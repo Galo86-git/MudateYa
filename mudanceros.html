@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Sumate como mudancero — MudateYa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080E0C;--bg2:#0D1410;--surface:#172018;--surface2:#1D2820;
+  --border:#213029;--border2:#2A3C32;
+  --emerald:#22C36A;--emerald-dim:#1A9A52;--emerald-glow:rgba(34,195,106,.18);--emerald-subtle:rgba(34,195,106,.08);
+  --sky:#29B6F6;--sky-subtle:rgba(41,182,246,.08);--sky-glow:rgba(41,182,246,.18);
+  --text:#E8F5EE;--text2:#7AADA0;--text3:#3D6458;
+  --mono:'DM Mono',monospace;--r:12px;--r2:16px;--r3:24px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:62px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--text);text-decoration:none}
+.logo span{color:var(--emerald)}
+.nav-back{font-size:12px;color:var(--text2);text-decoration:none;font-family:var(--mono);display:flex;align-items:center;gap:6px;transition:color .2s}
+.nav-back:hover{color:var(--text)}
+
+/* HERO */
+.hero{max-width:760px;margin:0 auto;padding:4rem 2rem 3rem;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--emerald-subtle);color:var(--emerald);font-family:var(--mono);font-size:11px;letter-spacing:.5px;padding:5px 12px;border-radius:6px;margin-bottom:1.2rem;border:1px solid rgba(34,195,106,.2)}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,6vw,5.5rem);line-height:.95;letter-spacing:2px;margin-bottom:1rem}
+.hero h1 em{color:var(--emerald);font-style:normal}
+.hero p{font-size:15px;color:var(--text2);line-height:1.75;font-weight:300;max-width:520px;margin:0 auto 2rem}
+
+/* STATS */
+.hero-stats{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-bottom:2.5rem}
+.hstat{text-align:center}
+.hstat-n{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--emerald);letter-spacing:1px}
+.hstat-l{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.3px}
+
+/* FORM */
+.form-wrap{max-width:760px;margin:0 auto;padding:0 2rem 5rem}
+.form-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5)}
+
+.form-section{padding:2rem;border-bottom:1px solid var(--border)}
+.form-section:last-child{border-bottom:none}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--text);margin-bottom:4px}
+.section-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:1.4rem}
+
+.field-grid{display:grid;gap:12px}
+.field-grid.cols2{grid-template-columns:1fr 1fr}
+.field-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)}
+.field-label span{color:var(--emerald)}
+.field input,.field select,.field textarea{
+  width:100%;padding:11px 14px;
+  border:1px solid var(--border2);border-radius:10px;
+  font-size:13px;font-family:'Outfit',sans-serif;
+  color:var(--text);background:var(--surface2);outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--emerald);box-shadow:0 0 0 3px var(--emerald-subtle)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text3)}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233D6458' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.field select option{background:var(--surface2)}
+.field textarea{resize:vertical;min-height:80px;line-height:1.5}
+.field-hint{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+/* CHIPS */
+.chips-grid{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface2);
+  cursor:pointer;font-size:12px;font-weight:400;color:var(--text2);
+  transition:all .2s;user-select:none;
+}
+.chip:hover{border-color:rgba(34,195,106,.3);background:var(--emerald-subtle)}
+.chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
+.chip-icon{font-size:.9rem}
+
+/* HORARIOS */
+.horario-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.horario-chip{padding:8px 6px;border-radius:8px;text-align:center;border:1px solid var(--border);background:var(--surface2);font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;transition:all .2s;user-select:none}
+.horario-chip:hover{border-color:rgba(34,195,106,.3);color:var(--text2)}
+.horario-chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
+
+/* PRECIO */
+.precio-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)}
+.precio-label{font-size:13px;color:var(--text2);flex:1}
+.precio-input-wrap{position:relative;display:flex;align-items:center}
+.precio-prefix{position:absolute;left:12px;font-size:13px;color:var(--text3);font-family:var(--mono)}
+.precio-input{width:140px;padding:9px 12px 9px 26px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none;transition:border-color .2s}
+.precio-input:focus{border-color:var(--emerald)}
+
+/* FOTO */
+.upload-area{
+  border:2px dashed var(--border2);border-radius:12px;
+  padding:2rem;text-align:center;cursor:pointer;
+  transition:all .2s;background:var(--surface2);
+}
+.upload-area:hover{border-color:var(--emerald);background:var(--emerald-subtle)}
+.upload-area.has-file{border-color:var(--emerald);background:var(--emerald-subtle)}
+.upload-icon{font-size:2rem;margin-bottom:8px}
+.upload-text{font-size:13px;color:var(--text2);margin-bottom:4px}
+.upload-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.upload-preview{max-width:120px;max-height:120px;border-radius:10px;margin:0 auto 8px;display:none;object-fit:cover}
+#fotoInput{display:none}
+
+/* SUBMIT */
+.form-footer{padding:1.5rem 2rem;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.footer-note{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.btn-submit{
+  background:var(--emerald);color:#041A0E;border:none;
+  padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:'Outfit',sans-serif;
+  display:flex;align-items:center;gap:8px;
+  transition:all .2s;letter-spacing:.2px;
+}
+.btn-submit:hover{background:#2EDB7A;transform:translateY(-1px);box-shadow:0 6px 24px var(--emerald-glow)}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* SUCCESS */
+.success-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
+.success-overlay.show{display:flex}
+.success-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);padding:2.5rem 2rem;max-width:440px;width:100%;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.7)}
+.success-icon{width:64px;height:64px;border-radius:50%;background:var(--emerald-subtle);border:2px solid var(--emerald);color:var(--emerald);font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem}
+.success-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;margin-bottom:.4rem}
+.success-sub{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:1.4rem}
+.success-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:1.4rem;text-align:left}
+.success-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2)}
+.success-step-num{width:22px;height:22px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);color:var(--emerald);font-size:11px;font-weight:700;font-family:var(--mono);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-home{display:block;width:100%;padding:13px;border-radius:12px;border:none;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s;text-align:center}
+.btn-home:hover{background:#2EDB7A}
+
+/* ERROR */
+.field-error{font-size:10px;color:#ff6b6b;font-family:var(--mono);display:none}
+.field.has-error input,.field.has-error select,.field.has-error textarea{border-color:#ff6b6b}
+.field.has-error .field-error{display:block}
+
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(4,26,14,.3);border-top-color:#041A0E;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:640px){
+  nav{padding:0 1.2rem}
+  .hero{padding:3rem 1.2rem 2rem}
+  .form-wrap{padding:0 1.2rem 4rem}
+  .field-grid.cols2,.field-grid.cols3{grid-template-columns:1fr}
+  .horario-grid{grid-template-columns:repeat(2,1fr)}
+  .form-footer{flex-direction:column;align-items:stretch}
+  .btn-submit{justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">Mudate<span>Ya</span></a>
+  <a href="/" class="nav-back">← Volver al inicio</a>
+</nav>
+
+<div class="hero">
+  <span class="hero-badge">🚛 Para mudanceros</span>
+  <h1>SUMARTE ES<br><em>GRATIS</em></h1>
+  <p>Completá el formulario y empezá a recibir clientes en menos de 24 horas. Sin costos fijos — solo pagás cuando concretás un trabajo.</p>
+  <div class="hero-stats">
+    <div class="hstat"><div class="hstat-n">+9.800</div><div class="hstat-l">mudanzas realizadas</div></div>
+    <div class="hstat"><div class="hstat-n">10%</div><div class="hstat-l">comisión por trabajo</div></div>
+    <div class="hstat"><div class="hstat-n">24hs</div><div class="hstat-l">para empezar a recibir pedidos</div></div>
+  </div>
+</div>
+
+<div class="form-wrap">
+  <form class="form-card" id="regForm" novalidate>
+
+    <!-- SECCIÓN 1: DATOS PERSONALES -->
+    <div class="form-section">
+      <div class="section-title">Datos personales</div>
+      <div class="section-sub">Tu información de contacto — no se muestra públicamente</div>
+      <div class="field-grid cols2">
+        <div class="field" id="f-nombre">
+          <label class="field-label">Nombre completo <span>*</span></label>
+          <input type="text" id="nombre" placeholder="Juan González" autocomplete="name"/>
+          <span class="field-error">Este campo es obligatorio</span>
+        </div>
+        <div class="field" id="f-empresa">
+          <label class="field-label">Nombre de la empresa / razón social</label>
+          <input type="text" id="empresa" placeholder="Mudanzas González (opcional)"/>
+        </div>
+        <div class="field" id="f-telefono">
+          <label class="field-label">WhatsApp / teléfono <span>*</span></label>
+          <input type="tel" id="telefono" placeholder="+54 9 11 1234-5678"/>
+          <span class="field-error">Ingresá un teléfono válido</span>
+        </div>
+        <div class="field" id="f-email">
+          <label class="field-label">Email <span>*</span></label>
+          <input type="email" id="email" placeholder="juan@email.com"/>
+          <span class="field-error">Ingresá un email válido</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: ZONA -->
+    <div class="form-section">
+      <div class="section-title">Zona de cobertura</div>
+      <div class="section-sub">¿En qué áreas operás?</div>
+      <div class="field-grid">
+        <div class="field" id="f-zona-base">
+          <label class="field-label">Ciudad / zona base <span>*</span></label>
+          <select id="zonaBase">
+            <option value="">Seleccioná tu zona principal</option>
+            <option>CABA — zona norte</option>
+            <option>CABA — zona sur</option>
+            <option>CABA — zona oeste</option>
+            <option>CABA — zona centro</option>
+            <option>GBA Norte (San Isidro, Vicente López, etc.)</option>
+            <option>GBA Sur (Quilmes, Avellaneda, etc.)</option>
+            <option>GBA Oeste (Morón, Ituzaingó, etc.)</option>
+            <option>GBA Este (Lanús, Lomas de Zamora, etc.)</option>
+            <option>Rosario</option>
+            <option>Córdoba Capital</option>
+            <option>Otra ciudad</option>
+          </select>
+          <span class="field-error">Seleccioná tu zona base</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Zonas adicionales que cubrís</label>
+          <input type="text" id="zonasExtra" placeholder="Ej: Tigre, San Fernando, Escobar"/>
+          <span class="field-hint">Separadas por comas</span>
+        </div>
+        <div class="field">
+          <label class="field-label">¿Hacés mudanzas de larga distancia?</label>
+          <div class="chips-grid" id="chips-distancia">
+            <div class="chip" onclick="toggleChip(this,'distancia')"><span class="chip-icon">🏙️</span>Solo CABA/GBA</div>
+            <div class="chip" onclick="toggleChip(this,'distancia')"><span class="chip-icon">🗺️</span>Interior del país</div>
+            <div class="chip" onclick="toggleChip(this,'distancia')"><span class="chip-icon">🌎</span>Internacional</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: VEHÍCULO -->
+    <div class="form-section">
+      <div class="section-title">Vehículo y capacidad</div>
+      <div class="section-sub">¿Con qué trabajás?</div>
+      <div class="field-grid">
+        <div class="field" id="f-vehiculo">
+          <label class="field-label">Tipo de vehículo <span>*</span></label>
+          <select id="vehiculo">
+            <option value="">Seleccioná el tipo</option>
+            <option>Camioneta / furgón pequeño (hasta 1.5t)</option>
+            <option>Camión mediano (1.5t — 3.5t)</option>
+            <option>Camión grande (3.5t — 7t)</option>
+            <option>Camión con hidrogrúa</option>
+            <option>Múltiples vehículos</option>
+          </select>
+          <span class="field-error">Seleccioná el tipo de vehículo</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Cantidad de vehículos disponibles</label>
+          <select id="cantVehiculos">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4 o más</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Cantidad de personas en el equipo</label>
+          <select id="equipo">
+            <option>Solo yo</option>
+            <option>2 personas</option>
+            <option>3 personas</option>
+            <option>4 o más personas</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: SERVICIOS -->
+    <div class="form-section">
+      <div class="section-title">Servicios que ofrecés</div>
+      <div class="section-sub">Seleccioná todos los que apliquen</div>
+      <div class="chips-grid" id="chips-servicios">
+        <div class="chip sel" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Mudanzas completas</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🏢</span>Mudanzas de oficina</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🚚</span>Fletes y envíos</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Embalaje incluido</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🔧</span>Desmontaje y montaje</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🏗️</span>Sube / escalera</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🛡️</span>Seguro de mudanza</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🧹</span>Limpieza post-mudanza</div>
+        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Guardamuebles</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 5: DISPONIBILIDAD -->
+    <div class="form-section">
+      <div class="section-title">Disponibilidad</div>
+      <div class="section-sub">¿Cuándo podés trabajar?</div>
+      <div class="field-grid">
+        <div class="field">
+          <label class="field-label">Días disponibles</label>
+          <div class="horario-grid" id="chips-dias">
+            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Lunes</div>
+            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Martes</div>
+            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Miércoles</div>
+            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Jueves</div>
+            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Viernes</div>
+            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Sábado</div>
+            <div class="horario-chip" onclick="toggleChip(this,'dias')">Domingo</div>
+            <div class="horario-chip" onclick="toggleChip(this,'dias')">Feriados</div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Horarios</label>
+          <div class="chips-grid" id="chips-horarios">
+            <div class="chip sel" onclick="toggleChip(this,'horarios')">🌅 Mañana (8–12hs)</div>
+            <div class="chip sel" onclick="toggleChip(this,'horarios')">☀️ Tarde (12–18hs)</div>
+            <div class="chip" onclick="toggleChip(this,'horarios')">🌙 Noche (18–22hs)</div>
+            <div class="chip" onclick="toggleChip(this,'horarios')">⏰ 24 horas</div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Tiempo mínimo de anticipación</label>
+          <select id="anticipacion">
+            <option>Mismo día</option>
+            <option>24 horas</option>
+            <option selected>48 horas</option>
+            <option>1 semana</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 6: PRECIOS -->
+    <div class="form-section">
+      <div class="section-title">Precios base</div>
+      <div class="section-sub">Precios orientativos en ARS — podés ajustarlos por cotización</div>
+      <div class="field-grid" style="gap:8px">
+        <div class="precio-row">
+          <span class="precio-label">Monoambiente / 1 ambiente</span>
+          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p1" placeholder="45.000" min="0"/></div>
+        </div>
+        <div class="precio-row">
+          <span class="precio-label">2 ambientes</span>
+          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p2" placeholder="65.000" min="0"/></div>
+        </div>
+        <div class="precio-row">
+          <span class="precio-label">3 ambientes</span>
+          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p3" placeholder="85.000" min="0"/></div>
+        </div>
+        <div class="precio-row">
+          <span class="precio-label">4+ ambientes</span>
+          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p4" placeholder="110.000" min="0"/></div>
+        </div>
+        <div class="precio-row">
+          <span class="precio-label">Flete / envío chico</span>
+          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="pflete" placeholder="18.000" min="0"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 7: FOTO -->
+    <div class="form-section">
+      <div class="section-title">Foto o logo</div>
+      <div class="section-sub">Se muestra en tu perfil para generar más confianza</div>
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fotoInput').click()">
+        <img id="fotoPreview" class="upload-preview" alt="preview"/>
+        <div class="upload-icon" id="uploadIcon">📷</div>
+        <div class="upload-text" id="uploadText">Hacé click para subir una foto</div>
+        <div class="upload-sub">JPG, PNG o WebP · Máx. 5MB</div>
+      </div>
+      <input type="file" id="fotoInput" accept="image/*" onchange="previewFoto(this)"/>
+    </div>
+
+    <!-- SECCIÓN 8: EXTRA -->
+    <div class="form-section">
+      <div class="section-title">Algo más que quieras contar</div>
+      <div class="section-sub">Experiencia, especialidades, lo que quieras destacar</div>
+      <div class="field">
+        <textarea id="extra" placeholder="Ej: 10 años de experiencia, especializado en mudanzas de pianos, camión con hidráulica para pisos altos sin ascensor..."></textarea>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="form-footer">
+      <span class="footer-note">🔒 Tus datos están seguros · Solo MudateYa los ve</span>
+      <button type="submit" class="btn-submit" id="btnSubmit">
+        Enviar solicitud
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">✓</div>
+    <h2 class="success-title">¡Solicitud enviada!</h2>
+    <p class="success-sub">Recibimos tu información. Te vamos a contactar por WhatsApp en las próximas <strong>24 horas</strong> para activar tu perfil.</p>
+    <div class="success-steps">
+      <div class="success-step"><span class="success-step-num">1</span><span>Revisamos tu solicitud y verificamos tus datos</span></div>
+      <div class="success-step"><span class="success-step-num">2</span><span>Te contactamos por WhatsApp para confirmar</span></div>
+      <div class="success-step"><span class="success-step-num">3</span><span>Tu perfil queda activo y empezás a recibir pedidos</span></div>
+    </div>
+    <a href="/" class="btn-home">Volver al inicio</a>
+  </div>
+</div>
+
+<script>
+// ── CHIPS ──────────────────────────────────────────────────────────────────
+function toggleChip(el, group){
+  if(group==='distancia'){
+    document.querySelectorAll('#chips-distancia .chip').forEach(c=>c.classList.remove('sel'));
+  }
+  el.classList.toggle('sel');
+}
+
+function getChips(containerId){
+  return Array.from(document.querySelectorAll('#'+containerId+' .sel')).map(c=>c.textContent.trim());
+}
+
+// ── FOTO PREVIEW ───────────────────────────────────────────────────────────
+function previewFoto(input){
+  if(input.files&&input.files[0]){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var preview=document.getElementById('fotoPreview');
+      preview.src=e.target.result;
+      preview.style.display='block';
+      document.getElementById('uploadIcon').style.display='none';
+      document.getElementById('uploadText').textContent='Foto cargada ✓';
+      document.getElementById('uploadArea').classList.add('has-file');
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// ── VALIDACIÓN ─────────────────────────────────────────────────────────────
+function validateField(id, condition){
+  var field=document.getElementById('f-'+id);
+  if(!field)return true;
+  if(!condition){
+    field.classList.add('has-error');
+    return false;
+  }
+  field.classList.remove('has-error');
+  return true;
+}
+
+// ── SUBMIT ─────────────────────────────────────────────────────────────────
+document.getElementById('regForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+
+  var nombre=document.getElementById('nombre').value.trim();
+  var telefono=document.getElementById('telefono').value.trim();
+  var email=document.getElementById('email').value.trim();
+  var zonaBase=document.getElementById('zonaBase').value;
+  var vehiculo=document.getElementById('vehiculo').value;
+
+  var ok=true;
+  ok=validateField('nombre', nombre.length>1) && ok;
+  ok=validateField('telefono', telefono.length>6) && ok;
+  ok=validateField('email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
+  ok=validateField('zona-base', zonaBase!=='') && ok;
+  ok=validateField('vehiculo', vehiculo!=='') && ok;
+
+  if(!ok){
+    document.querySelector('.has-error input, .has-error select')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  var btn=document.getElementById('btnSubmit');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> Enviando…';
+
+  // Convertir foto a base64 si existe
+  var fotoBase64='';
+  var fotoInput=document.getElementById('fotoInput');
+  if(fotoInput.files&&fotoInput.files[0]){
+    fotoBase64=await new Promise(function(resolve){
+      var r=new FileReader();
+      r.onload=function(e){resolve(e.target.result);};
+      r.readAsDataURL(fotoInput.files[0]);
+    });
+  }
+
+  var data={
+    nombre, telefono, email,
+    empresa:       document.getElementById('empresa').value.trim(),
+    zonaBase,
+    zonasExtra:    document.getElementById('zonasExtra').value.trim(),
+    distancia:     getChips('chips-distancia').join(', '),
+    vehiculo,
+    cantVehiculos: document.getElementById('cantVehiculos').value,
+    equipo:        document.getElementById('equipo').value,
+    servicios:     getChips('chips-servicios').join(', '),
+    dias:          getChips('chips-dias').join(', '),
+    horarios:      getChips('chips-horarios').join(', '),
+    anticipacion:  document.getElementById('anticipacion').value,
+    precio1amb:    document.getElementById('p1').value||'',
+    precio2amb:    document.getElementById('p2').value||'',
+    precio3amb:    document.getElementById('p3').value||'',
+    precio4amb:    document.getElementById('p4').value||'',
+    precioFlete:   document.getElementById('pflete').value||'',
+    extra:         document.getElementById('extra').value.trim(),
+    foto:          fotoBase64,
+    fecha:         new Date().toLocaleString('es-AR'),
+  };
+
+  try{
+    var res=await fetch('/api/registrar-mudancero',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    });
+    var json=await res.json();
+    if(json.error)throw new Error(json.error);
+    document.getElementById('successOverlay').classList.add('show');
+    document.body.style.overflow='hidden';
+  }catch(err){
+    btn.disabled=false;
+    btn.innerHTML='Enviar solicitud <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+    var errDiv=document.createElement('div');
+    errDiv.style.cssText='color:#ff6b6b;font-size:12px;text-align:center;margin-top:12px;font-family:var(--mono);padding:0 2rem';
+    errDiv.textContent='⚠ '+err.message+' — Intentá de nuevo o escribinos por WhatsApp.';
+    document.querySelector('.form-footer').after(errDiv);
+    setTimeout(()=>errDiv.remove(),5000);
+  }
+});
+</script>
+</body>
+</html>
