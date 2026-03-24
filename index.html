@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
@@ -1158,7 +1158,7 @@ function selectPayOption(opt){
 }
 
 function initMercadoPago(tipo,monto,mudancero,precioTotal){
-  var MP_PUBLIC_KEY='TEST-d5f68cd7-0ed3-4253-82d5-bcd6145de778'; // reemplazar con tu key
+  var MP_PUBLIC_KEY='TEST-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'; // reemplazar con tu key
   var desc=tipo==='fee'
     ? 'Fee MudateYa — '+mudancero+' (restante $'+( precioTotal-monto).toLocaleString('es-AR')+' al mudancero)'
     : 'Mudanza completa — '+mudancero;
@@ -1213,6 +1213,8 @@ function showPaySuccess(mudancero,tipo,monto,precioTotal){
   document.getElementById('ps-tipo').textContent=tipo==='fee'?'Fee de servicio MudateYa':'Mudanza completa';
   document.getElementById('paySuccess').classList.add('open');
 }
+
+function getInputVal(id){
   var el=document.getElementById(id);
   return el?el.value.trim():'';
 }
