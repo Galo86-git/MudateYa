@@ -925,8 +925,54 @@ function goStep(n){
   step=n;
   document.getElementById('step'+n).classList.add('active');
   var hero=document.getElementById('heroGrid');
-  if(n===3){buildSummary();searchRealProviders();showRouteMap();hero.classList.add('step3-active')}
+  if(n===3){
+    buildSummary();
+    searchRealProviders();
+    showRouteMap();
+    hero.classList.add('step3-active');
+    // Publicar la mudanza en el sistema de cotizaciones
+    publicarMudanzaEnSistema();
+  }
   else{hero.classList.remove('step3-active');document.getElementById('mapPanel').classList.remove('show')}
+}
+
+var _mudanzaPublicadaId = null;
+
+async function publicarMudanzaEnSistema(){
+  var user = null;
+  try{ user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); }catch(e){}
+  if(!user) return; // Sin login no publicamos
+
+  if(_mudanzaPublicadaId) return; // Ya publicada
+
+  var desde = getInputVal('desde');
+  var hasta = getInputVal('hasta');
+  var extras = Array.from(document.querySelectorAll('.extra-chip.sel span:nth-child(2)')).map(function(e){return e.textContent.trim()}).join(', ');
+  var objetos = Array.from(document.querySelectorAll('.obj-chip.sel .obj-label')).map(function(e){return e.textContent}).join(', ');
+  var precio = estimarPrecio();
+
+  try{
+    var r = await fetch('/api/cotizaciones?action=publicar', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        clienteEmail: user.email,
+        clienteNombre: user.name,
+        desde, hasta,
+        ambientes: amb + ' ambiente' + (amb!==1?'s':''),
+        fecha: getFechaLabel(),
+        servicios: objetos,
+        extras,
+        zonaBase: desde,
+        precio_estimado: precio,
+      })
+    });
+    var d = await r.json();
+    if(d.id) _mudanzaPublicadaId = d.id;
+    console.log('Mudanza publicada:', d.id);
+  }catch(e){
+    console.warn('No se pudo publicar mudanza:', e.message);
+  }
 }
 
 function changeAmb(d){amb=Math.max(1,Math.min(10,amb+d));document.getElementById('ambVal').textContent=amb}
