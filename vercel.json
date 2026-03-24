@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Pago confirmado — MudateYa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080E0C;--surface:#172018;--border:#213029;
+  --emerald:#22C36A;--emerald-subtle:rgba(34,195,106,.08);
+  --sky:#29B6F6;--sky-subtle:rgba(41,182,246,.08);
+  --text:#E8F5EE;--text2:#7AADA0;--text3:#3D6458;
+  --mono:'DM Mono',monospace;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:2.5rem 2rem;max-width:440px;width:100%;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.6);}
+.icon{width:64px;height:64px;border-radius:50%;background:var(--emerald-subtle);border:2px solid var(--emerald);color:var(--emerald);font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;}
+h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;margin-bottom:.4rem;}
+.sub{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:1.4rem;}
+.info-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:1.2rem;text-align:left;}
+.info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.info-row:last-child{border-bottom:none;}
+.info-label{color:var(--text3);font-family:var(--mono);}
+.info-val{color:var(--text2);font-weight:500;}
+.resto-box{background:var(--sky-subtle);border:1px solid rgba(41,182,246,.2);border-radius:10px;padding:12px;margin-bottom:1.4rem;font-size:12px;color:var(--text2);line-height:1.6;text-align:left;}
+.resto-box strong{color:var(--sky);}
+.steps{display:flex;flex-direction:column;gap:8px;margin-bottom:1.4rem;text-align:left;}
+.step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2);}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);color:var(--emerald);font-size:11px;font-weight:700;font-family:var(--mono);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.btn-home{display:block;width:100%;padding:13px;border-radius:12px;border:none;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s;}
+.btn-home:hover{background:#2EDB7A;transform:translateY(-1px);}
+.footer-note{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">✓</div>
+  <h1>¡Listo!</h1>
+  <p class="sub">Tu pago fue confirmado. <span id="resumen-tipo">El fee de MudateYa</span> fue procesado correctamente.</p>
+
+  <div class="info-box">
+    <div class="info-row"><span class="info-label">Mudancero</span><span class="info-val" id="info-mudancero">—</span></div>
+    <div class="info-row"><span class="info-label">Monto pagado</span><span class="info-val" id="info-monto">—</span></div>
+    <div class="info-row"><span class="info-label">Estado</span><span class="info-val" style="color:var(--emerald)">✓ Aprobado</span></div>
+  </div>
+
+  <div class="resto-box" id="resto-box" style="display:none">
+    Recordá pagar <strong id="info-resto">—</strong> directamente al mudancero el día de la mudanza con el medio de pago que acuerden.
+  </div>
+
+  <div class="steps">
+    <div class="step"><span class="step-num">1</span><span>Te contactamos por WhatsApp en las próximas horas para coordinar</span></div>
+    <div class="step"><span class="step-num">2</span><span>El mudancero confirma disponibilidad en menos de 24hs</span></div>
+    <div class="step"><span class="step-num">3</span><span>¡Todo listo para tu mudanza!</span></div>
+  </div>
+
+  <a href="/" class="btn-home">Volver al inicio</a>
+  <p class="footer-note">Revisá tu email — te mandamos la confirmación con todos los detalles</p>
+</div>
+
+<script>
+// Leer params de la URL que devuelve MP
+var params=new URLSearchParams(window.location.search);
+var tipo=params.get('tipo')||'fee';
+var monto=parseInt(params.get('monto'))||0;
+var mudancero=decodeURIComponent(params.get('mudancero')||'tu mudancero');
+var precioTotal=parseInt(params.get('precio_total'))||0;
+
+document.getElementById('info-mudancero').textContent=mudancero;
+document.getElementById('info-monto').textContent=monto?'$'+monto.toLocaleString('es-AR'):'—';
+
+if(tipo==='fee'){
+  document.getElementById('resumen-tipo').textContent='El fee de MudateYa';
+  if(precioTotal&&monto){
+    var resto=precioTotal-monto;
+    document.getElementById('info-resto').textContent='$'+resto.toLocaleString('es-AR');
+    document.getElementById('resto-box').style.display='block';
+  }
+}else{
+  document.getElementById('resumen-tipo').textContent='El pago completo de tu mudanza';
+}
+</script>
+</body>
+</html>
