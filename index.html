@@ -615,8 +615,8 @@ gmp-placeautocomplete input:focus,gmp-place-autocomplete input:focus{
     <li><a href="#testimonios">Reseñas</a></li>
   </ul>
   <div class="nav-actions">
-    <a href="#" class="btn-ghost">Iniciar sesión</a>
-    <a href="#" class="btn-cta">Publicar mudanza</a>
+    <a href="/mi-mudanza" class="btn-ghost" id="navLogin">Iniciar sesión</a>
+    <a href="#" class="btn-cta" id="navPublicar" onclick="publicarMudanza(event)">Publicar mudanza</a>
   </div>
   <button class="nav-burger" id="navBurger" onclick="toggleMenu()" aria-label="Menú">
     <span></span><span></span><span></span>
@@ -1282,6 +1282,34 @@ function toggleMenu(){
 function closeMenu(){
   document.getElementById('navBurger').classList.remove('open');
   document.getElementById('mobileMenu').classList.remove('open');
+}
+
+// ── LOGIN STATE ────────────────────────────────────────────────────────────
+(function initLoginState(){
+  var saved = sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser');
+  if(!saved) return;
+  try{
+    var user = JSON.parse(saved);
+    var navLogin = document.getElementById('navLogin');
+    var navPublicar = document.getElementById('navPublicar');
+    if(navLogin){
+      navLogin.textContent = user.name.split(' ')[0];
+      navLogin.href = '/mi-mudanza';
+    }
+    if(navPublicar) navPublicar.textContent = 'Mi mudanza →';
+  }catch(e){}
+})();
+
+function publicarMudanza(e){
+  var saved = sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser');
+  if(!saved){
+    // No logueado — redirigir a login
+    window.location.href = '/mi-mudanza';
+    return;
+  }
+  // Logueado — scroll al wizard
+  e.preventDefault();
+  document.getElementById('desde') && document.getElementById('desde').scrollIntoView({behavior:'smooth', block:'center'});
 }
 </script>
 
