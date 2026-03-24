@@ -4,6 +4,7 @@
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/admin", "dest": "/admin.html" },
     { "src": "/mudanceros", "dest": "/mudanceros.html" },
+    { "src": "/mi-cuenta", "dest": "/mi-cuenta.html" },
     { "src": "/pago-exitoso", "dest": "/pago-exitoso.html" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
