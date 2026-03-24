@@ -2,6 +2,7 @@
   "version": 2,
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/admin", "dest": "/admin.html" },
     { "src": "/mudanceros", "dest": "/mudanceros.html" },
     { "src": "/pago-exitoso", "dest": "/pago-exitoso.html" },
     { "src": "/(.*)", "dest": "/$1" }
