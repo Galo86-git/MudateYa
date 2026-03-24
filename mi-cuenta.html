@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mi cuenta — MudateYa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080E0C;--bg2:#0D1410;--surface:#172018;--surface2:#1D2820;
+  --border:#213029;--border2:#2A3C32;
+  --emerald:#22C36A;--emerald-dim:#1A9A52;--emerald-glow:rgba(34,195,106,.18);--emerald-subtle:rgba(34,195,106,.08);
+  --sky:#29B6F6;--sky-subtle:rgba(41,182,246,.08);--sky-glow:rgba(41,182,246,.18);
+  --red:#FF5252;--red-subtle:rgba(255,82,82,.08);
+  --amber:#FFB300;--amber-subtle:rgba(255,179,0,.08);
+  --text:#E8F5EE;--text2:#7AADA0;--text3:#3D6458;
+  --mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* LOGIN */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.5)}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;margin-bottom:.3rem}
+.login-logo span{color:var(--emerald)}
+.login-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:1.8rem}
+.login-note{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1rem;line-height:1.6}
+.login-note a{color:var(--emerald);text-decoration:none}
+
+/* NOT FOUND */
+#notFoundScreen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:2rem;flex-direction:column;gap:1rem;text-align:center}
+.nf-icon{font-size:3rem}
+.nf-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px}
+.nf-sub{font-size:14px;color:var(--text2);line-height:1.7;max-width:360px}
+.btn-register{display:inline-block;margin-top:.5rem;background:var(--emerald);color:#041A0E;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;transition:all .2s}
+.btn-register:hover{background:#2EDB7A}
+
+/* APP */
+#appScreen{display:none;min-height:100vh}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:58px}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;text-decoration:none;color:var(--text)}
+.nav-logo span{color:var(--emerald)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--border2)}
+.nav-name{font-size:12px;color:var(--text2)}
+.btn-logout{font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:all .2s}
+.btn-logout:hover{color:var(--red);border-color:var(--red)}
+
+/* STATUS BADGE */
+.status-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:.7rem 1.5rem;display:flex;align-items:center;gap:10px}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-dot.approved{background:var(--emerald);box-shadow:0 0 8px var(--emerald-glow)}
+.status-dot.pending{background:var(--amber)}
+.status-dot.rejected{background:var(--red)}
+.status-text{font-size:12px;color:var(--text2);font-family:var(--mono)}
+
+/* BODY */
+.app-body{display:flex;min-height:calc(100vh - 58px)}
+
+/* SIDEBAR */
+.sidebar{width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:1.2rem 0;position:sticky;top:58px;height:calc(100vh - 58px)}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 1.2rem;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
+.sidebar-item:hover{background:var(--surface);color:var(--text)}
+.sidebar-item.active{background:var(--emerald-subtle);color:var(--emerald);border-left-color:var(--emerald)}
+.sidebar-icon{font-size:14px;width:18px;text-align:center}
+.sidebar-badge{margin-left:auto;background:var(--red);color:white;font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:10px;font-weight:700}
+
+/* MAIN */
+.main{flex:1;padding:1.8rem;overflow-x:hidden;min-width:0}
+.page{display:none}
+.page.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem}
+
+/* METRICS */
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:2rem}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem}
+.metric-label{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.metric-val{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;letter-spacing:1px}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+.metric-card.green .metric-val{color:var(--emerald)}
+.metric-card.blue .metric-val{color:var(--sky)}
+.metric-card.amber .metric-val{color:var(--amber)}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1.2rem}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;border-bottom:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+
+/* PEDIDOS */
+.pedido-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.2rem;margin-bottom:10px;transition:border-color .2s}
+.pedido-card:hover{border-color:rgba(34,195,106,.3)}
+.pedido-card.nuevo{border-left:3px solid var(--emerald)}
+.pedido-card.aceptado{border-left:3px solid var(--sky)}
+.pedido-card.rechazado{border-left:3px solid var(--red);opacity:.7}
+.pedido-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.pedido-ruta{font-size:14px;font-weight:600;color:var(--text)}
+.pedido-fecha{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.pedido-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.pedido-tag{font-size:11px;color:var(--text2);background:var(--surface2);padding:3px 8px;border-radius:5px;font-family:var(--mono)}
+.pedido-precio{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--emerald);letter-spacing:.5px}
+.pedido-precio-sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.pedido-actions{display:flex;gap:8px;margin-top:12px}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-green{background:var(--emerald);color:#041A0E}
+.btn-green:hover{background:#2EDB7A;transform:translateY(-1px)}
+.btn-red{background:var(--red-subtle);color:var(--red);border:1px solid rgba(255,82,82,.2)}
+.btn-red:hover{background:var(--red);color:white}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--emerald);color:var(--emerald)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* EMPTY / LOADING */
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
+.empty-icon{font-size:2.5rem;margin-bottom:8px}
+.loading{text-align:center;padding:3rem;color:var(--text3);font-family:var(--mono);font-size:12px}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10px;font-family:var(--mono);font-weight:600}
+.badge.nuevo{background:var(--emerald-subtle);color:var(--emerald);border:1px solid rgba(34,195,106,.2)}
+.badge.aceptado{background:var(--sky-subtle);color:var(--sky);border:1px solid rgba(41,182,246,.2)}
+.badge.rechazado{background:var(--red-subtle);color:var(--red);border:1px solid rgba(255,82,82,.2)}
+.badge.pagado{background:var(--amber-subtle);color:var(--amber);border:1px solid rgba(255,179,0,.2)}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 200px);max-height:600px}
+.chat-list{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:10px}
+.chat-msg{max-width:70%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55}
+.chat-msg.mine{align-self:flex-end;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);color:var(--text)}
+.chat-msg.other{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.chat-msg-time{font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+.chat-input-wrap{display:flex;gap:8px;padding:1rem;border-top:1px solid var(--border)}
+.chat-input{flex:1;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s}
+.chat-input:focus{border-color:var(--emerald)}
+.chat-contacts{width:220px;border-right:1px solid var(--border);flex-shrink:0}
+.chat-contact{padding:12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .2s}
+.chat-contact:hover,.chat-contact.active{background:var(--emerald-subtle)}
+.chat-contact-name{font-size:13px;font-weight:500;color:var(--text)}
+.chat-contact-last{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-area{display:flex;flex-direction:column;flex:1;min-width:0}
+.chat-header{padding:12px 1rem;border-bottom:1px solid var(--border);font-size:13px;font-weight:500}
+.chat-container{display:flex;height:100%}
+
+/* PERFIL */
+.perfil-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)}
+.field input,.field select,.field textarea{width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--emerald)}
+.field input::placeholder{color:var(--text3)}
+.chips-grid{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:12px;color:var(--text2);transition:all .2s;user-select:none}
+.chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .metrics-grid{grid-template-columns:1fr 1fr}
+  .perfil-grid{grid-template-columns:1fr}
+  .chat-contacts{display:none}
+  .main{padding:1rem}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">Mudate<span>Ya</span></div>
+    <div class="login-sub">Portal del mudancero</div>
+    <div id="googleBtn"></div>
+    <div class="login-note">
+      ¿Todavía no te registraste?<br>
+      <a href="/mudanceros">Sumate como mudancero →</a>
+    </div>
+  </div>
+</div>
+
+<!-- NOT FOUND -->
+<div id="notFoundScreen">
+  <div class="nf-icon">🚛</div>
+  <div class="nf-title">Perfil no encontrado</div>
+  <p class="nf-sub">Tu email no está registrado como mudancero todavía. Completá el formulario para sumarte.</p>
+  <a href="/mudanceros" class="btn-register">Registrarme como mudancero →</a>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <nav class="nav">
+    <a href="/" class="nav-logo">Mudate<span>Ya</span></a>
+    <div class="nav-right">
+      <img id="navAvatar" class="nav-avatar" src="" alt=""/>
+      <span id="navName" class="nav-name"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-text" id="statusText">Cargando…</span>
+  </div>
+
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <a class="sidebar-item active" onclick="showPage('pedidos')" href="#">
+        <span class="sidebar-icon">📋</span> Pedidos
+        <span class="sidebar-badge" id="badgeNuevos" style="display:none">0</span>
+      </a>
+      <a class="sidebar-item" onclick="showPage('historial')" href="#">
+        <span class="sidebar-icon">📅</span> Historial
+      </a>
+      <a class="sidebar-item" onclick="showPage('ganancias')" href="#">
+        <span class="sidebar-icon">💰</span> Ganancias
+      </a>
+      <a class="sidebar-item" onclick="showPage('chat')" href="#">
+        <span class="sidebar-icon">💬</span> Mensajes
+      </a>
+      <a class="sidebar-item" onclick="showPage('perfil')" href="#">
+        <span class="sidebar-icon">⚙️</span> Mi perfil
+      </a>
+    </div>
+
+    <div class="main">
+
+      <!-- PEDIDOS -->
+      <div class="page active" id="page-pedidos">
+        <div class="page-title">Pedidos nuevos</div>
+        <div id="pedidosList"><div class="loading"><span class="spinner"></span>Cargando pedidos…</div></div>
+      </div>
+
+      <!-- HISTORIAL -->
+      <div class="page" id="page-historial">
+        <div class="page-title">Historial de trabajos</div>
+        <div id="historialList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+      </div>
+
+      <!-- GANANCIAS -->
+      <div class="page" id="page-ganancias">
+        <div class="page-title">Mis ganancias</div>
+        <div class="metrics-grid">
+          <div class="metric-card green"><div class="metric-label">Ganancias totales</div><div class="metric-val" id="g-total">$0</div><div class="metric-sub">neto después de fee</div></div>
+          <div class="metric-card blue"><div class="metric-label">Trabajos completados</div><div class="metric-val" id="g-trabajos">0</div><div class="metric-sub">mudanzas</div></div>
+          <div class="metric-card amber"><div class="metric-label">Promedio por trabajo</div><div class="metric-val" id="g-promedio">$0</div><div class="metric-sub">por mudanza</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Detalle de pagos</span></div>
+          <div id="gananciasList"><div class="empty"><div class="empty-icon">💰</div>Sin pagos registrados aún</div></div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="page" id="page-chat">
+        <div class="page-title">Mensajes</div>
+        <div class="card">
+          <div class="chat-wrap">
+            <div class="chat-container">
+              <div class="chat-contacts" id="chatContacts">
+                <div class="empty" style="padding:2rem"><div class="empty-icon">💬</div>Sin conversaciones</div>
+              </div>
+              <div class="chat-area">
+                <div class="chat-header" id="chatHeader">Seleccioná una conversación</div>
+                <div class="chat-list" id="chatList">
+                  <div class="empty" style="margin:auto"><div class="empty-icon">💬</div>Acá aparecerán los mensajes con tus clientes</div>
+                </div>
+                <div class="chat-input-wrap">
+                  <input class="chat-input" id="chatInput" placeholder="Escribí un mensaje…" onkeydown="if(event.key==='Enter')sendMsg()"/>
+                  <button class="btn btn-green" onclick="sendMsg()">Enviar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFIL -->
+      <div class="page" id="page-perfil">
+        <div class="page-title">Mi perfil</div>
+        <div class="card" style="padding:1.5rem">
+          <div class="perfil-grid" id="perfilForm">
+            <div class="loading"><span class="spinner"></span>Cargando…</div>
+          </div>
+          <div style="margin-top:1.5rem;display:flex;justify-content:flex-end">
+            <button class="btn btn-green" onclick="guardarPerfil()" id="btnGuardar">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /app-body -->
+</div><!-- /appScreen -->
+
+<script>
+var GOOGLE_CLIENT_ID = '';
+var currentUser = null;
+var mudanceroData = null;
+var pedidosSimulados = [];
+var chatContactoActivo = null;
+var mensajes = {};
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+window.onload = async function(){
+  try{
+    var r = await fetch('/api/admin-config');
+    var cfg = await r.json();
+    GOOGLE_CLIENT_ID = cfg.googleClientId;
+  }catch(e){}
+
+  var saved = sessionStorage.getItem('mudanceroUser');
+  if(saved){
+    try{
+      currentUser = JSON.parse(saved);
+      await initApp();
+      return;
+    }catch(e){}
+  }
+
+  if(GOOGLE_CLIENT_ID){
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredential,
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('googleBtn'),
+      {theme:'filled_black',size:'large',text:'signin_with',width:280}
+    );
+  }
+};
+
+function handleCredential(response){
+  var payload = JSON.parse(atob(response.credential.split('.')[1]));
+  currentUser = {name:payload.name, email:payload.email, picture:payload.picture};
+  sessionStorage.setItem('mudanceroUser', JSON.stringify(currentUser));
+  initApp();
+}
+
+async function initApp(){
+  // Buscar mudancero por email
+  try{
+    var r = await fetch('/api/mudancero-data?email=' + encodeURIComponent(currentUser.email));
+    var d = await r.json();
+    if(!d.found){
+      showScreen('notFound');
+      return;
+    }
+    mudanceroData = d.mudancero;
+  }catch(e){
+    // En desarrollo mostrar igual
+    mudanceroData = {nombre: currentUser.name, estado: 'Pendiente', zona: 'CABA'};
+  }
+
+  showScreen('app');
+  document.getElementById('navName').textContent = currentUser.name;
+  document.getElementById('navAvatar').src = currentUser.picture || '';
+
+  var estado = mudanceroData[21] || mudanceroData.estado || 'Pendiente';
+  var dot = document.getElementById('statusDot');
+  var txt = document.getElementById('statusText');
+  if(estado === 'Aprobado'){
+    dot.className = 'status-dot approved';
+    txt.textContent = '✓ Perfil activo — estás recibiendo pedidos';
+  }else if(estado === 'Rechazado'){
+    dot.className = 'status-dot rejected';
+    txt.textContent = '✗ Perfil rechazado — contactanos para más info';
+  }else{
+    dot.className = 'status-dot pending';
+    txt.textContent = '⏳ Perfil en revisión — te avisamos en menos de 24hs';
+  }
+
+  loadPedidos();
+  loadPerfil();
+}
+
+function showScreen(name){
+  document.getElementById('loginScreen').style.display = name==='login'?'flex':'none';
+  document.getElementById('notFoundScreen').style.display = name==='notFound'?'flex':'none';
+  document.getElementById('appScreen').style.display = name==='app'?'block':'none';
+}
+
+function logout(){
+  sessionStorage.removeItem('mudanceroUser');
+  location.reload();
+}
+
+// ── NAVEGACIÓN ─────────────────────────────────────────────────────────────
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(event) event.currentTarget.classList.add('active');
+  if(name==='historial') loadHistorial();
+  if(name==='ganancias') loadGanancias();
+  if(name==='chat') loadChat();
+}
+
+// ── PEDIDOS ────────────────────────────────────────────────────────────────
+function loadPedidos(){
+  // Pedidos simulados hasta que haya sistema de pedidos real
+  pedidosSimulados = [
+    {id:'MYA-001',desde:'Palermo, CABA',hasta:'Núñez, CABA',ambientes:'2 ambientes',fecha:'Hoy 10:30hs',precio:89000,fee:8900,estado:'nuevo',extras:'Embalaje incluido'},
+    {id:'MYA-002',desde:'Villa Urquiza, CABA',hasta:'San Isidro, GBA Norte',ambientes:'3 ambientes',fecha:'Mañana 9:00hs',precio:125000,fee:12500,estado:'nuevo',extras:'Desmontaje, Sube / escalera'},
+    {id:'MYA-003',desde:'Flores, CABA',hasta:'Quilmes, GBA Sur',ambientes:'1 ambiente',fecha:'15 Abr · 14:00hs',precio:55000,fee:5500,estado:'aceptado',extras:''},
+  ];
+
+  var nuevos = pedidosSimulados.filter(p=>p.estado==='nuevo').length;
+  var badge = document.getElementById('badgeNuevos');
+  badge.textContent = nuevos;
+  badge.style.display = nuevos > 0 ? '' : 'none';
+
+  if(pedidosSimulados.length === 0){
+    document.getElementById('pedidosList').innerHTML = '<div class="empty"><div class="empty-icon">📋</div>No tenés pedidos nuevos por ahora.<br>Cuando un cliente elija tu zona, te aparece acá.</div>';
+    return;
+  }
+
+  var html = pedidosSimulados.map(p => `
+    <div class="pedido-card ${p.estado}" id="pedido-${p.id}">
+      <div class="pedido-header">
+        <div>
+          <div class="pedido-ruta">${p.desde} → ${p.hasta}</div>
+          <div class="pedido-fecha">📅 ${p.fecha} · ${p.ambientes}</div>
+        </div>
+        <span class="badge ${p.estado}">${p.estado==='nuevo'?'Nuevo':p.estado==='aceptado'?'Aceptado':'Rechazado'}</span>
+      </div>
+      ${p.extras ? `<div class="pedido-meta"><span class="pedido-tag">📦 ${p.extras}</span></div>` : ''}
+      <div style="display:flex;align-items:flex-end;justify-content:space-between">
+        <div>
+          <div class="pedido-precio">$${p.precio.toLocaleString('es-AR')}</div>
+          <div class="pedido-precio-sub">Fee MudateYa: $${p.fee.toLocaleString('es-AR')} · Vos cobrás: $${(p.precio-p.fee).toLocaleString('es-AR')}</div>
+        </div>
+        ${p.estado==='nuevo' ? `
+          <div class="pedido-actions">
+            <button class="btn btn-red" onclick="responderPedido('${p.id}','rechazar')">✗ Rechazar</button>
+            <button class="btn btn-green" onclick="responderPedido('${p.id}','aceptar')">✓ Aceptar</button>
+          </div>` : ''}
+        ${p.estado==='aceptado' ? `
+          <div class="pedido-actions">
+            <button class="btn btn-ghost" onclick="showPage('chat')">💬 Chatear</button>
+          </div>` : ''}
+      </div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: ${p.id}</div>
+    </div>`).join('');
+
+  document.getElementById('pedidosList').innerHTML = html;
+}
+
+function responderPedido(id, accion){
+  var pedido = pedidosSimulados.find(p=>p.id===id);
+  if(!pedido) return;
+  pedido.estado = accion === 'aceptar' ? 'aceptado' : 'rechazado';
+  loadPedidos();
+
+  if(accion === 'aceptar'){
+    // Agregar contacto al chat
+    if(!mensajes[id]){
+      mensajes[id] = {
+        nombre: 'Cliente — ' + pedido.desde.split(',')[0],
+        msgs: [{from:'system',text:'Pedido aceptado. Podés coordinar con el cliente acá.',time:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}]
+      };
+    }
+  }
+}
+
+// ── HISTORIAL ──────────────────────────────────────────────────────────────
+function loadHistorial(){
+  var completados = pedidosSimulados.filter(p=>p.estado==='aceptado');
+  if(completados.length === 0){
+    document.getElementById('historialList').innerHTML = '<div class="empty"><div class="empty-icon">📅</div>Aún no tenés trabajos completados.</div>';
+    return;
+  }
+  var html = completados.map(p => `
+    <div class="pedido-card aceptado">
+      <div class="pedido-header">
+        <div>
+          <div class="pedido-ruta">${p.desde} → ${p.hasta}</div>
+          <div class="pedido-fecha">📅 ${p.fecha} · ${p.ambientes}</div>
+        </div>
+        <span class="badge pagado">Completado</span>
+      </div>
+      <div class="pedido-precio">$${(p.precio-p.fee).toLocaleString('es-AR')}</div>
+      <div class="pedido-precio-sub">cobrado · fee $${p.fee.toLocaleString('es-AR')} pagado a MudateYa</div>
+    </div>`).join('');
+  document.getElementById('historialList').innerHTML = html;
+}
+
+// ── GANANCIAS ──────────────────────────────────────────────────────────────
+function loadGanancias(){
+  var completados = pedidosSimulados.filter(p=>p.estado==='aceptado');
+  var total = completados.reduce((s,p)=>s+(p.precio-p.fee),0);
+  var promedio = completados.length > 0 ? Math.round(total/completados.length) : 0;
+  document.getElementById('g-total').textContent = '$'+total.toLocaleString('es-AR');
+  document.getElementById('g-trabajos').textContent = completados.length;
+  document.getElementById('g-promedio').textContent = '$'+promedio.toLocaleString('es-AR');
+
+  if(completados.length === 0){
+    document.getElementById('gananciasList').innerHTML = '<div class="empty"><div class="empty-icon">💰</div>Aceptá pedidos para ver tus ganancias acá.</div>';
+    return;
+  }
+  var html = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr style="border-bottom:1px solid var(--border)"><th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--text3);font-family:var(--mono)">Trabajo</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--text3);font-family:var(--mono)">Precio total</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--text3);font-family:var(--mono)">Fee MYA</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--text3);font-family:var(--mono)">Vos cobrás</th></tr></thead><tbody>'
+    + completados.map(p=>`
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:11px 14px;font-size:12px;color:var(--text2)">${p.desde.split(',')[0]} → ${p.hasta.split(',')[0]}</td>
+        <td style="padding:11px 14px;font-size:12px;font-family:var(--mono)">$${p.precio.toLocaleString('es-AR')}</td>
+        <td style="padding:11px 14px;font-size:12px;font-family:var(--mono);color:var(--red)">-$${p.fee.toLocaleString('es-AR')}</td>
+        <td style="padding:11px 14px;font-size:13px;font-family:var(--mono);color:var(--emerald);font-weight:600">$${(p.precio-p.fee).toLocaleString('es-AR')}</td>
+      </tr>`).join('')
+    + '</tbody></table>';
+  document.getElementById('gananciasList').innerHTML = html;
+}
+
+// ── CHAT ───────────────────────────────────────────────────────────────────
+function loadChat(){
+  var contacts = Object.entries(mensajes);
+  if(contacts.length === 0){
+    document.getElementById('chatContacts').innerHTML = '<div class="empty" style="padding:2rem"><div class="empty-icon">💬</div>Aceptá un pedido para chatear con el cliente</div>';
+    return;
+  }
+  var html = contacts.map(([id, data]) => `
+    <div class="chat-contact ${chatContactoActivo===id?'active':''}" onclick="selectChat('${id}')">
+      <div class="chat-contact-name">${data.nombre}</div>
+      <div class="chat-contact-last">${data.msgs[data.msgs.length-1]?.text||''}</div>
+    </div>`).join('');
+  document.getElementById('chatContacts').innerHTML = html;
+  if(contacts.length > 0 && !chatContactoActivo) selectChat(contacts[0][0]);
+}
+
+function selectChat(id){
+  chatContactoActivo = id;
+  var data = mensajes[id];
+  if(!data) return;
+  document.getElementById('chatHeader').textContent = data.nombre;
+  renderMsgs();
+  loadChat();
+}
+
+function renderMsgs(){
+  if(!chatContactoActivo || !mensajes[chatContactoActivo]) return;
+  var msgs = mensajes[chatContactoActivo].msgs;
+  var html = msgs.map(m => `
+    <div class="chat-msg ${m.from==='me'?'mine':'other'}">
+      ${m.text}
+      <div class="chat-msg-time">${m.time}</div>
+    </div>`).join('');
+  var list = document.getElementById('chatList');
+  list.innerHTML = html;
+  list.scrollTop = list.scrollHeight;
+}
+
+function sendMsg(){
+  var input = document.getElementById('chatInput');
+  var text = input.value.trim();
+  if(!text || !chatContactoActivo) return;
+  mensajes[chatContactoActivo].msgs.push({
+    from:'me', text,
+    time: new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})
+  });
+  input.value = '';
+  renderMsgs();
+}
+
+// ── PERFIL ─────────────────────────────────────────────────────────────────
+function loadPerfil(){
+  if(!mudanceroData) return;
+  var m = Array.isArray(mudanceroData) ? mudanceroData : [];
+  var html = `
+    <div class="field"><label class="field-label">Nombre</label><input type="text" id="pf-nombre" value="${m[1]||currentUser.name||''}"/></div>
+    <div class="field"><label class="field-label">Empresa</label><input type="text" id="pf-empresa" value="${m[2]||''}"/></div>
+    <div class="field"><label class="field-label">Teléfono / WhatsApp</label><input type="tel" id="pf-tel" value="${m[3]||''}"/></div>
+    <div class="field"><label class="field-label">Zona base</label><input type="text" id="pf-zona" value="${m[5]||''}"/></div>
+    <div class="field"><label class="field-label">Vehículo</label><input type="text" id="pf-vehiculo" value="${m[8]||''}"/></div>
+    <div class="field"><label class="field-label">Equipo</label><input type="text" id="pf-equipo" value="${m[10]||''}"/></div>
+    <div class="field" style="grid-column:1/-1"><label class="field-label">Disponibilidad</label>
+      <div class="chips-grid" id="pf-dias">
+        ${['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(d=>`
+          <div class="chip ${(m[12]||'').includes(d)?'sel':''}" onclick="this.classList.toggle('sel')">${d}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field" style="grid-column:1/-1"><label class="field-label">Notas / presentación</label>
+      <textarea id="pf-notas" rows="3">${m[20]||''}</textarea>
+    </div>`;
+  document.getElementById('perfilForm').innerHTML = html;
+}
+
+async function guardarPerfil(){
+  var btn = document.getElementById('btnGuardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+  setTimeout(()=>{
+    btn.disabled = false;
+    btn.innerHTML = '✓ Guardado';
+    setTimeout(()=>btn.innerHTML='Guardar cambios',2000);
+  },1000);
+  // TODO: conectar con API para actualizar Sheet
+}
+</script>
+</body>
+</html>
