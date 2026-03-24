@@ -1158,45 +1158,42 @@ function selectPayOption(opt){
 }
 
 function initMercadoPago(tipo,monto,mudancero,precioTotal){
-  var MP_PUBLIC_KEY='TEST-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'; // reemplazar con tu key
-  var desc=tipo==='fee'
-    ? 'Fee MudateYa — '+mudancero+' (restante $'+( precioTotal-monto).toLocaleString('es-AR')+' al mudancero)'
-    : 'Mudanza completa — '+mudancero;
-
-  // Mostrar loading en botón
   var btn=document.getElementById('pm-btn-'+(tipo==='fee'?'fee':'total'));
   var orig=btn.innerHTML;
-  btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;vertical-align:middle;display:inline-block"></span>Redirigiendo…';
+  btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;vertical-align:middle;display:inline-block"></span>Iniciando pago…';
   btn.disabled=true;
 
-  // En producción: llamar a tu backend para crear la preferencia MP
-  // Acá simulamos la redirección con un timeout
-  setTimeout(function(){
-    btn.innerHTML=orig;
-    btn.disabled=false;
-    // Simular éxito (en prod esto viene del webhook de MP)
-    showPaySuccess(mudancero,tipo,monto,precioTotal);
-  },1800);
+  var desde=getInputVal('desde')||'Origen';
+  var hasta=getInputVal('hasta')||'Destino';
 
-  /* INTEGRACIÓN REAL con Mercado Pago:
-  fetch('/api/crear-preferencia', {
+  fetch('/api/crear-preferencia',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      title: desc,
-      unit_price: monto,
-      quantity: 1,
-      currency_id: 'ARS',
-      back_urls: {
-        success: window.location.href+'?pago=ok',
-        failure: window.location.href+'?pago=error',
-      }
+      mudanceroNombre:mudancero,
+      tipoPago:tipo,
+      monto:monto,
+      precioTotal:precioTotal,
+      desde:desde,
+      hasta:hasta,
+      ambientes:amb+' ambiente'+(amb!==1?'s':''),
     })
   })
-  .then(r=>r.json())
-  .then(data=>{ window.location.href = data.init_point; })
-  .catch(err=>{ btn.innerHTML=orig; btn.disabled=false; alert('Error al iniciar pago: '+err.message); });
-  */
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.error){throw new Error(data.error);}
+    var url=data.sandbox_url||data.init_point;
+    window.location.href=url;
+  })
+  .catch(function(err){
+    btn.innerHTML=orig;
+    btn.disabled=false;
+    var errEl=document.createElement('div');
+    errEl.style.cssText='color:#ff6b6b;font-size:11px;text-align:center;margin-top:8px;font-family:var(--mono)';
+    errEl.textContent='⚠ '+err.message;
+    btn.parentElement.appendChild(errEl);
+    setTimeout(function(){if(errEl.parentElement)errEl.remove();},4000);
+  });
 }
 
 function showPaySuccess(mudancero,tipo,monto,precioTotal){
