@@ -267,6 +267,16 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <!-- PAGOS -->
       <div class="page" id="page-pagos">
         <div class="page-title">Pagos</div>
+
+        <!-- Liquidaciones pendientes -->
+        <div class="table-card" style="margin-bottom:1.5rem">
+          <div class="table-header">
+            <span class="table-title">💰 Liquidaciones pendientes a mudanceros</span>
+            <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">Pagos totales recibidos → 90% a transferir al mudancero</span>
+          </div>
+          <div id="liquidacionesList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+
         <div class="table-card">
           <div class="table-header">
             <span class="table-title">Historial de pagos</span>
@@ -625,7 +635,65 @@ function filterMudanceros(){
 }
 
 // ── PAGOS PAGE ─────────────────────────────────────────────────────────────
-function renderPagosFull(){
+function renderHistorialPagos(){
+  renderLiquidaciones();
+  renderHistorialPagos();
+}
+
+function renderLiquidaciones(){
+  // Calcular liquidaciones pendientes: pagos totales donde MudateYa tiene que pagar al mudancero
+  var liquidaciones = {};
+
+  // Pagos MP totales (tipo 'total')
+  pagosData.forEach(function(p){
+    var tipo = (p[1]||'').toLowerCase();
+    if(tipo.includes('total')){
+      var mudancero = p[0]||'—';
+      var monto = parseFloat(p[3]||0);
+      var fee = Math.round(monto * 0.10);
+      var aTransferir = monto - fee;
+      if(!liquidaciones[mudancero]) liquidaciones[mudancero] = { mudancero, total: 0, trabajos: 0, pendiente: true };
+      liquidaciones[mudancero].total += aTransferir;
+      liquidaciones[mudancero].trabajos++;
+    }
+  });
+
+  // Transferencias totales confirmadas
+  transferenciasData.filter(t => t.estado === 'confirmada').forEach(function(t){
+    var monto = parseInt((t.monto||'0').replace(/\D/g,''));
+    // Si el monto es cercano al total (no al fee), hay que liquidar
+    var mudancero = t.mudancero||'—';
+    // Detectar si es pago total o fee: fee es ~10% del precio estimado
+    // Por ahora mostramos todas las transferencias confirmadas como liquidaciones
+    if(!liquidaciones[mudancero]) liquidaciones[mudancero] = { mudancero, total: 0, trabajos: 0, pendiente: true };
+    liquidaciones[mudancero].total += Math.round(monto * 0.90);
+    liquidaciones[mudancero].trabajos++;
+  });
+
+  var items = Object.values(liquidaciones);
+
+  if(items.length === 0){
+    document.getElementById('liquidacionesList').innerHTML = '<div class="empty"><div class="empty-icon">✓</div>Sin liquidaciones pendientes</div>';
+    return;
+  }
+
+  var html = '<table><thead><tr><th>Mudancero</th><th>Trabajos</th><th>Total a transferir (90%)</th><th>Estado</th></tr></thead><tbody>'
+    + items.map(l => `
+      <tr>
+        <td class="td-name">${l.mudancero}</td>
+        <td class="td-mono">${l.trabajos}</td>
+        <td class="td-mono" style="color:var(--emerald);font-weight:600;font-size:14px">$${Math.round(l.total).toLocaleString('es-AR')}</td>
+        <td><span class="badge pending">Pendiente de pago</span></td>
+      </tr>`).join('')
+    + '</tbody></table>'
+    + `<div style="padding:12px 14px;background:var(--bg2);border-top:1px solid var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)">
+        Total a liquidar: <strong style="color:var(--emerald)">$${items.reduce((s,l)=>s+l.total,0).toLocaleString('es-AR')}</strong>
+       </div>`;
+
+  document.getElementById('liquidacionesList').innerHTML = html;
+}
+
+function renderHistorialPagos(){
   var html = pagosData.length === 0
     ? '<div class="empty"><div class="empty-icon">💳</div>Sin pagos registrados aún</div>'
     : '<table><thead><tr><th>Mudancero</th><th>Tipo</th><th>Desde</th><th>Monto</th><th>Precio Total</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>'
