@@ -1477,15 +1477,37 @@ function closePayModal(){
 }
 
 // Selección de opción de pago
+var transferOpcion = 'fee';
+
 function selectPayTab(tab){
   document.querySelectorAll('.pm-tab').forEach(function(t,i){t.classList.toggle('active', i===(tab==='mp'?0:1));});
   document.getElementById('pm-panel-mp').classList.toggle('active', tab==='mp');
   document.getElementById('pm-panel-transfer').classList.toggle('active', tab==='transfer');
-  // Actualizar monto en panel transferencia
-  if(tab==='transfer'){
-    var feeEl = document.getElementById('pm-fee');
-    document.getElementById('tr-monto').textContent = feeEl ? feeEl.textContent : '—';
-  }
+  if(tab==='transfer') updateTransferMontos();
+}
+
+function updateTransferMontos(){
+  var feeEl = document.getElementById('pm-fee');
+  var totalEl = document.getElementById('pm-precio-total');
+  var fee = feeEl ? feeEl.textContent : '—';
+  var total = totalEl ? totalEl.textContent : '—';
+  var feeVal = document.getElementById('tr-fee-val');
+  var totalVal = document.getElementById('tr-total-val');
+  if(feeVal) feeVal.textContent = fee;
+  if(totalVal) totalVal.textContent = total;
+  selectTransferOption(transferOpcion);
+}
+
+function selectTransferOption(opcion){
+  transferOpcion = opcion;
+  document.getElementById('tr-opt-fee').classList.toggle('selected', opcion==='fee');
+  document.getElementById('tr-opt-total').classList.toggle('selected', opcion==='total');
+  var feeEl = document.getElementById('pm-fee');
+  var totalEl = document.getElementById('pm-precio-total');
+  var monto = opcion==='fee' ? (feeEl?feeEl.textContent:'—') : (totalEl?totalEl.textContent:'—');
+  var sub = opcion==='fee' ? 'fee de servicio MudateYa (10%)' : 'precio total de la mudanza';
+  document.getElementById('tr-monto').textContent = monto;
+  document.getElementById('tr-monto-sub').textContent = sub;
 }
 
 function copiar(texto, btn){
@@ -2079,9 +2101,30 @@ async function initMaps(){
 
     <!-- PANEL TRANSFERENCIA -->
     <div class="pm-panel" id="pm-panel-transfer">
+      <!-- Opciones fee / total para transferencia -->
+      <div class="pm-options" style="margin-bottom:10px">
+        <div class="pm-opt selected" id="tr-opt-fee" onclick="selectTransferOption('fee')" style="position:relative">
+          <div style="position:absolute;top:-10px;left:12px;background:var(--emerald);color:#041A0E;font-size:9px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.4px">⭐ RECOMENDADO</div>
+          <div class="pm-opt-radio"></div>
+          <div class="pm-opt-body">
+            <div class="pm-opt-title">Solo el fee (10%)</div>
+            <div class="pm-opt-desc">Reservás tu lugar. El resto lo pagás al mudancero el día de la mudanza.</div>
+          </div>
+          <div class="pm-opt-price" id="tr-fee-val">—</div>
+        </div>
+        <div class="pm-opt" id="tr-opt-total" onclick="selectTransferOption('total')">
+          <div class="pm-opt-radio"></div>
+          <div class="pm-opt-body">
+            <div class="pm-opt-title">Total de la mudanza</div>
+            <div class="pm-opt-desc">Todo incluido. No abonás nada el día de la mudanza.</div>
+          </div>
+          <div class="pm-opt-price" id="tr-total-val">—</div>
+        </div>
+      </div>
+
       <div class="transfer-monto">
         <div class="transfer-monto-num" id="tr-monto">—</div>
-        <div class="transfer-monto-sub">fee de servicio MudateYa (10%)</div>
+        <div class="transfer-monto-sub" id="tr-monto-sub">fee de servicio MudateYa (10%)</div>
       </div>
       <div class="transfer-box">
         <div class="transfer-row">
