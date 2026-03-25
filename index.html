@@ -1143,6 +1143,23 @@ function goStep(n){
       setTimeout(function(){if(msg)msg.textContent='';},3000);
       return;
     }
+    // Validar fecha
+    if(dateMode==='exact'){
+      var fechaVal=document.getElementById('fechaMudanza').value;
+      if(!fechaVal){
+        var fechaMsg=document.getElementById('fecha-error');
+        if(!fechaMsg){fechaMsg=document.createElement('div');fechaMsg.id='fecha-error';fechaMsg.style.cssText='font-size:11px;color:#29B6F6;margin-top:6px;font-family:DM Mono,monospace;';document.getElementById('date-exact-wrap').appendChild(fechaMsg);}
+        fechaMsg.textContent='⚠ Seleccioná una fecha de mudanza.';
+        setTimeout(function(){if(fechaMsg)fechaMsg.textContent='';},3000);
+        return;
+      }
+    }else if(dateMode==='flex'&&!selectedFlex){
+      var flexMsg=document.getElementById('flex-error');
+      if(!flexMsg){flexMsg=document.createElement('div');flexMsg.id='flex-error';flexMsg.style.cssText='font-size:11px;color:#29B6F6;margin-top:6px;font-family:DM Mono,monospace;';document.getElementById('date-flex-wrap').appendChild(flexMsg);}
+      flexMsg.textContent='⚠ Seleccioná una opción de fecha flexible.';
+      setTimeout(function(){if(flexMsg)flexMsg.textContent='';},3000);
+      return;
+    }
   }
   document.getElementById('step'+step).classList.remove('active');
   if(n>step){
