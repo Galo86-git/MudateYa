@@ -33,6 +33,8 @@ module.exports = async function handler(req, res) {
 
   const { action } = req.query;
 
+  try {
+
   if (action === 'publicar' && req.method === 'POST') {
     const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado } = req.body;
     if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
@@ -82,10 +84,20 @@ module.exports = async function handler(req, res) {
   if (action === 'mis-mudanzas' && req.method === 'GET') {
     const { email } = req.query;
     if (!email) return res.status(400).json({ error: 'Falta email' });
-    const ids = await getJSON(`cliente:${email}`) || [];
-    const mudanzas = [];
-    for (const id of ids) { const m = await getJSON(`mudanza:${id}`); if (m) mudanzas.push(m); }
-    return res.status(200).json({ mudanzas });
+    try {
+      const ids = await getJSON(`cliente:${email}`) || [];
+      const mudanzas = [];
+      for (const id of ids) {
+        try {
+          const m = await getJSON(`mudanza:${id}`);
+          if (m) mudanzas.push(m);
+        } catch(e) { console.warn('Error leyendo mudanza', id, e.message); }
+      }
+      return res.status(200).json({ mudanzas });
+    } catch (e) {
+      console.error('Error en mis-mudanzas:', e.message);
+      return res.status(200).json({ mudanzas: [] });
+    }
   }
 
   if (action === 'por-zona' && req.method === 'GET') {
@@ -112,6 +124,10 @@ module.exports = async function handler(req, res) {
   }
 
   return res.status(400).json({ error: 'Acción no reconocida' });
+  } catch(e) {
+    console.error('Error en cotizaciones:', e.message);
+    return res.status(200).json({ mudanzas: [], error: e.message });
+  }
 };
 
 async function notificarMudanceros(mudanza) {
