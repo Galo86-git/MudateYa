@@ -442,7 +442,7 @@ function renderMudanzaCard(m, idx){
             <div class="mud-name">${m.cotizacionAceptada.mudanceroNombre}</div>
             <div class="mud-tel">📱 ${m.cotizacionAceptada.mudanceroTel||'—'}</div>
           </div>
-          ${m.cotizacionAceptada.mudanceroTel ? `<a href="https://wa.me/${m.cotizacionAceptada.mudanceroTel.replace(/\D/g,'')}" target="_blank" class="btn btn-green" style="margin-left:auto;font-size:12px;padding:7px 14px">WhatsApp</a>` : ''}
+          ${m.cotizacionAceptada.mudanceroTel ? `<a href="https://wa.me/${String(m.cotizacionAceptada.mudanceroTel).replace(/\D/g,'')}" target="_blank" class="btn btn-green" style="margin-left:auto;font-size:12px;padding:7px 14px">WhatsApp</a>` : ''}
         </div>` : ''}
 
       <div class="mudanza-meta">
