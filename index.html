@@ -744,7 +744,12 @@ gmp-placeautocomplete input:focus,gmp-place-autocomplete input:focus{
               </div>
             </div>
           </div>
-          <div class="wiz-footer" style="margin-top:12px">
+          <!-- Login suave en paso 1 -->
+          <div id="wiz-login-hint" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:rgba(34,195,106,.06);border:1px solid rgba(34,195,106,.15);border-radius:8px;margin-top:10px">
+            <span style="font-size:12px;color:var(--text2);flex:1">Guardá tu cotización — <strong style="color:var(--emerald)">iniciá sesión</strong> para recibirla por email</span>
+            <button onclick="openLoginModal()" style="font-size:11px;padding:5px 12px;background:var(--emerald);color:#041A0E;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-family:Outfit,sans-serif;white-space:nowrap">Ingresar →</button>
+          </div>
+          <div class="wiz-footer" style="margin-top:10px">
             <span class="wiz-hint">gratis · sin compromiso</span>
             <button class="btn-next" onclick="goStep(2)">Continuar <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
           </div>
@@ -795,7 +800,7 @@ gmp-placeautocomplete input:focus,gmp-place-autocomplete input:focus{
           <div id="realProvidersList" style="display:flex;flex-direction:column;gap:6px"></div>
           <div class="wiz-footer" style="margin-top:14px">
             <button class="btn-back" onclick="goStep(2)">← Ajustar</button>
-            <button class="btn-next">Solicitar cotización <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+            <a href="/mi-mudanza" id="btn-ver-mudanza" style="display:none" class="btn-next" style="text-decoration:none">Ver mi mudanza →</a>
           </div>
         </div>
 
@@ -1010,8 +1015,12 @@ async function publicarMudanzaEnSistema(){
       })
     });
     var d = await r.json();
-    if(d.id) _mudanzaPublicadaId = d.id;
-    console.log('Mudanza publicada:', d.id);
+    if(d.id){
+      _mudanzaPublicadaId = d.id;
+      // Mostrar botón "Ver mi mudanza" y ocultar "Solicitar cotización"
+      var btnVer = document.getElementById('btn-ver-mudanza');
+      if(btnVer) btnVer.style.display = 'inline-flex';
+    }
   }catch(e){
     console.warn('No se pudo publicar mudanza:', e.message);
   }
@@ -1183,7 +1192,7 @@ function appendRealProvider(place,list){
     '<div class="rp-info"><div class="rp-name">'+name+'</div><div class="rp-stars"><span class="s">'+stars+'</span> '+ratingTxt+'</div></div>'+
     '<div style="text-align:right;flex-shrink:0">'+
       '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--emerald);letter-spacing:.5px">$'+precio.toLocaleString('es-AR')+'</div>'+
-      '<div style="font-size:9px;color:var(--text3);font-family:var(--mono)">precio estimado</div>'+
+      '<div style="font-size:9px;color:var(--text3);font-family:var(--mono);cursor:help" title="Calculado según distancia y ambientes. El mudancero puede ajustarlo al cotizar.">estimado ⓘ</div>'+
     '</div>';
   el.addEventListener('click',function(){openPayModal(name,initials,rating,precio,placeId);});
   list.appendChild(el);
@@ -1407,6 +1416,18 @@ function closeMenu(){
   var navPublicar = document.getElementById('navPublicar');
   var dd = document.getElementById('loginDropdown');
 
+  // Mostrar hint de login en wizard si no está logueado
+  if(!clienteSaved && !mudanceroSaved){
+    // Mostrar hint cuando empiece a escribir en el campo desde
+    var desdeInput = document.getElementById('desde');
+    if(desdeInput){
+      desdeInput.addEventListener('input', function(){
+        var hint = document.getElementById('wiz-login-hint');
+        if(hint && this.value.length > 2) hint.style.display = 'flex';
+      }, {once: true});
+    }
+  }
+
   if(clienteSaved || mudanceroSaved){
     try{
       var user = JSON.parse(clienteSaved || mudanceroSaved);
@@ -1416,6 +1437,9 @@ function closeMenu(){
         navLogin.style.borderColor = 'var(--emerald)';
         navLogin.style.color = 'var(--emerald)';
       }
+      // Ocultar hint de login
+      var hint = document.getElementById('wiz-login-hint');
+      if(hint) hint.style.display = 'none';
       // Actualizar items del dropdown según quién está logueado
       if(dd){
         var items = dd.querySelectorAll('.login-dropdown-item');
@@ -1619,11 +1643,12 @@ async function initMaps(){
 
     <!-- Opciones de pago -->
     <div class="pm-options">
-      <div class="pm-opt selected" id="pm-opt-fee" onclick="selectPayOption('fee')">
+      <div class="pm-opt selected" id="pm-opt-fee" onclick="selectPayOption('fee')" style="position:relative">
+        <div style="position:absolute;top:-10px;left:12px;background:var(--emerald);color:#041A0E;font-size:9px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.4px">⭐ RECOMENDADO</div>
         <div class="pm-opt-radio"></div>
         <div class="pm-opt-body">
           <div class="pm-opt-title">Pagar solo el fee ahora</div>
-          <div class="pm-opt-desc">Reservás tu lugar. El resto lo pagás al mudancero.</div>
+          <div class="pm-opt-desc">Reservás tu lugar con menos dinero. El resto al mudancero el día de la mudanza.</div>
         </div>
         <div class="pm-opt-price" id="pm-fee">—</div>
       </div>
@@ -1631,7 +1656,7 @@ async function initMaps(){
         <div class="pm-opt-radio"></div>
         <div class="pm-opt-body">
           <div class="pm-opt-title">Pagar el total ahora</div>
-          <div class="pm-opt-desc">Todo incluido. El mudancero recibe su parte automáticamente.</div>
+          <div class="pm-opt-desc">Todo cubierto. El mudancero recibe su parte automáticamente tras el servicio.</div>
         </div>
         <div class="pm-opt-price" id="pm-precio-total2">—</div>
       </div>
