@@ -208,6 +208,15 @@ tr:hover td{background:rgba(34,195,106,.03)}
           <div class="metric-card red"><div class="metric-label">Mudanzas</div><div class="metric-val" id="m-mudanzas">—</div><div class="metric-sub">registradas</div></div>
         </div>
 
+        <!-- Transferencias pendientes -->
+        <div class="table-card" id="dash-transfer-section" style="display:none">
+          <div class="table-header">
+            <span class="table-title">💸 Transferencias pendientes de validación</span>
+            <button class="btn-sm primary" onclick="showPage('transferencias')">Ver todas →</button>
+          </div>
+          <div id="dashTransferList"></div>
+        </div>
+
         <!-- Mudanceros pendientes -->
         <div class="table-card">
           <div class="table-header">
@@ -492,12 +501,49 @@ function renderDashboard(){
   var totalPagos = pagosData.length;
   var gmv = pagosData.reduce((s, p) => s + (parseFloat(p[3]) || 0), 0);
   var revenue = gmv * 0.10;
+  var transferenciasPendientes = transferenciasData.filter(t => t.estado === 'pendiente').length;
 
   document.getElementById('m-mudanceros').textContent = totalMudanceros;
   document.getElementById('m-pendientes-sub').textContent = aprobados + ' activos · ' + pendientes + ' pendientes';
   document.getElementById('m-mudanzas').textContent = totalPagos;
   document.getElementById('m-gmv').textContent = gmv > 0 ? '$' + Math.round(gmv).toLocaleString('es-AR') : '—';
   document.getElementById('m-revenue').textContent = revenue > 0 ? '$' + Math.round(revenue).toLocaleString('es-AR') : '—';
+
+  // Badge transferencias en dashboard
+  if(transferenciasPendientes > 0){
+    var existing = document.getElementById('dash-transfer-card');
+    if(!existing){
+      var grid = document.getElementById('metricsGrid');
+      var card = document.createElement('div');
+      card.id = 'dash-transfer-card';
+      card.className = 'metric-card amber';
+      card.style.cursor = 'pointer';
+      card.onclick = function(){ document.querySelector('[onclick*="transferencias"]').click(); };
+      card.innerHTML = '<div class="metric-label">Transferencias</div><div class="metric-val">'+transferenciasPendientes+'</div><div class="metric-sub">pendientes de validar</div>';
+      grid.appendChild(card);
+    } else {
+      existing.querySelector('.metric-val').textContent = transferenciasPendientes;
+    }
+  }
+
+  // Transferencias pendientes en dashboard
+  var pendientesTransfer = transferenciasData.filter(t => t.estado === 'pendiente');
+  var seccion = document.getElementById('dash-transfer-section');
+  if(pendientesTransfer.length > 0){
+    seccion.style.display = '';
+    document.getElementById('dashTransferList').innerHTML = '<table><thead><tr><th>Cliente</th><th>Mudancero</th><th>Monto</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>'
+      + pendientesTransfer.slice(0,3).map(t => `
+        <tr>
+          <td class="td-name">${t.clienteNombre||'—'}</td>
+          <td>${t.mudancero||'—'}</td>
+          <td class="td-mono" style="color:var(--amber)">${t.monto||'—'}</td>
+          <td class="td-mono">${t.fecha||'—'}</td>
+          <td><button class="btn-sm primary" onclick="accionTransfer('${t.id}','confirmar')">✓ Confirmar</button></td>
+        </tr>`).join('')
+      + '</tbody></table>';
+  } else {
+    seccion.style.display = 'none';
+  }
 
   // Color dinámico según aprobados
   var cardMud = document.querySelector('#page-dashboard .metric-card.amber');
