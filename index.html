@@ -1555,18 +1555,48 @@ async function confirmarTransferencia(){
     });
   }catch(e){ console.warn('Error registrando transferencia:', e); }
 
-  // Mostrar éxito
-  closePayModal();
+  // Cerrar modal de pago
+  document.getElementById('payModal').classList.remove('open');
+  document.body.style.overflow='';
+
+  // Mostrar pantalla de éxito
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1rem';
+  overlay.id = 'transferSuccess';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:1rem';
   overlay.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:2rem;max-width:400px;width:100%;text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:12px">✅</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:8px">¡Comprobante recibido!</div>
-      <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:1.2rem">Vamos a validar tu transferencia en las próximas <strong style="color:var(--text)">2 horas hábiles</strong>. Te avisamos por email cuando tu reserva esté confirmada.</p>
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:var(--emerald);color:#041A0E;border:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">Entendido</button>
+    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center;box-shadow:0 40px 80px rgba(0,0,0,.6)">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--emerald-subtle);border:2px solid var(--emerald);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:1.8rem">✅</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;margin-bottom:.5rem">¡Comprobante enviado!</div>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem">
+        Vamos a validar tu transferencia en las próximas <strong style="color:var(--text)">2 horas hábiles</strong>.<br>
+        Te avisamos por email cuando tu reserva esté confirmada.
+      </p>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:1.5rem;text-align:left">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Resumen</div>
+        <div style="font-size:13px;color:var(--text2)">Mudancero: <strong style="color:var(--text)" id="ts-mudancero"></strong></div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px">Monto: <strong style="color:var(--emerald)" id="ts-monto"></strong></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button onclick="document.getElementById('transferSuccess').remove()" 
+          style="background:none;border:1px solid var(--border2);color:var(--text2);padding:11px 20px;border-radius:10px;cursor:pointer;font-family:Outfit,sans-serif;font-size:13px;transition:all .2s"
+          onmouseover="this.style.borderColor='var(--border)'" onmouseout="this.style.borderColor='var(--border2)'">
+          Seguir viendo
+        </button>
+        <a href="/mi-mudanza" 
+          style="background:var(--emerald);color:#041A0E;padding:11px 24px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;font-family:Outfit,sans-serif">
+          Ver mi mudanza →
+        </a>
+      </div>
     </div>`;
   document.body.appendChild(overlay);
+
+  // Rellenar datos del resumen
+  document.getElementById('ts-mudancero').textContent = document.getElementById('pm-mudancero-name').textContent;
+  document.getElementById('ts-monto').textContent = document.getElementById('tr-monto').textContent;
+
+  // Reset del botón por si acaso
+  btn.disabled = false;
+  btn.textContent = 'Confirmar transferencia →';
 }
 
 var selectedPayOption='fee';
