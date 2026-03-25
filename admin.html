@@ -407,17 +407,21 @@ function renderDashboard(){
   // Métricas
   var totalMudanceros = mudancerosData.length;
   var pendientes = mudancerosData.filter(m => getEstado(m) === 'Pendiente').length;
+  var aprobados = mudancerosData.filter(m => getEstado(m) === 'Aprobado').length;
   var totalPagos = pagosData.length;
   var gmv = pagosData.reduce((s, p) => s + (parseFloat(p[3]) || 0), 0);
   var revenue = gmv * 0.10;
 
   document.getElementById('m-mudanceros').textContent = totalMudanceros;
-  document.getElementById('m-pendientes-sub').textContent = pendientes + ' pendientes';
+  document.getElementById('m-pendientes-sub').textContent = aprobados + ' activos · ' + pendientes + ' pendientes';
   document.getElementById('m-mudanzas').textContent = totalPagos;
   document.getElementById('m-gmv').textContent = gmv > 0 ? '$' + Math.round(gmv).toLocaleString('es-AR') : '—';
   document.getElementById('m-revenue').textContent = revenue > 0 ? '$' + Math.round(revenue).toLocaleString('es-AR') : '—';
 
-  // Pendientes
+  // Color dinámico según aprobados
+  var cardMud = document.querySelector('#page-dashboard .metric-card.amber');
+  if(cardMud && aprobados > 0) cardMud.className = 'metric-card green';
+  else if(cardMud) cardMud.className = 'metric-card amber';
   var pending = mudancerosData.filter(m => getEstado(m) === 'Pendiente').slice(0, 5);
   var html = pending.length === 0
     ? '<div class="empty"><div class="empty-icon">✓</div>Sin pendientes</div>'
