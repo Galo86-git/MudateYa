@@ -988,14 +988,22 @@ function testiPrev(){ goTesti(testiPage-1); }
 function testiNext(){ goTesti(testiPage === testiTotal-1 ? 0 : testiPage+1); }
 
 // Auto-avance cada 5 segundos
-var testiAuto = setInterval(function(){ testiNext(); }, 5000);
-document.querySelector('.testi-carousel') && document.querySelector('.testi-carousel').addEventListener('mouseenter', function(){ clearInterval(testiAuto); });
-document.querySelector('.testi-carousel') && document.querySelector('.testi-carousel').addEventListener('mouseleave', function(){ testiAuto = setInterval(testiNext, 5000); });
+var testiAuto;
+function startAutoPlay(){ testiAuto = setInterval(function(){ testiNext(); }, 5000); }
+function stopAutoPlay(){ clearInterval(testiAuto); }
 
-window.addEventListener('resize', function(){ buildCarousel(); });
-document.addEventListener('DOMContentLoaded', function(){ buildCarousel(); });
-// Fallback si DOMContentLoaded ya pasó
-if(document.readyState !== 'loading') buildCarousel();
+var testiCarousel = document.querySelector('.testi-carousel');
+if(testiCarousel){
+  testiCarousel.addEventListener('mouseenter', stopAutoPlay);
+  testiCarousel.addEventListener('mouseleave', startAutoPlay);
+}
+
+window.addEventListener('resize', function(){ clearTimeout(window._testiResize); window._testiResize = setTimeout(buildCarousel, 150); });
+
+// Iniciar después de que todo esté renderizado
+window.addEventListener('load', function(){
+  setTimeout(function(){ buildCarousel(); startAutoPlay(); }, 100);
+});
 </script>
 
 <!-- ZONAS -->
@@ -1503,6 +1511,18 @@ function renderStars(rating){
   var full=Math.floor(rating),half=(rating-full)>=.5?1:0,empty=5-full-half;
   return'★'.repeat(full)+(half?'½':'')+'☆'.repeat(empty);
 }
+
+// Establecer fecha mínima de hoy en el campo de fecha
+(function(){
+  var fechaInput = document.getElementById('fechaMudanza');
+  if(fechaInput){
+    var hoy = new Date();
+    var yyyy = hoy.getFullYear();
+    var mm = String(hoy.getMonth()+1).padStart(2,'0');
+    var dd = String(hoy.getDate()).padStart(2,'0');
+    fechaInput.min = yyyy+'-'+mm+'-'+dd;
+  }
+})();
 
 function toggleLoginDropdown(e){
   e.preventDefault();
