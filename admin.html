@@ -548,8 +548,17 @@ function openModal(idx){
   }).join('');
   document.getElementById('modalContent').innerHTML = html;
   var estado = getEstado(m);
-  document.getElementById('btnAprobar').style.display = estado === 'Aprobado' ? 'none' : '';
-  document.getElementById('btnRechazar').style.display = estado === 'Rechazado' ? 'none' : '';
+
+  // Resetear botones siempre
+  var btnA = document.getElementById('btnAprobar');
+  var btnR = document.getElementById('btnRechazar');
+  btnA.disabled = false;
+  btnR.disabled = false;
+  btnA.textContent = '✓ Aprobar';
+  btnR.textContent = '✗ Rechazar';
+  btnA.style.display = estado === 'Aprobado' ? 'none' : '';
+  btnR.style.display = estado === 'Rechazado' ? 'none' : '';
+
   document.getElementById('mudanceroModal').classList.add('open');
 }
 
