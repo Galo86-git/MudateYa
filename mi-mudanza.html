@@ -331,6 +331,37 @@ async function loadMudanzas(){
 function renderMudanzaCard(m, idx){
   var cotizaciones = m.cotizaciones || [];
   var tieneCotz = cotizaciones.length > 0;
+
+  // Mudanza pagada por transferencia
+  if(m.tipoPago === 'transferencia'){
+    var estadoLabel = m.estado === 'pago_transferencia_pendiente' ? 'Validando transferencia' : 'Confirmada';
+    var estadoColor = m.estado === 'pago_transferencia_pendiente' ? 'pendiente' : 'confirmada';
+    var mud = m.cotizacionAceptada || {};
+    return `
+      <div class="mudanza-card" style="border-left:3px solid var(--amber)">
+        <div class="mudanza-header">
+          <div>
+            <div class="mudanza-ruta">${m.desde} → ${m.hasta}</div>
+            <div class="mudanza-fecha">📅 ${m.fecha||'—'}</div>
+          </div>
+          <span class="badge ${estadoColor}">${estadoLabel}</span>
+        </div>
+        ${m.estado === 'pago_transferencia_pendiente' ? `
+          <div style="background:var(--amber-subtle);border:1px solid rgba(255,179,0,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--amber)">
+            ⏳ Tu transferencia está siendo validada. Te avisamos en las próximas 2hs hábiles.
+          </div>` : ''}
+        ${mud.mudanceroNombre ? `
+          <div class="mudanza-mudancero">
+            <div class="mud-avatar">${mud.mudanceroNombre.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
+            <div>
+              <div class="mud-name">${mud.mudanceroNombre}</div>
+              <div class="mud-tel">💰 ${m.montoTransferencia||'—'} · Transferencia bancaria</div>
+            </div>
+          </div>` : ''}
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: ${m.id}</div>
+      </div>`;
+  }
+
   var pasoActual = m.estado === 'cotizacion_aceptada' ? 2 : tieneCotz ? 1 : 0;
   var pasos = ['Publicada','Cotizaciones recibidas','Mudancero confirmado','En curso','Completada'];
 
