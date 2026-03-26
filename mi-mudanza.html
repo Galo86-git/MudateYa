@@ -202,9 +202,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
       <a class="sidebar-item" onclick="showPage('pagos')" href="#">
         <span class="sidebar-icon">💳</span> Pagos
       </a>
-      <a class="sidebar-item" onclick="showPage('chat')" href="#">
-        <span class="sidebar-icon">💬</span> Mensajes
-      </a>
       <a class="sidebar-item" onclick="showPage('calificaciones')" href="#">
         <span class="sidebar-icon">⭐</span> Calificaciones
       </a>
@@ -222,38 +219,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
       <div class="page" id="page-pagos">
         <div class="page-title">Mis pagos</div>
         <div id="pagosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
-      </div>
-
-      <!-- CHAT -->
-      <div class="page" id="page-chat">
-        <div class="chat-container">
-          <!-- Sidebar contactos -->
-          <div class="chat-sidebar">
-            <div class="chat-sidebar-header">💬 Mensajes</div>
-            <div class="chat-contacts-list" id="chatContacts">
-              <div style="padding:2rem;text-align:center;color:var(--text3);font-size:12px">Cargando…</div>
-            </div>
-          </div>
-          <!-- Área principal -->
-          <div class="chat-main">
-            <div class="chat-main-header" id="chatMainHeader">
-              <div class="chat-placeholder" style="flex-direction:row;justify-content:flex-start;background:transparent">
-                <span style="font-size:1.2rem;opacity:.4">💬</span>
-                <span style="font-size:13px;color:var(--text3)">Seleccioná una conversación</span>
-              </div>
-            </div>
-            <div class="chat-messages" id="chatList">
-              <div class="chat-placeholder">
-                <div style="font-size:3rem;opacity:.2">💬</div>
-                <span style="font-size:13px">Tus mensajes con el mudancero aparecen acá</span>
-              </div>
-            </div>
-            <div class="chat-input-area">
-              <input class="chat-input-field" id="chatInput" placeholder="Escribí un mensaje…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"/>
-              <button class="chat-send-btn" onclick="sendMsg()">➤</button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- CALIFICACIONES -->
@@ -476,7 +441,7 @@ function renderMudanzaCard(m, idx){
       </div>
 
       <div class="mudanza-actions" style="margin-top:8px">
-        <button class="btn btn-ghost" onclick="showPage('chat')" style="font-size:12px">💬 Chat</button>
+        ${mud.mudanceroTel ? `<a href="https://wa.me/${String(mud.mudanceroTel).replace(/\D/g,'')}" target="_blank" class="btn btn-green" style="font-size:13px;padding:10px 20px">📱 Coordinar por WhatsApp</a>` : ''}
         <button class="btn btn-ghost" style="font-size:12px" onclick="window.location.reload()">↻ Actualizar</button>
       </div>
       <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: ${m.id}</div>
