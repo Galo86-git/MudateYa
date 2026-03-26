@@ -730,27 +730,37 @@ gmp-placeautocomplete input:focus,gmp-place-autocomplete input:focus{
         Iniciar sesión ▾
       </a>
       <div class="login-dropdown-menu">
-        <a href="/mi-mudanza" class="login-dropdown-item">
-          <span class="login-dropdown-icon">🏠</span>
-          <span class="login-dropdown-label">
-            Soy cliente
-            <span class="login-dropdown-sub">Ver mis mudanzas</span>
-          </span>
-        </a>
-        <a href="/mi-cuenta" class="login-dropdown-item">
-          <span class="login-dropdown-icon">🚛</span>
-          <span class="login-dropdown-label">
-            Soy mudancero
-            <span class="login-dropdown-sub">Ver pedidos y cotizaciones</span>
-          </span>
-        </a>
-        <a href="#" class="login-dropdown-item" id="navLogoutBtn" style="display:none" onclick="logoutNav(event)">
-          <span class="login-dropdown-icon">🚪</span>
-          <span class="login-dropdown-label">
-            Cerrar sesión
-            <span class="login-dropdown-sub" id="navLogoutEmail"></span>
-          </span>
-        </a>
+        <!-- Sin sesión -->
+        <div id="nav-no-session">
+          <a href="#" class="login-dropdown-item" onclick="iniciarSesionComo('cliente',event)">
+            <span class="login-dropdown-icon">🏠</span>
+            <span class="login-dropdown-label">
+              Soy cliente
+              <span class="login-dropdown-sub">Publicar y seguir mi mudanza</span>
+            </span>
+          </a>
+          <a href="#" class="login-dropdown-item" onclick="iniciarSesionComo('mudancero',event)">
+            <span class="login-dropdown-icon">🚛</span>
+            <span class="login-dropdown-label">
+              Soy mudancero
+              <span class="login-dropdown-sub">Ver pedidos y cotizaciones</span>
+            </span>
+          </a>
+        </div>
+        <!-- Con sesión -->
+        <div id="nav-with-session" style="display:none">
+          <a href="#" class="login-dropdown-item" id="nav-panel-link">
+            <span class="login-dropdown-icon">👤</span>
+            <span class="login-dropdown-label">
+              <span id="nav-user-name">Mi cuenta</span>
+              <span class="login-dropdown-sub" id="nav-user-email"></span>
+            </span>
+          </a>
+          <a href="#" class="login-dropdown-item" onclick="logoutNav(event)" style="border-top:1px solid var(--border)">
+            <span class="login-dropdown-icon">🚪</span>
+            <span class="login-dropdown-label">Cerrar sesión</span>
+          </a>
+        </div>
       </div>
     </div>
     <a href="#" class="btn-cta" id="navPublicar" onclick="publicarMudanza(event)">Publicar mudanza</a>
@@ -1263,13 +1273,54 @@ function goStep(n){
   else{hero.classList.remove('step3-active');document.getElementById('mapPanel').classList.remove('show')}
 }
 
+var _loginRol = null; // 'cliente' | 'mudancero'
+
+function iniciarSesionComo(rol, e){
+  e.preventDefault();
+  _loginRol = rol;
+  document.getElementById('loginDropdown').classList.remove('open');
+  // Abrir modal de login
+  abrirLoginModal();
+}
+
+function abrirLoginModal(){
+  var modal = document.getElementById('navLoginModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'navLoginModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1rem';
+    modal.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:2rem;max-width:380px;width:100%;text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;margin-bottom:6px">Mudate<span style="color:var(--emerald)">Ya</span></div>
+        <div id="navLoginTitle" style="font-size:14px;color:var(--text2);margin-bottom:1.5rem"></div>
+        <div id="navLoginGoogleBtn" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">🔒 No publicamos nada en tu cuenta de Google</div>
+        <button onclick="document.getElementById('navLoginModal').remove()" style="margin-top:1rem;background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif">Cancelar</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  document.getElementById('navLoginTitle').textContent = _loginRol === 'cliente'
+    ? 'Iniciá sesión para publicar tu mudanza y recibir cotizaciones'
+    : 'Iniciá sesión para ver pedidos y enviar cotizaciones';
+
+  // Renderizar botón Google
+  var btnEl = document.getElementById('navLoginGoogleBtn');
+  if(btnEl) btnEl.innerHTML = '';
+  setTimeout(function(){
+    if(window.google && btnEl){
+      google.accounts.id.renderButton(btnEl, {
+        theme: 'filled_black', size: 'large', text: 'continue_with', width: 280,
+      });
+    }
+  }, 100);
+}
+
 function logoutNav(e){
   e.preventDefault();
   sessionStorage.removeItem('googleUser');
   sessionStorage.removeItem('clienteUser');
-  document.getElementById('navLogin').textContent = 'Iniciar sesión ▾';
-  document.getElementById('navLogoutBtn').style.display = 'none';
-  document.getElementById('navLogoutEmail').textContent = '';
+  updateNavUser();
   document.getElementById('loginDropdown').classList.remove('open');
   _mudanzaPublicadaId = null;
 }
@@ -1277,10 +1328,25 @@ function logoutNav(e){
 function updateNavUser(){
   var user = null;
   try{ user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); }catch(e){}
+  var noSession = document.getElementById('nav-no-session');
+  var withSession = document.getElementById('nav-with-session');
+  var navLogin = document.getElementById('navLogin');
   if(user){
-    document.getElementById('navLogin').textContent = user.name.split(' ')[0] + ' ▾';
-    document.getElementById('navLogoutBtn').style.display = 'flex';
-    document.getElementById('navLogoutEmail').textContent = user.email;
+    if(noSession) noSession.style.display = 'none';
+    if(withSession) withSession.style.display = 'block';
+    if(navLogin) navLogin.textContent = user.name.split(' ')[0] + ' ▾';
+    var nameEl = document.getElementById('nav-user-name');
+    var emailEl = document.getElementById('nav-user-email');
+    if(nameEl) nameEl.textContent = user.name;
+    if(emailEl) emailEl.textContent = user.email;
+    // Link al panel según rol detectado
+    var link = document.getElementById('nav-panel-link');
+    var isMudancero = sessionStorage.getItem('rolMudancero') === '1';
+    if(link) link.href = isMudancero ? '/mi-cuenta' : '/mi-mudanza';
+  } else {
+    if(noSession) noSession.style.display = 'block';
+    if(withSession) withSession.style.display = 'none';
+    if(navLogin) navLogin.textContent = 'Iniciar sesión ▾';
   }
 }
   // Mostrar modal de login inline en el wizard
@@ -2433,13 +2499,25 @@ function openLoginModal(){
           var user = {name:payload.name, email:payload.email, picture:payload.picture};
           sessionStorage.setItem('googleUser', JSON.stringify(user));
           sessionStorage.setItem('clienteUser', JSON.stringify(user));
+          // Cerrar modales
           closeLoginModal();
+          var navModal = document.getElementById('navLoginModal');
+          if(navModal) navModal.remove();
           // Actualizar nav
-          var navLogin = document.getElementById('navLogin');
-          if(navLogin) navLogin.textContent = user.name.split(' ')[0] + ' ▾';
           updateNavUser();
+          // Si vino del nav con rol, redirigir
+          if(_loginRol && document.getElementById('navLoginModal') === null){
+            if(_loginRol === 'mudancero'){
+              sessionStorage.setItem('rolMudancero','1');
+              window.location.href = '/mi-cuenta';
+              return;
+            } else {
+              window.location.href = '/mi-mudanza';
+              return;
+            }
+          }
           // Si estamos en paso 3, continuar con la publicación
-          if(step === 3 && document.getElementById('step3-login').style.display !== 'none'){
+          if(step === 3 && document.getElementById('step3-login') && document.getElementById('step3-login').style.display !== 'none'){
             onStep3Login(user);
           }
           // Abrir modal de pago pendiente
