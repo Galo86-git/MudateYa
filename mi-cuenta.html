@@ -234,9 +234,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
       <a class="sidebar-item" onclick="showPage('ganancias')" href="#">
         <span class="sidebar-icon">💰</span> Ganancias
       </a>
-      <a class="sidebar-item" onclick="showPage('chat')" href="#">
-        <span class="sidebar-icon">💬</span> Mensajes
-      </a>
       <a class="sidebar-item" onclick="showPage('perfil')" href="#">
         <span class="sidebar-icon">⚙️</span> Mi perfil
       </a>
@@ -267,34 +264,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
         <div class="card">
           <div class="card-header"><span class="card-title">Detalle de pagos</span></div>
           <div id="gananciasList"><div class="empty"><div class="empty-icon">💰</div>Sin pagos registrados aún</div></div>
-        </div>
-      </div>
-
-      <!-- CHAT -->
-      <div class="page" id="page-chat">
-        <div class="chat-wrap">
-          <div class="chat-container">
-            <!-- Sidebar contactos -->
-            <div class="chat-contacts" id="chatContacts">
-              <div class="chat-contacts-header">💬 Conversaciones</div>
-              <div id="chatContactsList">
-                <div style="padding:2rem;text-align:center;color:var(--text3);font-size:12px">Cargando…</div>
-              </div>
-            </div>
-            <!-- Área de mensajes -->
-            <div class="chat-area">
-              <div class="chat-header" id="chatHeader">
-                <span style="color:var(--text3);font-size:13px">Seleccioná una conversación</span>
-              </div>
-              <div class="chat-list" id="chatList">
-                <div class="empty" style="margin:auto"><div class="empty-icon" style="opacity:.3">💬</div>Tus mensajes con los clientes aparecen acá</div>
-              </div>
-              <div class="chat-input-wrap">
-                <input class="chat-input" id="chatInput" placeholder="Escribí un mensaje…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"/>
-                <button class="chat-send" onclick="sendMsg()">➤</button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
