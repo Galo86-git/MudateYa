@@ -744,6 +744,13 @@ gmp-placeautocomplete input:focus,gmp-place-autocomplete input:focus{
             <span class="login-dropdown-sub">Ver pedidos y cotizaciones</span>
           </span>
         </a>
+        <a href="#" class="login-dropdown-item" id="navLogoutBtn" style="display:none" onclick="logoutNav(event)">
+          <span class="login-dropdown-icon">🚪</span>
+          <span class="login-dropdown-label">
+            Cerrar sesión
+            <span class="login-dropdown-sub" id="navLogoutEmail"></span>
+          </span>
+        </a>
       </div>
     </div>
     <a href="#" class="btn-cta" id="navPublicar" onclick="publicarMudanza(event)">Publicar mudanza</a>
@@ -1189,6 +1196,9 @@ var step=1,amb=2,dateMode='exact',selectedFlex='';
 var placesService=null,geocoder=null,fromLocation=null;
 var routeMap=null,directionsRenderer=null;
 
+// Actualizar nav si hay sesión guardada
+document.addEventListener('DOMContentLoaded', function(){ updateNavUser(); });
+
 function goStep(n){
   // Validación paso 1 → 2
   if(n===2&&step===1){
@@ -1253,7 +1263,26 @@ function goStep(n){
   else{hero.classList.remove('step3-active');document.getElementById('mapPanel').classList.remove('show')}
 }
 
-function mostrarLoginStep3(){
+function logoutNav(e){
+  e.preventDefault();
+  sessionStorage.removeItem('googleUser');
+  sessionStorage.removeItem('clienteUser');
+  document.getElementById('navLogin').textContent = 'Iniciar sesión ▾';
+  document.getElementById('navLogoutBtn').style.display = 'none';
+  document.getElementById('navLogoutEmail').textContent = '';
+  document.getElementById('loginDropdown').classList.remove('open');
+  _mudanzaPublicadaId = null;
+}
+
+function updateNavUser(){
+  var user = null;
+  try{ user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); }catch(e){}
+  if(user){
+    document.getElementById('navLogin').textContent = user.name.split(' ')[0] + ' ▾';
+    document.getElementById('navLogoutBtn').style.display = 'flex';
+    document.getElementById('navLogoutEmail').textContent = user.email;
+  }
+}
   // Mostrar modal de login inline en el wizard
   document.getElementById('step3-publishing').style.display = 'none';
   document.getElementById('step3-published').style.display = 'none';
@@ -2407,7 +2436,8 @@ function openLoginModal(){
           closeLoginModal();
           // Actualizar nav
           var navLogin = document.getElementById('navLogin');
-          if(navLogin) navLogin.textContent = user.name.split(' ')[0];
+          if(navLogin) navLogin.textContent = user.name.split(' ')[0] + ' ▾';
+          updateNavUser();
           // Si estamos en paso 3, continuar con la publicación
           if(step === 3 && document.getElementById('step3-login').style.display !== 'none'){
             onStep3Login(user);
