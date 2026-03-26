@@ -1752,9 +1752,9 @@ function iniciarSesionComo(rol, e) { e.preventDefault(); _loginRol = rol; docume
 function logoutNav(e) {
   e.preventDefault();
   sessionStorage.removeItem('googleUser'); sessionStorage.removeItem('clienteUser');
-  updateNavUser();
-  document.getElementById('loginDropdown').classList.remove('open');
+  sessionStorage.removeItem('rolMudancero');
   _mudanzaPublicadaId = null;
+  window.location.href = '/';
 }
 function updateNavUser() {
   var user = null;
