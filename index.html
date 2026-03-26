@@ -1240,7 +1240,24 @@ function goStep(n){
       return;
     }
   }
-  document.getElementById('step'+step).classList.remove('active');
+  // Validación paso 2 → 3
+  if(n===3&&step===2){
+    var objSel = document.querySelectorAll('.obj-chip.sel');
+    if(objSel.length === 0){
+      var objGrid = document.getElementById('obj-grid') || document.querySelector('.obj-grid');
+      var msg = document.getElementById('obj-error');
+      if(!msg){
+        msg = document.createElement('div');
+        msg.id = 'obj-error';
+        msg.style.cssText = 'font-size:11px;color:#29B6F6;margin-top:6px;font-family:DM Mono,monospace;';
+        if(objGrid) objGrid.parentElement.insertBefore(msg, objGrid.nextSibling);
+        else document.querySelector('.wstep.active').appendChild(msg);
+      }
+      msg.textContent = '⚠ Seleccioná al menos un objeto para continuar.';
+      setTimeout(function(){ if(msg) msg.textContent=''; }, 3000);
+      return;
+    }
+  }
   if(n>step){
     document.getElementById('wp'+step).classList.remove('active');
     document.getElementById('wp'+step).classList.add('done');
