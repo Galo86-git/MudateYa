@@ -459,6 +459,31 @@ async function notificarMudanceros(mudanza) {
 async function notificarCliente(mudanza, cotizacion) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   if (!process.env.RESEND_API_KEY) return;
+
+  // Generar PDF con los datos de la cotización
+  let attachments = [];
+  try {
+    const pdfBase64 = await generarPDFBase64({
+      id:                cotizacion.id,
+      fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' }),
+      clienteNombre:     mudanza.clienteNombre,
+      clienteEmail:      mudanza.clienteEmail,
+      mudanceroNombre:   cotizacion.mudanceroNombre,
+      mudancero_initials:(cotizacion.mudanceroNombre||'MV').slice(0,2).toUpperCase(),
+      desde:             mudanza.desde,
+      hasta:             mudanza.hasta,
+      fecha:             mudanza.fecha,
+      ambientes:         mudanza.ambientes,
+      objetos:           mudanza.servicios,
+      extras:            mudanza.extras,
+      precio:            cotizacion.precio,
+      nota:              cotizacion.nota,
+    });
+    attachments = [{ filename: `cotizacion-${cotizacion.id}.pdf`, content: pdfBase64 }];
+  } catch(e) {
+    console.error('Error generando PDF cotización:', e.message);
+  }
+
   await resend.emails.send({
     from: 'MudateYa <onboarding@resend.dev>',
     to: mudanza.clienteEmail,
@@ -472,9 +497,11 @@ async function notificarCliente(mudanza, cotizacion) {
           ${cotizacion.tiempoEstimado ? `<div style="color:#7AADA0;font-size:12px;margin-top:4px">⏱ ${cotizacion.tiempoEstimado}</div>` : ''}
           ${cotizacion.nota ? `<div style="color:#7AADA0;font-size:12px;margin-top:8px;font-style:italic">"${cotizacion.nota}"</div>` : ''}
         </div>
-        <a href="https://mudateya.vercel.app/mi-mudanza" style="display:inline-block;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Ver cotizaciones →</a>
+        <p style="color:#7AADA0;font-size:13px">Adjuntamos el detalle completo en PDF.</p>
+        <a href="https://mudateya.vercel.app/mi-mudanza" style="display:inline-block;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Ver todas las cotizaciones →</a>
       </div>
     </div>`,
+    attachments,
   });
 }
 
