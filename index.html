@@ -1515,26 +1515,32 @@ function buildSummary() {
   document.getElementById('summaryBox').innerHTML = html;
 }
 function solicitarPresupuestos() {
-  // Ocultar el botón solicitar
   document.getElementById('step3-btn-solicitar').style.display = 'none';
-  // Verificar si está logueado
   var user = null;
   try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
   if (!user) {
-    // Mostrar bloque de login inline en el paso 3
     document.getElementById('step3-login').style.display = 'block';
     _loginRol = 'cliente';
-    // Renderizar botón Google en el paso 3
-    setTimeout(function() {
-      var el = document.getElementById('step3-google-btn');
-      if (el && window.google && _googleLoginInited) {
-        el.innerHTML = '';
-        try { google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'continue_with', width: 280 }); } catch(e) {}
-      } else {
-        // Si aún no está inited, abrir modal de login
+    var el = document.getElementById('step3-google-btn');
+    el.innerHTML = '';
+    function tryRenderBtn() {
+      if (window.google && _googleLoginInited) {
+        try {
+          google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'continue_with', width: 280 });
+        } catch(e) {
+          el.innerHTML = '<button onclick="openLoginModal()" style="background:var(--emerald);color:#041A0E;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;">Iniciar sesión con Google →</button>';
+        }
+      } else if (window.google && !_googleLoginInited) {
+        // Inicializar primero y luego renderizar
         openLoginModal();
+        closeLoginModal();
+        setTimeout(tryRenderBtn, 400);
+      } else {
+        // Google aún no cargó, fallback al modal
+        el.innerHTML = '<button onclick="openLoginModal()" style="background:var(--emerald);color:#041A0E;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;">Iniciar sesión con Google →</button>';
       }
-    }, 200);
+    }
+    setTimeout(tryRenderBtn, 150);
   } else {
     publicarMudanzaEnSistema();
   }
@@ -1829,7 +1835,18 @@ function openLoginModal() {
     }).catch(function(e) { console.error('Error config Google:', e); });
   }
 }
-function closeLoginModal() { document.getElementById('loginModal').classList.remove('open'); document.body.style.overflow = ''; }
+function closeLoginModal() {
+  document.getElementById('loginModal').classList.remove('open');
+  document.body.style.overflow = '';
+  // Si estamos en paso 3 esperando login, mostrar botón para reintentar
+  if (step === 3 && document.getElementById('step3-login').style.display !== 'none') {
+    var el = document.getElementById('step3-google-btn');
+    if (el && el.innerHTML === '') {
+      // Mostrar botón manual para reabrir el modal
+      el.innerHTML = '<button onclick="openLoginModal()" style="background:var(--emerald);color:#041A0E;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;">Iniciar sesión con Google →</button>';
+    }
+  }
+}
 
 // Fecha mínima hoy
 (function() {
