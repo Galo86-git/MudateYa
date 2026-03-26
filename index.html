@@ -782,6 +782,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
           <div id="step3-error" style="display:none;background:rgba(255,82,82,.08);border:1px solid rgba(255,82,82,.2);border-radius:12px;padding:1rem;font-size:13px;color:#FF5252;margin-bottom:14px;text-align:center">Hubo un error al publicar. Intentá de nuevo.</div>
           <div class="wiz-footer" style="margin-top:14px">
             <button class="btn-back" onclick="goStep(2)">← Ajustar</button>
+            <button id="step3-btn-solicitar" class="btn-next" onclick="solicitarPresupuestos()">Solicitar presupuestos <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
             <a href="/mi-mudanza" id="btn-ver-mudanza" style="display:none;text-decoration:none" class="btn-next">Ver cotizaciones →</a>
           </div>
         </div>
@@ -1101,6 +1102,21 @@ function goStep(n) {
       showFieldError('wrap-desde', !d ? '⚠ Ingresá la dirección de origen.' : '⚠ Ingresá la dirección de destino.');
       return;
     }
+    // Validar fecha — obligatoria
+    if (dateMode === 'exact') {
+      if (!document.getElementById('fechaMudanza').value) {
+        showFieldError('date-exact-wrap', '⚠ Seleccioná una fecha de mudanza.');
+        // Resaltar el campo
+        document.getElementById('fechaMudanza').style.borderColor = 'var(--sky)';
+        setTimeout(function(){ document.getElementById('fechaMudanza').style.borderColor = ''; }, 3000);
+        return;
+      }
+    } else {
+      if (!selectedFlex) {
+        showFieldError('date-flex-wrap', '⚠ Seleccioná una opción de fecha.');
+        return;
+      }
+    }
   }
   // Validación paso 2 → 3
   if (n === 3 && step === 2) {
@@ -1155,25 +1171,29 @@ function goStep(n) {
     buildSummary();
     showRouteMap();
     hero.classList.add('step3-active');
-    var user = null;
-    try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
-    if (!user) mostrarLoginStep3();
-    else publicarMudanzaEnSistema();
+    // Mostrar estado inicial: resumen + botón solicitar (NO publicar ni login automático)
+    document.getElementById('step3-login').style.display = 'none';
+    document.getElementById('step3-publishing').style.display = 'none';
+    document.getElementById('step3-published').style.display = 'none';
+    document.getElementById('step3-error').style.display = 'none';
+    document.getElementById('step3-btn-solicitar').style.display = 'inline-flex';
+    document.getElementById('btn-ver-mudanza').style.display = 'none';
   } else {
     hero.classList.remove('step3-active');
     document.getElementById('mapPanel').classList.remove('show');
   }
 }
 
-function showFieldError(wrapId, msg) {
-  var wrap = document.getElementById(wrapId);
-  var errId = wrapId + '-err';
+function showFieldError(elemId, msg) {
+  var elem = document.getElementById(elemId);
+  if (!elem) return;
+  var errId = elemId + '-err';
   var err = document.getElementById(errId);
   if (!err) {
     err = document.createElement('div');
     err.id = errId;
     err.style.cssText = 'font-size:11px;color:#29B6F6;margin-top:4px;font-family:DM Mono,monospace;';
-    wrap.parentElement.appendChild(err);
+    elem.appendChild(err);
   }
   err.textContent = msg;
   setTimeout(function() { if (err) err.textContent = ''; }, 3000);
@@ -1496,8 +1516,37 @@ function buildSummary() {
   if (extras.length) html += '<br>Extras: ' + extras.join(', ');
   document.getElementById('summaryBox').innerHTML = html;
 }
-function mostrarLoginStep3() { _loginRol = 'cliente'; openLoginModal(); }
-function onStep3Login(user) { document.getElementById('step3-login').style.display = 'none'; publicarMudanzaEnSistema(); }
+function solicitarPresupuestos() {
+  // Ocultar el botón solicitar
+  document.getElementById('step3-btn-solicitar').style.display = 'none';
+  // Verificar si está logueado
+  var user = null;
+  try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
+  if (!user) {
+    // Mostrar bloque de login inline en el paso 3
+    document.getElementById('step3-login').style.display = 'block';
+    _loginRol = 'cliente';
+    // Renderizar botón Google en el paso 3
+    setTimeout(function() {
+      var el = document.getElementById('step3-google-btn');
+      if (el && window.google && _googleLoginInited) {
+        el.innerHTML = '';
+        try { google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'continue_with', width: 280 }); } catch(e) {}
+      } else {
+        // Si aún no está inited, abrir modal de login
+        openLoginModal();
+      }
+    }, 200);
+  } else {
+    publicarMudanzaEnSistema();
+  }
+}
+function mostrarLoginStep3() { solicitarPresupuestos(); }
+function onStep3Login(user) {
+  document.getElementById('step3-login').style.display = 'none';
+  document.getElementById('step3-btn-solicitar').style.display = 'none';
+  publicarMudanzaEnSistema();
+}
 async function publicarMudanzaEnSistema() {
   var user = null;
   try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
