@@ -1304,16 +1304,26 @@ function abrirLoginModal(){
     ? 'Iniciá sesión para publicar tu mudanza y recibir cotizaciones'
     : 'Iniciá sesión para ver pedidos y enviar cotizaciones';
 
-  // Renderizar botón Google
+  // Renderizar botón Google — reutiliza el initialize ya hecho
   var btnEl = document.getElementById('navLoginGoogleBtn');
   if(btnEl) btnEl.innerHTML = '';
-  setTimeout(function(){
+  function renderNavBtn(){
     if(window.google && btnEl){
-      google.accounts.id.renderButton(btnEl, {
-        theme: 'filled_black', size: 'large', text: 'continue_with', width: 280,
-      });
+      try{
+        google.accounts.id.renderButton(btnEl, {
+          theme:'filled_black', size:'large', text:'continue_with', width:280,
+        });
+      }catch(e){ setTimeout(renderNavBtn, 300); }
+    } else {
+      setTimeout(renderNavBtn, 300);
     }
-  }, 100);
+  }
+  // Asegurar que google.accounts.id.initialize corrió primero
+  if(!_googleLoginInited){
+    openLoginModal(); // Esto llama initialize
+    closeLoginModal();
+  }
+  setTimeout(renderNavBtn, 250);
 }
 
 function logoutNav(e){
