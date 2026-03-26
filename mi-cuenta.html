@@ -838,53 +838,96 @@ function loadGanancias(){
 }
 
 // ── CHAT ───────────────────────────────────────────────────────────────────
-function loadChat(){
-  var contacts = Object.entries(mensajes);
-  if(contacts.length === 0){
-    document.getElementById('chatContacts').innerHTML = '<div class="empty" style="padding:2rem"><div class="empty-icon">💬</div>Aceptá un pedido para chatear con el cliente</div>';
-    return;
-  }
-  var html = contacts.map(([id, data]) => `
-    <div class="chat-contact ${chatContactoActivo===id?'active':''}" onclick="selectChat('${id}')">
-      <div class="chat-contact-name">${data.nombre}</div>
-      <div class="chat-contact-last">${data.msgs[data.msgs.length-1]?.text||''}</div>
-    </div>`).join('');
-  document.getElementById('chatContacts').innerHTML = html;
-  if(contacts.length > 0 && !chatContactoActivo) selectChat(contacts[0][0]);
+var chatMudanzaActiva = null;
+var chatPolling = null;
+var chatUltimoId = 0;
+
+async function loadChat(){
+  try{
+    var r = await fetch('/api/chat?action=conversaciones&email='+encodeURIComponent(currentUser.email));
+    var d = await r.json();
+    var convs = d.conversaciones || [];
+
+    // También buscar mudanzas aceptadas
+    var aceptadas = misCotizaciones.filter(m =>
+      m.estado === 'cotizacion_aceptada' && m.cotizacionAceptada?.id === m.miCotizacion?.id
+    );
+
+    if(aceptadas.length === 0 && convs.length === 0){
+      document.getElementById('chatContacts').innerHTML = '<div class="empty" style="padding:2rem"><div class="empty-icon">💬</div>Cuando acepten tu cotización podés chatear con el cliente acá</div>';
+      return;
+    }
+
+    var contactosHtml = aceptadas.map(m => {
+      var conv = convs.find(c => c.mudanzaId === m.id);
+      var ultimo = conv?.ultimoMensaje?.texto || 'Sin mensajes aún';
+      return `
+        <div class="chat-contact ${chatMudanzaActiva===m.id?'active':''}" onclick="abrirChatMudancero('${m.id}','Cliente')">
+          <div class="chat-contact-name">${m.desde?.split(',')[0]||'—'} → ${m.hasta?.split(',')[0]||'—'}</div>
+          <div class="chat-contact-last">${ultimo.substring(0,35)}${ultimo.length>35?'…':''}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('chatContacts').innerHTML = contactosHtml || '<div class="empty" style="padding:1rem">Sin conversaciones</div>';
+
+    if(aceptadas.length > 0 && !chatMudanzaActiva){
+      abrirChatMudancero(aceptadas[0].id, 'Cliente');
+    }
+  }catch(e){ console.warn('Error cargando chat:', e.message); }
 }
 
-function selectChat(id){
-  chatContactoActivo = id;
-  var data = mensajes[id];
-  if(!data) return;
-  document.getElementById('chatHeader').textContent = data.nombre;
-  renderMsgs();
+async function abrirChatMudancero(mudanzaId, nombre){
+  chatMudanzaActiva = mudanzaId;
+  document.getElementById('chatHeader').textContent = '💬 ' + nombre;
+  await cargarMensajesMudancero();
+  if(chatPolling) clearInterval(chatPolling);
+  chatPolling = setInterval(cargarMensajesMudancero, 4000);
   loadChat();
 }
 
-function renderMsgs(){
-  if(!chatContactoActivo || !mensajes[chatContactoActivo]) return;
-  var msgs = mensajes[chatContactoActivo].msgs;
-  var html = msgs.map(m => `
-    <div class="chat-msg ${m.from==='me'?'mine':'other'}">
-      ${m.text}
-      <div class="chat-msg-time">${m.time}</div>
-    </div>`).join('');
-  var list = document.getElementById('chatList');
-  list.innerHTML = html;
-  list.scrollTop = list.scrollHeight;
+async function cargarMensajesMudancero(){
+  if(!chatMudanzaActiva) return;
+  try{
+    var r = await fetch('/api/chat?action=leer&mudanzaId='+chatMudanzaActiva);
+    var d = await r.json();
+    var msgs = d.mensajes || [];
+    if(msgs.length === chatUltimoId) return;
+    chatUltimoId = msgs.length;
+    var list = document.getElementById('chatList');
+    if(msgs.length === 0){
+      list.innerHTML = '<div class="empty" style="margin:auto"><div class="empty-icon">💬</div>Iniciá la conversación con el cliente</div>';
+      return;
+    }
+    list.innerHTML = msgs.map(m => {
+      var esMio = m.fromEmail === currentUser.email;
+      var hora = new Date(m.fecha).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="chat-msg ${esMio?'mine':'other'}">
+        ${!esMio?`<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">${m.fromNombre}</div>`:''}
+        ${m.texto}
+        <div class="chat-msg-time">${hora}</div>
+      </div>`;
+    }).join('');
+    list.scrollTop = list.scrollHeight;
+  }catch(e){ console.warn('Error:', e.message); }
 }
 
 function sendMsg(){
   var input = document.getElementById('chatInput');
   var text = input.value.trim();
-  if(!text || !chatContactoActivo) return;
-  mensajes[chatContactoActivo].msgs.push({
-    from:'me', text,
-    time: new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})
-  });
+  if(!text || !chatMudanzaActiva) return;
   input.value = '';
-  renderMsgs();
+  fetch('/api/chat?action=enviar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      mudanzaId: chatMudanzaActiva,
+      fromEmail: currentUser.email,
+      fromNombre: Array.isArray(mudanceroData) ? (mudanceroData[1]||currentUser.name) : currentUser.name,
+      fromRol: 'mudancero',
+      texto: text,
+    })
+  }).then(function(){ cargarMensajesMudancero(); })
+    .catch(function(e){ console.warn('Error:', e.message); input.value = text; });
 }
 
 // ── PERFIL ─────────────────────────────────────────────────────────────────
