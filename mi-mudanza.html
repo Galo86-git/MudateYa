@@ -110,16 +110,37 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .badge.pendiente{background:var(--amber-subtle);color:var(--amber);border:1px solid rgba(255,179,0,.2)}
 .badge.completada{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
 
-/* CHAT */
-.chat-wrap{height:400px;display:flex;flex-direction:column}
-.chat-list{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:8px}
-.chat-msg{max-width:72%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55}
-.chat-msg.mine{align-self:flex-end;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);color:var(--text)}
-.chat-msg.other{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
-.chat-msg-time{font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
-.chat-input-wrap{display:flex;gap:8px;padding:1rem;border-top:1px solid var(--border)}
-.chat-input{flex:1;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s}
-.chat-input:focus{border-color:var(--emerald)}
+/* CHAT WHATSAPP STYLE */
+.chat-container{display:flex;height:calc(100vh - 160px);min-height:500px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.chat-sidebar{width:280px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg2)}
+.chat-sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text)}
+.chat-contacts-list{flex:1;overflow-y:auto}
+.chat-contact-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
+.chat-contact-item:hover{background:var(--surface)}
+.chat-contact-item.active{background:var(--emerald-subtle);border-left:3px solid var(--emerald)}
+.chat-contact-avatar{width:42px;height:42px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--emerald);font-family:var(--mono);flex-shrink:0}
+.chat-contact-info{flex:1;min-width:0}
+.chat-contact-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-contact-preview{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-main-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface)}
+.chat-main-avatar{width:36px;height:36px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--emerald);font-family:var(--mono);flex-shrink:0}
+.chat-main-name{font-size:13px;font-weight:600;color:var(--text)}
+.chat-main-status{font-size:11px;color:var(--emerald);font-family:var(--mono)}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
+.chat-bubble{max-width:68%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.55;word-break:break-word}
+.chat-bubble.mine{align-self:flex-end;background:#1A5A30;color:#E8F5EE;border-bottom-right-radius:3px}
+.chat-bubble.other{align-self:flex-start;background:var(--surface);border:1px solid var(--border);color:var(--text2);border-bottom-left-radius:3px}
+.chat-bubble-sender{font-size:10px;color:var(--emerald);font-family:var(--mono);margin-bottom:3px;font-weight:600}
+.chat-bubble-time{font-size:10px;opacity:.5;text-align:right;margin-top:3px}
+.chat-input-area{padding:10px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface)}
+.chat-input-field{flex:1;padding:10px 16px;border:1px solid var(--border2);border-radius:22px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s}
+.chat-input-field:focus{border-color:var(--emerald)}
+.chat-input-field::placeholder{color:var(--text3)}
+.chat-send-btn{width:38px;height:38px;border-radius:50%;background:var(--emerald);border:none;color:#041A0E;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.chat-send-btn:hover{background:#2EDB7A;transform:scale(1.05)}
+.chat-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text3);gap:8px;background:var(--bg)}
+@media(max-width:768px){.chat-sidebar{display:none}}
 
 /* EMPTY / LOADING */
 .empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
@@ -205,18 +226,31 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
       <!-- CHAT -->
       <div class="page" id="page-chat">
-        <div class="page-title">Mensajes</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
-          <div class="chat-wrap">
-            <div class="chat-list" id="chatList">
-              <div class="empty" style="margin:auto">
-                <div class="empty-icon">💬</div>
-                Acá podés chatear con tu mudancero una vez que acepte el pedido
+        <div class="chat-container">
+          <!-- Sidebar contactos -->
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">💬 Mensajes</div>
+            <div class="chat-contacts-list" id="chatContacts">
+              <div style="padding:2rem;text-align:center;color:var(--text3);font-size:12px">Cargando…</div>
+            </div>
+          </div>
+          <!-- Área principal -->
+          <div class="chat-main">
+            <div class="chat-main-header" id="chatMainHeader">
+              <div class="chat-placeholder" style="flex-direction:row;justify-content:flex-start;background:transparent">
+                <span style="font-size:1.2rem;opacity:.4">💬</span>
+                <span style="font-size:13px;color:var(--text3)">Seleccioná una conversación</span>
               </div>
             </div>
-            <div class="chat-input-wrap">
-              <input class="chat-input" id="chatInput" placeholder="Escribí un mensaje…" onkeydown="if(event.key==='Enter')sendMsg()"/>
-              <button class="btn btn-green" onclick="sendMsg()">Enviar</button>
+            <div class="chat-messages" id="chatList">
+              <div class="chat-placeholder">
+                <div style="font-size:3rem;opacity:.2">💬</div>
+                <span style="font-size:13px">Tus mensajes con el mudancero aparecen acá</span>
+              </div>
+            </div>
+            <div class="chat-input-area">
+              <input class="chat-input-field" id="chatInput" placeholder="Escribí un mensaje…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"/>
+              <button class="chat-send-btn" onclick="sendMsg()">➤</button>
             </div>
           </div>
         </div>
@@ -604,34 +638,44 @@ async function loadConversaciones(){
       var mud = m.cotizacionAceptada || {};
       var conv = convs.find(c => c.mudanzaId === m.id);
       var ultimo = conv?.ultimoMensaje?.texto || 'Sin mensajes aún';
+      var initials = (mud.mudanceroNombre||'MV').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
       return `
-        <div class="chat-contact ${chatMudanzaActiva===m.id?'active':''}" onclick="abrirChat('${m.id}','${(mud.mudanceroNombre||'Mudancero').replace(/'/g,"\\'")}')">
-          <div class="chat-contact-name">${mud.mudanceroNombre||'Mudancero'}</div>
-          <div class="chat-contact-last">${m.desde?.split(',')[0]||'—'} → ${m.hasta?.split(',')[0]||'—'}</div>
-          <div class="chat-contact-last" style="color:var(--text3)">${ultimo.substring(0,40)}${ultimo.length>40?'…':''}</div>
+        <div class="chat-contact-item ${chatMudanzaActiva===m.id?'active':''}" onclick="abrirChat('${m.id}','${(mud.mudanceroNombre||'Mudancero').replace(/'/g,"\\'")}','${initials}')">
+          <div class="chat-contact-avatar">${initials}</div>
+          <div class="chat-contact-info">
+            <div class="chat-contact-name">${mud.mudanceroNombre||'Mudancero'}</div>
+            <div class="chat-contact-preview">${m.desde?.split(',')[0]||'—'} → ${m.hasta?.split(',')[0]||'—'}</div>
+            <div class="chat-contact-preview">${ultimo.substring(0,35)}${ultimo.length>35?'…':''}</div>
+          </div>
         </div>`;
     }).join('');
 
-    document.querySelector('.chat-contacts') && (document.querySelector('.chat-contacts').innerHTML = contactosHtml || '<div class="empty" style="padding:1rem">Sin conversaciones</div>');
+    document.getElementById('chatContacts').innerHTML = contactosHtml || '<div style="padding:2rem;text-align:center;color:var(--text3);font-size:12px">Sin conversaciones aún</div>';
 
     // Abrir primera si hay
     if(todasMudanzas.length > 0 && !chatMudanzaActiva){
       var mud = todasMudanzas[0].cotizacionAceptada || {};
-      abrirChat(todasMudanzas[0].id, mud.mudanceroNombre||'Mudancero');
+      var initials = (mud.mudanceroNombre||'MV').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+      abrirChat(todasMudanzas[0].id, mud.mudanceroNombre||'Mudancero', initials);
     }
   }catch(e){
     console.warn('Error cargando conversaciones:', e.message);
   }
 }
 
-async function abrirChat(mudanzaId, nombreMudancero){
+async function abrirChat(mudanzaId, nombreMudancero, initials){
   chatMudanzaActiva = mudanzaId;
-  document.getElementById('chatHeader').textContent = '💬 ' + nombreMudancero;
+  var init = initials || (nombreMudancero||'MV').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  document.getElementById('chatMainHeader').innerHTML = `
+    <div class="chat-main-avatar">${init}</div>
+    <div>
+      <div class="chat-main-name">${nombreMudancero}</div>
+      <div class="chat-main-status">● En línea</div>
+    </div>`;
+  chatUltimoId = 0;
   await cargarMensajes();
-  // Polling cada 4 segundos
   if(chatPolling) clearInterval(chatPolling);
   chatPolling = setInterval(cargarMensajes, 4000);
-  // Actualizar contactos
   loadConversaciones();
 }
 
@@ -641,20 +685,20 @@ async function cargarMensajes(){
     var r = await fetch('/api/chat?action=leer&mudanzaId='+chatMudanzaActiva);
     var d = await r.json();
     var msgs = d.mensajes || [];
-    if(msgs.length === chatUltimoId) return; // Sin cambios
+    if(msgs.length === chatUltimoId) return;
     chatUltimoId = msgs.length;
     var list = document.getElementById('chatList');
     if(msgs.length === 0){
-      list.innerHTML = '<div class="empty" style="margin:auto"><div class="empty-icon">💬</div>Empezá la conversación con tu mudancero</div>';
+      list.innerHTML = '<div class="chat-placeholder"><div style="font-size:2.5rem;opacity:.2">💬</div><span style="font-size:13px">Empezá la conversación</span></div>';
       return;
     }
     list.innerHTML = msgs.map(m => {
       var esMio = m.fromEmail === currentUser.email;
       var hora = new Date(m.fecha).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-      return `<div class="chat-msg ${esMio?'mine':'other'}">
-        ${!esMio?`<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">${m.fromNombre}</div>`:''}
+      return `<div class="chat-bubble ${esMio?'mine':'other'}">
+        ${!esMio?`<div class="chat-bubble-sender">${m.fromNombre}</div>`:''}
         ${m.texto}
-        <div class="chat-msg-time">${hora}</div>
+        <div class="chat-bubble-time">${hora}</div>
       </div>`;
     }).join('');
     list.scrollTop = list.scrollHeight;
