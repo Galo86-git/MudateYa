@@ -583,7 +583,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 </div>
 
 <nav>
-  <a href="#" class="logo">Mudate<span>Ya</span></a>
+  <a href="/" class="logo">Mudate<span>Ya</span></a>
   <ul class="nav-links">
     <li><a href="#como-funciona">Cómo funciona</a></li>
     <li><a href="#para-quien">Para quién</a></li>
@@ -1328,38 +1328,10 @@ function fswInitMaps() {
   var inputD = document.getElementById('fsw-desde');
   var inputH = document.getElementById('fsw-hasta');
   if (!window.google || !inputD) return;
-  google.maps.importLibrary('places').then(function() {
-    makeFSWDropdown(inputD); makeFSWDropdown(inputH);
-  }).catch(function() {});
-}
-function makeFSWDropdown(input) {
-  var dd = document.createElement('ul');
-  dd.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:9999;list-style:none;margin:4px 0 0;padding:0;background:#1D2820;border:1px solid #2A3C32;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.6);overflow:hidden;display:none;';
-  input.parentElement.style.position = 'relative';
-  input.parentElement.appendChild(dd);
-  var tmr;
-  input.addEventListener('input', function() {
-    clearTimeout(tmr); var q = this.value.trim();
-    if (q.length < 2) { dd.style.display = 'none'; return; }
-    tmr = setTimeout(async function() {
-      try {
-        var token = new google.maps.places.AutocompleteSessionToken();
-        var res = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({ input: q, sessionToken: token, locationBias: { center: { lat: -34.6037, lng: -58.3816 }, radius: 200000 } });
-        var preds = res.suggestions || [];
-        dd.innerHTML = '';
-        if (!preds.length) { dd.style.display = 'none'; return; }
-        preds.slice(0, 5).forEach(function(pred) {
-          var li = document.createElement('li');
-          li.textContent = pred.placePrediction ? pred.placePrediction.text.toString() : '';
-          li.style.cssText = 'padding:12px 16px;cursor:pointer;font-size:13px;color:#7AADA0;border-bottom:1px solid #213029;';
-          li.addEventListener('mousedown', function() { input.value = li.textContent; dd.style.display = 'none'; });
-          dd.appendChild(li);
-        });
-        dd.style.display = 'block';
-      } catch(e) {}
-    }, 200);
-  });
-  input.addEventListener('blur', function() { setTimeout(function() { dd.style.display = 'none'; }, 150); });
+  try {
+    new google.maps.places.Autocomplete(inputD, { componentRestrictions: { country: 'ar' }, fields: ['formatted_address', 'geometry'], types: ['geocode', 'establishment'] });
+    new google.maps.places.Autocomplete(inputH, { componentRestrictions: { country: 'ar' }, fields: ['formatted_address', 'geometry'], types: ['geocode', 'establishment'] });
+  } catch(e) { console.warn('FSW maps error:', e); }
 }
 
 // ════════════════════════════════════════════════════
@@ -1367,100 +1339,51 @@ function makeFSWDropdown(input) {
 // ════════════════════════════════════════════════════
 var GMAPS_KEY = 'AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8';
 
-async function initMaps() {
+function initMaps() {
   var note = document.getElementById('maps-note');
   try {
-    await google.maps.importLibrary('places');
     geocoder = new google.maps.Geocoder();
 
     var inputD = document.getElementById('desde');
     var inputH = document.getElementById('hasta');
 
-    function makeDropdown(input, isDesde) {
-      var dropdown = document.createElement('ul');
-      dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:9999;list-style:none;margin:4px 0 0;padding:0;background:#1D2820;border:1px solid #2A3C32;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.6);overflow:hidden;display:none;';
-      input.parentElement.style.position = 'relative';
-      input.parentElement.appendChild(dropdown);
-
-      var debounce;
-      var activeIdx = -1;
-
-      function highlightItem(idx) {
-        var items = dropdown.querySelectorAll('li');
-        items.forEach(function(li, i) {
-          if (i === idx) { li.style.background = 'rgba(34,195,106,.12)'; li.style.color = '#E8F5EE'; }
-          else { li.style.background = ''; li.style.color = '#7AADA0'; }
-        });
-      }
-
-      input.addEventListener('input', function() {
-        activeIdx = -1;
-        clearTimeout(debounce);
-        var q = this.value.trim();
-        if (q.length < 2) { dropdown.style.display = 'none'; return; }
-        debounce = setTimeout(async function() {
-          try {
-            var req = { input: q, includedRegionCodes: ['ar'], sessionToken: new google.maps.places.AutocompleteSessionToken() };
-            var { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(req);
-            dropdown.innerHTML = '';
-            if (!suggestions || !suggestions.length) { dropdown.style.display = 'none'; return; }
-            suggestions.slice(0, 5).forEach(function(s) {
-              var pred = s.placePrediction;
-              var li = document.createElement('li');
-              li.textContent = pred.text.toString();
-              li.style.cssText = 'padding:10px 14px;font-size:13px;color:#7AADA0;cursor:pointer;border-top:1px solid #213029;font-family:Outfit,sans-serif;transition:background .1s;';
-              li.addEventListener('mouseenter', function() { activeIdx = Array.from(dropdown.querySelectorAll('li')).indexOf(this); highlightItem(activeIdx); });
-              li.addEventListener('mouseleave', function() { highlightItem(activeIdx); });
-              li.addEventListener('mousedown', async function(e) {
-                e.preventDefault();
-                await selectSuggestion(pred, input, isDesde, dropdown);
-              });
-              dropdown.appendChild(li);
-            });
-            dropdown.style.display = 'block';
-            activeIdx = -1;
-          } catch(err) { console.warn('Autocomplete error:', err); }
-        }, 280);
+    // Usar Autocomplete clásico — funciona en desktop y móvil
+    function makeAC(input, isDesde) {
+      var ac = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'ar' },
+        fields: ['formatted_address', 'geometry', 'name'],
+        types: ['geocode', 'establishment']
       });
 
-      input.addEventListener('keydown', function(e) {
-        var items = dropdown.querySelectorAll('li');
-        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, items.length - 1); highlightItem(activeIdx); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); highlightItem(activeIdx); }
-        else if (e.key === 'Enter') { e.preventDefault(); if (activeIdx >= 0 && items[activeIdx]) items[activeIdx].dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); }
-        else if (e.key === 'Escape') { dropdown.style.display = 'none'; activeIdx = -1; }
-      });
-
-      // ── BLUR: verificar auto-avance para escritura manual ──
-      input.addEventListener('blur', function() {
-        setTimeout(function() {
-          dropdown.style.display = 'none';
-          activeIdx = -1;
-          // Chequear auto-avance cuando el usuario sale del campo manualmente
+      ac.addListener('place_changed', function() {
+        var place = ac.getPlace();
+        if (!place.geometry) {
+          // El usuario escribió algo pero no eligió — dejar el texto como está
           checkAutoAdvance();
-        }, 200);
+          return;
+        }
+        // Usar formatted_address si existe, si no el name
+        var addr = place.formatted_address || place.name || input.value;
+        input.value = addr;
+        if (isDesde) {
+          fromLocation = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          };
+        }
+        checkAutoAdvance();
+      });
+
+      // Blur también verifica (para quien escribe a mano sin elegir sugerencia)
+      input.addEventListener('blur', function() {
+        setTimeout(function() { checkAutoAdvance(); }, 300);
       });
     }
 
-    // ── selectSuggestion: el punto clave donde se completa una dirección ──
-    async function selectSuggestion(pred, input, isDesde, dropdown) {
-      var place = pred.toPlace();
-      await place.fetchFields({ fields: ['formattedAddress', 'location', 'displayName'] });
-      var addr = place.formattedAddress || place.displayName || pred.text.toString();
-      input.value = addr;
-      dropdown.style.display = 'none';
-      if (isDesde && place.location) {
-        fromLocation = { lat: place.location.lat(), lng: place.location.lng() };
-      }
+    makeAC(inputD, true);
+    makeAC(inputH, false);
 
-      // ── AUTO-AVANCE: verificar si ambos campos están completos ──
-      checkAutoAdvance();
-    }
-
-    makeDropdown(inputD, true);
-    makeDropdown(inputH, false);
-
-    placesService = 'new_api';
+    placesService = 'classic';
     if (note) note.style.display = 'none';
 
   } catch(e) {
@@ -1472,7 +1395,7 @@ async function initMaps() {
 
 (function() {
   var s = document.createElement('script');
-  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY + '&libraries=places,maps&language=es&region=AR&loading=async&callback=__mapsReady';
+  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY + '&libraries=places,maps&language=es&region=AR&callback=__mapsReady';
   s.async = true; s.defer = true;
   s.onerror = function() { var st = document.getElementById('maps-status'); if (st) st.textContent = '⚠ No se pudo conectar con Google Maps.'; };
   window.__mapsReady = function() { initMaps(); };
