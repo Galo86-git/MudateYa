@@ -502,6 +502,41 @@ async function enviarEmailAceptacion(mudanza, cot) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   if (!process.env.RESEND_API_KEY) return;
 
+  const siteUrl = process.env.SITE_URL || 'https://mudateya.vercel.app';
+  const precioFmt = '$' + parseInt(cot.precio).toLocaleString('es-AR');
+
+  // ── 1. Generar link de pago MP ───────────────────
+  let linkPago = `${siteUrl}/mi-mudanza`; // fallback
+  try {
+    const { MercadoPagoConfig, Preference } = require('mercadopago');
+    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+    const preference = new Preference(client);
+    const result = await preference.create({ body: {
+      items: [{
+        id:          `${mudanza.id}-${cot.id}`,
+        title:       `MudateYa — Mudanza con ${cot.mudanceroNombre}`,
+        description: `${mudanza.desde} → ${mudanza.hasta} · ${mudanza.ambientes}`,
+        quantity:    1,
+        unit_price:  Number(cot.precio),
+        currency_id: 'ARS',
+      }],
+      back_urls: {
+        success: `${siteUrl}/pago-exitoso?mudanzaId=${mudanza.id}&cotizacionId=${cot.id}&monto=${cot.precio}&mudancero=${encodeURIComponent(cot.mudanceroNombre)}`,
+        failure: `${siteUrl}/mi-mudanza?pago=error`,
+        pending: `${siteUrl}/mi-mudanza?pago=pendiente`,
+      },
+      auto_return:          'approved',
+      statement_descriptor: 'MUDATEYA',
+      external_reference:   `${mudanza.id}-${cot.id}`,
+      notification_url:     `${siteUrl}/api/webhook-mp`,
+      metadata:             { mudanzaId: mudanza.id, cotizacionId: cot.id },
+    }});
+    linkPago = result.init_point || result.initPoint || linkPago;
+  } catch(e) {
+    console.error('Error generando link MP:', e.message);
+  }
+
+  // ── 2. Generar PDF ───────────────────────────────
   let attachments = [];
   try {
     const pdfBase64 = await generarPDFBase64({
@@ -525,57 +560,98 @@ async function enviarEmailAceptacion(mudanza, cot) {
     console.error('Error generando PDF:', e.message);
   }
 
-  const emailHtml = `<div style="font-family:Arial,sans-serif;max-width:580px;background:#0D1410;color:#E8F5EE;border-radius:16px;overflow:hidden">
-    <div style="background:#22C36A;padding:18px 22px"><h2 style="margin:0;color:#041A0E">✅ ¡Cotización aceptada!</h2></div>
-    <div style="padding:22px">
-      <p style="color:#7AADA0;line-height:1.7">Hola <strong style="color:#E8F5EE">${mudanza.clienteNombre}</strong>,</p>
-      <p style="color:#7AADA0;line-height:1.7">Aceptaste la cotización de <strong style="color:#E8F5EE">${cot.mudanceroNombre}</strong> por <strong style="color:#22C36A">$${parseInt(cot.precio).toLocaleString('es-AR')}</strong>.</p>
-      <div style="background:#172018;border-radius:10px;padding:14px 18px;margin:14px 0">
-        <table style="width:100%">
-          <tr><td style="color:#7AADA0;padding:5px 0;width:35%">Mudancero</td><td><strong>${cot.mudanceroNombre}</strong></td></tr>
-          <tr><td style="color:#7AADA0;padding:5px 0">Teléfono</td><td>${cot.mudanceroTel || '—'}</td></tr>
-          <tr><td style="color:#7AADA0;padding:5px 0">Ruta</td><td>${mudanza.desde} → ${mudanza.hasta}</td></tr>
-          <tr><td style="color:#7AADA0;padding:5px 0">Fecha</td><td>${mudanza.fecha}</td></tr>
-          <tr><td style="color:#7AADA0;padding:5px 0">Precio</td><td style="color:#22C36A;font-weight:700">$${parseInt(cot.precio).toLocaleString('es-AR')}</td></tr>
-          ${cot.nota ? `<tr><td style="color:#7AADA0;padding:5px 0">Nota</td><td style="font-style:italic">${cot.nota}</td></tr>` : ''}
-        </table>
-      </div>
-      <p style="color:#7AADA0">Encontrás el comprobante adjunto en PDF.</p>
-      <a href="https://mudateya.vercel.app/mi-mudanza" style="display:inline-block;margin-top:12px;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Ver mi mudanza →</a>
-    </div>
-  </div>`;
-
+  // ── 3. Email al CLIENTE con botón de pago ────────
   if (mudanza.clienteEmail) {
     await resend.emails.send({
       from: 'MudateYa <onboarding@resend.dev>',
       to: mudanza.clienteEmail,
-      subject: `✅ Cotización aceptada — ${cot.mudanceroNombre} · $${parseInt(cot.precio).toLocaleString('es-AR')}`,
-      html: emailHtml,
+      subject: `✅ Aceptaste la cotización — Pagá ahora con Mercado Pago`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:580px;background:#0D1410;color:#E8F5EE;border-radius:16px;overflow:hidden">
+        <div style="background:#22C36A;padding:18px 22px">
+          <h2 style="margin:0;color:#041A0E">✅ ¡Cotización aceptada!</h2>
+        </div>
+        <div style="padding:22px">
+          <p style="color:#7AADA0;line-height:1.7">Hola <strong style="color:#E8F5EE">${mudanza.clienteNombre}</strong>,</p>
+          <p style="color:#7AADA0;line-height:1.7">
+            Aceptaste la cotización de <strong style="color:#E8F5EE">${cot.mudanceroNombre}</strong>.
+            Para confirmar la mudanza, completá el pago.
+          </p>
+
+          <!-- Resumen -->
+          <div style="background:#172018;border-radius:10px;padding:14px 18px;margin:14px 0">
+            <table style="width:100%">
+              <tr><td style="color:#7AADA0;padding:5px 0;width:35%">Mudancero</td><td><strong>${cot.mudanceroNombre}</strong></td></tr>
+              <tr><td style="color:#7AADA0;padding:5px 0">Teléfono</td><td>${cot.mudanceroTel || '—'}</td></tr>
+              <tr><td style="color:#7AADA0;padding:5px 0">Ruta</td><td>${mudanza.desde} → ${mudanza.hasta}</td></tr>
+              <tr><td style="color:#7AADA0;padding:5px 0">Fecha</td><td>${mudanza.fecha}</td></tr>
+              <tr><td style="color:#7AADA0;padding:5px 0">Ambientes</td><td>${mudanza.ambientes}</td></tr>
+              ${cot.nota ? `<tr><td style="color:#7AADA0;padding:5px 0">Nota</td><td style="font-style:italic">${cot.nota}</td></tr>` : ''}
+            </table>
+          </div>
+
+          <!-- Precio + botón de pago -->
+          <div style="background:#0D2018;border:2px solid #22C36A;border-radius:12px;padding:20px;margin:20px 0;text-align:center">
+            <div style="font-size:13px;color:#5A8A78;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Total a pagar</div>
+            <div style="font-size:2.5rem;font-weight:700;color:#22C36A;margin-bottom:16px">${precioFmt}</div>
+            <a href="${linkPago}"
+               style="display:inline-block;background:#009EE3;color:white;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:.3px">
+              💳 Pagar con Mercado Pago
+            </a>
+            <p style="color:#3D6458;font-size:11px;margin-top:12px;margin-bottom:0">
+              🔒 Pago 100% seguro · MudateYa retiene el monto hasta confirmar el servicio
+            </p>
+          </div>
+
+          <p style="color:#7AADA0;font-size:13px">
+            También podés acceder desde
+            <a href="${siteUrl}/mi-mudanza" style="color:#22C36A">tu panel de mudanzas</a>.
+          </p>
+          <p style="color:#3D6458;font-size:11px">
+            Adjuntamos el comprobante de cotización en PDF para tus registros.
+          </p>
+        </div>
+      </div>`,
       attachments,
     });
   }
 
+  // ── 4. Email al MUDANCERO ────────────────────────
   if (cot.mudanceroEmail) {
     await resend.emails.send({
       from: 'MudateYa <onboarding@resend.dev>',
       to: cot.mudanceroEmail,
       subject: `🎉 ¡Aceptaron tu cotización! — ${mudanza.desde} → ${mudanza.hasta}`,
       html: `<div style="font-family:Arial,sans-serif;max-width:580px;background:#0D1410;color:#E8F5EE;border-radius:16px;overflow:hidden">
-        <div style="background:#22C36A;padding:18px 22px"><h2 style="margin:0;color:#041A0E">🎉 ¡Te eligieron!</h2></div>
+        <div style="background:#22C36A;padding:18px 22px">
+          <h2 style="margin:0;color:#041A0E">🎉 ¡Te eligieron!</h2>
+        </div>
         <div style="padding:22px">
-          <p style="color:#7AADA0"><strong style="color:#E8F5EE">${mudanza.clienteNombre}</strong> aceptó tu cotización de <strong style="color:#22C36A">$${parseInt(cot.precio).toLocaleString('es-AR')}</strong>.</p>
+          <p style="color:#7AADA0;line-height:1.7">
+            <strong style="color:#E8F5EE">${mudanza.clienteNombre}</strong> aceptó tu cotización.
+            Te avisaremos cuando confirme el pago.
+          </p>
           <div style="background:#172018;border-radius:10px;padding:14px 18px;margin:14px 0">
             <table style="width:100%">
               <tr><td style="color:#7AADA0;padding:5px 0;width:35%">Ruta</td><td>${mudanza.desde} → ${mudanza.hasta}</td></tr>
               <tr><td style="color:#7AADA0;padding:5px 0">Fecha</td><td>${mudanza.fecha}</td></tr>
               <tr><td style="color:#7AADA0;padding:5px 0">Tamaño</td><td>${mudanza.ambientes}</td></tr>
-              <tr><td style="color:#7AADA0;padding:5px 0">Precio acordado</td><td style="color:#22C36A;font-weight:700">$${parseInt(cot.precio).toLocaleString('es-AR')}</td></tr>
+              <tr><td style="color:#7AADA0;padding:5px 0">Precio acordado</td><td style="color:#22C36A;font-weight:700">${precioFmt}</td></tr>
             </table>
           </div>
-          <a href="https://mudateya.vercel.app/mi-cuenta" style="display:inline-block;margin-top:12px;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Ver en mi panel →</a>
+          <div style="background:#0D2018;border:1px solid #1E3028;border-radius:10px;padding:14px 18px;margin-bottom:14px">
+            <p style="color:#7AADA0;font-size:13px;margin:0">
+              💡 <strong style="color:#E8F5EE">¿Cuándo recibís el pago?</strong><br>
+              MudateYa procesa las liquidaciones cada <strong style="color:#22C36A">15 días hábiles</strong>
+              una vez confirmada la mudanza.
+            </p>
+          </div>
+          <a href="${siteUrl}/mi-cuenta" style="display:inline-block;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">
+            Ver en mi panel →
+          </a>
         </div>
       </div>`,
       attachments,
     });
   }
 }
+
