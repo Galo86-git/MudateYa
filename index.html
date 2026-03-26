@@ -1279,8 +1279,7 @@ function iniciarSesionComo(rol, e){
   e.preventDefault();
   _loginRol = rol;
   document.getElementById('loginDropdown').classList.remove('open');
-  // Abrir modal de login
-  abrirLoginModal();
+  openLoginModal();
 }
 
 function abrirLoginModal(){
@@ -1360,23 +1359,9 @@ function updateNavUser(){
   }
 }
 function mostrarLoginStep3(){
-  // Mostrar modal de login inline en el wizard
-  document.getElementById('step3-publishing').style.display = 'none';
-  document.getElementById('step3-published').style.display = 'none';
-  document.getElementById('step3-error').style.display = 'none';
-  document.getElementById('step3-login').style.display = 'block';
-  // Inicializar botón de Google si no existe
-  setTimeout(function(){
-    var el = document.getElementById('step3-google-btn');
-    if(el && !el.hasChildNodes()){
-      google.accounts.id.renderButton(el, {
-        theme: 'filled_black',
-        size: 'large',
-        text: 'continue_with',
-        width: 280,
-      });
-    }
-  }, 100);
+  // Usar el modal de login existente que ya funciona
+  _loginRol = 'cliente';
+  openLoginModal();
 }
 
 function onStep3Login(user){
@@ -2497,6 +2482,20 @@ openPayModal=function(name,initials,rating,precio,placeId){
 var _googleLoginInited = false;
 
 function openLoginModal(){
+  // Actualizar texto según el contexto
+  var titulo = document.querySelector('#loginModal .pay-modal > div:nth-child(2)');
+  var desc = document.querySelector('#loginModal .pay-modal > p:first-of-type');
+  if(_loginRol === 'cliente'){
+    if(titulo) titulo.textContent = 'PUBLICAR MI MUDANZA';
+    if(desc) desc.textContent = 'Iniciá sesión para publicar tu mudanza y recibir cotizaciones de mudanceros verificados.';
+  } else if(_loginRol === 'mudancero'){
+    if(titulo) titulo.textContent = 'ENTRAR AL PANEL';
+    if(desc) desc.textContent = 'Iniciá sesión para ver pedidos disponibles y enviar cotizaciones.';
+  } else {
+    if(titulo) titulo.textContent = 'ANTES DE CONTINUAR';
+    if(desc) desc.textContent = 'Iniciá sesión para confirmar tu identidad y recibir el comprobante de pago.';
+  }
+
   document.getElementById('loginModal').classList.add('open');
   document.body.style.overflow='hidden';
 
