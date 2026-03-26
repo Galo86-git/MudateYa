@@ -885,6 +885,15 @@ gmp-placeautocomplete input:focus,gmp-place-autocomplete input:focus{
         <div class="wstep" id="step3">
           <div class="result-summary" id="summaryBox"></div>
 
+          <!-- Estado: login requerido -->
+          <div id="step3-login" style="display:none;text-align:center;padding:1.2rem 0">
+            <div style="font-size:1.8rem;margin-bottom:10px">🔐</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.5px;color:var(--text);margin-bottom:6px">Iniciá sesión para publicar</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px">Es gratis y solo usamos tu email para avisarte cuando lleguen cotizaciones.</div>
+            <div id="step3-google-btn" style="display:flex;justify-content:center;margin-bottom:12px"></div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">🔒 No publicamos nada en tu cuenta de Google</div>
+          </div>
+
           <!-- Estado: publicando -->
           <div id="step3-publishing" style="display:none;text-align:center;padding:2rem 0">
             <span class="spinner" style="width:24px;height:24px;border-width:3px;display:inline-block;margin-bottom:16px;vertical-align:middle"></span>
@@ -1232,12 +1241,43 @@ function goStep(n){
     buildSummary();
     showRouteMap();
     hero.classList.add('step3-active');
-    publicarMudanzaEnSistema();
+    // Verificar login antes de publicar
+    var user = null;
+    try{ user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); }catch(e){}
+    if(!user){
+      mostrarLoginStep3();
+    } else {
+      publicarMudanzaEnSistema();
+    }
   }
   else{hero.classList.remove('step3-active');document.getElementById('mapPanel').classList.remove('show')}
 }
 
-var _mudanzaPublicadaId = null;
+function mostrarLoginStep3(){
+  // Mostrar modal de login inline en el wizard
+  document.getElementById('step3-publishing').style.display = 'none';
+  document.getElementById('step3-published').style.display = 'none';
+  document.getElementById('step3-error').style.display = 'none';
+  document.getElementById('step3-login').style.display = 'block';
+  // Inicializar botón de Google si no existe
+  setTimeout(function(){
+    var el = document.getElementById('step3-google-btn');
+    if(el && !el.hasChildNodes()){
+      google.accounts.id.renderButton(el, {
+        theme: 'filled_black',
+        size: 'large',
+        text: 'continue_with',
+        width: 280,
+      });
+    }
+  }, 100);
+}
+
+function onStep3Login(user){
+  // Llamado después del login exitoso en el paso 3
+  document.getElementById('step3-login').style.display = 'none';
+  publicarMudanzaEnSistema();
+}
 
 async function publicarMudanzaEnSistema(){
   var user = null;
@@ -2368,6 +2408,10 @@ function openLoginModal(){
           // Actualizar nav
           var navLogin = document.getElementById('navLogin');
           if(navLogin) navLogin.textContent = user.name.split(' ')[0];
+          // Si estamos en paso 3, continuar con la publicación
+          if(step === 3 && document.getElementById('step3-login').style.display !== 'none'){
+            onStep3Login(user);
+          }
           // Abrir modal de pago pendiente
           if(_pendingPayModal){
             var p = _pendingPayModal;
