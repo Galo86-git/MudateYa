@@ -1274,6 +1274,8 @@ function goStep(n){
   }
   step=n;
   document.getElementById('step'+n).classList.add('active');
+  // Scroll al wizard
+  document.getElementById('heroGrid').scrollIntoView({behavior:'smooth', block:'start'});
   var hero=document.getElementById('heroGrid');
   if(n===3){
     buildSummary();
