@@ -86,13 +86,16 @@ module.exports = async function handler(req, res) {
     if (!email) return res.status(400).json({ error: 'Falta email' });
     try {
       const ids = await getJSON(`cliente:${email}`) || [];
+      console.log(`mis-mudanzas: email=${email}, ids=`, ids);
       const mudanzas = [];
       for (const id of ids) {
         try {
           const m = await getJSON(`mudanza:${id}`);
           if (m) mudanzas.push(m);
+          else console.warn(`mudanza:${id} no encontrada o expirada`);
         } catch(e) { console.warn('Error leyendo mudanza', id, e.message); }
       }
+      console.log(`mis-mudanzas: devolviendo ${mudanzas.length} mudanzas`);
       return res.status(200).json({ mudanzas });
     } catch (e) {
       console.error('Error en mis-mudanzas:', e.message);
