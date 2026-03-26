@@ -1045,10 +1045,17 @@ function checkAutoAdvance() {
 
   var d = document.getElementById('desde').value.trim();
   var h = document.getElementById('hasta').value.trim();
-
   var hint = document.getElementById('autoAdvanceHint');
 
-  if (d && h) {
+  // Verificar fecha según el modo activo
+  var fechaOk = false;
+  if (dateMode === 'exact') {
+    fechaOk = !!document.getElementById('fechaMudanza').value;
+  } else {
+    fechaOk = !!selectedFlex;
+  }
+
+  if (d && h && fechaOk) {
     // Marcar ambos inputs como completados visualmente
     document.getElementById('desde').classList.add('filled');
     document.getElementById('hasta').classList.add('filled');
@@ -1059,13 +1066,15 @@ function checkAutoAdvance() {
     // Cancelar timer anterior si existía
     if (_autoAdvanceTimer) clearTimeout(_autoAdvanceTimer);
 
-    // Avanzar después de 600ms (tiempo suficiente para ver el hint)
+    // Avanzar después de 600ms
     _autoAdvanceTimer = setTimeout(function() {
       if (step === 1) {
         var dCurr = document.getElementById('desde').value.trim();
         var hCurr = document.getElementById('hasta').value.trim();
-        // Verificar nuevamente que sigan completos
-        if (dCurr && hCurr) {
+        var fechaAun = dateMode === 'exact'
+          ? !!document.getElementById('fechaMudanza').value
+          : !!selectedFlex;
+        if (dCurr && hCurr && fechaAun) {
           goStep(2);
         }
       }
@@ -1073,13 +1082,9 @@ function checkAutoAdvance() {
     }, 600);
 
   } else {
-    // Si se borró alguno, cancelar el auto-avance
-    if (_autoAdvanceTimer) {
-      clearTimeout(_autoAdvanceTimer);
-      _autoAdvanceTimer = null;
-    }
+    // Faltan datos — cancelar
+    if (_autoAdvanceTimer) { clearTimeout(_autoAdvanceTimer); _autoAdvanceTimer = null; }
     if (hint) hint.classList.remove('show');
-    // Quitar estado filled
     if (!d) document.getElementById('desde').classList.remove('filled');
     if (!h) document.getElementById('hasta').classList.remove('filled');
   }
@@ -1470,6 +1475,8 @@ function setDateMode(mode) {
 function toggleFlex(el) {
   document.querySelectorAll('.flex-chip').forEach(function(c) { c.classList.remove('sel'); });
   el.classList.add('sel'); selectedFlex = el.textContent;
+  // Verificar si ya podemos avanzar
+  checkAutoAdvance();
 }
 function getFechaLabel() {
   if (dateMode === 'flex') return selectedFlex || 'Fechas flexibles';
@@ -1780,7 +1787,12 @@ function closeLoginModal() { document.getElementById('loginModal').classList.rem
 // Fecha mínima hoy
 (function() {
   var f = document.getElementById('fechaMudanza');
-  if (f) { var h = new Date(); f.min = h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); }
+  if (f) {
+    var h = new Date();
+    f.min = h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0');
+    // Cuando se selecciona fecha exacta, verificar auto-avance
+    f.addEventListener('change', function() { checkAutoAdvance(); });
+  }
 })();
 </script>
 </body>
