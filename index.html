@@ -327,6 +327,72 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 .pac-matched{color:var(--emerald)!important}
 .pac-icon,.pac-logo{display:none!important}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+/* ── SELECTOR TIPO SERVICIO ── */
+.service-selector{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.4rem;animation:fadeUp .6s .3s ease both}
+.service-card{background:var(--surface);border:2px solid var(--border2);border-radius:16px;padding:1.2rem 1rem;cursor:pointer;transition:all .2s;text-align:center;user-select:none}
+.service-card:hover{border-color:rgba(34,195,106,.4);background:var(--emerald-subtle);transform:translateY(-2px)}
+.service-card.sel{border-color:var(--emerald);background:var(--emerald-subtle);box-shadow:0 0 0 1px var(--emerald),0 4px 20px var(--emerald-glow)}
+.service-card-icon{font-size:2rem;margin-bottom:8px;display:block}
+.service-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.5px;color:var(--text);margin-bottom:3px}
+.service-card.sel .service-card-title{color:var(--emerald)}
+.service-card-sub{font-size:10px;color:var(--text3);font-family:var(--mono);line-height:1.4}
+/* ── WIZARD FLETE ── */
+.flete-overlay{position:fixed;inset:0;z-index:800;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+.flete-overlay.open{display:flex}
+.flete-nav{display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;height:56px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
+.flete-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--text)}
+.flete-logo span{color:var(--emerald)}
+.flete-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:8px;line-height:1}
+.flete-progress{display:flex;align-items:center;padding:0 1.4rem;height:48px;border-bottom:1px solid var(--border);gap:0;flex-shrink:0}
+.flete-step-dot{display:flex;align-items:center;gap:6px;flex:1}
+.flete-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);background:var(--surface2);font-family:var(--mono);font-size:10px;font-weight:500;color:var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .3s}
+.flete-step-dot.active .flete-dot{border-color:var(--emerald);background:var(--emerald);color:#041A0E}
+.flete-step-dot.done .flete-dot{border-color:var(--emerald-dim);background:var(--emerald-subtle);color:var(--emerald)}
+.flete-dot-label{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;transition:color .3s}
+.flete-step-dot.active .flete-dot-label{color:var(--text)}
+.flete-step-dot.done .flete-dot-label{color:var(--emerald-dim)}
+.flete-line{flex:1;height:1px;background:var(--border);transition:background .4s;margin:0 6px}
+.flete-line.done{background:var(--emerald)}
+.flete-body{flex:1;overflow-y:auto;padding:1.8rem 1.4rem 7rem;max-width:600px;width:100%;margin:0 auto}
+.flete-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text);margin-bottom:.3rem}
+.flete-sub{font-size:13px;color:var(--text2);margin-bottom:1.4rem;line-height:1.5}
+.flete-footer{position:absolute;bottom:0;left:0;right:0;padding:1rem 1.4rem;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;z-index:1}
+.flete-btn-back{background:none;border:1px solid var(--border2);color:var(--text2);padding:11px 20px;border-radius:10px;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.flete-btn-next{background:var(--emerald);color:#041A0E;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;display:flex;align-items:center;gap:8px}
+.flete-btn-next:hover{background:#2EDB7A}
+.flete-btn-next:disabled{opacity:.5;cursor:not-allowed}
+.flete-panel{display:none}
+.flete-panel.active{display:block;animation:slideInStep .35s cubic-bezier(0.22,1,0.36,1) both}
+.foto-upload-area{border:2px dashed var(--border2);border-radius:14px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:1rem}
+.foto-upload-area:hover{border-color:var(--emerald);background:var(--emerald-subtle)}
+.foto-upload-area.has-files{border-color:var(--emerald);background:rgba(34,195,106,.04)}
+.foto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.foto-thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border2)}
+.foto-thumb img{width:100%;height:100%;object-fit:cover}
+.foto-thumb-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:white;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ia-loading{display:none;text-align:center;padding:1.2rem;background:var(--surface2);border:1px solid var(--border);border-radius:12px;margin-bottom:1rem}
+.ia-loading.show{display:block}
+.ia-result{display:none;background:var(--surface2);border:1px solid rgba(34,195,106,.2);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem}
+.ia-result.show{display:block;animation:slideInStep .3s ease both}
+.ia-result-title{font-size:10px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:10px}
+.ia-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:11px;font-family:var(--mono);background:var(--emerald-subtle);color:var(--emerald);border:1px solid rgba(34,195,106,.2);margin:3px 3px 3px 0}
+.ia-tag.warning{background:var(--amber-subtle);color:var(--amber);border-color:rgba(255,179,0,.2)}
+.flete-precio-box{background:var(--emerald-subtle);border:2px solid rgba(34,195,106,.3);border-radius:16px;padding:1.4rem;text-align:center;margin-bottom:1rem}
+.flete-precio-num{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--emerald);letter-spacing:2px;line-height:1}
+.flete-precio-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px}
+.flete-precio-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:1rem}
+.flete-precio-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:11px}
+.flete-precio-item-label{color:var(--text3);font-family:var(--mono);margin-bottom:2px}
+.flete-precio-item-val{color:var(--text);font-weight:600}
+.piso-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.piso-label{font-size:13px;color:var(--text2)}
+.asc-toggle{display:flex;gap:6px}
+.asc-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .2s}
+.asc-btn.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
+.piso-num{display:flex;align-items:center;gap:8px}
+.piso-num button{width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.piso-num button:hover{border-color:var(--emerald);color:var(--emerald)}
+.piso-num span{font-family:var(--mono);font-size:1rem;font-weight:500;color:var(--text);min-width:20px;text-align:center}
 .pay-modal-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
 .pay-modal-overlay.open{display:flex;animation:fadeUp .25s ease both}
 .pay-modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);width:100%;max-width:460px;padding:1.6rem;position:relative;box-shadow:0 40px 100px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto}
@@ -655,6 +721,18 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
       <span class="hero-badge">🇦🇷 El marketplace de mudanzas de Argentina</span>
       <h1>MUDARTE<br>NUNCA FUE<br><em>TAN FÁCIL</em></h1>
       <p class="hero-desc">Cargás tu mudanza en 2 minutos, recibís presupuestos reales de mudanceros verificados y coordinás todo desde tu celu. Sin llamadas, sin sorpresas.</p>
+      <div class="service-selector">
+        <div class="service-card sel" id="sc-mudanza" onclick="selectService('mudanza')">
+          <span class="service-card-icon">🏠</span>
+          <div class="service-card-title">Mudanza</div>
+          <div class="service-card-sub">Varios ambientes · Cotizaciones múltiples</div>
+        </div>
+        <div class="service-card" id="sc-flete" onclick="selectService('flete')">
+          <span class="service-card-icon">📦</span>
+          <div class="service-card-title">Flete</div>
+          <div class="service-card-sub">Objeto puntual · Precio inmediato</div>
+        </div>
+      </div>
       <div class="trust-row">
         <span class="trust-item"><span class="trust-dot"></span>+1.200 verificados</span>
         <span class="trust-item"><span class="trust-dot"></span>4.8★ promedio</span>
@@ -1905,9 +1983,494 @@ function closeLoginModal() {
   if (f) {
     var h = new Date();
     f.min = h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0');
-    // Sin auto-avance al cambiar fecha — solo es validación obligatoria
   }
+  var ff = document.getElementById('flete-fecha-val');
+  if (ff) ff.min = f ? f.min : '';
 })();
-</script>
+
+// ════════════════════════════════════════════════════
+// SELECTOR TIPO SERVICIO
+// ════════════════════════════════════════════════════
+var tipoServicio = 'mudanza';
+function selectService(tipo) {
+  tipoServicio = tipo;
+  document.getElementById('sc-mudanza').classList.toggle('sel', tipo === 'mudanza');
+  document.getElementById('sc-flete').classList.toggle('sel', tipo === 'flete');
+  if (tipo === 'flete') {
+    setTimeout(function() { openFlete(); }, 200);
+    // Resetear selector visual para la próxima vez
+    setTimeout(function() {
+      document.getElementById('sc-mudanza').classList.add('sel');
+      document.getElementById('sc-flete').classList.remove('sel');
+      tipoServicio = 'mudanza';
+    }, 500);
+  }
+}
+
+// ════════════════════════════════════════════════════
+// WIZARD FLETE
+// ════════════════════════════════════════════════════
+var fleteStep = 1;
+var fleteData = { desde:'', hasta:'', fecha:'hoy', pisoOrigen:0, pisoDestino:0, ascOrigen:true, ascDestino:true, fotos:[], iaAnalisis:null, precio:0, km:0 };
+
+function openFlete() {
+  document.getElementById('fleteOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  fleteGoStep(1);
+  fleteInitMaps();
+}
+function closeFlete() {
+  document.getElementById('fleteOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function fleteGoStep(n) {
+  var goingForward = n > fleteStep;
+  for (var i = 1; i <= 3; i++) {
+    var dot = document.getElementById('fd' + i);
+    dot.classList.remove('active','done');
+    if (i < n) dot.classList.add('done');
+    if (i === n) dot.classList.add('active');
+    if (i < 3) document.getElementById('fl' + i).classList.toggle('done', i < n);
+  }
+  document.querySelectorAll('.flete-panel').forEach(function(p){ p.classList.remove('active'); });
+  var panel = document.getElementById('fp' + n);
+  panel.classList.add('active');
+  if (!goingForward) panel.style.animationName = 'slideInStepBack';
+  else panel.style.animationName = 'slideInStep';
+
+  var footer = document.getElementById('flete-footer');
+  var back   = document.getElementById('flete-back');
+  var next   = document.getElementById('flete-next');
+  back.style.visibility = n === 1 ? 'hidden' : 'visible';
+
+  if (n === 3) {
+    calcularPrecioFlete();
+    next.textContent = 'Solicitar flete →';
+  } else {
+    next.textContent = 'Continuar →';
+  }
+  footer.style.display = 'flex';
+  fleteStep = n;
+  document.querySelector('#fleteOverlay .flete-body').scrollTop = 0;
+}
+
+function fleteNext() {
+  if (fleteStep === 1) {
+    var d = document.getElementById('flete-desde').value.trim();
+    var h = document.getElementById('flete-hasta').value.trim();
+    if (!d || !h) { alert('Ingresá origen y destino'); return; }
+    fleteData.desde = d; fleteData.hasta = h;
+    fleteGoStep(2);
+  } else if (fleteStep === 2) {
+    fleteGoStep(3);
+  } else if (fleteStep === 3) {
+    fleteSolicitar();
+  }
+}
+function fleteBack() { if (fleteStep > 1) fleteGoStep(fleteStep - 1); else closeFlete(); }
+
+function fleteSetFecha(modo) {
+  fleteData.fecha = modo;
+  ['hoy','manana','fecha'].forEach(function(m){
+    document.getElementById('flete-tab-' + m).classList.toggle('active', m === modo);
+  });
+  document.getElementById('flete-fecha-input').style.display = modo === 'fecha' ? 'block' : 'none';
+}
+
+// ── PISOS ──────────────────────────────────────────
+function changePiso(tipo, delta) {
+  var key = tipo === 'origen' ? 'pisoOrigen' : 'pisoDestino';
+  fleteData[key] = Math.max(0, Math.min(30, fleteData[key] + delta));
+  var el = document.getElementById('piso-' + tipo + '-val');
+  el.textContent = fleteData[key] === 0 ? 'PB' : fleteData[key] + '°';
+}
+function setAsc(tipo, val) {
+  var key = tipo === 'origen' ? 'ascOrigen' : 'ascDestino';
+  fleteData[key] = val;
+  document.getElementById('asc-' + tipo + '-si').classList.toggle('sel', val);
+  document.getElementById('asc-' + tipo + '-no').classList.toggle('sel', !val);
+}
+
+// ── FOTOS + IA ─────────────────────────────────────
+var fleteFotos = []; // array de {file, base64}
+
+function onFotosSelected(input) {
+  var files = Array.from(input.files).slice(0, 4);
+  if (!files.length) return;
+  var area = document.getElementById('fotoUploadArea');
+  area.classList.add('has-files');
+  var grid = document.getElementById('fotoGrid');
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+  fleteFotos = [];
+  var pending = files.length;
+  files.forEach(function(file, idx) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var b64 = e.target.result.split(',')[1];
+      fleteFotos.push({ file: file, base64: b64, dataUrl: e.target.result });
+      var thumb = document.createElement('div');
+      thumb.className = 'foto-thumb';
+      thumb.innerHTML = '<img src="' + e.target.result + '" alt="foto"/>'
+        + '<button class="foto-thumb-del" onclick="removeFoto(' + idx + ')">✕</button>';
+      grid.appendChild(thumb);
+      pending--;
+      if (pending === 0) analizarConIA();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeFoto(idx) {
+  fleteFotos.splice(idx, 1);
+  if (fleteFotos.length === 0) {
+    document.getElementById('fotoGrid').style.display = 'none';
+    document.getElementById('fotoUploadArea').classList.remove('has-files');
+    document.getElementById('iaResult').classList.remove('show');
+  } else { analizarConIA(); }
+}
+
+async function analizarConIA() {
+  if (!fleteFotos.length) return;
+  document.getElementById('iaLoading').classList.add('show');
+  document.getElementById('iaResult').classList.remove('show');
+  try {
+    var imageContent = fleteFotos.slice(0,2).map(function(f){
+      return { type:'image', source:{ type:'base64', media_type: f.file.type || 'image/jpeg', data: f.base64 } };
+    });
+    imageContent.push({ type:'text', text:'Analizá este objeto que necesita ser flete/mudado. Respondé SOLO con JSON válido (sin markdown) con estos campos: {"tipo":"nombre del objeto","peso_kg":número estimado,"dimensiones":"ancho x alto x prof en cm aprox","dificultad":"baja|media|alta","fragil":true/false,"requiere_desmontaje":true/false,"personas_necesarias":número,"notas":"observación breve"}' });
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:400, messages:[{ role:'user', content: imageContent }] })
+    });
+    var data = await response.json();
+    var text = (data.content || []).map(function(b){ return b.text || ''; }).join('');
+    var clean = text.replace(/```json|```/g,'').trim();
+    var obj = JSON.parse(clean);
+    fleteData.iaAnalisis = obj;
+    mostrarIAResult(obj);
+  } catch(e) {
+    console.warn('Error IA:', e.message);
+    document.getElementById('iaLoading').classList.remove('show');
+    document.getElementById('iaDesc').textContent = 'No se pudo analizar automáticamente. Continuá de todas formas.';
+    document.getElementById('iaResult').classList.add('show');
+  }
+}
+
+function mostrarIAResult(obj) {
+  document.getElementById('iaLoading').classList.remove('show');
+  var tags = '';
+  if (obj.tipo)       tags += '<span class="ia-tag">📦 ' + obj.tipo + '</span>';
+  if (obj.peso_kg)    tags += '<span class="ia-tag">⚖️ ~' + obj.peso_kg + 'kg</span>';
+  if (obj.dimensiones) tags += '<span class="ia-tag">📐 ' + obj.dimensiones + '</span>';
+  if (obj.fragil)     tags += '<span class="ia-tag warning">⚠️ Frágil</span>';
+  if (obj.requiere_desmontaje) tags += '<span class="ia-tag warning">🔧 Requiere desmontaje</span>';
+  if (obj.personas_necesarias > 1) tags += '<span class="ia-tag">👥 ' + obj.personas_necesarias + ' personas</span>';
+  document.getElementById('iaTags').innerHTML = tags;
+  document.getElementById('iaDesc').textContent = obj.notas || '';
+  document.getElementById('iaResult').classList.add('show');
+}
+
+// ── PRECIO ─────────────────────────────────────────
+function calcularPrecioFlete() {
+  var BASE      = 15000;
+  var POR_KM    = 800;
+  var PISO_SIN_ASC = 3000; // por piso sin ascensor
+  var PESADO    = 10000;
+  var FRAGIL    = 8000;
+  var GRANDE    = 12000;
+  var DESMONTAJE = 7000;
+
+  // Distancia — intentar leer del mapa si está disponible
+  var km = fleteData.km || 10; // default 10km si no hay mapa
+  var costoDist = km * POR_KM;
+
+  // Pisos sin ascensor
+  var costoOrigen  = (!fleteData.ascOrigen  && fleteData.pisoOrigen  > 0) ? fleteData.pisoOrigen  * PISO_SIN_ASC : 0;
+  var costoDestino = (!fleteData.ascDestino && fleteData.pisoDestino > 0) ? fleteData.pisoDestino * PISO_SIN_ASC : 0;
+
+  // IA
+  var costoIA = 0;
+  var ia = fleteData.iaAnalisis;
+  if (ia) {
+    if (ia.dificultad === 'alta' || (ia.peso_kg && ia.peso_kg > 80)) costoIA += PESADO;
+    if (ia.fragil) costoIA += FRAGIL;
+    if (ia.requiere_desmontaje) costoIA += DESMONTAJE;
+    if (ia.dimensiones && ia.dimensiones.includes('200')) costoIA += GRANDE;
+  }
+
+  var total = BASE + costoDist + costoOrigen + costoDestino + costoIA;
+  total = Math.round(total / 1000) * 1000;
+  fleteData.precio = total;
+
+  // Mostrar
+  document.getElementById('flete-precio-final').textContent = '$' + total.toLocaleString('es-AR');
+
+  var items = [
+    { label: 'Base', val: '$' + BASE.toLocaleString('es-AR') },
+    { label: 'Distancia (~' + km + 'km)', val: '$' + costoDist.toLocaleString('es-AR') },
+  ];
+  if (costoOrigen)  items.push({ label: 'Piso origen', val: '$' + costoOrigen.toLocaleString('es-AR') });
+  if (costoDestino) items.push({ label: 'Piso destino', val: '$' + costoDestino.toLocaleString('es-AR') });
+  if (costoIA)      items.push({ label: 'Tipo de objeto', val: '$' + costoIA.toLocaleString('es-AR') });
+
+  document.getElementById('flete-breakdown').innerHTML = items.map(function(item){
+    return '<div class="flete-precio-item"><div class="flete-precio-item-label">'+item.label+'</div><div class="flete-precio-item-val">'+item.val+'</div></div>';
+  }).join('');
+
+  // Resumen
+  var ia = fleteData.iaAnalisis;
+  var rows = [
+    '📍 ' + (fleteData.desde || '—'),
+    '🏁 ' + (fleteData.hasta || '—'),
+    '📅 ' + (fleteData.fecha === 'hoy' ? 'Hoy' : fleteData.fecha === 'manana' ? 'Mañana' : (document.getElementById('flete-fecha-val').value || '—')),
+  ];
+  if (ia && ia.tipo) rows.push('📦 ' + ia.tipo + (ia.peso_kg ? ' · ~' + ia.peso_kg + 'kg' : ''));
+  document.getElementById('flete-resumen').innerHTML = rows.map(function(r){
+    return '<span>' + r + '</span>';
+  }).join('');
+}
+
+async function fleteSolicitar() {
+  var user = null;
+  try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
+  if (!user) { _loginRol = 'cliente'; openLoginModal(); return; }
+
+  document.getElementById('flete-next').style.display = 'none';
+  document.getElementById('flete-back').style.display = 'none';
+  document.getElementById('flete-publishing').style.display = 'block';
+
+  var ia = fleteData.iaAnalisis;
+  var fecha = fleteData.fecha === 'hoy' ? 'Hoy' : fleteData.fecha === 'manana' ? 'Mañana' : (document.getElementById('flete-fecha-val').value || '—');
+
+  try {
+    await fetch('/api/cotizaciones?action=publicar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        clienteEmail:    user.email,
+        clienteNombre:   user.name,
+        desde:           fleteData.desde,
+        hasta:           fleteData.hasta,
+        ambientes:       'Flete',
+        fecha:           fecha,
+        servicios:       ia ? ia.tipo : 'Objeto a definir',
+        extras:          ia ? ('~' + (ia.peso_kg||'?') + 'kg · ' + (ia.dimensiones||'')) : '',
+        zonaBase:        fleteData.desde,
+        precio_estimado: fleteData.precio,
+        tipo:            'flete',
+        pisoOrigen:      fleteData.pisoOrigen,
+        pisoDestino:     fleteData.pisoDestino,
+        ascOrigen:       fleteData.ascOrigen,
+        ascDestino:      fleteData.ascDestino,
+      })
+    });
+  } catch(e) { console.warn('Error publicando flete:', e.message); }
+
+  document.getElementById('flete-publishing').style.display = 'none';
+  document.getElementById('flete-published').style.display = 'block';
+  document.getElementById('flete-footer').style.display = 'none';
+}
+
+// Calcular km cuando hay mapa disponible
+function fleteGetKmFromMaps() {
+  var d = document.getElementById('flete-desde').value.trim();
+  var h = document.getElementById('flete-hasta').value.trim();
+  if (!d || !h || !window.google) return;
+  var ds = new google.maps.DirectionsService();
+  ds.route({ origin: d + ', Argentina', destination: h + ', Argentina', travelMode: google.maps.TravelMode.DRIVING }, function(result, status) {
+    if (status === 'OK') {
+      var km = result.routes[0].legs[0].distance.value / 1000;
+      fleteData.km = Math.round(km);
+    }
+  });
+}
+
+function fleteInitMaps() {
+  var inputD = document.getElementById('flete-desde');
+  var inputH = document.getElementById('flete-hasta');
+  if (!window.google || !inputD) return;
+  function makeAC(input) {
+    var dropdown = document.createElement('ul');
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:99999;list-style:none;margin:4px 0 0;padding:0;background:#1D2820;border:1px solid #2A3C32;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.8);overflow:hidden;display:none;';
+    input.parentElement.style.position = 'relative';
+    input.parentElement.appendChild(dropdown);
+    var debounce;
+    input.addEventListener('input', function() {
+      clearTimeout(debounce);
+      var q = this.value.trim();
+      if (q.length < 2) { dropdown.style.display='none'; return; }
+      debounce = setTimeout(function() {
+        new google.maps.places.AutocompleteService().getPlacePredictions(
+          { input: q, componentRestrictions:{ country:'ar' }, types:['geocode','establishment'] },
+          function(predictions, status) {
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) { dropdown.style.display='none'; return; }
+            dropdown.innerHTML = '';
+            predictions.slice(0,5).forEach(function(s) {
+              var text = s.description || '';
+              var li = document.createElement('li');
+              li.textContent = text;
+              li.style.cssText = 'padding:12px 16px;font-size:14px;color:#7AADA0;cursor:pointer;border-top:1px solid #213029;font-family:Outfit,sans-serif;';
+              li.addEventListener('mousedown', function(e) { e.preventDefault(); input.value = text; dropdown.style.display='none'; fleteGetKmFromMaps(); });
+              li.addEventListener('mouseover', function() { this.style.background='rgba(34,195,106,.12)'; this.style.color='#E8F5EE'; });
+              li.addEventListener('mouseout', function() { this.style.background=''; this.style.color='#7AADA0'; });
+              dropdown.appendChild(li);
+            });
+            dropdown.style.display = 'block';
+          }
+        );
+      }, 300);
+    });
+    input.addEventListener('blur', function() { setTimeout(function(){ dropdown.style.display='none'; }, 250); });
+  }
+  makeAC(inputD); makeAC(inputH);
+}
+
+<!-- ══════════════════════════════════════════════════
+     WIZARD FLETE
+══════════════════════════════════════════════════ -->
+<div class="flete-overlay" id="fleteOverlay">
+  <div class="flete-nav">
+    <div class="flete-logo">Mudate<span>Ya</span> <span style="font-size:14px;color:var(--text3);font-family:var(--mono);letter-spacing:0;text-transform:none;font-weight:400">· Flete</span></div>
+    <button class="flete-close" onclick="closeFlete()">✕</button>
+  </div>
+  <div class="flete-progress">
+    <div class="flete-step-dot active" id="fd1"><div class="flete-dot">1</div><span class="flete-dot-label">Ruta</span></div>
+    <div class="flete-line" id="fl1"></div>
+    <div class="flete-step-dot" id="fd2"><div class="flete-dot">2</div><span class="flete-dot-label">El objeto</span></div>
+    <div class="flete-line" id="fl2"></div>
+    <div class="flete-step-dot" id="fd3"><div class="flete-dot">3</div><span class="flete-dot-label">Precio</span></div>
+  </div>
+
+  <div class="flete-body">
+
+    <!-- PASO 1: RUTA -->
+    <div class="flete-panel active" id="fp1">
+      <div class="flete-title">¿De dónde a dónde?</div>
+      <div class="flete-sub">Ingresá origen y destino del flete</div>
+      <div class="input-stack" style="margin-bottom:14px">
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+          <input class="addr-input" id="flete-desde" placeholder="Desde… (ej: Palermo, CABA)" autocomplete="new-password"/>
+        </div>
+        <div class="dot-connector"></div>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M12 5l7 7-7 7"/></svg>
+          <input class="addr-input" id="flete-hasta" placeholder="Hasta… (ej: Quilmes, GBA)" autocomplete="new-password"/>
+        </div>
+      </div>
+      <div class="field-label" style="margin-bottom:8px">¿Cuándo lo necesitás?</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button id="flete-tab-hoy" class="date-tab active" onclick="fleteSetFecha('hoy')">⚡ Hoy</button>
+        <button id="flete-tab-manana" class="date-tab" onclick="fleteSetFecha('manana')">📅 Mañana</button>
+        <button id="flete-tab-fecha" class="date-tab" onclick="fleteSetFecha('fecha')">🗓 Otra fecha</button>
+      </div>
+      <div id="flete-fecha-input" style="display:none">
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <input class="date-input" id="flete-fecha-val" type="date"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2: OBJETO + FOTOS + PISOS -->
+    <div class="flete-panel" id="fp2">
+      <div class="flete-title">¿Qué necesitás mover?</div>
+      <div class="flete-sub">Subí fotos para que la IA analice el objeto automáticamente</div>
+
+      <!-- Upload fotos -->
+      <div class="foto-upload-area" id="fotoUploadArea" onclick="document.getElementById('fotoInput').click()">
+        <div style="font-size:2rem;margin-bottom:8px">📷</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text2)">Tocá para subir fotos</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px">Hasta 4 fotos · JPG o PNG</div>
+      </div>
+      <input type="file" id="fotoInput" accept="image/*" multiple style="display:none" onchange="onFotosSelected(this)"/>
+      <div class="foto-grid" id="fotoGrid" style="display:none"></div>
+
+      <!-- Análisis IA -->
+      <div class="ia-loading" id="iaLoading">
+        <span class="spinner"></span>
+        <span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Analizando con IA…</span>
+      </div>
+      <div class="ia-result" id="iaResult">
+        <div class="ia-result-title">✦ Análisis IA</div>
+        <div id="iaTags"></div>
+        <div id="iaDesc" style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.5"></div>
+      </div>
+
+      <!-- Pisos -->
+      <div class="field-label" style="margin:14px 0 8px">Pisos y acceso</div>
+      <div class="piso-row">
+        <span class="piso-label">Piso origen</span>
+        <div class="piso-num">
+          <button onclick="changePiso('origen',-1)">−</button>
+          <span id="piso-origen-val">PB</span>
+          <button onclick="changePiso('origen',1)">+</button>
+        </div>
+        <div class="asc-toggle">
+          <button class="asc-btn sel" id="asc-origen-si" onclick="setAsc('origen',true)">🛗 Asc</button>
+          <button class="asc-btn" id="asc-origen-no" onclick="setAsc('origen',false)">🚶 No</button>
+        </div>
+      </div>
+      <div class="piso-row">
+        <span class="piso-label">Piso destino</span>
+        <div class="piso-num">
+          <button onclick="changePiso('destino',-1)">−</button>
+          <span id="piso-destino-val">PB</span>
+          <button onclick="changePiso('destino',1)">+</button>
+        </div>
+        <div class="asc-toggle">
+          <button class="asc-btn sel" id="asc-destino-si" onclick="setAsc('destino',true)">🛗 Asc</button>
+          <button class="asc-btn" id="asc-destino-no" onclick="setAsc('destino',false)">🚶 No</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 3: PRECIO + CONFIRMAR -->
+    <div class="flete-panel" id="fp3">
+      <div class="flete-title">Tu precio estimado</div>
+      <div class="flete-sub">Precio calculado en base a distancia, objeto y acceso</div>
+
+      <div class="flete-precio-box">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">PRECIO FIJO</div>
+        <div class="flete-precio-num" id="flete-precio-final">—</div>
+        <div class="flete-precio-sub">El fletero recibe este precio · Pagás por Mercado Pago</div>
+      </div>
+
+      <div class="flete-precio-breakdown" id="flete-breakdown"></div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;margin:1rem 0">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Resumen</div>
+        <div id="flete-resumen" style="font-size:12px;color:var(--text2);display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+
+      <div id="flete-publishing" style="display:none;text-align:center;padding:1.5rem 0">
+        <div style="position:relative;width:48px;height:48px;margin:0 auto 14px">
+          <span class="spinner" style="position:absolute;inset:0;width:48px;height:48px;border-width:3px;display:block"></span>
+          <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px">📦</span>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--text)">Buscando fleteros disponibles…</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px">Te notificamos en menos de 30 minutos</div>
+      </div>
+
+      <div id="flete-published" style="display:none">
+        <div style="background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);border-radius:14px;padding:1.2rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:6px">🚛</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--text);margin-bottom:4px">¡Flete publicado!</div>
+          <div style="font-size:12px;color:var(--text2)">Los fleteros de tu zona ya pueden ver tu pedido. Te avisamos cuando alguno acepte.</div>
+        </div>
+        <a href="/mi-mudanza" style="display:block;margin-top:1rem;text-align:center;padding:13px;background:var(--emerald);border-radius:10px;color:#041A0E;text-decoration:none;font-size:14px;font-weight:700">Ver estado del flete →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="flete-footer" id="flete-footer">
+    <button class="flete-btn-back" id="flete-back" onclick="fleteBack()">← Volver</button>
+    <button class="flete-btn-next" id="flete-next" onclick="fleteNext()">Continuar →</button>
+  </div>
+</div>
+
 </body>
 </html>
