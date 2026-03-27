@@ -21,20 +21,15 @@
 }
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
-/* LOGIN */
 #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
 .login-card{background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:2.5rem 2rem;max-width:400px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.5)}
 .login-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;margin-bottom:.3rem}
 .login-logo span{color:var(--emerald)}
 .login-sub{font-size:13px;color:var(--text2);margin-bottom:.5rem;line-height:1.6}
 .login-note{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1rem}
-.login-divider{font-size:11px;color:var(--text3);margin:1.2rem 0;display:flex;align-items:center;gap:10px}
-.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* APP */
 #appScreen{display:none;min-height:100vh}
 
-/* NAV */
 .nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:58px}
 .nav-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;text-decoration:none;color:var(--text)}
 .nav-logo span{color:var(--emerald)}
@@ -46,24 +41,20 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .btn-new{background:var(--emerald);color:#041A0E;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s}
 .btn-new:hover{background:#2EDB7A}
 
-/* BODY */
 .app-body{display:flex;min-height:calc(100vh - 58px)}
 
-/* SIDEBAR */
 .sidebar{width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:1.2rem 0;position:sticky;top:58px;height:calc(100vh - 58px)}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 1.2rem;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
 .sidebar-item:hover{background:var(--surface);color:var(--text)}
 .sidebar-item.active{background:var(--emerald-subtle);color:var(--emerald);border-left-color:var(--emerald)}
 .sidebar-icon{font-size:14px;width:18px;text-align:center}
 
-/* MAIN */
 .main{flex:1;padding:1.8rem;overflow-x:hidden;min-width:0}
 .page{display:none}
 .page.active{display:block;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem}
 
-/* MUDANZA CARD */
 .mudanza-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:1.4rem;margin-bottom:1rem;transition:border-color .2s}
 .mudanza-card:hover{border-color:rgba(34,195,106,.3)}
 .mudanza-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem}
@@ -77,7 +68,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .mud-tel{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .mudanza-actions{display:flex;gap:8px;flex-wrap:wrap}
 
-/* ESTADO STEPPER */
 .stepper{display:flex;gap:0;margin-bottom:1rem}
 .step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
 .step-item:not(:last-child)::after{content:'';position:absolute;top:12px;left:50%;right:-50%;height:2px;background:var(--border);z-index:0}
@@ -88,13 +78,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .step-label{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:5px;text-align:center;letter-spacing:.3px}
 .step-item.active .step-label{color:var(--emerald)}
 
-/* CALIFICACIÓN */
 .stars-row{display:flex;gap:6px;margin:8px 0}
 .star{font-size:1.5rem;cursor:pointer;transition:transform .1s;opacity:.4}
 .star.sel{opacity:1}
 .star:hover{transform:scale(1.15)}
 
-/* PAGO INFO */
 .pago-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem}
 .pago-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
 .pago-row:last-child{border-bottom:none;padding-top:8px;margin-top:4px}
@@ -103,46 +91,12 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .pago-val.green{color:var(--emerald)}
 .pago-val.amber{color:var(--amber)}
 
-/* BADGE */
 .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;font-size:10px;font-family:var(--mono);font-weight:600}
 .badge.confirmada{background:var(--emerald-subtle);color:var(--emerald);border:1px solid rgba(34,195,106,.2)}
 .badge.en-curso{background:var(--sky-subtle);color:var(--sky);border:1px solid rgba(41,182,246,.2)}
 .badge.pendiente{background:var(--amber-subtle);color:var(--amber);border:1px solid rgba(255,179,0,.2)}
 .badge.completada{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
 
-/* CHAT WHATSAPP STYLE */
-.chat-container{display:flex;height:calc(100vh - 160px);min-height:500px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.chat-sidebar{width:280px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg2)}
-.chat-sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text)}
-.chat-contacts-list{flex:1;overflow-y:auto}
-.chat-contact-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
-.chat-contact-item:hover{background:var(--surface)}
-.chat-contact-item.active{background:var(--emerald-subtle);border-left:3px solid var(--emerald)}
-.chat-contact-avatar{width:42px;height:42px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--emerald);font-family:var(--mono);flex-shrink:0}
-.chat-contact-info{flex:1;min-width:0}
-.chat-contact-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chat-contact-preview{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
-.chat-main-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface)}
-.chat-main-avatar{width:36px;height:36px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--emerald);font-family:var(--mono);flex-shrink:0}
-.chat-main-name{font-size:13px;font-weight:600;color:var(--text)}
-.chat-main-status{font-size:11px;color:var(--emerald);font-family:var(--mono)}
-.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
-.chat-bubble{max-width:68%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.55;word-break:break-word}
-.chat-bubble.mine{align-self:flex-end;background:#1A5A30;color:#E8F5EE;border-bottom-right-radius:3px}
-.chat-bubble.other{align-self:flex-start;background:var(--surface);border:1px solid var(--border);color:var(--text2);border-bottom-left-radius:3px}
-.chat-bubble-sender{font-size:10px;color:var(--emerald);font-family:var(--mono);margin-bottom:3px;font-weight:600}
-.chat-bubble-time{font-size:10px;opacity:.5;text-align:right;margin-top:3px}
-.chat-input-area{padding:10px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface)}
-.chat-input-field{flex:1;padding:10px 16px;border:1px solid var(--border2);border-radius:22px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s}
-.chat-input-field:focus{border-color:var(--emerald)}
-.chat-input-field::placeholder{color:var(--text3)}
-.chat-send-btn{width:38px;height:38px;border-radius:50%;background:var(--emerald);border:none;color:#041A0E;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
-.chat-send-btn:hover{background:#2EDB7A;transform:scale(1.05)}
-.chat-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text3);gap:8px;background:var(--bg)}
-@media(max-width:768px){.chat-sidebar{display:none}}
-
-/* EMPTY / LOADING */
 .empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
 .empty-icon{font-size:2.5rem;margin-bottom:10px}
 .empty-title{font-size:16px;font-weight:500;color:var(--text2);margin-bottom:6px}
@@ -152,7 +106,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* BTN */
 .btn{padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
 .btn-green{background:var(--emerald);color:#041A0E}
 .btn-green:hover{background:#2EDB7A}
@@ -160,6 +113,33 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .btn-ghost:hover{border-color:var(--emerald);color:var(--emerald)}
 .btn-sky{background:var(--sky-subtle);color:var(--sky);border:1px solid rgba(41,182,246,.2)}
 .btn-sky:hover{background:var(--sky);color:white}
+
+/* ── MODAL PRESUPUESTO PDF ── */
+.ppto-modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
+.ppto-modal-overlay.open{display:flex;animation:fadeIn .2s ease}
+.ppto-modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:1.6rem;max-width:480px;width:100%;position:relative;box-shadow:0 40px 100px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto}
+.ppto-close{position:absolute;top:1rem;right:1rem;background:var(--surface2);border:1px solid var(--border);color:var(--text3);width:28px;height:28px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ppto-close:hover{color:var(--text);border-color:var(--border2)}
+.ppto-header{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.ppto-avatar{width:44px;height:44px;border-radius:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--emerald);font-family:var(--mono);flex-shrink:0}
+.ppto-mud-name{font-size:15px;font-weight:600;color:var(--text)}
+.ppto-badge{font-size:10px;font-family:var(--mono);color:var(--emerald);background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);padding:2px 8px;border-radius:4px;margin-top:3px;display:inline-block}
+.ppto-section{margin-bottom:1rem}
+.ppto-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:8px}
+.ppto-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.ppto-row:last-child{border-bottom:none}
+.ppto-row-label{font-size:11px;font-weight:600;color:var(--text3);font-family:var(--mono);min-width:80px;padding-top:1px}
+.ppto-row-val{font-size:13px;color:var(--text);flex:1;line-height:1.4}
+.ppto-price-box{background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.25);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.ppto-price-num{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--emerald);letter-spacing:1px}
+.ppto-price-label{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:2px}
+.ppto-price-sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.ppto-nota{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);font-style:italic;line-height:1.5;margin-bottom:1rem}
+.ppto-actions{display:flex;gap:8px;margin-top:1rem}
+.ppto-btn-aceptar{flex:1;padding:13px;border-radius:10px;border:none;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.ppto-btn-aceptar:hover{background:#2EDB7A;transform:translateY(-1px)}
+.ppto-btn-cerrar{padding:13px 20px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.ppto-btn-cerrar:hover{border-color:var(--border);color:var(--text)}
 
 @media(max-width:768px){
   .sidebar{display:none}
@@ -178,7 +158,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
     <p class="login-sub">Iniciá sesión para publicar tu mudanza y seguir el estado en tiempo real.</p>
     <div style="margin:1.5rem 0" id="googleBtn"></div>
     <div class="login-note">🔒 Solo usamos tu email para identificarte · No publicamos nada en tu cuenta</div>
-    <a href="/" style="display:inline-block;margin-top:1rem;font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono);transition:color .2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">← Volver al inicio</a>
+    <a href="/" style="display:inline-block;margin-top:1rem;font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono)" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">← Volver al inicio</a>
   </div>
 </div>
 
@@ -196,37 +176,71 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
   <div class="app-body">
     <div class="sidebar">
-      <a class="sidebar-item active" onclick="showPage('mudanzas')" href="#">
+      <a class="sidebar-item active" onclick="showPage('mudanzas',event)" href="#">
         <span class="sidebar-icon">🚛</span> Mis mudanzas
       </a>
-      <a class="sidebar-item" onclick="showPage('pagos')" href="#">
+      <a class="sidebar-item" onclick="showPage('pagos',event)" href="#">
         <span class="sidebar-icon">💳</span> Pagos
       </a>
-      <a class="sidebar-item" onclick="showPage('calificaciones')" href="#">
+      <a class="sidebar-item" onclick="showPage('calificaciones',event)" href="#">
         <span class="sidebar-icon">⭐</span> Calificaciones
       </a>
     </div>
 
     <div class="main">
-
-      <!-- MIS MUDANZAS -->
       <div class="page active" id="page-mudanzas">
         <div class="page-title">Mis mudanzas</div>
         <div id="mudanzasList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
       </div>
-
-      <!-- PAGOS -->
       <div class="page" id="page-pagos">
         <div class="page-title">Mis pagos</div>
         <div id="pagosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
       </div>
-
-      <!-- CALIFICACIONES -->
       <div class="page" id="page-calificaciones">
         <div class="page-title">Calificaciones</div>
         <div id="calificacionesList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
       </div>
+    </div>
+  </div>
+</div>
 
+<!-- MODAL PRESUPUESTO -->
+<div class="ppto-modal-overlay" id="pptoModal">
+  <div class="ppto-modal">
+    <button class="ppto-close" onclick="cerrarPresupuesto()">✕</button>
+    <div class="ppto-header">
+      <div class="ppto-avatar" id="ppto-initials">MV</div>
+      <div>
+        <div class="ppto-mud-name" id="ppto-nombre">—</div>
+        <span class="ppto-badge">✓ VERIFICADO · MudateYa</span>
+      </div>
+    </div>
+
+    <div class="ppto-section">
+      <div class="ppto-section-title">Detalle de la mudanza</div>
+      <div id="ppto-rows"></div>
+    </div>
+
+    <div class="ppto-price-box">
+      <div>
+        <div class="ppto-price-label">PRECIO COTIZADO</div>
+        <div class="ppto-price-num" id="ppto-precio">—</div>
+        <div class="ppto-price-sub">Pago 100% por Mercado Pago</div>
+      </div>
+      <div style="text-align:right">
+        <div class="ppto-price-label">TIEMPO ESTIMADO</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text)" id="ppto-tiempo">—</div>
+      </div>
+    </div>
+
+    <div id="ppto-nota-wrap" style="display:none">
+      <div class="ppto-section-title">Nota del mudancero</div>
+      <div class="ppto-nota" id="ppto-nota"></div>
+    </div>
+
+    <div class="ppto-actions">
+      <button class="ppto-btn-cerrar" onclick="cerrarPresupuesto()">Cerrar</button>
+      <button class="ppto-btn-aceptar" id="ppto-btn-aceptar">Elegir este mudancero →</button>
     </div>
   </div>
 </div>
@@ -235,9 +249,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 var GOOGLE_CLIENT_ID = '';
 var currentUser = null;
 var mudanzasData = [];
-var chatMsgs = [];
 
-// ── INIT ──────────────────────────────────────────────────────────────────
 window.onload = async function(){
   try{
     var r = await fetch('/api/admin-config');
@@ -255,14 +267,8 @@ window.onload = async function(){
   }
 
   if(GOOGLE_CLIENT_ID){
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredential,
-    });
-    google.accounts.id.renderButton(
-      document.getElementById('googleBtn'),
-      {theme:'filled_black',size:'large',text:'signin_with',width:300}
-    );
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential });
+    google.accounts.id.renderButton(document.getElementById('googleBtn'), {theme:'filled_black',size:'large',text:'signin_with',width:300});
   }
 };
 
@@ -270,7 +276,6 @@ function handleCredential(response){
   var payload = JSON.parse(atob(response.credential.split('.')[1]));
   currentUser = {name:payload.name, email:payload.email, picture:payload.picture};
   sessionStorage.setItem('clienteUser', JSON.stringify(currentUser));
-  // Guardar en sessionStorage para que la landing sepa que está logueado
   sessionStorage.setItem('googleUser', JSON.stringify(currentUser));
   showApp();
 }
@@ -292,9 +297,7 @@ function logout(){
 // ── MUDANZAS ───────────────────────────────────────────────────────────────
 async function loadMudanzas(){
   document.getElementById('mudanzasList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
-
   try{
-    // Timeout de 8 segundos
     var controller = new AbortController();
     var timeout = setTimeout(function(){ controller.abort(); }, 8000);
     var r = await fetch('/api/cotizaciones?action=mis-mudanzas&email='+encodeURIComponent(currentUser.email), { signal: controller.signal });
@@ -302,7 +305,6 @@ async function loadMudanzas(){
     var d = await r.json();
     mudanzasData = d.mudanzas || [];
   }catch(e){
-    console.warn('Error cargando mudanzas:', e.message);
     mudanzasData = [];
   }
 
@@ -317,92 +319,57 @@ async function loadMudanzas(){
     return;
   }
 
-  var html = mudanzasData.map((m, idx) => renderMudanzaCard(m, idx)).join('');
-  document.getElementById('mudanzasList').innerHTML = html;
+  document.getElementById('mudanzasList').innerHTML = mudanzasData.map(function(m, idx){ return renderMudanzaCard(m, idx); }).join('');
 }
 
 function renderMudanzaCard(m, idx){
   var cotizaciones = m.cotizaciones || [];
   var tieneCotz = cotizaciones.length > 0;
-
-  // Mudanza pagada por transferencia
-  if(m.tipoPago === 'transferencia'){
-    var confirmada = m.estado === 'cotizacion_aceptada';
-    var rechazada = m.estado === 'transferencia_rechazada';
-    var estadoLabel = confirmada ? '✓ Reserva confirmada' : rechazada ? 'Transferencia rechazada' : 'Validando transferencia';
-    var estadoColor = confirmada ? 'confirmada' : rechazada ? 'rechazada' : 'pendiente';
-    var mud = m.cotizacionAceptada || {};
-    return `
-      <div class="mudanza-card" style="border-left:3px solid ${confirmada?'var(--emerald)':rechazada?'var(--red)':'var(--amber)'}">
-        <div class="mudanza-header">
-          <div>
-            <div class="mudanza-ruta">${m.desde} → ${m.hasta}</div>
-            <div class="mudanza-fecha">📅 ${m.fecha||'—'}</div>
-          </div>
-          <span class="badge ${estadoColor}">${estadoLabel}</span>
-        </div>
-        ${confirmada ? `
-          <div style="background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--emerald)">
-            ✅ Tu transferencia fue validada. Tu mudanza está confirmada.
-          </div>` : rechazada ? `
-          <div style="background:var(--red-subtle);border:1px solid rgba(255,82,82,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--red)">
-            ✗ No pudimos validar tu transferencia. Contactanos respondiendo el email que te enviamos.
-          </div>` : `
-          <div style="background:var(--amber-subtle);border:1px solid rgba(255,179,0,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--amber)">
-            ⏳ Tu transferencia está siendo validada. Te avisamos en las próximas 2hs hábiles.
-          </div>`}
-        ${mud.mudanceroNombre ? `
-          <div class="mudanza-mudancero">
-            <div class="mud-avatar">${mud.mudanceroNombre.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
-            <div>
-              <div class="mud-name">${mud.mudanceroNombre}</div>
-              <div class="mud-tel">💰 ${m.montoTransferencia||'—'} · Transferencia bancaria</div>
-            </div>
-            ${confirmada && mud.mudanceroTel ? `<a href="https://wa.me/${String(mud.mudanceroTel).replace(/\D/g,'')}" target="_blank" class="btn btn-green" style="margin-left:auto;font-size:12px;padding:7px 14px">WhatsApp</a>` : ''}
-          </div>` : ''}
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-ghost" onclick="window.location.reload()" style="font-size:12px">↻ Actualizar estado</button>
-        </div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: ${m.id}</div>
-      </div>`;
-  }
-
   var pasoActual = m.estado === 'cotizacion_aceptada' ? 2 : tieneCotz ? 1 : 0;
   var pasos = ['Publicada','Cotizaciones recibidas','Mudancero confirmado','En curso','Completada'];
 
-  var stepperHtml = pasos.map((p, i) => `
-    <div class="step-item ${i < pasoActual ? 'done' : i === pasoActual ? 'active' : ''}">
-      <div class="step-dot">${i < pasoActual ? '✓' : i+1}</div>
-      <div class="step-label">${p}</div>
-    </div>`).join('');
+  var stepperHtml = pasos.map(function(p, i){
+    return '<div class="step-item '+(i < pasoActual ? 'done' : i === pasoActual ? 'active' : '')+'"><div class="step-dot">'+(i < pasoActual ? '✓' : i+1)+'</div><div class="step-label">'+p+'</div></div>';
+  }).join('');
 
   var badgeClass = pasoActual === 0 ? 'pendiente' : pasoActual === 1 ? 'en-curso' : 'confirmada';
   var badgeText = pasoActual === 0 ? 'Buscando cotizaciones' : pasoActual === 1 ? cotizaciones.length+' cotización'+(cotizaciones.length>1?'es':'') : 'Confirmada';
 
-  // Cotizaciones recibidas
+  // ── COTIZACIONES con botón "Ver presupuesto" ──────────────────────────
   var cotzHtml = '';
   if(tieneCotz){
-    cotzHtml = `<div style="margin:1rem 0">
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cotizaciones recibidas</div>
-      ${cotizaciones.map(c => {
-        var isAceptada = m.cotizacionAceptada?.id === c.id;
-        return `<div style="background:var(--surface2);border:1px solid ${isAceptada?'var(--emerald)':'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:500;color:var(--text)">${c.mudanceroNombre}</div>
-            ${c.tiempoEstimado?`<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">⏱ ${c.tiempoEstimado}</div>`:''}
-            ${c.nota?`<div style="font-size:11px;color:var(--text2);margin-top:3px;font-style:italic">"${c.nota}"</div>`:''}
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--emerald);letter-spacing:.5px">$${c.precio.toLocaleString('es-AR')}</div>
-            ${isAceptada
-              ? '<div style="font-size:10px;color:var(--emerald);font-family:var(--mono)">✓ Aceptada</div>'
-              : m.estado !== 'cotizacion_aceptada'
-                ? `<button class="btn btn-green" style="font-size:11px;padding:5px 12px;margin-top:4px" onclick="aceptarCotizacion('${m.id}','${c.id}')">Elegir →</button>`
-                : ''}
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
+    cotzHtml = '<div style="margin:1rem 0">'
+      + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cotizaciones recibidas</div>'
+      + cotizaciones.map(function(c){
+          var isAceptada = m.cotizacionAceptada && m.cotizacionAceptada.id === c.id;
+          var mData = JSON.stringify(m).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+          var cData = JSON.stringify(c).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+          return '<div style="background:var(--surface2);border:1px solid '+(isAceptada?'var(--emerald)':'var(--border)')+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+            // Fila superior: nombre + precio
+            + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(isAceptada||m.estado==='cotizacion_aceptada'?'0':'8px')+'">'
+            +   '<div style="flex:1">'
+            +     '<div style="font-size:13px;font-weight:500;color:var(--text)">'+c.mudanceroNombre+'</div>'
+            +     (c.tiempoEstimado?'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">⏱ '+c.tiempoEstimado+'</div>':'')
+            +   '</div>'
+            +   '<div style="text-align:right;flex-shrink:0">'
+            +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--emerald);letter-spacing:.5px">$'+c.precio.toLocaleString('es-AR')+'</div>'
+            +     (isAceptada ? '<div style="font-size:10px;color:var(--emerald);font-family:var(--mono)">✓ Aceptada</div>' : '')
+            +   '</div>'
+            + '</div>'
+            // Botones — solo si no está aceptada ni hay otra aceptada
+            + ((!isAceptada && m.estado !== 'cotizacion_aceptada') ? (
+                '<div style="display:flex;gap:6px;margin-top:6px">'
+                // Ver presupuesto
+                + '<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;flex:1" '
+                +   'onclick="verPresupuesto('+JSON.stringify(m).replace(/"/g,"'")+'|SPLIT|'+JSON.stringify(c).replace(/"/g,"'")+')">📄 Ver presupuesto</button>'
+                // Elegir
+                + '<button class="btn btn-green" style="font-size:11px;padding:6px 14px" '
+                +   'onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\')">Elegir →</button>'
+                + '</div>'
+              ) : '')
+            + '</div>';
+        }).join('')
+      + '</div>';
   }
 
   var expira = new Date(m.expira);
@@ -410,46 +377,110 @@ function renderMudanzaCard(m, idx){
   var horasRestantes = Math.max(0, Math.round((expira - ahorita) / 3600000));
   var mud = m.cotizacionAceptada || {};
 
-  return `
-    <div class="mudanza-card">
-      <div class="mudanza-header">
-        <div>
-          <div class="mudanza-ruta">${m.desde} → ${m.hasta}</div>
-          <div class="mudanza-fecha">📅 ${m.fecha||'A confirmar'} · ${m.ambientes||'—'}</div>
-        </div>
-        <span class="badge ${badgeClass}">${badgeText}</span>
-      </div>
-
-      <div class="stepper">${stepperHtml}</div>
-
-      ${pasoActual === 0 ? `<div style="font-size:11px;color:var(--amber);font-family:var(--mono);margin-bottom:10px">⏱ Expira en ${horasRestantes}hs · los mudanceros están enviando cotizaciones</div>` : ''}
-
-      ${cotzHtml}
-
-      ${m.cotizacionAceptada ? `
-        <div class="mudanza-mudancero">
-          <div class="mud-avatar">${m.cotizacionAceptada.mudanceroNombre.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
-          <div>
-            <div class="mud-name">${m.cotizacionAceptada.mudanceroNombre}</div>
-            <div class="mud-tel">📱 ${m.cotizacionAceptada.mudanceroTel||'—'}</div>
-          </div>
-          ${m.cotizacionAceptada.mudanceroTel ? `<a href="https://wa.me/${String(m.cotizacionAceptada.mudanceroTel).replace(/\D/g,'')}" target="_blank" class="btn btn-green" style="margin-left:auto;font-size:12px;padding:7px 14px">WhatsApp</a>` : ''}
-        </div>` : ''}
-
-      <div class="mudanza-meta">
-        ${m.extras ? `<span class="meta-tag">📦 ${m.extras}</span>` : ''}
-        ${m.precio_estimado ? `<span class="meta-tag">Estimado: $${parseInt(m.precio_estimado).toLocaleString('es-AR')}</span>` : ''}
-      </div>
-
-      <div class="mudanza-actions" style="margin-top:8px">
-        ${mud.mudanceroTel ? `<a href="https://wa.me/${String(mud.mudanceroTel).replace(/\D/g,'')}" target="_blank" class="btn btn-green" style="font-size:13px;padding:10px 20px">📱 Coordinar por WhatsApp</a>` : ''}
-        <button class="btn btn-ghost" style="font-size:12px" onclick="window.location.reload()">↻ Actualizar</button>
-      </div>
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: ${m.id}</div>
-    </div>`;
+  return '<div class="mudanza-card">'
+    + '<div class="mudanza-header">'
+    +   '<div><div class="mudanza-ruta">'+m.desde+' → '+m.hasta+'</div>'
+    +   '<div class="mudanza-fecha">📅 '+(m.fecha||'A confirmar')+' · '+(m.ambientes||'—')+'</div></div>'
+    +   '<span class="badge '+badgeClass+'">'+badgeText+'</span>'
+    + '</div>'
+    + '<div class="stepper">'+stepperHtml+'</div>'
+    + (pasoActual === 0 ? '<div style="font-size:11px;color:var(--amber);font-family:var(--mono);margin-bottom:10px">⏱ Expira en '+horasRestantes+'hs · los mudanceros están enviando cotizaciones</div>' : '')
+    + cotzHtml
+    + (m.cotizacionAceptada ? '<div class="mudanza-mudancero">'
+        + '<div class="mud-avatar">'+m.cotizacionAceptada.mudanceroNombre.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)+'</div>'
+        + '<div><div class="mud-name">'+m.cotizacionAceptada.mudanceroNombre+'</div>'
+        + '<div class="mud-tel">📱 '+(m.cotizacionAceptada.mudanceroTel||'—')+'</div></div>'
+        + (m.cotizacionAceptada.mudanceroTel ? '<a href="https://wa.me/'+String(m.cotizacionAceptada.mudanceroTel).replace(/\D/g,'')+'" target="_blank" class="btn btn-green" style="margin-left:auto;font-size:12px;padding:7px 14px">WhatsApp</a>' : '')
+        + '</div>' : '')
+    + '<div class="mudanza-meta">'
+    +   (m.extras ? '<span class="meta-tag">📦 '+m.extras+'</span>' : '')
+    +   (m.precio_estimado ? '<span class="meta-tag">Estimado: $'+parseInt(m.precio_estimado).toLocaleString('es-AR')+'</span>' : '')
+    + '</div>'
+    + '<div class="mudanza-actions" style="margin-top:8px">'
+    +   (mud.mudanceroTel ? '<a href="https://wa.me/'+String(mud.mudanceroTel).replace(/\D/g,'')+'" target="_blank" class="btn btn-green" style="font-size:13px;padding:10px 20px">📱 Coordinar por WhatsApp</a>' : '')
+    +   '<button class="btn btn-ghost" style="font-size:12px" onclick="loadMudanzas()">↻ Actualizar</button>'
+    + '</div>'
+    + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: '+m.id+'</div>'
+    + '</div>';
 }
 
+// ── MODAL VER PRESUPUESTO ──────────────────────────────────────────────────
+// El onclick pasa los datos como string JSON separados por |SPLIT|
+// (evita problemas con comillas anidadas en atributos HTML)
+var _pptoMudanzaId = null;
+var _pptoCotizacionId = null;
+
+function verPresupuesto(raw) {
+  // raw viene como "jsonM|SPLIT|jsonC" con comillas simples en lugar de dobles
+  var parts = raw.split('|SPLIT|');
+  var m, c;
+  try {
+    m = JSON.parse(parts[0].replace(/'/g, '"'));
+    c = JSON.parse(parts[1].replace(/'/g, '"'));
+  } catch(e) {
+    console.error('Error parseando presupuesto:', e);
+    return;
+  }
+
+  _pptoMudanzaId    = m.id;
+  _pptoCotizacionId = c.id;
+
+  // Initials
+  var initials = (c.mudanceroNombre || 'MV').split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
+  document.getElementById('ppto-initials').textContent = initials;
+  document.getElementById('ppto-nombre').textContent   = c.mudanceroNombre || '—';
+  document.getElementById('ppto-precio').textContent   = '$' + (c.precio || 0).toLocaleString('es-AR');
+  document.getElementById('ppto-tiempo').textContent   = c.tiempoEstimado || 'A coordinar';
+
+  // Nota
+  if (c.nota) {
+    document.getElementById('ppto-nota-wrap').style.display = 'block';
+    document.getElementById('ppto-nota').textContent = '"' + c.nota + '"';
+  } else {
+    document.getElementById('ppto-nota-wrap').style.display = 'none';
+  }
+
+  // Filas de detalle
+  var rows = [
+    ['Desde',     m.desde     || '—', '📍'],
+    ['Hasta',     m.hasta     || '—', '🏁'],
+    ['Fecha',     m.fecha     || '—', '📅'],
+    ['Ambientes', m.ambientes || '—', '🏠'],
+    ['Objetos',   m.servicios || '—', '📦'],
+  ];
+  if (m.extras) rows.push(['Servicios', m.extras, '✅']);
+
+  document.getElementById('ppto-rows').innerHTML = rows.map(function(row){
+    return '<div class="ppto-row">'
+      + '<span class="ppto-row-label">'+row[0]+'</span>'
+      + '<span class="ppto-row-val">'+row[2]+' '+row[1]+'</span>'
+      + '</div>';
+  }).join('');
+
+  // Botón aceptar
+  document.getElementById('ppto-btn-aceptar').onclick = function(){
+    cerrarPresupuesto();
+    aceptarCotizacion(_pptoMudanzaId, _pptoCotizacionId);
+  };
+
+  document.getElementById('pptoModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarPresupuesto(){
+  document.getElementById('pptoModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Cerrar con click fuera
+document.getElementById('pptoModal').addEventListener('click', function(e){
+  if (e.target === this) cerrarPresupuesto();
+});
+
+// ── ACEPTAR COTIZACIÓN ─────────────────────────────────────────────────────
 async function aceptarCotizacion(mudanzaId, cotizacionId){
+  var btn = event && event.currentTarget;
+  if (btn) { btn.disabled = true; btn.textContent = 'Procesando…'; }
   try{
     var r = await fetch('/api/cotizaciones?action=aceptar', {
       method: 'POST',
@@ -461,6 +492,7 @@ async function aceptarCotizacion(mudanzaId, cotizacionId){
     await loadMudanzas();
   }catch(e){
     alert('Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Elegir →'; }
   }
 }
 
@@ -470,295 +502,86 @@ function renderPagos(){
     document.getElementById('pagosList').innerHTML = '<div class="empty"><div class="empty-icon">💳</div>Sin pagos registrados aún</div>';
     return;
   }
-
-  var html = mudanzasData.map(m => {
-    // Transferencia bancaria
-    if(m.tipoPago === 'transferencia'){
-      var mud = m.cotizacionAceptada || {};
-      var estadoPago = m.estado === 'cotizacion_aceptada' ? 'Confirmada' : 'Pendiente de validación';
-      var estadoColor = m.estado === 'cotizacion_aceptada' ? 'green' : 'amber';
-      return `
-        <div class="pago-card">
-          <div class="pago-row"><span class="pago-label">Mudanza</span><span class="pago-val">${m.desde} → ${m.hasta}</span></div>
-          <div class="pago-row"><span class="pago-label">Mudancero</span><span class="pago-val">${mud.mudanceroNombre||'—'}</span></div>
-          <div class="pago-row"><span class="pago-label">Tipo de pago</span><span class="pago-val">🏦 Transferencia bancaria</span></div>
-          <div class="pago-row"><span class="pago-label">Monto transferido</span><span class="pago-val ${estadoColor}">${m.montoTransferencia||'—'}</span></div>
-          <div class="pago-row"><span class="pago-label">Estado</span><span class="pago-val ${estadoColor}">${estadoPago}</span></div>
-          <div class="pago-row"><span class="pago-label">Fecha</span><span class="pago-val">${m.fecha||'—'}</span></div>
-          <div style="margin-top:10px">
-            <button class="btn btn-ghost" onclick="descargarComprobanteTransfer(${JSON.stringify(m).replace(/"/g,'&quot;')})" style="font-size:12px">⬇ Descargar comprobante</button>
-          </div>
-        </div>`;
-    }
-    // Mercado Pago
+  var html = mudanzasData.map(function(m){
     if(m.cotizacionAceptada || m.precio){
-      var mud2 = m.cotizacionAceptada || {};
-      var precio = mud2.precio || parseInt(m.precio||0);
-      var monto = parseInt(m.montoMP||0) || Math.round(precio*0.1);
-      return `
-        <div class="pago-card">
-          <div class="pago-row"><span class="pago-label">Mudanza</span><span class="pago-val">${m.desde} → ${m.hasta}</span></div>
-          <div class="pago-row"><span class="pago-label">Mudancero</span><span class="pago-val">${mud2.mudanceroNombre||m.mudancero?.nombre||'—'}</span></div>
-          <div class="pago-row"><span class="pago-label">Tipo de pago</span><span class="pago-val">💳 Mercado Pago</span></div>
-          <div class="pago-row"><span class="pago-label">Monto pagado a MudateYa</span><span class="pago-val green">$${monto.toLocaleString('es-AR')}</span></div>
-          <div class="pago-row"><span class="pago-label">Precio total mudanza</span><span class="pago-val">$${precio.toLocaleString('es-AR')}</span></div>
-          <div class="pago-row"><span class="pago-label">Fecha</span><span class="pago-val">${m.fechaPago||m.fecha||'—'}</span></div>
-          <div style="margin-top:10px">
-            <button class="btn btn-ghost" onclick="descargarComprobante(${JSON.stringify(m).replace(/"/g,'&quot;')})" style="font-size:12px">⬇ Descargar comprobante</button>
-          </div>
-        </div>`;
+      var mud = m.cotizacionAceptada || {};
+      var precio = mud.precio || parseInt(m.precio||0);
+      return '<div class="pago-card">'
+        + '<div class="pago-row"><span class="pago-label">Mudanza</span><span class="pago-val">'+m.desde+' → '+m.hasta+'</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Mudancero</span><span class="pago-val">'+(mud.mudanceroNombre||'—')+'</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Método</span><span class="pago-val">💳 Mercado Pago</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Total</span><span class="pago-val green">$'+precio.toLocaleString('es-AR')+'</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Fecha</span><span class="pago-val">'+(m.fecha||'—')+'</span></div>'
+        + '</div>';
     }
     return '';
   }).filter(Boolean).join('');
-
   document.getElementById('pagosList').innerHTML = html || '<div class="empty"><div class="empty-icon">💳</div>Sin pagos aún</div>';
 }
 
-function descargarComprobanteTransfer(m){
-  var mud = m.cotizacionAceptada || {};
-  var contenido = `COMPROBANTE DE PAGO — MUDATEYA
-================================
-Fecha: ${m.fecha||'—'}
-Mudanza: ${m.desde} → ${m.hasta}
-Mudancero: ${mud.mudanceroNombre||'—'}
-
-DETALLE DE PAGO
----------------
-Tipo: Transferencia bancaria
-Monto transferido: ${m.montoTransferencia||'—'}
-Estado: ${m.estado === 'cotizacion_aceptada' ? 'Confirmada' : 'Pendiente de validación'}
-
-Cliente: ${currentUser.name}
-Email: ${currentUser.email}
-
-================================
-mudateya.ar | soporte@mudateya.ar`;
-
-  var blob = new Blob([contenido], {type:'text/plain'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'comprobante-transferencia-mudateya.txt';
-  a.click();
-}
-
-function descargarComprobante(m){
-  var contenido = `COMPROBANTE DE PAGO — MUDATEYA
-================================
-Fecha: ${m.fechaPago||m.fecha||'—'}
-Mudanza: ${m.desde} → ${m.hasta}
-Mudancero: ${m.mudancero?.nombre||'—'}
-Ambientes: ${m.ambientes||'—'}
-
-DETALLE DE PAGO
----------------
-Precio total mudanza: $${parseInt(m.precio||0).toLocaleString('es-AR')}
-Monto pagado a MudateYa: $${parseInt(m.montoMP||0).toLocaleString('es-AR')}
-${m.tipoPago==='fee'?'Resto al mudancero: $'+(parseInt(m.precio||0)-parseInt(m.montoMP||0)).toLocaleString('es-AR'):'Pago total incluido'}
-
-Cliente: ${currentUser.name}
-Email: ${currentUser.email}
-
-================================
-mudateya.ar | soporte@mudateya.ar`;
-
-  var blob = new Blob([contenido], {type:'text/plain'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'comprobante-mudateya.txt';
-  a.click();
-}
-
-// ── CHAT ───────────────────────────────────────────────────────────────────
-var chatMudanzaActiva = null;
-var chatPolling = null;
-var chatUltimoId = 0;
-
-function showPage(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  if(event) event.currentTarget.classList.add('active');
-  if(name==='pagos') renderPagos();
-  if(name==='calificaciones') renderCalificaciones();
-  if(name==='chat') loadConversaciones();
-  // Detener polling si salimos del chat
-  if(name!=='chat' && chatPolling){ clearInterval(chatPolling); chatPolling=null; }
-}
-
-async function loadConversaciones(){
-  try{
-    var r = await fetch('/api/chat?action=conversaciones&email='+encodeURIComponent(currentUser.email));
-    var d = await r.json();
-    var convs = d.conversaciones || [];
-
-    // También mostrar mudanzas activas sin mensajes
-    var todasMudanzas = mudanzasData.filter(m => m.cotizacionAceptada || m.tipoPago === 'transferencia');
-
-    if(todasMudanzas.length === 0 && convs.length === 0){
-      document.getElementById('chatList').innerHTML = '<div class="empty" style="margin:auto"><div class="empty-icon">💬</div>Cuando tengas una mudanza confirmada podés chatear con tu mudancero acá</div>';
-      return;
-    }
-
-    // Armar lista de contactos
-    var contactosHtml = todasMudanzas.map(m => {
-      var mud = m.cotizacionAceptada || {};
-      var conv = convs.find(c => c.mudanzaId === m.id);
-      var ultimo = conv?.ultimoMensaje?.texto || 'Sin mensajes aún';
-      var initials = (mud.mudanceroNombre||'MV').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-      return `
-        <div class="chat-contact-item ${chatMudanzaActiva===m.id?'active':''}" onclick="abrirChat('${m.id}','${(mud.mudanceroNombre||'Mudancero').replace(/'/g,"\\'")}','${initials}')">
-          <div class="chat-contact-avatar">${initials}</div>
-          <div class="chat-contact-info">
-            <div class="chat-contact-name">${mud.mudanceroNombre||'Mudancero'}</div>
-            <div class="chat-contact-preview">${m.desde?.split(',')[0]||'—'} → ${m.hasta?.split(',')[0]||'—'}</div>
-            <div class="chat-contact-preview">${ultimo.substring(0,35)}${ultimo.length>35?'…':''}</div>
-          </div>
-        </div>`;
-    }).join('');
-
-    document.getElementById('chatContacts').innerHTML = contactosHtml || '<div style="padding:2rem;text-align:center;color:var(--text3);font-size:12px">Sin conversaciones aún</div>';
-
-    // Abrir primera si hay
-    if(todasMudanzas.length > 0 && !chatMudanzaActiva){
-      var mud = todasMudanzas[0].cotizacionAceptada || {};
-      var initials = (mud.mudanceroNombre||'MV').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-      abrirChat(todasMudanzas[0].id, mud.mudanceroNombre||'Mudancero', initials);
-    }
-  }catch(e){
-    console.warn('Error cargando conversaciones:', e.message);
-  }
-}
-
-async function abrirChat(mudanzaId, nombreMudancero, initials){
-  chatMudanzaActiva = mudanzaId;
-  var init = initials || (nombreMudancero||'MV').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-  document.getElementById('chatMainHeader').innerHTML = `
-    <div class="chat-main-avatar">${init}</div>
-    <div>
-      <div class="chat-main-name">${nombreMudancero}</div>
-      <div class="chat-main-status">● En línea</div>
-    </div>`;
-  chatUltimoId = 0;
-  await cargarMensajes();
-  if(chatPolling) clearInterval(chatPolling);
-  chatPolling = setInterval(cargarMensajes, 4000);
-  loadConversaciones();
-}
-
-async function cargarMensajes(){
-  if(!chatMudanzaActiva) return;
-  try{
-    var r = await fetch('/api/chat?action=leer&mudanzaId='+chatMudanzaActiva);
-    var d = await r.json();
-    var msgs = d.mensajes || [];
-    if(msgs.length === chatUltimoId) return;
-    chatUltimoId = msgs.length;
-    var list = document.getElementById('chatList');
-    if(msgs.length === 0){
-      list.innerHTML = '<div class="chat-placeholder"><div style="font-size:2.5rem;opacity:.2">💬</div><span style="font-size:13px">Empezá la conversación</span></div>';
-      return;
-    }
-    list.innerHTML = msgs.map(m => {
-      var esMio = m.fromEmail === currentUser.email;
-      var hora = new Date(m.fecha).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-      return `<div class="chat-bubble ${esMio?'mine':'other'}">
-        ${!esMio?`<div class="chat-bubble-sender">${m.fromNombre}</div>`:''}
-        ${m.texto}
-        <div class="chat-bubble-time">${hora}</div>
-      </div>`;
-    }).join('');
-    list.scrollTop = list.scrollHeight;
-  }catch(e){ console.warn('Error cargando mensajes:', e.message); }
-}
-
-async function sendMsg(){
-  var input = document.getElementById('chatInput');
-  var text = input.value.trim();
-  if(!text || !chatMudanzaActiva) return;
-  input.value = '';
-  try{
-    await fetch('/api/chat?action=enviar', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        mudanzaId: chatMudanzaActiva,
-        fromEmail: currentUser.email,
-        fromNombre: currentUser.name,
-        fromRol: 'cliente',
-        texto: text,
-      })
-    });
-    await cargarMensajes();
-  }catch(e){
-    console.warn('Error enviando mensaje:', e.message);
-    // Mostrar error temporal
-    input.value = text;
-  }
-}
-
-// ── CALIFICACIONES ────────────────────────────────────────────────────────
+// ── CALIFICACIONES ─────────────────────────────────────────────────────────
 var calIdx = null;
 var calStars = 0;
 
 function renderCalificaciones(){
-  var completadas = mudanzasData.filter(m => m.paso >= 4);
+  var completadas = mudanzasData.filter(function(m){ return m.paso >= 4; });
   if(completadas.length === 0){
     document.getElementById('calificacionesList').innerHTML = '<div class="empty"><div class="empty-icon">⭐</div>Las calificaciones aparecen cuando completás una mudanza</div>';
     return;
   }
-  var html = completadas.map((m, idx) => `
-    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.2rem;margin-bottom:10px">
-      <div style="font-size:14px;font-weight:500;margin-bottom:4px">${m.mudancero?.nombre||'Mudancero'}</div>
-      <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">${m.desde} → ${m.hasta}</div>
-      ${m.calificado ? `<div style="color:var(--amber);font-size:1.2rem">${'★'.repeat(m.estrellas||5)}</div><div style="font-size:12px;color:var(--text2);margin-top:6px">${m.comentario||''}</div>`
-      : `<button class="btn btn-sky" onclick="abrirCalificacion(${mudanzasData.indexOf(m)})" style="font-size:12px">⭐ Calificar</button>`}
-    </div>`).join('');
-  document.getElementById('calificacionesList').innerHTML = html;
+  document.getElementById('calificacionesList').innerHTML = completadas.map(function(m){
+    return '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.2rem;margin-bottom:10px">'
+      + '<div style="font-size:14px;font-weight:500;margin-bottom:4px">'+(m.mudancero&&m.mudancero.nombre?m.mudancero.nombre:'Mudancero')+'</div>'
+      + '<div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">'+m.desde+' → '+m.hasta+'</div>'
+      + (m.calificado
+          ? '<div style="color:var(--amber);font-size:1.2rem">'+'★'.repeat(m.estrellas||5)+'</div><div style="font-size:12px;color:var(--text2);margin-top:6px">'+(m.comentario||'')+'</div>'
+          : '<button class="btn btn-sky" onclick="abrirCalificacion('+mudanzasData.indexOf(m)+')" style="font-size:12px">⭐ Calificar</button>')
+      + '</div>';
+  }).join('');
 }
 
 function abrirCalificacion(idx){
-  calIdx = idx;
-  calStars = 0;
+  calIdx = idx; calStars = 0;
   var m = mudanzasData[idx];
   var modal = document.createElement('div');
   modal.id = 'calModal';
   modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
-  modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:1.8rem;max-width:420px;width:100%">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Calificar mudancero</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">${m.mudancero?.nombre||'Mudancero'} · ${m.desde} → ${m.hasta}</div>
-      <div class="stars-row" id="starsRow">
-        ${[1,2,3,4,5].map(n=>`<span class="star" onclick="setStar(${n})" onmouseover="hoverStar(${n})" onmouseout="renderStarsUI()">★</span>`).join('')}
-      </div>
-      <div style="margin:1rem 0">
-        <textarea id="calComentario" rows="3" placeholder="Contá tu experiencia (opcional)…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical;transition:border-color .2s"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="document.getElementById('calModal').remove()">Cancelar</button>
-        <button class="btn btn-green" onclick="guardarCalificacion()">Enviar calificación</button>
-      </div>
-    </div>`;
+  modal.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:1.8rem;max-width:420px;width:100%">'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Calificar mudancero</div>'
+    + '<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+(m.mudancero&&m.mudancero.nombre?m.mudancero.nombre:'Mudancero')+' · '+m.desde+' → '+m.hasta+'</div>'
+    + '<div class="stars-row" id="starsRow">'+[1,2,3,4,5].map(function(n){ return '<span class="star" onclick="setStar('+n+')" onmouseover="hoverStar('+n+')" onmouseout="renderStarsUI()">★</span>'; }).join('')+'</div>'
+    + '<div style="margin:1rem 0"><textarea id="calComentario" rows="3" placeholder="Contá tu experiencia (opcional)…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:\'Outfit\',sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical"></textarea></div>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btn-ghost" onclick="document.getElementById(\'calModal\').remove()">Cancelar</button>'
+    + '<button class="btn btn-green" onclick="guardarCalificacion()">Enviar calificación</button>'
+    + '</div></div>';
   document.body.appendChild(modal);
 }
 
-function hoverStar(n){
-  document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('sel',i<n));
-}
+function hoverStar(n){ document.querySelectorAll('.star').forEach(function(s,i){ s.classList.toggle('sel',i<n); }); }
 function setStar(n){ calStars=n; renderStarsUI(); }
-function renderStarsUI(){
-  document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('sel',i<calStars));
-}
+function renderStarsUI(){ document.querySelectorAll('.star').forEach(function(s,i){ s.classList.toggle('sel',i<calStars); }); }
 
 function guardarCalificacion(){
-  if(calStars === 0){ alert('Seleccioná al menos 1 estrella'); return; }
+  if(calStars===0){ alert('Seleccioná al menos 1 estrella'); return; }
   var comentario = document.getElementById('calComentario').value.trim();
   mudanzasData[calIdx].calificado = true;
   mudanzasData[calIdx].estrellas = calStars;
   mudanzasData[calIdx].comentario = comentario;
-  sessionStorage.setItem('mudanzasCliente_' + currentUser.email, JSON.stringify(mudanzasData));
   document.getElementById('calModal').remove();
   loadMudanzas();
   renderCalificaciones();
+}
+
+// ── NAVEGACIÓN ─────────────────────────────────────────────────────────────
+function showPage(name, e){
+  if(e) e.preventDefault();
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.sidebar-item').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('page-'+name).classList.add('active');
+  if(e && e.currentTarget) e.currentTarget.classList.add('active');
+  if(name==='pagos') renderPagos();
+  if(name==='calificaciones') renderCalificaciones();
 }
 </script>
 </body>
