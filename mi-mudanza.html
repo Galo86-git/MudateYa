@@ -359,10 +359,8 @@ function renderMudanzaCard(m, idx){
             // Botones — solo si no está aceptada ni hay otra aceptada
             + ((!isAceptada && m.estado !== 'cotizacion_aceptada') ? (
                 '<div style="display:flex;gap:6px;margin-top:6px">'
-                // Ver presupuesto
                 + '<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;flex:1" '
-                +   'onclick="verPresupuesto('+JSON.stringify(m).replace(/"/g,"'")+'|SPLIT|'+JSON.stringify(c).replace(/"/g,"'")+')">📄 Ver presupuesto</button>'
-                // Elegir
+                +   'onclick="verPresupuesto(\''+m.id+'\',\''+c.id+'\')">📄 Ver presupuesto</button>'
                 + '<button class="btn btn-green" style="font-size:11px;padding:6px 14px" '
                 +   'onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\')">Elegir →</button>'
                 + '</div>'
@@ -405,27 +403,19 @@ function renderMudanzaCard(m, idx){
 }
 
 // ── MODAL VER PRESUPUESTO ──────────────────────────────────────────────────
-// El onclick pasa los datos como string JSON separados por |SPLIT|
-// (evita problemas con comillas anidadas en atributos HTML)
 var _pptoMudanzaId = null;
 var _pptoCotizacionId = null;
 
-function verPresupuesto(raw) {
-  // raw viene como "jsonM|SPLIT|jsonC" con comillas simples en lugar de dobles
-  var parts = raw.split('|SPLIT|');
-  var m, c;
-  try {
-    m = JSON.parse(parts[0].replace(/'/g, '"'));
-    c = JSON.parse(parts[1].replace(/'/g, '"'));
-  } catch(e) {
-    console.error('Error parseando presupuesto:', e);
-    return;
-  }
+function verPresupuesto(mudanzaId, cotizacionId) {
+  // Buscar los datos en memoria por ID — sin pasar JSON en el onclick
+  var m = mudanzasData.find(function(x){ return x.id === mudanzaId; });
+  if (!m) { console.error('Mudanza no encontrada:', mudanzaId); return; }
+  var c = (m.cotizaciones || []).find(function(x){ return x.id === cotizacionId; });
+  if (!c) { console.error('Cotización no encontrada:', cotizacionId); return; }
 
-  _pptoMudanzaId    = m.id;
-  _pptoCotizacionId = c.id;
+  _pptoMudanzaId    = mudanzaId;
+  _pptoCotizacionId = cotizacionId;
 
-  // Initials
   var initials = (c.mudanceroNombre || 'MV').split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
   document.getElementById('ppto-initials').textContent = initials;
   document.getElementById('ppto-nombre').textContent   = c.mudanceroNombre || '—';
