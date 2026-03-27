@@ -359,8 +359,9 @@ function renderMudanzaCard(m, idx){
             // Botones — solo si no está aceptada ni hay otra aceptada
             + ((!isAceptada && m.estado !== 'cotizacion_aceptada') ? (
                 '<div style="display:flex;gap:6px;margin-top:6px">'
-                + '<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;flex:1" '
-                +   'onclick="verPresupuesto(\''+m.id+'\',\''+c.id+'\')">📄 Ver presupuesto</button>'
+                + '<a class="btn btn-ghost" style="font-size:11px;padding:6px 12px;flex:1;justify-content:center;text-decoration:none" '
+                +   'href="/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'" target="_blank">'
+                +   '📄 Ver presupuesto</a>'
                 + '<button class="btn btn-green" style="font-size:11px;padding:6px 14px" '
                 +   'onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\')">Elegir →</button>'
                 + '</div>'
