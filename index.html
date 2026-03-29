@@ -329,7 +329,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 /* ── SELECTOR TIPO SERVICIO ── */
 .service-selector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.4rem;animation:fadeUp .6s .3s ease both}
-.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:14px;padding:1.1rem .9rem;cursor:pointer;transition:all .2s;text-align:center;user-select:none}
+.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:14px;padding:1.1rem .9rem;cursor:pointer;transition:all .2s;text-align:center;user-select:none;-webkit-tap-highlight-color:rgba(34,195,106,.15);touch-action:manipulation}
 .service-card:hover{border-color:rgba(34,195,106,.4);background:var(--emerald-subtle);transform:translateY(-2px)}
 .service-card.sel{border-color:var(--emerald);background:var(--emerald-subtle)}
 .service-card-icon{font-size:2rem;margin-bottom:8px;display:block}
@@ -353,7 +353,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 .flete-step-dot.done .flete-dot-label{color:var(--emerald-dim)}
 .flete-line{flex:1;height:1px;background:var(--border);transition:background .4s;margin:0 6px}
 .flete-line.done{background:var(--emerald)}
-.flete-body{flex:1;overflow-y:auto;padding:1.8rem 1.4rem 7rem;max-width:600px;width:100%;margin:0 auto}
+.flete-body{flex:1;overflow-y:auto;padding:1.8rem 1.4rem 9rem;max-width:600px;width:100%;margin:0 auto;-webkit-overflow-scrolling:touch}
 .flete-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text);margin-bottom:.3rem}
 .flete-sub{font-size:13px;color:var(--text2);margin-bottom:1.4rem;line-height:1.5}
 .flete-footer{position:absolute;bottom:0;left:0;right:0;padding:1rem 1.4rem;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;z-index:1}
@@ -724,12 +724,12 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 
       <!-- SELECTOR — elegís primero qué necesitás -->
       <div class="service-selector">
-        <div class="service-card sel" id="sc-mudanza" onclick="selectService('mudanza')">
+        <div class="service-card sel" id="sc-mudanza" onclick="selectService('mudanza')" ontouchend="selectService('mudanza');event.preventDefault()">
           <span class="service-card-icon">🏠</span>
           <div class="service-card-title">Mudanza</div>
           <div class="service-card-sub">Varios ambientes · Cotizaciones múltiples</div>
         </div>
-        <div class="service-card" id="sc-flete" onclick="selectService('flete')">
+        <div class="service-card" id="sc-flete" onclick="selectService('flete')" ontouchend="selectService('flete');event.preventDefault()">
           <span class="service-card-icon">📦</span>
           <div class="service-card-title">Flete</div>
           <div class="service-card-sub">Objeto puntual · Precio inmediato</div>
@@ -2024,17 +2024,66 @@ var fleteData = { desde:'', hasta:'', fecha:'hoy', pisoOrigen:0, pisoDestino:0, 
 function openFlete() {
   document.getElementById('fleteOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-  // Setear fecha mínima = hoy cada vez que se abre
   var hoy = new Date();
   var minDate = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
   var ff = document.getElementById('flete-fecha-val');
   if (ff) { ff.min = minDate; ff.value = minDate; }
   fleteGoStep(1);
   fleteInitMaps();
+
+  // ── FIX MOBILE KEYBOARD ──────────────────────────
+  // Cuando el teclado aparece en mobile, el viewport se achica.
+  // Usamos visualViewport para ajustar el footer y hacer scroll al input.
+  var overlay = document.getElementById('fleteOverlay');
+  var footer  = document.getElementById('flete-footer');
+  var body    = overlay.querySelector('.flete-body');
+
+  function onViewportResize() {
+    if (!window.visualViewport) return;
+    var vh = window.visualViewport.height;
+    var offsetTop = window.visualViewport.offsetTop || 0;
+    // Mover el footer para que quede justo sobre el teclado
+    footer.style.bottom = (window.innerHeight - vh - offsetTop) + 'px';
+    // Ajustar padding del body para que el contenido no quede tapado
+    body.style.paddingBottom = (footer.offsetHeight + (window.innerHeight - vh - offsetTop) + 20) + 'px';
+  }
+
+  function onViewportScroll() {
+    if (!window.visualViewport) return;
+    overlay.style.top = window.visualViewport.offsetTop + 'px';
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    window.visualViewport.addEventListener('scroll', onViewportScroll);
+    overlay._vpResize = onViewportResize;
+    overlay._vpScroll = onViewportScroll;
+  }
+
+  // Scroll al input activo
+  overlay.querySelectorAll('.addr-input').forEach(function(input) {
+    input.addEventListener('focus', function() {
+      var self = this;
+      setTimeout(function() {
+        self.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 400);
+    });
+  });
 }
 function closeFlete() {
-  document.getElementById('fleteOverlay').classList.remove('open');
+  var overlay = document.getElementById('fleteOverlay');
+  var footer  = document.getElementById('flete-footer');
+  var body    = overlay.querySelector('.flete-body');
+  overlay.classList.remove('open');
   document.body.style.overflow = '';
+  // Limpiar ajustes de teclado
+  footer.style.bottom = '';
+  body.style.paddingBottom = '';
+  overlay.style.top = '';
+  if (window.visualViewport && overlay._vpResize) {
+    window.visualViewport.removeEventListener('resize', overlay._vpResize);
+    window.visualViewport.removeEventListener('scroll', overlay._vpScroll);
+  }
 }
 
 function fleteGoStep(n) {
