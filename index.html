@@ -337,7 +337,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 .service-card.sel .service-card-title{color:var(--emerald)}
 .service-card-sub{font-size:10px;color:var(--text3);font-family:var(--mono);line-height:1.4}
 /* ── WIZARD FLETE ── */
-.flete-overlay{position:fixed;inset:0;z-index:800;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+.flete-overlay{position:fixed;inset:0;z-index:900;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
 .flete-overlay.open{display:flex}
 .flete-nav{display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;height:56px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
 .flete-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--text)}
@@ -2005,13 +2005,13 @@ function selectService(tipo) {
   document.getElementById('sc-mudanza').classList.toggle('sel', tipo === 'mudanza');
   document.getElementById('sc-flete').classList.toggle('sel', tipo === 'flete');
   if (tipo === 'flete') {
-    setTimeout(function() { openFlete(); }, 200);
-    // Resetear selector visual para la próxima vez
+    openFlete();
+    // Resetear selector visual después
     setTimeout(function() {
       document.getElementById('sc-mudanza').classList.add('sel');
       document.getElementById('sc-flete').classList.remove('sel');
       tipoServicio = 'mudanza';
-    }, 500);
+    }, 300);
   }
 }
 
