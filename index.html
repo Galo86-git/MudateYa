@@ -96,7 +96,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(13,11,8,.88);backdrop-filt
 .hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--emerald-subtle);color:var(--emerald);font-family:var(--mono);font-size:11px;letter-spacing:.5px;padding:5px 12px;border-radius:6px;margin-bottom:1.4rem;border:1px solid rgba(41,182,246,.2);animation:fadeUp .6s ease both}
 .hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
-.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,6vw,7rem);line-height:.95;letter-spacing:2px;color:var(--text);margin-bottom:1.4rem;animation:fadeUp .6s .1s ease both}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,6vw,7rem);line-height:.95;letter-spacing:2px;color:var(--text);margin-bottom:.8rem;animation:fadeUp .6s .1s ease both}
 .hero h1 em{color:var(--emerald);font-style:normal;position:relative}
 .hero h1 em::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:3px;background:var(--emerald);border-radius:2px;animation:expand .8s .8s ease both;transform-origin:left}
 @keyframes expand{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -720,7 +720,8 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
     <div class="hero-left">
       <span class="hero-badge">🇦🇷 El marketplace de mudanzas de Argentina</span>
       <h1>MUDARTE<br>NUNCA FUE<br><em>TAN FÁCIL</em></h1>
-      <p class="hero-desc">Cargás tu mudanza en 2 minutos, recibís presupuestos reales de mudanceros verificados y coordinás todo desde tu celu. Sin llamadas, sin sorpresas.</p>
+
+      <!-- SELECTOR — elegís primero qué necesitás -->
       <div class="service-selector">
         <div class="service-card sel" id="sc-mudanza" onclick="selectService('mudanza')">
           <span class="service-card-icon">🏠</span>
@@ -733,6 +734,8 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
           <div class="service-card-sub">Objeto puntual · Precio inmediato</div>
         </div>
       </div>
+
+      <p class="hero-desc">Cargás en 2 minutos, recibís presupuestos de mudanceros verificados y coordinás todo desde tu celu. Sin llamadas, sin sorpresas.</p>
       <div class="trust-row">
         <span class="trust-item"><span class="trust-dot"></span>+1.200 verificados</span>
         <span class="trust-item"><span class="trust-dot"></span>4.8★ promedio</span>
