@@ -2020,6 +2020,11 @@ var fleteData = { desde:'', hasta:'', fecha:'hoy', pisoOrigen:0, pisoDestino:0, 
 function openFlete() {
   document.getElementById('fleteOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  // Setear fecha mínima = hoy cada vez que se abre
+  var hoy = new Date();
+  var minDate = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+  var ff = document.getElementById('flete-fecha-val');
+  if (ff) { ff.min = minDate; ff.value = minDate; }
   fleteGoStep(1);
   fleteInitMaps();
 }
