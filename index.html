@@ -1985,7 +1985,11 @@ function closeLoginModal() {
     f.min = h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0');
   }
   var ff = document.getElementById('flete-fecha-val');
-  if (ff) ff.min = f ? f.min : '';
+  if (ff) {
+    var hoy = new Date();
+    ff.min = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+    ff.value = ff.min; // default a hoy
+  }
 })();
 
 // ════════════════════════════════════════════════════
