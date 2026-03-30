@@ -2423,6 +2423,12 @@ async function fleteSolicitar() {
   var ia = fleteData.iaAnalisis;
   var fecha = fleteData.fecha === 'hoy' ? 'Hoy' : fleteData.fecha === 'manana' ? 'Mañana' : (document.getElementById('flete-fecha-val').value || '—');
 
+  // Comprimir y enviar hasta 2 fotos
+  var fotosComprimidas = [];
+  for (var i = 0; i < Math.min(fleteFotos.length, 2); i++) {
+    fotosComprimidas.push(await comprimirFoto(fleteFotos[i].dataUrl, 400));
+  }
+
   try {
     await fetch('/api/cotizaciones?action=publicar', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2433,7 +2439,7 @@ async function fleteSolicitar() {
         hasta:           fleteData.hasta,
         ambientes:       'Flete',
         fecha:           fecha,
-        servicios:       ia ? ia.tipo : 'Objeto a definir',
+        servicios:       ia ? ia.tipo : (fleteData.descripcionManual || 'Objeto a definir'),
         extras:          ia ? ('~' + (ia.peso_kg||'?') + 'kg · ' + (ia.dimensiones||'')) : '',
         zonaBase:        fleteData.desde,
         precio_estimado: fleteData.precio,
@@ -2442,6 +2448,7 @@ async function fleteSolicitar() {
         pisoDestino:     fleteData.pisoDestino,
         ascOrigen:       fleteData.ascOrigen,
         ascDestino:      fleteData.ascDestino,
+        fotos:           fotosComprimidas,
       })
     });
   } catch(e) { console.warn('Error publicando flete:', e.message); }
@@ -2449,6 +2456,23 @@ async function fleteSolicitar() {
   document.getElementById('flete-publishing').style.display = 'none';
   document.getElementById('flete-published').style.display = 'block';
   document.getElementById('flete-footer').style.display = 'none';
+}
+
+// Comprimir foto a max ancho px en base64
+function comprimirFoto(dataUrl, maxW) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var ratio = Math.min(1, maxW / img.width);
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
 }
 
 // Calcular km cuando hay mapa disponible
