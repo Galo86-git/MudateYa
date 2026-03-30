@@ -319,13 +319,12 @@ function guardarCelular() {
     return;
   }
   localStorage.setItem('clienteWA_' + currentUser.email, val);
-  // Actualizar también en sessionStorage para que el wizard lo use
-  try {
-    var u = JSON.parse(sessionStorage.getItem('clienteUser') || '{}');
-    u.celular = val;
-    sessionStorage.setItem('clienteUser', JSON.stringify(u));
-    sessionStorage.setItem('googleUser', JSON.stringify(u));
-  } catch(e) {}
+  // Actualizar en Redis todas las mudanzas del cliente
+  fetch('/api/cotizaciones?action=update-wa', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ email: currentUser.email, clienteWA: val })
+  }).catch(function(e){ console.warn('Error guardando WA:', e.message); });
   var modal = document.getElementById('celModal');
   if (modal) modal.remove();
 }
