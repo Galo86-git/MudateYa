@@ -511,6 +511,12 @@ function renderPedidos(){
         : m.estado==='cotizacion_aceptada'
         ? '<span class="badge rechazado">No elegida</span>'
         : '<span class="badge nuevo">Pendiente</span>';
+      // Datos del cliente cuando fue aceptada
+      var clienteNombre = (m.cotizacionAceptada && m.cotizacionAceptada.clienteNombre) || '';
+      var clienteEmail  = (m.cotizacionAceptada && m.cotizacionAceptada.clienteEmail)  || '';
+      var waCliente = clienteEmail
+        ? 'mailto:'+clienteEmail+'?subject=Mudanza+MudateYa+%E2%80%93+'+encodeURIComponent(m.desde+' → '+m.hasta)
+        : '';
       html += '<div class="pedido-card '+(isAcept?'aceptado':'')+'">'
         +'<div class="pedido-header"><div>'
         +'<div class="pedido-ruta">'+m.desde+' → '+m.hasta+'</div>'
@@ -519,6 +525,12 @@ function renderPedidos(){
         +'<div class="pedido-precio">$'+(cot?.precio?.toLocaleString('es-AR')||'—')+'</div>'
         +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">tu cotización</div>'
         +(cot?.nota?'<div style="font-size:12px;color:var(--text2);margin-top:6px;font-style:italic">"'+cot.nota+'"</div>':'')
+        // Contacto del cliente — solo si fue aceptada
+        +(isAcept && clienteNombre ? '<div style="margin-top:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
+          +'<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--emerald)">✓ Cliente: '+clienteNombre+'</div>'
+          +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+clienteEmail+'</div></div>'
+          +(clienteEmail ? '<a href="'+waCliente+'" style="background:var(--emerald);color:#041A0E;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">📧 Contactar</a>' : '')
+          +'</div>' : '')
         +'</div>';
     });
   }
