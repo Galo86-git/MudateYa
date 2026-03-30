@@ -1434,14 +1434,58 @@ function fswSetupStep4() {
   document.getElementById('fsw-publishing-state').style.display = 'none';
   document.getElementById('fsw-published-state').style.display = 'none';
   if (!user) {
-    document.getElementById('fsw-login-state').style.display = 'block';
     _loginRol = 'cliente';
-    if (!_googleLoginInited) { openLoginModal(); closeLoginModal(); }
-    setTimeout(function() {
-      var el = document.getElementById('fsw-google-btn');
-      if (el && window.google) { el.innerHTML = ''; try { google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'continue_with', width: 280 }); } catch(e) {} }
-    }, 400);
-  } else { fswPublicar(user); }
+    document.getElementById('fsw-login-state').style.display = 'block';
+    fswRenderGoogleBtn();
+  } else {
+    fswPublicar(user);
+  }
+}
+
+function fswRenderGoogleBtn() {
+  var el = document.getElementById('fsw-google-btn');
+  if (!el) return;
+  el.innerHTML = '';
+
+  function tryRender() {
+    if (window.google && _googleLoginInited) {
+      try {
+        google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'continue_with', width: 280 });
+      } catch(e) {
+        showFallbackBtn();
+      }
+    } else if (window.google && !_googleLoginInited) {
+      // Inicializar sin abrir el modal
+      fetch('/api/admin-config').then(function(r){ return r.json(); }).then(function(cfg) {
+        if (!cfg.googleClientId) { showFallbackBtn(); return; }
+        google.accounts.id.initialize({
+          client_id: cfg.googleClientId,
+          callback: function(response) {
+            var payload = JSON.parse(atob(response.credential.split('.')[1]));
+            var user = { name: payload.name, email: payload.email, picture: payload.picture };
+            sessionStorage.setItem('googleUser', JSON.stringify(user));
+            sessionStorage.setItem('clienteUser', JSON.stringify(user));
+            closeLoginModal();
+            updateNavUser();
+            fswOnLogin(user);
+            var waGuardado = localStorage.getItem('clienteWA_' + user.email);
+            if (!waGuardado) setTimeout(function(){ pedirCelularModal(user); }, 800);
+          }
+        });
+        _googleLoginInited = true;
+        google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'continue_with', width: 280 });
+      }).catch(showFallbackBtn);
+    } else {
+      // Google aún no cargó — reintentar
+      setTimeout(tryRender, 300);
+    }
+  }
+
+  function showFallbackBtn() {
+    el.innerHTML = '<button onclick="openLoginModal()" style="background:var(--emerald);color:#041A0E;border:none;padding:13px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;width:100%">Iniciar sesión con Google →</button>';
+  }
+
+  tryRender();
 }
 async function fswPublicar(user) {
   if (fswPublicadaId) { document.getElementById('fsw-published-state').style.display = 'block'; return; }
