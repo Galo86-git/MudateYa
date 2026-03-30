@@ -1461,10 +1461,15 @@ function fswInitMaps() {
   function makeAC(input) {
     if (input._acInit) return;
     input._acInit = true;
+
+    // Agregar al input-stack (padre del input-wrap) para evitar overflow:hidden
+    var anchor = input.parentElement.parentElement; // input-stack
+    anchor.style.position = 'relative';
+
     var dropdown = document.createElement('ul');
-    dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:99999;list-style:none;margin:4px 0 0;padding:0;background:#1D2820;border:1px solid #2A3C32;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.8);overflow:hidden;display:none;';
-    input.parentElement.style.position = 'relative';
-    input.parentElement.appendChild(dropdown);
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:99999;list-style:none;margin:2px 0 0;padding:0;background:#1D2820;border:1px solid #2A3C32;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.8);overflow:hidden;display:none;';
+    anchor.appendChild(dropdown);
+
     var debounce;
 
     function selectItem(text) {
@@ -1499,7 +1504,10 @@ function fswInitMaps() {
         );
       }, 300);
     });
-    input.addEventListener('blur', function() { setTimeout(function(){ dropdown.style.display='none'; }, 250); });
+
+    input.addEventListener('blur', function() {
+      setTimeout(function(){ dropdown.style.display='none'; }, 250);
+    });
     input.addEventListener('focus', function() {
       setTimeout(function(){ input.scrollIntoView({ behavior:'smooth', block:'center' }); }, 350);
     });
