@@ -278,6 +278,9 @@ function handleCredential(response){
   sessionStorage.setItem('clienteUser', JSON.stringify(currentUser));
   sessionStorage.setItem('googleUser', JSON.stringify(currentUser));
   showApp();
+  // Pedir celular si no lo tiene guardado
+  var wa = localStorage.getItem('clienteWA_' + currentUser.email);
+  if (!wa) setTimeout(pedirCelular, 600);
 }
 
 function showApp(){
@@ -286,6 +289,45 @@ function showApp(){
   document.getElementById('navName').textContent = currentUser.name.split(' ')[0];
   document.getElementById('navAvatar').src = currentUser.picture || '';
   loadMudanzas();
+}
+
+function pedirCelular() {
+  var modal = document.createElement('div');
+  modal.id = 'celModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1.2rem';
+  modal.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:22px;padding:2rem 1.6rem;max-width:380px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
+    +'<div style="font-size:2.2rem;margin-bottom:10px">📱</div>'
+    +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--text);margin-bottom:6px">Tu número de celular</div>'
+    +'<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.4rem">Para que el mudancero que elijas pueda coordinarse con vos.</div>'
+    +'<input id="celInput" type="tel" placeholder="+54 9 11 1234-5678"'
+    +' style="width:100%;padding:12px 14px;border:1px solid var(--border2);border-radius:10px;font-size:15px;font-family:Outfit,sans-serif;color:var(--text);background:var(--surface2);outline:none;text-align:center;margin-bottom:8px"'
+    +' onkeydown="if(event.key===\'Enter\') guardarCelular()"/>'
+    +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:1.2rem">🔒 Solo lo ve el mudancero que aceptés · Nunca se comparte con nadie más</div>'
+    +'<button onclick="guardarCelular()" style="width:100%;padding:13px;border-radius:10px;border:none;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;margin-bottom:8px">Guardar →</button>'
+    +'<button onclick="document.getElementById(\'celModal\').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--mono)">Ahora no</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){ var i = document.getElementById('celInput'); if(i) i.focus(); }, 100);
+}
+
+function guardarCelular() {
+  var val = (document.getElementById('celInput') || {}).value || '';
+  val = val.trim();
+  if (val.length < 8) {
+    var i = document.getElementById('celInput');
+    if (i) { i.style.borderColor = 'var(--emerald)'; setTimeout(function(){ i.style.borderColor=''; }, 1500); }
+    return;
+  }
+  localStorage.setItem('clienteWA_' + currentUser.email, val);
+  // Actualizar también en sessionStorage para que el wizard lo use
+  try {
+    var u = JSON.parse(sessionStorage.getItem('clienteUser') || '{}');
+    u.celular = val;
+    sessionStorage.setItem('clienteUser', JSON.stringify(u));
+    sessionStorage.setItem('googleUser', JSON.stringify(u));
+  } catch(e) {}
+  var modal = document.getElementById('celModal');
+  if (modal) modal.remove();
 }
 
 function logout(){
