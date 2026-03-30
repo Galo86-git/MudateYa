@@ -420,6 +420,24 @@ module.exports = async function handler(req, res) {
       } catch(e) { return res.status(200).json({ mudanzas: [] }); }
     }
 
+    // Actualizar celular del cliente en todas sus mudanzas
+    if (action === 'update-wa' && req.method === 'POST') {
+      const { email, clienteWA } = req.body;
+      if (!email || !clienteWA) return res.status(400).json({ error: 'Faltan datos' });
+      try {
+        const ids = await getJSON(`cliente:${email}`) || [];
+        for (const id of ids) {
+          const m = await getJSON(`mudanza:${id}`);
+          if (m) {
+            m.clienteWA = clienteWA;
+            if (m.cotizacionAceptada) m.cotizacionAceptada.clienteWA = clienteWA;
+            await setJSON(`mudanza:${id}`, m, 604800);
+          }
+        }
+        return res.status(200).json({ ok: true, updated: ids.length });
+      } catch(e) { return res.status(500).json({ error: e.message }); }
+    }
+
     if (action === 'por-zona' && req.method === 'GET') {
       const { email } = req.query;
       const ids = await getJSON('mudanzas:activas') || [];
