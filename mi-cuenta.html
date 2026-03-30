@@ -444,6 +444,8 @@ function verFotoGrande(mudanzaId, fotoIdx) {
   lb.onclick = function(e){ if(e.target===lb) lb.remove(); };
   document.body.appendChild(lb);
 }
+
+function logout(){
   sessionStorage.removeItem('mudanceroUser');
   sessionStorage.removeItem('googleUser');
   sessionStorage.removeItem('clienteUser');
