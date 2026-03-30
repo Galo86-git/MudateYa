@@ -514,6 +514,10 @@ function renderPedidos(){
       // Datos del cliente — siempre disponibles en la raíz de la mudanza
       var clienteNombre = m.clienteNombre || m.cotizacionAceptada?.clienteNombre || '';
       var clienteEmail  = m.clienteEmail  || m.cotizacionAceptada?.clienteEmail  || '';
+      var clienteWA     = m.clienteWA || '';
+      var waLink = clienteWA
+        ? 'https://wa.me/54'+clienteWA.replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+clienteNombre.split(' ')[0]+', te contacto por la mudanza que acepté en MudateYa ('+m.desde+' → '+m.hasta+') 🚛')
+        : '';
       var mailLink = clienteEmail
         ? 'mailto:'+clienteEmail+'?subject='+encodeURIComponent('Mudanza MudateYa – '+m.desde+' → '+m.hasta)+'&body='+encodeURIComponent('Hola '+clienteNombre+', te contacto por la mudanza que acordamos en MudateYa.')
         : '';
@@ -530,9 +534,12 @@ function renderPedidos(){
           +'<div style="flex:1">'
           +'<div style="font-size:11px;font-weight:700;color:var(--emerald);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
           +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+(clienteNombre||'—')+'</div>'
-          +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(clienteEmail||'Sin email')+'</div>'
+          +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(clienteWA ? '📱 '+clienteWA : clienteEmail||'Sin contacto')+'</div>'
           +'</div>'
-          +(mailLink ? '<a href="'+mailLink+'" class="btn btn-green" style="font-size:12px;padding:8px 14px;flex-shrink:0;white-space:nowrap;text-decoration:none">📧 Contactar</a>' : '')
+          +'<div style="display:flex;gap:6px;flex-shrink:0">'
+          +(waLink ? '<a href="'+waLink+'" target="_blank" rel="noopener" class="btn btn-green" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">💬 WhatsApp</a>' : '')
+          +(mailLink ? '<a href="'+mailLink+'" class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">📧 Email</a>' : '')
+          +'</div>'
           +'</div>' : '')
         +'</div>';
     });
