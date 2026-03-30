@@ -96,7 +96,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(13,11,8,.88);backdrop-filt
 .hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--emerald-subtle);color:var(--emerald);font-family:var(--mono);font-size:11px;letter-spacing:.5px;padding:5px 12px;border-radius:6px;margin-bottom:1.4rem;border:1px solid rgba(41,182,246,.2);animation:fadeUp .6s ease both}
 .hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
-.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,6vw,7rem);line-height:.95;letter-spacing:2px;color:var(--text);margin-bottom:.8rem;animation:fadeUp .6s .1s ease both}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,4.5vw,5.5rem);line-height:1;letter-spacing:2px;color:var(--text);margin-bottom:1.6rem;animation:fadeUp .6s .1s ease both;white-space:nowrap}
 .hero h1 em{color:var(--emerald);font-style:normal;position:relative}
 .hero h1 em::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:3px;background:var(--emerald);border-radius:2px;animation:expand .8s .8s ease both;transform-origin:left}
 @keyframes expand{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -328,19 +328,19 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 .pac-icon,.pac-logo{display:none!important}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 /* ── SELECTOR TIPO SERVICIO ── */
-.service-selector{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:2rem;animation:fadeUp .6s .3s ease both;max-width:560px;width:100%}
-.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:22px;padding:2rem 1.4rem 1.6rem;cursor:pointer;transition:all .22s cubic-bezier(.22,1,.36,1);text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:hidden}
+.service-selector{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:2rem;animation:fadeUp .6s .3s ease both;max-width:620px;width:100%}
+.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:24px;padding:2.6rem 1.6rem 2.2rem;cursor:pointer;transition:all .22s cubic-bezier(.22,1,.36,1);text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:hidden}
 .service-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(34,195,106,.12) 0%,transparent 70%);opacity:0;transition:opacity .3s}
 .service-card:hover::before,.service-card.sel::before{opacity:1}
 .service-card:hover{border-color:rgba(34,195,106,.5);transform:translateY(-4px);box-shadow:0 12px 40px rgba(34,195,106,.15)}
 .service-card.sel{border-color:var(--emerald);background:var(--emerald-subtle);box-shadow:0 0 0 1px var(--emerald),0 8px 32px rgba(34,195,106,.2)}
 .service-card:active{transform:scale(.97)}
-.service-card-icon{font-size:2.8rem;margin-bottom:12px;display:block;line-height:1;transition:transform .2s}
+.service-card-icon{font-size:3.4rem;margin-bottom:14px;display:block;line-height:1;transition:transform .2s}
 .service-card:hover .service-card-icon{transform:scale(1.12)}
-.service-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:1px;color:var(--text);margin-bottom:5px;line-height:1}
+.service-card-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;color:var(--text);margin-bottom:8px;line-height:1}
 .service-card.sel .service-card-title{color:var(--emerald)}
-.service-card-sub{font-size:11px;color:var(--text3);font-family:var(--mono);line-height:1.5}
-.service-card-arrow{position:absolute;bottom:14px;right:16px;font-size:16px;color:var(--border2);transition:all .2s}
+.service-card-sub{font-size:12px;color:var(--text3);font-family:var(--mono);line-height:1.6}
+.service-card-arrow{position:absolute;bottom:16px;right:18px;font-size:16px;color:var(--border2);transition:all .2s}
 .service-card:hover .service-card-arrow,.service-card.sel .service-card-arrow{color:var(--emerald);transform:translateX(3px)}
 /* ── WIZARD FLETE ── */
 .flete-overlay{position:fixed;inset:0;z-index:900;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
@@ -470,11 +470,12 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
   .nav-links,.nav-actions{display:none}
   .nav-burger{display:flex}
   .hero{padding:2rem 1.2rem 1.8rem;min-height:unset}
+  .hero h1{font-size:clamp(1.8rem,8vw,3rem);white-space:normal}
   .service-selector{max-width:100%;gap:10px}
-  .service-card{padding:1.6rem 1rem 1.4rem;border-radius:18px}
-  .service-card-icon{font-size:2.4rem;margin-bottom:10px}
-  .service-card-title{font-size:1.5rem}
-  .hero h1{font-size:clamp(3.5rem,14vw,5rem)}
+  .service-card{padding:2rem 1rem 1.8rem;border-radius:18px}
+  .service-card-icon{font-size:2.8rem;margin-bottom:12px}
+  .service-card-title{font-size:1.8rem}
+  .hero-desc{font-size:14px;max-width:100%}
   .hero-desc{font-size:14px;max-width:100%}
   .stats-bar{grid-template-columns:repeat(2,1fr)}
   .stat-item{border-right:none;border-bottom:1px solid var(--border)}
@@ -727,7 +728,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
   <div class="hero" id="heroGrid">
     <div class="hero-left">
       <span class="hero-badge">🇦🇷 El marketplace de mudanzas de Argentina</span>
-      <h1>MUDARTE<br>NUNCA FUE<br><em>TAN FÁCIL</em></h1>
+      <h1>MUDARTE NUNCA FUE <em>TAN FÁCIL</em></h1>
 
       <!-- SELECTOR — elegís primero qué necesitás -->
       <div class="service-selector">
