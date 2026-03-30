@@ -596,10 +596,10 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
       </div>
       <div class="field-label" style="margin-bottom:8px">Servicios adicionales</div>
       <div class="extras-grid">
-        <label class="extra-chip"><span class="extra-icon">📦</span>Embalaje incluido<input type="checkbox" style="display:none"/></label>
-        <label class="extra-chip"><span class="extra-icon">🔧</span>Desmontaje<input type="checkbox" style="display:none"/></label>
-        <label class="extra-chip"><span class="extra-icon">🏗️</span>Sube / escalera<input type="checkbox" style="display:none"/></label>
-        <label class="extra-chip"><span class="extra-icon">🛡️</span>Seguro de mudanza<input type="checkbox" style="display:none"/></label>
+        <div class="extra-chip" onclick="toggleExtra(this)"><span class="extra-icon">📦</span><span>Embalaje incluido</span><div class="chk"></div></div>
+        <div class="extra-chip" onclick="toggleExtra(this)"><span class="extra-icon">🔧</span><span>Desmontaje</span><div class="chk"></div></div>
+        <div class="extra-chip" onclick="toggleExtra(this)"><span class="extra-icon">🏗️</span><span>Sube / escalera</span><div class="chk"></div></div>
+        <div class="extra-chip" onclick="toggleExtra(this)"><span class="extra-icon">🛡️</span><span>Seguro de mudanza</span><div class="chk"></div></div>
       </div>
     </div>
     <div class="fsw-panel" id="fsw-p3">
@@ -1396,7 +1396,36 @@ function fswBuildSummary() {
   document.getElementById('fsw-sum-amb').textContent = fswAmb + ' ambiente' + (fswAmb !== 1 ? 's' : '');
   var precio = 50000 + (fswAmb - 1) * 30000;
   document.getElementById('fsw-sum-precio').textContent = '$' + precio.toLocaleString('es-AR');
-  
+  // Cargar mapa en el FSW
+  if (desde && hasta && window.google) {
+    setTimeout(function() { fswShowMap(desde, hasta); }, 200);
+  }
+}
+
+function fswShowMap(desde, hasta) {
+  var mapDiv = document.getElementById('fswRouteMap');
+  if (!mapDiv || !window.google) return;
+  var fswMap = new google.maps.Map(mapDiv, {
+    zoom: 11, center: { lat: -34.6037, lng: -58.3816 },
+    mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControl: false,
+    styles: [{ elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] }, { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] }, { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#38414e' }] }, { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#746855' }] }, { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#17263c' }] }, { featureType: 'poi', stylers: [{ visibility: 'off' }] }]
+  });
+  google.maps.event.trigger(fswMap, 'resize');
+  var renderer = new google.maps.DirectionsRenderer({ polylineOptions: { strokeColor: '#22C36A', strokeWeight: 5, strokeOpacity: .9 } });
+  renderer.setMap(fswMap);
+  var ds = new google.maps.DirectionsService();
+  ds.route({ origin: desde + ', Argentina', destination: hasta + ', Argentina', travelMode: google.maps.TravelMode.DRIVING }, function(result, status) {
+    if (status === 'OK') {
+      renderer.setDirections(result);
+      var leg = result.routes[0].legs[0];
+      document.getElementById('fsw-sum-dist').innerHTML = leg.distance.text;
+      document.getElementById('fsw-sum-dur').innerHTML = leg.duration.text;
+      // Actualizar precio con distancia real
+      var km = leg.distance.value / 1000;
+      var precioConDist = 50000 + (fswAmb - 1) * 30000 + Math.round(km) * 900;
+      document.getElementById('fsw-sum-precio').textContent = '$' + Math.round(precioConDist/1000)*1000 .toLocaleString('es-AR');
+    }
+  });
 }
 function fswSetupStep4() {
   var user = null;
