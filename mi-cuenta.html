@@ -487,101 +487,173 @@ async function loadPedidos(){
   }
 }
 
+var _tabActiva = 'disponibles';
+
 function renderPedidos(){
+  // Clasificar cotizaciones
+  var enviados = misCotizaciones.filter(function(m){
+    var cot = m.miCotizacion;
+    var isAcept = m.estado==='cotizacion_aceptada' && m.cotizacionAceptada && m.cotizacionAceptada.id===cot?.id;
+    var expirado = new Date(m.expira) < new Date();
+    var noElegido = m.estado==='cotizacion_aceptada' && !isAcept;
+    return !isAcept && !noElegido && !expirado;
+  });
+  var expirados = misCotizaciones.filter(function(m){
+    var cot = m.miCotizacion;
+    var isAcept = m.estado==='cotizacion_aceptada' && m.cotizacionAceptada && m.cotizacionAceptada.id===cot?.id;
+    var expirado = new Date(m.expira) < new Date();
+    var noElegido = m.estado==='cotizacion_aceptada' && !isAcept;
+    return !isAcept && (noElegido || expirado);
+  });
+  var aceptados = misCotizaciones.filter(function(m){
+    var cot = m.miCotizacion;
+    return m.estado==='cotizacion_aceptada' && m.cotizacionAceptada && m.cotizacionAceptada.id===cot?.id;
+  });
+
+  // Badge sidebar
   var badge = document.getElementById('badgeNuevos');
   badge.textContent = mudanzasDisponibles.length;
   badge.style.display = mudanzasDisponibles.length > 0 ? '' : 'none';
-  var html = '';
 
-  if(mudanzasDisponibles.length > 0){
-    html += '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📋 Mudanzas disponibles en tu zona</div>';
-    mudanzasDisponibles.forEach(function(m){
-      var expira = new Date(m.expira);
-      var hs = Math.max(0, Math.round((expira - new Date()) / 3600000));
-      var esFlete = m.ambientes === 'Flete';
-      // Fotos del cliente
-      var fotosHtml = '';
-      if (m.fotos && m.fotos.length) {
-        fotosHtml = '<div style="display:flex;gap:6px;margin-bottom:10px">'
-          + m.fotos.map(function(f, fi){
-              return '<img src="'+f+'" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')" title="Ver foto">';
-            }).join('')
-          + '</div>';
-      }
-      html += '<div class="pedido-card nuevo">'
-        +'<div class="pedido-header"><div>'
-        +'<div class="pedido-ruta">'+m.desde+' → '+m.hasta+'</div>'
-        +'<div class="pedido-fecha">📅 '+(m.fecha||'A confirmar')+' · '+(esFlete ? '🚛 Flete' : m.ambientes||'—')+'</div>'
-        +'</div><span class="badge nuevo">Disponible</span></div>'
-        + fotosHtml
-        +'<div class="pedido-meta">'
-        +(m.servicios ? '<span class="pedido-tag">'+(esFlete?'📦':'🏠')+' '+m.servicios+'</span>' : '')
-        +(m.extras    ? '<span class="pedido-tag" style="color:var(--amber)">⚠ '+m.extras+'</span>' : '')
-        +'</div>'
-        +'<div style="display:flex;align-items:flex-end;justify-content:space-between">'
-        +'<div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Precio estimado del cliente</div>'
-        +'<div class="pedido-precio">$'+parseInt(m.precio_estimado||0).toLocaleString('es-AR')+'</div>'
-        +'<div style="font-size:10px;color:'+(hs<4?'var(--red)':'var(--amber)')+';font-family:var(--mono);margin-top:3px">⏱ Expira en '+hs+'hs</div>'
-        +'</div><div class="pedido-actions">'
-        +'<button class="btn btn-green" onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))">💰 Enviar cotización</button>'
-        +'</div></div>'
-        +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: '+m.id+'</div>'
-        +'</div>';
-    });
+  // Tabs header
+  var tabs = [
+    { id:'disponibles', label:'Disponibles', count: mudanzasDisponibles.length, color:'var(--emerald)' },
+    { id:'enviados',    label:'En espera',   count: enviados.length,             color:'var(--sky)' },
+    { id:'aceptados',   label:'Aceptados',   count: aceptados.length,            color:'var(--emerald)' },
+    { id:'expirados',   label:'Expirados',   count: expirados.length,            color:'var(--text3)' },
+  ];
+
+  var tabsHtml = '<div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.2rem;overflow-x:auto">'
+    + tabs.map(function(t){
+        var isActive = _tabActiva === t.id;
+        return '<button onclick="setTabPedidos(\''+t.id+'\')" style="'
+          +'display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:none;'
+          +'font-size:12px;font-weight:600;font-family:\'Outfit\',sans-serif;cursor:pointer;white-space:nowrap;'
+          +'border-bottom:2px solid '+(isActive ? t.color : 'transparent')+';'
+          +'color:'+(isActive ? t.color : 'var(--text3)')+';transition:all .2s">'
+          +t.label
+          +(t.count > 0 ? '<span style="background:'+(isActive?t.color:'var(--border2)')+';color:'+(isActive?'#041A0E':'var(--text3)')+';font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center">'+t.count+'</span>' : '')
+          +'</button>';
+      }).join('')
+    +'</div>';
+
+  // Contenido según tab activa
+  var contentHtml = '';
+
+  if (_tabActiva === 'disponibles') {
+    if (mudanzasDisponibles.length === 0) {
+      contentHtml = '<div class="empty"><div class="empty-icon">📋</div>No hay mudanzas disponibles en tu zona ahora.<br><span style="font-size:11px;font-family:var(--mono)">Te avisamos por email cuando aparezca una.</span></div>';
+    } else {
+      mudanzasDisponibles.forEach(function(m){
+        contentHtml += renderCardDisponible(m);
+      });
+    }
   }
 
-  if(misCotizaciones.length > 0){
-    html += '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 10px">✉️ Cotizaciones enviadas</div>';
-    misCotizaciones.forEach(function(m){
-      var cot = m.miCotizacion;
-      var isAcept = m.estado==='cotizacion_aceptada' && m.cotizacionAceptada && m.cotizacionAceptada.id===cot?.id;
-      var estadoBadge = isAcept
-        ? '<span class="badge aceptado">✓ Aceptada</span>'
-        : m.estado==='cotizacion_aceptada'
-        ? '<span class="badge rechazado">No elegida</span>'
-        : '<span class="badge nuevo">Pendiente</span>';
-      // Datos del cliente — siempre disponibles en la raíz de la mudanza
-      var clienteNombre = m.clienteNombre || m.cotizacionAceptada?.clienteNombre || '';
-      var clienteEmail  = m.clienteEmail  || m.cotizacionAceptada?.clienteEmail  || '';
-      var clienteWA     = m.clienteWA || '';
-      var waLink = clienteWA
-        ? 'https://wa.me/54'+clienteWA.replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+clienteNombre.split(' ')[0]+', te contacto por la mudanza que acepté en MudateYa ('+m.desde+' → '+m.hasta+') 🚛')
-        : '';
-      var mailLink = clienteEmail
-        ? 'mailto:'+clienteEmail+'?subject='+encodeURIComponent('Mudanza MudateYa – '+m.desde+' → '+m.hasta)+'&body='+encodeURIComponent('Hola '+clienteNombre+', te contacto por la mudanza que acordamos en MudateYa.')
-        : '';
-      html += '<div class="pedido-card '+(isAcept?'aceptado':'')+'">'
-        +'<div class="pedido-header"><div>'
-        +'<div class="pedido-ruta">'+m.desde+' → '+m.hasta+'</div>'
-        +'<div class="pedido-fecha">📅 '+(m.fecha||'—')+' · '+(m.ambientes||'—')+'</div>'
-        +'</div>'+estadoBadge+'</div>'
-        // Fotos del cliente
-        +(m.fotos&&m.fotos.length ? '<div style="display:flex;gap:6px;margin:8px 0">'
-          +m.fotos.map(function(f,fi){
-            return '<img src="'+f+'" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')" title="Ver foto">';
-          }).join('')
-          +'</div>' : '')
-        +'<div class="pedido-precio">$'+(cot?.precio?.toLocaleString('es-AR')||'—')+'</div>'
-        +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">tu cotización</div>'
-        +(cot?.nota?'<div style="font-size:12px;color:var(--text2);margin-top:6px;font-style:italic">"'+cot.nota+'"</div>':'')
-        // Contacto del cliente — aparece cuando la cotización fue aceptada
-        +(isAcept ? '<div style="margin-top:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
-          +'<div style="flex:1">'
-          +'<div style="font-size:11px;font-weight:700;color:var(--emerald);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
-          +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+(clienteNombre||'—')+'</div>'
-          +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(clienteWA ? '📱 '+clienteWA : clienteEmail||'Sin contacto')+'</div>'
-          +'</div>'
-          +'<div style="display:flex;gap:6px;flex-shrink:0">'
-          +(waLink ? '<a href="'+waLink+'" target="_blank" rel="noopener" class="btn btn-green" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">💬 WhatsApp</a>' : '')
-          +(mailLink ? '<a href="'+mailLink+'" class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">📧 Email</a>' : '')
-          +'</div>'
-          +'</div>' : '')
-        +'</div>';
-    });
+  else if (_tabActiva === 'enviados') {
+    if (enviados.length === 0) {
+      contentHtml = '<div class="empty"><div class="empty-icon">✉️</div>No tenés cotizaciones en espera.<br><span style="font-size:11px;font-family:var(--mono)">Cuando enviés una aparece acá hasta que el cliente decida.</span></div>';
+    } else {
+      enviados.forEach(function(m){ contentHtml += renderCardCotizacion(m); });
+    }
   }
 
-  if(!html) html = '<div class="empty"><div class="empty-icon">📋</div>No hay mudanzas disponibles en tu zona por ahora.<br>Te avisamos por email cuando aparezca una.</div>';
-  document.getElementById('pedidosList').innerHTML = html;
+  else if (_tabActiva === 'aceptados') {
+    if (aceptados.length === 0) {
+      contentHtml = '<div class="empty"><div class="empty-icon">🎉</div>Aún no tenés cotizaciones aceptadas.</div>';
+    } else {
+      aceptados.forEach(function(m){ contentHtml += renderCardCotizacion(m); });
+    }
+  }
+
+  else if (_tabActiva === 'expirados') {
+    if (expirados.length === 0) {
+      contentHtml = '<div class="empty"><div class="empty-icon">⏱</div>Sin cotizaciones expiradas.</div>';
+    } else {
+      contentHtml += '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">El cliente eligió otro mudancero o la publicación venció.</div>';
+      expirados.forEach(function(m){ contentHtml += renderCardCotizacion(m); });
+    }
+  }
+
+  document.getElementById('pedidosList').innerHTML = tabsHtml + contentHtml;
+}
+
+function setTabPedidos(tab) {
+  _tabActiva = tab;
+  renderPedidos();
+}
+
+function renderCardDisponible(m) {
+  var expira = new Date(m.expira);
+  var hs = Math.max(0, Math.round((expira - new Date()) / 3600000));
+  var esFlete = m.ambientes === 'Flete';
+  var fotosHtml = '';
+  if (m.fotos && m.fotos.length) {
+    fotosHtml = '<div style="display:flex;gap:6px;margin-bottom:10px">'
+      + m.fotos.map(function(f,fi){
+          return '<img src="'+f+'" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')" title="Ver foto">';
+        }).join('')
+      + '</div>';
+  }
+  return '<div class="pedido-card nuevo">'
+    +'<div class="pedido-header"><div>'
+    +'<div class="pedido-ruta">'+m.desde+' → '+m.hasta+'</div>'
+    +'<div class="pedido-fecha">📅 '+(m.fecha||'A confirmar')+' · '+(esFlete?'🚛 Flete':m.ambientes||'—')+'</div>'
+    +'</div><span class="badge nuevo">Disponible</span></div>'
+    + fotosHtml
+    +'<div class="pedido-meta">'
+    +(m.servicios?'<span class="pedido-tag">'+(esFlete?'📦':'🏠')+' '+m.servicios+'</span>':'')
+    +(m.extras?'<span class="pedido-tag" style="color:var(--amber)">⚠ '+m.extras+'</span>':'')
+    +'</div>'
+    +'<div style="display:flex;align-items:flex-end;justify-content:space-between">'
+    +'<div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Precio estimado</div>'
+    +'<div class="pedido-precio">$'+parseInt(m.precio_estimado||0).toLocaleString('es-AR')+'</div>'
+    +'<div style="font-size:10px;color:'+(hs<4?'var(--red)':'var(--amber)')+';font-family:var(--mono);margin-top:3px">⏱ Expira en '+hs+'hs</div>'
+    +'</div><div class="pedido-actions">'
+    +'<button class="btn btn-green" onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))">💰 Cotizar</button>'
+    +'</div></div>'
+    +'</div>';
+}
+
+function renderCardCotizacion(m) {
+  var cot = m.miCotizacion;
+  var isAcept = m.estado==='cotizacion_aceptada' && m.cotizacionAceptada && m.cotizacionAceptada.id===cot?.id;
+  var expirado = new Date(m.expira) < new Date();
+  var noElegido = m.estado==='cotizacion_aceptada' && !isAcept;
+  var clienteNombre = m.clienteNombre || '';
+  var clienteEmail  = m.clienteEmail  || '';
+  var clienteWA     = m.clienteWA     || '';
+  var waLink = clienteWA ? 'https://wa.me/54'+clienteWA.replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+clienteNombre.split(' ')[0]+', te contacto por la mudanza que acepté en MudateYa ('+m.desde+' → '+m.hasta+') 🚛') : '';
+  var mailLink = clienteEmail ? 'mailto:'+clienteEmail+'?subject='+encodeURIComponent('Mudanza MudateYa – '+m.desde+' → '+m.hasta) : '';
+
+  var badge = isAcept
+    ? '<span class="badge aceptado">✓ Aceptada</span>'
+    : (noElegido ? '<span class="badge rechazado">No elegida</span>'
+    : (expirado  ? '<span class="badge" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border)">Expirada</span>'
+    : '<span class="badge nuevo">En espera</span>'));
+
+  return '<div class="pedido-card '+(isAcept?'aceptado':(noElegido||expirado?'rechazado':''))+'">'
+    +'<div class="pedido-header"><div>'
+    +'<div class="pedido-ruta">'+m.desde+' → '+m.hasta+'</div>'
+    +'<div class="pedido-fecha">📅 '+(m.fecha||'—')+' · '+(m.ambientes||'—')+'</div>'
+    +'</div>'+badge+'</div>'
+    +(m.fotos&&m.fotos.length ? '<div style="display:flex;gap:6px;margin:8px 0">'
+      +m.fotos.map(function(f,fi){ return '<img src="'+f+'" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')">'; }).join('')
+      +'</div>' : '')
+    +'<div class="pedido-precio">$'+(cot?.precio?.toLocaleString('es-AR')||'—')+'</div>'
+    +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">tu cotización</div>'
+    +(cot?.nota?'<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic">"'+cot.nota+'"</div>':'')
+    +(isAcept&&(clienteNombre||clienteWA) ? '<div style="margin-top:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
+      +'<div style="flex:1">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--emerald);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
+      +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+(clienteNombre||'—')+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(clienteWA?'📱 '+clienteWA:clienteEmail||'Sin contacto')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;flex-shrink:0">'
+      +(waLink?'<a href="'+waLink+'" target="_blank" rel="noopener" class="btn btn-green" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">💬 WhatsApp</a>':'')
+      +(mailLink?'<a href="'+mailLink+'" class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">📧 Email</a>':'')
+      +'</div></div>' : '')
+    +'</div>';
 }
 
 function abrirCotizacion(mudanza){
