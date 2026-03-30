@@ -90,9 +90,9 @@ nav{position:sticky;top:0;z-index:200;background:rgba(13,11,8,.88);backdrop-filt
 .hero-wrap{position:relative;overflow:hidden}
 .hero-glow{position:absolute;top:-200px;right:-100px;width:700px;height:700px;background:radial-gradient(circle,rgba(41,182,246,.12) 0%,transparent 65%);pointer-events:none;z-index:0}
 .hero-glow2{position:absolute;bottom:-300px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(34,195,106,.06) 0%,transparent 65%);pointer-events:none;z-index:0}
-.hero{max-width:1200px;margin:0 auto;padding:5rem 2.5rem 4rem;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;position:relative;z-index:1}
-.hero.step3-active{grid-template-columns:.9fr 1fr 1fr;gap:2rem}
-.hero-left{padding-top:.5rem}
+.hero{max-width:800px;margin:0 auto;padding:5rem 2.5rem 4rem;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1}
+.hero.step3-active{max-width:1200px;display:grid;grid-template-columns:.9fr 1fr 1fr;gap:2rem;text-align:left;align-items:start}
+.hero-left{padding-top:.5rem;width:100%}
 .hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--emerald-subtle);color:var(--emerald);font-family:var(--mono);font-size:11px;letter-spacing:.5px;padding:5px 12px;border-radius:6px;margin-bottom:1.4rem;border:1px solid rgba(41,182,246,.2);animation:fadeUp .6s ease both}
 .hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
@@ -100,8 +100,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(13,11,8,.88);backdrop-filt
 .hero h1 em{color:var(--emerald);font-style:normal;position:relative}
 .hero h1 em::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:3px;background:var(--emerald);border-radius:2px;animation:expand .8s .8s ease both;transform-origin:left}
 @keyframes expand{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-.hero-desc{font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:2rem;font-weight:300;animation:fadeUp .6s .2s ease both;max-width:420px}
-.trust-row{display:flex;align-items:center;gap:1.5rem;animation:fadeUp .6s .3s ease both;flex-wrap:wrap}
+.hero-desc{font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:1.6rem;font-weight:300;animation:fadeUp .6s .2s ease both;max-width:520px}
+.trust-row{display:flex;align-items:center;justify-content:center;gap:1.5rem;animation:fadeUp .6s .3s ease both;flex-wrap:wrap}
 .trust-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:.3px}
 .trust-dot{width:6px;height:6px;border-radius:50%;background:var(--sky);flex-shrink:0;box-shadow:0 0 6px var(--sky)}
 .wizard-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03),inset 0 1px 0 rgba(255,255,255,.05);animation:fadeUp .6s .15s ease both;overflow:visible}
@@ -328,14 +328,14 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
 .pac-icon,.pac-logo{display:none!important}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 /* ── SELECTOR TIPO SERVICIO ── */
-.service-selector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.4rem;animation:fadeUp .6s .3s ease both}
-.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:14px;padding:1.1rem .9rem;cursor:pointer;transition:all .2s;text-align:center;user-select:none;-webkit-tap-highlight-color:rgba(34,195,106,.15);touch-action:manipulation}
-.service-card:hover{border-color:rgba(34,195,106,.4);background:var(--emerald-subtle);transform:translateY(-2px)}
+.service-selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.4rem;animation:fadeUp .6s .3s ease both;max-width:520px;width:100%}
+.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:18px;padding:1.6rem 1.2rem;cursor:pointer;transition:all .2s;text-align:center;user-select:none;-webkit-tap-highlight-color:rgba(34,195,106,.15);touch-action:manipulation}
+.service-card:hover{border-color:rgba(34,195,106,.4);background:var(--emerald-subtle);transform:translateY(-3px);box-shadow:0 8px 30px rgba(34,195,106,.12)}
 .service-card.sel{border-color:var(--emerald);background:var(--emerald-subtle)}
-.service-card-icon{font-size:2rem;margin-bottom:8px;display:block}
-.service-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.5px;color:var(--text);margin-bottom:3px}
+.service-card-icon{font-size:2.4rem;margin-bottom:10px;display:block}
+.service-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.5px;color:var(--text);margin-bottom:4px}
 .service-card.sel .service-card-title{color:var(--emerald)}
-.service-card-sub{font-size:10px;color:var(--text3);font-family:var(--mono);line-height:1.4}
+.service-card-sub{font-size:11px;color:var(--text3);font-family:var(--mono);line-height:1.4}
 /* ── WIZARD FLETE ── */
 .flete-overlay{position:fixed;inset:0;z-index:900;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
 .flete-overlay.open{display:flex}
@@ -463,10 +463,8 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
   nav{padding:0 1.2rem}
   .nav-links,.nav-actions{display:none}
   .nav-burger{display:flex}
-  .hero{grid-template-columns:1fr;padding:2.5rem 1.2rem 2rem;gap:2rem;min-height:unset}
-  .wizard-card{position:static;border-radius:var(--r3)}
-  .wizard-body{max-height:none;overflow-y:visible}
-  .wiz-footer{position:static;background:none;border-top:none;padding:0}
+  .hero{padding:2.5rem 1.2rem 2rem;min-height:unset}
+  .service-selector{max-width:100%}
   .hero h1{font-size:clamp(3.5rem,14vw,5rem)}
   .hero-desc{font-size:14px;max-width:100%}
   .stats-bar{grid-template-columns:repeat(2,1fr)}
@@ -744,8 +742,8 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:2rem 2.5r
       </div>
     </div>
 
-    <!-- WIZARD -->
-    <div class="wizard-card">
+    <!-- WIZARD (oculto — ahora es fullscreen via FSW) -->
+    <div class="wizard-card" style="display:none">
       <div class="wizard-progress">
         <div class="wp-step active" id="wp1"><div class="wp-dot">01</div><span class="wp-label">Direcciones</span></div>
         <div class="wp-line" id="line1"></div>
@@ -2045,15 +2043,16 @@ function selectService(tipo) {
   tipoServicio = tipo;
   document.getElementById('sc-mudanza').classList.toggle('sel', tipo === 'mudanza');
   document.getElementById('sc-flete').classList.toggle('sel', tipo === 'flete');
-  if (tipo === 'flete') {
-    openFlete();
-    // Resetear selector visual después
-    setTimeout(function() {
-      document.getElementById('sc-mudanza').classList.add('sel');
-      document.getElementById('sc-flete').classList.remove('sel');
-      tipoServicio = 'mudanza';
-    }, 300);
-  }
+  setTimeout(function() {
+    if (tipo === 'flete') openFlete();
+    else openFSW();
+  }, 150);
+  // Resetear selector visual
+  setTimeout(function() {
+    document.getElementById('sc-mudanza').classList.add('sel');
+    document.getElementById('sc-flete').classList.remove('sel');
+    tipoServicio = 'mudanza';
+  }, 400);
 }
 
 // ════════════════════════════════════════════════════
