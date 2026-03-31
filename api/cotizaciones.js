@@ -422,7 +422,17 @@ module.exports = async function handler(req, res) {
       } catch(e) { return res.status(200).json({ mudanzas: [] }); }
     }
 
-    // Cambiar estado de mudanza — el mudancero marca en curso o completada
+    // Registrar pago realizado (anticipo o saldo) — llamado desde pago-exitoso
+    if (action === 'registrar-pago' && req.method === 'POST') {
+      const { mudanzaId, tipoPago } = req.body;
+      if (!mudanzaId || !tipoPago) return res.status(400).json({ error: 'Faltan datos' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'No encontrada' });
+      if (tipoPago === 'anticipo') m.anticipoPagado = true;
+      if (tipoPago === 'saldo')    m.saldoPagado = true;
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      return res.status(200).json({ ok: true });
+    }
     if (action === 'cambiar-estado' && req.method === 'POST') {
       const { mudanzaId, estado, mudanceroEmail } = req.body;
       const estadosValidos = ['en_curso', 'completada'];
