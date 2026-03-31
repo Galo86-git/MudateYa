@@ -331,11 +331,12 @@ li.kb-active{background:rgba(34,195,106,.18)!important;color:#E8F5EE!important}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 /* ── SELECTOR TIPO SERVICIO ── */
 .service-selector{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:2rem;animation:fadeUp .6s .3s ease both;max-width:620px;width:100%}
-.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:24px;padding:2.6rem 1.6rem 2.2rem;cursor:pointer;transition:all .22s cubic-bezier(.22,1,.36,1);text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:hidden;animation:cardPulse 3s ease-in-out infinite}
-.service-card:nth-child(2){animation-delay:1.5s}
-@keyframes cardPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(34,195,106,0)}
-  50%{box-shadow:0 0 18px 4px rgba(34,195,106,.15),0 0 0 1px rgba(34,195,106,.12)}
+.service-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:24px;padding:2.6rem 1.6rem 2.2rem;cursor:pointer;transition:border-color .22s,background .22s;text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:hidden;animation:cardBreath 2.8s ease-in-out infinite}
+.service-card:nth-child(2){animation-delay:1.4s}
+@keyframes cardBreath{
+  0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(34,195,106,0);border-color:var(--border2)}
+  40%{transform:translateY(-6px) scale(1.02);box-shadow:0 12px 40px rgba(34,195,106,.2),0 0 0 2px rgba(34,195,106,.3);border-color:rgba(34,195,106,.6)}
+  60%{transform:translateY(-6px) scale(1.02)}
 }
 .service-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(34,195,106,.12) 0%,transparent 70%);opacity:0;transition:opacity .3s}
 .service-card:hover::before,.service-card.sel::before{opacity:1}
