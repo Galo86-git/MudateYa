@@ -768,7 +768,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
 // GOOGLE SHEETS — LOG DE PEDIDOS DE CLIENTES
 // ════════════════════════════════════════════════════
 async function logPedidoSheets(mudanza) {
-  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  const webhookUrl = process.env.GOOGLE_SHEETS_PEDIDOS_URL;
   if (!webhookUrl) return;
 
   const fecha = new Date(mudanza.fechaPublicacion).toLocaleString('es-AR', {
