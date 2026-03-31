@@ -341,6 +341,8 @@ module.exports = async function handler(req, res) {
       if (!globalIdx.includes(id)) globalIdx.push(id);
       await setJSON('mudanzas:activas', globalIdx, 604800);
       try { await notificarMudanceros(mudanza); } catch(e) { console.error(e.message); }
+      // Loguear en Google Sheets
+      try { await logPedidoSheets(mudanza); } catch(e) { console.warn('Sheets log error:', e.message); }
       return res.status(200).json({ ok: true, id, mudanza });
     }
 
@@ -760,5 +762,40 @@ async function enviarEmailAceptacion(mudanza, cot) {
       attachments,
     });
   }
+}
+
+// ════════════════════════════════════════════════════
+// GOOGLE SHEETS — LOG DE PEDIDOS DE CLIENTES
+// ════════════════════════════════════════════════════
+async function logPedidoSheets(mudanza) {
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  const fecha = new Date(mudanza.fechaPublicacion).toLocaleString('es-AR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires'
+  });
+
+  const row = {
+    ID:               mudanza.id,
+    Fecha:            fecha,
+    Tipo:             (mudanza.tipo || 'mudanza').toUpperCase(),
+    Desde:            mudanza.desde,
+    Hasta:            mudanza.hasta,
+    Ambientes:        mudanza.ambientes || '—',
+    Objeto:           mudanza.servicios || '—',
+    'Precio estimado': mudanza.precio_estimado ? `$${parseInt(mudanza.precio_estimado).toLocaleString('es-AR')}` : '—',
+    Cliente:          mudanza.clienteNombre || '—',
+    Email:            mudanza.clienteEmail || '—',
+    Celular:          mudanza.clienteWA || '—',
+    Estado:           'Buscando',
+    Expira:           new Date(mudanza.expira).toLocaleString('es-AR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires' }),
+  };
+
+  await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(row),
+  });
 }
 
