@@ -572,6 +572,13 @@ function renderMudanzaCard(m, idx){
     +   (mud.mudanceroTel ? '<a href="https://wa.me/54'+String(mud.mudanceroTel).replace(/\D/g,'')+'?text=Hola+'+encodeURIComponent((mud.mudanceroNombre||'').split(' ')[0])+'%2C+te+contacto+por+mi+mudanza+en+MudateYa+%F0%9F%9A%9B" target="_blank" rel="noopener" class="btn btn-green" style="font-size:13px;padding:10px 20px">💬 Coordinar por WhatsApp</a>' : '')
     +   '<button class="btn btn-ghost" style="font-size:12px" onclick="loadMudanzas()">↻ Actualizar</button>'
     +   (m.estado==='buscando' ? '<button class="btn btn-ghost" style="font-size:12px;color:var(--red);border-color:rgba(255,82,82,.3)" onclick="eliminarMudanza(\''+m.id+'\',this)">🗑 Eliminar</button>' : '')
+    // Botón pagar anticipo — aparece cuando está confirmada y no pagó el anticipo
+    +   (m.estado==='cotizacion_aceptada' && !m.anticipoPagado && m.cotizacionAceptada
+        ? '<button class="btn" style="background:#009EE3;color:white;font-size:13px;padding:10px 18px" onclick="pagarAnticipo(mudanzasData.find(function(x){return x.id===\''+m.id+'\'}))">💳 Pagar anticipo 50% ($'+Math.round((m.cotizacionAceptada.precio||0)*0.5).toLocaleString('es-AR')+')</button>'
+        : '')
+    +   (m.anticipoPagado && !m.saldoPagado && m.estado!=='completada'
+        ? '<span style="font-size:11px;color:var(--emerald);font-family:var(--mono);padding:8px 0">✓ Anticipo pagado</span>'
+        : '')
     // Botón pagar saldo — aparece cuando el mudancero marca completada
     +   (m.estado==='completada' && m.cotizacionAceptada && !m.saldoPagado
         ? '<button id="btnPagarSaldo_'+m.id+'" class="btn" style="background:#009EE3;color:white;font-size:13px;padding:10px 18px" onclick="pagarSaldo(\''+m.id+'\')">💳 Pagar saldo final ($'+Math.round((m.cotizacionAceptada.precio||0)*0.5).toLocaleString('es-AR')+')</button>'
