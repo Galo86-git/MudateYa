@@ -700,19 +700,37 @@ function renderCardCotizacion(m) {
   var isAcept = m.estado==='cotizacion_aceptada' && m.cotizacionAceptada && m.cotizacionAceptada.id===cot?.id;
   var expirado = new Date(m.expira) < new Date();
   var noElegido = m.estado==='cotizacion_aceptada' && !isAcept;
+  var enCurso = m.estado==='en_curso';
+  var completada = m.estado==='completada';
   var clienteNombre = m.clienteNombre || '';
   var clienteEmail  = m.clienteEmail  || '';
   var clienteWA     = m.clienteWA     || '';
   var waLink = clienteWA ? 'https://wa.me/54'+clienteWA.replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+clienteNombre.split(' ')[0]+', te contacto por la mudanza que acepté en MudateYa ('+m.desde+' → '+m.hasta+') 🚛') : '';
   var mailLink = clienteEmail ? 'mailto:'+clienteEmail+'?subject='+encodeURIComponent('Mudanza MudateYa – '+m.desde+' → '+m.hasta) : '';
 
-  var badge = isAcept
-    ? '<span class="badge aceptado">✓ Aceptada</span>'
-    : (noElegido ? '<span class="badge rechazado">No elegida</span>'
-    : (expirado  ? '<span class="badge" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border)">Expirada</span>'
-    : '<span class="badge nuevo">En espera</span>'));
+  var badge = completada ? '<span class="badge aceptado">✓ Completada</span>'
+    : enCurso   ? '<span class="badge" style="background:rgba(41,182,246,.12);color:var(--sky);border:1px solid rgba(41,182,246,.25)">▶ En curso</span>'
+    : isAcept   ? '<span class="badge aceptado">✓ Aceptada</span>'
+    : noElegido ? '<span class="badge rechazado">No elegida</span>'
+    : expirado  ? '<span class="badge" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border)">Expirada</span>'
+    : '<span class="badge nuevo">En espera</span>';
 
-  return '<div class="pedido-card '+(isAcept?'aceptado':(noElegido||expirado?'rechazado':''))+'">'
+  // Botones de estado — solo para mudanzas aceptadas o en curso
+  var estadoBtns = '';
+  if (isAcept && !enCurso && !completada) {
+    estadoBtns = '<div style="margin-top:10px;display:flex;gap:8px">'
+      +'<button class="btn btn-green" style="font-size:12px" onclick="cambiarEstado(\''+m.id+'\',\'en_curso\',this)">▶ Iniciar mudanza</button>'
+      +'</div>';
+  } else if (enCurso) {
+    estadoBtns = '<div style="margin-top:10px;display:flex;gap:8px;align-items:center">'
+      +'<div style="font-size:11px;color:var(--sky);font-family:var(--mono);flex:1">🚛 Mudanza en curso…</div>'
+      +'<button class="btn btn-green" style="font-size:12px" onclick="cambiarEstado(\''+m.id+'\',\'completada\',this)">✓ Marcar como completada</button>'
+      +'</div>';
+  } else if (completada) {
+    estadoBtns = '<div style="margin-top:10px;padding:8px 12px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);border-radius:8px;font-size:12px;color:var(--emerald);font-family:var(--mono)">✓ Mudanza completada</div>';
+  }
+
+  return '<div class="pedido-card '+(isAcept||enCurso||completada?'aceptado':(noElegido||expirado?'rechazado':''))+'">'
     +'<div class="pedido-header"><div>'
     +'<div class="pedido-ruta">'+m.desde+' → '+m.hasta+'</div>'
     +'<div class="pedido-fecha">📅 '+(m.fecha||'—')+' · '+(m.ambientes||'—')+'</div>'
@@ -723,7 +741,7 @@ function renderCardCotizacion(m) {
     +'<div class="pedido-precio">$'+(cot?.precio?.toLocaleString('es-AR')||'—')+'</div>'
     +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">tu cotización</div>'
     +(cot?.nota?'<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic">"'+cot.nota+'"</div>':'')
-    +(isAcept&&(clienteNombre||clienteWA) ? '<div style="margin-top:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
+    +((isAcept||enCurso||completada)&&(clienteNombre||clienteWA) ? '<div style="margin-top:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
       +'<div style="flex:1">'
       +'<div style="font-size:11px;font-weight:700;color:var(--emerald);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
       +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+(clienteNombre||'—')+'</div>'
@@ -733,7 +751,28 @@ function renderCardCotizacion(m) {
       +(waLink?'<a href="'+waLink+'" target="_blank" rel="noopener" class="btn btn-green" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">💬 WhatsApp</a>':'')
       +(mailLink?'<a href="'+mailLink+'" class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">📧 Email</a>':'')
       +'</div></div>' : '')
+    + estadoBtns
     +'</div>';
+}
+
+async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    var r = await fetch('/api/cotizaciones?action=cambiar-estado', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ mudanzaId, estado: nuevoEstado, mudanceroEmail: currentUser.email })
+    });
+    var d = await r.json();
+    if (d.error) throw new Error(d.error);
+    // Actualizar estado en memoria y re-render
+    var m = misCotizaciones.find(function(x){ return x.id === mudanzaId; });
+    if (m) m.estado = nuevoEstado;
+    renderPedidos();
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = btn.textContent || '?'; }
+    console.warn('Error cambiando estado:', e.message);
+  }
 }
 
 async function rechazarPedido(mudanzaId, btn) {
