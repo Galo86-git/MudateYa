@@ -336,6 +336,8 @@ function logout(){
 }
 
 // ── MUDANZAS ───────────────────────────────────────────────────────────────
+var _tabMudanzas = 'buscando';
+
 async function loadMudanzas(){
   document.getElementById('mudanzasList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try{
@@ -348,27 +350,65 @@ async function loadMudanzas(){
   }catch(e){
     mudanzasData = [];
   }
-
+  // Auto-seleccionar tab con contenido
   var ahora = new Date();
-  var activas = mudanzasData.filter(function(m){
-    var expirada = new Date(m.expira) < ahora;
-    var aceptada = m.estado === 'cotizacion_aceptada';
-    // Mostrar si: tiene cotización aceptada, O si no expiró, O si tiene cotizaciones recibidas (aunque expiró)
-    return aceptada || !expirada || (m.cotizaciones && m.cotizaciones.length > 0);
-  });
+  var tieneActivas = mudanzasData.some(function(m){ return m.estado==='buscando' && new Date(m.expira)>=ahora && (!m.cotizaciones||m.cotizaciones.length===0); });
+  var tieneCotz    = mudanzasData.some(function(m){ return m.cotizaciones&&m.cotizaciones.length>0&&m.estado!=='cotizacion_aceptada'; });
+  var tieneAcept   = mudanzasData.some(function(m){ return m.estado==='cotizacion_aceptada'; });
+  if(!tieneActivas && tieneCotz) _tabMudanzas='cotizados';
+  else if(!tieneActivas && !tieneCotz && tieneAcept) _tabMudanzas='aceptadas';
+  renderMudanzasTabs();
+}
 
-  if(activas.length === 0){
-    document.getElementById('mudanzasList').innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">🚛</div>
-        <div class="empty-title">Todavía no publicaste ninguna mudanza</div>
-        <p style="color:var(--text3);font-size:13px">Completá el wizard para recibir presupuestos de mudanceros verificados.</p>
-        <a href="/" class="btn-start">Publicar mi mudanza →</a>
-      </div>`;
-    return;
-  }
+function setTabMudanzas(tab) {
+  _tabMudanzas = tab;
+  renderMudanzasTabs();
+}
 
-  document.getElementById('mudanzasList').innerHTML = activas.map(function(m, idx){ return renderMudanzaCard(m, idx); }).join('');
+function renderMudanzasTabs() {
+  var ahora = new Date();
+  var buscando  = mudanzasData.filter(function(m){ return m.estado==='buscando' && new Date(m.expira)>=ahora && (!m.cotizaciones||m.cotizaciones.length===0); });
+  var conCotz   = mudanzasData.filter(function(m){ return m.cotizaciones&&m.cotizaciones.length>0&&m.estado!=='cotizacion_aceptada'; });
+  var aceptadas = mudanzasData.filter(function(m){ return m.estado==='cotizacion_aceptada'; });
+  var expiradas = mudanzasData.filter(function(m){ return new Date(m.expira)<ahora && m.estado==='buscando' && (!m.cotizaciones||m.cotizaciones.length===0); });
+
+  var tabs = [
+    { id:'buscando',  label:'Buscando',    count:buscando.length,  color:'var(--amber)' },
+    { id:'cotizados', label:'Cotizaciones', count:conCotz.length,   color:'var(--sky)' },
+    { id:'aceptadas', label:'Confirmadas',  count:aceptadas.length, color:'var(--emerald)' },
+    { id:'expiradas', label:'Expiradas',    count:expiradas.length, color:'var(--text3)' },
+  ];
+
+  var tabsHtml = '<div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.2rem;overflow-x:auto">'
+    + tabs.map(function(t){
+        var on = _tabMudanzas===t.id;
+        return '<button onclick="setTabMudanzas(\''+t.id+'\')" style="'
+          +'display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:none;'
+          +'font-size:12px;font-weight:600;font-family:\'Outfit\',sans-serif;cursor:pointer;white-space:nowrap;'
+          +'border-bottom:2px solid '+(on?t.color:'transparent')+';color:'+(on?t.color:'var(--text3)')+';transition:all .2s">'
+          +t.label
+          +(t.count>0?'<span style="background:'+(on?t.color:'var(--surface2)')+';color:'+(on?'#041A0E':'var(--text3)')+';font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid var(--border2)">'+t.count+'</span>':'')
+          +'</button>';
+      }).join('')
+    +'</div>';
+
+  var list = _tabMudanzas==='buscando' ? buscando
+           : _tabMudanzas==='cotizados' ? conCotz
+           : _tabMudanzas==='aceptadas' ? aceptadas
+           : expiradas;
+
+  var emptyMsgs = {
+    buscando:  '⏳ No tenés mudanzas buscando cotizaciones.<br><br><a href="/" style="background:var(--emerald);color:#041A0E;padding:11px 24px;border-radius:9px;text-decoration:none;font-weight:700;font-size:13px">Publicar mudanza →</a>',
+    cotizados: '📬 No tenés cotizaciones pendientes de revisar.',
+    aceptadas: '✅ Cuando aceptes una cotización aparece acá.',
+    expiradas: '⏱ No tenés mudanzas expiradas sin cotizar.'
+  };
+
+  var contentHtml = list.length===0
+    ? '<div style="text-align:center;padding:3rem;color:var(--text3);font-size:13px;line-height:2">'+emptyMsgs[_tabMudanzas]+'</div>'
+    : list.map(function(m,idx){ return renderMudanzaCard(m,idx); }).join('');
+
+  document.getElementById('mudanzasList').innerHTML = tabsHtml + contentHtml;
 }
 
 function renderMudanzaCard(m, idx){
