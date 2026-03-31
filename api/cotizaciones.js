@@ -71,7 +71,9 @@ async function generarPDFBase64(datos) {
   const extras        = datos.extras || '';
   const nota          = datos.nota || '';
   const precio        = parseInt(datos.precio || datos.precio_total || 0);
-  const fee           = Math.round(precio * 0.15 / 500) * 500;
+  const esFlete       = datos.ambientes === 'Flete' || datos.tipo === 'flete';
+  const feePct        = esFlete ? 0.20 : 0.15;
+  const fee           = Math.round(precio * feePct / 500) * 500;
   const resto         = precio - fee;
   const fmt           = (n) => '$' + n.toLocaleString('es-AR');
   const starStr       = '★'.repeat(Math.floor(estrellas)) + '☆'.repeat(5 - Math.floor(estrellas));
@@ -420,7 +422,22 @@ module.exports = async function handler(req, res) {
       } catch(e) { return res.status(200).json({ mudanzas: [] }); }
     }
 
-    // Rechazar pedido — el mudancero no quiere cotizar esta mudanza
+    // Eliminar mudanza — solo el cliente puede eliminar sus propias mudanzas en estado buscando
+    if (action === 'eliminar' && req.method === 'POST') {
+      const { mudanzaId, clienteEmail } = req.body;
+      if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'No encontrada' });
+      if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
+      if (m.estado !== 'buscando') return res.status(400).json({ error: 'Solo se pueden eliminar mudanzas buscando cotizaciones' });
+      // Marcar como eliminada
+      m.estado = 'eliminada';
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      // Sacar de la lista activa
+      const activas = await getJSON('mudanzas:activas') || [];
+      await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId), 604800);
+      return res.status(200).json({ ok: true });
+    }
     if (action === 'rechazar' && req.method === 'POST') {
       const { mudanzaId, mudanceroEmail } = req.body;
       if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
