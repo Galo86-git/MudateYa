@@ -454,6 +454,7 @@ function calcNeto(ambientes) {
 function calcFeeLabel(ambientes) {
   return (ambientes === 'Flete') ? '20%' : '15%';
 }
+function verFotoGrande(mudanzaId, fotoIdx) {
   var m = mudanzasDisponibles.find(function(x){ return x.id === mudanzaId; })
        || misCotizaciones.find(function(x){ return x.id === mudanzaId; });
   if (!m || !m.fotos || !m.fotos[fotoIdx]) return;
