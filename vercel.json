@@ -7,6 +7,9 @@
     { "src": "/mi-cuenta", "dest": "/mi-cuenta.html" },
     { "src": "/mi-mudanza", "dest": "/mi-mudanza.html" },
     { "src": "/pago-exitoso", "dest": "/pago-exitoso.html" },
+    { "src": "/terminos", "dest": "/terminos.html" },
+    { "src": "/privacidad", "dest": "/privacidad.html" },
+    { "src": "/contacto", "dest": "/contacto.html" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
