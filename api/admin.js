@@ -69,37 +69,59 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ rows });
     }
 
-    // ── GET pagos (mudanzas completadas) ─────────────
+    // ── GET pagos (todas las mudanzas con cotización aceptada) ─────────────
     if (req.method === 'GET' && type === 'pagos') {
-      const ids = await getJSON('mudanzas:activas') || [];
-      const allKeys = await redisCall('KEYS', 'mudanza:*').catch(() => []);
       const rows = [];
-      const claves = Array.isArray(allKeys) ? allKeys : [];
-      for (const key of claves.slice(0, 200)) {
-        const m = await getJSON(key.replace('mudanza:', '')).catch(() => null);
+      const seen = new Set();
+
+      // Leer desde mudanzas:activas
+      const activas = await getJSON('mudanzas:activas') || [];
+
+      // Leer también desde todos los clientes registrados
+      let todasIds = [...activas];
+
+      // Buscar por clientes en Redis (hasta 50 clientes)
+      try {
+        const clienteKeys = await redisCall('KEYS', 'cliente:*');
+        if (Array.isArray(clienteKeys)) {
+          for (const key of clienteKeys.slice(0, 50)) {
+            const ids = await getJSON(key) || [];
+            todasIds = todasIds.concat(ids);
+          }
+        }
+      } catch(e) { console.warn('Error buscando clientes:', e.message); }
+
+      // Deduplicar
+      const idsUnicos = [...new Set(todasIds)];
+
+      for (const id of idsUnicos.slice(0, 300)) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const m = await getJSON(`mudanza:${id}`).catch(() => null);
         if (!m) continue;
         const cot = m.cotizacionAceptada || {};
-        if (!cot.precio) continue;
+        if (!cot.precio) continue; // Solo mudanzas con cotización aceptada
         const esFlete = m.tipo === 'flete' || m.ambientes === 'Flete';
         const feePct = esFlete ? 0.20 : 0.15;
         const fee = Math.round(cot.precio * feePct);
         rows.push({
-          id:            m.id,
-          fecha:         m.fechaPublicacion || '',
+          id:             m.id,
+          fecha:          m.fechaPublicacion || '',
           fechaCompletada: m.fechaCompletada || '',
-          tipo:          (m.tipo || 'mudanza').toUpperCase(),
-          desde:         m.desde,
-          hasta:         m.hasta,
-          cliente:       m.clienteNombre || m.clienteEmail || '—',
-          mudancero:     cot.mudanceroNombre || '—',
-          precio:        cot.precio,
-          fee:           fee,
-          neto:          cot.precio - fee,
-          estado:        m.estado,
+          tipo:           (m.tipo || 'mudanza').toUpperCase(),
+          desde:          m.desde,
+          hasta:          m.hasta,
+          cliente:        m.clienteNombre || m.clienteEmail || '—',
+          mudancero:      cot.mudanceroNombre || '—',
+          precio:         cot.precio,
+          fee:            fee,
+          neto:           cot.precio - fee,
+          estado:         m.estado,
           anticipoPagado: m.anticipoPagado || false,
-          saldoPagado:   m.saldoPagado || false,
+          saldoPagado:    m.saldoPagado || false,
         });
       }
+
       // Ordenar por fecha desc
       rows.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
       return res.status(200).json({ rows });
