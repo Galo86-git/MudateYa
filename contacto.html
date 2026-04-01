@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Contacto — MudateYa</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080E0C;--bg2:#0D1410;--surface:#172018;--surface2:#1D2820;--border:#213029;--border2:#2A3C32;--emerald:#22C36A;--emerald-subtle:rgba(34,195,106,.08);--amber:#FFB300;--text:#E8F5EE;--text2:#7AADA0;--text3:#3D6458;--mono:'DM Mono',monospace;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+nav{position:sticky;top:0;z-index:100;background:rgba(8,14,12,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:58px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--text);text-decoration:none}
+.logo span{color:var(--emerald)}
+.nav-back{font-size:12px;color:var(--text3);text-decoration:none;font-family:var(--mono);transition:color .2s}
+.nav-back:hover{color:var(--text2)}
+.container{max-width:960px;margin:0 auto;padding:4rem 2rem 6rem;display:grid;grid-template-columns:1fr 1.2fr;gap:4rem;align-items:start}
+@media(max-width:768px){.container{grid-template-columns:1fr;gap:2.5rem;padding:2.5rem 1.2rem 4rem}}
+.page-badge{display:inline-flex;align-items:center;gap:6px;background:var(--emerald-subtle);color:var(--emerald);font-family:var(--mono);font-size:11px;letter-spacing:.5px;padding:5px 12px;border-radius:6px;margin-bottom:1.2rem;border:1px solid rgba(34,195,106,.2)}
+h1{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;letter-spacing:1px;color:var(--text);margin-bottom:.6rem;line-height:1}
+.subtitle{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:2.5rem;font-weight:300}
+.contact-item{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.6rem}
+.contact-icon{width:40px;height:40px;border-radius:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.contact-label{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.contact-value{font-size:14px;color:var(--text);font-weight:400}
+.contact-value a{color:var(--emerald);text-decoration:none}
+.faq-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.5px;color:var(--text3);margin:2.5rem 0 1rem}
+.faq-item{border-bottom:1px solid var(--border);padding:.8rem 0}
+.faq-q{font-size:13px;color:var(--text2);font-weight:500;margin-bottom:4px}
+.faq-a{font-size:12px;color:var(--text3);line-height:1.6;font-family:var(--mono)}
+.form-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:2rem}
+.form-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.5px;color:var(--text);margin-bottom:1.4rem}
+.field{margin-bottom:1.2rem}
+label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:6px}
+input,select,textarea{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;font-size:14px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--emerald);box-shadow:0 0 0 3px var(--emerald-subtle)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+select option{background:var(--surface2);color:var(--text)}
+textarea{resize:vertical;min-height:120px;line-height:1.6}
+.btn-submit{width:100%;padding:13px;border:none;border-radius:10px;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-top:.5rem}
+.btn-submit:hover{background:#2EDB7A;transform:translateY(-1px)}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.success-msg{display:none;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);border-radius:10px;padding:1rem 1.2rem;text-align:center;font-size:14px;color:var(--emerald);margin-top:1rem}
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center}
+.footer-links{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap}
+.footer-links a{font-size:12px;color:var(--text3);text-decoration:none;font-family:var(--mono);transition:color .2s}
+.footer-links a:hover{color:var(--text2)}
+.footer-copy{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:.8rem}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">Mudate<span>Ya</span></a>
+  <a href="/" class="nav-back">← Volver al inicio</a>
+</nav>
+
+<div class="container">
+
+  <!-- LEFT: Info + FAQ -->
+  <div>
+    <div class="page-badge">💬 Contacto</div>
+    <h1>¿Podemos ayudarte?</h1>
+    <p class="subtitle">Estamos para responder tus dudas sobre mudanzas, fletes, pagos o cómo sumarte como mudancero.</p>
+
+    <div class="contact-item">
+      <div class="contact-icon">📧</div>
+      <div>
+        <div class="contact-label">Email</div>
+        <div class="contact-value"><a href="mailto:hola@mudateya.ar">hola@mudateya.ar</a></div>
+      </div>
+    </div>
+    <div class="contact-item">
+      <div class="contact-icon">💬</div>
+      <div>
+        <div class="contact-label">WhatsApp</div>
+        <div class="contact-value"><a href="https://wa.me/5491100000000" target="_blank">+54 9 11 0000-0000</a></div>
+      </div>
+    </div>
+    <div class="contact-item">
+      <div class="contact-icon">⏱</div>
+      <div>
+        <div class="contact-label">Horario de atención</div>
+        <div class="contact-value">Lunes a viernes · 9 a 18hs</div>
+      </div>
+    </div>
+    <div class="contact-item">
+      <div class="contact-icon">🇦🇷</div>
+      <div>
+        <div class="contact-label">Operamos en</div>
+        <div class="contact-value">CABA, GBA, Rosario, Córdoba</div>
+      </div>
+    </div>
+
+    <div class="faq-title">Preguntas frecuentes</div>
+    <div class="faq-item">
+      <div class="faq-q">¿Cuánto tarda en llegar la primera cotización?</div>
+      <div class="faq-a">Generalmente menos de 15 minutos después de publicar.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Puedo cancelar una mudanza?</div>
+      <div class="faq-a">Podés cancelar gratis mientras no hayas aceptado ninguna cotización.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Cómo me sumo como mudancero?</div>
+      <div class="faq-a">Entrá a mudateya.ar/mudanceros y completá el formulario de registro.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Es seguro pagar por la plataforma?</div>
+      <div class="faq-a">Sí, todos los pagos van por Mercado Pago con protección al comprador.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Qué pasa si el mudancero no se presenta?</div>
+      <div class="faq-a">Contactanos de inmediato y gestionamos el reembolso o reemplazo.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Form -->
+  <div class="form-card">
+    <div class="form-title">Envianos un mensaje</div>
+    <form id="contactForm" onsubmit="enviarConsulta(event)">
+      <div class="field">
+        <label>Tu nombre</label>
+        <input type="text" id="cf-nombre" placeholder="Juan García" required/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="cf-email" placeholder="juan@email.com" required/>
+      </div>
+      <div class="field">
+        <label>Soy</label>
+        <select id="cf-tipo">
+          <option value="cliente">Cliente (quiero mudar)</option>
+          <option value="mudancero">Mudancero / fletero</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Asunto</label>
+        <select id="cf-asunto">
+          <option value="consulta">Consulta general</option>
+          <option value="problema-pago">Problema con un pago</option>
+          <option value="problema-mudanza">Problema con una mudanza</option>
+          <option value="sumarme">Quiero sumarme como mudancero</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Mensaje</label>
+        <textarea id="cf-mensaje" placeholder="Contanos en qué podemos ayudarte…" required></textarea>
+      </div>
+      <button type="submit" class="btn-submit" id="btnEnviar">Enviar mensaje →</button>
+    </form>
+    <div class="success-msg" id="successMsg">
+      ✓ Mensaje enviado. Te respondemos en menos de 24hs hábiles.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/terminos">Términos</a>
+    <a href="/privacidad">Privacidad</a>
+    <a href="/contacto">Contacto</a>
+  </div>
+  <div class="footer-copy">© 2025 MudateYa · Hecho en Argentina 🇦🇷</div>
+</footer>
+
+<script>
+async function enviarConsulta(e) {
+  e.preventDefault();
+  var btn = document.getElementById('btnEnviar');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  var nombre  = document.getElementById('cf-nombre').value.trim();
+  var email   = document.getElementById('cf-email').value.trim();
+  var tipo    = document.getElementById('cf-tipo').value;
+  var asunto  = document.getElementById('cf-asunto').value;
+  var mensaje = document.getElementById('cf-mensaje').value.trim();
+
+  try {
+    await fetch('/api/cotizaciones?action=contacto', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ nombre, email, tipo, asunto, mensaje })
+    });
+  } catch(err) {
+    console.warn('Error enviando contacto:', err.message);
+  }
+
+  document.getElementById('contactForm').style.display = 'none';
+  document.getElementById('successMsg').style.display = 'block';
+}
+</script>
+</body>
+</html>
