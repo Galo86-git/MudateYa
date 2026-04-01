@@ -19,15 +19,11 @@
 }
 html{scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-
-/* NAV */
 nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:62px;}
 .logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--text);text-decoration:none}
 .logo span{color:var(--emerald)}
 .nav-back{font-size:12px;color:var(--text2);text-decoration:none;font-family:var(--mono);display:flex;align-items:center;gap:6px;transition:color .2s}
 .nav-back:hover{color:var(--text)}
-
-/* HERO */
 .hero{max-width:760px;margin:0 auto;padding:4rem 2rem 3rem;text-align:center}
 .hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--emerald-subtle);color:var(--emerald);font-family:var(--mono);font-size:11px;letter-spacing:.5px;padding:5px 12px;border-radius:6px;margin-bottom:1.2rem;border:1px solid rgba(34,195,106,.2)}
 .hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
@@ -35,76 +31,45 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
 .hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,6vw,5.5rem);line-height:.95;letter-spacing:2px;margin-bottom:1rem}
 .hero h1 em{color:var(--emerald);font-style:normal}
 .hero p{font-size:15px;color:var(--text2);line-height:1.75;font-weight:300;max-width:520px;margin:0 auto 2rem}
-
-/* STATS */
 .hero-stats{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-bottom:2.5rem}
 .hstat{text-align:center}
 .hstat-n{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--emerald);letter-spacing:1px}
 .hstat-l{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.3px}
-
-/* FORM */
 .form-wrap{max-width:760px;margin:0 auto;padding:0 2rem 5rem}
 .form-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5)}
-
 .form-section{padding:2rem;border-bottom:1px solid var(--border)}
 .form-section:last-child{border-bottom:none}
 .section-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--text);margin-bottom:4px}
 .section-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:1.4rem}
-
 .field-grid{display:grid;gap:12px}
 .field-grid.cols2{grid-template-columns:1fr 1fr}
 .field-grid.cols3{grid-template-columns:1fr 1fr 1fr}
-
 .field{display:flex;flex-direction:column;gap:6px}
 .field-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)}
 .field-label span{color:var(--emerald)}
-.field input,.field select,.field textarea{
-  width:100%;padding:11px 14px;
-  border:1px solid var(--border2);border-radius:10px;
-  font-size:13px;font-family:'Outfit',sans-serif;
-  color:var(--text);background:var(--surface2);outline:none;
-  transition:border-color .2s,box-shadow .2s;
-}
+.field input,.field select,.field textarea{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s,box-shadow .2s;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--emerald);box-shadow:0 0 0 3px var(--emerald-subtle)}
 .field input::placeholder,.field textarea::placeholder{color:var(--text3)}
 .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233D6458' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .field select option{background:var(--surface2)}
 .field textarea{resize:vertical;min-height:80px;line-height:1.5}
 .field-hint{font-size:10px;color:var(--text3);font-family:var(--mono)}
-
-/* CHIPS */
 .chips-grid{display:flex;flex-wrap:wrap;gap:6px}
-.chip{
-  display:flex;align-items:center;gap:6px;
-  padding:7px 12px;border-radius:8px;
-  border:1px solid var(--border);background:var(--surface2);
-  cursor:pointer;font-size:12px;font-weight:400;color:var(--text2);
-  transition:all .2s;user-select:none;
-}
+.chip{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:12px;font-weight:400;color:var(--text2);transition:all .2s;user-select:none;}
 .chip:hover{border-color:rgba(34,195,106,.3);background:var(--emerald-subtle)}
 .chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
 .chip-icon{font-size:.9rem}
-
-/* HORARIOS */
 .horario-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .horario-chip{padding:8px 6px;border-radius:8px;text-align:center;border:1px solid var(--border);background:var(--surface2);font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;transition:all .2s;user-select:none}
 .horario-chip:hover{border-color:rgba(34,195,106,.3);color:var(--text2)}
 .horario-chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
-
-/* PRECIO */
 .precio-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)}
 .precio-label{font-size:13px;color:var(--text2);flex:1}
 .precio-input-wrap{position:relative;display:flex;align-items:center}
 .precio-prefix{position:absolute;left:12px;font-size:13px;color:var(--text3);font-family:var(--mono)}
 .precio-input{width:140px;padding:9px 12px 9px 26px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none;transition:border-color .2s}
 .precio-input:focus{border-color:var(--emerald)}
-
-/* FOTO */
-.upload-area{
-  border:2px dashed var(--border2);border-radius:12px;
-  padding:2rem;text-align:center;cursor:pointer;
-  transition:all .2s;background:var(--surface2);
-}
+.upload-area{border:2px dashed var(--border2);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);}
 .upload-area:hover{border-color:var(--emerald);background:var(--emerald-subtle)}
 .upload-area.has-file{border-color:var(--emerald);background:var(--emerald-subtle)}
 .upload-icon{font-size:2rem;margin-bottom:8px}
@@ -112,21 +77,11 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
 .upload-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .upload-preview{max-width:120px;max-height:120px;border-radius:10px;margin:0 auto 8px;display:none;object-fit:cover}
 #fotoInput{display:none}
-
-/* SUBMIT */
 .form-footer{padding:1.5rem 2rem;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .footer-note{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.btn-submit{
-  background:var(--emerald);color:#041A0E;border:none;
-  padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;
-  cursor:pointer;font-family:'Outfit',sans-serif;
-  display:flex;align-items:center;gap:8px;
-  transition:all .2s;letter-spacing:.2px;
-}
+.btn-submit{background:var(--emerald);color:#041A0E;border:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px;transition:all .2s;letter-spacing:.2px;}
 .btn-submit:hover{background:#2EDB7A;transform:translateY(-1px);box-shadow:0 6px 24px var(--emerald-glow)}
 .btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
-
-/* SUCCESS */
 .success-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
 .success-overlay.show{display:flex}
 .success-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);padding:2.5rem 2rem;max-width:440px;width:100%;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.7)}
@@ -138,16 +93,11 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
 .success-step-num{width:22px;height:22px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);color:var(--emerald);font-size:11px;font-weight:700;font-family:var(--mono);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .btn-home{display:block;width:100%;padding:13px;border-radius:12px;border:none;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s;text-align:center}
 .btn-home:hover{background:#2EDB7A}
-
-/* ERROR */
 .field-error{font-size:10px;color:#ff6b6b;font-family:var(--mono);display:none}
 .field.has-error input,.field.has-error select,.field.has-error textarea{border-color:#ff6b6b}
 .field.has-error .field-error{display:block}
-
-/* SPINNER */
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(4,26,14,.3);border-top-color:#041A0E;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 @media(max-width:640px){
   nav{padding:0 1.2rem}
   .hero{padding:3rem 1.2rem 2rem}
@@ -160,27 +110,22 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
 </style>
 </head>
 <body>
-
 <nav>
   <a href="/" class="logo">Mudate<span>Ya</span></a>
   <a href="/" class="nav-back">← Volver al inicio</a>
 </nav>
-
 <div class="hero">
   <span class="hero-badge">🚛 Para mudanceros</span>
   <h1>SUMARTE ES<br><em>GRATIS</em></h1>
   <p>Completá el formulario y empezá a recibir clientes en menos de 24 horas. Sin costos fijos — solo pagás cuando concretás un trabajo.</p>
   <div class="hero-stats">
     <div class="hstat"><div class="hstat-n">+9.800</div><div class="hstat-l">mudanzas realizadas</div></div>
-    <div class="hstat"><div class="hstat-n">10%</div><div class="hstat-l">comisión por trabajo</div></div>
+    <div class="hstat"><div class="hstat-n">$0</div><div class="hstat-l">costo fijo mensual</div></div>
     <div class="hstat"><div class="hstat-n">24hs</div><div class="hstat-l">para empezar a recibir pedidos</div></div>
   </div>
 </div>
-
 <div class="form-wrap">
   <form class="form-card" id="regForm" novalidate>
-
-    <!-- SECCIÓN 1: DATOS PERSONALES -->
     <div class="form-section">
       <div class="section-title">Datos personales</div>
       <div class="section-sub">Tu información de contacto — no se muestra públicamente</div>
@@ -206,8 +151,6 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         </div>
       </div>
     </div>
-
-    <!-- SECCIÓN 2: ZONA -->
     <div class="form-section">
       <div class="section-title">Zona de cobertura</div>
       <div class="section-sub">¿En qué áreas operás?</div>
@@ -245,8 +188,6 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         </div>
       </div>
     </div>
-
-    <!-- SECCIÓN 3: VEHÍCULO -->
     <div class="form-section">
       <div class="section-title">Vehículo y capacidad</div>
       <div class="section-sub">¿Con qué trabajás?</div>
@@ -266,25 +207,17 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <div class="field">
           <label class="field-label">Cantidad de vehículos disponibles</label>
           <select id="cantVehiculos">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4 o más</option>
+            <option>1</option><option>2</option><option>3</option><option>4 o más</option>
           </select>
         </div>
         <div class="field">
           <label class="field-label">Cantidad de personas en el equipo</label>
           <select id="equipo">
-            <option>Solo yo</option>
-            <option>2 personas</option>
-            <option>3 personas</option>
-            <option>4 o más personas</option>
+            <option>Solo yo</option><option>2 personas</option><option>3 personas</option><option>4 o más personas</option>
           </select>
         </div>
       </div>
     </div>
-
-    <!-- SECCIÓN 4: SERVICIOS -->
     <div class="form-section">
       <div class="section-title">Servicios que ofrecés</div>
       <div class="section-sub">Seleccioná todos los que apliquen</div>
@@ -300,8 +233,6 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Guardamuebles</div>
       </div>
     </div>
-
-    <!-- SECCIÓN 5: DISPONIBILIDAD -->
     <div class="form-section">
       <div class="section-title">Disponibilidad</div>
       <div class="section-sub">¿Cuándo podés trabajar?</div>
@@ -331,44 +262,22 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <div class="field">
           <label class="field-label">Tiempo mínimo de anticipación</label>
           <select id="anticipacion">
-            <option>Mismo día</option>
-            <option>24 horas</option>
-            <option selected>48 horas</option>
-            <option>1 semana</option>
+            <option>Mismo día</option><option>24 horas</option><option selected>48 horas</option><option>1 semana</option>
           </select>
         </div>
       </div>
     </div>
-
-    <!-- SECCIÓN 6: PRECIOS -->
     <div class="form-section">
       <div class="section-title">Precios base</div>
       <div class="section-sub">Precios orientativos en ARS — podés ajustarlos por cotización</div>
       <div class="field-grid" style="gap:8px">
-        <div class="precio-row">
-          <span class="precio-label">Monoambiente / 1 ambiente</span>
-          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p1" placeholder="45.000" min="0"/></div>
-        </div>
-        <div class="precio-row">
-          <span class="precio-label">2 ambientes</span>
-          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p2" placeholder="65.000" min="0"/></div>
-        </div>
-        <div class="precio-row">
-          <span class="precio-label">3 ambientes</span>
-          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p3" placeholder="85.000" min="0"/></div>
-        </div>
-        <div class="precio-row">
-          <span class="precio-label">4+ ambientes</span>
-          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p4" placeholder="110.000" min="0"/></div>
-        </div>
-        <div class="precio-row">
-          <span class="precio-label">Flete / envío chico</span>
-          <div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="pflete" placeholder="18.000" min="0"/></div>
-        </div>
+        <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p1" placeholder="45.000" min="0"/></div></div>
+        <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p2" placeholder="65.000" min="0"/></div></div>
+        <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p3" placeholder="85.000" min="0"/></div></div>
+        <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p4" placeholder="110.000" min="0"/></div></div>
+        <div class="precio-row"><span class="precio-label">Flete / envío chico</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="pflete" placeholder="18.000" min="0"/></div></div>
       </div>
     </div>
-
-    <!-- SECCIÓN 7: FOTO -->
     <div class="form-section">
       <div class="section-title">Foto o logo</div>
       <div class="section-sub">Se muestra en tu perfil para generar más confianza</div>
@@ -380,8 +289,6 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
       </div>
       <input type="file" id="fotoInput" accept="image/*" onchange="previewFoto(this)"/>
     </div>
-
-    <!-- SECCIÓN 8: EXTRA -->
     <div class="form-section">
       <div class="section-title">Algo más que quieras contar</div>
       <div class="section-sub">Experiencia, especialidades, lo que quieras destacar</div>
@@ -389,8 +296,6 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <textarea id="extra" placeholder="Ej: 10 años de experiencia, especializado en mudanzas de pianos, camión con hidráulica para pisos altos sin ascensor..."></textarea>
       </div>
     </div>
-
-    <!-- SECCIÓN 9: DATOS BANCARIOS -->
     <div class="form-section">
       <div class="section-title">Datos para cobrar</div>
       <div class="section-sub">Así te transferimos tus ganancias — 24hs después de cada trabajo confirmado</div>
@@ -422,8 +327,6 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <span style="font-size:11px;color:var(--text2);font-family:var(--mono);line-height:1.6">Tus datos bancarios están cifrados y solo se usan para transferirte tus ganancias. Nunca se comparten con clientes.</span>
       </div>
     </div>
-
-    <!-- FOOTER -->
     <div class="form-footer">
       <span class="footer-note">🔒 Tus datos están seguros · Solo MudateYa los ve</span>
       <button type="submit" class="btn-submit" id="btnSubmit">
@@ -431,11 +334,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </div>
-
   </form>
 </div>
-
-<!-- SUCCESS OVERLAY -->
 <div class="success-overlay" id="successOverlay">
   <div class="success-card">
     <div class="success-icon">✓</div>
@@ -449,34 +349,23 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
     <a href="/" class="btn-home">Volver al inicio</a>
   </div>
 </div>
-
 <script>
 function toggleMetodoCobro(){
-  var metodo = document.getElementById('metodoCobro').value;
-  document.getElementById('wrap-cbu').style.display = metodo === 'cbu' ? '' : 'none';
-  document.getElementById('wrap-mp').style.display = metodo === 'mp' ? '' : 'none';
+  var metodo=document.getElementById('metodoCobro').value;
+  document.getElementById('wrap-cbu').style.display=metodo==='cbu'?'':'none';
+  document.getElementById('wrap-mp').style.display=metodo==='mp'?'':'none';
 }
-
-// ── CHIPS ──────────────────────────────────────────────────────────────────
-function toggleChip(el, group){
-  if(group==='distancia'){
-    document.querySelectorAll('#chips-distancia .chip').forEach(c=>c.classList.remove('sel'));
-  }
+function toggleChip(el,group){
+  if(group==='distancia'){document.querySelectorAll('#chips-distancia .chip').forEach(c=>c.classList.remove('sel'));}
   el.classList.toggle('sel');
 }
-
-function getChips(containerId){
-  return Array.from(document.querySelectorAll('#'+containerId+' .sel')).map(c=>c.textContent.trim());
-}
-
-// ── FOTO PREVIEW ───────────────────────────────────────────────────────────
+function getChips(containerId){return Array.from(document.querySelectorAll('#'+containerId+' .sel')).map(c=>c.textContent.trim());}
 function previewFoto(input){
   if(input.files&&input.files[0]){
     var reader=new FileReader();
     reader.onload=function(e){
       var preview=document.getElementById('fotoPreview');
-      preview.src=e.target.result;
-      preview.style.display='block';
+      preview.src=e.target.result;preview.style.display='block';
       document.getElementById('uploadIcon').style.display='none';
       document.getElementById('uploadText').textContent='Foto cargada ✓';
       document.getElementById('uploadArea').classList.add('has-file');
@@ -484,89 +373,36 @@ function previewFoto(input){
     reader.readAsDataURL(input.files[0]);
   }
 }
-
-// ── VALIDACIÓN ─────────────────────────────────────────────────────────────
-function validateField(id, condition){
+function validateField(id,condition){
   var field=document.getElementById('f-'+id);
   if(!field)return true;
-  if(!condition){
-    field.classList.add('has-error');
-    return false;
-  }
-  field.classList.remove('has-error');
-  return true;
+  if(!condition){field.classList.add('has-error');return false;}
+  field.classList.remove('has-error');return true;
 }
-
-// ── SUBMIT ─────────────────────────────────────────────────────────────────
-document.getElementById('regForm').addEventListener('submit', async function(e){
+document.getElementById('regForm').addEventListener('submit',async function(e){
   e.preventDefault();
-
   var nombre=document.getElementById('nombre').value.trim();
   var telefono=document.getElementById('telefono').value.trim();
   var email=document.getElementById('email').value.trim();
   var zonaBase=document.getElementById('zonaBase').value;
   var vehiculo=document.getElementById('vehiculo').value;
-
   var ok=true;
-  ok=validateField('nombre', nombre.length>1) && ok;
-  ok=validateField('telefono', telefono.length>6) && ok;
-  ok=validateField('email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
-  ok=validateField('zona-base', zonaBase!=='') && ok;
-  ok=validateField('vehiculo', vehiculo!=='') && ok;
-
-  if(!ok){
-    document.querySelector('.has-error input, .has-error select')?.scrollIntoView({behavior:'smooth',block:'center'});
-    return;
-  }
-
+  ok=validateField('nombre',nombre.length>1)&&ok;
+  ok=validateField('telefono',telefono.length>6)&&ok;
+  ok=validateField('email',/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))&&ok;
+  ok=validateField('zona-base',zonaBase!=='')&&ok;
+  ok=validateField('vehiculo',vehiculo!=='')&&ok;
+  if(!ok){document.querySelector('.has-error input,.has-error select')?.scrollIntoView({behavior:'smooth',block:'center'});return;}
   var btn=document.getElementById('btnSubmit');
-  btn.disabled=true;
-  btn.innerHTML='<span class="spinner"></span> Enviando…';
-
-  // Convertir foto a base64 si existe
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Enviando…';
   var fotoBase64='';
   var fotoInput=document.getElementById('fotoInput');
   if(fotoInput.files&&fotoInput.files[0]){
-    fotoBase64=await new Promise(function(resolve){
-      var r=new FileReader();
-      r.onload=function(e){resolve(e.target.result);};
-      r.readAsDataURL(fotoInput.files[0]);
-    });
+    fotoBase64=await new Promise(function(resolve){var r=new FileReader();r.onload=function(e){resolve(e.target.result);};r.readAsDataURL(fotoInput.files[0]);});
   }
-
-  var data={
-    nombre, telefono, email,
-    empresa:       document.getElementById('empresa').value.trim(),
-    zonaBase,
-    zonasExtra:    document.getElementById('zonasExtra').value.trim(),
-    distancia:     getChips('chips-distancia').join(', '),
-    vehiculo,
-    cantVehiculos: document.getElementById('cantVehiculos').value,
-    equipo:        document.getElementById('equipo').value,
-    servicios:     getChips('chips-servicios').join(', '),
-    dias:          getChips('chips-dias').join(', '),
-    horarios:      getChips('chips-horarios').join(', '),
-    anticipacion:  document.getElementById('anticipacion').value,
-    precio1amb:    document.getElementById('p1').value||'',
-    precio2amb:    document.getElementById('p2').value||'',
-    precio3amb:    document.getElementById('p3').value||'',
-    precio4amb:    document.getElementById('p4').value||'',
-    precioFlete:   document.getElementById('pflete').value||'',
-    extra:         document.getElementById('extra').value.trim(),
-    foto:          fotoBase64,
-    fecha:         new Date().toLocaleString('es-AR'),
-    metodoCobro:   document.getElementById('metodoCobro').value,
-    cbu:           document.getElementById('cbu').value.trim(),
-    emailMP:       document.getElementById('emailMP').value.trim(),
-    titularCuenta: document.getElementById('titularCuenta').value.trim(),
-  };
-
+  var data={nombre,telefono,email,empresa:document.getElementById('empresa').value.trim(),zonaBase,zonasExtra:document.getElementById('zonasExtra').value.trim(),distancia:getChips('chips-distancia').join(', '),vehiculo,cantVehiculos:document.getElementById('cantVehiculos').value,equipo:document.getElementById('equipo').value,servicios:getChips('chips-servicios').join(', '),dias:getChips('chips-dias').join(', '),horarios:getChips('chips-horarios').join(', '),anticipacion:document.getElementById('anticipacion').value,precio1amb:document.getElementById('p1').value||'',precio2amb:document.getElementById('p2').value||'',precio3amb:document.getElementById('p3').value||'',precio4amb:document.getElementById('p4').value||'',precioFlete:document.getElementById('pflete').value||'',extra:document.getElementById('extra').value.trim(),foto:fotoBase64,fecha:new Date().toLocaleString('es-AR'),metodoCobro:document.getElementById('metodoCobro').value,cbu:document.getElementById('cbu').value.trim(),emailMP:document.getElementById('emailMP').value.trim(),titularCuenta:document.getElementById('titularCuenta').value.trim()};
   try{
-    var res=await fetch('/api/registrar-mudancero',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(data)
-    });
+    var res=await fetch('/api/registrar-mudancero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     var json=await res.json();
     if(json.error)throw new Error(json.error);
     document.getElementById('successOverlay').classList.add('show');
