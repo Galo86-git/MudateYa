@@ -66,7 +66,7 @@ footer{border-top:1px solid var(--border);padding:2rem;text-align:center}
       <div class="contact-icon">📧</div>
       <div>
         <div class="contact-label">Email</div>
-        <div class="contact-value"><a href="mailto:hola@mudateya.ar">hola@mudateya.ar</a></div>
+        <div class="contact-value"><a href="/cdn-cgi/l/email-protection#7c1413101d3c1109181d0819051d521d0e"><span class="__cf_email__" data-cfemail="a3cbcccfc2e3ced6c7c2d7c6dac28dc2d1">[email&#160;protected]</span></a></div>
       </div>
     </div>
     <div class="contact-item">
@@ -94,23 +94,51 @@ footer{border-top:1px solid var(--border);padding:2rem;text-align:center}
     <div class="faq-title">Preguntas frecuentes</div>
     <div class="faq-item">
       <div class="faq-q">¿Cuánto tarda en llegar la primera cotización?</div>
-      <div class="faq-a">Generalmente menos de 15 minutos después de publicar.</div>
+      <div class="faq-a">Generalmente menos de 15 minutos después de publicar tu pedido.</div>
     </div>
     <div class="faq-item">
-      <div class="faq-q">¿Puedo cancelar una mudanza?</div>
-      <div class="faq-a">Podés cancelar gratis mientras no hayas aceptado ninguna cotización.</div>
+      <div class="faq-q">¿Cuántas cotizaciones voy a recibir?</div>
+      <div class="faq-a">Podés recibir múltiples cotizaciones de diferentes mudanceros de tu zona. Tenés 24hs para comparar y elegir la que más te convenga.</div>
     </div>
     <div class="faq-item">
-      <div class="faq-q">¿Cómo me sumo como mudancero?</div>
-      <div class="faq-a">Entrá a mudateya.ar/mudanceros y completá el formulario de registro.</div>
+      <div class="faq-q">¿Es gratis publicar una mudanza?</div>
+      <div class="faq-a">Sí, publicar un pedido es completamente gratuito. Solo pagás cuando aceptás una cotización y confirmás el servicio.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Cómo funciona el pago?</div>
+      <div class="faq-a">Al aceptar una cotización abonás el 50% como anticipo por Mercado Pago. El 50% restante lo pagás cuando el mudancero completa el servicio.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">¿Es seguro pagar por la plataforma?</div>
-      <div class="faq-a">Sí, todos los pagos van por Mercado Pago con protección al comprador.</div>
+      <div class="faq-a">Sí. Todos los pagos se procesan a través de Mercado Pago con protección al comprador. MudateYa no almacena datos de tarjetas.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Puedo cancelar una mudanza?</div>
+      <div class="faq-a">Podés eliminar tu pedido gratis mientras esté en estado "Buscando cotizaciones". Una vez que aceptaste y pagaste el anticipo, contactanos para gestionar la cancelación.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">¿Qué pasa si el mudancero no se presenta?</div>
-      <div class="faq-a">Contactanos de inmediato y gestionamos el reembolso o reemplazo.</div>
+      <div class="faq-a">Contactanos de inmediato a hola@mudateya.ar. Gestionamos el reembolso del anticipo y te ayudamos a encontrar un reemplazo.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Los mudanceros están verificados?</div>
+      <div class="faq-a">Sí. Todos los prestadores pasan por un proceso de verificación de identidad antes de poder cotizar en la plataforma.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿En qué zonas opera MudateYa?</div>
+      <div class="faq-a">Actualmente en CABA y Gran Buenos Aires. Próximamente en Rosario, Córdoba, Mendoza y Mar del Plata.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Cómo me sumo como mudancero?</div>
+      <div class="faq-a">Entrá a mudateya.ar/mudanceros, completá el formulario de registro y un miembro del equipo te contactará para validar tu perfil.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Puedo pedir un flete para un solo objeto?</div>
+      <div class="faq-a">Sí. La opción "Flete" está pensada para objetos puntuales como heladeras, muebles, electrodomésticos o cajas. Podés subir fotos para que los fleteros coticen con precisión.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Puedo ver el historial de mis mudanzas?</div>
+      <div class="faq-a">Sí. En tu panel de "Mis mudanzas" podés ver todas tus mudanzas activas, cotizaciones recibidas, el estado del servicio y el historial completo.</div>
     </div>
   </div>
 
@@ -166,7 +194,7 @@ footer{border-top:1px solid var(--border);padding:2rem;text-align:center}
   <div class="footer-copy">© 2025 MudateYa · Hecho en Argentina 🇦🇷</div>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 async function enviarConsulta(e) {
   e.preventDefault();
   var btn = document.getElementById('btnEnviar');
@@ -184,13 +212,4 @@ async function enviarConsulta(e) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ nombre, email, tipo, asunto, mensaje })
     });
-  } catch(err) {
-    console.warn('Error enviando contacto:', err.message);
-  }
-
-  document.getElementById('contactForm').style.display = 'none';
-  document.getElementById('successMsg').style.display = 'block';
-}
-</script>
-</body>
-</html>
+  
