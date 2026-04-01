@@ -27,15 +27,8 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Verificar admin password básico
-  const adminPass = process.env.ADMIN_PASSWORD || 'mudateya2024';
-  const authHeader = req.headers['x-admin-key'] || req.query.key;
-  if (authHeader !== adminPass && process.env.NODE_ENV === 'production') {
-    // En desarrollo no bloquear para facilitar testing
-    if (process.env.VERCEL_ENV === 'production') {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-  }
+  // Auth desactivada — proteger con password en el futuro si es necesario
+
 
   const { type } = req.query;
 
