@@ -173,7 +173,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="page-title">Dashboard</div>
         <div class="metrics-grid" id="metricsGrid">
           <div class="metric-card green"><div class="metric-label">GMV Total</div><div class="metric-val" id="m-gmv">—</div><div class="metric-sub">acumulado</div></div>
-          <div class="metric-card blue"><div class="metric-label">Revenue (fees)</div><div class="metric-val" id="m-revenue">—</div><div class="metric-sub">15% del GMV</div></div>
+          <div class="metric-card blue"><div class="metric-label">Revenue (fees)</div><div class="metric-val" id="m-revenue">—</div><div class="metric-sub" id="m-revenue-sub">sin operaciones aún</div></div>
           <div class="metric-card amber"><div class="metric-label">Mudanceros activos</div><div class="metric-val" id="m-mudanceros">—</div><div class="metric-sub" id="m-pendientes-sub">— pendientes</div></div>
           <div class="metric-card red"><div class="metric-label">Mudanzas</div><div class="metric-val" id="m-mudanzas">—</div><div class="metric-sub">registradas</div></div>
         </div>
@@ -400,12 +400,22 @@ function renderDashboard(){
   var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
   var aprobados  = mudancerosData.filter(function(m){ return getEstado(m) === 'Aprobado'; }).length;
   var totalPagos = pagosData.length + transferenciasData.filter(function(t){ return t.estado === 'confirmada' || t.estado === 'pendiente'; }).length;
-  var gmv = pagosData.reduce(function(s,p){ return s + (parseFloat(p[3])||0); }, 0)
+  var gmv = pagosData.reduce(function(s,p){ return s + (parseFloat(p.precio)||0); }, 0)
           + transferenciasData.filter(function(t){ return t.estado === 'confirmada' || t.estado === 'pendiente'; })
               .reduce(function(s,t){ return s + (parseInt((t.monto||'0').replace(/\D/g,''))||0); }, 0);
 
-  // ── CAMBIO: 15% ──
-  var revenue = gmv * 0.15;
+  // Fee calculado por operación según tipo (flete=20%, mudanza=15%)
+  var revenue = pagosData.reduce(function(s, p) {
+    var precio = parseFloat(p.precio) || 0;
+    var esFlete = (p.tipo || '').toUpperCase() === 'FLETE';
+    return s + Math.round(precio * (esFlete ? 0.20 : 0.15));
+  }, 0);
+
+  // Fee promedio real
+  var feePromedio = gmv > 0 ? Math.round((revenue / gmv) * 100) : 0;
+  var subFee = pagosData.length > 0
+    ? feePromedio + '% promedio (' + pagosData.filter(function(p){ return (p.tipo||'').toUpperCase()==='FLETE'; }).length + ' fletes · ' + pagosData.filter(function(p){ return (p.tipo||'').toUpperCase()!=='FLETE'; }).length + ' mudanzas)'
+    : 'sin operaciones aún';
 
   var transferenciasPendientes = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; }).length;
 
@@ -414,6 +424,7 @@ function renderDashboard(){
   document.getElementById('m-mudanzas').textContent = totalPagos;
   document.getElementById('m-gmv').textContent = gmv > 0 ? '$' + Math.round(gmv).toLocaleString('es-AR') : '—';
   document.getElementById('m-revenue').textContent = revenue > 0 ? '$' + Math.round(revenue).toLocaleString('es-AR') : '—';
+  document.getElementById('m-revenue-sub').textContent = subFee;
 
   if(transferenciasPendientes > 0){
     var existing = document.getElementById('dash-transfer-card');
