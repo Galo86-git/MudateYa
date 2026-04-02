@@ -1,6 +1,7 @@
 // api/analizar-foto.js
-// Proxy seguro para la API de Claude — evita exponer la API key en el frontend
-// y resuelve el problema de CORS al llamar desde el browser
+// Proxy seguro para la API de Claude
+// Detecta automáticamente si las imágenes son un DNI o un objeto de flete/mudanza
+// y responde con el schema correspondiente
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,10 +15,21 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { images } = req.body;
+    const { images, prompt } = req.body;
     if (!images || !images.length) return res.status(400).json({ error: 'Faltan imágenes' });
 
-    // Armar el contenido: imágenes + prompt
+    // ── DETECTAR MODO ────────────────────────────────────────────────────
+    // Si el frontend manda un prompt custom (ej: DNI), lo usamos directamente.
+    // Si no, usamos el prompt de análisis de objeto (modo flete).
+    const esDNI = prompt && (
+      prompt.includes('DNI') ||
+      prompt.includes('documento') ||
+      prompt.includes('numero_dni')
+    );
+
+    const promptFinal = prompt || PROMPT_OBJETO;
+
+    // ── ARMAR CONTENIDO PARA CLAUDE ──────────────────────────────────────
     const content = [
       ...images.slice(0, 2).map(img => ({
         type: 'image',
@@ -29,21 +41,11 @@ module.exports = async function handler(req, res) {
       })),
       {
         type: 'text',
-        text: `Analizá este objeto que necesita ser flete/mudado en Argentina.
-Respondé SOLO con JSON válido (sin markdown, sin explicaciones) con exactamente estos campos:
-{
-  "tipo": "nombre descriptivo del objeto",
-  "peso_kg": número estimado,
-  "dimensiones": "ancho x alto x profundidad en cm aproximado",
-  "dificultad": "baja" | "media" | "alta",
-  "fragil": true | false,
-  "requiere_desmontaje": true | false,
-  "personas_necesarias": número (1 o 2),
-  "notas": "observación breve sobre el objeto o su manipulación"
-}`
+        text: promptFinal
       }
     ];
 
+    // ── LLAMAR A CLAUDE ──────────────────────────────────────────────────
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -53,7 +55,7 @@ Respondé SOLO con JSON válido (sin markdown, sin explicaciones) con exactament
       },
       body: JSON.stringify({
         model: 'claude-opus-4-5',
-        max_tokens: 400,
+        max_tokens: esDNI ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
     });
@@ -67,7 +69,7 @@ Respondé SOLO con JSON válido (sin markdown, sin explicaciones) con exactament
     const data = await response.json();
     const text = (data.content || []).map(b => b.text || '').join('');
 
-    // Parsear y validar el JSON
+    // ── PARSEAR JSON DE LA RESPUESTA ─────────────────────────────────────
     let analisis;
     try {
       analisis = JSON.parse(text.replace(/```json|```/g, '').trim());
@@ -86,3 +88,35 @@ Respondé SOLO con JSON válido (sin markdown, sin explicaciones) con exactament
     return res.status(500).json({ error: error.message });
   }
 };
+
+// ── PROMPTS ──────────────────────────────────────────────────────────────
+
+const PROMPT_OBJETO = `Analizá este objeto que necesita ser flete/mudado en Argentina.
+Respondé SOLO con JSON válido (sin markdown, sin explicaciones) con exactamente estos campos:
+{
+  "tipo": "nombre descriptivo del objeto",
+  "peso_kg": número estimado,
+  "dimensiones": "ancho x alto x profundidad en cm aproximado",
+  "dificultad": "baja" | "media" | "alta",
+  "fragil": true | false,
+  "requiere_desmontaje": true | false,
+  "personas_necesarias": número (1 o 2),
+  "notas": "observación breve sobre el objeto o su manipulación"
+}`;
+
+// Nota: el prompt de DNI lo manda el frontend directamente en req.body.prompt
+// Ver mudanceros.html → función analizarDNI()
+// Schema esperado para DNI:
+// {
+//   "tipo_documento": "DNI",
+//   "numero_dni": "...",
+//   "apellido": "...",
+//   "nombres": "...",
+//   "fecha_nacimiento": "DD/MM/AAAA",
+//   "fecha_vencimiento": "DD/MM/AAAA",
+//   "cuil": "...",
+//   "sexo": "M o F",
+//   "nacionalidad": "...",
+//   "legible": true | false,
+//   "advertencias": []
+// }
