@@ -8,31 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://accounts.google.com/gsi/client" async defer>
-// ── SELECTOR MODO FSW ─────────────────────────────────────────────
-window._fswModo = 'abierto';
 
-function fswSeleccionarModo(modo) {
-  window._fswModo = modo;
-  var dirigido = document.getElementById('fsw-modo-dirigido');
-  var abierto  = document.getElementById('fsw-modo-abierto');
-  if (modo === 'dirigido') {
-    dirigido.style.background  = 'var(--emerald-subtle)';
-    dirigido.style.borderColor = 'var(--emerald)';
-    dirigido.querySelectorAll('div')[1].style.color = 'var(--emerald)';
-    abierto.style.background   = 'var(--surface)';
-    abierto.style.borderColor  = 'var(--border2)';
-    abierto.querySelectorAll('div')[1].style.color  = 'var(--text)';
-    document.getElementById('fsw-next').textContent = 'Ver mudanceros →';
-  } else {
-    abierto.style.background   = 'var(--emerald-subtle)';
-    abierto.style.borderColor  = 'var(--emerald)';
-    abierto.querySelectorAll('div')[1].style.color  = 'var(--emerald)';
-    dirigido.style.background  = 'var(--surface)';
-    dirigido.style.borderColor = 'var(--border2)';
-    dirigido.querySelectorAll('div')[1].style.color = 'var(--text)';
-    document.getElementById('fsw-next').textContent = 'Solicitar presupuestos →';
-  }
-}
 
 // ── GUARDAR EN SESSIONSTORAGE Y REDIRIGIR AL CATÁLOGO ────────────
 function _guardarYRedirigirCatalogo() {
@@ -590,6 +566,32 @@ li.kb-active{background:rgba(34,195,106,.18)!important;color:#E8F5EE!important}
 .fsw-panel{display:none}
 .fsw-panel.active{display:block;animation:fadeUp .25s ease both}
 </style>
+<script>
+window._fswModo = 'abierto';
+
+function fswSeleccionarModo(modo) {
+  window._fswModo = modo;
+  var dirigido = document.getElementById('fsw-modo-dirigido');
+  var abierto  = document.getElementById('fsw-modo-abierto');
+  if (modo === 'dirigido') {
+    dirigido.style.background  = 'var(--emerald-subtle)';
+    dirigido.style.borderColor = 'var(--emerald)';
+    dirigido.querySelectorAll('div')[1].style.color = 'var(--emerald)';
+    abierto.style.background   = 'var(--surface)';
+    abierto.style.borderColor  = 'var(--border2)';
+    abierto.querySelectorAll('div')[1].style.color  = 'var(--text)';
+    document.getElementById('fsw-next').textContent = 'Ver mudanceros →';
+  } else {
+    abierto.style.background   = 'var(--emerald-subtle)';
+    abierto.style.borderColor  = 'var(--emerald)';
+    abierto.querySelectorAll('div')[1].style.color  = 'var(--emerald)';
+    dirigido.style.background  = 'var(--surface)';
+    dirigido.style.borderColor = 'var(--border2)';
+    dirigido.querySelectorAll('div')[1].style.color = 'var(--text)';
+    document.getElementById('fsw-next').textContent = 'Solicitar presupuestos →';
+  }
+}
+</script>
 </head>
 <body>
 
