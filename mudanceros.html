@@ -69,14 +69,13 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
 .precio-prefix{position:absolute;left:12px;font-size:13px;color:var(--text3);font-family:var(--mono)}
 .precio-input{width:140px;padding:9px 12px 9px 26px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none;transition:border-color .2s}
 .precio-input:focus{border-color:var(--emerald)}
-.upload-area{border:2px dashed var(--border2);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);}
+.upload-area{border:2px dashed var(--border2);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);}
 .upload-area:hover{border-color:var(--emerald);background:var(--emerald-subtle)}
-.upload-area.has-file{border-color:var(--emerald);background:var(--emerald-subtle)}
-.upload-icon{font-size:2rem;margin-bottom:8px}
-.upload-text{font-size:13px;color:var(--text2);margin-bottom:4px}
+.upload-area.has-file{border-color:var(--emerald);background:rgba(34,195,106,.06)}
+.upload-icon{font-size:1.8rem;margin-bottom:6px}
+.upload-text{font-size:13px;color:var(--text2);margin-bottom:3px}
 .upload-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.upload-preview{max-width:120px;max-height:120px;border-radius:10px;margin:0 auto 8px;display:none;object-fit:cover}
-#fotoInput{display:none}
+.upload-preview{max-width:100px;max-height:100px;border-radius:8px;margin:0 auto 6px;display:none;object-fit:cover}
 .form-footer{padding:1.5rem 2rem;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .footer-note{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .btn-submit{background:var(--emerald);color:#041A0E;border:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px;transition:all .2s;letter-spacing:.2px;}
@@ -97,7 +96,23 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
 .field.has-error input,.field.has-error select,.field.has-error textarea{border-color:#ff6b6b}
 .field.has-error .field-error{display:block}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(4,26,14,.3);border-top-color:#041A0E;border-radius:50%;animation:spin .7s linear infinite}
+.spinner-dark{display:inline-block;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--emerald);animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ── DNI ANALYSIS RESULT ── */
+.dni-result{display:none;background:var(--surface2);border:1px solid rgba(34,195,106,.25);border-radius:12px;padding:1rem 1.2rem;margin-top:1rem;animation:fadeUp .3s ease}
+.dni-result.show{display:block}
+.dni-result-title{font-size:10px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.dni-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.dni-row:last-child{border-bottom:none}
+.dni-label{color:var(--text3);font-family:var(--mono)}
+.dni-val{color:var(--text);font-weight:500}
+.dni-val.ok{color:var(--emerald)}
+.dni-val.warn{color:#F59E0B}
+.dni-loading{display:none;text-align:center;padding:.8rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-top:1rem;font-size:12px;color:var(--text3);font-family:var(--mono)}
+.dni-loading.show{display:flex;align-items:center;justify-content:center;gap:8px}
+.dni-error{display:none;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:10px;padding:.7rem 1rem;margin-top:1rem;font-size:12px;color:#ff6b6b;font-family:var(--mono)}
+.dni-error.show{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:640px){
   nav{padding:0 1.2rem}
   .hero{padding:3rem 1.2rem 2rem}
@@ -106,7 +121,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
   .horario-grid{grid-template-columns:repeat(2,1fr)}
   .form-footer{flex-direction:column;align-items:stretch}
   .btn-submit{justify-content:center}
-  .foto-vehiculo-grid{grid-template-columns:1fr!important}
+  .foto-grid-2{grid-template-columns:1fr!important}
 }
 </style>
 </head>
@@ -127,6 +142,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
 </div>
 <div class="form-wrap">
   <form class="form-card" id="regForm" novalidate>
+
+    <!-- ── SECCIÓN 1: DATOS PERSONALES ── -->
     <div class="form-section">
       <div class="section-title">Datos personales</div>
       <div class="section-sub">Tu información de contacto — no se muestra públicamente</div>
@@ -152,6 +169,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         </div>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 2: ZONA ── -->
     <div class="form-section">
       <div class="section-title">Zona de cobertura</div>
       <div class="section-sub">¿En qué áreas operás?</div>
@@ -189,6 +208,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         </div>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 3: VEHÍCULO ── -->
     <div class="form-section">
       <div class="section-title">Vehículo y capacidad</div>
       <div class="section-sub">¿Con qué trabajás?</div>
@@ -219,6 +240,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         </div>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 4: SERVICIOS ── -->
     <div class="form-section">
       <div class="section-title">Servicios que ofrecés</div>
       <div class="section-sub">Seleccioná todos los que apliquen</div>
@@ -234,6 +257,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Guardamuebles</div>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 5: DISPONIBILIDAD ── -->
     <div class="form-section">
       <div class="section-title">Disponibilidad</div>
       <div class="section-sub">¿Cuándo podés trabajar?</div>
@@ -268,6 +293,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         </div>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 6: PRECIOS ── -->
     <div class="form-section">
       <div class="section-title">Precios base</div>
       <div class="section-sub">Precios orientativos en ARS — podés ajustarlos por cotización</div>
@@ -279,10 +306,66 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <div class="precio-row"><span class="precio-label">Flete / envío chico</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="pflete" placeholder="18.000" min="0"/></div></div>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 7: DNI FRENTE Y DORSO ── -->
+    <div class="form-section" id="seccion-dni">
+      <div class="section-title">Verificación de DNI</div>
+      <div class="section-sub">Requerido · Analizamos las fotos automáticamente · Solo tarda unos segundos</div>
+
+      <div class="foto-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+
+        <!-- FRENTE -->
+        <div>
+          <div class="field-label" style="margin-bottom:8px">DNI frente <span style="color:var(--emerald)">*</span></div>
+          <div class="upload-area" id="uploadDniFrente" onclick="document.getElementById('dniFrente').click()">
+            <img id="dniFrente-preview" class="upload-preview" alt="DNI frente"/>
+            <div class="upload-icon" id="dniFrente-icon">🪪</div>
+            <div class="upload-text" id="dniFrente-text">Subir frente del DNI</div>
+            <div class="upload-sub">Lado con foto y número</div>
+          </div>
+          <input type="file" id="dniFrente" accept="image/*" style="display:none" onchange="onDNIUpload(this,'frente')"/>
+        </div>
+
+        <!-- DORSO -->
+        <div>
+          <div class="field-label" style="margin-bottom:8px">DNI dorso <span style="color:var(--emerald)">*</span></div>
+          <div class="upload-area" id="uploadDniDorso" onclick="document.getElementById('dniDorso').click()">
+            <img id="dniDorso-preview" class="upload-preview" alt="DNI dorso"/>
+            <div class="upload-icon" id="dniDorso-icon">🪪</div>
+            <div class="upload-text" id="dniDorso-text">Subir dorso del DNI</div>
+            <div class="upload-sub">Lado con código de barras</div>
+          </div>
+          <input type="file" id="dniDorso" accept="image/*" style="display:none" onchange="onDNIUpload(this,'dorso')"/>
+        </div>
+      </div>
+
+      <!-- LOADING -->
+      <div class="dni-loading" id="dni-loading">
+        <span class="spinner-dark" style="width:14px;height:14px;flex-shrink:0"></span>
+        Analizando DNI con IA…
+      </div>
+
+      <!-- ERROR -->
+      <div class="dni-error" id="dni-error"></div>
+
+      <!-- RESULTADO DEL ANÁLISIS -->
+      <div class="dni-result" id="dni-result">
+        <div class="dni-result-title">
+          <span id="dni-result-icon">✦</span> Análisis del DNI
+        </div>
+        <div id="dni-result-rows"></div>
+        <div style="margin-top:10px;font-size:10px;color:var(--text3);font-family:var(--mono)">
+          🔒 Datos usados solo para verificación interna · No se comparten con clientes
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── SECCIÓN 8: FOTOS DEL VEHÍCULO ── -->
     <div class="form-section">
       <div class="section-title">Fotos del vehículo</div>
       <div class="section-sub">Requerido · Se muestran en tu perfil para generar confianza</div>
-      <div class="foto-vehiculo-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="foto-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div>
           <div class="field-label" style="margin-bottom:8px">Foto del camión <span style="color:var(--emerald)">*</span></div>
           <div class="upload-area" id="uploadAreaCamion" onclick="document.getElementById('fotoCamionInput').click()">
@@ -305,6 +388,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         </div>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 9: FOTO PERFIL ── -->
     <div class="form-section">
       <div class="section-title">Foto o logo de perfil</div>
       <div class="section-sub">Se muestra en tu perfil para generar más confianza</div>
@@ -314,8 +399,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <div class="upload-text" id="uploadText">Hacé click para subir una foto</div>
         <div class="upload-sub">JPG, PNG o WebP · Máx. 5MB</div>
       </div>
-      <input type="file" id="fotoInput" accept="image/*" onchange="previewFoto(this)"/>
+      <input type="file" id="fotoInput" accept="image/*" onchange="previewFoto(this)" style="display:none"/>
     </div>
+
+    <!-- ── SECCIÓN 10: EXTRA ── -->
     <div class="form-section">
       <div class="section-title">Algo más que quieras contar</div>
       <div class="section-sub">Experiencia, especialidades, lo que quieras destacar</div>
@@ -323,6 +410,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <textarea id="extra" placeholder="Ej: 10 años de experiencia, especializado en mudanzas de pianos, camión con hidráulica para pisos altos sin ascensor..."></textarea>
       </div>
     </div>
+
+    <!-- ── SECCIÓN 11: DATOS BANCARIOS ── -->
     <div class="form-section">
       <div class="section-title">Datos para cobrar</div>
       <div class="section-sub">Así te transferimos tus ganancias — 24hs después de cada trabajo confirmado</div>
@@ -354,6 +443,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
         <span style="font-size:11px;color:var(--text2);font-family:var(--mono);line-height:1.6">Tus datos bancarios están cifrados y solo se usan para transferirte tus ganancias. Nunca se comparten con clientes.</span>
       </div>
     </div>
+
     <div class="form-footer">
       <span class="footer-note">🔒 Tus datos están seguros · Solo MudateYa los ve</span>
       <button type="submit" class="btn-submit" id="btnSubmit">
@@ -363,6 +453,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
     </div>
   </form>
 </div>
+
 <div class="success-overlay" id="successOverlay">
   <div class="success-card">
     <div class="success-icon">✓</div>
@@ -376,17 +467,136 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
     <a href="/" class="btn-home">Volver al inicio</a>
   </div>
 </div>
+
 <script>
-function toggleMetodoCobro(){
-  var metodo=document.getElementById('metodoCobro').value;
-  document.getElementById('wrap-cbu').style.display=metodo==='cbu'?'':'none';
-  document.getElementById('wrap-mp').style.display=metodo==='mp'?'':'none';
+// ── ESTADO GLOBAL DNI ────────────────────────────────────────────
+var dniData = { frente: null, dorso: null, analisis: null, ok: false };
+
+// ── DNI: UPLOAD + PREVIEW + TRIGGER ANÁLISIS ────────────────────
+function onDNIUpload(input, lado) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var b64 = e.target.result.split(',')[1];
+    var dataUrl = e.target.result;
+
+    // Preview
+    var preview = document.getElementById('dni' + cap(lado) + '-preview');
+    var icon    = document.getElementById('dni' + cap(lado) + '-icon');
+    var text    = document.getElementById('dni' + cap(lado) + '-text');
+    var area    = document.getElementById('uploadDni' + cap(lado));
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    icon.style.display = 'none';
+    text.textContent = lado === 'frente' ? 'Frente cargado ✓' : 'Dorso cargado ✓';
+    area.classList.add('has-file');
+
+    // Guardar base64
+    dniData[lado] = { b64: b64, mediaType: file.type || 'image/jpeg', dataUrl: dataUrl };
+
+    // Si tenemos los dos lados, analizamos
+    if (dniData.frente && dniData.dorso) {
+      analizarDNI();
+    }
+  };
+  reader.readAsDataURL(file);
 }
-function toggleChip(el,group){
-  if(group==='distancia'){document.querySelectorAll('#chips-distancia .chip').forEach(c=>c.classList.remove('sel'));}
-  el.classList.toggle('sel');
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ── DNI: LLAMADA A LA API DE ANÁLISIS ───────────────────────────
+async function analizarDNI() {
+  // Limpiar estado anterior
+  dniData.analisis = null;
+  dniData.ok = false;
+  document.getElementById('dni-result').classList.remove('show');
+  document.getElementById('dni-error').classList.remove('show');
+  document.getElementById('dni-loading').classList.add('show');
+
+  try {
+    var response = await fetch('/api/analizar-foto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        images: [
+          { data: dniData.frente.b64, mediaType: dniData.frente.mediaType },
+          { data: dniData.dorso.b64,  mediaType: dniData.dorso.mediaType  }
+        ],
+        // Le indicamos a la API que es un DNI, no un objeto de flete
+        prompt: 'Estas son las dos caras del DNI argentino de una persona. Extraé la siguiente información en JSON puro sin markdown:\n{\n  "tipo_documento": "DNI",\n  "numero_dni": "...",\n  "apellido": "...",\n  "nombres": "...",\n  "fecha_nacimiento": "DD/MM/AAAA",\n  "fecha_vencimiento": "DD/MM/AAAA",\n  "cuil": "...",\n  "sexo": "M o F",\n  "nacionalidad": "...",\n  "legible": true o false,\n  "advertencias": []\n}\nSi algún campo no es visible, ponelo como null. El campo legible es false si alguna cara está borrosa o ilegible.'
+      })
+    });
+
+    var data = await response.json();
+    document.getElementById('dni-loading').classList.remove('show');
+
+    if (data.error && !data.analisis) throw new Error(data.error);
+
+    // La API devuelve el resultado en data.analisis
+    var analisis = data.analisis || data;
+    dniData.analisis = analisis;
+
+    mostrarResultadoDNI(analisis);
+
+  } catch(e) {
+    document.getElementById('dni-loading').classList.remove('show');
+    var errEl = document.getElementById('dni-error');
+    errEl.textContent = '⚠ No pudimos analizar el DNI: ' + e.message + '. Podés continuar igual, lo revisamos manualmente.';
+    errEl.classList.add('show');
+    // Permitir continuar aunque falle el análisis
+    dniData.ok = true;
+  }
 }
-function getChips(containerId){return Array.from(document.querySelectorAll('#'+containerId+' .sel')).map(c=>c.textContent.trim());}
+
+function mostrarResultadoDNI(a) {
+  var legible = a.legible !== false;
+  dniData.ok = legible;
+
+  var icon = document.getElementById('dni-result-icon');
+  icon.textContent = legible ? '✓' : '⚠';
+  icon.style.color = legible ? 'var(--emerald)' : '#F59E0B';
+
+  var rows = '';
+  if (a.numero_dni)       rows += row('Número DNI',    a.numero_dni,       legible);
+  if (a.apellido)         rows += row('Apellido',      a.apellido,         legible);
+  if (a.nombres)          rows += row('Nombres',       a.nombres,          legible);
+  if (a.fecha_nacimiento) rows += row('Nacimiento',    a.fecha_nacimiento, true);
+  if (a.fecha_vencimiento)rows += row('Vencimiento',   a.fecha_vencimiento, venceOk(a.fecha_vencimiento));
+  if (a.cuil)             rows += row('CUIL',          a.cuil,             true);
+  if (a.sexo)             rows += row('Sexo',          a.sexo,             true);
+  if (!legible)           rows += row('Estado',        'Imágenes poco legibles — intentá con mejor iluminación', false);
+  if (a.advertencias && a.advertencias.length) {
+    rows += row('Avisos', a.advertencias.join(' · '), false);
+  }
+
+  document.getElementById('dni-result-rows').innerHTML = rows;
+  document.getElementById('dni-result').classList.add('show');
+
+  // Si no está legible, mostrar aviso para repetir
+  if (!legible) {
+    var errEl = document.getElementById('dni-error');
+    errEl.textContent = '⚠ Las imágenes no están suficientemente claras. Por favor subí fotos con buena iluminación y sin reflejos.';
+    errEl.classList.add('show');
+  }
+}
+
+function row(label, val, ok) {
+  var cls = ok ? 'ok' : 'warn';
+  return '<div class="dni-row"><span class="dni-label">' + label + '</span><span class="dni-val ' + cls + '">' + (val || '—') + '</span></div>';
+}
+
+function venceOk(fecha) {
+  if (!fecha) return true;
+  try {
+    var parts = fecha.split('/');
+    if (parts.length !== 3) return true;
+    var d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    return d > new Date();
+  } catch(e) { return true; }
+}
+
+// ── RESTO DE PREVIEWS ────────────────────────────────────────────
 function previewFoto(input){
   if(input.files&&input.files[0]){
     var reader=new FileReader();
@@ -426,6 +636,18 @@ function previewFotoPatente(input){
     reader.readAsDataURL(input.files[0]);
   }
 }
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function toggleMetodoCobro(){
+  var metodo=document.getElementById('metodoCobro').value;
+  document.getElementById('wrap-cbu').style.display=metodo==='cbu'?'':'none';
+  document.getElementById('wrap-mp').style.display=metodo==='mp'?'':'none';
+}
+function toggleChip(el,group){
+  if(group==='distancia'){document.querySelectorAll('#chips-distancia .chip').forEach(c=>c.classList.remove('sel'));}
+  el.classList.toggle('sel');
+}
+function getChips(containerId){return Array.from(document.querySelectorAll('#'+containerId+' .sel')).map(c=>c.textContent.trim());}
 function validateField(id,condition){
   var field=document.getElementById('f-'+id);
   if(!field)return true;
@@ -438,8 +660,13 @@ function flashUpload(areaId){
   el.scrollIntoView({behavior:'smooth',block:'center'});
   setTimeout(function(){el.style.border='';},3000);
 }
+function readFile(file){return new Promise(function(resolve){var r=new FileReader();r.onload=function(e){resolve(e.target.result);};r.readAsDataURL(file);});}
+
+// ── SUBMIT ───────────────────────────────────────────────────────
 document.getElementById('regForm').addEventListener('submit',async function(e){
   e.preventDefault();
+
+  // Validar campos básicos
   var nombre=document.getElementById('nombre').value.trim();
   var telefono=document.getElementById('telefono').value.trim();
   var email=document.getElementById('email').value.trim();
@@ -452,21 +679,60 @@ document.getElementById('regForm').addEventListener('submit',async function(e){
   ok=validateField('zona-base',zonaBase!=='')&&ok;
   ok=validateField('vehiculo',vehiculo!=='')&&ok;
   if(!ok){document.querySelector('.has-error input,.has-error select')?.scrollIntoView({behavior:'smooth',block:'center'});return;}
-  // Validar fotos obligatorias
+
+  // Validar DNI obligatorio
+  if(!dniData.frente){flashUpload('uploadDniFrente');return;}
+  if(!dniData.dorso){flashUpload('uploadDniDorso');return;}
+
+  // Validar fotos del vehículo
   var fotoCamionInput=document.getElementById('fotoCamionInput');
   var fotoPatenteInput=document.getElementById('fotoPatenteInput');
   if(!fotoCamionInput.files||!fotoCamionInput.files[0]){flashUpload('uploadAreaCamion');return;}
   if(!fotoPatenteInput.files||!fotoPatenteInput.files[0]){flashUpload('uploadAreaPatente');return;}
+
   var btn=document.getElementById('btnSubmit');
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Enviando…';
+
   // Leer fotos en base64
-  function readFile(file){return new Promise(function(resolve){var r=new FileReader();r.onload=function(e){resolve(e.target.result);};r.readAsDataURL(file);});}
   var fotoBase64='';
   var fotoInput=document.getElementById('fotoInput');
   if(fotoInput.files&&fotoInput.files[0]) fotoBase64=await readFile(fotoInput.files[0]);
   var fotoCamionBase64=await readFile(fotoCamionInput.files[0]);
   var fotoPatenteBase64=await readFile(fotoPatenteInput.files[0]);
-  var data={nombre,telefono,email,empresa:document.getElementById('empresa').value.trim(),zonaBase,zonasExtra:document.getElementById('zonasExtra').value.trim(),distancia:getChips('chips-distancia').join(', '),vehiculo,cantVehiculos:document.getElementById('cantVehiculos').value,equipo:document.getElementById('equipo').value,servicios:getChips('chips-servicios').join(', '),dias:getChips('chips-dias').join(', '),horarios:getChips('chips-horarios').join(', '),anticipacion:document.getElementById('anticipacion').value,precio1amb:document.getElementById('p1').value||'',precio2amb:document.getElementById('p2').value||'',precio3amb:document.getElementById('p3').value||'',precio4amb:document.getElementById('p4').value||'',precioFlete:document.getElementById('pflete').value||'',extra:document.getElementById('extra').value.trim(),foto:fotoBase64,fotoCamion:fotoCamionBase64,fotoPatente:fotoPatenteBase64,fecha:new Date().toLocaleString('es-AR'),metodoCobro:document.getElementById('metodoCobro').value,cbu:document.getElementById('cbu').value.trim(),emailMP:document.getElementById('emailMP').value.trim(),titularCuenta:document.getElementById('titularCuenta').value.trim()};
+
+  var data={
+    nombre,telefono,email,
+    empresa:document.getElementById('empresa').value.trim(),
+    zonaBase,
+    zonasExtra:document.getElementById('zonasExtra').value.trim(),
+    distancia:getChips('chips-distancia').join(', '),
+    vehiculo,
+    cantVehiculos:document.getElementById('cantVehiculos').value,
+    equipo:document.getElementById('equipo').value,
+    servicios:getChips('chips-servicios').join(', '),
+    dias:getChips('chips-dias').join(', '),
+    horarios:getChips('chips-horarios').join(', '),
+    anticipacion:document.getElementById('anticipacion').value,
+    precio1amb:document.getElementById('p1').value||'',
+    precio2amb:document.getElementById('p2').value||'',
+    precio3amb:document.getElementById('p3').value||'',
+    precio4amb:document.getElementById('p4').value||'',
+    precioFlete:document.getElementById('pflete').value||'',
+    extra:document.getElementById('extra').value.trim(),
+    foto:fotoBase64,
+    fotoCamion:fotoCamionBase64,
+    fotoPatente:fotoPatenteBase64,
+    // DNI
+    dniFrente: dniData.frente ? 'data:' + dniData.frente.mediaType + ';base64,' + dniData.frente.b64 : '',
+    dniDorso:  dniData.dorso  ? 'data:' + dniData.dorso.mediaType  + ';base64,' + dniData.dorso.b64  : '',
+    dniAnalisis: dniData.analisis || null,
+    fecha:new Date().toLocaleString('es-AR'),
+    metodoCobro:document.getElementById('metodoCobro').value,
+    cbu:document.getElementById('cbu').value.trim(),
+    emailMP:document.getElementById('emailMP').value.trim(),
+    titularCuenta:document.getElementById('titularCuenta').value.trim()
+  };
+
   try{
     var res=await fetch('/api/registrar-mudancero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     var json=await res.json();
