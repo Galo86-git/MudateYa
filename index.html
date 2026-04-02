@@ -2482,7 +2482,7 @@ function fleteNext() {
     fleteData.desde = d; fleteData.hasta = h;
     fleteGoStep(2);
   } else if (fleteStep === 2) {
-    var tieneDescripcion = (fleteData.descripcionManual || '').trim().length >= 10;
+    var tieneDescripcion = (fleteData.descripcionManual || '').trim().length >= 3;
     if (!fleteFotos.length && !tieneDescripcion) {
       // Mostrar el box de descripción si no está visible
       var sinFotoBox = document.getElementById('sinFotoBox');
