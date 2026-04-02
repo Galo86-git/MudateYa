@@ -332,7 +332,11 @@ module.exports = async function handler(req, res) {
       const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       const id = 'MYA-' + Date.now();
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], estado: 'buscando', fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      const { modoCotizacion, mudancerosInvitados } = req.body;
+      // modoCotizacion: 'abierto' (primeros 5) | 'dirigido' (cliente elige mudanceros)
+      const modo = modoCotizacion || 'abierto';
+      const MAX_COT = 5;
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -351,8 +355,30 @@ module.exports = async function handler(req, res) {
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (mudanza.estado !== 'buscando') return res.status(400).json({ error: 'No acepta más cotizaciones' });
       if (mudanza.cotizaciones.find(c => c.mudanceroEmail === mudanceroEmail)) return res.status(400).json({ error: 'Ya cotizaste esta mudanza' });
+
+      // Modo dirigido: solo pueden cotizar los mudanceros invitados por el cliente
+      if (mudanza.modoCotizacion === 'dirigido') {
+        const invitados = mudanza.mudancerosInvitados || [];
+        if (!invitados.includes(mudanceroEmail)) {
+          return res.status(403).json({ error: 'Esta mudanza solo acepta cotizaciones de mudanceros seleccionados por el cliente' });
+        }
+      }
+
+      // Modo abierto: máximo 5 cotizaciones, después se cierra
+      const maxCot = mudanza.maxCotizaciones || 5;
+      if (mudanza.modoCotizacion !== 'dirigido' && mudanza.cotizaciones.length >= maxCot) {
+        mudanza.estado = 'cotizaciones_completas';
+        await setJSON(`mudanza:${mudanzaId}`, mudanza, 172800);
+        return res.status(400).json({ error: 'Esta mudanza ya recibió las 5 cotizaciones. Llegaste tarde.' });
+      }
+
       const cotizacion = { id: 'COT-' + Date.now(), mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio: parseInt(precio), nota: nota||'', tiempoEstimado: tiempoEstimado||'', fecha: new Date().toISOString(), estado: 'pendiente' };
       mudanza.cotizaciones.push(cotizacion);
+
+      // Si con esta cotización llegamos al límite, cerramos automáticamente
+      if (mudanza.modoCotizacion !== 'dirigido' && mudanza.cotizaciones.length >= maxCot) {
+        mudanza.estado = 'cotizaciones_completas';
+      }
       await setJSON(`mudanza:${mudanzaId}`, mudanza, 172800);
       const mudIdx = await getJSON(`mudancero:${mudanceroEmail}`) || [];
       if (!mudIdx.includes(mudanzaId)) mudIdx.push(mudanzaId);
@@ -469,6 +495,71 @@ module.exports = async function handler(req, res) {
       await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId), 604800);
       return res.status(200).json({ ok: true });
     }
+    // Modo dirigido: cliente invita a mudanceros específicos
+    if (action === 'invitar-mudanceros' && req.method === 'POST') {
+      const { mudanzaId, clienteEmail: cEmail, mudancerosEmails } = req.body;
+      if (!mudanzaId || !cEmail || !mudancerosEmails?.length) return res.status(400).json({ error: 'Faltan datos' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (m.clienteEmail !== cEmail) return res.status(403).json({ error: 'Sin permiso' });
+      // Agregar los nuevos invitados (sin duplicar)
+      const actuales = m.mudancerosInvitados || [];
+      const nuevos = mudancerosEmails.filter(e => !actuales.includes(e));
+      m.mudancerosInvitados = [...actuales, ...nuevos];
+      m.modoCotizacion = 'dirigido';
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      // Notificar a cada mudancero invitado
+      for (const emailMud of nuevos) {
+        try {
+          const perfil = await getJSON(`mudancero:perfil:${emailMud}`);
+          if (perfil) await notificarMudanceroInvitado(m, perfil);
+        } catch(e) { console.warn('Error notificando mudancero:', e.message); }
+      }
+      return res.status(200).json({ ok: true, invitados: m.mudancerosInvitados });
+    }
+
+    // Catálogo público de mudanceros verificados (para modo dirigido)
+    if (action === 'catalogo' && req.method === 'GET') {
+      const { zona } = req.query;
+      const todos = await getJSON('mudanceros:todos') || [];
+      const catalogo = [];
+      for (const email of todos) {
+        try {
+          const p = await getJSON(`mudancero:perfil:${email}`);
+          if (!p || p.estado !== 'aprobado') continue;
+          // Filtrar por zona si se especifica
+          if (zona && p.zonaBase && !p.zonaBase.toLowerCase().includes(zona.toLowerCase()) &&
+              !(p.zonasExtra||'').toLowerCase().includes(zona.toLowerCase())) continue;
+          // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
+          catalogo.push({
+            email:              p.email,
+            nombre:             p.nombre,
+            empresa:            p.empresa       || '',
+            zonaBase:           p.zonaBase,
+            zonasExtra:         p.zonasExtra    || '',
+            vehiculo:           p.vehiculo,
+            servicios:          p.servicios     || '',
+            calificacion:       p.calificacion  || 0,
+            nroResenas:         p.nroResenas    || 0,
+            trabajosCompletados: p.trabajosCompletados || 0,
+            verificadoIdentidad: p.verificadoIdentidad || false,
+            verificadoVehiculo:  p.verificadoVehiculo  || false,
+            verificadoSeguro:    p.verificadoSeguro     || false,
+            foto:               p.foto          || '',
+            fotoCamion:         p.fotoCamion    || '',
+            precios:            p.precios       || {},
+            horarios:           p.horarios      || '',
+            dias:               p.dias          || '',
+            anticipacion:       p.anticipacion  || '',
+            extra:              p.extra         || '',
+          });
+        } catch(e) {}
+      }
+      // Ordenar por calificación desc
+      catalogo.sort((a,b) => (b.calificacion - a.calificacion) || (b.trabajosCompletados - a.trabajosCompletados));
+      return res.status(200).json({ mudanceros: catalogo });
+    }
+
     if (action === 'rechazar' && req.method === 'POST') {
       const { mudanzaId, mudanceroEmail } = req.body;
       if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
@@ -503,7 +594,9 @@ module.exports = async function handler(req, res) {
       const ahora = new Date();
       for (const id of ids) {
         const m = await getJSON(`mudanza:${id}`);
-        if (!m || m.estado !== 'buscando' || new Date(m.expira) < ahora) continue;
+        if (!m || !['buscando','cotizaciones_completas'].includes(m.estado) || new Date(m.expira) < ahora) continue;
+        if (m.estado === 'cotizaciones_completas') continue; // ya tiene 5, no mostrar más
+        if (m.modoCotizacion === 'dirigido' && email && !(m.mudancerosInvitados||[]).includes(email)) continue; // modo dirigido: solo invitados
         if (email && m.cotizaciones.find(c => c.mudanceroEmail === email)) continue;
         if (rechazados.includes(id)) continue; // ocultar rechazados
         disponibles.push(m);
@@ -764,6 +857,48 @@ async function enviarEmailAceptacion(mudanza, cot) {
       attachments,
     });
   }
+}
+
+// ════════════════════════════════════════════════════
+// EMAIL — MUDANCERO INVITADO (modo dirigido)
+// ════════════════════════════════════════════════════
+async function notificarMudanceroInvitado(mudanza, perfil) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  if (!process.env.RESEND_API_KEY || !perfil.email) return;
+  const siteUrl = process.env.SITE_URL || 'https://mudateya.vercel.app';
+  await resend.emails.send({
+    from: 'MudateYa <onboarding@resend.dev>',
+    to:   perfil.email,
+    subject: `⭐ Te eligieron — ${mudanza.desde} → ${mudanza.hasta}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:580px;background:#0D1410;color:#E8F5EE;border-radius:16px;overflow:hidden">
+      <div style="background:#22C36A;padding:18px 22px">
+        <h2 style="margin:0;color:#041A0E">⭐ ¡Un cliente te eligió!</h2>
+      </div>
+      <div style="padding:22px">
+        <p style="color:#7AADA0;line-height:1.7">
+          Hola <strong style="color:#E8F5EE">${perfil.nombre}</strong>,<br>
+          <strong style="color:#E8F5EE">${mudanza.clienteNombre || 'Un cliente'}</strong> revisó tu perfil y te invitó a cotizar su mudanza.
+        </p>
+        <div style="background:#172018;border-radius:10px;padding:14px 18px;margin:14px 0">
+          <table style="width:100%">
+            <tr><td style="color:#7AADA0;padding:5px 0;width:35%">De</td><td><strong>${mudanza.desde}</strong></td></tr>
+            <tr><td style="color:#7AADA0;padding:5px 0">A</td><td><strong>${mudanza.hasta}</strong></td></tr>
+            <tr><td style="color:#7AADA0;padding:5px 0">Tamaño</td><td>${mudanza.ambientes || '—'}</td></tr>
+            <tr><td style="color:#7AADA0;padding:5px 0">Fecha</td><td>${mudanza.fecha || '—'}</td></tr>
+            ${mudanza.precio_estimado ? `<tr><td style="color:#7AADA0;padding:5px 0">Estimado cliente</td><td style="color:#22C36A;font-weight:700">$${parseInt(mudanza.precio_estimado).toLocaleString('es-AR')}</td></tr>` : ''}
+          </table>
+        </div>
+        <div style="background:#0D2018;border:1px solid rgba(34,195,106,.3);border-radius:10px;padding:12px 16px;margin-bottom:16px">
+          <p style="color:#7AADA0;font-size:13px;margin:0">
+            💡 Esta es una solicitud <strong style="color:#E8F5EE">directa</strong> — el cliente te eligió a vos específicamente entre los mudanceros disponibles.
+          </p>
+        </div>
+        <a href="${siteUrl}/mi-cuenta" style="display:inline-block;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">
+          Enviar cotización →
+        </a>
+      </div>
+    </div>`,
+  });
 }
 
 // ════════════════════════════════════════════════════
