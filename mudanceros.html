@@ -320,10 +320,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
           <div class="upload-area" id="uploadDniFrente" onclick="document.getElementById('dniFrente').click()">
             <img id="dniFrente-preview" class="upload-preview" alt="DNI frente"/>
             <div class="upload-icon" id="dniFrente-icon">🪪</div>
-            <div class="upload-text" id="dniFrente-text">Subir frente del DNI</div>
-            <div class="upload-sub">Lado con foto y número</div>
+            <div class="upload-text" id="dniFrente-text">Sacá foto o subí imagen</div>
+            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
           </div>
-          <input type="file" id="dniFrente" accept="image/*" style="display:none" onchange="onDNIUpload(this,'frente')"/>
+          <input type="file" id="dniFrente" accept="image/*" capture="environment" style="display:none" onchange="onDNIUpload(this,'frente')"/>
         </div>
 
         <!-- DORSO -->
@@ -332,10 +332,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
           <div class="upload-area" id="uploadDniDorso" onclick="document.getElementById('dniDorso').click()">
             <img id="dniDorso-preview" class="upload-preview" alt="DNI dorso"/>
             <div class="upload-icon" id="dniDorso-icon">🪪</div>
-            <div class="upload-text" id="dniDorso-text">Subir dorso del DNI</div>
-            <div class="upload-sub">Lado con código de barras</div>
+            <div class="upload-text" id="dniDorso-text">Sacá foto o subí imagen</div>
+            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
           </div>
-          <input type="file" id="dniDorso" accept="image/*" style="display:none" onchange="onDNIUpload(this,'dorso')"/>
+          <input type="file" id="dniDorso" accept="image/*" capture="environment" style="display:none" onchange="onDNIUpload(this,'dorso')"/>
         </div>
       </div>
 
@@ -371,20 +371,20 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
           <div class="upload-area" id="uploadAreaCamion" onclick="document.getElementById('fotoCamionInput').click()">
             <img id="fotoCamionPreview" class="upload-preview" alt="preview camión"/>
             <div class="upload-icon" id="uploadIconCamion">🚛</div>
-            <div class="upload-text" id="uploadTextCamion">Subir foto del camión</div>
-            <div class="upload-sub">Vista frontal o lateral · Máx. 5MB</div>
+            <div class="upload-text" id="uploadTextCamion">Sacá foto o subí imagen</div>
+            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
           </div>
-          <input type="file" id="fotoCamionInput" accept="image/*" onchange="previewFotoCamion(this)" style="display:none"/>
+          <input type="file" id="fotoCamionInput" accept="image/*" capture="environment" onchange="previewFotoCamion(this)" style="display:none"/>
         </div>
         <div>
           <div class="field-label" style="margin-bottom:8px">Foto de la patente <span style="color:var(--emerald)">*</span></div>
           <div class="upload-area" id="uploadAreaPatente" onclick="document.getElementById('fotoPatenteInput').click()">
             <img id="fotoPatentePreview" class="upload-preview" alt="preview patente"/>
             <div class="upload-icon" id="uploadIconPatente">🔢</div>
-            <div class="upload-text" id="uploadTextPatente">Subir foto de la patente</div>
-            <div class="upload-sub">Que sea legible · Máx. 5MB</div>
+            <div class="upload-text" id="uploadTextPatente">Sacá foto o subí imagen</div>
+            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
           </div>
-          <input type="file" id="fotoPatenteInput" accept="image/*" onchange="previewFotoPatente(this)" style="display:none"/>
+          <input type="file" id="fotoPatenteInput" accept="image/*" capture="environment" onchange="previewFotoPatente(this)" style="display:none"/>
         </div>
       </div>
     </div>
@@ -396,8 +396,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.9);backdrop-filte
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('fotoInput').click()">
         <img id="fotoPreview" class="upload-preview" alt="preview"/>
         <div class="upload-icon" id="uploadIcon">📷</div>
-        <div class="upload-text" id="uploadText">Hacé click para subir una foto</div>
-        <div class="upload-sub">JPG, PNG o WebP · Máx. 5MB</div>
+        <div class="upload-text" id="uploadText">Sacá foto o elegí de la galería</div>
+        <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
       </div>
       <input type="file" id="fotoInput" accept="image/*" onchange="previewFoto(this)" style="display:none"/>
     </div>
