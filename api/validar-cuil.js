@@ -1,6 +1,7 @@
 // api/validar-cuil.js
-// Consulta AFIP via TangoFactura para validar si un CUIL existe
-// Llamado desde el frontend (onblur del campo CUIL) para feedback inmediato
+// Valida CUIL argentino consultando CuitOnline (scraping del HTML)
+// TangoFactura y la API oficial de AFIP/ARCA no tienen acceso público gratuito
+// CuitOnline usa datos del padrón público de ARCA — misma fuente, sin API key
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,75 +14,112 @@ module.exports = async function handler(req, res) {
 
   const cuilLimpio = cuil.replace(/[-\s]/g, '');
 
+  // ── 1. VALIDAR FORMATO ────────────────────────────────────────
   if (!/^\d{11}$/.test(cuilLimpio)) {
     return res.status(200).json({
       valido: false,
-      error:  'El CUIL debe tener 11 dígitos (sin guiones: 20123456789)'
+      error:  'El CUIL/CUIT debe tener 11 dígitos (ej: 20-12345678-9 o 30-12345678-9)'
     });
   }
 
-  // Validar dígito verificador del CUIL
-  if (!validarDigitoVerificador(cuilLimpio)) {
+  // ── 2. VALIDAR DÍGITO VERIFICADOR ────────────────────────────
+  if (!validarDV(cuilLimpio)) {
     return res.status(200).json({
       valido: false,
-      error:  'El CUIL ingresado tiene un dígito verificador incorrecto'
+      error:  'El CUIL/CUIT tiene un dígito verificador incorrecto. Revisá que lo hayas ingresado bien.'
     });
   }
 
+  // ── 3. CONSULTAR CUITONLINE ──────────────────────────────────
   try {
     const response = await fetch(
-      `https://afip.tangofactura.com/Rest/GetContribuyenteFull?cuit=${cuilLimpio}`,
+      `https://www.cuitonline.com/search.php?q=${cuilLimpio}`,
       {
-        headers: { 'Accept': 'application/json' },
-        // Timeout de 5 segundos para no bloquear el formulario
-        signal: AbortSignal.timeout(5000),
+        headers: {
+          // Simular un browser para evitar bloqueos
+          'User-Agent': 'Mozilla/5.0 (compatible; MudateYa/1.0)',
+          'Accept':     'text/html,application/xhtml+xml',
+          'Accept-Language': 'es-AR,es;q=0.9',
+        },
+        signal: AbortSignal.timeout(6000),
       }
     );
 
     if (!response.ok) {
-      // AFIP o TangoFactura caído — devolvemos advertencia, no error bloqueante
       return res.status(200).json({
-        valido:     null,
+        valido:      null,
         advertencia: true,
-        error:      'AFIP no disponible en este momento. Podés continuar igual.'
+        error:       'No se pudo consultar el padrón en este momento. Podés continuar igual.'
       });
     }
 
-    const data = await response.json();
+    const html = await response.text();
 
-    if (data.errorGetData || !data.Contribuyente) {
+    // ── 4. PARSEAR EL HTML ──────────────────────────────────────
+    // CuitOnline devuelve algo como:
+    // <strong>ZALDIVAR JUAN GALO</strong>
+    // • CUIT: 20-32507679-9
+    // Persona Física (masculino)
+
+    // Verificar si no encontró resultados
+    if (html.includes('No se encontraron resultados') || html.includes('0 personas encontradas')) {
       return res.status(200).json({
         valido: false,
-        error:  'CUIL no encontrado en AFIP. Verificá que sea correcto.'
+        error:  'CUIL/CUIT no encontrado en el padrón de ARCA. Verificá que sea correcto.'
       });
     }
 
-    const c = data.Contribuyente;
+    // Extraer el nombre — aparece en un tag <strong> o como texto destacado
+    const nombreMatch = html.match(/class="nombre[^"]*"[^>]*>([^<]+)</) ||
+                        html.match(/<strong>([A-ZÁÉÍÓÚÑ\s]+)<\/strong>/) ||
+                        html.match(/CUIT:\s*[\d\-]+[^<]*<[^>]+>\s*([A-ZÁÉÍÓÚÑ\s,]+)</i);
+
+    // Extraer el CUIL con formato oficial
+    const cuitMatch = html.match(/CUIT:\s*([\d\-]+)/i);
+
+    // Extraer tipo de persona
+    const tipoMatch = html.match(/Persona\s+(Física|Jurídica)/i);
+
+    if (!nombreMatch && !cuitMatch) {
+      // Página cargó pero no encontró el CUIL
+      return res.status(200).json({
+        valido: false,
+        error:  'CUIL/CUIT no encontrado en el padrón de ARCA.'
+      });
+    }
+
+    // Normalizar nombre — puede venir como "APELLIDO NOMBRE" o "APELLIDO, NOMBRE"
+    const nombreRaw   = (nombreMatch ? nombreMatch[1] : '').trim();
+    const partes      = nombreRaw.includes(',')
+      ? nombreRaw.split(',').map(s => s.trim())
+      : nombreRaw.split(' ');
+
+    const apellido = partes[0] || '';
+    const nombres  = partes.slice(1).join(' ') || '';
 
     return res.status(200).json({
       valido:      true,
       cuil:        cuilLimpio,
-      nombre:      c.nombre       || '',
-      apellido:    c.apellido     || '',
-      razonSocial: c.razonSocial  || '',
-      estadoClave: c.estadoClave  || '', // ACTIVO / INACTIVO
-      tipoClave:   c.tipoClave    || '', // CUIL / CUIT
+      nombre:      nombres,
+      apellido:    apellido,
+      nombreCompleto: nombreRaw,
+      tipoClave:   tipoMatch ? tipoMatch[1] : 'Física',
+      fuente:      'ARCA via CuitOnline',
     });
 
   } catch(e) {
-    // Timeout u otro error de red
-    console.warn('Error consultando AFIP:', e.message);
+    console.warn('Error consultando CuitOnline:', e.message);
+    // Timeout u otro error — no bloqueamos el formulario
     return res.status(200).json({
       valido:      null,
       advertencia: true,
-      error:       'AFIP no disponible temporalmente. Podés continuar igual.'
+      error:       'El padrón no está disponible ahora. Podés continuar igual, verificamos manualmente.'
     });
   }
 };
 
-// ── VALIDAR DÍGITO VERIFICADOR DEL CUIL ─────────────────────────
-// Algoritmo oficial de AFIP
-function validarDigitoVerificador(cuil) {
+// ── VALIDAR DÍGITO VERIFICADOR DEL CUIL (algoritmo oficial ARCA) ─
+function validarDV(cuil) {
   if (cuil.length !== 11) return false;
   const digits = cuil.split('').map(Number);
   const serie  = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
