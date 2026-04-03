@@ -1741,8 +1741,7 @@ async function fswPublicarAbierto() {
   var user = null;
   try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
   if (!user) { _loginRol = 'cliente'; openLoginModal(); return; }
-  fswGoStep(4);
-  fswPublicar(user);
+  fswGoStep(4); // fswSetupStep4 se encarga de llamar fswPublicar
 }
 
 function fswBuildSummary() {
