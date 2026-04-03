@@ -567,6 +567,10 @@ li.kb-active{background:rgba(34,195,106,.18)!important;color:#E8F5EE!important}
 .fsw-panel.active{display:block;animation:fadeUp .25s ease both}
 
 /* ── PASO 3 NUEVO LAYOUT ── */
+@media(min-width:769px){
+  #fsw-p3{overflow:hidden;height:100%}
+  .fsw-panel.active#fsw-p3{display:flex;flex-direction:column}
+}
 /* El fsw-body tiene max-width:600px — para p3 lo override con clase especial */
 .fsw-body.p3-mode{max-width:100%;padding:0;overflow:hidden;display:flex;flex-direction:column}
 .fsw-p3-layout{display:grid;grid-template-columns:280px 1fr 260px;flex:1;overflow:hidden;position:relative}
@@ -631,31 +635,45 @@ li.kb-active{background:rgba(34,195,106,.18)!important;color:#E8F5EE!important}
 .fsw-divisor::before,.fsw-divisor::after{content:"";flex:1;height:1px;background:var(--border)}
 
 @media(max-width:768px){
-  /* Paso 3 mobile: layout vertical con secciones colapsables */
-  .fsw-body.p3-mode{overflow-y:auto;overflow-x:hidden}
+  /* Paso 3 mobile: todo scroll libre */
+  .fsw-body.p3-mode{
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch;
+    padding:0 !important;
+    height:100%;
+  }
   .fsw-p3-layout{
-    grid-template-columns:1fr;
-    height:auto;
-    overflow:visible;
-    display:flex;
-    flex-direction:column;
+    grid-template-columns:1fr !important;
+    height:auto !important;
+    overflow:visible !important;
+    display:block !important;
   }
   .fsw-p3-left{
     border-right:none;
     border-bottom:1px solid var(--border);
     padding:1rem;
     gap:8px;
+    height:auto !important;
+    overflow:visible !important;
   }
   .fsw-map-wrap{height:160px}
   .fsw-p3-center{
-    min-height:auto;
-    overflow:visible;
+    height:auto !important;
+    overflow:visible !important;
     border-bottom:1px solid var(--border);
   }
-  .fsw-cat-scroll{overflow:visible;max-height:none;padding-bottom:0}
+  .fsw-cat-scroll{
+    overflow:visible !important;
+    height:auto !important;
+    max-height:none !important;
+    padding-bottom:0;
+  }
   .fsw-cat-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:.8rem}
   .fsw-p3-right{
     border-left:none;
+    height:auto !important;
+    overflow:visible !important;
     padding:1rem;
   }
   .fsw-abierto-card{min-height:140px}
@@ -665,8 +683,7 @@ li.kb-active{background:rgba(34,195,106,.18)!important;color:#E8F5EE!important}
     z-index:999;
     padding:.8rem 1rem;
   }
-  /* Ocultar el botón volver de la columna izq en mobile — está el del footer */
-  .fsw-p3-left .fsw-volver-btn{display:none}
+  .fsw-volver-btn{display:none !important}
 }
 </style>
 <script>
@@ -779,7 +796,7 @@ function fswSeleccionarModo(modo) {
         <div class="extra-chip" onclick="toggleExtra(this)"><span class="extra-icon">🛡️</span><span>Seguro de mudanza</span><div class="chk"></div></div>
       </div>
     </div>
-    <div class="fsw-panel" id="fsw-p3" style="padding:0;overflow:hidden;height:100%">
+    <div class="fsw-panel" id="fsw-p3" style="padding:0">
       <div class="fsw-p3-layout">
 
         <!-- IZQUIERDA: resumen + mapa -->
