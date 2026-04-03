@@ -778,7 +778,7 @@ function fswSeleccionarModo(modo) {
         <div class="fsw-p3-center">
           <div class="fsw-cat-header">
             <div class="fsw-cat-title">ELEGÍ TU MUDANCERO</div>
-            <div class="fsw-cat-sub">Seleccioná hasta 3 y pediles cotización · o usá la opción rápida →</div>
+            <div class="fsw-cat-sub">Seleccioná mudanceros y pediles cotización · o usá la opción rápida →</div>
           </div>
           <div class="fsw-cat-search">
             <input id="fsw-cat-filtro" placeholder="Buscar por nombre o zona…" oninput="fswFiltrarCatalogo()"/>
@@ -1527,7 +1527,7 @@ function showFieldError(elemId, msg) {
 function openFSW() {
   document.getElementById('fswOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-  fswStep = 1; fswPublicadaId = null;
+  fswStep = 1; fswPublicadaId = null; _fswPublicando = false;
   fswGoStep(1);
   var today = new Date().toISOString().split('T')[0];
   document.getElementById('fsw-fecha').min = today;
@@ -1536,6 +1536,7 @@ function openFSW() {
 function closeFSW() {
   document.getElementById('fswOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  _fswPublicando = false;
 }
 function fswGoStep(n) {
   for (var i = 1; i <= 4; i++) {
@@ -1611,15 +1612,6 @@ function fswBack() {
 var _fswCatTodos = [];
 var _fswSeleccionados = new Set();
 
-var _MOCK_MUDANCEROS = [
-  { email:'carlos@mock.com', nombre:'Carlos Gómez', empresa:'Mudanzas Gómez', zonaBase:'Palermo, CABA', vehiculo:'Camión mediano', calificacion:4.8, nroResenas:42, trabajosCompletados:38, verificadoIdentidad:true, verificadoVehiculo:true, verificadoSeguro:false, precios:{amb1:55000,flete:18000} },
-  { email:'roberto@mock.com', nombre:'Roberto Silva', empresa:'Silva Fletes', zonaBase:'Quilmes, GBA', vehiculo:'Camioneta / furgón pequeño', calificacion:4.6, nroResenas:27, trabajosCompletados:24, verificadoIdentidad:true, verificadoVehiculo:false, verificadoSeguro:false, precios:{amb1:42000,flete:14000} },
-  { email:'diego@mock.com', nombre:'Diego Fernández', empresa:'', zonaBase:'Caballito, CABA', vehiculo:'Camión grande', calificacion:5.0, nroResenas:15, trabajosCompletados:13, verificadoIdentidad:true, verificadoVehiculo:true, verificadoSeguro:true, precios:{amb1:70000,flete:22000} },
-  { email:'martin@mock.com', nombre:'Martín López', empresa:'Mudanzas del Norte', zonaBase:'San Isidro, GBA', vehiculo:'Camión mediano', calificacion:4.5, nroResenas:61, trabajosCompletados:55, verificadoIdentidad:true, verificadoVehiculo:true, verificadoSeguro:false, precios:{amb1:60000,flete:20000} },
-  { email:'pablo@mock.com', nombre:'Pablo Torres', empresa:'', zonaBase:'Flores, CABA', vehiculo:'Camioneta / furgón pequeño', calificacion:4.3, nroResenas:9, trabajosCompletados:8, verificadoIdentidad:false, verificadoVehiculo:true, verificadoSeguro:false, precios:{amb1:38000,flete:12000} },
-  { email:'lucas@mock.com', nombre:'Lucas Ramírez', empresa:'Fletes Rápidos BA', zonaBase:'Lanús, GBA', vehiculo:'Camión mediano', calificacion:4.7, nroResenas:33, trabajosCompletados:30, verificadoIdentidad:true, verificadoVehiculo:true, verificadoSeguro:true, precios:{amb1:52000,flete:17000} },
-];
-
 async function fswCargarCatalogo() {
   var grid = document.getElementById('fsw-cat-grid');
   if (!grid) return;
@@ -1627,12 +1619,10 @@ async function fswCargarCatalogo() {
   try {
     var r = await fetch('/api/cotizaciones?action=catalogo');
     var d = await r.json();
-    _fswCatTodos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : _MOCK_MUDANCEROS;
+    _fswCatTodos = d.mudanceros || [];
     fswRenderCatalogo(_fswCatTodos);
   } catch(e) {
-    // Si falla la API igual mostramos los mock
-    _fswCatTodos = _MOCK_MUDANCEROS;
-    fswRenderCatalogo(_fswCatTodos);
+    grid.innerHTML = '<div class="fsw-cat-empty">No se pudo cargar el catálogo.</div>';
   }
 }
 
@@ -1676,14 +1666,6 @@ function fswToggleMudancero(email) {
   if (_fswSeleccionados.has(email)) {
     _fswSeleccionados.delete(email);
   } else {
-    if (_fswSeleccionados.size >= 3) {
-      var t = document.createElement('div');
-      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1D2820;border:1px solid var(--border2);color:var(--text2);padding:10px 20px;border-radius:10px;font-size:12px;font-family:var(--mono);z-index:999;white-space:nowrap';
-      t.textContent = 'Podés seleccionar hasta 3 mudanceros';
-      document.body.appendChild(t);
-      setTimeout(function(){ t.remove(); }, 2500);
-      return;
-    }
     _fswSeleccionados.add(email);
   }
   var card = document.querySelector('[data-email="' + email + '"]');
@@ -1855,9 +1837,12 @@ function fswRenderGoogleBtn() {
 
   tryRender();
 }
+var _fswPublicando = false;
 async function fswPublicar(user) {
   // Modo abierto: publicar directo y redirigir a mi-mudanza
   if (fswPublicadaId) { document.getElementById('fsw-published-state').style.display = 'block'; return; }
+  if (_fswPublicando) return; // guard anti-doble publicación
+  _fswPublicando = true;
   document.getElementById('fsw-login-state').style.display = 'none';
   document.getElementById('fsw-publishing-state').style.display = 'block';
   var desde = document.getElementById('fsw-desde').value.trim();
