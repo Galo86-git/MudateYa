@@ -1767,9 +1767,21 @@ function fswPedirCotizacionSeleccionados() {
 }
 
 async function _fswPublicarDirigido(user, data) {
-  fswGoStep(4);
+  // Mostrar paso 4 SIN llamar fswSetupStep4 (que publicaría en modo abierto)
+  for (var i = 1; i <= 4; i++) {
+    var dot = document.getElementById('fsw-dot' + i);
+    dot.classList.remove('active', 'done');
+    if (i < 4) dot.classList.add('done');
+    if (i === 4) dot.classList.add('active');
+    if (i < 4) document.getElementById('fsw-line' + i).classList.toggle('done', true);
+  }
+  document.querySelectorAll('.fsw-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('fsw-p4').classList.add('active');
+  document.getElementById('fsw-footer').style.display = 'none';
+  fswStep = 4;
   document.getElementById('fsw-login-state').style.display = 'none';
   document.getElementById('fsw-publishing-state').style.display = 'block';
+  document.getElementById('fsw-published-state').style.display = 'none';
   try {
     var r = await fetch('/api/cotizaciones?action=publicar', {
       method: 'POST', headers: {'Content-Type':'application/json'},
