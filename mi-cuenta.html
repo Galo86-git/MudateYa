@@ -5,75 +5,75 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Mi cuenta — MudateYa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080E0C;--bg2:#0D1410;--surface:#172018;--surface2:#1D2820;
-  --border:#213029;--border2:#2A3C32;
-  --emerald:#22C36A;--emerald-dim:#1A9A52;--emerald-glow:rgba(34,195,106,.18);--emerald-subtle:rgba(34,195,106,.08);
-  --sky:#29B6F6;--sky-subtle:rgba(41,182,246,.08);--sky-glow:rgba(41,182,246,.18);
-  --red:#FF5252;--red-subtle:rgba(255,82,82,.08);
-  --amber:#FFB300;--amber-subtle:rgba(255,179,0,.08);
-  --text:#E8F5EE;--text2:#7AADA0;--text3:#3D6458;
+  --bg:#FFFFFF;--bg2:#F5F7FA;--surface:#FFFFFF;--surface2:#F5F7FA;
+  --border:#E2E8F0;--border2:#CBD5E1;
+  --blue:#1A6FFF;--blue-dark:#0F52CC;--blue-glow:rgba(26,111,255,.15);--blue-light:#EEF4FF;
+  --green:#22C36A;--green-light:rgba(34,195,106,.1);--green-dark:#17A356;
+  --red:#EF4444;--red-light:rgba(239,68,68,.08);
+  --amber:#F59E0B;--amber-light:rgba(245,158,11,.08);
+  --text:#0F1923;--text2:#475569;--text3:#64748B;
   --mono:'DM Mono',monospace;
 }
 html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
-.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.5)}
+body{font-family:'Inter',sans-serif;background:#fff;color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:#F5F7FA}
+.login-card{background:#fff;border:1px solid #E2E8F0;border-radius:24px;padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.1)}
 .login-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;margin-bottom:.3rem}
-.login-logo span{color:var(--emerald)}
+.login-logo span{color:var(--blue)}
 .login-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:1.8rem}
 .login-note{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1rem;line-height:1.6}
-.login-note a{color:var(--emerald);text-decoration:none}
+.login-note a{color:var(--blue);text-decoration:none}
 #notFoundScreen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:2rem;flex-direction:column;gap:1rem;text-align:center}
 .nf-icon{font-size:3rem}
 .nf-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px}
 .nf-sub{font-size:14px;color:var(--text2);line-height:1.7;max-width:360px}
-.btn-register{display:inline-block;margin-top:.5rem;background:var(--emerald);color:#041A0E;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;transition:all .2s}
-.btn-register:hover{background:#2EDB7A}
+.btn-register{display:inline-block;margin-top:.5rem;background:var(--blue);color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;transition:all .2s}
+.btn-register:hover{background:var(--blue-dark)}
 #appScreen{display:none;min-height:100vh}
-.nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:58px}
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;text-decoration:none;color:var(--text)}
-.nav-logo span{color:var(--emerald)}
+.nav{position:sticky;top:0;z-index:200;background:#003580;border-bottom:2px solid #22C36A;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:58px}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;text-decoration:none;color:#fff}
+.nav-logo span{color:var(--blue)}
 .nav-right{display:flex;align-items:center;gap:10px}
-.nav-avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--border2)}
-.nav-name{font-size:12px;color:var(--text2)}
-.btn-logout{font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:all .2s}
-.btn-logout:hover{color:var(--red);border-color:var(--red)}
-.status-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:.7rem 1.5rem;display:flex;align-items:center;gap:10px}
+.nav-avatar{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.3)}
+.nav-name{font-size:12px;color:rgba(255,255,255,.85)}
+.btn-logout{font-size:11px;color:rgba(255,255,255,.8);background:none;border:1px solid rgba(255,255,255,.3);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:all .2s}
+.btn-logout:hover{color:#fff;border-color:#fff}
+.status-bar{background:#fff;border-bottom:1px solid #E2E8F0;padding:.7rem 1.5rem;display:flex;align-items:center;gap:10px}
 .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.status-dot.approved{background:var(--emerald);box-shadow:0 0 8px var(--emerald-glow)}
+.status-dot.approved{background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
 .status-dot.pending{background:var(--amber)}
 .status-dot.rejected{background:var(--red)}
 .status-text{font-size:12px;color:var(--text2);font-family:var(--mono)}
 .app-body{display:flex;min-height:calc(100vh - 58px)}
-.sidebar{width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:1.2rem 0;position:sticky;top:58px;height:calc(100vh - 58px)}
-.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 1.2rem;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
+.sidebar{width:200px;flex-shrink:0;background:#F5F7FA;border-right:1px solid #E2E8F0;padding:1.2rem 0;position:sticky;top:58px;height:calc(100vh - 58px)}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 1.2rem;font-size:13px;color:#475569;cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
 .sidebar-item:hover{background:var(--surface);color:var(--text)}
-.sidebar-item.active{background:var(--emerald-subtle);color:var(--emerald);border-left-color:var(--emerald)}
+.sidebar-item.active{background:#EEF4FF;color:#1A6FFF;border-left-color:#1A6FFF}
 .sidebar-icon{font-size:14px;width:18px;text-align:center}
 .sidebar-badge{margin-left:auto;background:var(--red);color:white;font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:10px;font-weight:700}
 .main{flex:1;padding:1.8rem;overflow-x:hidden;min-width:0}
 .page{display:none}
 .page.active{display:block;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem;color:#0F1923}
 .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:2rem}
-.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem}
+.metric-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:1.2rem}
 .metric-label{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
 .metric-val{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;letter-spacing:1px}
 .metric-sub{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
-.metric-card.green .metric-val{color:var(--emerald)}
-.metric-card.blue .metric-val{color:var(--sky)}
+.metric-card.green .metric-val{color:var(--blue)}
+.metric-card.blue .metric-val{color:var(--green)}
 .metric-card.amber .metric-val{color:var(--amber)}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1.2rem}
+.card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:1.2rem}
 .card-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;border-bottom:1px solid var(--border)}
 .card-title{font-size:13px;font-weight:600;color:var(--text)}
-.pedido-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.2rem;margin-bottom:10px;transition:border-color .2s}
-.pedido-card:hover{border-color:rgba(34,195,106,.3)}
+.pedido-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:1.2rem;margin-bottom:10px;transition:border-color .2s}
+.pedido-card:hover{border-color:rgba(26,111,255,.25)}
 .pedido-card.nuevo{border-left:3px solid var(--emerald)}
 .pedido-card.aceptado{border-left:3px solid var(--sky)}
 .pedido-card.rechazado{border-left:3px solid var(--red);opacity:.7}
@@ -82,16 +82,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .pedido-fecha{font-size:10px;color:var(--text3);font-family:var(--mono)}
 .pedido-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .pedido-tag{font-size:11px;color:var(--text2);background:var(--surface2);padding:3px 8px;border-radius:5px;font-family:var(--mono)}
-.pedido-precio{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--emerald);letter-spacing:.5px}
+.pedido-precio{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--blue);letter-spacing:.5px}
 .pedido-precio-sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
 .pedido-actions{display:flex;gap:8px;margin-top:12px}
-.btn{padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
-.btn-green{background:var(--emerald);color:#041A0E}
-.btn-green:hover{background:#2EDB7A;transform:translateY(-1px)}
-.btn-red{background:var(--red-subtle);color:var(--red);border:1px solid rgba(255,82,82,.2)}
+.btn{padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-green{background:var(--blue);color:#fff}
+.btn-green:hover{background:var(--blue-dark);transform:translateY(-1px)}
+.btn-red{background:var(--red-light);color:var(--red);border:1px solid rgba(239,68,68,.2)}
 .btn-red:hover{background:var(--red);color:white}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
-.btn-ghost:hover{border-color:var(--emerald);color:var(--emerald)}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
 .empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
 .empty-icon{font-size:2.5rem;margin-bottom:8px}
@@ -101,7 +101,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .truck-scene{position:relative;width:280px;height:100px;margin:0 auto 1rem}
 .truck-body{position:absolute;bottom:22px;left:0;animation:truckDrive 1.2s ease-in-out infinite alternate}
 .truck-road{position:absolute;bottom:8px;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent 0%,var(--border2) 20%,var(--border2) 80%,transparent 100%);overflow:hidden}
-.truck-road::after{content:'';position:absolute;top:0;left:-60px;width:40px;height:3px;background:var(--emerald);opacity:.4;animation:roadLine 0.6s linear infinite}
+.truck-road::after{content:'';position:absolute;top:0;left:-60px;width:40px;height:3px;background:var(--blue);opacity:.4;animation:roadLine 0.6s linear infinite}
 .truck-wheel{position:absolute;bottom:-8px;width:14px;height:14px;border-radius:50%;background:var(--surface2);border:2px solid var(--border2);animation:wheelSpin .5s linear infinite}
 .truck-wheel.front{right:6px}
 .truck-wheel.rear{left:18px}
@@ -110,21 +110,21 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 @keyframes wheelSpin{to{transform:rotate(360deg)}}
 @keyframes roadLine{to{left:220px}}
 @keyframes msgFade{0%,100%{opacity:.4}50%{opacity:1}}
-.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:#1A6FFF;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10px;font-family:var(--mono);font-weight:600}
-.badge.nuevo{background:var(--emerald-subtle);color:var(--emerald);border:1px solid rgba(34,195,106,.2)}
-.badge.aceptado{background:var(--sky-subtle);color:var(--sky);border:1px solid rgba(41,182,246,.2)}
-.badge.rechazado{background:var(--red-subtle);color:var(--red);border:1px solid rgba(255,82,82,.2)}
-.badge.pagado{background:var(--amber-subtle);color:var(--amber);border:1px solid rgba(255,179,0,.2)}
+.badge.nuevo{background:var(--blue-light);color:var(--blue);border:1px solid rgba(26,111,255,.2)}
+.badge.aceptado{background:var(--green-light);color:var(--green);border:1px solid rgba(34,195,106,.2)}
+.badge.rechazado{background:var(--red-light);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.badge.pagado{background:var(--amber-light);color:var(--amber);border:1px solid rgba(255,179,0,.2)}
 .field{display:flex;flex-direction:column;gap:6px}
 .field-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)}
-.field input,.field select,.field textarea{width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--emerald)}
+.field input,.field select,.field textarea{width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface2);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
 .field input::placeholder{color:var(--text3)}
 .chips-grid{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:12px;color:var(--text2);transition:all .2s;user-select:none}
-.chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
+.chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
 @media(max-width:768px){
   .sidebar{display:none}
   .metrics-grid{grid-template-columns:1fr 1fr}
@@ -143,16 +143,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
         <div class="truck-road"></div>
         <div class="truck-body">
           <svg width="90" height="44" viewBox="0 0 90 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="0" y="6" width="58" height="28" rx="3" fill="#1D2820" stroke="#2A3C32" stroke-width="1.5"/>
-            <rect x="3" y="9" width="52" height="10" rx="2" fill="#213029" opacity=".6"/>
-            <rect x="58" y="12" width="26" height="22" rx="3" fill="#172018" stroke="#2A3C32" stroke-width="1.5"/>
-            <rect x="67" y="15" width="13" height="10" rx="2" fill="#22C36A" opacity=".25"/>
-            <rect x="81" y="20" width="5" height="4" rx="1" fill="#22C36A" opacity=".8"/>
-            <circle cx="72" cy="36" r="7" fill="#172018" stroke="#2A3C32" stroke-width="2"/>
-            <circle cx="72" cy="36" r="3" fill="#22C36A" opacity=".3"/>
-            <circle cx="16" cy="36" r="7" fill="#172018" stroke="#2A3C32" stroke-width="2"/>
-            <circle cx="16" cy="36" r="3" fill="#22C36A" opacity=".3"/>
-            <text x="6" y="25" font-family="Bebas Neue,sans-serif" font-size="9" fill="#22C36A" opacity=".5" letter-spacing="1">MUDATEYA</text>
+            <rect x="0" y="6" width="58" height="28" rx="3" fill="#EEF4FF" stroke="#E2E8F0" stroke-width="1.5"/>
+            <rect x="3" y="9" width="52" height="10" rx="2" fill="#E2E8F0" opacity=".6"/>
+            <rect x="58" y="12" width="26" height="22" rx="3" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="1.5"/>
+            <rect x="67" y="15" width="13" height="10" rx="2" fill="#1A6FFF" opacity=".25"/>
+            <rect x="81" y="20" width="5" height="4" rx="1" fill="#1A6FFF" opacity=".8"/>
+            <circle cx="72" cy="36" r="7" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2"/>
+            <circle cx="72" cy="36" r="3" fill="#1A6FFF" opacity=".3"/>
+            <circle cx="16" cy="36" r="7" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2"/>
+            <circle cx="16" cy="36" r="3" fill="#1A6FFF" opacity=".3"/>
+            <text x="6" y="25" font-family="Bebas Neue,sans-serif" font-size="9" fill="#1A6FFF" opacity=".5" letter-spacing="1">MUDATEYA</text>
           </svg>
         </div>
       </div>
@@ -167,7 +167,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
         ¿Todavía no te registraste?<br>
         <a href="/mudanceros">Sumate como mudancero →</a>
       </div>
-      <a href="/" style="display:inline-block;margin-top:1rem;font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono)" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">← Volver al inicio</a>
+      <a href="/" style="display:inline-block;margin-top:1rem;font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono)" onmouseover="this.style.color='#0F1923'" onmouseout="this.style.color='#64748B'">← Volver al inicio</a>
     </div>
   </div>
 </div>
@@ -340,11 +340,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
         <div class="card" style="margin-bottom:1rem">
           <div class="card-header"><span class="card-title">💰 Precios base ($ARS)</span></div>
           <div style="padding:1.2rem;display:grid;gap:8px">
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">Monoambiente / 1 ambiente</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p1" placeholder="55.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">2 ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p2" placeholder="90.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">3 ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p3" placeholder="135.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">4+ ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p4" placeholder="180.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">Flete / envío chico</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-pflete" placeholder="18.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--bg);outline:none"/></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">Monoambiente / 1 ambiente</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p1" placeholder="55.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">2 ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p2" placeholder="90.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">3 ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p3" placeholder="135.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">4+ ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-p4" placeholder="180.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">Flete / envío chico</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="number" id="pf-pflete" placeholder="18.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
           </div>
         </div>
         <div class="card" style="margin-bottom:1rem">
@@ -360,7 +360,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
         <div class="card" style="margin-bottom:1.5rem">
           <div class="card-header"><span class="card-title">📝 Presentación</span></div>
           <div style="padding:1.2rem">
-            <div class="field"><textarea id="pf-notas" rows="4" placeholder="Contá tu experiencia, especialidades, qué te diferencia…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical;transition:border-color .2s;line-height:1.55"></textarea></div>
+            <div class="field"><textarea id="pf-notas" rows="4" placeholder="Contá tu experiencia, especialidades, qué te diferencia…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical;transition:border-color .2s;line-height:1.55"></textarea></div>
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:10px;padding-bottom:2rem">
@@ -530,33 +530,33 @@ function truckLoader(msg) {
     +'<div class="truck-body">'
     +'<svg width="140" height="68" viewBox="0 0 140 68" fill="none" xmlns="http://www.w3.org/2000/svg">'
     // Caja/trailer
-    +'<rect x="0" y="8" width="88" height="42" rx="4" fill="#172018" stroke="#2A3C32" stroke-width="1.5"/>'
+    +'<rect x="0" y="8" width="88" height="42" rx="4" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="1.5"/>'
     // Ventana caja
-    +'<rect x="4" y="12" width="80" height="14" rx="2" fill="#1D2820" opacity=".8"/>'
+    +'<rect x="4" y="12" width="80" height="14" rx="2" fill="#EEF4FF" opacity=".8"/>'
     // Logo MUDATEYA en caja — más grande y visible
-    +'<rect x="4" y="29" width="80" height="17" rx="2" fill="#22C36A" opacity=".12"/>'
-    +'<text x="44" y="41" font-family="Bebas Neue,sans-serif" font-size="13" fill="#22C36A" opacity=".9" letter-spacing="2" text-anchor="middle">MUDATEYA</text>'
+    +'<rect x="4" y="29" width="80" height="17" rx="2" fill="#1A6FFF" opacity=".12"/>'
+    +'<text x="44" y="41" font-family="Bebas Neue,sans-serif" font-size="13" fill="#1A6FFF" opacity=".9" letter-spacing="2" text-anchor="middle">MUDATEYA</text>'
     // Cabina
-    +'<rect x="88" y="18" width="40" height="32" rx="4" fill="#1D2820" stroke="#2A3C32" stroke-width="1.5"/>'
+    +'<rect x="88" y="18" width="40" height="32" rx="4" fill="#EEF4FF" stroke="#E2E8F0" stroke-width="1.5"/>'
     // Parabrisa
-    +'<rect x="100" y="22" width="20" height="14" rx="2" fill="#22C36A" opacity=".2"/>'
+    +'<rect x="100" y="22" width="20" height="14" rx="2" fill="#1A6FFF" opacity=".2"/>'
     // Faro
-    +'<rect x="124" y="30" width="6" height="6" rx="1" fill="#22C36A" opacity=".9"/>'
-    +'<rect x="124" y="30" width="6" height="6" rx="1" fill="#22C36A" opacity=".4" filter="blur(2px)"/>'
+    +'<rect x="124" y="30" width="6" height="6" rx="1" fill="#1A6FFF" opacity=".9"/>'
+    +'<rect x="124" y="30" width="6" height="6" rx="1" fill="#1A6FFF" opacity=".4" filter="blur(2px)"/>'
     // Detalle cabina
-    +'<rect x="90" y="38" width="8" height="8" rx="1" fill="#213029"/>'
+    +'<rect x="90" y="38" width="8" height="8" rx="1" fill="#E2E8F0"/>'
     // Rueda delantera
-    +'<circle cx="110" cy="54" r="10" fill="#172018" stroke="#2A3C32" stroke-width="2"/>'
-    +'<circle cx="110" cy="54" r="5" fill="#1D2820" stroke="#22C36A" stroke-width="1" opacity=".6"/>'
-    +'<circle cx="110" cy="54" r="2" fill="#22C36A" opacity=".4"/>'
+    +'<circle cx="110" cy="54" r="10" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2"/>'
+    +'<circle cx="110" cy="54" r="5" fill="#EEF4FF" stroke="#22C36A" stroke-width="1" opacity=".6"/>'
+    +'<circle cx="110" cy="54" r="2" fill="#1A6FFF" opacity=".4"/>'
     // Rueda trasera
-    +'<circle cx="24" cy="54" r="10" fill="#172018" stroke="#2A3C32" stroke-width="2"/>'
-    +'<circle cx="24" cy="54" r="5" fill="#1D2820" stroke="#22C36A" stroke-width="1" opacity=".6"/>'
-    +'<circle cx="24" cy="54" r="2" fill="#22C36A" opacity=".4"/>'
+    +'<circle cx="24" cy="54" r="10" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2"/>'
+    +'<circle cx="24" cy="54" r="5" fill="#EEF4FF" stroke="#22C36A" stroke-width="1" opacity=".6"/>'
+    +'<circle cx="24" cy="54" r="2" fill="#1A6FFF" opacity=".4"/>'
     // Rueda trasera extra
-    +'<circle cx="42" cy="54" r="10" fill="#172018" stroke="#2A3C32" stroke-width="2"/>'
-    +'<circle cx="42" cy="54" r="5" fill="#1D2820" stroke="#22C36A" stroke-width="1" opacity=".6"/>'
-    +'<circle cx="42" cy="54" r="2" fill="#22C36A" opacity=".4"/>'
+    +'<circle cx="42" cy="54" r="10" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2"/>'
+    +'<circle cx="42" cy="54" r="5" fill="#EEF4FF" stroke="#22C36A" stroke-width="1" opacity=".6"/>'
+    +'<circle cx="42" cy="54" r="2" fill="#1A6FFF" opacity=".4"/>'
     +'</svg>'
     +'</div></div>'
     +'<div class="truck-msg">'+msg+'</div>'
@@ -621,7 +621,7 @@ function renderPedidos(){
     { id:'disponibles', label:'Disponibles', count: mudanzasDisponibles.length, color:'var(--emerald)' },
     { id:'enviados',    label:'En espera',   count: enviados.length,             color:'var(--sky)' },
     { id:'aceptados',   label:'Aceptados',   count: aceptados.length,            color:'var(--emerald)' },
-    { id:'expirados',   label:'Expirados',   count: expirados.length,            color:'var(--text3)' },
+    { id:'expirados',   label:'Expirados',   count: expirados.length,            color:'#64748B' },
   ];
 
   var tabsHtml = '<div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.2rem;overflow-x:auto">'
@@ -631,9 +631,9 @@ function renderPedidos(){
           +'display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:none;'
           +'font-size:12px;font-weight:600;font-family:\'Outfit\',sans-serif;cursor:pointer;white-space:nowrap;'
           +'border-bottom:2px solid '+(isActive ? t.color : 'transparent')+';'
-          +'color:'+(isActive ? t.color : 'var(--text3)')+';transition:all .2s">'
+          +'color:'+(isActive ? t.color : '#64748B')+';transition:all .2s">'
           +t.label
-          +(t.count > 0 ? '<span style="background:'+(isActive?t.color:'var(--border2)')+';color:'+(isActive?'#041A0E':'var(--text3)')+';font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center">'+t.count+'</span>' : '')
+          +(t.count > 0 ? '<span style="background:'+(isActive?t.color:'#CBD5E1')+';color:'+(isActive?'#041A0E':'#64748B')+';font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center">'+t.count+'</span>' : '')
           +'</button>';
       }).join('')
     +'</div>';
@@ -704,7 +704,7 @@ function renderCardDisponible(m) {
     + fotosHtml
     +'<div class="pedido-meta">'
     +(m.servicios?'<span class="pedido-tag">'+(esFlete?'📦':'🏠')+' '+m.servicios+'</span>':'')
-    +(m.extras?'<span class="pedido-tag" style="color:var(--amber)">⚠ '+m.extras+'</span>':'')
+    +(m.extras?'<span class="pedido-tag" style="color:#F59E0B">⚠ '+m.extras+'</span>':'')
     +'</div>'
     +'<div style="display:flex;align-items:flex-end;justify-content:space-between">'
     +'<div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Precio estimado</div>'
@@ -731,7 +731,7 @@ function renderCardCotizacion(m) {
   var mailLink = clienteEmail ? 'mailto:'+clienteEmail+'?subject='+encodeURIComponent('Mudanza MudateYa – '+m.desde+' → '+m.hasta) : '';
 
   var badge = completada ? '<span class="badge aceptado">✓ Completada</span>'
-    : enCurso   ? '<span class="badge" style="background:rgba(41,182,246,.12);color:var(--sky);border:1px solid rgba(41,182,246,.25)">▶ En curso</span>'
+    : enCurso   ? '<span class="badge" style="background:rgba(41,182,246,.12);color:var(--green);border:1px solid rgba(41,182,246,.25)">▶ En curso</span>'
     : isAcept   ? '<span class="badge aceptado">✓ Aceptada</span>'
     : noElegido ? '<span class="badge rechazado">No elegida</span>'
     : expirado  ? '<span class="badge" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border)">Expirada</span>'
@@ -746,20 +746,20 @@ function renderCardCotizacion(m) {
         +'<button class="btn btn-green" style="font-size:12px" onclick="cambiarEstado(\''+m.id+'\',\'en_curso\',this)">▶ Iniciar mudanza</button>'
         +'</div>';
     } else {
-      estadoBtns = '<div style="margin-top:10px;padding:8px 12px;background:rgba(255,179,0,.08);border:1px solid rgba(255,179,0,.25);border-radius:8px;font-size:12px;color:var(--amber);font-family:var(--mono)">'
+      estadoBtns = '<div style="margin-top:10px;padding:8px 12px;background:var(--amber-light);border:1px solid rgba(255,179,0,.25);border-radius:8px;font-size:12px;color:var(--amber);font-family:var(--mono)">'
         +'⏳ Esperando anticipo del cliente (50%) para poder iniciar'
         +'</div>';
     }
   } else if (enCurso) {
     var anticipoPagado2 = m.anticipoPagado;
     estadoBtns = '<div style="margin-top:10px;display:flex;gap:8px;align-items:center">'
-      +'<div style="font-size:11px;color:var(--sky);font-family:var(--mono);flex:1">🚛 Mudanza en curso…</div>'
+      +'<div style="font-size:11px;color:var(--green);font-family:var(--mono);flex:1">🚛 Mudanza en curso…</div>'
       +(anticipoPagado2
         ? '<button class="btn btn-green" style="font-size:12px" onclick="cambiarEstado(\''+m.id+'\',\'completada\',this)">✓ Marcar como completada</button>'
         : '<span style="font-size:11px;color:var(--amber);font-family:var(--mono)">⏳ Anticipo pendiente</span>')
       +'</div>';
   } else if (completada) {
-    estadoBtns = '<div style="margin-top:10px;padding:8px 12px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);border-radius:8px;font-size:12px;color:var(--emerald);font-family:var(--mono)">✓ Mudanza completada</div>';
+    estadoBtns = '<div style="margin-top:10px;padding:8px 12px;background:var(--blue-light);border:1px solid rgba(26,111,255,.2);border-radius:8px;font-size:12px;color:var(--blue);font-family:var(--mono)">✓ Mudanza completada</div>';
   }
 
   return '<div class="pedido-card '+(isAcept||enCurso||completada?'aceptado':(noElegido||expirado?'rechazado':''))+'">'
@@ -773,9 +773,9 @@ function renderCardCotizacion(m) {
     +'<div class="pedido-precio">$'+(cot?.precio?.toLocaleString('es-AR')||'—')+'</div>'
     +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">tu cotización</div>'
     +(cot?.nota?'<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic">"'+cot.nota+'"</div>':'')
-    +((isAcept||enCurso||completada)&&(clienteNombre||clienteWA) ? '<div style="margin-top:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
+    +((isAcept||enCurso||completada)&&(clienteNombre||clienteWA) ? '<div style="margin-top:10px;background:var(--blue-light);border:1px solid rgba(26,111,255,.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
       +'<div style="flex:1">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--emerald);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--blue);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
       +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+(clienteNombre||'—')+'</div>'
       +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(clienteWA?'📱 '+clienteWA:clienteEmail||'Sin contacto')+'</div>'
       +'</div>'
@@ -829,19 +829,19 @@ function abrirCotizacion(mudanza){
   var ps = parseInt(mudanza.precio_estimado||0);
   var modal = document.createElement('div');
   modal.id = 'cotModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
-  modal.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:1.8rem;max-width:460px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
+  modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:20px;padding:1.8rem;max-width:460px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
     +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Enviar cotización</div>'
     +'<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+mudanza.desde+' → '+mudanza.hasta+' · '+(mudanza.ambientes||'')+'</div>'
     +'<div style="display:flex;flex-direction:column;gap:12px">'
-    +'<div><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Tu precio ($ARS) <span style="color:var(--emerald)">*</span></label>'
+    +'<div><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Tu precio ($ARS) <span style="color:#1A6FFF">*</span></label>'
     +'<div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:12px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span>'
     +'<input type="number" id="cot-precio" value="'+ps+'" min="0" style="width:100%;padding:11px 14px 11px 26px;border:1px solid var(--border2);border-radius:10px;font-size:14px;font-family:var(--mono);color:var(--text);background:var(--surface2);outline:none;font-weight:600"/></div>'
     +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px">Precio estimado del cliente: $'+ps.toLocaleString('es-AR')+'</div></div>'
     +'<div><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Tiempo estimado</label>'
-    +'<input type="text" id="cot-tiempo" placeholder="Ej: 3-4 horas" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Outfit,sans-serif;color:var(--text);background:var(--surface2);outline:none"/></div>'
+    +'<input type="text" id="cot-tiempo" placeholder="Ej: 3-4 horas" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface2);outline:none"/></div>'
     +'<div><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Nota para el cliente</label>'
-    +'<textarea id="cot-nota" rows="3" placeholder="Describí tu propuesta: experiencia, qué incluye, condiciones…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Outfit,sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical;line-height:1.55"></textarea></div>'
+    +'<textarea id="cot-nota" rows="3" placeholder="Describí tu propuesta: experiencia, qué incluye, condiciones…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical;line-height:1.55"></textarea></div>'
     +'</div>'
     +'<div style="display:flex;gap:8px;margin-top:1.2rem;justify-content:flex-end">'
     +'<button class="btn btn-ghost" onclick="document.getElementById(\'cotModal\').remove()">Cancelar</button>'
@@ -932,7 +932,7 @@ function loadGanancias(){
         +'<td style="padding:11px 14px;font-size:12px;color:var(--text2)">'+m.desde.split(',')[0]+' → '+m.hasta.split(',')[0]+'</td>'
         +'<td style="padding:11px 14px;font-size:12px;font-family:var(--mono)">$'+cot.precio.toLocaleString('es-AR')+'</td>'
         +'<td style="padding:11px 14px;font-size:12px;font-family:var(--mono);color:var(--red)">-$'+fee.toLocaleString('es-AR')+'</td>'
-        +'<td style="padding:11px 14px;font-size:13px;font-family:var(--mono);color:var(--emerald);font-weight:600">$'+(cot.precio-fee).toLocaleString('es-AR')+'</td>'
+        +'<td style="padding:11px 14px;font-size:13px;font-family:var(--mono);color:var(--blue);font-weight:600">$'+(cot.precio-fee).toLocaleString('es-AR')+'</td>'
         +'</tr>';
     }).join('')
     +'</tbody></table>';
@@ -999,7 +999,7 @@ async function guardarPerfil(){
   }catch(err){
     btn.disabled=false; btn.innerHTML='Guardar cambios';
     msg.style.color='var(--red)'; msg.textContent='⚠ Error: '+err.message;
-    setTimeout(function(){ msg.textContent=''; msg.style.color='var(--text3)'; },4000);
+    setTimeout(function(){ msg.textContent=''; msg.style.color='#64748B'; },4000);
   }
 }
 </script>
