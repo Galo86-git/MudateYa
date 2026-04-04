@@ -327,26 +327,88 @@ function cerrarLightbox() {
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') cerrarLightbox(); });
 
 function solicitarCotizacion() {
-  window.location.href = '/#resultados';
+  var email = new URLSearchParams(location.search).get('id');
+  var busqueda = null;
+  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
+  var user = null;
+  try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e){}
+
+  if (!user) {
+    // No logueado → volver al index a loguearse
+    sessionStorage.setItem('pendingMudancero', email);
+    window.location.href = '/';
+    return;
+  }
+
+  if (!busqueda || !busqueda.desde || !busqueda.hasta) {
+    alert('No encontramos tu búsqueda. Volvé al inicio e ingresá origen y destino.');
+    return;
+  }
+
+  var btn = document.querySelector('.btn-cot');
+  btn.disabled = true;
+  btn.textContent = 'Publicando…';
+
+  var esFlete = busqueda.tipo === 'flete';
+  var ambNum = parseInt(busqueda.ambientes) || 2;
+  var precioEst = esFlete ? 180000 : ({1:450000,2:550000,3:680000,4:860000,5:1050000,6:1180000}[Math.min(ambNum,6)] || 550000);
+
+  fetch('/api/cotizaciones?action=publicar', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      clienteEmail: user.email,
+      clienteNombre: user.name,
+      desde: busqueda.desde,
+      hasta: busqueda.hasta,
+      ambientes: esFlete ? 'Flete' : (ambNum + ' ambientes'),
+      fecha: busqueda.fecha || 'A confirmar',
+      tipo: busqueda.tipo || 'mudanza',
+      precio_estimado: precioEst,
+      distanciaKm: busqueda.distanciaKm || 0,
+      modoCotizacion: 'dirigido',
+      mudancerosInvitados: [email],
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.error) throw new Error(d.error);
+    var nombre = _mudancero ? (_mudancero.empresa || _mudancero.nombre) : 'este mudancero';
+    document.querySelector('.sidebar-card').innerHTML =
+      '<div style="text-align:center;padding:1.2rem">'
+      +'<div style="font-size:2.5rem;margin-bottom:12px">🚀</div>'
+      +'<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">¡Solicitud enviada!</div>'
+      +'<p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem;line-height:1.6">Le enviamos tu pedido a <strong>'+nombre+'</strong>. Te avisamos por email cuando te cotice.</p>'
+      +'<a href="/mi-mudanza" style="display:block;padding:13px;background:var(--blue);color:#fff;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;text-align:center">Ver mis mudanzas →</a>'
+      +'</div>';
+  })
+  .catch(function(e){
+    btn.disabled = false;
+    btn.textContent = 'Solicitar cotización →';
+    alert('Error: ' + e.message);
+  });
 }
+
 function seleccionarYVolver() {
-  // Marcar como seleccionado y volver
   var email = new URLSearchParams(location.search).get('id');
   if (email) {
+    // Guardar en sessionStorage para que el index lo lea al volver
     try {
       var sel = JSON.parse(sessionStorage.getItem('seleccionados')||'[]');
       if (!sel.includes(email)) sel.push(email);
       sessionStorage.setItem('seleccionados', JSON.stringify(sel));
+      sessionStorage.setItem('ultimoSeleccionado', email);
     } catch(e){}
   }
   history.back();
 }
 
+var _mudancero = null;
+
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
 (function init() {
-  // Intentar leer del sessionStorage primero (más rápido)
   var m = null;
   try { m = JSON.parse(sessionStorage.getItem('perfilMudancero')); } catch(e){}
 
@@ -360,6 +422,8 @@ function seleccionarYVolver() {
       +'</div>';
     return;
   }
+
+  _mudancero = m;
 
   // Calcular índice basado en el email para datos extra consistentes
   var email = m.email || '';
