@@ -310,20 +310,48 @@ nav{
 .btn-clear{background:none;border:none;font-size:12px;color:var(--blue);cursor:pointer;padding:0;font-family:'Inter',sans-serif;text-decoration:underline;margin-top:6px;display:block}
 
 /* Filtros mobile top bar */
+/* ── FILTROS BAR (siempre visible) ─────────────── */
 .filtros-mobile-bar{
-  display:none;
+  display:flex;
   background:#fff;border-bottom:1px solid var(--border);
-  padding:.6rem 1rem;gap:6px;overflow-x:auto;
-  scrollbar-width:none;
+  padding:.55rem 1rem;gap:6px;overflow-x:auto;
+  scrollbar-width:none;position:sticky;top:58px;z-index:90;
 }
 .filtros-mobile-bar::-webkit-scrollbar{display:none}
+
+/* Pill base */
 .filtro-pill{
-  padding:6px 12px;border-radius:20px;border:1px solid var(--border2);
-  font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap;
-  background:#fff;transition:all .2s;flex-shrink:0;
+  position:relative;
+  padding:7px 14px;border-radius:22px;border:1.5px solid var(--border2);
+  font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;
+  background:#fff;transition:all .18s;flex-shrink:0;
+  display:flex;align-items:center;gap:5px;user-select:none;
 }
 .filtro-pill:hover{border-color:var(--blue);color:var(--blue)}
 .filtro-pill.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
+.filtro-pill.has-value{border-color:var(--blue);background:var(--blue);color:#fff;font-weight:600}
+.filtro-pill.has-value:hover{background:var(--blue-dark,#0052CC)}
+.pill-chevron{font-size:9px;transition:transform .2s;display:inline-block}
+.filtro-pill.open .pill-chevron{transform:rotate(180deg)}
+
+/* Dropdown panel */
+.pill-dropdown{
+  display:none;position:absolute;top:calc(100% + 8px);left:0;
+  background:#fff;border:1px solid var(--border2);border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.12);padding:14px;min-width:200px;z-index:200;
+}
+.filtro-pill.open .pill-dropdown{display:block}
+.pd-title{font-size:10px;font-weight:700;color:var(--text3,#94A3B8);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:10px;font-family:var(--mono)}
+.pd-opt{display:flex;align-items:center;gap:9px;padding:7px 4px;border-radius:8px;
+  cursor:pointer;font-size:13px;color:var(--text);transition:background .15s}
+.pd-opt:hover{background:var(--bg2,#F5F7FA)}
+.pd-opt.selected{color:var(--blue);font-weight:600}
+.pd-opt.selected::after{content:'✓';margin-left:auto;font-size:11px}
+.pd-sep{height:1px;background:var(--border);margin:8px 0}
+.pd-clear{font-size:11px;color:var(--blue);cursor:pointer;text-align:center;
+  padding:6px;border-radius:6px;transition:background .15s;font-weight:600}
+.pd-clear:hover{background:var(--blue-light)}
 
 /* Header resultados */
 .res-header{
@@ -530,7 +558,7 @@ footer{background:#003580;padding:1.5rem}
   .swap-btn{display:none}
   .res-body{grid-template-columns:1fr;padding:.8rem 1rem}
   .filtros{display:none}
-  .filtros-mobile-bar{display:flex}
+  /* filtros-mobile-bar ya es siempre visible */
   .mud-card{grid-template-columns:120px 1fr}
   .mud-card-foto{width:120px;height:120px}
   .mud-card-precio{display:none}
@@ -764,16 +792,72 @@ footer{background:#003580;padding:1.5rem}
     </div>
   </div>
 
-  <!-- Filtros mobile -->
+  <!-- Filtros bar con dropdowns -->
   <div class="filtros-mobile-bar" id="filtrosMobileBar">
-    <div class="filtro-pill" onclick="togglePill(this,'ord-cal')">⭐ Mejor calificación</div>
-    <div class="filtro-pill" onclick="togglePill(this,'ord-precio')">💰 Menor precio</div>
-    <div class="filtro-pill" onclick="togglePill(this,'veh-cam-g')">🚛 Camión grande</div>
-    <div class="filtro-pill" onclick="togglePill(this,'veh-cam-m')">🚚 Camión mediano</div>
-    <div class="filtro-pill" onclick="togglePill(this,'verif-id')">✅ Verificado</div>
-    <div class="filtro-pill" onclick="togglePill(this,'verif-seg')">🛡 Con seguro</div>
-    <div class="filtro-pill" onclick="togglePill(this,'zona-caba')">📍 CABA</div>
-    <div class="filtro-pill" onclick="togglePill(this,'zona-gba')">📍 GBA</div>
+
+    <!-- Ordenar -->
+    <div class="filtro-pill" id="pill-orden" onclick="togglePillDropdown(event,'pill-orden')">
+      <span id="pill-orden-lbl">Ordenar</span>
+      <span class="pill-chevron">▼</span>
+      <div class="pill-dropdown" onclick="event.stopPropagation()">
+        <div class="pd-title">Ordenar por</div>
+        <div class="pd-opt selected" id="pdo-cal" onclick="setPillOrden('cal',this)">⭐ Mejor calificación</div>
+        <div class="pd-opt" id="pdo-precio" onclick="setPillOrden('precio',this)">💰 Menor precio</div>
+        <div class="pd-opt" id="pdo-trab" onclick="setPillOrden('trab',this)">📦 Más trabajos</div>
+      </div>
+    </div>
+
+    <!-- Vehículo -->
+    <div class="filtro-pill" id="pill-veh" onclick="togglePillDropdown(event,'pill-veh')">
+      <span id="pill-veh-lbl">Vehículo</span>
+      <span class="pill-chevron">▼</span>
+      <div class="pill-dropdown" onclick="event.stopPropagation()">
+        <div class="pd-title">Tipo de vehículo</div>
+        <div class="pd-opt" id="pdv-cam-g" onclick="togglePillFV('Camión grande','pdv-cam-g','pill-veh','pill-veh-lbl','Vehículo')">🚛 Camión grande</div>
+        <div class="pd-opt" id="pdv-cam-m" onclick="togglePillFV('Camión mediano','pdv-cam-m','pill-veh','pill-veh-lbl','Vehículo')">🚚 Camión mediano</div>
+        <div class="pd-opt" id="pdv-fur" onclick="togglePillFV('Camioneta / furgón pequeño','pdv-fur','pill-veh','pill-veh-lbl','Vehículo')">🚐 Camioneta / furgón</div>
+        <div class="pd-opt" id="pdv-gru" onclick="togglePillFV('Camión con hidrogrúa','pdv-gru','pill-veh','pill-veh-lbl','Vehículo')">🏗 Con hidrogrúa</div>
+        <div class="pd-sep"></div>
+        <div class="pd-clear" onclick="limpiarPillFV('pill-veh','pill-veh-lbl','Vehículo')">Limpiar</div>
+      </div>
+    </div>
+
+    <!-- Verificaciones -->
+    <div class="filtro-pill" id="pill-ver" onclick="togglePillDropdown(event,'pill-ver')">
+      <span id="pill-ver-lbl">Verificación</span>
+      <span class="pill-chevron">▼</span>
+      <div class="pill-dropdown" onclick="event.stopPropagation()">
+        <div class="pd-title">Verificaciones</div>
+        <div class="pd-opt" id="pdver-id" onclick="togglePillFVer('id','pdver-id','pill-ver','pill-ver-lbl','Verificación')">✅ Identidad verificada</div>
+        <div class="pd-opt" id="pdver-veh" onclick="togglePillFVer('veh','pdver-veh','pill-ver','pill-ver-lbl','Verificación')">🚛 Vehículo verificado</div>
+        <div class="pd-opt" id="pdver-seg" onclick="togglePillFVer('seg','pdver-seg','pill-ver','pill-ver-lbl','Verificación')">🛡 Con seguro</div>
+        <div class="pd-sep"></div>
+        <div class="pd-clear" onclick="limpiarPillFVer('pill-ver','pill-ver-lbl','Verificación')">Limpiar</div>
+      </div>
+    </div>
+
+    <!-- Zona -->
+    <div class="filtro-pill" id="pill-zona" onclick="togglePillDropdown(event,'pill-zona')">
+      <span id="pill-zona-lbl">Zona</span>
+      <span class="pill-chevron">▼</span>
+      <div class="pill-dropdown" onclick="event.stopPropagation()">
+        <div class="pd-title">Zona de operación</div>
+        <div class="pd-opt" id="pdz-caba" onclick="togglePillFZ('CABA','pdz-caba','pill-zona','pill-zona-lbl','Zona')">📍 CABA</div>
+        <div class="pd-opt" id="pdz-gban" onclick="togglePillFZ('GBA Norte','pdz-gban','pill-zona','pill-zona-lbl','Zona')">📍 GBA Norte</div>
+        <div class="pd-opt" id="pdz-gbas" onclick="togglePillFZ('GBA Sur','pdz-gbas','pill-zona','pill-zona-lbl','Zona')">📍 GBA Sur</div>
+        <div class="pd-opt" id="pdz-gbao" onclick="togglePillFZ('GBA Oeste','pdz-gbao','pill-zona','pill-zona-lbl','Zona')">📍 GBA Oeste</div>
+        <div class="pd-opt" id="pdz-ros" onclick="togglePillFZ('Rosario','pdz-ros','pill-zona','pill-zona-lbl','Zona')">📍 Rosario</div>
+        <div class="pd-opt" id="pdz-cor" onclick="togglePillFZ('Córdoba','pdz-cor','pill-zona','pill-zona-lbl','Zona')">📍 Córdoba</div>
+        <div class="pd-sep"></div>
+        <div class="pd-clear" onclick="limpiarPillFZ('pill-zona','pill-zona-lbl','Zona')">Limpiar</div>
+      </div>
+    </div>
+
+    <!-- Limpiar todo -->
+    <div class="filtro-pill" id="pill-clear" style="display:none;border-color:#EF4444;color:#EF4444" onclick="limpiarTodosFiltros()">
+      ✕ Limpiar todo
+    </div>
+
   </div>
 
   <div class="res-body" id="resBody">
@@ -1517,21 +1601,111 @@ function limpiarFiltros() {
   document.querySelectorAll('input[name=orden]').forEach(function(i,idx){ i.checked=idx===0; });
   renderResultados();
 }
-function togglePill(el, key) {
-  el.classList.toggle('active');
-  // Mapear pill a filtro
-  var map = {
-    'ord-cal':function(){ _filtros.orden='cal'; },
-    'ord-precio':function(){ _filtros.orden='precio'; },
-    'veh-cam-g':function(){ if(_filtros.vehiculos.has('Camión grande')) _filtros.vehiculos.delete('Camión grande'); else _filtros.vehiculos.add('Camión grande'); },
-    'veh-cam-m':function(){ if(_filtros.vehiculos.has('Camión mediano')) _filtros.vehiculos.delete('Camión mediano'); else _filtros.vehiculos.add('Camión mediano'); },
-    'verif-id':function(){ if(_filtros.verifs.has('id')) _filtros.verifs.delete('id'); else _filtros.verifs.add('id'); },
-    'verif-seg':function(){ if(_filtros.verifs.has('seg')) _filtros.verifs.delete('seg'); else _filtros.verifs.add('seg'); },
-    'zona-caba':function(){ if(_filtros.zonas.has('CABA')) _filtros.zonas.delete('CABA'); else _filtros.zonas.add('CABA'); },
-    'zona-gba':function(){ if(_filtros.zonas.has('GBA')) _filtros.zonas.delete('GBA'); else _filtros.zonas.add('GBA'); },
-  };
-  if (map[key]) { map[key](); renderResultados(); }
+
+// ══════════════════════════════════════════
+// PILL DROPDOWNS
+// ══════════════════════════════════════════
+function togglePillDropdown(e, pillId) {
+  e.stopPropagation();
+  var pill = document.getElementById(pillId);
+  var isOpen = pill.classList.contains('open');
+  // Cerrar todos
+  document.querySelectorAll('.filtro-pill.open').forEach(function(p){ p.classList.remove('open'); });
+  if (!isOpen) pill.classList.add('open');
 }
+// Cerrar al click fuera
+document.addEventListener('click', function() {
+  document.querySelectorAll('.filtro-pill.open').forEach(function(p){ p.classList.remove('open'); });
+});
+
+function _actualizarClearAll() {
+  var hayFiltros = _filtros.vehiculos.size || _filtros.zonas.size || _filtros.verifs.size || _filtros.orden !== 'cal';
+  document.getElementById('pill-clear').style.display = hayFiltros ? 'flex' : 'none';
+}
+
+// Ordenar
+function setPillOrden(v, el) {
+  _filtros.orden = v;
+  var labels = { 'cal':'Ordenar', 'precio':'Menor precio', 'trab':'Más trabajos' };
+  document.getElementById('pill-orden-lbl').textContent = v === 'cal' ? 'Ordenar' : labels[v];
+  document.getElementById('pill-orden').classList.toggle('has-value', v !== 'cal');
+  document.querySelectorAll('#pill-orden .pd-opt').forEach(function(o){ o.classList.remove('selected'); });
+  if (el) el.classList.add('selected');
+  document.getElementById('pill-orden').classList.remove('open');
+  _actualizarClearAll();
+  renderResultados();
+}
+
+// Vehículo (multi)
+function togglePillFV(v, optId, pillId, lblId, lblDefault) {
+  if (_filtros.vehiculos.has(v)) _filtros.vehiculos.delete(v); else _filtros.vehiculos.add(v);
+  var opt = document.getElementById(optId);
+  if (opt) opt.classList.toggle('selected', _filtros.vehiculos.has(v));
+  var n = _filtros.vehiculos.size;
+  document.getElementById(lblId).textContent = n ? (lblDefault + ' (' + n + ')') : lblDefault;
+  document.getElementById(pillId).classList.toggle('has-value', n > 0);
+  _actualizarClearAll();
+  renderResultados();
+}
+function limpiarPillFV(pillId, lblId, lblDefault) {
+  _filtros.vehiculos.clear();
+  document.querySelectorAll('#' + pillId + ' .pd-opt').forEach(function(o){ o.classList.remove('selected'); });
+  document.getElementById(lblId).textContent = lblDefault;
+  document.getElementById(pillId).classList.remove('has-value','open');
+  _actualizarClearAll();
+  renderResultados();
+}
+
+// Verificación (multi)
+function togglePillFVer(v, optId, pillId, lblId, lblDefault) {
+  if (_filtros.verifs.has(v)) _filtros.verifs.delete(v); else _filtros.verifs.add(v);
+  var opt = document.getElementById(optId);
+  if (opt) opt.classList.toggle('selected', _filtros.verifs.has(v));
+  var n = _filtros.verifs.size;
+  document.getElementById(lblId).textContent = n ? (lblDefault + ' (' + n + ')') : lblDefault;
+  document.getElementById(pillId).classList.toggle('has-value', n > 0);
+  _actualizarClearAll();
+  renderResultados();
+}
+function limpiarPillFVer(pillId, lblId, lblDefault) {
+  _filtros.verifs.clear();
+  document.querySelectorAll('#' + pillId + ' .pd-opt').forEach(function(o){ o.classList.remove('selected'); });
+  document.getElementById(lblId).textContent = lblDefault;
+  document.getElementById(pillId).classList.remove('has-value','open');
+  _actualizarClearAll();
+  renderResultados();
+}
+
+// Zona (multi)
+function togglePillFZ(v, optId, pillId, lblId, lblDefault) {
+  if (_filtros.zonas.has(v)) _filtros.zonas.delete(v); else _filtros.zonas.add(v);
+  var opt = document.getElementById(optId);
+  if (opt) opt.classList.toggle('selected', _filtros.zonas.has(v));
+  var n = _filtros.zonas.size;
+  document.getElementById(lblId).textContent = n ? (lblDefault + ' (' + n + ')') : lblDefault;
+  document.getElementById(pillId).classList.toggle('has-value', n > 0);
+  _actualizarClearAll();
+  renderResultados();
+}
+function limpiarPillFZ(pillId, lblId, lblDefault) {
+  _filtros.zonas.clear();
+  document.querySelectorAll('#' + pillId + ' .pd-opt').forEach(function(o){ o.classList.remove('selected'); });
+  document.getElementById(lblId).textContent = lblDefault;
+  document.getElementById(pillId).classList.remove('has-value','open');
+  _actualizarClearAll();
+  renderResultados();
+}
+
+function limpiarTodosFiltros() {
+  limpiarPillFV('pill-veh','pill-veh-lbl','Vehículo');
+  limpiarPillFVer('pill-ver','pill-ver-lbl','Verificación');
+  limpiarPillFZ('pill-zona','pill-zona-lbl','Zona');
+  setPillOrden('cal', document.getElementById('pdo-cal'));
+}
+
+// legacy togglePill (por si algo lo llama)
+function togglePill(el, key) {}
+
 
 // ══════════════════════════════════════════
 // PUBLICAR
