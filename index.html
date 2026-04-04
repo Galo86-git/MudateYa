@@ -2512,20 +2512,20 @@ window.addEventListener('pageshow', function(e) {
     }, 100);
   }
 });
+// Recibir mensajes del perfil (legacy — ya no se usa nueva pestaña pero se mantiene por si acaso)
+window.addEventListener('message', function(e) {
   if (!e.data || !e.data.type) return;
   if (e.data.type === 'seleccionar' && e.data.email) {
     _sel.add(e.data.email);
     var n = _sel.size;
     document.getElementById('selBar').classList.toggle('show', n > 0);
     document.getElementById('selCount').textContent = n;
-    // Si hay resultados visibles, re-renderizar para marcar la card
     if (document.getElementById('resultados').classList.contains('show')) {
       renderResultados();
     }
   }
   if (e.data.type === 'pendingMudancero' && e.data.email) {
     sessionStorage.setItem('pendingMudancero', e.data.email);
-    // Mostrar mensaje en el hero
     var heroSub = document.querySelector('.hero-sub');
     if (heroSub) {
       heroSub.innerHTML = '⚡ <strong style="color:#22C36A">¡Ya casi!</strong> Ingresá tu origen y destino para enviarle la solicitud al mudancero.';
