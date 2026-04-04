@@ -1171,6 +1171,32 @@ function initMaps() {
   // Iniciar mapa mini si resultados ya visibles
   if (document.getElementById('resultados').classList.contains('show')) initMapaMini();
 }
+// Flags de validación por input
+var _validAddr = {};
+
+function setAddrError(inputId, msg) {
+  var inp = document.getElementById(inputId);
+  if (!inp) return;
+  inp.style.border = '2px solid #FF5252';
+  inp.style.background = 'rgba(255,82,82,.06)';
+  // Mostrar tooltip de error
+  var errId = inputId + '-err';
+  var existing = document.getElementById(errId);
+  if (existing) existing.remove();
+  var err = document.createElement('div');
+  err.id = errId;
+  err.style.cssText = 'position:absolute;top:calc(100% + 4px);left:0;right:0;background:#FF5252;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;z-index:999;font-family:var(--mono);box-shadow:0 4px 12px rgba(255,82,82,.3)';
+  err.textContent = msg;
+  inp.parentElement.style.position = 'relative';
+  inp.parentElement.appendChild(err);
+  setTimeout(function(){
+    inp.style.border = '';
+    inp.style.background = '';
+    if (err.parentElement) err.remove();
+  }, 3000);
+  inp.focus();
+}
+
 function makeAC(inputId, ddId) {
   var input = document.getElementById(inputId);
   var dd = document.getElementById(ddId);
@@ -1178,6 +1204,7 @@ function makeAC(inputId, ddId) {
   var deb;
   input.addEventListener('input', function() {
     clearTimeout(deb);
+    _validAddr[inputId] = false; // invalidar al escribir manualmente
     var q = this.value.trim();
     if (q.length < 2) { dd.classList.remove('open'); return; }
     deb = setTimeout(function() {
@@ -1190,8 +1217,8 @@ function makeAC(inputId, ddId) {
             var li = document.createElement('li');
             li.className = 'ac-item';
             li.textContent = s.description;
-            li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
-            li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
+            li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
+            li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
             dd.appendChild(li);
           });
           dd.classList.add('open');
@@ -1206,7 +1233,7 @@ function makeAC(inputId, ddId) {
     var idx = active ? Array.from(items).indexOf(active) : -1;
     if (e.key === 'ArrowDown') { e.preventDefault(); if (active) active.classList.remove('kb'); var n = items[idx+1]||items[0]; if(n){ n.classList.add('kb'); n.scrollIntoView({block:'nearest'}); } }
     else if (e.key === 'ArrowUp') { e.preventDefault(); if (active) active.classList.remove('kb'); var p = items[idx-1]||items[items.length-1]; if(p){ p.classList.add('kb'); p.scrollIntoView({block:'nearest'}); } }
-    else if (e.key === 'Enter' && active) { e.preventDefault(); active.dispatchEvent(new MouseEvent('mousedown')); }
+    else if (e.key === 'Enter' && active) { e.preventDefault(); _validAddr[inputId] = true; active.dispatchEvent(new MouseEvent('mousedown')); }
     else if (e.key === 'Escape') { dd.classList.remove('open'); }
   });
   input.addEventListener('click', function(e){ e.stopPropagation(); });
@@ -1246,12 +1273,25 @@ function verMapa() {
 // BUSCAR
 // ══════════════════════════════════════════
 function buscar() {
-  var desde = _tipo==='mudanza' ? document.getElementById('input-desde').value.trim() : document.getElementById('input-flete-desde').value.trim();
-  var hasta  = _tipo==='mudanza' ? document.getElementById('input-hasta').value.trim()  : document.getElementById('input-flete-hasta').value.trim();
-  if (!desde || !hasta) {
-    var inp = document.getElementById(_tipo==='mudanza' ? 'input-desde' : 'input-flete-desde');
-    inp.focus(); inp.style.outline = '2px solid #22C36A';
-    setTimeout(function(){ inp.style.outline=''; }, 2000);
+  var idDesde = _tipo==='mudanza' ? 'input-desde' : 'input-flete-desde';
+  var idHasta = _tipo==='mudanza' ? 'input-hasta' : 'input-flete-hasta';
+  var desde = document.getElementById(idDesde).value.trim();
+  var hasta  = document.getElementById(idHasta).value.trim();
+  // Validar que ambas direcciones fueron elegidas del autocomplete
+  if (!desde) {
+    setAddrError(idDesde, '⚠ Ingresá la dirección de origen');
+    return;
+  }
+  if (!_validAddr[idDesde]) {
+    setAddrError(idDesde, '⚠ Elegí una dirección de la lista de sugerencias');
+    return;
+  }
+  if (!hasta) {
+    setAddrError(idHasta, '⚠ Ingresá la dirección de destino');
+    return;
+  }
+  if (!_validAddr[idHasta]) {
+    setAddrError(idHasta, '⚠ Elegí una dirección de la lista de sugerencias');
     return;
   }
   var fecha = _tipo==='mudanza' ? (_fechaLabel||'A definir') : _fechaFlete;
