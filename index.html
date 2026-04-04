@@ -1857,7 +1857,8 @@ function verPerfil(email) {
   var m = _todos.find(function(x){ return x.email===email; });
   if (m) sessionStorage.setItem('perfilMudancero', JSON.stringify(m));
   sessionStorage.setItem('busquedaActual', JSON.stringify(_busqueda));
-  window.open('/mudancero?id=' + encodeURIComponent(email), '_blank');
+  // Abrir en misma pestaña con parámetro de retorno
+  window.location.href = '/mudancero?id=' + encodeURIComponent(email) + '&back=1';
 }
 
 // ══════════════════════════════════════════
@@ -2453,7 +2454,85 @@ function toggleMenu() { document.getElementById('navBurger').classList.toggle('o
 function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open'); }
 
 // Init
-document.addEventListener('DOMContentLoaded', function() { updateNav(); });
+document.addEventListener('DOMContentLoaded', function() {
+  updateNav();
+  // Manejar retorno desde perfil de mudancero
+  var params = new URLSearchParams(location.search);
+  var emailSel = params.get('seleccionar');
+  if (emailSel) {
+    // Limpiar la URL
+    history.replaceState({}, '', location.pathname + (location.hash || ''));
+    // Esperar a que carguen los datos y seleccionar
+    var intentos = 0;
+    var intv = setInterval(function() {
+      intentos++;
+      var m = _todos.find(function(x){ return x.email === emailSel; });
+      if (m) {
+        clearInterval(intv);
+        _sel.add(emailSel);
+        // Si hay búsqueda activa, mostrar resultados
+        if (_todos.length > 0) {
+          document.getElementById('resultados').classList.add('show');
+          renderResultados();
+          setTimeout(function(){
+            var listaEl = document.getElementById('listaRes');
+            if (listaEl) listaEl.scrollIntoView({behavior:'smooth', block:'start'});
+          }, 300);
+        } else {
+          // No hay búsqueda, hacer scroll al hero para que busque
+          document.getElementById('heroSection').scrollIntoView({behavior:'smooth', block:'start'});
+        }
+      }
+      if (intentos > 20) clearInterval(intv);
+    }, 200);
+  }
+});
+
+// Detectar cuando el usuario vuelve desde el perfil (history.back)
+window.addEventListener('pageshow', function(e) {
+  var email = null;
+  try { email = sessionStorage.getItem('ultimoSeleccionado'); } catch(e){}
+  if (!email) return;
+  sessionStorage.removeItem('ultimoSeleccionado');
+  // Marcar como seleccionado
+  _sel.add(email);
+  // Actualizar barra de selección
+  var n = _sel.size;
+  var selBar = document.getElementById('selBar');
+  if (selBar) selBar.classList.toggle('show', n > 0);
+  var selCount = document.getElementById('selCount');
+  if (selCount) selCount.textContent = n;
+  // Re-renderizar resultados para mostrar el check
+  if (document.getElementById('resultados').classList.contains('show')) {
+    renderResultados();
+    // Scroll suave de vuelta a los resultados
+    setTimeout(function(){
+      var listaEl = document.getElementById('listaRes');
+      if (listaEl) listaEl.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 100);
+  }
+});
+  if (!e.data || !e.data.type) return;
+  if (e.data.type === 'seleccionar' && e.data.email) {
+    _sel.add(e.data.email);
+    var n = _sel.size;
+    document.getElementById('selBar').classList.toggle('show', n > 0);
+    document.getElementById('selCount').textContent = n;
+    // Si hay resultados visibles, re-renderizar para marcar la card
+    if (document.getElementById('resultados').classList.contains('show')) {
+      renderResultados();
+    }
+  }
+  if (e.data.type === 'pendingMudancero' && e.data.email) {
+    sessionStorage.setItem('pendingMudancero', e.data.email);
+    // Mostrar mensaje en el hero
+    var heroSub = document.querySelector('.hero-sub');
+    if (heroSub) {
+      heroSub.innerHTML = '⚡ <strong style="color:#22C36A">¡Ya casi!</strong> Ingresá tu origen y destino para enviarle la solicitud al mudancero.';
+    }
+    document.getElementById('heroSection').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+});
 document.getElementById('pubModal').addEventListener('click', function(e){ if(e.target===this && document.getElementById('pub-ok').style.display!=='none'){this.classList.remove('open'); document.body.style.overflow='';} });
 document.getElementById('loginModal').addEventListener('click', function(e){ if(e.target===this) cerrarLogin(); });
 </script>
