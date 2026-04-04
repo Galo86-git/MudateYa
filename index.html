@@ -26,7 +26,7 @@
   --border2:#CBD5E1;
   --text:#0F1923;
   --text2:#475569;
-  --text3:#94A3B8;
+  --text3:#64748B;
   --shadow:0 2px 8px rgba(0,0,0,.08);
   --shadow-md:0 4px 20px rgba(0,0,0,.1);
   --shadow-lg:0 8px 40px rgba(0,0,0,.12);
@@ -45,7 +45,7 @@ nav{
 .nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;text-decoration:none}
 .nav-logo span{color:var(--green)}
 .nav-links{display:flex;gap:1.2rem;list-style:none}
-.nav-links a{font-size:13px;color:rgba(255,255,255,.8);text-decoration:none;transition:color .2s}
+.nav-links a{font-size:13px;color:rgba(255,255,255,.9);text-decoration:none;transition:color .2s}
 .nav-links a:hover{color:#fff}
 .nav-right{display:flex;gap:8px;align-items:center}
 .btn-nav-outline{background:none;border:1.5px solid rgba(255,255,255,.6);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap}
@@ -92,13 +92,13 @@ nav{
 .seg-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px}
 .seg-label svg{opacity:.6}
 .seg-val{font-size:15px;font-weight:400;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.1px}
-.seg-val.ph{color:var(--text3);font-weight:400}
+.seg-val.ph{color:#64748B;font-weight:400}
 .seg-input{
   background:none;border:none;outline:none;
   font-size:15px;font-weight:400;color:var(--text);
   font-family:'Inter',sans-serif;width:100%;padding:0;letter-spacing:-.1px;
 }
-.seg-input::placeholder{color:var(--text3);font-weight:400}
+.seg-input::placeholder{color:#94A3B8;font-weight:400}
 .btn-search-bar{
   background:var(--blue);color:#fff;
   border:none;padding:0 1.8rem;
@@ -147,7 +147,7 @@ nav{
 .service-tabs{display:flex;gap:0;margin-bottom:1.2rem}
 .service-tab{
   padding:.55rem 1.1rem;font-size:13px;font-weight:500;
-  color:rgba(255,255,255,.7);cursor:pointer;
+  color:rgba(255,255,255,.85);cursor:pointer;
   border-bottom:3px solid transparent;
   transition:all .2s;display:flex;align-items:center;gap:6px;
   user-select:none;
@@ -259,7 +259,7 @@ nav{
   white-space:nowrap;
 }
 .res-seg:hover{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.5)}
-.res-seg-label{font-size:9px;color:rgba(255,255,255,.6);font-family:var(--mono);text-transform:uppercase;display:block;letter-spacing:.4px;margin-bottom:1px}
+.res-seg-label{font-size:9px;color:rgba(255,255,255,.75);font-family:var(--mono);text-transform:uppercase;display:block;letter-spacing:.4px;margin-bottom:1px}
 .res-seg-val{font-size:12px;font-weight:600;color:#fff}
 .btn-res-search{
   background:#22C36A;color:#fff;
@@ -330,7 +330,7 @@ nav{
   margin-bottom:1rem;flex-wrap:wrap;gap:8px;
 }
 .res-titulo{font-size:16px;font-weight:700;color:var(--text)}
-.res-ruta{font-size:12px;color:var(--text3);margin-top:1px}
+.res-ruta{font-size:12px;color:var(--text2);margin-top:1px}
 .res-count{font-size:13px;color:var(--text2)}
 .res-count strong{color:var(--text)}
 
@@ -404,7 +404,7 @@ nav{
 .mud-tag-blue{background:var(--blue-light);color:var(--blue);border:1px solid rgba(26,111,255,.2)}
 .mud-tag-gray{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
 .mud-card-zona{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;margin-bottom:6px}
-.mud-card-trabajos{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.mud-card-trabajos{font-size:11px;color:var(--text2);font-family:var(--mono)}
 
 .mud-card-precio{
   padding:1rem 1.2rem;
@@ -418,11 +418,11 @@ nav{
   font-family:'Inter',sans-serif;letter-spacing:.1px;
 }
 .mud-rating-label{font-size:11px;color:var(--text2);margin-top:3px}
-.mud-rating-resenas{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.mud-rating-resenas{font-size:11px;color:var(--text2);font-family:var(--mono)}
 .mud-precio-box{text-align:right}
-.mud-precio-desde{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.mud-precio-desde{font-size:10px;color:var(--text2);font-family:var(--mono)}
 .mud-precio-num{font-size:22px;font-weight:700;color:var(--text);line-height:1}
-.mud-precio-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:.6rem}
+.mud-precio-sub{font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:.6rem}
 .btn-ver{
   background:var(--blue);color:#fff;
   border:none;padding:9px 16px;border-radius:var(--r);
@@ -471,7 +471,7 @@ nav{
 .stat-item{padding:1.4rem 1rem;text-align:center;border-right:1px solid rgba(255,255,255,.15)}
 .stat-item:last-child{border-right:none}
 .stat-n{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#22C36A;letter-spacing:1px;line-height:1}
-.stat-l{font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;font-family:var(--mono);letter-spacing:.2px}
+.stat-l{font-size:11px;color:rgba(255,255,255,.8);margin-top:4px;font-family:var(--mono);letter-spacing:.2px}
 
 .section{padding:4rem 1.5rem;background:#fff}
 .section.alt{background:var(--bg2)}
@@ -506,9 +506,9 @@ footer{background:#003580;padding:1.5rem}
 .footer-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#fff;letter-spacing:1px}
 .footer-logo span{color:var(--green)}
 .footer-links{display:flex;gap:1.2rem}
-.footer-links a{font-size:11px;color:rgba(255,255,255,.55);text-decoration:none;font-family:var(--mono);transition:color .2s}
+.footer-links a{font-size:11px;color:rgba(255,255,255,.75);text-decoration:none;font-family:var(--mono);transition:color .2s}
 .footer-links a:hover{color:#fff}
-.footer-copy{font-size:10px;color:rgba(255,255,255,.4);font-family:var(--mono)}
+.footer-copy{font-size:10px;color:rgba(255,255,255,.65);font-family:var(--mono)}
 
 /* Modales */
 .modal-ov{display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
@@ -643,7 +643,7 @@ footer{background:#003580;padding:1.5rem}
                 <button class="amb-btn" onclick="changeAmb(1)">+</button>
               </div>
             </div>
-            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px">Contá todos los ambientes a mudar</div>
+            <div style="font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:6px">Contá todos los ambientes a mudar</div>
           </div>
         </div>
         <button class="btn-search-bar" onclick="buscar()">
@@ -653,7 +653,7 @@ footer{background:#003580;padding:1.5rem}
       </div>
       <!-- Objetos mudanza (opcional, debajo de la barra) -->
       <div style="background:rgba(255,255,255,.12);border-radius:0 0 var(--r2) var(--r2);padding:.6rem 1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
-        <span style="font-size:11px;color:rgba(255,255,255,.6);font-family:var(--mono);white-space:nowrap">¿Qué llevás?</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.85);font-family:var(--mono);white-space:nowrap">¿Qué llevás?</span>
         <div class="obj-chip" onclick="toggleObj(this)">🛋️ Muebles</div>
         <div class="obj-chip" onclick="toggleObj(this)">📺 Electrónica</div>
         <div class="obj-chip" onclick="toggleObj(this)">🏋️ Pesados</div>
@@ -693,7 +693,7 @@ footer{background:#003580;padding:1.5rem}
       </div>
       <div style="background:rgba(255,255,255,.12);border-radius:0 0 var(--r2) var(--r2);padding:.7rem 1rem;margin-top:4px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <span style="font-size:11px;color:rgba(255,255,255,.6);font-family:var(--mono);white-space:nowrap">¿Qué objeto?</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.85);font-family:var(--mono);white-space:nowrap">¿Qué objeto?</span>
           <div class="obj-chip" onclick="selFleteObj(this,'sillon')">🛋️ Sillón/sofá</div>
           <div class="obj-chip" onclick="selFleteObj(this,'heladera')">🧊 Heladera</div>
           <div class="obj-chip" onclick="selFleteObj(this,'otros')" id="chip-otros">📝 Otros</div>
@@ -711,7 +711,7 @@ footer{background:#003580;padding:1.5rem}
             <input type="file" id="flete-foto-input" accept="image/*" style="display:none" onchange="onFleteFoto(this)"/>
           </label>
           <!-- Badge estático "Analizado con IA" -->
-          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.55);font-family:var(--mono)">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.8);font-family:var(--mono)">
             <span style="width:7px;height:7px;border-radius:50%;background:#22C36A;display:inline-block;flex-shrink:0"></span>
             Analizado con IA
           </div>
@@ -746,7 +746,7 @@ footer{background:#003580;padding:1.5rem}
         <span class="res-seg-label">Desde</span>
         <span class="res-seg-val" id="res-desde">—</span>
       </div>
-      <div style="color:rgba(255,255,255,.4);font-size:16px">→</div>
+      <div style="color:rgba(255,255,255,.7);font-size:16px">→</div>
       <div class="res-seg" onclick="scrollToHero()">
         <span class="res-seg-label">Hasta</span>
         <span class="res-seg-val" id="res-hasta">—</span>
@@ -912,7 +912,7 @@ footer{background:#003580;padding:1.5rem}
       <div style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem">Iniciá sesión</div>
       <p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem">Para publicar y recibir cotizaciones. Es gratis.</p>
       <div id="googleBtn" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
-      <p style="font-size:10px;color:var(--text3);font-family:var(--mono)">🔒 Solo usamos tu email · No publicamos nada en tu cuenta</p>
+      <p style="font-size:10px;color:var(--text2);font-family:var(--mono)">🔒 Solo usamos tu email · No publicamos nada en tu cuenta</p>
     </div>
   </div>
 </div>
