@@ -298,11 +298,12 @@ nav{
 .filtro-section:last-child{border-bottom:none;margin-bottom:0}
 .filtro-h{font-size:13px;font-weight:700;color:var(--text);margin-bottom:.7rem}
 .filtro-opt{
-  display:flex;align-items:center;gap:8px;padding:4px 0;
+  display:flex;align-items:center;gap:8px;padding:5px 0;
   cursor:pointer;font-size:13px;color:var(--text2);
   transition:color .15s;user-select:none;
 }
 .filtro-opt:hover{color:var(--text)}
+.filtro-opt label{cursor:pointer;display:flex;align-items:center;gap:8px;width:100%}
 .filtro-opt input[type=checkbox]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
 .filtro-opt input[type=radio]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
 .filtro-count{font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto}
@@ -784,31 +785,31 @@ footer{background:#003580;padding:1.5rem}
       </div>
       <div class="filtro-section">
         <div class="filtro-h">Ordenar por</div>
-        <div class="filtro-opt"><input type="radio" name="orden" checked onchange="setOrden('cal')"/> Mejor calificación</div>
-        <div class="filtro-opt"><input type="radio" name="orden" onchange="setOrden('precio')"/> Menor precio</div>
-        <div class="filtro-opt"><input type="radio" name="orden" onchange="setOrden('trab')"/> Más trabajos</div>
+        <div class="filtro-opt"><label><input type="radio" name="orden" checked onchange="setOrden('cal')"/> Mejor calificación</label></div>
+        <div class="filtro-opt"><label><input type="radio" name="orden" onchange="setOrden('precio')"/> Menor precio</label></div>
+        <div class="filtro-opt"><label><input type="radio" name="orden" onchange="setOrden('trab')"/> Más trabajos</label></div>
       </div>
       <div class="filtro-section">
         <div class="filtro-h">Vehículo</div>
         <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camión grande',this)"/> Camión grande <span class="filtro-count"></span></div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camión mediano',this)"/> Camión mediano</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camioneta / furgón pequeño',this)"/> Camioneta / furgón</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camión con hidrogrúa',this)"/> Con hidrogrúa</div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFV('Camión mediano',this)"/> Camión mediano</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFV('Camioneta / furgón pequeño',this)"/> Camioneta / furgón</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFV('Camión con hidrogrúa',this)"/> Con hidrogrúa</label></div>
       </div>
       <div class="filtro-section">
         <div class="filtro-h">Zona</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('CABA',this)"/> CABA</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('GBA Norte',this)"/> GBA Norte</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('GBA Sur',this)"/> GBA Sur</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('GBA Oeste',this)"/> GBA Oeste</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('Rosario',this)"/> Rosario</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('Córdoba',this)"/> Córdoba</div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('CABA',this)"/> CABA</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('GBA Norte',this)"/> GBA Norte</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('GBA Sur',this)"/> GBA Sur</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('GBA Oeste',this)"/> GBA Oeste</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Rosario',this)"/> Rosario</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Córdoba',this)"/> Córdoba</label></div>
       </div>
       <div class="filtro-section">
         <div class="filtro-h">Verificaciones</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFVer('id',this)"/> ✅ Identidad verificada</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFVer('veh',this)"/> 🚛 Vehículo verificado</div>
-        <div class="filtro-opt"><input type="checkbox" onchange="toggleFVer('seg',this)"/> 🛡 Con seguro</div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('id',this)"/> ✅ Identidad verificada</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('veh',this)"/> 🚛 Vehículo verificado</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('seg',this)"/> 🛡 Con seguro</label></div>
       </div>
       <button class="btn-clear" onclick="limpiarFiltros()">Limpiar filtros</button>
     </div>
