@@ -636,7 +636,7 @@ function renderPedidos(){
         var isActive = _tabActiva === t.id;
         return '<button onclick="setTabPedidos(\''+t.id+'\')" style="'
           +'display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:none;'
-          +'font-size:12px;font-weight:600;font-family:\'Outfit\',sans-serif;cursor:pointer;white-space:nowrap;'
+          +'font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap;'
           +'border-bottom:2px solid '+(isActive ? t.color : 'transparent')+';'
           +'color:'+(isActive ? t.color : '#64748B')+';transition:all .2s">'
           +t.label
