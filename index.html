@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>MudateYa — Cotizá tu mudanza en minutos · Argentina</title>
+<title>MudateYa — Cotizá tu mudanza · Argentina</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -11,575 +11,521 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080E0C;
-  --bg2:#0D1410;
-  --surface:#111A13;
-  --surface2:#172018;
-  --surface3:#1D2820;
-  --border:#1E2E24;
-  --border2:#2A3C32;
-  --emerald:#22C36A;
-  --emerald-dim:#1A9A52;
-  --emerald-glow:rgba(34,195,106,.2);
-  --emerald-subtle:rgba(34,195,106,.08);
-  --emerald-mid:rgba(34,195,106,.15);
-  --sky:#29B6F6;
-  --sky-subtle:rgba(41,182,246,.08);
-  --amber:#FFB300;
-  --red:#FF5252;
-  --text:#E8F5EE;
-  --text2:#7AADA0;
-  --text3:#3D6458;
+  --blue:#1A6FFF;
+  --blue-dark:#0F52CC;
+  --blue-light:#EEF4FF;
+  --blue-mid:rgba(26,111,255,.12);
+  --green:#22C36A;
+  --green-light:rgba(34,195,106,.1);
+  --green-dark:#17A356;
+  --bg:#FFFFFF;
+  --bg2:#F5F7FA;
+  --bg3:#EEF1F5;
+  --surface:#FFFFFF;
+  --border:#E2E8F0;
+  --border2:#CBD5E1;
+  --text:#0F1923;
+  --text2:#475569;
+  --text3:#94A3B8;
+  --shadow:0 2px 8px rgba(0,0,0,.08);
+  --shadow-md:0 4px 20px rgba(0,0,0,.1);
+  --shadow-lg:0 8px 40px rgba(0,0,0,.12);
   --mono:'DM Mono',monospace;
-  --r:10px;--r2:16px;--r3:22px;
+  --r:8px;--r2:12px;--r3:16px;
 }
 html{scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 
-/* ══════════════════ NAV ══════════════════ */
+/* ══ NAV ══ */
 nav{
-  position:sticky;top:0;z-index:500;
-  height:58px;
-  background:rgba(8,14,12,.95);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 1.5rem;
+  background:#003580;
+  height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.5rem;position:sticky;top:0;z-index:500;
 }
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;text-decoration:none;color:var(--text)}
-.nav-logo span{color:var(--emerald)}
-.nav-links{display:flex;gap:1.5rem;list-style:none}
-.nav-links a{font-size:13px;color:var(--text2);text-decoration:none;transition:color .2s}
-.nav-links a:hover{color:var(--text)}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;text-decoration:none}
+.nav-logo span{color:var(--green)}
+.nav-links{display:flex;gap:1.2rem;list-style:none}
+.nav-links a{font-size:13px;color:rgba(255,255,255,.8);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:#fff}
 .nav-right{display:flex;gap:8px;align-items:center}
-.btn-nav-ghost{background:none;border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:8px;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;text-decoration:none}
-.btn-nav-ghost:hover{border-color:var(--emerald);color:var(--emerald)}
-.btn-nav-cta{background:var(--emerald);color:#041A0E;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s}
-.btn-nav-cta:hover{background:#2EDB7A}
-.nav-user{display:flex;align-items:center;gap:8px;cursor:pointer;position:relative}
-.nav-user-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2)}
-.nav-user-name{font-size:12px;color:var(--text2)}
+.btn-nav-outline{background:none;border:1.5px solid rgba(255,255,255,.6);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn-nav-outline:hover{background:rgba(255,255,255,.15);border-color:#fff}
+.btn-nav-solid{background:#fff;color:#003580;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s}
+.btn-nav-solid:hover{background:#f0f4ff}
+.nav-user-name{font-size:12px;color:rgba(255,255,255,.85)}
+.nav-avatar{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,.4)}
 .nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
-.nav-burger span{display:block;width:22px;height:2px;background:var(--text2);border-radius:2px;transition:all .3s}
-.nav-burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
-.nav-burger.open span:nth-child(2){opacity:0}
-.nav-burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
-.mobile-menu{display:none;position:fixed;top:58px;left:0;right:0;z-index:490;background:rgba(8,14,12,.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:1rem 1.5rem 1.5rem;flex-direction:column;gap:2px}
+.nav-burger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px;transition:all .3s}
+.mobile-menu{display:none;position:fixed;top:56px;left:0;right:0;z-index:490;background:#003580;padding:1rem 1.5rem 1.5rem;flex-direction:column;gap:2px;border-top:1px solid rgba(255,255,255,.15)}
 .mobile-menu.open{display:flex}
-.mobile-menu a{font-size:15px;color:var(--text2);text-decoration:none;padding:11px 0;border-bottom:1px solid var(--border);transition:color .2s}
+.mobile-menu a{font-size:14px;color:rgba(255,255,255,.85);text-decoration:none;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)}
 .mobile-menu a:last-child{border-bottom:none}
-.mobile-menu a:hover{color:var(--text)}
 
-/* ══════════════════ HERO ══════════════════ */
-.hero{
-  background:var(--bg);
-  position:relative;
-  overflow:hidden;
-  padding:3rem 1.5rem 0;
-}
-/* Fondo con patrón sutil */
-.hero::before{
-  content:'';
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(34,195,106,.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(41,182,246,.06) 0%, transparent 55%);
-  pointer-events:none;
-  z-index:0;
-}
-.hero-inner{
-  max-width:900px;
-  margin:0 auto;
-  position:relative;
-  z-index:1;
-}
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--emerald-subtle);
-  color:var(--emerald);
-  font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;
-  padding:4px 12px;border-radius:20px;
-  border:1px solid rgba(34,195,106,.2);
-  margin-bottom:1.2rem;
-  animation:fadeUp .5s ease both;
-}
-.hero-eyebrow::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-.hero h1{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(2.6rem,5vw,4.2rem);
-  letter-spacing:2px;
-  line-height:1.02;
-  color:var(--text);
-  margin-bottom:.6rem;
-  animation:fadeUp .5s .08s ease both;
-}
-.hero h1 em{color:var(--emerald);font-style:normal}
-.hero-sub{
-  font-size:15px;color:var(--text2);font-weight:300;
-  margin-bottom:2.2rem;
-  animation:fadeUp .5s .16s ease both;
-  max-width:480px;
-}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+/* ══ HERO ══ */
+.hero{background:#003580;padding:2rem 1.5rem 3rem}
+.hero-inner{max-width:900px;margin:0 auto}
+.hero h1{font-family:'Outfit',sans-serif;font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;color:#fff;margin-bottom:.3rem;line-height:1.2}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.75);margin-bottom:1.6rem}
 
-/* ══════════════════ SEARCH CARD ══════════════════ */
-.search-card{
-  background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:var(--r3);
-  overflow:visible;
-  box-shadow:0 24px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03);
-  animation:fadeUp .5s .22s ease both;
-  position:relative;
-  z-index:10;
-}
-/* Tabs */
-.search-tabs{
-  display:flex;
-  border-bottom:1px solid var(--border);
-  padding:0 1.4rem;
-}
-.search-tab{
-  padding:1rem 1.2rem .8rem;
-  font-size:14px;font-weight:600;
-  color:var(--text3);
-  cursor:pointer;
-  border-bottom:2px solid transparent;
-  transition:all .2s;
-  display:flex;align-items:center;gap:6px;
-  font-family:'Outfit',sans-serif;
-  white-space:nowrap;
-  user-select:none;
-}
-.search-tab:hover{color:var(--text2)}
-.search-tab.active{color:var(--emerald);border-bottom-color:var(--emerald)}
-.search-tab-icon{font-size:16px}
-
-/* Formulario */
-.search-form{padding:1.2rem 1.4rem 1.4rem}
-.search-row{display:flex;gap:8px;margin-bottom:8px;align-items:stretch}
-.search-field{
-  flex:1;
-  background:var(--surface2);
-  border:1.5px solid var(--border2);
+/* ══ SEARCH BAR ══ */
+.search-bar{
+  background:#fff;
   border-radius:var(--r2);
-  padding:.75rem 1rem;
+  border:3px solid #22C36A;
+  display:flex;align-items:stretch;
+  overflow:visible;
+  position:relative;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+}
+.search-segment{
+  flex:1;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:.65rem 1rem;
+  border-right:1px solid var(--border);
   cursor:pointer;
-  transition:border-color .2s,background .2s;
   position:relative;
   min-width:0;
 }
-.search-field:hover{border-color:rgba(34,195,106,.4);background:rgba(34,195,106,.03)}
-.search-field.active{border-color:var(--emerald);background:var(--emerald-subtle);box-shadow:0 0 0 3px var(--emerald-subtle)}
-.search-field-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:3px;display:block}
-.search-field-value{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.search-field-value.placeholder{color:var(--text3);font-weight:400}
-.search-field-input{
-  width:100%;background:none;border:none;outline:none;
+.search-segment:last-of-type{border-right:none}
+.search-segment:hover{background:var(--bg2)}
+.search-segment.active{background:#f0f7ff}
+.seg-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;font-family:var(--mono);display:flex;align-items:center;gap:5px}
+.seg-label svg{opacity:.6}
+.seg-val{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-val.ph{color:var(--text3);font-weight:400}
+.seg-input{
+  background:none;border:none;outline:none;
   font-size:14px;font-weight:500;color:var(--text);
-  font-family:'Outfit',sans-serif;
-  padding:0;margin:0;
+  font-family:'Outfit',sans-serif;width:100%;padding:0;
 }
-.search-field-input::placeholder{color:var(--text3);font-weight:400}
-
-/* Swap button */
+.seg-input::placeholder{color:var(--text3);font-weight:400}
+.btn-search-bar{
+  background:var(--blue);color:#fff;
+  border:none;padding:0 1.8rem;
+  border-radius:0 var(--r) var(--r) 0;
+  font-size:16px;font-weight:700;
+  cursor:pointer;font-family:'Outfit',sans-serif;
+  transition:background .2s;white-space:nowrap;
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+}
+.btn-search-bar:hover{background:var(--blue-dark)}
 .swap-btn{
-  width:38px;height:38px;flex-shrink:0;
-  background:var(--surface3);border:1px solid var(--border2);
+  width:32px;height:32px;flex-shrink:0;
+  background:var(--bg2);border:1px solid var(--border);
   border-radius:50%;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .2s;align-self:center;
-  font-size:14px;color:var(--text2);
+  cursor:pointer;transition:all .2s;align-self:center;font-size:13px;color:var(--text2);
+  margin:0 -4px;z-index:2;
 }
-.swap-btn:hover{border-color:var(--emerald);color:var(--emerald);transform:rotate(180deg)}
+.swap-btn:hover{border-color:var(--blue);color:var(--blue);transform:rotate(180deg)}
 
-/* Ambientes picker */
-.amb-field{position:relative}
-.amb-dropdown{
-  display:none;position:absolute;top:calc(100% + 6px);left:0;
-  background:var(--surface2);border:1px solid var(--border2);
-  border-radius:14px;padding:1rem;z-index:200;
-  box-shadow:0 16px 40px rgba(0,0,0,.6);min-width:200px;
-}
-.amb-dropdown.open{display:block;animation:fadeUp .15s ease}
-.amb-row-ctrl{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.amb-label-txt{font-size:13px;color:var(--text2)}
-.amb-ctrl{display:flex;align-items:center;gap:10px}
-.amb-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.amb-btn:hover{border-color:var(--emerald);color:var(--emerald)}
-.amb-num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--text);min-width:22px;text-align:center;letter-spacing:1px}
-
-/* Fecha */
-.date-field-input{
-  width:100%;background:none;border:none;outline:none;
-  font-size:14px;font-weight:500;color:var(--text);
-  font-family:'Outfit',sans-serif;padding:0;margin:0;
-  color-scheme:dark;
-}
-.date-flex-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
-.date-chip{
-  padding:4px 10px;border-radius:6px;
-  border:1px solid var(--border2);background:var(--surface3);
-  font-size:11px;color:var(--text3);cursor:pointer;
-  transition:all .2s;font-family:var(--mono);
+/* Tabs tipo servicio */
+.service-tabs{display:flex;gap:0;margin-bottom:1.2rem}
+.service-tab{
+  padding:.55rem 1.1rem;font-size:13px;font-weight:500;
+  color:rgba(255,255,255,.7);cursor:pointer;
+  border-bottom:3px solid transparent;
+  transition:all .2s;display:flex;align-items:center;gap:6px;
   user-select:none;
 }
-.date-chip:hover{border-color:rgba(34,195,106,.3);color:var(--text2)}
-.date-chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
+.service-tab:hover{color:#fff}
+.service-tab.active{color:#fff;border-bottom-color:#22C36A}
 
-/* Botón buscar */
-.btn-search{
-  width:100%;
-  background:var(--emerald);
-  color:#041A0E;
-  border:none;
-  padding:14px 24px;
-  border-radius:var(--r2);
-  font-size:16px;
-  font-weight:700;
-  cursor:pointer;
-  font-family:'Outfit',sans-serif;
+/* Ambientes popup */
+.amb-popup{
+  display:none;position:absolute;top:calc(100% + 8px);left:0;
+  background:#fff;border:1px solid var(--border2);border-radius:var(--r2);
+  padding:1.2rem;z-index:300;box-shadow:var(--shadow-lg);min-width:240px;
+}
+.amb-popup.open{display:block}
+.amb-popup-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:6px}
+.amb-popup-label{font-size:14px;color:var(--text)}
+.amb-ctrl{display:flex;align-items:center;gap:8px}
+.amb-btn{
+  width:30px;height:30px;border-radius:50%;
+  border:1.5px solid var(--border2);background:#fff;
+  color:var(--text2);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
   transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  letter-spacing:.2px;
-  margin-top:10px;
 }
-.btn-search:hover{background:#2EDB7A;transform:translateY(-1px);box-shadow:0 8px 32px var(--emerald-glow)}
-.btn-search:active{transform:translateY(0)}
-.btn-search:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.amb-btn:hover{border-color:var(--blue);color:var(--blue)}
+.amb-btn:disabled{opacity:.35;cursor:not-allowed}
+.amb-num{font-weight:700;font-size:16px;color:var(--text);min-width:20px;text-align:center}
 
-/* Objetos chips (flete) */
-.obj-section{margin-top:10px}
-.obj-label-txt{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:6px;display:block}
-.obj-chips{display:flex;flex-wrap:wrap;gap:5px}
+/* Fecha chips */
+.fecha-popup{
+  display:none;position:absolute;top:calc(100% + 8px);left:0;
+  background:#fff;border:1px solid var(--border2);border-radius:var(--r2);
+  padding:1rem;z-index:300;box-shadow:var(--shadow-lg);min-width:260px;
+}
+.fecha-popup.open{display:block}
+.fecha-popup input[type=date]{
+  width:100%;padding:8px 10px;border:1px solid var(--border2);
+  border-radius:8px;font-size:13px;font-family:'Outfit',sans-serif;
+  color:var(--text);background:#fff;outline:none;margin-bottom:8px;
+}
+.fecha-popup input[type=date]:focus{border-color:var(--blue)}
+.chip-grid{display:flex;flex-wrap:wrap;gap:5px}
+.fecha-chip{
+  padding:5px 10px;border-radius:20px;
+  border:1px solid var(--border2);background:#fff;
+  font-size:11px;color:var(--text2);cursor:pointer;
+  transition:all .2s;user-select:none;
+}
+.fecha-chip:hover{border-color:var(--blue);color:var(--blue)}
+.fecha-chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
+
+/* Objetos (flete) */
+.obj-row{padding:.7rem 1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .obj-chip{
-  padding:5px 10px;border-radius:7px;
-  border:1px solid var(--border2);background:var(--surface2);
+  padding:5px 11px;border-radius:20px;
+  border:1px solid var(--border2);background:#fff;
   font-size:12px;color:var(--text2);cursor:pointer;
-  transition:all .2s;display:flex;align-items:center;gap:5px;
-  user-select:none;
+  transition:all .2s;user-select:none;display:flex;align-items:center;gap:4px;
 }
-.obj-chip:hover{border-color:rgba(34,195,106,.3);background:var(--emerald-subtle)}
-.obj-chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
+.obj-chip:hover{border-color:var(--blue)}
+.obj-chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.obj-chip-label{font-size:11px;font-weight:600;color:var(--text2);font-family:var(--mono);white-space:nowrap}
 
-/* Autocomplete dropdown */
-.ac-dropdown{
+/* Autocomplete */
+.ac-drop{
   position:absolute;top:calc(100% + 4px);left:0;right:0;
-  background:var(--surface2);border:1px solid var(--border2);
-  border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.7);
-  overflow:hidden;z-index:9999;display:none;
+  background:#fff;border:1px solid var(--border2);border-radius:var(--r2);
+  box-shadow:var(--shadow-lg);overflow:hidden;z-index:9999;display:none;
   list-style:none;
 }
-.ac-dropdown.open{display:block;animation:fadeUp .12s ease}
+.ac-drop.open{display:block}
 .ac-item{
   padding:11px 14px;font-size:13px;color:var(--text2);
-  cursor:pointer;border-top:1px solid var(--border);
-  transition:background .15s;font-family:'Outfit',sans-serif;
+  cursor:pointer;border-top:1px solid var(--border);transition:background .15s;
 }
 .ac-item:first-child{border-top:none}
-.ac-item:hover,.ac-item.kb{background:var(--emerald-subtle);color:var(--text)}
+.ac-item:hover,.ac-item.kb{background:var(--blue-light);color:var(--blue)}
 
-/* ══════════════════ TRUST BAR ══════════════════ */
+/* ══ TRUST BAR ══ */
 .trust-bar{
-  display:flex;align-items:center;justify-content:center;gap:1.5rem;
-  padding:1rem 0 2.5rem;
-  flex-wrap:wrap;
-  position:relative;z-index:1;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:.7rem 1.5rem;
+  display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;
 }
-.trust-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.3px}
-.trust-dot{width:5px;height:5px;border-radius:50%;background:var(--emerald);flex-shrink:0;box-shadow:0 0 5px var(--emerald)}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.trust-icon{font-size:14px}
 
-/* ══════════════════ RESULTADOS (PASO 2) ══════════════════ */
+/* ══ RESULTADOS ══ */
 #resultados{display:none}
-#resultados.show{display:block;animation:fadeUp .4s ease both}
+#resultados.show{display:block}
 
-.resultados-header{
-  background:var(--surface);
-  border-bottom:1px solid var(--border);
-  padding:1rem 1.5rem;
-  display:flex;align-items:center;justify-content:space-between;
-  gap:12px;flex-wrap:wrap;
-  position:sticky;top:58px;z-index:100;
+/* Sticky search bar en resultados */
+.res-search-bar{
+  background:#003580;
+  padding:.7rem 1.5rem;
+  position:sticky;top:56px;z-index:100;
+  border-bottom:3px solid #22C36A;
 }
-.res-titulo{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:1.4rem;letter-spacing:1px;color:var(--text);
-}
-.res-ruta{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2px}
-.res-count{font-size:12px;color:var(--emerald);font-family:var(--mono)}
-.btn-modificar{background:none;border:1px solid var(--border2);color:var(--text2);padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
-.btn-modificar:hover{border-color:var(--emerald);color:var(--emerald)}
-
-.resultados-body{
+.res-search-inner{
   max-width:1100px;margin:0 auto;
-  display:grid;grid-template-columns:240px 1fr;
-  gap:0;
-  min-height:60vh;
-}
-
-/* Filtros */
-.filtros-panel{
-  border-right:1px solid var(--border);
-  padding:1.4rem 1.2rem;
-  background:var(--bg);
-}
-.filtro-titulo{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:10px}
-.filtro-grupo{margin-bottom:1.4rem;border-bottom:1px solid var(--border);padding-bottom:1.4rem}
-.filtro-grupo:last-child{border-bottom:none;margin-bottom:0}
-.filtro-option{
   display:flex;align-items:center;gap:8px;
-  padding:6px 0;cursor:pointer;
-  font-size:13px;color:var(--text2);
-  transition:color .2s;user-select:none;
 }
-.filtro-option:hover{color:var(--text)}
-.filtro-option input[type=checkbox]{accent-color:var(--emerald);width:14px;height:14px;cursor:pointer;flex-shrink:0}
-.filtro-option.active{color:var(--emerald)}
-.stars-filter{display:flex;gap:3px;cursor:pointer}
-.star-f{font-size:14px;color:var(--border2);transition:color .2s}
-.star-f.on{color:#F5A623}
-.filtro-range{width:100%;accent-color:var(--emerald);margin:6px 0}
-.filtro-range-vals{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono)}
-.btn-limpiar-filtros{background:none;border:none;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono);text-decoration:underline;padding:0;transition:color .2s}
-.btn-limpiar-filtros:hover{color:var(--emerald)}
-
-/* Lista de resultados */
-.lista-resultados{padding:1rem 1.2rem;display:flex;flex-direction:column;gap:10px}
-
-/* Card mudancero — estilo resultado de vuelo */
-.mud-result-card{
-  background:var(--surface);
-  border:1.5px solid var(--border2);
-  border-radius:var(--r2);
-  display:grid;
-  grid-template-columns:auto 1fr auto;
-  gap:0;
-  overflow:hidden;
-  cursor:pointer;
-  transition:border-color .2s,box-shadow .2s,transform .15s;
-}
-.mud-result-card:hover{
-  border-color:rgba(34,195,106,.5);
-  box-shadow:0 8px 28px rgba(0,0,0,.4);
-  transform:translateY(-1px);
-}
-.mud-result-card.sel{
-  border-color:var(--emerald);
-  box-shadow:0 0 0 2px var(--emerald),0 8px 28px rgba(34,195,106,.15);
-}
-.mud-card-avatar{
-  width:80px;
-  background:var(--surface2);
-  display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:6px;
-  padding:.8rem .5rem;
-  border-right:1px solid var(--border);
-  flex-shrink:0;
-}
-.mud-initials{
-  width:44px;height:44px;border-radius:10px;
-  background:var(--surface3);
-  border:1px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--emerald);
-  letter-spacing:1px;
-}
-.mud-rating-big{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--text);letter-spacing:.5px}
-.mud-stars-sm{font-size:9px;color:#F5A623;letter-spacing:1px}
-.mud-card-info{padding:.9rem 1rem;min-width:0}
-.mud-card-nombre{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px}
-.mud-card-empresa{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
-.mud-card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
-.mud-tag{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:3px 8px;border-radius:5px;
-  font-size:10px;font-family:var(--mono);
-  background:var(--surface2);color:var(--text3);
-  border:1px solid var(--border);
-}
-.mud-tag.green{background:var(--emerald-subtle);color:var(--emerald);border-color:rgba(34,195,106,.2)}
-.mud-tag.sky{background:rgba(41,182,246,.08);color:var(--sky);border-color:rgba(41,182,246,.2)}
-.mud-card-zona{font-size:11px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:5px}
-.mud-card-precio{
-  padding:.9rem 1.2rem;
-  display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;
-  border-left:1px solid var(--border);
-  flex-shrink:0;min-width:140px;
-}
-.mud-precio-num{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--emerald);letter-spacing:1px;line-height:1}
-.mud-precio-sub{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:3px;text-align:right}
-.btn-cotizar{
-  background:var(--emerald);color:#041A0E;
-  border:none;padding:9px 16px;border-radius:9px;
-  font-size:13px;font-weight:700;cursor:pointer;
-  font-family:'Outfit',sans-serif;transition:all .2s;
+.res-seg{
+  background:rgba(255,255,255,.15);
+  border:1.5px solid rgba(255,255,255,.3);
+  border-radius:var(--r);padding:.5rem .9rem;
+  font-size:13px;color:#fff;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;gap:6px;
   white-space:nowrap;
 }
-.btn-cotizar:hover{background:#2EDB7A}
-.btn-cotizar.sel-btn{background:var(--surface2);color:var(--emerald);border:1px solid var(--emerald)}
-
-/* Opción rápida highlight */
-.opcion-rapida-card{
-  background:linear-gradient(135deg, var(--emerald-subtle) 0%, rgba(41,182,246,.06) 100%);
-  border:1.5px solid rgba(34,195,106,.35);
-  border-radius:var(--r2);
-  padding:1rem 1.2rem;
-  display:flex;align-items:center;gap:1rem;
-  cursor:pointer;
-  transition:all .2s;
+.res-seg:hover{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.5)}
+.res-seg-label{font-size:9px;color:rgba(255,255,255,.6);font-family:var(--mono);text-transform:uppercase;display:block;letter-spacing:.4px;margin-bottom:1px}
+.res-seg-val{font-size:12px;font-weight:600;color:#fff}
+.btn-res-search{
+  background:#22C36A;color:#fff;
+  border:none;padding:9px 20px;border-radius:var(--r);
+  font-size:13px;font-weight:700;cursor:pointer;
+  font-family:'Outfit',sans-serif;transition:all .2s;white-space:nowrap;
+  margin-left:auto;
 }
-.opcion-rapida-card:hover{border-color:var(--emerald);box-shadow:0 6px 24px var(--emerald-glow)}
-.or-icon{font-size:2rem;flex-shrink:0}
-.or-body{flex:1}
-.or-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--emerald);letter-spacing:1px;margin-bottom:2px}
-.or-sub{font-size:11px;color:var(--text2);font-family:var(--mono);line-height:1.5}
-.btn-or{
-  background:var(--emerald);color:#041A0E;
-  border:none;padding:10px 18px;border-radius:10px;
+.btn-res-search:hover{background:#1DAF5C}
+
+/* Body de resultados */
+.res-body{
+  max-width:1100px;margin:0 auto;
+  display:grid;grid-template-columns:240px 1fr;
+  align-items:start;
+  padding:1.2rem 1.5rem;gap:1.2rem;
+}
+
+/* Mapa mini */
+.mapa-mini{
+  width:100%;height:180px;border-radius:var(--r2);
+  overflow:hidden;border:1px solid var(--border);
+  margin-bottom:.8rem;background:var(--bg3);
+  position:relative;
+}
+.mapa-mini-btn{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  background:#fff;border:1px solid var(--border2);border-radius:20px;
+  padding:5px 12px;font-size:11px;font-weight:600;color:var(--text2);
+  cursor:pointer;box-shadow:var(--shadow);white-space:nowrap;
+}
+
+/* Panel filtros */
+.filtros{background:#fff}
+.filtro-section{border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1rem}
+.filtro-section:last-child{border-bottom:none;margin-bottom:0}
+.filtro-h{font-size:13px;font-weight:700;color:var(--text);margin-bottom:.7rem}
+.filtro-opt{
+  display:flex;align-items:center;gap:8px;padding:4px 0;
+  cursor:pointer;font-size:13px;color:var(--text2);
+  transition:color .15s;user-select:none;
+}
+.filtro-opt:hover{color:var(--text)}
+.filtro-opt input[type=checkbox]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+.filtro-opt input[type=radio]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+.filtro-count{font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto}
+.btn-clear{background:none;border:none;font-size:12px;color:var(--blue);cursor:pointer;padding:0;font-family:'Outfit',sans-serif;text-decoration:underline;margin-top:6px;display:block}
+
+/* Filtros mobile top bar */
+.filtros-mobile-bar{
+  display:none;
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:.6rem 1rem;gap:6px;overflow-x:auto;
+  scrollbar-width:none;
+}
+.filtros-mobile-bar::-webkit-scrollbar{display:none}
+.filtro-pill{
+  padding:6px 12px;border-radius:20px;border:1px solid var(--border2);
+  font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap;
+  background:#fff;transition:all .2s;flex-shrink:0;
+}
+.filtro-pill:hover{border-color:var(--blue);color:var(--blue)}
+.filtro-pill.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
+
+/* Header resultados */
+.res-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;flex-wrap:wrap;gap:8px;
+}
+.res-titulo{font-size:16px;font-weight:700;color:var(--text)}
+.res-ruta{font-size:12px;color:var(--text3);margin-top:1px}
+.res-count{font-size:13px;color:var(--text2)}
+.res-count strong{color:var(--text)}
+
+/* Opción rápida card */
+.card-rapida{
+  background:linear-gradient(135deg,#EEF4FF 0%,#F0FFF6 100%);
+  border:2px solid var(--blue);border-radius:var(--r2);
+  padding:1rem 1.2rem;display:flex;align-items:center;gap:1rem;
+  cursor:pointer;transition:all .2s;margin-bottom:10px;
+}
+.card-rapida:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.cr-icon{font-size:2rem;flex-shrink:0}
+.cr-body{flex:1}
+.cr-title{font-size:15px;font-weight:700;color:var(--blue);margin-bottom:2px}
+.cr-sub{font-size:12px;color:var(--text2);line-height:1.5}
+.btn-cr{
+  background:var(--blue);color:#fff;
+  border:none;padding:10px 18px;border-radius:var(--r);
   font-size:13px;font-weight:700;cursor:pointer;
   font-family:'Outfit',sans-serif;transition:all .2s;
   white-space:nowrap;flex-shrink:0;
 }
-.btn-or:hover{background:#2EDB7A}
+.btn-cr:hover{background:var(--blue-dark)}
+
+/* Card mudancero estilo Booking */
+.mud-card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--r2);
+  display:grid;grid-template-columns:200px 1fr auto;
+  overflow:hidden;cursor:pointer;transition:all .2s;
+  margin-bottom:10px;
+  box-shadow:var(--shadow);
+}
+.mud-card:hover{border-color:var(--blue);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.mud-card.sel{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue),var(--shadow-md)}
+.mud-card-foto{
+  width:200px;height:160px;object-fit:cover;
+  background:var(--bg3);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;position:relative;
+}
+.mud-card-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.mud-foto-ph{
+  width:100%;height:100%;
+  background:linear-gradient(135deg,#EEF4FF,#E8F5FF);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;
+}
+.mud-foto-initials{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--blue);letter-spacing:2px}
+.mud-foto-truck{font-size:1.5rem}
+.mud-sel-check{
+  position:absolute;top:8px;left:8px;
+  width:22px;height:22px;border-radius:50%;
+  border:2px solid #fff;background:rgba(255,255,255,.8);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;box-shadow:var(--shadow);
+}
+.mud-card.sel .mud-sel-check{background:var(--blue);border-color:var(--blue)}
+.mud-sel-check svg{display:none}
+.mud-card.sel .mud-sel-check svg{display:block}
+
+.mud-card-body{padding:1rem 1.2rem;min-width:0}
+.mud-card-nombre{font-size:17px;font-weight:700;color:var(--blue);margin-bottom:2px;cursor:pointer}
+.mud-card-nombre:hover{text-decoration:underline}
+.mud-card-empresa{font-size:12px;color:var(--text2);margin-bottom:8px}
+.mud-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.mud-tag{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 8px;border-radius:4px;
+  font-size:11px;font-family:var(--mono);
+}
+.mud-tag-green{background:var(--green-light);color:var(--green-dark);border:1px solid rgba(34,195,106,.25)}
+.mud-tag-blue{background:var(--blue-light);color:var(--blue);border:1px solid rgba(26,111,255,.2)}
+.mud-tag-gray{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+.mud-card-zona{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;margin-bottom:6px}
+.mud-card-trabajos{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+.mud-card-precio{
+  padding:1rem 1.2rem;
+  display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;
+  border-left:1px solid var(--border);flex-shrink:0;min-width:160px;
+}
+.mud-rating-box{text-align:right;margin-bottom:.5rem}
+.mud-rating-num{
+  display:inline-block;background:var(--blue);color:#fff;
+  font-size:14px;font-weight:700;padding:4px 8px;border-radius:6px 6px 6px 0;
+  font-family:'Outfit',sans-serif;
+}
+.mud-rating-label{font-size:11px;color:var(--text2);margin-top:3px}
+.mud-rating-resenas{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.mud-precio-box{text-align:right}
+.mud-precio-desde{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.mud-precio-num{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.mud-precio-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:.6rem}
+.btn-ver{
+  background:var(--blue);color:#fff;
+  border:none;padding:9px 16px;border-radius:var(--r);
+  font-size:13px;font-weight:700;cursor:pointer;
+  font-family:'Outfit',sans-serif;transition:all .2s;width:100%;text-align:center;
+}
+.btn-ver:hover{background:var(--blue-dark)}
+.btn-sel-toggle{
+  background:#fff;color:var(--blue);
+  border:1.5px solid var(--blue);padding:7px 14px;border-radius:var(--r);
+  font-size:12px;font-weight:600;cursor:pointer;
+  font-family:'Outfit',sans-serif;transition:all .2s;width:100%;text-align:center;
+  margin-top:5px;
+}
+.mud-card.sel .btn-sel-toggle{background:var(--blue-light)}
 
 /* Barra seleccionados fija */
-.sel-bar-fixed{
-  display:none;
-  position:fixed;bottom:0;left:0;right:0;z-index:400;
-  background:rgba(8,14,12,.97);
-  border-top:1px solid var(--border2);
-  backdrop-filter:blur(16px);
+.sel-bar{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;
+  background:#003580;
+  border-top:3px solid #22C36A;
   padding:.9rem 1.5rem;
   align-items:center;justify-content:space-between;gap:12px;
 }
-.sel-bar-fixed.show{display:flex;animation:slideUp .2s ease both}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sel-bar-info{font-size:13px;color:var(--text2)}
-.sel-bar-info strong{color:var(--emerald)}
-.btn-pedir-cot{
-  background:var(--emerald);color:#041A0E;
-  border:none;padding:11px 24px;border-radius:10px;
+.sel-bar.show{display:flex}
+.sel-bar-info{font-size:14px;color:#fff}
+.sel-bar-info strong{color:#22C36A}
+.btn-pedir{
+  background:var(--green);color:#fff;
+  border:none;padding:11px 28px;border-radius:var(--r);
   font-size:14px;font-weight:700;cursor:pointer;
   font-family:'Outfit',sans-serif;transition:all .2s;
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
 }
-.btn-pedir-cot:hover{background:#2EDB7A;box-shadow:0 4px 20px var(--emerald-glow)}
+.btn-pedir:hover{background:var(--green-dark);box-shadow:0 4px 16px rgba(34,195,106,.35)}
 
 /* No results */
-.no-results{
-  text-align:center;padding:3rem;color:var(--text3);
-  font-family:var(--mono);font-size:12px;
-}
+.no-results{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
 
-/* ══════════════════ STATS BAR ══════════════════ */
+/* ══ SECCIONES ABAJO ══ */
 .stats-bar{
-  background:var(--surface);
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
+  background:#003580;
   display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid rgba(255,255,255,.15);
 }
-.stat-item{padding:1.6rem 1rem;text-align:center;border-right:1px solid var(--border)}
+.stat-item{padding:1.4rem 1rem;text-align:center;border-right:1px solid rgba(255,255,255,.15)}
 .stat-item:last-child{border-right:none}
-.stat-n{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--emerald);letter-spacing:1px;line-height:1}
-.stat-l{font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono);letter-spacing:.3px}
+.stat-n{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#22C36A;letter-spacing:1px;line-height:1}
+.stat-l{font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;font-family:var(--mono);letter-spacing:.2px}
 
-/* ══════════════════ SECCIONES ══════════════════ */
-.section{padding:4.5rem 1.5rem}
-.section-inner{max-width:1000px;margin:0 auto}
-.eyebrow{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--sky);margin-bottom:10px}
-.s-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.4rem,4vw,3.8rem);letter-spacing:1.5px;color:var(--text);margin-bottom:.5rem;line-height:1.02}
-.s-sub{font-size:14px;color:var(--text2);max-width:480px;font-weight:300;line-height:1.7}
+.section{padding:4rem 1.5rem;background:#fff}
+.section.alt{background:var(--bg2)}
+.sec-inner{max-width:1000px;margin:0 auto}
+.sec-eyebrow{font-size:11px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--mono);margin-bottom:8px}
+.sec-title{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;color:var(--text);margin-bottom:.4rem;line-height:1.1}
+.sec-sub{font-size:14px;color:var(--text2);font-weight:300;line-height:1.7;max-width:500px}
 
-/* Steps */
-.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin-top:2.5rem}
-.step-block{background:var(--bg);padding:2rem 1.5rem;transition:background .2s}
-.step-block:hover{background:var(--surface)}
-.step-num{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--border2);letter-spacing:2px;margin-bottom:.8rem;transition:color .3s}
-.step-block:hover .step-num{color:var(--emerald-dim)}
-.step-block h3{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin-top:2rem;border-radius:var(--r2);overflow:hidden}
+.step-block{background:#fff;padding:1.8rem 1.5rem;transition:background .2s}
+.step-block:hover{background:var(--bg2)}
+.step-num{font-size:2.8rem;font-weight:900;color:var(--blue-light);font-family:'Bebas Neue',sans-serif;margin-bottom:.7rem;line-height:1}
+.step-block h3{font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text)}
 .step-block p{font-size:13px;color:var(--text2);line-height:1.65;font-weight:300}
 
-/* Audience */
-.aud-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-top:2.5rem}
-.aud-card{background:var(--bg);padding:2.5rem 2rem;transition:background .2s}
-.aud-card:hover{background:var(--surface)}
-.aud-icon{font-size:2rem;margin-bottom:1.2rem;display:block}
-.aud-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:.5rem}
-.aud-card.cl .aud-title{color:var(--emerald)}
-.aud-card.mud .aud-title{color:var(--sky)}
-.aud-desc{font-size:13px;color:var(--text2);font-weight:300;line-height:1.7;margin-bottom:1.4rem}
-.aud-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.aud-list li{font-size:13px;color:var(--text2);display:flex;align-items:flex-start;gap:8px;font-weight:300}
-.aud-arr{font-weight:700;flex-shrink:0;margin-top:1px}
-.aud-card.cl .aud-arr{color:var(--emerald)}
-.aud-card.mud .aud-arr{color:var(--sky)}
+.aud-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-top:2rem;border-radius:var(--r2);overflow:hidden}
+.aud-card{background:#fff;padding:2rem;transition:background .2s}
+.aud-card:hover{background:var(--bg2)}
+.aud-icon{font-size:2rem;margin-bottom:1rem;display:block}
+.aud-title{font-size:1.4rem;font-weight:800;margin-bottom:.4rem}
+.aud-card.cl .aud-title{color:var(--blue)}
+.aud-card.mud .aud-title{color:#003580}
+.aud-desc{font-size:13px;color:var(--text2);font-weight:300;line-height:1.7;margin-bottom:1.2rem}
+.aud-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.aud-list li{font-size:13px;color:var(--text2);display:flex;align-items:flex-start;gap:8px}
+.aud-arr{font-weight:700;flex-shrink:0}
+.aud-card.cl .aud-arr{color:var(--blue)}
+.aud-card.mud .aud-arr{color:#003580}
 
-/* Footer */
-footer{background:var(--bg);border-top:1px solid var(--border);padding:1.5rem}
+footer{background:#003580;padding:1.5rem}
 .footer-inner{max-width:1000px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
-.footer-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:1px}
-.footer-logo span{color:var(--emerald)}
+.footer-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#fff;letter-spacing:1px}
+.footer-logo span{color:var(--green)}
 .footer-links{display:flex;gap:1.2rem}
-.footer-links a{font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono);transition:color .2s}
-.footer-links a:hover{color:var(--text2)}
-.footer-copy{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.footer-links a{font-size:11px;color:rgba(255,255,255,.55);text-decoration:none;font-family:var(--mono);transition:color .2s}
+.footer-links a:hover{color:#fff}
+.footer-copy{font-size:10px;color:rgba(255,255,255,.4);font-family:var(--mono)}
 
-/* ══════════════════ MODALES ══════════════════ */
-.modal-overlay{
-  display:none;position:fixed;inset:0;z-index:800;
-  background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
-  align-items:center;justify-content:center;padding:1rem;
-}
-.modal-overlay.open{display:flex;animation:fadeUp .2s ease both}
-.modal-box{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r3);padding:1.8rem;
-  max-width:420px;width:100%;position:relative;
-  box-shadow:0 40px 100px rgba(0,0,0,.7);
-  max-height:90vh;overflow-y:auto;
-}
-.modal-close{
-  position:absolute;top:1rem;right:1rem;
-  background:var(--surface2);border:1px solid var(--border);
-  color:var(--text3);width:26px;height:26px;border-radius:50%;
-  font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:all .2s;
-}
-.modal-close:hover{color:var(--text);border-color:var(--border2)}
-.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;margin-bottom:.3rem}
-.modal-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.4rem}
+/* Modales */
+.modal-ov{display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
+.modal-ov.open{display:flex}
+.modal-box{background:#fff;border-radius:var(--r3);padding:1.8rem;max-width:420px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+.modal-close{position:absolute;top:1rem;right:1rem;background:var(--bg2);border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.modal-close:hover{background:var(--bg3)}
 
-/* Spinner */
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ══════════════════ RESPONSIVE ══════════════════ */
-@media(max-width:768px){
-  nav{padding:0 1rem}
-  .nav-links{display:none}
-  .nav-right{display:none}
-  .nav-burger{display:flex}
-  .hero{padding:2rem 1rem 0}
-  .hero h1{white-space:normal}
-  .search-tabs{padding:0 1rem;overflow-x:auto;scrollbar-width:none}
-  .search-tabs::-webkit-scrollbar{display:none}
-  .search-form{padding:1rem}
-  .search-row{flex-direction:column;gap:6px}
+/* RESPONSIVE */
+@media(max-width:900px){
+  .search-bar{flex-direction:column;border-radius:var(--r2);overflow:visible}
+  .search-segment{border-right:none;border-bottom:1px solid var(--border)}
+  .search-segment:last-of-type{border-bottom:none}
+  .btn-search-bar{border-radius:0 0 var(--r) var(--r);padding:14px;justify-content:center}
   .swap-btn{display:none}
-  .stats-bar{grid-template-columns:repeat(2,1fr)}
-  .stat-item:nth-child(odd){border-right:1px solid var(--border)}
-  .stat-item:nth-child(even){border-right:none}
-  .stat-item:nth-last-child(-n+2){border-bottom:none}
-  .stat-item{border-bottom:1px solid var(--border)}
-  .steps-grid,.aud-grid{grid-template-columns:1fr}
-  .resultados-body{grid-template-columns:1fr}
-  .filtros-panel{display:none}
-  .filtros-panel.mobile-open{display:block;border-right:none;border-bottom:1px solid var(--border)}
-  .mud-result-card{grid-template-columns:auto 1fr}
+  .res-body{grid-template-columns:1fr;padding:.8rem 1rem}
+  .filtros{display:none}
+  .filtros-mobile-bar{display:flex}
+  .mud-card{grid-template-columns:120px 1fr}
+  .mud-card-foto{width:120px;height:120px}
   .mud-card-precio{display:none}
-  .mud-result-card-mobile-price{display:flex}
+  .mud-card-body{padding:.8rem}
+}
+@media(max-width:600px){
+  nav{padding:0 1rem}
+  .nav-links,.nav-right{display:none}
+  .nav-burger{display:flex}
+  .hero{padding:1.5rem 1rem 2.5rem}
+  .res-search-inner{flex-wrap:wrap;gap:6px}
+  .res-seg{font-size:11px;padding:.4rem .7rem}
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .stat-item{border-bottom:1px solid rgba(255,255,255,.15)}
+  .stat-item:nth-child(odd){border-right:1px solid rgba(255,255,255,.15)}
+  .stat-item:nth-child(even){border-right:none}
+  .steps-grid,.aud-grid{grid-template-columns:1fr}
+  .section{padding:2.5rem 1rem}
   .footer-inner{flex-direction:column;align-items:flex-start}
-  .section{padding:3rem 1rem}
+  .card-rapida{flex-direction:column;text-align:center}
+  .btn-cr{width:100%}
 }
 </style>
 </head>
@@ -591,18 +537,17 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:1.5rem}
   <ul class="nav-links">
     <li><a href="#como-funciona">Cómo funciona</a></li>
     <li><a href="#para-quien">Para quién</a></li>
-    <li><a href="#zonas">Zonas</a></li>
   </ul>
   <div class="nav-right" id="navRight">
     <div id="nav-no-session" style="display:flex;gap:8px">
-      <a href="/mi-cuenta" class="btn-nav-ghost">Soy mudancero</a>
-      <a href="#" onclick="abrirLogin(event)" class="btn-nav-cta">Iniciar sesión</a>
+      <a href="/mi-cuenta" class="btn-nav-outline">Soy mudancero</a>
+      <a href="#" onclick="abrirLogin(event)" class="btn-nav-solid">Iniciar sesión</a>
     </div>
     <div id="nav-with-session" style="display:none;align-items:center;gap:10px">
-      <img id="navAvatar" class="nav-user-avatar" src="" alt=""/>
+      <img id="navAvatar" class="nav-avatar" src="" alt=""/>
       <span id="navUserName" class="nav-user-name"></span>
-      <a href="/mi-mudanza" class="btn-nav-ghost" style="font-size:11px">Mis mudanzas</a>
-      <button onclick="logout()" class="btn-nav-ghost" style="font-size:11px;cursor:pointer">Salir</button>
+      <a href="/mi-mudanza" class="btn-nav-outline" style="font-size:11px">Mis mudanzas</a>
+      <button onclick="logout()" class="btn-nav-outline" style="font-size:11px;cursor:pointer">Salir</button>
     </div>
   </div>
   <button class="nav-burger" id="navBurger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
@@ -611,199 +556,229 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:1.5rem}
 <div class="mobile-menu" id="mobileMenu">
   <a href="#como-funciona" onclick="closeMenu()">Cómo funciona</a>
   <a href="#para-quien" onclick="closeMenu()">Para quién</a>
-  <a href="#zonas" onclick="closeMenu()">Zonas</a>
-  <a href="/mi-mudanza" onclick="closeMenu()">🏠 Mi mudanza</a>
-  <a href="/mi-cuenta" onclick="closeMenu()">🚛 Soy mudancero</a>
+  <a href="/mi-mudanza" onclick="closeMenu()">Mis mudanzas</a>
+  <a href="/mi-cuenta" onclick="closeMenu()">Soy mudancero</a>
 </div>
 
 <!-- HERO -->
 <section class="hero" id="heroSection">
   <div class="hero-inner">
-    <div class="hero-eyebrow">🇦🇷 El marketplace de mudanzas de Argentina</div>
-    <h1>COTIZÁ TU MUDANZA<br>EN <em>MINUTOS</em></h1>
-    <p class="hero-sub">Comparás precios de mudanceros verificados, elegís el mejor y coordinás todo desde acá.</p>
+    <h1>Cotizá tu mudanza con los mejores de Argentina</h1>
+    <p class="hero-sub">Comparás precios reales de mudanceros verificados y elegís sin compromiso. Es gratis.</p>
 
-    <!-- SEARCH CARD -->
-    <div class="search-card" id="searchCard">
-      <!-- Tabs -->
-      <div class="search-tabs">
-        <div class="search-tab active" id="tab-mudanza" onclick="setTipo('mudanza')">
-          <span class="search-tab-icon">🏠</span> Mudanza
+    <!-- Service tabs -->
+    <div class="service-tabs">
+      <div class="service-tab active" id="tab-mud" onclick="setTipo('mudanza')">🏠 Mudanza</div>
+      <div class="service-tab" id="tab-flete" onclick="setTipo('flete')">📦 Flete</div>
+    </div>
+
+    <!-- SEARCH BAR MUDANZA -->
+    <div id="sb-mudanza">
+      <div class="search-bar" id="searchBarMud">
+        <div class="search-segment" id="seg-desde" style="flex:1.2;position:relative">
+          <span class="seg-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+            Desde
+          </span>
+          <input id="input-desde" class="seg-input" placeholder="Ej: Palermo, CABA" autocomplete="off"/>
+          <ul class="ac-drop" id="ac-desde"></ul>
         </div>
-        <div class="search-tab" id="tab-flete" onclick="setTipo('flete')">
-          <span class="search-tab-icon">📦</span> Flete
+        <div class="swap-btn" onclick="swapDir()" title="Intercambiar">⇄</div>
+        <div class="search-segment" id="seg-hasta" style="flex:1.2;position:relative">
+          <span class="seg-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Hasta
+          </span>
+          <input id="input-hasta" class="seg-input" placeholder="Ej: Quilmes, GBA" autocomplete="off"/>
+          <ul class="ac-drop" id="ac-hasta"></ul>
         </div>
-      </div>
-
-      <!-- Formulario MUDANZA -->
-      <div class="search-form" id="form-mudanza">
-
-        <!-- Fila 1: Desde / Swap / Hasta -->
-        <div class="search-row">
-          <div class="search-field" id="field-desde" style="position:relative">
-            <span class="search-field-label">Desde</span>
-            <input id="input-desde" class="search-field-input" placeholder="Ej: Palermo, CABA" autocomplete="off"/>
-            <ul class="ac-dropdown" id="ac-desde"></ul>
+        <div class="search-segment" id="seg-fecha" style="flex:1;position:relative;cursor:pointer" onclick="toggleFechaPopup(event)">
+          <span class="seg-label">📅 Fecha</span>
+          <div class="seg-val ph" id="fecha-display">¿Cuándo te mudás?</div>
+          <div class="fecha-popup" id="fechaPopup" onclick="event.stopPropagation()">
+            <input type="date" id="input-fecha" onchange="onFechaExacta()"/>
+            <div class="chip-grid">
+              <div class="fecha-chip" onclick="setFechaChip(this,'Esta semana')">Esta semana</div>
+              <div class="fecha-chip" onclick="setFechaChip(this,'En 2 semanas')">En 2 semanas</div>
+              <div class="fecha-chip" onclick="setFechaChip(this,'Este mes')">Este mes</div>
+              <div class="fecha-chip" onclick="setFechaChip(this,'Próximo mes')">Próximo mes</div>
+              <div class="fecha-chip" onclick="setFechaChip(this,'En 2-3 meses')">En 2-3 meses</div>
+              <div class="fecha-chip" onclick="setFechaChip(this,'Sin fecha fija')">Sin fecha fija</div>
+            </div>
           </div>
-          <div class="swap-btn" onclick="swapDirecciones()" title="Intercambiar">⇅</div>
-          <div class="search-field" id="field-hasta" style="position:relative">
-            <span class="search-field-label">Hasta</span>
-            <input id="input-hasta" class="search-field-input" placeholder="Ej: Quilmes, GBA" autocomplete="off"/>
-            <ul class="ac-dropdown" id="ac-hasta"></ul>
-          </div>
         </div>
-
-        <!-- Fila 2: Fecha / Ambientes -->
-        <div class="search-row">
-          <div class="search-field" id="field-fecha">
-            <span class="search-field-label">Fecha</span>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <input type="date" id="input-fecha" class="date-field-input" style="flex:1;min-width:120px"/>
-              <div class="date-flex-chips" id="chips-fecha">
-                <div class="date-chip" onclick="setFechaChip(this,'Esta semana')">Esta semana</div>
-                <div class="date-chip" onclick="setFechaChip(this,'En 2 semanas')">En 2 semanas</div>
-                <div class="date-chip" onclick="setFechaChip(this,'Este mes')">Este mes</div>
-                <div class="date-chip" onclick="setFechaChip(this,'Próximo mes')">Próximo mes</div>
-                <div class="date-chip" onclick="setFechaChip(this,'+ 2 meses')">+ 2 meses</div>
+        <div class="search-segment" id="seg-amb" style="flex:.7;cursor:pointer;position:relative" onclick="toggleAmbPopup(event)">
+          <span class="seg-label">🏠 Ambientes</span>
+          <div class="seg-val" id="amb-display">2 ambientes</div>
+          <div class="amb-popup" id="ambPopup" onclick="event.stopPropagation()">
+            <div class="amb-popup-row">
+              <span class="amb-popup-label">Ambientes / habitaciones</span>
+              <div class="amb-ctrl">
+                <button class="amb-btn" onclick="changeAmb(-1)" id="amb-minus" disabled>−</button>
+                <span class="amb-num" id="ambNum">2</span>
+                <button class="amb-btn" onclick="changeAmb(1)">+</button>
               </div>
             </div>
-          </div>
-          <div class="search-field amb-field" id="field-amb" onclick="toggleAmbDropdown(event)" style="cursor:pointer;min-width:140px;flex-shrink:0">
-            <span class="search-field-label">Ambientes</span>
-            <div class="search-field-value" id="amb-display">2 ambientes</div>
-            <div class="amb-dropdown" id="ambDropdown" onclick="event.stopPropagation()">
-              <div class="amb-row-ctrl">
-                <span class="amb-label-txt">Ambientes / habitaciones</span>
-                <div class="amb-ctrl">
-                  <button class="amb-btn" onclick="changeAmb(-1)">−</button>
-                  <span class="amb-num" id="ambNum">2</span>
-                  <button class="amb-btn" onclick="changeAmb(1)">+</button>
-                </div>
-              </div>
-            </div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px">Contá todos los ambientes a mudar</div>
           </div>
         </div>
-
-        <!-- Objetos (opcional) -->
-        <div class="obj-section">
-          <span class="obj-label-txt">¿Qué llevás? <span style="font-weight:300;color:var(--text3);text-transform:none;letter-spacing:0;font-size:10px">(opcional)</span></span>
-          <div class="obj-chips" id="obj-chips-mud">
-            <div class="obj-chip" onclick="toggleObj(this)">🛋️ Muebles grandes</div>
-            <div class="obj-chip" onclick="toggleObj(this)">📺 Electrónica</div>
-            <div class="obj-chip" onclick="toggleObj(this)">🏋️ Objetos pesados</div>
-            <div class="obj-chip" onclick="toggleObj(this)">📦 Frágiles</div>
-            <div class="obj-chip" onclick="toggleObj(this)">🚗 Vehículo / moto</div>
-            <div class="obj-chip" onclick="toggleObj(this)">🎨 Arte / cuadros</div>
-          </div>
-        </div>
-
-        <button class="btn-search" id="btn-buscar-mud" onclick="buscar()">
-          🔍 Ver mudanceros disponibles
+        <button class="btn-search-bar" onclick="buscar()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Buscar
         </button>
       </div>
-
-      <!-- Formulario FLETE -->
-      <div class="search-form" id="form-flete" style="display:none">
-        <div class="search-row">
-          <div class="search-field" style="position:relative">
-            <span class="search-field-label">Desde</span>
-            <input id="input-flete-desde" class="search-field-input" placeholder="Ej: Palermo, CABA" autocomplete="off"/>
-            <ul class="ac-dropdown" id="ac-flete-desde"></ul>
-          </div>
-          <div class="swap-btn" onclick="swapFlete()" title="Intercambiar">⇅</div>
-          <div class="search-field" style="position:relative">
-            <span class="search-field-label">Hasta</span>
-            <input id="input-flete-hasta" class="search-field-input" placeholder="Ej: Quilmes, GBA" autocomplete="off"/>
-            <ul class="ac-dropdown" id="ac-flete-hasta"></ul>
-          </div>
-        </div>
-        <div class="search-row">
-          <div class="search-field" style="flex:1">
-            <span class="search-field-label">¿Cuándo?</span>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">
-              <div class="date-chip sel" onclick="setFechaFlete(this,'Hoy')" id="fc-hoy">⚡ Hoy</div>
-              <div class="date-chip" onclick="setFechaFlete(this,'Mañana')" id="fc-man">📅 Mañana</div>
-              <input type="date" id="input-flete-fecha" class="date-field-input" style="width:140px;margin-top:2px"/>
-            </div>
-          </div>
-        </div>
-        <div class="obj-section">
-          <span class="obj-label-txt">¿Qué objeto?</span>
-          <div class="obj-chips" id="obj-chips-flete">
-            <div class="obj-chip" onclick="toggleObj(this)">🛋️ Sillón / sofá</div>
-            <div class="obj-chip" onclick="toggleObj(this)">🪞 Espejo / cuadro grande</div>
-            <div class="obj-chip" onclick="toggleObj(this)">📦 Cajas / bultos</div>
-            <div class="obj-chip" onclick="toggleObj(this)">🏋️ Objeto pesado</div>
-            <div class="obj-chip" onclick="toggleObj(this)">📺 Electrónica grande</div>
-            <div class="obj-chip" onclick="toggleObj(this)">🚲 Bicicleta / moto</div>
-          </div>
-        </div>
-        <button class="btn-search" id="btn-buscar-flete" onclick="buscar()">
-          🔍 Ver fleteros disponibles
-        </button>
+      <!-- Objetos mudanza (opcional, debajo de la barra) -->
+      <div style="background:rgba(255,255,255,.12);border-radius:0 0 var(--r2) var(--r2);padding:.6rem 1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <span style="font-size:11px;color:rgba(255,255,255,.6);font-family:var(--mono);white-space:nowrap">¿Qué llevás?</span>
+        <div class="obj-chip" onclick="toggleObj(this)">🛋️ Muebles</div>
+        <div class="obj-chip" onclick="toggleObj(this)">📺 Electrónica</div>
+        <div class="obj-chip" onclick="toggleObj(this)">🏋️ Pesados</div>
+        <div class="obj-chip" onclick="toggleObj(this)">📦 Frágiles</div>
+        <div class="obj-chip" onclick="toggleObj(this)">🚗 Vehículo</div>
       </div>
     </div>
 
-    <!-- Trust bar -->
-    <div class="trust-bar">
-      <span class="trust-item"><span class="trust-dot"></span>+1.200 mudanceros verificados</span>
-      <span class="trust-item"><span class="trust-dot"></span>4.8★ calificación promedio</span>
-      <span class="trust-item"><span class="trust-dot"></span>Gratis para clientes</span>
-      <span class="trust-item"><span class="trust-dot"></span>Pago seguro Mercado Pago</span>
+    <!-- SEARCH BAR FLETE -->
+    <div id="sb-flete" style="display:none">
+      <div class="search-bar">
+        <div class="search-segment" style="flex:1.2;position:relative">
+          <span class="seg-label">📍 Desde</span>
+          <input id="input-flete-desde" class="seg-input" placeholder="Ej: Palermo, CABA" autocomplete="off"/>
+          <ul class="ac-drop" id="ac-flete-desde"></ul>
+        </div>
+        <div class="swap-btn" onclick="swapFlete()">⇄</div>
+        <div class="search-segment" style="flex:1.2;position:relative">
+          <span class="seg-label">🏁 Hasta</span>
+          <input id="input-flete-hasta" class="seg-input" placeholder="Ej: Quilmes, GBA" autocomplete="off"/>
+          <ul class="ac-drop" id="ac-flete-hasta"></ul>
+        </div>
+        <div class="search-segment" style="flex:.8;position:relative;cursor:pointer" onclick="toggleFechaPopup(event,'flete')">
+          <span class="seg-label">📅 ¿Cuándo?</span>
+          <div class="seg-val ph" id="flete-fecha-display">Hoy / Mañana</div>
+          <div class="fecha-popup" id="fechaFletePopup" onclick="event.stopPropagation()">
+            <div class="chip-grid">
+              <div class="fecha-chip sel" onclick="setFechaFlete(this,'Hoy')">⚡ Hoy</div>
+              <div class="fecha-chip" onclick="setFechaFlete(this,'Mañana')">📅 Mañana</div>
+              <div class="fecha-chip" onclick="setFechaFlete(this,'Esta semana')">Esta semana</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-search-bar" onclick="buscar()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Buscar
+        </button>
+      </div>
+      <div style="background:rgba(255,255,255,.12);border-radius:0 0 var(--r2) var(--r2);padding:.6rem 1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <span style="font-size:11px;color:rgba(255,255,255,.6);font-family:var(--mono);white-space:nowrap">¿Qué objeto?</span>
+        <div class="obj-chip" id="flete-obj-chips">
+          <div class="obj-chip" onclick="toggleObj(this)">🛋️ Sillón/sofá</div>
+          <div class="obj-chip" onclick="toggleObj(this)">📦 Cajas/bultos</div>
+          <div class="obj-chip" onclick="toggleObj(this)">🏋️ Pesado</div>
+          <div class="obj-chip" onclick="toggleObj(this)">🚲 Bici/moto</div>
+        </div>
+      </div>
     </div>
+
   </div>
 </section>
 
-<!-- RESULTADOS (PASO 2) -->
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="trust-item"><span class="trust-icon">✅</span> +1.200 mudanceros verificados</div>
+  <div class="trust-item"><span class="trust-icon">⭐</span> 4.8 calificación promedio</div>
+  <div class="trust-item"><span class="trust-icon">💳</span> Pago seguro con Mercado Pago</div>
+  <div class="trust-item"><span class="trust-icon">🆓</span> Gratis para clientes</div>
+</div>
+
+<!-- RESULTADOS -->
 <section id="resultados">
-  <div class="resultados-header">
-    <div>
-      <div class="res-titulo" id="res-titulo">Mudanceros disponibles</div>
-      <div class="res-ruta" id="res-ruta">—</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <span class="res-count" id="res-count"></span>
-      <button class="btn-modificar" onclick="modificarBusqueda()">✏ Modificar búsqueda</button>
+
+  <!-- Sticky search bar en resultados -->
+  <div class="res-search-bar" id="resSearchBar">
+    <div class="res-search-inner">
+      <div class="res-seg" onclick="scrollToHero()">
+        <span class="res-seg-label">Desde</span>
+        <span class="res-seg-val" id="res-desde">—</span>
+      </div>
+      <div style="color:rgba(255,255,255,.4);font-size:16px">→</div>
+      <div class="res-seg" onclick="scrollToHero()">
+        <span class="res-seg-label">Hasta</span>
+        <span class="res-seg-val" id="res-hasta">—</span>
+      </div>
+      <div class="res-seg" onclick="scrollToHero()">
+        <span class="res-seg-label">Fecha</span>
+        <span class="res-seg-val" id="res-fecha">—</span>
+      </div>
+      <div class="res-seg" onclick="scrollToHero()" id="res-seg-amb">
+        <span class="res-seg-label">Ambientes</span>
+        <span class="res-seg-val" id="res-amb">—</span>
+      </div>
+      <button class="btn-res-search" onclick="scrollToHero()">✏ Modificar</button>
     </div>
   </div>
 
-  <div class="resultados-body">
-    <!-- Filtros -->
-    <div class="filtros-panel" id="filtrosPanel">
-      <div class="filtro-grupo">
-        <div class="filtro-titulo">Ordenar por</div>
-        <div class="filtro-option active" onclick="setOrden('calificacion',this)"><input type="radio" name="orden" checked/> Mejor calificación</div>
-        <div class="filtro-option" onclick="setOrden('precio_asc',this)"><input type="radio" name="orden"/> Menor precio</div>
-        <div class="filtro-option" onclick="setOrden('trabajos',this)"><input type="radio" name="orden"/> Más trabajos</div>
+  <!-- Filtros mobile -->
+  <div class="filtros-mobile-bar" id="filtrosMobileBar">
+    <div class="filtro-pill" onclick="togglePill(this,'ord-cal')">⭐ Mejor calificación</div>
+    <div class="filtro-pill" onclick="togglePill(this,'ord-precio')">💰 Menor precio</div>
+    <div class="filtro-pill" onclick="togglePill(this,'veh-cam-g')">🚛 Camión grande</div>
+    <div class="filtro-pill" onclick="togglePill(this,'veh-cam-m')">🚚 Camión mediano</div>
+    <div class="filtro-pill" onclick="togglePill(this,'verif-id')">✅ Verificado</div>
+    <div class="filtro-pill" onclick="togglePill(this,'verif-seg')">🛡 Con seguro</div>
+    <div class="filtro-pill" onclick="togglePill(this,'zona-caba')">📍 CABA</div>
+    <div class="filtro-pill" onclick="togglePill(this,'zona-gba')">📍 GBA</div>
+  </div>
+
+  <div class="res-body" id="resBody">
+    <!-- Panel izquierdo: mapa + filtros -->
+    <div class="filtros" id="filtrosPanel">
+      <div id="mapaMin" class="mapa-mini">
+        <div id="mapaDiv" style="width:100%;height:100%"></div>
+        <div class="mapa-mini-btn" onclick="verMapa()">Ver en mapa</div>
       </div>
-      <div class="filtro-grupo">
-        <div class="filtro-titulo">Vehículo</div>
-        <div class="filtro-option" onclick="toggleFiltroVehiculo('Camión grande',this)"><input type="checkbox"/> Camión grande</div>
-        <div class="filtro-option" onclick="toggleFiltroVehiculo('Camión mediano',this)"><input type="checkbox"/> Camión mediano</div>
-        <div class="filtro-option" onclick="toggleFiltroVehiculo('Camioneta / furgón pequeño',this)"><input type="checkbox"/> Camioneta / furgón</div>
-        <div class="filtro-option" onclick="toggleFiltroVehiculo('Camión con hidrogrúa',this)"><input type="checkbox"/> Con hidrogrúa</div>
+      <div class="filtro-section">
+        <div class="filtro-h">Ordenar por</div>
+        <div class="filtro-opt"><input type="radio" name="orden" checked onchange="setOrden('cal')"/> Mejor calificación</div>
+        <div class="filtro-opt"><input type="radio" name="orden" onchange="setOrden('precio')"/> Menor precio</div>
+        <div class="filtro-opt"><input type="radio" name="orden" onchange="setOrden('trab')"/> Más trabajos</div>
       </div>
-      <div class="filtro-grupo">
-        <div class="filtro-titulo">Zona</div>
-        <div class="filtro-option" onclick="toggleFiltroZona('CABA',this)"><input type="checkbox"/> CABA</div>
-        <div class="filtro-option" onclick="toggleFiltroZona('GBA Norte',this)"><input type="checkbox"/> GBA Norte</div>
-        <div class="filtro-option" onclick="toggleFiltroZona('GBA Sur',this)"><input type="checkbox"/> GBA Sur</div>
-        <div class="filtro-option" onclick="toggleFiltroZona('GBA Oeste',this)"><input type="checkbox"/> GBA Oeste</div>
-        <div class="filtro-option" onclick="toggleFiltroZona('Rosario',this)"><input type="checkbox"/> Rosario</div>
-        <div class="filtro-option" onclick="toggleFiltroZona('Córdoba',this)"><input type="checkbox"/> Córdoba</div>
+      <div class="filtro-section">
+        <div class="filtro-h">Vehículo</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camión grande',this)"/> Camión grande <span class="filtro-count"></span></div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camión mediano',this)"/> Camión mediano</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camioneta / furgón pequeño',this)"/> Camioneta / furgón</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFV('Camión con hidrogrúa',this)"/> Con hidrogrúa</div>
       </div>
-      <div class="filtro-grupo">
-        <div class="filtro-titulo">Verificaciones</div>
-        <div class="filtro-option" onclick="toggleFiltroVerif('identidad',this)"><input type="checkbox"/> ✓ Identidad verificada</div>
-        <div class="filtro-option" onclick="toggleFiltroVerif('vehiculo',this)"><input type="checkbox"/> 🚛 Vehículo verificado</div>
-        <div class="filtro-option" onclick="toggleFiltroVerif('seguro',this)"><input type="checkbox"/> 🛡 Con seguro</div>
+      <div class="filtro-section">
+        <div class="filtro-h">Zona</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('CABA',this)"/> CABA</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('GBA Norte',this)"/> GBA Norte</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('GBA Sur',this)"/> GBA Sur</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('GBA Oeste',this)"/> GBA Oeste</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('Rosario',this)"/> Rosario</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFZ('Córdoba',this)"/> Córdoba</div>
       </div>
-      <button class="btn-limpiar-filtros" onclick="limpiarFiltros()">Limpiar filtros</button>
+      <div class="filtro-section">
+        <div class="filtro-h">Verificaciones</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFVer('id',this)"/> ✅ Identidad verificada</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFVer('veh',this)"/> 🚛 Vehículo verificado</div>
+        <div class="filtro-opt"><input type="checkbox" onchange="toggleFVer('seg',this)"/> 🛡 Con seguro</div>
+      </div>
+      <button class="btn-clear" onclick="limpiarFiltros()">Limpiar filtros</button>
     </div>
 
-    <!-- Lista -->
-    <div class="lista-resultados" id="listaResultados">
-      <div class="no-results"><span class="spinner"></span></div>
+    <!-- Lista de resultados -->
+    <div>
+      <div class="res-header">
+        <div>
+          <div class="res-titulo" id="resTitulo">Mudanceros disponibles</div>
+          <div class="res-ruta" id="resRuta"></div>
+        </div>
+        <div class="res-count" id="resCount"></div>
+      </div>
+      <div id="listaRes">
+        <div class="no-results"><span class="spinner"></span> Cargando…</div>
+      </div>
     </div>
   </div>
 </section>
@@ -816,35 +791,33 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:1.5rem}
   <div class="stat-item"><div class="stat-n">&lt;15min</div><div class="stat-l">primer presupuesto</div></div>
 </div>
 
-<!-- CÓMO FUNCIONA -->
-<section class="section" id="como-funciona" style="background:var(--bg2);border-top:1px solid var(--border)">
-  <div class="section-inner">
-    <div class="eyebrow">El proceso</div>
-    <div class="s-title">2 PASOS Y LISTO</div>
-    <div class="s-sub">Sin llamadas, sin formularios eternos, sin sorpresas de precio.</div>
+<!-- SECCIONES INFO -->
+<section class="section alt" id="como-funciona">
+  <div class="sec-inner">
+    <div class="sec-eyebrow">El proceso</div>
+    <div class="sec-title">Así de simple</div>
+    <div class="sec-sub">Sin llamadas, sin sorpresas de precio, sin compromiso.</div>
     <div class="steps-grid">
-      <div class="step-block"><div class="step-num">01</div><h3>Ingresá tu mudanza</h3><p>Completá origen, destino, fecha y qué llevás. Todo en menos de 1 minuto.</p></div>
-      <div class="step-block"><div class="step-num">02</div><h3>Elegís y cotizás</h3><p>Ves los mudanceros disponibles con precios reales, reseñas y verificaciones. Pedís cotización a los que más te gusten.</p></div>
-      <div class="step-block"><div class="step-num">03</div><h3>Coordinás y pagás seguro</h3><p>Acordás día y hora directo con el mudancero. Pagás 100% por Mercado Pago, protegido por MudateYa.</p></div>
+      <div class="step-block"><div class="step-num">01</div><h3>Ingresá tu mudanza</h3><p>Completá origen, destino y fecha. Todo en menos de un minuto.</p></div>
+      <div class="step-block"><div class="step-num">02</div><h3>Comparás mudanceros</h3><p>Ves precios, fotos del camión, reseñas y verificaciones. Entrás al perfil de cada uno.</p></div>
+      <div class="step-block"><div class="step-num">03</div><h3>Elegís y coordinás</h3><p>Pedís cotización, acordás fecha y pagás 100% seguro por Mercado Pago.</p></div>
     </div>
   </div>
 </section>
 
-<!-- PARA QUIÉN -->
 <section class="section" id="para-quien">
-  <div class="section-inner">
-    <div class="eyebrow">Para todos</div>
-    <div class="s-title">HECHO PARA LOS DOS LADOS</div>
+  <div class="sec-inner">
+    <div class="sec-eyebrow">Para todos</div>
+    <div class="sec-title">Hecho para los dos lados</div>
     <div class="aud-grid">
       <div class="aud-card cl">
         <span class="aud-icon">🏠</span>
         <div class="aud-title">Si te mudás</div>
-        <p class="aud-desc">Comparás precios reales antes de comprometerte con nadie.</p>
+        <p class="aud-desc">Comparás precios reales antes de comprometerte con nadie. Es gratis.</p>
         <ul class="aud-list">
-          <li><span class="aud-arr">→</span>Presupuestos de mudanceros verificados</li>
-          <li><span class="aud-arr">→</span>Sin costos ocultos — precio acordado de antemano</li>
-          <li><span class="aud-arr">→</span>Pagás con Mercado Pago, 100% seguro</li>
-          <li><span class="aud-arr">→</span>Gratis para clientes — siempre</li>
+          <li><span class="aud-arr">→</span>Solo mudanceros con identidad y vehículo verificado</li>
+          <li><span class="aud-arr">→</span>Precios acordados de antemano, sin sorpresas</li>
+          <li><span class="aud-arr">→</span>Pagás con Mercado Pago, 100% protegido</li>
         </ul>
       </div>
       <div class="aud-card mud">
@@ -852,17 +825,16 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:1.5rem}
         <div class="aud-title">Si sos mudancero</div>
         <p class="aud-desc">Llenás tu agenda con clientes que ya quieren contratar.</p>
         <ul class="aud-list">
-          <li><span class="aud-arr">→</span>Pedidos de clientes listos para contratar</li>
+          <li><span class="aud-arr">→</span>Pedidos en tu zona listos para cotizar</li>
           <li><span class="aud-arr">→</span>Sin costos fijos — pagás solo si trabajás</li>
-          <li><span class="aud-arr">→</span>Construís reputación con reseñas verificadas</li>
+          <li><span class="aud-arr">→</span>Construís tu reputación con reseñas reales</li>
         </ul>
-        <a href="/mudanceros" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.4rem;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;background:rgba(41,182,246,.08);border:1px solid rgba(41,182,246,.2);color:var(--sky);transition:all .2s">Sumarme como mudancero →</a>
+        <a href="/mudanceros" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:#003580;color:#fff;transition:opacity .2s">Sumarme como mudancero →</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- FOOTER -->
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">Mudate<span>Ya</span></div>
@@ -870,26 +842,29 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:1.5rem}
       <a href="/terminos">Términos</a>
       <a href="/privacidad">Privacidad</a>
       <a href="/contacto">Contacto</a>
-      <a href="/mudanceros">Sumarme</a>
     </div>
     <div class="footer-copy">© 2025 MudateYa · Argentina 🇦🇷</div>
   </div>
 </footer>
 
 <!-- BARRA SELECCIONADOS -->
-<div class="sel-bar-fixed" id="selBar">
-  <div class="sel-bar-info">Cotización a <strong id="selCount">0</strong> mudancero/s</div>
-  <button class="btn-pedir-cot" onclick="pedirCotizacion()">Pedir cotización →</button>
+<div class="sel-bar" id="selBar">
+  <div class="sel-bar-info">
+    <strong id="selCount">0</strong> mudancero/s seleccionado/s
+  </div>
+  <button class="btn-pedir" onclick="pedirCotizacion()">
+    Pedir cotización →
+  </button>
 </div>
 
 <!-- MODAL LOGIN -->
-<div class="modal-overlay" id="loginModal">
+<div class="modal-ov" id="loginModal">
   <div class="modal-box">
     <button class="modal-close" onclick="cerrarLogin()">✕</button>
     <div style="text-align:center">
-      <div style="font-size:2rem;margin-bottom:10px">🔐</div>
-      <div class="modal-title">Iniciá sesión</div>
-      <p class="modal-sub">Para publicar tu mudanza y recibir cotizaciones gratis.</p>
+      <div style="font-size:2.5rem;margin-bottom:10px">🔐</div>
+      <div style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem">Iniciá sesión</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem">Para publicar y recibir cotizaciones. Es gratis.</p>
       <div id="googleBtn" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
       <p style="font-size:10px;color:var(--text3);font-family:var(--mono)">🔒 Solo usamos tu email · No publicamos nada en tu cuenta</p>
     </div>
@@ -897,147 +872,138 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:1.5rem}
 </div>
 
 <!-- MODAL PUBLICANDO -->
-<div class="modal-overlay" id="pubModal">
-  <div class="modal-box" style="text-align:center;max-width:360px">
-    <div id="pub-publishing" style="padding:1rem 0">
-      <div style="position:relative;width:52px;height:52px;margin:0 auto 1.2rem">
+<div class="modal-ov" id="pubModal">
+  <div class="modal-box" style="max-width:360px;text-align:center">
+    <div id="pub-ing" style="padding:1rem 0">
+      <div style="position:relative;width:52px;height:52px;margin:0 auto 1rem">
         <span class="spinner" style="position:absolute;inset:0;width:52px;height:52px;border-width:3px;display:block"></span>
-        <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px">🚛</span>
+        <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px">🚛</span>
       </div>
-      <div class="modal-title">Publicando tu mudanza…</div>
-      <p style="font-size:13px;color:var(--text2)">Notificando a los mudanceros seleccionados</p>
+      <div style="font-size:1rem;font-weight:700;margin-bottom:.3rem">Publicando tu mudanza…</div>
+      <p style="font-size:13px;color:var(--text2)">Notificando a los mudanceros</p>
     </div>
-    <div id="pub-published" style="display:none;padding:1rem 0">
+    <div id="pub-ok" style="display:none;padding:1rem 0">
       <div style="font-size:3rem;margin-bottom:12px">🚀</div>
-      <div class="modal-title">¡Publicada!</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem">Los mudanceros ya pueden verte. Te avisamos por email con cada cotización.</p>
-      <a href="/mi-mudanza" style="display:block;padding:13px;background:var(--emerald);border-radius:10px;color:#041A0E;text-decoration:none;font-size:14px;font-weight:700">Ver mis cotizaciones →</a>
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:.4rem">¡Publicada!</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem">Te avisamos por email con cada cotización recibida.</p>
+      <a href="/mi-mudanza" style="display:block;padding:13px;background:var(--blue);border-radius:var(--r);color:#fff;text-decoration:none;font-size:14px;font-weight:700">Ver mis cotizaciones →</a>
     </div>
   </div>
 </div>
 
 <script>
 // ══════════════════════════════════════════
-// ESTADO GLOBAL
+// CONSTANTES Y ESTADO
 // ══════════════════════════════════════════
 var GMAPS_KEY = 'AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8';
-var _tipo = 'mudanza'; // 'mudanza' | 'flete'
+var _tipo = 'mudanza';
 var _amb = 2;
 var _fechaLabel = '';
 var _fechaFlete = 'Hoy';
-var _seleccionados = new Set();
-var _todosResultados = [];
-var _filtros = { orden:'calificacion', vehiculos:new Set(), zonas:new Set(), verifs:new Set() };
+var _busqueda = {};
+var _todos = [];
+var _sel = new Set();
+var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set() };
 var _googleInited = false;
 var _currentUser = null;
-var _pendingPublicar = null;
+var _pendingPub = null;
+var _routeMap = null;
 
-// Recuperar sesión
 try { _currentUser = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
 
 // ══════════════════════════════════════════
-// MOCK MUDANCEROS
+// MOCK DATA
 // ══════════════════════════════════════════
-var _MOCK_MUDANCEROS = [
-  {email:'carlos.gomez@mock.com',nombre:'Carlos Gómez',empresa:'Mudanzas Gómez',zonaBase:'Palermo, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:42,trabajosCompletados:38,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:55000,flete:18000}},
-  {email:'roberto.silva@mock.com',nombre:'Roberto Silva',empresa:'Silva Fletes',zonaBase:'Quilmes, GBA Sur',vehiculo:'Camioneta / furgón pequeño',calificacion:4.6,nroResenas:27,trabajosCompletados:24,verificadoIdentidad:true,verificadoVehiculo:false,verificadoSeguro:false,precios:{amb1:42000,flete:14000}},
-  {email:'diego.fernandez@mock.com',nombre:'Diego Fernández',empresa:'',zonaBase:'Caballito, CABA',vehiculo:'Camión grande',calificacion:5.0,nroResenas:15,trabajosCompletados:13,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:70000,flete:22000}},
-  {email:'martin.lopez@mock.com',nombre:'Martín López',empresa:'Mudanzas del Norte',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:61,trabajosCompletados:55,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:60000,flete:20000}},
-  {email:'pablo.torres@mock.com',nombre:'Pablo Torres',empresa:'',zonaBase:'Flores, CABA',vehiculo:'Camioneta / furgón pequeño',calificacion:4.3,nroResenas:9,trabajosCompletados:8,verificadoIdentidad:false,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:38000,flete:12000}},
-  {email:'lucas.ramirez@mock.com',nombre:'Lucas Ramírez',empresa:'Fletes Rápidos BA',zonaBase:'Lanús, GBA Sur',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:33,trabajosCompletados:30,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:52000,flete:17000}},
-  {email:'gustavo.perez@mock.com',nombre:'Gustavo Pérez',empresa:'Perez Mudanzas',zonaBase:'Belgrano, CABA',vehiculo:'Camión grande',calificacion:4.9,nroResenas:88,trabajosCompletados:79,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:72000,flete:23000}},
-  {email:'facundo.diaz@mock.com',nombre:'Facundo Díaz',empresa:'',zonaBase:'Avellaneda, GBA Sur',vehiculo:'Camión mediano',calificacion:4.4,nroResenas:19,trabajosCompletados:16,verificadoIdentidad:true,verificadoVehiculo:false,verificadoSeguro:false,precios:{amb1:48000,flete:15000}},
-  {email:'andres.ruiz@mock.com',nombre:'Andrés Ruiz',empresa:'TransMud SRL',zonaBase:'Vicente López, GBA Norte',vehiculo:'Camión grande',calificacion:4.7,nroResenas:54,trabajosCompletados:48,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:65000,flete:21000}},
-  {email:'gabriel.moreno@mock.com',nombre:'Gabriel Moreno',empresa:'',zonaBase:'Recoleta, CABA',vehiculo:'Camioneta / furgón pequeño',calificacion:4.2,nroResenas:7,trabajosCompletados:6,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:35000,flete:11000}},
-  {email:'nicolas.castro@mock.com',nombre:'Nicolás Castro',empresa:'Castro e Hijos',zonaBase:'Morón, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.6,nroResenas:41,trabajosCompletados:37,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:53000,flete:17000}},
-  {email:'sebastian.vega@mock.com',nombre:'Sebastián Vega',empresa:'',zonaBase:'Villa Urquiza, CABA',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:23,trabajosCompletados:20,verificadoIdentidad:false,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:50000,flete:16000}},
-  {email:'matias.herrera@mock.com',nombre:'Matías Herrera',empresa:'Herrera Mudanzas',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión grande',calificacion:4.8,nroResenas:67,trabajosCompletados:60,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:68000,flete:22000}},
-  {email:'javier.medina@mock.com',nombre:'Javier Medina',empresa:'',zonaBase:'Córdoba Capital',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:35,trabajosCompletados:31,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:55000,flete:18000}},
-  {email:'leandro.romero@mock.com',nombre:'Leandro Romero',empresa:'Romero & Co',zonaBase:'Lomas de Zamora, GBA Sur',vehiculo:'Camión mediano',calificacion:4.3,nroResenas:16,trabajosCompletados:14,verificadoIdentidad:true,verificadoVehiculo:false,verificadoSeguro:false,precios:{amb1:46000,flete:15000}},
-  {email:'damian.ortiz@mock.com',nombre:'Damián Ortiz',empresa:'Ortiz Transportes',zonaBase:'Palermo, CABA',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:102,trabajosCompletados:95,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:95000,flete:30000}},
-  {email:'cristian.nunez@mock.com',nombre:'Cristian Núñez',empresa:'',zonaBase:'Tigre, GBA Norte',vehiculo:'Camión mediano',calificacion:4.4,nroResenas:28,trabajosCompletados:25,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:49000,flete:16000}},
-  {email:'rodrigo.molina@mock.com',nombre:'Rodrigo Molina',empresa:'MoliMud',zonaBase:'Almagro, CABA',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:45,trabajosCompletados:41,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:58000,flete:19000}},
-  {email:'walter.rojas@mock.com',nombre:'Walter Rojas',empresa:'Rojas Mudanzas',zonaBase:'San Telmo, CABA',vehiculo:'Camión grande',calificacion:4.6,nroResenas:38,trabajosCompletados:34,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:63000,flete:21000}},
-  {email:'omar.gutierrez@mock.com',nombre:'Omar Gutiérrez',empresa:'',zonaBase:'La Plata, GBA Sur',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:52,trabajosCompletados:47,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:54000,flete:17000}},
-  {email:'hugo.vargas@mock.com',nombre:'Hugo Vargas',empresa:'Vargas e Hijos',zonaBase:'Castelar, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:71,trabajosCompletados:65,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:61000,flete:20000}},
-  {email:'santiago.rios@mock.com',nombre:'Santiago Ríos',empresa:'RíosMud SRL',zonaBase:'Córdoba Capital',vehiculo:'Camión grande',calificacion:4.7,nroResenas:49,trabajosCompletados:44,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:67000,flete:22000}},
-  {email:'pablo.miranda@mock.com',nombre:'Pablo Miranda',empresa:'Miranda Logística',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:83,trabajosCompletados:76,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:92000,flete:29000}},
-  {email:'claudio.benitez@mock.com',nombre:'Claudio Benítez',empresa:'Benítez Mudanzas',zonaBase:'San Fernando, GBA Norte',vehiculo:'Camión grande',calificacion:4.6,nroResenas:36,trabajosCompletados:32,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:64000,flete:21000}},
-  {email:'hector.aguirre@mock.com',nombre:'Héctor Aguirre',empresa:'Aguirre Trans',zonaBase:'Liniers, CABA',vehiculo:'Camión grande',calificacion:4.7,nroResenas:58,trabajosCompletados:52,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:69000,flete:22000}},
-  {email:'marcelo.ponce@mock.com',nombre:'Marcelo Ponce',empresa:'Ponce & Hermanos',zonaBase:'Devoto, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:76,trabajosCompletados:69,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:59000,flete:19000}},
-  {email:'tomas.ibarra@mock.com',nombre:'Tomás Ibarra',empresa:'IbarraMud',zonaBase:'Tucumán Capital',vehiculo:'Camión mediano',calificacion:4.6,nroResenas:31,trabajosCompletados:28,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:50000,flete:16000}},
-  {email:'ignacio.carpio@mock.com',nombre:'Ignacio Carpio',empresa:'Carpio Logística',zonaBase:'Mar del Plata',vehiculo:'Camión grande',calificacion:4.7,nroResenas:44,trabajosCompletados:40,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:66000,flete:21000}},
-  {email:'oscar.vera@mock.com',nombre:'Óscar Vera',empresa:'Vera Transportes',zonaBase:'Córdoba Capital',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:93,trabajosCompletados:84,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:62000,flete:20000}},
-  {email:'victor.parra@mock.com',nombre:'Víctor Parra',empresa:'ParraMud SRL',zonaBase:'San Justo, GBA Oeste',vehiculo:'Camión grande',calificacion:4.6,nroResenas:47,trabajosCompletados:42,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:68000,flete:22000}},
-  {email:'german.sandoval@mock.com',nombre:'Germán Sandoval',empresa:'',zonaBase:'Recoleta, CABA',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:39,trabajosCompletados:35,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:60000,flete:19000}},
-  {email:'maximiliano.gil@mock.com',nombre:'Maximiliano Gil',empresa:'Gil & Asociados',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.8,nroResenas:57,trabajosCompletados:51,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:88000,flete:28000}},
-  {email:'hernan.delgado@mock.com',nombre:'Hernán Delgado',empresa:'Delgado Fletes',zonaBase:'La Plata, GBA Sur',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:33,trabajosCompletados:29,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:52000,flete:17000}},
-  {email:'jorge.robles@mock.com',nombre:'Jorge Robles',empresa:'',zonaBase:'Colegiales, CABA',vehiculo:'Camión mediano',calificacion:4.6,nroResenas:26,trabajosCompletados:23,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:56000,flete:18000}},
-  {email:'pablo.saenz@mock.com',nombre:'Pablo Sáenz',empresa:'Sáenz Mudanzas',zonaBase:'Mar del Plata',vehiculo:'Camión grande',calificacion:4.7,nroResenas:62,trabajosCompletados:56,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:71000,flete:23000}},
-  {email:'cristobal.paz@mock.com',nombre:'Cristóbal Paz',empresa:'PazMud',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:115,trabajosCompletados:105,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:98000,flete:32000}},
+var _MOCK = [
+  {email:'carlos.gomez@mock.com',nombre:'Carlos Gómez',empresa:'Mudanzas Gómez',zonaBase:'Palermo, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:42,trabajosCompletados:38,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:55000,flete:18000},fotoUrl:''},
+  {email:'roberto.silva@mock.com',nombre:'Roberto Silva',empresa:'Silva Fletes',zonaBase:'Quilmes, GBA Sur',vehiculo:'Camioneta / furgón pequeño',calificacion:4.6,nroResenas:27,trabajosCompletados:24,verificadoIdentidad:true,verificadoVehiculo:false,verificadoSeguro:false,precios:{amb1:42000,flete:14000},fotoUrl:''},
+  {email:'diego.fernandez@mock.com',nombre:'Diego Fernández',empresa:'',zonaBase:'Caballito, CABA',vehiculo:'Camión grande',calificacion:5.0,nroResenas:15,trabajosCompletados:13,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:70000,flete:22000},fotoUrl:''},
+  {email:'martin.lopez@mock.com',nombre:'Martín López',empresa:'Mudanzas del Norte',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:61,trabajosCompletados:55,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:60000,flete:20000},fotoUrl:''},
+  {email:'pablo.torres@mock.com',nombre:'Pablo Torres',empresa:'',zonaBase:'Flores, CABA',vehiculo:'Camioneta / furgón pequeño',calificacion:4.3,nroResenas:9,trabajosCompletados:8,verificadoIdentidad:false,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:38000,flete:12000},fotoUrl:''},
+  {email:'lucas.ramirez@mock.com',nombre:'Lucas Ramírez',empresa:'Fletes Rápidos BA',zonaBase:'Lanús, GBA Sur',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:33,trabajosCompletados:30,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:52000,flete:17000},fotoUrl:''},
+  {email:'gustavo.perez@mock.com',nombre:'Gustavo Pérez',empresa:'Perez Mudanzas',zonaBase:'Belgrano, CABA',vehiculo:'Camión grande',calificacion:4.9,nroResenas:88,trabajosCompletados:79,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:72000,flete:23000},fotoUrl:''},
+  {email:'andres.ruiz@mock.com',nombre:'Andrés Ruiz',empresa:'TransMud SRL',zonaBase:'Vicente López, GBA Norte',vehiculo:'Camión grande',calificacion:4.7,nroResenas:54,trabajosCompletados:48,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:65000,flete:21000},fotoUrl:''},
+  {email:'nicolas.castro@mock.com',nombre:'Nicolás Castro',empresa:'Castro e Hijos',zonaBase:'Morón, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.6,nroResenas:41,trabajosCompletados:37,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:53000,flete:17000},fotoUrl:''},
+  {email:'rodrigo.molina@mock.com',nombre:'Rodrigo Molina',empresa:'MoliMud',zonaBase:'Almagro, CABA',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:45,trabajosCompletados:41,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:58000,flete:19000},fotoUrl:''},
+  {email:'damian.ortiz@mock.com',nombre:'Damián Ortiz',empresa:'Ortiz Transportes',zonaBase:'Palermo, CABA',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:102,trabajosCompletados:95,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:95000,flete:30000},fotoUrl:''},
+  {email:'hugo.vargas@mock.com',nombre:'Hugo Vargas',empresa:'Vargas e Hijos',zonaBase:'Castelar, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:71,trabajosCompletados:65,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:61000,flete:20000},fotoUrl:''},
+  {email:'pablo.miranda@mock.com',nombre:'Pablo Miranda',empresa:'Miranda Logística',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:83,trabajosCompletados:76,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:92000,flete:29000},fotoUrl:''},
+  {email:'oscar.vera@mock.com',nombre:'Óscar Vera',empresa:'Vera Transportes',zonaBase:'Córdoba Capital',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:93,trabajosCompletados:84,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:62000,flete:20000},fotoUrl:''},
+  {email:'cristobal.paz@mock.com',nombre:'Cristóbal Paz',empresa:'PazMud',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:115,trabajosCompletados:105,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:98000,flete:32000},fotoUrl:''},
+  {email:'marcelo.ponce@mock.com',nombre:'Marcelo Ponce',empresa:'Ponce & Hermanos',zonaBase:'Devoto, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:76,trabajosCompletados:69,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:59000,flete:19000},fotoUrl:''},
+  {email:'hector.aguirre@mock.com',nombre:'Héctor Aguirre',empresa:'Aguirre Trans',zonaBase:'Liniers, CABA',vehiculo:'Camión grande',calificacion:4.7,nroResenas:58,trabajosCompletados:52,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:69000,flete:22000},fotoUrl:''},
+  {email:'maximiliano.gil@mock.com',nombre:'Maximiliano Gil',empresa:'Gil & Asociados',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.8,nroResenas:57,trabajosCompletados:51,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:88000,flete:28000},fotoUrl:''},
+  {email:'victor.parra@mock.com',nombre:'Víctor Parra',empresa:'ParraMud SRL',zonaBase:'San Justo, GBA Oeste',vehiculo:'Camión grande',calificacion:4.6,nroResenas:47,trabajosCompletados:42,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:68000,flete:22000},fotoUrl:''},
+  {email:'walter.rojas@mock.com',nombre:'Walter Rojas',empresa:'Rojas Mudanzas',zonaBase:'San Telmo, CABA',vehiculo:'Camión grande',calificacion:4.6,nroResenas:38,trabajosCompletados:34,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:63000,flete:21000},fotoUrl:''},
 ];
 
 // ══════════════════════════════════════════
-// TIPO: MUDANZA / FLETE
+// TIPO
 // ══════════════════════════════════════════
 function setTipo(t) {
   _tipo = t;
-  document.getElementById('tab-mudanza').classList.toggle('active', t === 'mudanza');
-  document.getElementById('tab-flete').classList.toggle('active', t === 'flete');
-  document.getElementById('form-mudanza').style.display = t === 'mudanza' ? 'block' : 'none';
-  document.getElementById('form-flete').style.display   = t === 'flete'   ? 'block' : 'none';
+  document.getElementById('tab-mud').classList.toggle('active', t==='mudanza');
+  document.getElementById('tab-flete').classList.toggle('active', t==='flete');
+  document.getElementById('sb-mudanza').style.display = t==='mudanza' ? '' : 'none';
+  document.getElementById('sb-flete').style.display   = t==='flete'   ? '' : 'none';
 }
 
 // ══════════════════════════════════════════
 // AMBIENTES
 // ══════════════════════════════════════════
-function toggleAmbDropdown(e) {
+function toggleAmbPopup(e) {
   e.stopPropagation();
-  document.getElementById('ambDropdown').classList.toggle('open');
+  document.getElementById('ambPopup').classList.toggle('open');
+  document.getElementById('fechaPopup').classList.remove('open');
 }
 function changeAmb(d) {
   _amb = Math.max(1, Math.min(12, _amb + d));
   document.getElementById('ambNum').textContent = _amb;
-  document.getElementById('amb-display').textContent = _amb + ' ambiente' + (_amb !== 1 ? 's' : '');
+  document.getElementById('amb-display').textContent = _amb + ' ambiente' + (_amb!==1?'s':'');
+  document.getElementById('amb-minus').disabled = _amb <= 1;
 }
-document.addEventListener('click', function(e) {
-  var dd = document.getElementById('ambDropdown');
-  if (dd && !dd.contains(e.target) && !document.getElementById('field-amb').contains(e.target)) {
-    dd.classList.remove('open');
-  }
-});
 
 // ══════════════════════════════════════════
 // FECHA
 // ══════════════════════════════════════════
-var _fechaChipSel = '';
+function toggleFechaPopup(e, tipo) {
+  e.stopPropagation();
+  var id = tipo === 'flete' ? 'fechaFletePopup' : 'fechaPopup';
+  document.getElementById(id).classList.toggle('open');
+  document.getElementById('ambPopup').classList.remove('open');
+}
 function setFechaChip(el, val) {
-  document.querySelectorAll('#chips-fecha .date-chip').forEach(function(c){ c.classList.remove('sel'); });
+  document.querySelectorAll('#fechaPopup .fecha-chip').forEach(function(c){ c.classList.remove('sel'); });
   el.classList.add('sel');
-  _fechaChipSel = val;
   _fechaLabel = val;
+  document.getElementById('fecha-display').textContent = val;
+  document.getElementById('fecha-display').classList.remove('ph');
+  document.getElementById('fechaPopup').classList.remove('open');
   document.getElementById('input-fecha').value = '';
 }
-document.getElementById('input-fecha').addEventListener('change', function() {
-  if (this.value) {
-    document.querySelectorAll('#chips-fecha .date-chip').forEach(function(c){ c.classList.remove('sel'); });
-    _fechaChipSel = '';
-    var d = new Date(this.value + 'T12:00:00');
-    _fechaLabel = d.toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'});
-  }
-});
+function onFechaExacta() {
+  var v = document.getElementById('input-fecha').value;
+  if (!v) return;
+  document.querySelectorAll('#fechaPopup .fecha-chip').forEach(function(c){ c.classList.remove('sel'); });
+  var d = new Date(v + 'T12:00:00');
+  _fechaLabel = d.toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('fecha-display').textContent = _fechaLabel;
+  document.getElementById('fecha-display').classList.remove('ph');
+  document.getElementById('fechaPopup').classList.remove('open');
+}
 function setFechaFlete(el, val) {
-  document.querySelectorAll('[id^="fc-"]').forEach(function(c){ c.classList.remove('sel'); });
+  document.querySelectorAll('#fechaFletePopup .fecha-chip').forEach(function(c){ c.classList.remove('sel'); });
   el.classList.add('sel');
   _fechaFlete = val;
+  document.getElementById('flete-fecha-display').textContent = val;
+  document.getElementById('flete-fecha-display').classList.remove('ph');
+  document.getElementById('fechaFletePopup').classList.remove('open');
 }
 // Fecha mínima hoy
 (function(){
-  var hoy = new Date();
-  var min = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+  var h = new Date();
+  var min = h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');
   document.getElementById('input-fecha').min = min;
-  var ff = document.getElementById('input-flete-fecha');
-  if (ff) { ff.min = min; ff.value = min; }
 })();
 
 // ══════════════════════════════════════════
@@ -1048,46 +1014,64 @@ function toggleObj(el) { el.classList.toggle('sel'); }
 // ══════════════════════════════════════════
 // SWAP
 // ══════════════════════════════════════════
-function swapDirecciones() {
+function swapDir() {
   var d = document.getElementById('input-desde'), h = document.getElementById('input-hasta');
-  var tmp = d.value; d.value = h.value; h.value = tmp;
+  var t = d.value; d.value = h.value; h.value = t;
 }
 function swapFlete() {
   var d = document.getElementById('input-flete-desde'), h = document.getElementById('input-flete-hasta');
-  var tmp = d.value; d.value = h.value; h.value = tmp;
+  var t = d.value; d.value = h.value; h.value = t;
 }
+
+// Cerrar popups al click fuera
+document.addEventListener('click', function(e) {
+  ['ambPopup','fechaPopup','fechaFletePopup'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  });
+  // Cerrar AC dropdowns
+  document.querySelectorAll('.ac-drop').forEach(function(d){ d.classList.remove('open'); });
+});
 
 // ══════════════════════════════════════════
 // MAPS AUTOCOMPLETE
 // ══════════════════════════════════════════
 function initMaps() {
-  makeAC('input-desde', 'ac-desde');
-  makeAC('input-hasta', 'ac-hasta');
-  makeAC('input-flete-desde', 'ac-flete-desde');
-  makeAC('input-flete-hasta', 'ac-flete-hasta');
+  ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
+    var acId = 'ac-' + id.replace('input-','').replace('-desde','desde').replace('-hasta','hasta');
+    // fix id mapping
+    var ddId = {
+      'input-desde':'ac-desde',
+      'input-hasta':'ac-hasta',
+      'input-flete-desde':'ac-flete-desde',
+      'input-flete-hasta':'ac-flete-hasta'
+    }[id];
+    makeAC(id, ddId);
+  });
+  // Iniciar mapa mini si resultados ya visibles
+  if (document.getElementById('resultados').classList.contains('show')) initMapaMini();
 }
-function makeAC(inputId, dropdownId) {
+function makeAC(inputId, ddId) {
   var input = document.getElementById(inputId);
-  var dd = document.getElementById(dropdownId);
+  var dd = document.getElementById(ddId);
   if (!input || !dd) return;
-  var debounce;
+  var deb;
   input.addEventListener('input', function() {
-    clearTimeout(debounce);
+    clearTimeout(deb);
     var q = this.value.trim();
     if (q.length < 2) { dd.classList.remove('open'); return; }
-    debounce = setTimeout(function() {
+    deb = setTimeout(function() {
       new google.maps.places.AutocompleteService().getPlacePredictions(
-        { input: q, componentRestrictions:{ country:'ar' }, types:['geocode','establishment'] },
-        function(predictions, status) {
+        { input: q, componentRestrictions:{country:'ar'}, types:['geocode','establishment'] },
+        function(preds, status) {
           dd.innerHTML = '';
-          if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) { dd.classList.remove('open'); return; }
-          predictions.slice(0,5).forEach(function(s) {
-            var text = s.description || '';
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !preds) { dd.classList.remove('open'); return; }
+          preds.slice(0,5).forEach(function(s) {
             var li = document.createElement('li');
             li.className = 'ac-item';
-            li.textContent = text;
-            li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = text; dd.classList.remove('open'); dd.innerHTML = ''; });
-            li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = text; dd.classList.remove('open'); dd.innerHTML = ''; });
+            li.textContent = s.description;
+            li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
+            li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
             dd.appendChild(li);
           });
           dd.classList.add('open');
@@ -1095,242 +1079,270 @@ function makeAC(inputId, dropdownId) {
       );
     }, 280);
   });
-  input.addEventListener('blur', function(){ setTimeout(function(){ dd.classList.remove('open'); }, 220); });
+  input.addEventListener('blur', function(){ setTimeout(function(){ dd.classList.remove('open'); }, 200); });
   input.addEventListener('keydown', function(e) {
     var items = dd.querySelectorAll('.ac-item');
-    var active = dd.querySelector('.ac-item.kb');
+    var active = dd.querySelector('.kb');
     var idx = active ? Array.from(items).indexOf(active) : -1;
     if (e.key === 'ArrowDown') { e.preventDefault(); if (active) active.classList.remove('kb'); var n = items[idx+1]||items[0]; if(n){ n.classList.add('kb'); n.scrollIntoView({block:'nearest'}); } }
     else if (e.key === 'ArrowUp') { e.preventDefault(); if (active) active.classList.remove('kb'); var p = items[idx-1]||items[items.length-1]; if(p){ p.classList.add('kb'); p.scrollIntoView({block:'nearest'}); } }
     else if (e.key === 'Enter' && active) { e.preventDefault(); active.dispatchEvent(new MouseEvent('mousedown')); }
     else if (e.key === 'Escape') { dd.classList.remove('open'); }
   });
+  input.addEventListener('click', function(e){ e.stopPropagation(); });
 }
 (function() {
   var s = document.createElement('script');
-  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY + '&libraries=places&language=es&region=AR&callback=initMaps&loading=async';
+  s.src = 'https://maps.googleapis.com/maps/api/js?key='+GMAPS_KEY+'&libraries=places&language=es&region=AR&callback=initMaps&loading=async';
   s.async = true; s.defer = true;
   document.head.appendChild(s);
 })();
 
 // ══════════════════════════════════════════
-// BUSCAR — PASO 2
+// MAPA MINI
 // ══════════════════════════════════════════
-var _busqueda = {};
+function initMapaMini() {
+  if (!window.google || !_busqueda.desde || !_busqueda.hasta) return;
+  var mapDiv = document.getElementById('mapaDiv');
+  var map = new google.maps.Map(mapDiv, {
+    zoom:10, center:{lat:-34.6037,lng:-58.3816},
+    mapTypeControl:false, streetViewControl:false, fullscreenControl:false, zoomControl:false,
+    styles:[{elementType:'geometry',stylers:[{color:'#f5f5f5'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#c9e6f5'}]},{featureType:'poi',stylers:[{visibility:'off'}]}]
+  });
+  _routeMap = map;
+  var renderer = new google.maps.DirectionsRenderer({ polylineOptions:{strokeColor:'#1A6FFF',strokeWeight:4} });
+  renderer.setMap(map);
+  var ds = new google.maps.DirectionsService();
+  ds.route({ origin:_busqueda.desde+', Argentina', destination:_busqueda.hasta+', Argentina', travelMode:google.maps.TravelMode.DRIVING }, function(result, status) {
+    if (status === 'OK') renderer.setDirections(result);
+  });
+}
+function verMapa() {
+  if (!_busqueda.desde || !_busqueda.hasta) return;
+  window.open('https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(_busqueda.desde)+'&destination='+encodeURIComponent(_busqueda.hasta)+'&travelmode=driving','_blank');
+}
+
+// ══════════════════════════════════════════
+// BUSCAR
+// ══════════════════════════════════════════
 function buscar() {
-  var desde = _tipo === 'mudanza'
-    ? document.getElementById('input-desde').value.trim()
-    : document.getElementById('input-flete-desde').value.trim();
-  var hasta = _tipo === 'mudanza'
-    ? document.getElementById('input-hasta').value.trim()
-    : document.getElementById('input-flete-hasta').value.trim();
+  var desde = _tipo==='mudanza' ? document.getElementById('input-desde').value.trim() : document.getElementById('input-flete-desde').value.trim();
+  var hasta  = _tipo==='mudanza' ? document.getElementById('input-hasta').value.trim()  : document.getElementById('input-flete-hasta').value.trim();
   if (!desde || !hasta) {
-    var inp = document.getElementById(_tipo === 'mudanza' ? 'input-desde' : 'input-flete-desde');
-    inp.focus();
-    inp.style.outline = '2px solid var(--emerald)';
-    setTimeout(function(){ inp.style.outline = ''; }, 2000);
+    var inp = document.getElementById(_tipo==='mudanza' ? 'input-desde' : 'input-flete-desde');
+    inp.focus(); inp.style.outline = '2px solid #22C36A';
+    setTimeout(function(){ inp.style.outline=''; }, 2000);
     return;
   }
-  var fecha = _tipo === 'mudanza'
-    ? (_fechaLabel || _fechaChipSel || 'A definir')
-    : _fechaFlete;
-  var objetos = Array.from(document.querySelectorAll(
-    _tipo === 'mudanza' ? '#obj-chips-mud .obj-chip.sel' : '#obj-chips-flete .obj-chip.sel'
-  )).map(function(e){ return e.textContent.trim(); });
-  _busqueda = { tipo: _tipo, desde, hasta, fecha, ambientes: _amb, objetos };
-  // Actualizar header resultados
-  document.getElementById('res-titulo').textContent = _tipo === 'mudanza' ? 'Mudanceros disponibles' : 'Fleteros disponibles';
-  document.getElementById('res-ruta').textContent = desde + ' → ' + hasta + '  ·  ' + fecha + (_tipo === 'mudanza' ? '  ·  ' + _amb + ' amb.' : '');
-  // Cargar resultados
-  cargarResultados();
-  // Mostrar sección
+  var fecha = _tipo==='mudanza' ? (_fechaLabel||'A definir') : _fechaFlete;
+  _busqueda = { tipo:_tipo, desde, hasta, fecha, ambientes:_amb };
+  // Actualizar sticky bar
+  document.getElementById('res-desde').textContent = desde.split(',')[0];
+  document.getElementById('res-hasta').textContent  = hasta.split(',')[0];
+  document.getElementById('res-fecha').textContent  = fecha;
+  document.getElementById('res-amb').textContent    = _amb + ' amb.';
+  document.getElementById('res-seg-amb').style.display = _tipo==='mudanza' ? '' : 'none';
+  document.getElementById('resTitulo').textContent = _tipo==='mudanza' ? 'Mudanceros disponibles' : 'Fleteros disponibles';
+  document.getElementById('resRuta').textContent = desde + ' → ' + hasta;
+  // Mostrar resultados
   var sec = document.getElementById('resultados');
   sec.classList.add('show');
-  sec.scrollIntoView({ behavior:'smooth', block:'start' });
+  cargarResultados();
+  setTimeout(function(){ sec.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
+  setTimeout(initMapaMini, 600);
 }
-function modificarBusqueda() {
-  document.getElementById('resultados').classList.remove('show');
-  document.getElementById('heroSection').scrollIntoView({ behavior:'smooth', block:'start' });
+function scrollToHero() {
+  document.getElementById('heroSection').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+// ══════════════════════════════════════════
+// CARGAR Y RENDERIZAR RESULTADOS
+// ══════════════════════════════════════════
 async function cargarResultados() {
-  document.getElementById('listaResultados').innerHTML = '<div class="no-results"><span class="spinner"></span></div>';
+  document.getElementById('listaRes').innerHTML = '<div class="no-results"><span class="spinner"></span> Buscando…</div>';
   try {
     var r = await fetch('/api/cotizaciones?action=catalogo');
     var d = await r.json();
-    _todosResultados = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : _MOCK_MUDANCEROS;
-  } catch(e) {
-    _todosResultados = _MOCK_MUDANCEROS;
-  }
-  renderResultados();
-}
-
-// ══════════════════════════════════════════
-// FILTROS Y ORDEN
-// ══════════════════════════════════════════
-function setOrden(val, el) {
-  _filtros.orden = val;
-  document.querySelectorAll('[onclick^="setOrden"]').forEach(function(e){ e.classList.remove('active'); });
-  el.classList.add('active');
-  renderResultados();
-}
-function toggleFiltroVehiculo(val, el) {
-  if (_filtros.vehiculos.has(val)) _filtros.vehiculos.delete(val);
-  else _filtros.vehiculos.add(val);
-  el.classList.toggle('active', _filtros.vehiculos.has(val));
-  renderResultados();
-}
-function toggleFiltroZona(val, el) {
-  if (_filtros.zonas.has(val)) _filtros.zonas.delete(val);
-  else _filtros.zonas.add(val);
-  el.classList.toggle('active', _filtros.zonas.has(val));
-  renderResultados();
-}
-function toggleFiltroVerif(val, el) {
-  if (_filtros.verifs.has(val)) _filtros.verifs.delete(val);
-  else _filtros.verifs.add(val);
-  el.classList.toggle('active', _filtros.verifs.has(val));
-  renderResultados();
-}
-function limpiarFiltros() {
-  _filtros.vehiculos.clear(); _filtros.zonas.clear(); _filtros.verifs.clear(); _filtros.orden = 'calificacion';
-  document.querySelectorAll('.filtro-option').forEach(function(e){ e.classList.remove('active'); var cb = e.querySelector('input'); if(cb) cb.checked = false; });
+    _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : _MOCK;
+  } catch(e) { _todos = _MOCK; }
   renderResultados();
 }
 function renderResultados() {
-  var lista = _todosResultados.slice();
-  // Filtrar vehículo
+  var lista = _todos.slice();
+  // Filtros
   if (_filtros.vehiculos.size) lista = lista.filter(function(m){ return _filtros.vehiculos.has(m.vehiculo); });
-  // Filtrar zona
-  if (_filtros.zonas.size) lista = lista.filter(function(m){
-    return Array.from(_filtros.zonas).some(function(z){ return (m.zonaBase||'').includes(z); });
-  });
-  // Filtrar verificaciones
-  if (_filtros.verifs.has('identidad')) lista = lista.filter(function(m){ return m.verificadoIdentidad; });
-  if (_filtros.verifs.has('vehiculo'))  lista = lista.filter(function(m){ return m.verificadoVehiculo; });
-  if (_filtros.verifs.has('seguro'))    lista = lista.filter(function(m){ return m.verificadoSeguro; });
-  // Ordenar
+  if (_filtros.zonas.size)     lista = lista.filter(function(m){ return Array.from(_filtros.zonas).some(function(z){ return (m.zonaBase||'').includes(z); }); });
+  if (_filtros.verifs.has('id'))  lista = lista.filter(function(m){ return m.verificadoIdentidad; });
+  if (_filtros.verifs.has('veh')) lista = lista.filter(function(m){ return m.verificadoVehiculo; });
+  if (_filtros.verifs.has('seg')) lista = lista.filter(function(m){ return m.verificadoSeguro; });
+  // Orden
   lista.sort(function(a,b){
-    if (_filtros.orden === 'precio_asc') return (a.precios.amb1||0) - (b.precios.amb1||0);
-    if (_filtros.orden === 'trabajos')   return (b.trabajosCompletados||0) - (a.trabajosCompletados||0);
-    return (b.calificacion||0) - (a.calificacion||0);
+    if (_filtros.orden==='precio') return (a.precios.amb1||0)-(b.precios.amb1||0);
+    if (_filtros.orden==='trab')   return (b.trabajosCompletados||0)-(a.trabajosCompletados||0);
+    return (b.calificacion||0)-(a.calificacion||0);
   });
-  document.getElementById('res-count').textContent = lista.length + ' disponibles';
+  document.getElementById('resCount').innerHTML = '<strong>' + lista.length + '</strong> disponibles';
   if (!lista.length) {
-    document.getElementById('listaResultados').innerHTML = '<div class="no-results">No hay mudanceros con esos filtros.<br>Probá ampliando la búsqueda.</div>';
+    document.getElementById('listaRes').innerHTML = '<div class="no-results">Sin resultados con esos filtros. Probá ampliando la búsqueda.</div>';
     return;
   }
   var html = '';
-  // Opción rápida siempre arriba
-  html += '<div class="opcion-rapida-card" onclick="publicarAbierto()">'
-    + '<div class="or-icon">⚡</div>'
-    + '<div class="or-body">'
-    +   '<div class="or-title">RECIBIR LAS PRIMERAS 5 COTIZACIONES</div>'
-    +   '<div class="or-sub">Los primeros 5 mudanceros disponibles en tu zona te cotizan automáticamente. Más rápido.</div>'
-    + '</div>'
-    + '<button class="btn-or" onclick="event.stopPropagation();publicarAbierto()">Solicitar →</button>'
+  // Opción rápida
+  html += '<div class="card-rapida" onclick="publicarAbierto()">'
+    + '<div class="cr-icon">⚡</div>'
+    + '<div class="cr-body"><div class="cr-title">Recibir las primeras 5 cotizaciones automáticamente</div>'
+    + '<div class="cr-sub">Los primeros 5 mudanceros disponibles en tu zona te cotizan sin que tengas que elegirlos vos.</div></div>'
+    + '<button class="btn-cr" onclick="event.stopPropagation();publicarAbierto()">Solicitar →</button>'
     + '</div>';
-  // Cards mudanceros
+  // Cards
   html += lista.map(function(m) {
-    var sel = _seleccionados.has(m.email);
-    var initials = (m.nombre||'MV').split(' ').map(function(p){ return p[0]; }).join('').slice(0,2).toUpperCase();
-    var stars = '★'.repeat(Math.floor(m.calificacion||0)) + '☆'.repeat(5-Math.floor(m.calificacion||0));
-    var precio = _busqueda.tipo === 'flete' ? (m.precios.flete||0) : (m.precios.amb1||0) * _amb;
+    var sel = _sel.has(m.email);
+    var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
+    var precio = _busqueda.tipo==='flete' ? (m.precios.flete||0) : (m.precios.amb1||0) * Math.max(1,_busqueda.ambientes||2);
+    var ratingLabel = m.calificacion >= 4.8 ? 'Excepcional' : m.calificacion >= 4.5 ? 'Muy bueno' : m.calificacion >= 4 ? 'Bueno' : 'Bien';
+    var fotoHtml = m.fotoUrl
+      ? '<img src="'+m.fotoUrl+'" alt="Camión de '+m.nombre+'">'
+      : '<div class="mud-foto-ph"><div class="mud-foto-truck">🚛</div><div class="mud-foto-initials">'+initials+'</div></div>';
     var tags = '';
-    if (m.verificadoIdentidad) tags += '<span class="mud-tag green">✓ Verificado</span>';
-    if (m.verificadoVehiculo)  tags += '<span class="mud-tag">🚛 ' + m.vehiculo + '</span>';
-    if (m.verificadoSeguro)    tags += '<span class="mud-tag sky">🛡 Seguro</span>';
-    return '<div class="mud-result-card' + (sel ? ' sel' : '') + '" data-email="' + m.email + '">'
-      + '<div class="mud-card-avatar">'
-      +   '<div class="mud-initials">' + initials + '</div>'
-      +   '<div class="mud-rating-big">' + (m.calificacion||0).toFixed(1) + '</div>'
-      +   '<div class="mud-stars-sm">' + '★'.repeat(Math.round(m.calificacion||0)) + '</div>'
+    if (m.verificadoIdentidad) tags += '<span class="mud-tag mud-tag-green">✓ Verificado</span>';
+    if (m.verificadoSeguro)    tags += '<span class="mud-tag mud-tag-green">🛡 Seguro</span>';
+    if (m.verificadoVehiculo)  tags += '<span class="mud-tag mud-tag-blue">🚛 '+m.vehiculo+'</span>';
+    var emailEnc = m.email.replace(/\./g,'__dot__').replace(/@/g,'__at__');
+    return '<div class="mud-card'+(sel?' sel':'')+'" data-email="'+m.email+'" id="card-'+emailEnc+'">'
+      + '<div class="mud-card-foto">'
+      +   '<div class="mud-sel-check" onclick="toggleSel(\''+m.email+'\',event)">'
+      +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+      +   '</div>'
+      +   fotoHtml
       + '</div>'
-      + '<div class="mud-card-info">'
-      +   '<div class="mud-card-nombre">' + m.nombre + '</div>'
-      +   '<div class="mud-card-empresa">' + (m.empresa || 'Independiente') + '  ·  ' + (m.nroResenas||0) + ' reseñas  ·  ' + (m.trabajosCompletados||0) + ' trabajos</div>'
-      +   '<div class="mud-card-tags">' + tags + '</div>'
-      +   '<div class="mud-card-zona">📍 ' + (m.zonaBase||'') + '</div>'
+      + '<div class="mud-card-body">'
+      +   '<div class="mud-card-nombre" onclick="verPerfil(\''+m.email+'\')">'+m.nombre+'</div>'
+      +   '<div class="mud-card-empresa">'+(m.empresa||'Independiente')+'</div>'
+      +   '<div class="mud-tags">'+tags+'</div>'
+      +   '<div class="mud-card-zona">📍 '+( m.zonaBase||'')+'</div>'
+      +   '<div class="mud-card-trabajos">'+m.trabajosCompletados+' trabajos · '+m.nroResenas+' reseñas</div>'
       + '</div>'
       + '<div class="mud-card-precio">'
-      +   '<div>'
-      +     '<div class="mud-precio-num">$' + precio.toLocaleString('es-AR') + '</div>'
-      +     '<div class="mud-precio-sub">' + (_busqueda.tipo === 'flete' ? 'precio estimado flete' : 'precio estimado · ' + _amb + ' amb.') + '</div>'
+      +   '<div class="mud-rating-box">'
+      +     '<div class="mud-rating-num">'+m.calificacion.toFixed(1)+'</div>'
+      +     '<div class="mud-rating-label">'+ratingLabel+'</div>'
+      +     '<div class="mud-rating-resenas">'+m.nroResenas+' reseñas</div>'
       +   '</div>'
-      +   '<button class="btn-cotizar' + (sel ? ' sel-btn' : '') + '" onclick="toggleSeleccionado(\'' + m.email + '\',event)">'
-      +     (sel ? '✓ Seleccionado' : 'Seleccionar')
-      +   '</button>'
+      +   '<div class="mud-precio-box">'
+      +     '<div class="mud-precio-desde">desde</div>'
+      +     '<div class="mud-precio-num">$'+precio.toLocaleString('es-AR')+'</div>'
+      +     '<div class="mud-precio-sub">precio estimado</div>'
+      +   '</div>'
+      +   '<button class="btn-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
+      +   '<button class="btn-sel-toggle" onclick="toggleSel(\''+m.email+'\',event)">'+(sel?'✓ Seleccionado':'Seleccionar')+'</button>'
       + '</div>'
       + '</div>';
   }).join('');
-  document.getElementById('listaResultados').innerHTML = html;
+  document.getElementById('listaRes').innerHTML = html;
 }
 
 // ══════════════════════════════════════════
-// SELECCIÓN DE MUDANCEROS
+// SELECCIÓN
 // ══════════════════════════════════════════
-function toggleSeleccionado(email, e) {
+function toggleSel(email, e) {
   if (e) e.stopPropagation();
-  if (_seleccionados.has(email)) _seleccionados.delete(email);
-  else _seleccionados.add(email);
-  // Actualizar card
-  var card = document.querySelector('[data-email="' + email + '"]');
+  if (_sel.has(email)) _sel.delete(email);
+  else _sel.add(email);
+  var enc = email.replace(/\./g,'__dot__').replace(/@/g,'__at__');
+  var card = document.getElementById('card-'+enc);
   if (card) {
-    card.classList.toggle('sel', _seleccionados.has(email));
-    var btn = card.querySelector('.btn-cotizar');
-    if (btn) {
-      btn.classList.toggle('sel-btn', _seleccionados.has(email));
-      btn.textContent = _seleccionados.has(email) ? '✓ Seleccionado' : 'Seleccionar';
-    }
+    card.classList.toggle('sel', _sel.has(email));
+    var btn = card.querySelector('.btn-sel-toggle');
+    if (btn) btn.textContent = _sel.has(email) ? '✓ Seleccionado' : 'Seleccionar';
   }
-  // Barra
-  var n = _seleccionados.size;
-  var bar = document.getElementById('selBar');
-  bar.classList.toggle('show', n > 0);
+  var n = _sel.size;
+  document.getElementById('selBar').classList.toggle('show', n>0);
   document.getElementById('selCount').textContent = n;
+}
+
+// ══════════════════════════════════════════
+// VER PERFIL
+// ══════════════════════════════════════════
+function verPerfil(email) {
+  // Guardar contexto en sessionStorage para que mudancero.html lo use
+  var m = _todos.find(function(x){ return x.email===email; });
+  if (m) sessionStorage.setItem('perfilMudancero', JSON.stringify(m));
+  sessionStorage.setItem('busquedaActual', JSON.stringify(_busqueda));
+  window.location.href = '/mudancero?id=' + encodeURIComponent(email);
+}
+
+// ══════════════════════════════════════════
+// FILTROS
+// ══════════════════════════════════════════
+function setOrden(v) { _filtros.orden = v; renderResultados(); }
+function toggleFV(v,el) {
+  if(_filtros.vehiculos.has(v)) _filtros.vehiculos.delete(v); else _filtros.vehiculos.add(v);
+  renderResultados();
+}
+function toggleFZ(v,el) {
+  if(_filtros.zonas.has(v)) _filtros.zonas.delete(v); else _filtros.zonas.add(v);
+  renderResultados();
+}
+function toggleFVer(v,el) {
+  if(_filtros.verifs.has(v)) _filtros.verifs.delete(v); else _filtros.verifs.add(v);
+  renderResultados();
+}
+function limpiarFiltros() {
+  _filtros.vehiculos.clear(); _filtros.zonas.clear(); _filtros.verifs.clear(); _filtros.orden='cal';
+  document.querySelectorAll('.filtro-opt input').forEach(function(i){ i.checked=false; });
+  document.querySelectorAll('input[name=orden]').forEach(function(i,idx){ i.checked=idx===0; });
+  renderResultados();
+}
+function togglePill(el, key) {
+  el.classList.toggle('active');
+  // Mapear pill a filtro
+  var map = {
+    'ord-cal':function(){ _filtros.orden='cal'; },
+    'ord-precio':function(){ _filtros.orden='precio'; },
+    'veh-cam-g':function(){ if(_filtros.vehiculos.has('Camión grande')) _filtros.vehiculos.delete('Camión grande'); else _filtros.vehiculos.add('Camión grande'); },
+    'veh-cam-m':function(){ if(_filtros.vehiculos.has('Camión mediano')) _filtros.vehiculos.delete('Camión mediano'); else _filtros.vehiculos.add('Camión mediano'); },
+    'verif-id':function(){ if(_filtros.verifs.has('id')) _filtros.verifs.delete('id'); else _filtros.verifs.add('id'); },
+    'verif-seg':function(){ if(_filtros.verifs.has('seg')) _filtros.verifs.delete('seg'); else _filtros.verifs.add('seg'); },
+    'zona-caba':function(){ if(_filtros.zonas.has('CABA')) _filtros.zonas.delete('CABA'); else _filtros.zonas.add('CABA'); },
+    'zona-gba':function(){ if(_filtros.zonas.has('GBA')) _filtros.zonas.delete('GBA'); else _filtros.zonas.add('GBA'); },
+  };
+  if (map[key]) { map[key](); renderResultados(); }
 }
 
 // ══════════════════════════════════════════
 // PUBLICAR
 // ══════════════════════════════════════════
 function pedirCotizacion() {
-  if (!_seleccionados.size) return;
-  if (!_currentUser) { _pendingPublicar = 'dirigido'; abrirLogin(); return; }
-  _publicarDirigido();
+  if (!_sel.size) return;
+  if (!_currentUser) { _pendingPub='dirigido'; abrirLogin(); return; }
+  _publicar('dirigido');
 }
 function publicarAbierto() {
-  if (!_currentUser) { _pendingPublicar = 'abierto'; abrirLogin(); return; }
+  if (!_currentUser) { _pendingPub='abierto'; abrirLogin(); return; }
   _publicar('abierto');
 }
-async function _publicarDirigido() { await _publicar('dirigido'); }
 async function _publicar(modo) {
-  document.getElementById('pub-publishing').style.display = 'block';
-  document.getElementById('pub-published').style.display = 'none';
+  document.getElementById('pub-ing').style.display='block';
+  document.getElementById('pub-ok').style.display='none';
   document.getElementById('pubModal').classList.add('open');
-  var objetos = Array.from(document.querySelectorAll(
-    _busqueda.tipo === 'mudanza' ? '#obj-chips-mud .obj-chip.sel' : '#obj-chips-flete .obj-chip.sel'
-  )).map(function(e){ return e.textContent.trim(); }).join(', ');
-  var clienteWA = window._clienteWA || (_currentUser ? localStorage.getItem('clienteWA_' + _currentUser.email) || '' : '');
-  var data = {
-    clienteEmail:    _currentUser.email,
-    clienteNombre:   _currentUser.name,
-    clienteWA:       clienteWA,
-    desde:           _busqueda.desde,
-    hasta:           _busqueda.hasta,
-    ambientes:       _busqueda.tipo === 'mudanza' ? (_amb + ' ambiente' + (_amb!==1?'s':'')) : 'Flete',
-    fecha:           _busqueda.fecha,
-    servicios:       objetos,
-    zonaBase:        _busqueda.desde,
-    precio_estimado: _busqueda.tipo === 'mudanza' ? (50000 + (_amb-1)*30000) : 20000,
-    tipo:            _busqueda.tipo,
-    modoCotizacion:  modo,
-    mudancerosInvitados: modo === 'dirigido' ? Array.from(_seleccionados) : [],
-  };
+  var objetos = Array.from(document.querySelectorAll('.obj-chip.sel')).map(function(e){ return e.textContent.trim(); }).join(', ');
+  var clienteWA = window._clienteWA || (_currentUser ? localStorage.getItem('clienteWA_'+_currentUser.email)||'' : '');
   try {
-    var r = await fetch('/api/cotizaciones?action=publicar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
-    await r.json();
-  } catch(e) { console.warn('Error:', e.message); }
-  document.getElementById('pub-publishing').style.display = 'none';
-  document.getElementById('pub-published').style.display = 'block';
+    await fetch('/api/cotizaciones?action=publicar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        clienteEmail:_currentUser.email, clienteNombre:_currentUser.name, clienteWA:clienteWA,
+        desde:_busqueda.desde, hasta:_busqueda.hasta,
+        ambientes:_busqueda.tipo==='mudanza' ? (_busqueda.ambientes+' ambientes') : 'Flete',
+        fecha:_busqueda.fecha, servicios:objetos, zonaBase:_busqueda.desde,
+        precio_estimado:_busqueda.tipo==='mudanza' ? (50000+(_busqueda.ambientes-1)*30000) : 20000,
+        tipo:_busqueda.tipo, modoCotizacion:modo,
+        mudancerosInvitados:modo==='dirigido' ? Array.from(_sel) : [],
+      })
+    });
+  } catch(e) { console.warn(e.message); }
+  document.getElementById('pub-ing').style.display='none';
+  document.getElementById('pub-ok').style.display='block';
 }
 
 // ══════════════════════════════════════════
@@ -1339,70 +1351,54 @@ async function _publicar(modo) {
 function abrirLogin(e) {
   if (e) e.preventDefault();
   document.getElementById('loginModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  if (!_googleInited) initGoogleLogin();
+  document.body.style.overflow='hidden';
+  if (!_googleInited) initGLogin();
 }
 function cerrarLogin() {
   document.getElementById('loginModal').classList.remove('open');
-  document.body.style.overflow = '';
+  document.body.style.overflow='';
 }
-function initGoogleLogin() {
+function initGLogin() {
   fetch('/api/admin-config').then(function(r){ return r.json(); }).then(function(cfg) {
     if (!cfg.googleClientId) return;
     google.accounts.id.initialize({
-      client_id: cfg.googleClientId,
-      callback: function(response) {
+      client_id:cfg.googleClientId,
+      callback:function(response) {
         var p = JSON.parse(atob(response.credential.split('.')[1]));
-        _currentUser = { name: p.name, email: p.email, picture: p.picture };
+        _currentUser = {name:p.name, email:p.email, picture:p.picture};
         sessionStorage.setItem('googleUser', JSON.stringify(_currentUser));
         sessionStorage.setItem('clienteUser', JSON.stringify(_currentUser));
-        cerrarLogin();
-        updateNav();
-        window._clienteWA = localStorage.getItem('clienteWA_' + _currentUser.email) || '';
-        if (_pendingPublicar) {
-          var modo = _pendingPublicar; _pendingPublicar = null;
-          modo === 'abierto' ? publicarAbierto() : pedirCotizacion();
-        }
+        cerrarLogin(); updateNav();
+        if (_pendingPub) { var m=_pendingPub; _pendingPub=null; m==='abierto'?publicarAbierto():pedirCotizacion(); }
       }
     });
-    google.accounts.id.renderButton(document.getElementById('googleBtn'), { theme:'filled_black', size:'large', text:'signin_with', width:280 });
-    _googleInited = true;
-  }).catch(function(e){ console.error(e); });
+    google.accounts.id.renderButton(document.getElementById('googleBtn'), {theme:'filled_blue',size:'large',text:'signin_with',width:280});
+    _googleInited=true;
+  });
 }
 function logout() {
   sessionStorage.removeItem('googleUser'); sessionStorage.removeItem('clienteUser');
-  _currentUser = null; updateNav();
-  window.location.href = '/';
+  _currentUser=null; updateNav(); window.location.href='/';
 }
 function updateNav() {
-  var ns = document.getElementById('nav-no-session'), ws = document.getElementById('nav-with-session');
+  var ns=document.getElementById('nav-no-session'), ws=document.getElementById('nav-with-session');
   if (_currentUser) {
-    ns.style.display = 'none'; ws.style.display = 'flex';
-    var av = document.getElementById('navAvatar'); if (av) av.src = _currentUser.picture || '';
-    var nm = document.getElementById('navUserName'); if (nm) nm.textContent = _currentUser.name.split(' ')[0];
-  } else {
-    ns.style.display = 'flex'; ws.style.display = 'none';
-  }
+    ns.style.display='none'; ws.style.display='flex';
+    var av=document.getElementById('navAvatar'); if(av) av.src=_currentUser.picture||'';
+    var nm=document.getElementById('navUserName'); if(nm) nm.textContent=_currentUser.name.split(' ')[0];
+  } else { ns.style.display='flex'; ws.style.display='none'; }
 }
 
 // ══════════════════════════════════════════
 // NAV MOBILE
 // ══════════════════════════════════════════
-function toggleMenu() {
-  document.getElementById('navBurger').classList.toggle('open');
-  document.getElementById('mobileMenu').classList.toggle('open');
-}
-function closeMenu() {
-  document.getElementById('navBurger').classList.remove('open');
-  document.getElementById('mobileMenu').classList.remove('open');
-}
+function toggleMenu() { document.getElementById('navBurger').classList.toggle('open'); document.getElementById('mobileMenu').classList.toggle('open'); }
+function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open'); }
 
-// Init nav al cargar
+// Init
 document.addEventListener('DOMContentLoaded', function() { updateNav(); });
-
-// Cerrar modal pubModal al hacer click fuera
-document.getElementById('pubModal').addEventListener('click', function(e){ if (e.target === this && document.getElementById('pub-published').style.display !== 'none') { this.classList.remove('open'); document.body.style.overflow = ''; } });
-document.getElementById('loginModal').addEventListener('click', function(e){ if (e.target === this) cerrarLogin(); });
+document.getElementById('pubModal').addEventListener('click', function(e){ if(e.target===this && document.getElementById('pub-ok').style.display!=='none'){this.classList.remove('open'); document.body.style.overflow='';} });
+document.getElementById('loginModal').addEventListener('click', function(e){ if(e.target===this) cerrarLogin(); });
 </script>
 </body>
 </html>
