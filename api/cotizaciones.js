@@ -156,7 +156,7 @@ async function generarPDFBase64(datos) {
 
     // Franja azul navy arriba
     background: () => [
-      { canvas: [{ type: 'rect', x: 0, y: 0, w: 595, h: 76, color: NAVY }] },
+      { canvas: [{ type: 'rect', x: 0, y: 0, w: 595, h: 96, color: NAVY }] },
     ],
 
     defaultStyle: { font: 'Helvetica', fontSize: 9.5, color: TEXT, lineHeight: 1.3 },
