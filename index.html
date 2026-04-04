@@ -585,63 +585,7 @@ footer{background:#003580;padding:1.5rem}
 </div>
 
 <!-- HERO -->
-<section class="hero" id="heroSection" style="position:relative">
-  <!-- Camión animado de fondo -->
-  <div class="truck-scene">
-    <!-- Camión grande -->
-    <div class="truck-anim">
-      <svg width="280" height="60" viewBox="0 0 280 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Caja de carga -->
-        <rect x="0" y="8" width="190" height="38" rx="4" fill="#fff"/>
-        <rect x="2" y="10" width="186" height="34" rx="3" fill="rgba(255,255,255,.15)" stroke="#fff" stroke-width="1.5"/>
-        <!-- Líneas de la caja -->
-        <line x1="50" y1="10" x2="50" y2="44" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-        <line x1="100" y1="10" x2="100" y2="44" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-        <line x1="150" y1="10" x2="150" y2="44" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-        <!-- Texto MudateYa en la caja -->
-        <text x="95" y="31" font-family="Arial Black, sans-serif" font-size="11" font-weight="900" fill="rgba(255,255,255,.5)" text-anchor="middle" letter-spacing="2">MUDATEYA</text>
-        <!-- Cabina -->
-        <rect x="190" y="14" width="70" height="32" rx="5" fill="#fff" opacity=".9"/>
-        <rect x="192" y="16" width="66" height="28" rx="4" fill="rgba(255,255,255,.15)" stroke="#fff" stroke-width="1.5"/>
-        <!-- Ventana cabina -->
-        <rect x="218" y="18" width="32" height="18" rx="3" fill="rgba(26,111,255,.5)"/>
-        <line x1="234" y1="18" x2="234" y2="36" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
-        <!-- Luz delantera -->
-        <rect x="256" y="28" width="8" height="6" rx="2" fill="#22C36A" opacity=".9"/>
-        <!-- Chasis / base -->
-        <rect x="0" y="46" width="270" height="6" rx="2" fill="#fff" opacity=".5"/>
-        <!-- Ruedas -->
-        <circle cx="42" cy="52" r="10" fill="#1a1a2e" stroke="#fff" stroke-width="2"/>
-        <circle cx="42" cy="52" r="4" fill="#fff" opacity=".3"/>
-        <circle cx="120" cy="52" r="10" fill="#1a1a2e" stroke="#fff" stroke-width="2"/>
-        <circle cx="120" cy="52" r="4" fill="#fff" opacity=".3"/>
-        <circle cx="220" cy="52" r="10" fill="#1a1a2e" stroke="#fff" stroke-width="2"/>
-        <circle cx="220" cy="52" r="4" fill="#fff" opacity=".3"/>
-        <!-- Escape de humo sutil -->
-        <circle cx="274" cy="20" r="3" fill="#fff" opacity=".15"/>
-        <circle cx="270" cy="14" r="2" fill="#fff" opacity=".1"/>
-      </svg>
-    </div>
-    <!-- Camión chico (segundo) -->
-    <div class="truck-anim2">
-      <svg width="160" height="44" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="6" width="108" height="28" rx="3" fill="#fff" opacity=".6"/>
-        <line x1="36" y1="6" x2="36" y2="34" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-        <line x1="72" y1="6" x2="72" y2="34" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-        <rect x="108" y="10" width="42" height="24" rx="4" fill="#fff" opacity=".7"/>
-        <rect x="122" y="12" width="20" height="14" rx="2" fill="rgba(26,111,255,.4)"/>
-        <rect x="146" y="20" width="5" height="4" rx="1" fill="#22C36A" opacity=".8"/>
-        <rect x="0" y="34" width="155" height="4" rx="2" fill="#fff" opacity=".35"/>
-        <circle cx="24" cy="38" r="7" fill="#1a1a2e" stroke="#fff" stroke-width="1.5"/>
-        <circle cx="24" cy="38" r="3" fill="#fff" opacity=".25"/>
-        <circle cx="70" cy="38" r="7" fill="#1a1a2e" stroke="#fff" stroke-width="1.5"/>
-        <circle cx="70" cy="38" r="3" fill="#fff" opacity=".25"/>
-        <circle cx="128" cy="38" r="7" fill="#1a1a2e" stroke="#fff" stroke-width="1.5"/>
-        <circle cx="128" cy="38" r="3" fill="#fff" opacity=".25"/>
-      </svg>
-    </div>
-  </div>
-  <div class="hero-inner">
+<section class="hero" id="heroSection" style="position:relative"><div class="hero-inner">
     <h1>Cotizá tu mudanza con los mejores de Argentina</h1>
     <p class="hero-sub">Comparás precios reales de mudanceros verificados y elegís sin compromiso. Es gratis.</p>
 
@@ -756,7 +700,7 @@ footer{background:#003580;padding:1.5rem}
         <!-- Descripción manual (si elige Otros) -->
         <div id="flete-otros-box" style="display:none;margin-bottom:8px">
           <input id="flete-otros-input" type="text" placeholder="¿Qué es? Ej: Lavarropas, mesa de billar, piano…"
-            style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-family:'Outfit',sans-serif;outline:none;backdrop-filter:blur(4px)"
+            style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);background:#fff;color:#0F1923;font-size:13px;font-family:'Outfit',sans-serif;outline:none;"
             oninput="fleteOtrosTexto=this.value"/>
         </div>
         <!-- Upload foto -->
@@ -765,9 +709,15 @@ footer{background:#003580;padding:1.5rem}
             📷 <span id="flete-foto-txt">Subir foto del objeto</span>
             <input type="file" id="flete-foto-input" accept="image/*" style="display:none" onchange="onFleteFoto(this)"/>
           </label>
-          <div id="flete-ia-estado" style="display:none;font-size:11px;color:rgba(255,255,255,.7);font-family:var(--mono);display:flex;align-items:center;gap:6px">
-            <span id="flete-ia-spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#22C36A;border-radius:50%;animation:spin .7s linear infinite"></span>
-            <span id="flete-ia-txt">Analizando con IA…</span>
+          <!-- Badge estático "Analizado con IA" -->
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.55);font-family:var(--mono)">
+            <span style="width:7px;height:7px;border-radius:50%;background:#22C36A;display:inline-block;flex-shrink:0"></span>
+            Analizado con IA
+          </div>
+          <!-- Estado dinámico al subir foto -->
+          <div id="flete-ia-estado" style="display:none;font-size:11px;color:rgba(255,255,255,.85);font-family:var(--mono);align-items:center;gap:6px">
+            <span id="flete-ia-spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#22C36A;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></span>
+            <span id="flete-ia-txt">Analizando…</span>
           </div>
           <div id="flete-ia-result" style="display:none;font-size:11px;color:#22C36A;font-family:var(--mono)"></div>
         </div>
