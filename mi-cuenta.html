@@ -1019,34 +1019,10 @@ function recalcTotal() {
     // Botones
     +'<div style="display:flex;gap:8px;margin-top:1.2rem;justify-content:flex-end">'
     +'<button class="btn btn-ghost" onclick="document.getElementById(\'cotModal\').remove()">Cancelar</button>'
-    +'<button class="btn btn-green" id="btnEnviarCot" onclick="enviarCotizacion(\''+mudanza.id+'\','+distKm+')">Enviar cotización →</button>'
+    +'<button class="btn btn-green" id="btnEnviarCot" onclick="enviarCotizacion(\''+mudanza.id+'\')">Enviar cotización →</button>'
     +'</div></div>';
 
   document.body.appendChild(modal);
-}
-
-function recalcTotal() {
-  var base = parseInt(document.getElementById('cot-base').value)||0;
-  var kmField = document.getElementById('cot-km');
-  var precioPorKm = kmField ? (parseInt(kmField.value)||0) : 0;
-  // Leer distancia del desglose
-  var desgloseEl = document.getElementById('cot-desglose');
-  var distKm = 0;
-  if (desgloseEl) {
-    var match = desgloseEl.closest('[id]');
-    // Obtener distancia del label que dice "× X km"
-    var labels = document.querySelectorAll('#cotModal div');
-    for (var i = 0; i < labels.length; i++) {
-      var m = labels[i].textContent.match(/× (\d+) km/);
-      if (m) { distKm = parseInt(m[1]); break; }
-    }
-  }
-  var total = base + (precioPorKm * distKm);
-  var totalEl = document.getElementById('cot-total');
-  if (totalEl) totalEl.textContent = '$' + total.toLocaleString('es-AR');
-  if (desgloseEl) {
-    desgloseEl.textContent = 'Base $'+base.toLocaleString('es-AR')+' + '+distKm+'km × $'+precioPorKm.toLocaleString('es-AR');
-  }
 }
 
 async function enviarCotizacion(mudanzaId){
