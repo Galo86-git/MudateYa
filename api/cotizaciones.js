@@ -31,262 +31,243 @@ async function setJSON(key, value, exSeconds) {
 // ════════════════════════════════════════════════════
 async function generarPDFBase64(datos) {
   const PdfPrinter = require('pdfmake');
-  const fonts = {
-    Helvetica: {
-      normal: 'Helvetica', bold: 'Helvetica-Bold',
-      italics: 'Helvetica-Oblique', bolditalics: 'Helvetica-BoldOblique',
-    },
-  };
+  const fonts = { Helvetica: { normal:'Helvetica', bold:'Helvetica-Bold', italics:'Helvetica-Oblique', bolditalics:'Helvetica-BoldOblique' } };
   const printer = new PdfPrinter(fonts);
 
-  // Paleta blanca / Booking
-  const WHITE    = '#FFFFFF';
-  const BG       = '#F4F6F9';
-  const NAVY     = '#003580';
-  const BLUE     = '#1A6FFF';
-  const BLUE_LT  = '#EEF4FF';
-  const BLUE_BD  = '#C7D9FF';
-  const TEXT     = '#0F1923';
-  const TEXT2    = '#475569';
-  const TEXT3    = '#94A3B8';
-  const BORDER_C = '#E2E8F0';
-  const BORDER2  = '#CBD5E1';
-  const GREEN    = '#16A34A';
-  const GREEN_LT = '#F0FFF4';
-  const GREEN_BD = '#BBF7D0';
-  const AMBER    = '#92400E';
-  const AMBER_LT = '#FFFBEB';
-  const AMBER_BD = '#FCD34D';
+  const WHITE='#FFFFFF', BG='#F4F6F9', NAVY='#003580', BLUE='#1A6FFF';
+  const BLUE_LT='#EEF4FF', BLUE_BD='#C7D9FF', TEXT='#0F1923', TEXT2='#475569';
+  const TEXT3='#94A3B8', BORDER_C='#E2E8F0', BORDER2='#CBD5E1';
+  const GREEN='#16A34A', GREEN_LT='#F0FFF4', GREEN_BD='#BBF7D0';
+  const AMBER='#92400E', AMBER_LT='#FFFBEB', AMBER_BD='#FCD34D';
 
-  const nro           = datos.id || 'COT-0001';
-  const fechaEmision  = datos.fechaEmision || new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' });
-  const clienteNombre = datos.clienteNombre || '-';
-  const clienteEmail  = datos.clienteEmail  || '-';
-  const mudNombre     = datos.mudanceroNombre || '-';
-  const mudInits      = (datos.mudancero_initials || datos.mudanceroNombre || 'MV').slice(0,2).toUpperCase();
-  const estrellas     = parseFloat(datos.estrellas || 4.8);
-  const nroResenas    = datos.nro_resenas || '';
-  const vehiculo      = datos.vehiculo || '';
-  const desde         = datos.desde || '-';
-  const hasta         = datos.hasta || '-';
-  const fechaMud      = datos.fecha || datos.fecha_mudanza || '-';
-  const ambientes     = datos.ambientes || '-';
-  const objetos       = datos.objetos || datos.servicios || '-';
-  const extras        = datos.extras || '';
-  const nota          = datos.nota || '';
-  const precio        = parseInt(datos.precio || datos.precio_total || 0);
-  const precioBase    = parseInt(datos.precioBase || precio);
-  const precioKm      = parseInt(datos.precioKm || 0);
-  const distanciaKm   = parseInt(datos.distanciaKm || 0);
-  const tieneDesglose = precioKm > 0 && distanciaKm > 0;
-  const esFlete       = datos.ambientes === 'Flete' || datos.tipo === 'flete';
-  const fmt           = (n) => '$' + n.toLocaleString('es-AR');
-  const starLabel     = `${estrellas} / 5${nroResenas ? '  |  ' + nroResenas + ' resenas' : ''}`;
+  const nro          = datos.id || 'COT-0001';
+  const fechaEmision = datos.fechaEmision || new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+  const clienteNombre= datos.clienteNombre || '-';
+  const clienteEmail = datos.clienteEmail  || '-';
+  const mudNombre    = datos.mudanceroNombre || '-';
+  const mudInits     = (datos.mudancero_initials||datos.mudanceroNombre||'MV').slice(0,2).toUpperCase();
+  const vehiculo     = datos.vehiculo || '';
+  const desde        = datos.desde || '-';
+  const hasta        = datos.hasta || '-';
+  const fechaMud     = datos.fecha || '-';
+  const ambientes    = datos.ambientes || '-';
+  const objetos      = datos.objetos || datos.servicios || '-';
+  const extras       = datos.extras || '';
+  const nota         = datos.nota || '';
+  const precio       = parseInt(datos.precio || 0);
+  const precioBase   = parseInt(datos.precioBase || precio);
+  const precioKm     = parseInt(datos.precioKm || 0);
+  const distanciaKm  = parseInt(datos.distanciaKm || 0);
+  const tieneDesglose= precioKm > 0 && distanciaKm > 0;
+  const esFlete      = datos.ambientes === 'Flete' || datos.tipo === 'flete';
+  const fmt          = (n) => '$' + n.toLocaleString('es-AR');
 
-  function cardLayout(fillC, borderC) {
-    return {
-      fillColor: () => fillC, hLineColor: () => borderC, vLineColor: () => borderC,
-      hLineWidth: () => 0.6, vLineWidth: () => 0.6,
-      paddingLeft: () => 16, paddingRight: () => 16,
-      paddingTop: () => 14, paddingBottom: () => 14,
-    };
+  // Layouts compactos
+  function card(fill, border) {
+    return { fillColor:()=>fill, hLineColor:()=>border, vLineColor:()=>border,
+      hLineWidth:()=>0.5, vLineWidth:()=>0.5,
+      paddingLeft:()=>12, paddingRight:()=>12, paddingTop:()=>10, paddingBottom:()=>10 };
   }
-  function pillLayout(fillC, borderC) {
-    return {
-      fillColor: () => fillC, hLineColor: () => borderC, vLineColor: () => borderC,
-      hLineWidth: () => 0.5, vLineWidth: () => 0.5,
-      paddingLeft: () => 7, paddingRight: () => 7,
-      paddingTop: () => 3, paddingBottom: () => 3,
-    };
+  function pill(fill, border) {
+    return { fillColor:()=>fill, hLineColor:()=>border, vLineColor:()=>border,
+      hLineWidth:()=>0.4, vLineWidth:()=>0.4,
+      paddingLeft:()=>6, paddingRight:()=>6, paddingTop:()=>2, paddingBottom:()=>2 };
   }
-  function divider() {
-    return { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 467, y2: 0, lineWidth: 0.5, lineColor: BORDER_C }] };
+  function div() {
+    return { canvas:[{type:'line',x1:0,y1:0,x2:467,y2:0,lineWidth:0.4,lineColor:BORDER_C}] };
   }
-  function detalleRow(lbl, val, isLast) {
-    return {
-      stack: [
-        { columns: [
-          { text: lbl.toUpperCase(), bold: true, fontSize: 7.5, color: TEXT3, width: 130, characterSpacing: 0.4 },
-          { text: String(val || '-'), fontSize: 9, color: TEXT, width: '*' },
-        ]},
-        isLast ? { text: '' } : { margin: [0, 5, 0, 0], ...divider() },
-      ],
-      margin: [0, 6, 0, isLast ? 0 : 6],
-    };
-  }
-  function numBadge(num) {
-    return {
-      table: { widths: [20], body: [[{ text: num, bold: true, fontSize: 10, color: BLUE, alignment: 'center' }]] },
-      layout: {
-        fillColor: () => BLUE_LT, hLineColor: () => BLUE_BD, vLineColor: () => BLUE_BD,
-        hLineWidth: () => 0.6, vLineWidth: () => 0.6,
-        paddingLeft: () => 4, paddingRight: () => 4, paddingTop: () => 5, paddingBottom: () => 5,
-      },
-      margin: [0, 0, 0, 6], alignment: 'center',
-    };
+  function row(lbl, val, last) {
+    return { stack:[
+      { columns:[
+        {text:lbl.toUpperCase(),bold:true,fontSize:7,color:TEXT3,width:120,characterSpacing:0.3},
+        {text:String(val||'-'),fontSize:8.5,color:TEXT,width:'*'},
+      ]},
+      last ? {text:''} : {margin:[0,4,0,0],...div()},
+    ], margin:[0,5,0,last?0:5] };
   }
 
+  // Filas de detalle
   const filasDet = [
-    ['Desde', desde], ['Hasta', hasta], ['Fecha', fechaMud],
-    ['Tipo', esFlete ? 'Flete' : 'Mudanza'], ['Ambientes', ambientes], ['Objetos', objetos],
+    ['Desde',desde],['Hasta',hasta],['Fecha',fechaMud],
+    ['Tipo',esFlete?'Flete':'Mudanza'],['Ambientes',ambientes],
   ];
-  if (distanciaKm > 0) filasDet.push(['Distancia', distanciaKm + ' km']);
-  if (extras) filasDet.push(['Servicios adicionales', extras]);
-  if (nota)   filasDet.push(['Nota del mudancero', nota]);
+  if (objetos && objetos !== '-') filasDet.push(['Objetos',objetos]);
+  if (distanciaKm > 0) filasDet.push(['Distancia',distanciaKm+' km']);
+  if (extras) filasDet.push(['Servicios',extras]);
+  if (nota)   filasDet.push(['Nota',nota]);
 
-  // Sección de precio: con o sin desglose km
-  const precioSection = tieneDesglose
-    ? {
-        table: { widths: ['*'], body: [[{ stack: [
-          { text: 'DESGLOSE DEL PRECIO', bold: true, fontSize: 7, color: TEXT3, characterSpacing: 0.8, margin: [0,0,0,8] },
-          divider(),
-          { text: '', margin: [0, 2, 0, 0] },
-          detalleRow('Precio base (carga/descarga)', fmt(precioBase), false),
-          detalleRow('Distancia (' + distanciaKm + ' km × ' + fmt(precioKm) + '/km)', fmt(precioKm * distanciaKm), false),
-          { columns: [
-            { text: 'TOTAL COTIZADO', bold: true, fontSize: 10, color: BLUE, width: '*' },
-            { text: fmt(precio), bold: true, fontSize: 18, color: BLUE, alignment: 'right', width: 'auto' },
-          ], margin: [0, 8, 0, 0] },
-        ]}]]},
-        layout: cardLayout(BLUE_LT, BLUE_BD),
-        margin: [0, 0, 0, 8],
-      }
-    : {
-        table: { widths: ['*', 'auto'], body: [[
-          { stack: [
-            { text: fmt(precio), bold: true, fontSize: 32, color: BLUE },
-            { text: 'PRECIO TOTAL', bold: true, fontSize: 7.5, color: TEXT3, characterSpacing: 0.5, margin: [0,4,0,2] },
-            { text: 'Pago 100% por Mercado Pago. Seguro y protegido.', fontSize: 8, color: TEXT2 },
-          ]},
-          { stack: [
-            { table: { body: [[{ text: 'Mercado Pago', bold: true, fontSize: 8, color: NAVY }]] },
-              layout: pillLayout(BLUE_LT, BLUE_BD) },
-          ], alignment: 'right', margin: [0, 4, 0, 0] },
-        ]]},
-        layout: {
-          fillColor: () => BG, hLineColor: () => BORDER2, vLineColor: () => BORDER2,
-          hLineWidth: () => 0.8, vLineWidth: () => 0.8,
-          paddingLeft: () => 16, paddingRight: () => 16,
-          paddingTop: () => 16, paddingBottom: () => 16,
-        },
-        margin: [0, 0, 0, 8],
-      };
+  // Sección precio
+  const precioSection = tieneDesglose ? {
+    table:{widths:['*'],body:[[{stack:[
+      {text:'DESGLOSE DEL PRECIO',bold:true,fontSize:6.5,color:TEXT3,characterSpacing:0.6,margin:[0,0,0,6]},
+      div(), {text:'',margin:[0,2,0,0]},
+      row('Precio base (carga/descarga)', fmt(precioBase), false),
+      row('Distancia ('+distanciaKm+' km x '+fmt(precioKm)+'/km)', fmt(precioKm*distanciaKm), false),
+      {columns:[
+        {text:'TOTAL',bold:true,fontSize:9,color:BLUE,width:'*'},
+        {text:fmt(precio),bold:true,fontSize:16,color:BLUE,alignment:'right',width:'auto'},
+      ],margin:[0,6,0,0]},
+    ]}]]}, layout:card(BLUE_LT,BLUE_BD), margin:[0,0,0,6]
+  } : {
+    table:{widths:['*','auto'],body:[[
+      {stack:[
+        {text:fmt(precio),bold:true,fontSize:28,color:BLUE},
+        {text:'PRECIO TOTAL',bold:true,fontSize:7,color:TEXT3,margin:[0,3,0,1]},
+        {text:'Pago 100% por Mercado Pago.',fontSize:7.5,color:TEXT2},
+      ]},
+      {stack:[
+        {table:{body:[[{text:'Mercado Pago',bold:true,fontSize:7.5,color:NAVY}]]},
+          layout:pill(BLUE_LT,BLUE_BD)},
+      ],alignment:'right',margin:[0,4,0,0]},
+    ]]},
+    layout:{fillColor:()=>BG,hLineColor:()=>BORDER2,vLineColor:()=>BORDER2,
+      hLineWidth:()=>0.7,vLineWidth:()=>0.7,
+      paddingLeft:()=>14,paddingRight:()=>14,paddingTop:()=>12,paddingBottom:()=>12},
+    margin:[0,0,0,6]
+  };
 
   const dd = {
-    pageSize: 'A4',
-    pageMargins: [40, 42, 40, 40],
-    background: () => [
-      { canvas: [{ type: 'rect', x: 0, y: 0, w: 595, h: 76, color: NAVY }] },
-    ],
-    defaultStyle: { font: 'Helvetica', fontSize: 9.5, color: TEXT, lineHeight: 1.3 },
-    content: [
+    pageSize:'A4',
+    pageMargins:[36,42,36,36],
+    background:()=>[{canvas:[{type:'rect',x:0,y:0,w:595,h:70,color:NAVY}]}],
+    defaultStyle:{font:'Helvetica',fontSize:9,color:TEXT,lineHeight:1.25},
+    content:[
       // Header
-      { columns: [
-        { stack: [
-          { columns: [
-            { text: 'Mudate', bold: true, fontSize: 22, color: WHITE, width: 'auto' },
-            { text: 'Ya', bold: true, fontSize: 22, color: '#4ADE80', width: 'auto' },
-          ], columnGap: 0 },
-          { text: 'El marketplace de mudanzas de Argentina', fontSize: 8, color: '#aac4e0', margin: [0,2,0,0] },
+      {columns:[
+        {stack:[
+          {columns:[
+            {text:'Mudate',bold:true,fontSize:20,color:WHITE,width:'auto'},
+            {text:'Ya',bold:true,fontSize:20,color:'#4ADE80',width:'auto'},
+          ],columnGap:0},
+          {text:'El marketplace de mudanzas de Argentina',fontSize:7.5,color:'#aac4e0',margin:[0,2,0,0]},
         ]},
-        { stack: [
-          { text: nro, bold: true, fontSize: 13, color: WHITE, alignment: 'right' },
-          { text: 'COTIZACION OFICIAL', bold: true, fontSize: 7, color: '#aac4e0', alignment: 'right', characterSpacing: 0.6, margin: [0,3,0,2] },
-          { text: fechaEmision, fontSize: 8, color: '#aac4e0', alignment: 'right' },
+        {stack:[
+          {text:nro,bold:true,fontSize:12,color:WHITE,alignment:'right'},
+          {text:'COTIZACION OFICIAL',bold:true,fontSize:6.5,color:'#aac4e0',alignment:'right',characterSpacing:0.5,margin:[0,2,0,2]},
+          {text:fechaEmision,fontSize:7.5,color:'#aac4e0',alignment:'right'},
         ]},
-      ], margin: [0, 0, 0, 20] },
+      ],margin:[0,0,0,16]},
 
       // Badge
-      { columns: [
-        { table: { body: [[{ text: 'PRESUPUESTO OFICIAL  |  valido 24 horas', bold: true, fontSize: 7.5, color: BLUE, characterSpacing: 0.3 }]] },
-          layout: pillLayout(BLUE_LT, BLUE_BD), width: 'auto' },
-        { text: '', width: '*' },
-      ], margin: [0, 0, 0, 12] },
+      {columns:[
+        {table:{body:[[{text:'PRESUPUESTO OFICIAL  |  valido 24 horas',bold:true,fontSize:7,color:BLUE}]]},
+          layout:pill(BLUE_LT,BLUE_BD),width:'auto'},
+        {text:'',width:'*'},
+      ],margin:[0,0,0,10]},
 
       // Cliente + Mudancero
-      { columns: [
-        { width: '48%', table: { widths: ['*'], body: [[{ stack: [
-          { text: 'CLIENTE', bold: true, fontSize: 7, color: TEXT3, characterSpacing: 0.8, margin: [0,0,0,8] },
-          { text: clienteNombre, bold: true, fontSize: 12, color: TEXT },
-          { text: clienteEmail, fontSize: 8.5, color: TEXT2, margin: [0,3,0,0] },
-        ]}]]}, layout: cardLayout(WHITE, BORDER_C) },
-        { width: '4%', text: '' },
-        { width: '48%', table: { widths: ['*'], body: [[{ stack: [
-          { text: 'MUDANCERO', bold: true, fontSize: 7, color: TEXT3, characterSpacing: 0.8, margin: [0,0,0,8] },
-          { columns: [
-            { width: 36, stack: [
-              { table: { body: [[{ text: mudInits, bold: true, fontSize: 11, color: WHITE, alignment: 'center' }]] },
-                layout: { fillColor: () => NAVY, hLineColor: () => NAVY, vLineColor: () => NAVY, hLineWidth: () => 0, vLineWidth: () => 0,
-                  paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 7, paddingBottom: () => 7 } },
-            ], margin: [0, 0, 10, 0] },
-            { stack: [
-              { text: mudNombre, bold: true, fontSize: 12, color: TEXT },
-              { text: 'Calificacion: ' + starLabel, fontSize: 8, color: TEXT2, margin: [0,3,0,4] },
-              { table: { body: [[{ text: 'VERIFICADO', bold: true, fontSize: 6.5, color: GREEN }]] },
-                layout: pillLayout(GREEN_LT, GREEN_BD), width: 'auto' },
+      {columns:[
+        {width:'48%',table:{widths:['*'],body:[[{stack:[
+          {text:'CLIENTE',bold:true,fontSize:6.5,color:TEXT3,characterSpacing:0.7,margin:[0,0,0,6]},
+          {text:clienteNombre,bold:true,fontSize:11,color:TEXT},
+          {text:clienteEmail,fontSize:8,color:TEXT2,margin:[0,2,0,0]},
+        ]}]]},layout:card(WHITE,BORDER_C)},
+        {width:'4%',text:''},
+        {width:'48%',table:{widths:['*'],body:[[{stack:[
+          {text:'MUDANCERO',bold:true,fontSize:6.5,color:TEXT3,characterSpacing:0.7,margin:[0,0,0,6]},
+          {columns:[
+            {width:32,stack:[
+              {table:{body:[[{text:mudInits,bold:true,fontSize:10,color:WHITE,alignment:'center'}]]},
+                layout:{fillColor:()=>NAVY,hLineColor:()=>NAVY,vLineColor:()=>NAVY,
+                  hLineWidth:()=>0,vLineWidth:()=>0,
+                  paddingLeft:()=>5,paddingRight:()=>5,paddingTop:()=>6,paddingBottom:()=>6}},
+            ],margin:[0,0,8,0]},
+            {stack:[
+              {text:mudNombre,bold:true,fontSize:11,color:TEXT},
+              {table:{body:[[{text:'VERIFICADO',bold:true,fontSize:6,color:GREEN}]]},
+                layout:pill(GREEN_LT,GREEN_BD),width:'auto',margin:[0,4,0,0]},
+              vehiculo ? {text:vehiculo,fontSize:7.5,color:TEXT3,margin:[0,3,0,0]} : {text:''},
             ]},
-          ], columnGap: 0 },
-          vehiculo ? { text: vehiculo, fontSize: 8, color: TEXT3, margin: [0, 6, 0, 0] } : { text: '' },
-        ]}]]}, layout: cardLayout(WHITE, BORDER_C) },
-      ], columnGap: 0, margin: [0, 0, 0, 8] },
+          ],columnGap:0},
+        ]}]]},layout:card(WHITE,BORDER_C)},
+      ],columnGap:0,margin:[0,0,0,6]},
 
       // Detalle
-      { table: { widths: ['*'], body: [[{ stack: [
-        { text: 'DETALLE DEL SERVICIO', bold: true, fontSize: 7, color: TEXT3, characterSpacing: 0.8, margin: [0,0,0,8] },
-        divider(), { text: '', margin: [0, 2, 0, 0] },
-        ...filasDet.map(([lbl, val], i) => detalleRow(lbl, val, i === filasDet.length - 1)),
-      ]}]]}, layout: cardLayout(WHITE, BORDER_C), margin: [0, 0, 0, 8] },
+      {table:{widths:['*'],body:[[{stack:[
+        {text:'DETALLE DEL SERVICIO',bold:true,fontSize:6.5,color:TEXT3,characterSpacing:0.7,margin:[0,0,0,6]},
+        div(), {text:'',margin:[0,2,0,0]},
+        ...filasDet.map(([lbl,val],i)=>row(lbl,val,i===filasDet.length-1)),
+      ]}]]},layout:card(WHITE,BORDER_C),margin:[0,0,0,6]},
 
-      // Precio (con o sin desglose km)
+      // Precio
       precioSection,
 
-      // Proximos pasos
-      { table: { widths: ['*'], body: [[{ stack: [
-        { text: 'PROXIMOS PASOS', bold: true, fontSize: 7, color: TEXT3, characterSpacing: 0.8, margin: [0,0,0,12] },
-        { columns: [
-          { width: '25%', stack: [ { columns: [{ width: '*', text: '' }, numBadge('1'), { width: '*', text: '' }] }, { text: 'Aceptar cotizacion en MudateYa', fontSize: 7.5, color: TEXT2, alignment: 'center' } ]},
-          { width: '25%', stack: [ { columns: [{ width: '*', text: '' }, numBadge('2'), { width: '*', text: '' }] }, { text: 'Pagar con Mercado Pago', fontSize: 7.5, color: TEXT2, alignment: 'center' } ]},
-          { width: '25%', stack: [ { columns: [{ width: '*', text: '' }, numBadge('3'), { width: '*', text: '' }] }, { text: 'Coordinar fecha y horario', fontSize: 7.5, color: TEXT2, alignment: 'center' } ]},
-          { width: '25%', stack: [ { columns: [{ width: '*', text: '' }, numBadge('4'), { width: '*', text: '' }] }, { text: 'Mudanza realizada', fontSize: 7.5, color: TEXT2, alignment: 'center' } ]},
-        ], columnGap: 8 },
-      ]}]]}, layout: cardLayout(WHITE, BORDER_C), margin: [0, 0, 0, 8] },
+      // Proximos pasos — compacto horizontal
+      {table:{widths:['*'],body:[[{stack:[
+        {text:'PROXIMOS PASOS',bold:true,fontSize:6.5,color:TEXT3,characterSpacing:0.7,margin:[0,0,0,8]},
+        {columns:[
+          {width:'25%',stack:[
+            {table:{widths:[18],body:[[{text:'1',bold:true,fontSize:9,color:BLUE,alignment:'center'}]]},
+              layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,
+                hLineWidth:()=>0.5,vLineWidth:()=>0.5,paddingLeft:()=>3,paddingRight:()=>3,paddingTop:()=>4,paddingBottom:()=>4},
+              margin:[0,0,0,4],alignment:'center'},
+            {text:'Aceptar cotizacion',fontSize:7,color:TEXT2,alignment:'center'},
+          ]},
+          {width:'25%',stack:[
+            {table:{widths:[18],body:[[{text:'2',bold:true,fontSize:9,color:BLUE,alignment:'center'}]]},
+              layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,
+                hLineWidth:()=>0.5,vLineWidth:()=>0.5,paddingLeft:()=>3,paddingRight:()=>3,paddingTop:()=>4,paddingBottom:()=>4},
+              margin:[0,0,0,4],alignment:'center'},
+            {text:'Pagar con MP',fontSize:7,color:TEXT2,alignment:'center'},
+          ]},
+          {width:'25%',stack:[
+            {table:{widths:[18],body:[[{text:'3',bold:true,fontSize:9,color:BLUE,alignment:'center'}]]},
+              layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,
+                hLineWidth:()=>0.5,vLineWidth:()=>0.5,paddingLeft:()=>3,paddingRight:()=>3,paddingTop:()=>4,paddingBottom:()=>4},
+              margin:[0,0,0,4],alignment:'center'},
+            {text:'Coordinar fecha',fontSize:7,color:TEXT2,alignment:'center'},
+          ]},
+          {width:'25%',stack:[
+            {table:{widths:[18],body:[[{text:'4',bold:true,fontSize:9,color:BLUE,alignment:'center'}]]},
+              layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,
+                hLineWidth:()=>0.5,vLineWidth:()=>0.5,paddingLeft:()=>3,paddingRight:()=>3,paddingTop:()=>4,paddingBottom:()=>4},
+              margin:[0,0,0,4],alignment:'center'},
+            {text:'Mudanza lista',fontSize:7,color:TEXT2,alignment:'center'},
+          ]},
+        ],columnGap:6},
+      ]}]]},layout:card(WHITE,BORDER_C),margin:[0,0,0,6]},
 
-      // Garantias
-      { columns: [
-        { label: 'Pago seguro', sub: 'Mercado Pago' },
-        { label: 'Verificado', sub: 'Identidad confirmada' },
-        { label: 'Bien calificado', sub: '4.8 promedio' },
-        { label: 'Sin sorpresas', sub: 'Precio acordado' },
-      ].map(function(g) { return {
-        width: '25%',
-        table: { widths: ['*'], body: [[{ stack: [
-          { text: g.label, bold: true, fontSize: 8, color: NAVY, alignment: 'center', margin: [0,0,0,3] },
-          { text: g.sub, fontSize: 7, color: TEXT3, alignment: 'center' },
+      // Garantias + Aviso — en dos columnas para ahorrar espacio
+      {columns:[
+        // Garantias (izq)
+        {width:'60%',stack:[
+          {columns:[
+            {width:'25%',table:{widths:['*'],body:[[{stack:[
+              {text:'Pago seguro',bold:true,fontSize:7,color:NAVY,alignment:'center',margin:[0,0,0,2]},
+              {text:'Mercado Pago',fontSize:6,color:TEXT3,alignment:'center'},
+            ]}]]},layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,hLineWidth:()=>0.4,vLineWidth:()=>0.4,paddingLeft:()=>4,paddingRight:()=>4,paddingTop:()=>7,paddingBottom:()=>7}},
+            {width:'25%',table:{widths:['*'],body:[[{stack:[
+              {text:'Verificado',bold:true,fontSize:7,color:NAVY,alignment:'center',margin:[0,0,0,2]},
+              {text:'ID confirmada',fontSize:6,color:TEXT3,alignment:'center'},
+            ]}]]},layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,hLineWidth:()=>0.4,vLineWidth:()=>0.4,paddingLeft:()=>4,paddingRight:()=>4,paddingTop:()=>7,paddingBottom:()=>7}},
+            {width:'25%',table:{widths:['*'],body:[[{stack:[
+              {text:'4.8 promedio',bold:true,fontSize:7,color:NAVY,alignment:'center',margin:[0,0,0,2]},
+              {text:'Calificacion',fontSize:6,color:TEXT3,alignment:'center'},
+            ]}]]},layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,hLineWidth:()=>0.4,vLineWidth:()=>0.4,paddingLeft:()=>4,paddingRight:()=>4,paddingTop:()=>7,paddingBottom:()=>7}},
+            {width:'25%',table:{widths:['*'],body:[[{stack:[
+              {text:'Sin sorpresas',bold:true,fontSize:7,color:NAVY,alignment:'center',margin:[0,0,0,2]},
+              {text:'Precio acordado',fontSize:6,color:TEXT3,alignment:'center'},
+            ]}]]},layout:{fillColor:()=>BLUE_LT,hLineColor:()=>BLUE_BD,vLineColor:()=>BLUE_BD,hLineWidth:()=>0.4,vLineWidth:()=>0.4,paddingLeft:()=>4,paddingRight:()=>4,paddingTop:()=>7,paddingBottom:()=>7}},
+          ],columnGap:3},
+        ]},
+        // Aviso pagos externos (der)
+        {width:'38%',table:{widths:['*'],body:[[{stack:[
+          {text:'AVISO IMPORTANTE',bold:true,fontSize:6.5,color:AMBER,margin:[0,0,0,3]},
+          {text:'MudateYa solo garantiza pagos realizados a traves de su plataforma. Pagos externos no estan cubiertos.',fontSize:6.5,color:'#78350F',lineHeight:1.35},
         ]}]]},
-        layout: { fillColor: () => BLUE_LT, hLineColor: () => BLUE_BD, vLineColor: () => BLUE_BD,
-          hLineWidth: () => 0.5, vLineWidth: () => 0.5,
-          paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 10, paddingBottom: () => 10 },
-      }; }),
-      columnGap: 5, margin: [0, 0, 0, 10] },
-
-      // Aviso pagos externos
-      { table: { widths: ['*'], body: [[{ stack: [
-        { text: 'IMPORTANTE - PAGOS FUERA DE LA PLATAFORMA', bold: true, fontSize: 7.5, color: AMBER, characterSpacing: 0.3, margin: [0,0,0,5] },
-        { text: 'MudateYa garantiza y protege exclusivamente los pagos procesados a traves de su plataforma (Mercado Pago). Todo pago realizado fuera de la plataforma queda fuera de sus garantias. Ante cualquier conflicto derivado de pagos externos, MudateYa no tendra obligacion de intervenir ni compensar.', fontSize: 7.5, color: '#78350F', lineHeight: 1.4 },
-      ]}]]},
-      layout: { fillColor: () => AMBER_LT, hLineColor: () => AMBER_BD, vLineColor: () => AMBER_BD,
-        hLineWidth: () => 0.8, vLineWidth: () => 0.8,
-        paddingLeft: () => 12, paddingRight: () => 12, paddingTop: () => 10, paddingBottom: () => 10 },
-      margin: [0, 0, 0, 10] },
+        layout:{fillColor:()=>AMBER_LT,hLineColor:()=>AMBER_BD,vLineColor:()=>AMBER_BD,
+          hLineWidth:()=>0.6,vLineWidth:()=>0.6,
+          paddingLeft:()=>8,paddingRight:()=>8,paddingTop:()=>7,paddingBottom:()=>7}},
+      ],columnGap:6,margin:[0,0,0,8]},
 
       // Footer
-      divider(),
-      { margin: [0, 8, 0, 0], columns: [
-        { columns: [
-          { text: 'MudateYa', bold: true, fontSize: 9, color: NAVY, width: 'auto' },
-          { text: '  |  El marketplace de mudanzas de Argentina  |  mudateya.com.ar', fontSize: 8, color: TEXT3, width: '*', margin: [0,1,0,0] },
+      div(),
+      {margin:[0,6,0,0],columns:[
+        {columns:[
+          {text:'MudateYa',bold:true,fontSize:8.5,color:NAVY,width:'auto'},
+          {text:'  |  mudateya.com.ar',fontSize:7.5,color:TEXT3,width:'*',margin:[0,1,0,0]},
         ]},
-        { text: 'Valida 24hs  |  ' + nro, fontSize: 7.5, color: TEXT3, alignment: 'right', margin: [0,1,0,0] },
+        {text:'Valida 24hs  |  '+nro,fontSize:7,color:TEXT3,alignment:'right',margin:[0,1,0,0]},
       ]},
     ],
   };
@@ -302,6 +283,8 @@ async function generarPDFBase64(datos) {
     } catch(e) { reject(e); }
   });
 }
+
+
 
 
 // ════════════════════════════════════════════════════
