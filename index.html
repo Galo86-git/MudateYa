@@ -6,7 +6,7 @@
 <title>MudateYa — Cotizá tu mudanza · Argentina</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -34,7 +34,7 @@
   --r:8px;--r2:12px;--r3:16px;
 }
 html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden}
 
 /* ══ NAV ══ */
 nav{
@@ -48,9 +48,9 @@ nav{
 .nav-links a{font-size:13px;color:rgba(255,255,255,.8);text-decoration:none;transition:color .2s}
 .nav-links a:hover{color:#fff}
 .nav-right{display:flex;gap:8px;align-items:center}
-.btn-nav-outline{background:none;border:1.5px solid rgba(255,255,255,.6);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn-nav-outline{background:none;border:1.5px solid rgba(255,255,255,.6);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap}
 .btn-nav-outline:hover{background:rgba(255,255,255,.15);border-color:#fff}
-.btn-nav-solid{background:#fff;color:#003580;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s}
+.btn-nav-solid{background:#fff;color:#003580;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:none;transition:all .2s}
 .btn-nav-solid:hover{background:#f0f4ff}
 .nav-user-name{font-size:12px;color:rgba(255,255,255,.85)}
 .nav-avatar{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,.4)}
@@ -64,8 +64,8 @@ nav{
 /* ══ HERO ══ */
 .hero{background:#003580;padding:2rem 1.5rem 3rem}
 .hero-inner{max-width:900px;margin:0 auto}
-.hero h1{font-family:'Outfit',sans-serif;font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;color:#fff;margin-bottom:.3rem;line-height:1.2}
-.hero-sub{font-size:14px;color:rgba(255,255,255,.75);margin-bottom:1.6rem}
+.hero h1{font-family:'Inter',sans-serif;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;color:#fff;margin-bottom:.25rem;line-height:1.25;letter-spacing:-.3px}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.8);margin-bottom:1.4rem;font-weight:400;letter-spacing:-.1px}
 
 /* ══ SEARCH BAR ══ */
 .search-bar{
@@ -89,14 +89,14 @@ nav{
 .search-segment:last-of-type{border-right:none}
 .search-segment:hover{background:var(--bg2)}
 .search-segment.active{background:#f0f7ff}
-.seg-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;font-family:var(--mono);display:flex;align-items:center;gap:5px}
+.seg-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px}
 .seg-label svg{opacity:.6}
-.seg-val{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-val{font-size:15px;font-weight:400;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.1px}
 .seg-val.ph{color:var(--text3);font-weight:400}
 .seg-input{
   background:none;border:none;outline:none;
-  font-size:14px;font-weight:500;color:var(--text);
-  font-family:'Outfit',sans-serif;width:100%;padding:0;
+  font-size:15px;font-weight:400;color:var(--text);
+  font-family:'Inter',sans-serif;width:100%;padding:0;letter-spacing:-.1px;
 }
 .seg-input::placeholder{color:var(--text3);font-weight:400}
 .btn-search-bar{
@@ -104,9 +104,10 @@ nav{
   border:none;padding:0 1.8rem;
   border-radius:0 var(--r) var(--r) 0;
   font-size:16px;font-weight:700;
-  cursor:pointer;font-family:'Outfit',sans-serif;
+  cursor:pointer;font-family:'Inter',sans-serif;
   transition:background .2s;white-space:nowrap;
   display:flex;align-items:center;gap:6px;flex-shrink:0;
+  letter-spacing:-.2px;
 }
 .btn-search-bar:hover{background:var(--blue-dark)}
 .swap-btn{
@@ -184,7 +185,7 @@ nav{
 .fecha-popup.open{display:block}
 .fecha-popup input[type=date]{
   width:100%;padding:8px 10px;border:1px solid var(--border2);
-  border-radius:8px;font-size:13px;font-family:'Outfit',sans-serif;
+  border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;
   color:var(--text);background:#fff;outline:none;margin-bottom:8px;
 }
 .fecha-popup input[type=date]:focus{border-color:var(--blue)}
@@ -264,7 +265,7 @@ nav{
   background:#22C36A;color:#fff;
   border:none;padding:9px 20px;border-radius:var(--r);
   font-size:13px;font-weight:700;cursor:pointer;
-  font-family:'Outfit',sans-serif;transition:all .2s;white-space:nowrap;
+  font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;
   margin-left:auto;
 }
 .btn-res-search:hover{background:#1DAF5C}
@@ -305,7 +306,7 @@ nav{
 .filtro-opt input[type=checkbox]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
 .filtro-opt input[type=radio]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
 .filtro-count{font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto}
-.btn-clear{background:none;border:none;font-size:12px;color:var(--blue);cursor:pointer;padding:0;font-family:'Outfit',sans-serif;text-decoration:underline;margin-top:6px;display:block}
+.btn-clear{background:none;border:none;font-size:12px;color:var(--blue);cursor:pointer;padding:0;font-family:'Inter',sans-serif;text-decoration:underline;margin-top:6px;display:block}
 
 /* Filtros mobile top bar */
 .filtros-mobile-bar{
@@ -349,7 +350,7 @@ nav{
   background:var(--blue);color:#fff;
   border:none;padding:10px 18px;border-radius:var(--r);
   font-size:13px;font-weight:700;cursor:pointer;
-  font-family:'Outfit',sans-serif;transition:all .2s;
+  font-family:'Inter',sans-serif;transition:all .2s;
   white-space:nowrap;flex-shrink:0;
 }
 .btn-cr:hover{background:var(--blue-dark)}
@@ -390,7 +391,7 @@ nav{
 .mud-card.sel .mud-sel-check svg{display:block}
 
 .mud-card-body{padding:1rem 1.2rem;min-width:0}
-.mud-card-nombre{font-size:17px;font-weight:700;color:var(--blue);margin-bottom:2px;cursor:pointer}
+.mud-card-nombre{font-size:16px;font-weight:600;color:var(--blue);margin-bottom:2px;cursor:pointer;letter-spacing:-.2px}
 .mud-card-nombre:hover{text-decoration:underline}
 .mud-card-empresa{font-size:12px;color:var(--text2);margin-bottom:8px}
 .mud-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
@@ -413,8 +414,8 @@ nav{
 .mud-rating-box{text-align:right;margin-bottom:.5rem}
 .mud-rating-num{
   display:inline-block;background:var(--blue);color:#fff;
-  font-size:14px;font-weight:700;padding:4px 8px;border-radius:6px 6px 6px 0;
-  font-family:'Outfit',sans-serif;
+  font-size:13px;font-weight:700;padding:4px 8px;border-radius:6px 6px 6px 0;
+  font-family:'Inter',sans-serif;letter-spacing:.1px;
 }
 .mud-rating-label{font-size:11px;color:var(--text2);margin-top:3px}
 .mud-rating-resenas{font-size:11px;color:var(--text3);font-family:var(--mono)}
@@ -426,14 +427,14 @@ nav{
   background:var(--blue);color:#fff;
   border:none;padding:9px 16px;border-radius:var(--r);
   font-size:13px;font-weight:700;cursor:pointer;
-  font-family:'Outfit',sans-serif;transition:all .2s;width:100%;text-align:center;
+  font-family:'Inter',sans-serif;transition:all .2s;width:100%;text-align:center;
 }
 .btn-ver:hover{background:var(--blue-dark)}
 .btn-sel-toggle{
   background:#fff;color:var(--blue);
   border:1.5px solid var(--blue);padding:7px 14px;border-radius:var(--r);
   font-size:12px;font-weight:600;cursor:pointer;
-  font-family:'Outfit',sans-serif;transition:all .2s;width:100%;text-align:center;
+  font-family:'Inter',sans-serif;transition:all .2s;width:100%;text-align:center;
   margin-top:5px;
 }
 .mud-card.sel .btn-sel-toggle{background:var(--blue-light)}
@@ -453,7 +454,7 @@ nav{
   background:var(--green);color:#fff;
   border:none;padding:11px 28px;border-radius:var(--r);
   font-size:14px;font-weight:700;cursor:pointer;
-  font-family:'Outfit',sans-serif;transition:all .2s;
+  font-family:'Inter',sans-serif;transition:all .2s;
   display:flex;align-items:center;gap:8px;white-space:nowrap;
 }
 .btn-pedir:hover{background:var(--green-dark);box-shadow:0 4px 16px rgba(34,195,106,.35)}
@@ -476,7 +477,7 @@ nav{
 .section.alt{background:var(--bg2)}
 .sec-inner{max-width:1000px;margin:0 auto}
 .sec-eyebrow{font-size:11px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--mono);margin-bottom:8px}
-.sec-title{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;color:var(--text);margin-bottom:.4rem;line-height:1.1}
+.sec-title{font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;color:var(--text);margin-bottom:.4rem;line-height:1.15;letter-spacing:-.4px}
 .sec-sub{font-size:14px;color:var(--text2);font-weight:300;line-height:1.7;max-width:500px}
 
 .steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin-top:2rem;border-radius:var(--r2);overflow:hidden}
@@ -679,7 +680,7 @@ footer{background:#003580;padding:1.5rem}
           <span class="seg-label">📅 ¿Cuándo?</span>
           <div class="seg-val ph" id="flete-fecha-display">Hoy / Mañana</div>
           <div class="fecha-popup" id="fechaFletePopup" onclick="event.stopPropagation()">
-            <input type="date" id="input-flete-fecha" onchange="onFechaFlete()" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);background:#fff;outline:none;margin-bottom:8px"/>
+            <input type="date" id="input-flete-fecha" onchange="onFechaFlete()" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none;margin-bottom:8px"/>
             <div class="chip-grid">
               <div class="fecha-chip sel" onclick="setFechaFlete(this,'Hoy')">⚡ Hoy</div>
             </div>
@@ -700,12 +701,12 @@ footer{background:#003580;padding:1.5rem}
         <!-- Descripción manual (si elige Otros) -->
         <div id="flete-otros-box" style="display:none;margin-bottom:8px">
           <input id="flete-otros-input" type="text" placeholder="¿Qué es? Ej: Lavarropas, mesa de billar, piano…"
-            style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);background:#fff;color:#0F1923;font-size:13px;font-family:'Outfit',sans-serif;outline:none;"
+            style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);background:#fff;color:#0F1923;font-size:13px;font-family:'Inter',sans-serif;outline:none;"
             oninput="fleteOtrosTexto=this.value"/>
         </div>
         <!-- Upload foto -->
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <label id="flete-foto-label" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px dashed rgba(255,255,255,.4);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.85);font-family:'Outfit',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+          <label id="flete-foto-label" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px dashed rgba(255,255,255,.4);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.85);font-family:'Inter',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
             📷 <span id="flete-foto-txt">Subir foto del objeto</span>
             <input type="file" id="flete-foto-input" accept="image/*" style="display:none" onchange="onFleteFoto(this)"/>
           </label>
@@ -1292,6 +1293,33 @@ function buscar() {
   }
   if (!_validAddr[idHasta]) {
     setAddrError(idHasta, '⚠ Elegí una dirección de la lista de sugerencias');
+    return;
+  }
+  // Validar fecha obligatoria
+  var fecha = _tipo==='mudanza' ? _fechaLabel : _fechaFlete;
+  if (!fecha || fecha === 'A definir' || fecha === '' || fecha === 'Hoy / Mañana') {
+    if (_tipo === 'mudanza') {
+      var fechaSeg = document.getElementById('seg-fecha');
+      if (fechaSeg) {
+        fechaSeg.style.border = '2px solid #FF5252';
+        fechaSeg.style.background = 'rgba(255,82,82,.04)';
+        var errF = document.createElement('div');
+        errF.style.cssText = 'position:absolute;top:calc(100% + 4px);left:0;right:0;background:#FF5252;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;z-index:999;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(255,82,82,.3)';
+        errF.textContent = '⚠ Seleccioná una fecha';
+        fechaSeg.style.position = 'relative';
+        fechaSeg.appendChild(errF);
+        setTimeout(function(){ fechaSeg.style.border=''; fechaSeg.style.background=''; if(errF.parentElement) errF.remove(); }, 3000);
+        document.getElementById('seg-fecha').click();
+      }
+    } else {
+      // flete — abrir popup fecha
+      var fs = document.querySelector('#sb-flete [onclick*="toggleFechaPopup"]');
+      if (fs) {
+        fs.style.border = '2px solid #FF5252';
+        setTimeout(function(){ fs.style.border=''; }, 3000);
+        fs.click();
+      }
+    }
     return;
   }
   var fecha = _tipo==='mudanza' ? (_fechaLabel||'A definir') : _fechaFlete;
