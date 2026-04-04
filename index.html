@@ -320,6 +320,9 @@ nav{
 @media(max-width:900px){
   .filtros-mobile-bar{display:flex}
 }
+@media(max-width:600px){
+  .filtros-mobile-bar{top:146px}
+}
 .filtros-mobile-bar::-webkit-scrollbar{display:none}
 /* Asegurar que resultados no queden ocultos */
 #resBody{position:relative;z-index:1}
@@ -597,11 +600,24 @@ footer{background:#003580;padding:1.5rem}
   .swap-btn{display:none}
   .res-body{grid-template-columns:1fr;padding:.8rem 1rem}
   .filtros{display:none}
-  /* filtros-mobile-bar ya es siempre visible */
-  .mud-card{grid-template-columns:120px 1fr}
-  .mud-card-foto{width:120px;height:120px}
-  .mud-card-precio{display:none}
-  .mud-card-body{padding:.8rem}
+  /* Card mobile: 2 cols foto + cuerpo, precio dentro del cuerpo */
+  .mud-card{grid-template-columns:110px 1fr;min-height:auto}
+  .mud-card-foto{width:110px;height:auto;min-height:110px}
+  .mud-card-precio{display:none} /* ocultar columna derecha — el precio va dentro del body */
+  .mud-card-body{padding:.8rem .9rem}
+  /* Precio + rating mobile dentro del body */
+  .mud-mobile-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+  .mud-mobile-precio{font-size:17px;font-weight:700;color:var(--text);line-height:1}
+  .mud-mobile-precio small{font-size:10px;font-weight:400;color:var(--text2);display:block;font-family:var(--mono)}
+  .mud-mobile-rating{display:inline-flex;align-items:center;gap:5px}
+  .mud-mobile-rating-num{background:var(--blue);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:5px}
+  .mud-mobile-rating-lbl{font-size:11px;color:var(--text2)}
+  .mud-mobile-ver{display:block;width:100%;margin-top:8px;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;font-family:'Inter',sans-serif;text-align:center;cursor:pointer}
+}
+@media(min-width:901px){
+  /* En desktop ocultar elementos mobile-only */
+  .mud-mobile-footer{display:none}
+  .mud-mobile-ver{display:none}
 }
 @media(max-width:600px){
   nav{padding:0 1rem}
@@ -619,6 +635,10 @@ footer{background:#003580;padding:1.5rem}
   .footer-inner{flex-direction:column;align-items:flex-start}
   .card-rapida{flex-direction:column;text-align:center}
   .btn-cr{width:100%}
+  /* res-search-bar mobile: compactar en 2 filas */
+  .res-search-bar{padding:.5rem 1rem}
+  .res-search-inner{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .btn-res-search{grid-column:1/-1;margin-left:0;justify-content:center}
 }
 </style>
 </head>
@@ -1679,6 +1699,7 @@ function renderResultados() {
     if (m.verificadoSeguro)    tags += '<span class="mud-tag mud-tag-green">🛡 Seguro</span>';
     if (m.verificadoVehiculo)  tags += '<span class="mud-tag mud-tag-blue">🚛 '+m.vehiculo+'</span>';
     var emailEnc = m.email.replace(/\./g,'__dot__').replace(/@/g,'__at__');
+    var precioFmt = '$' + precio.toLocaleString('es-AR');
     return '<div class="mud-card'+(sel?' sel':'')+'" data-email="'+m.email+'" id="card-'+emailEnc+'">'
       + '<div class="mud-card-foto">'
       +   '<div class="mud-sel-check" onclick="toggleSel(\''+m.email+'\',event)">'
@@ -1690,8 +1711,17 @@ function renderResultados() {
       +   '<div class="mud-card-nombre" onclick="verPerfil(\''+m.email+'\')">'+m.nombre+'</div>'
       +   '<div class="mud-card-empresa">'+(m.empresa||'Independiente')+'</div>'
       +   '<div class="mud-tags">'+tags+'</div>'
-      +   '<div class="mud-card-zona">📍 '+( m.zonaBase||'')+'</div>'
+      +   '<div class="mud-card-zona">📍 '+(m.zonaBase||'')+'</div>'
       +   '<div class="mud-card-trabajos">'+m.trabajosCompletados+' trabajos · '+m.nroResenas+' reseñas</div>'
+      // Precio + rating visible en mobile (dentro del body)
+      +   '<div class="mud-mobile-footer">'
+      +     '<div class="mud-mobile-precio"><small>precio estimado</small>'+precioFmt+'</div>'
+      +     '<div class="mud-mobile-rating">'
+      +       '<span class="mud-mobile-rating-num">'+m.calificacion.toFixed(1)+'</span>'
+      +       '<span class="mud-mobile-rating-lbl">'+ratingLabel+'</span>'
+      +     '</div>'
+      +   '</div>'
+      +   '<button class="mud-mobile-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
       + '</div>'
       + '<div class="mud-card-precio">'
       +   '<div class="mud-rating-box">'
@@ -1701,7 +1731,7 @@ function renderResultados() {
       +   '</div>'
       +   '<div class="mud-precio-box">'
       +     '<div class="mud-precio-desde">desde</div>'
-      +     '<div class="mud-precio-num">$'+precio.toLocaleString('es-AR')+'</div>'
+      +     '<div class="mud-precio-num">'+precioFmt+'</div>'
       +     '<div class="mud-precio-sub">precio estimado</div>'
       +   '</div>'
       +   '<button class="btn-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
