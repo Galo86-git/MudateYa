@@ -2102,19 +2102,28 @@ function mfLimpiarTodo() {
 }
 
 function mfAplicar() {
-  _filtros.orden = _mfTemp.orden;
-  _filtros.verifs = new Set(_mfTemp.verifs);
-  _filtros.vehiculos = new Set(_mfTemp.vehiculos);
-  _filtros.zonas = new Set(_mfTemp.zonas);
-  _filtros.precioMin = _mfTemp.precioMin;
-  _filtros.precioMax = _mfTemp.precioMax;
-  _syncUI(_filtros.precioMin, _filtros.precioMax);
-  _cerrarSheet();
+  try {
+    _filtros.orden = _mfTemp.orden;
+    _filtros.verifs = new Set(_mfTemp.verifs);
+    _filtros.vehiculos = new Set(_mfTemp.vehiculos);
+    _filtros.zonas = new Set(_mfTemp.zonas);
+    _filtros.precioMin = _mfTemp.precioMin;
+    _filtros.precioMax = _mfTemp.precioMax;
+  } catch(e) { console.error('mfAplicar filtros:', e); }
+  // Cerrar sheet incondicionalmente
+  var sheet = document.getElementById('filtrosMobileSheet');
+  if (sheet) sheet.classList.remove('open');
+  document.body.style.overflow = '';
+  // Mostrar resultados
   if (!_todos.length) _todos = _MOCK;
-  document.getElementById('resultados').classList.add('show');
-  renderResultados();
+  var secRes = document.getElementById('resultados');
+  if (secRes) secRes.classList.add('show');
+  try {
+    renderResultados();
+  } catch(e) { console.error('mfAplicar render:', e); }
   setTimeout(function(){
-    document.getElementById('listaRes').scrollIntoView({behavior:'smooth', block:'start'});
+    var lista = document.getElementById('listaRes');
+    if (lista) lista.scrollIntoView({behavior:'smooth', block:'start'});
   }, 300);
 }
 
@@ -2187,19 +2196,26 @@ function _syncUI(mn, mx) {
   var minLbl = fmtPrecioSlider(mn);
   var maxLbl = fmtPrecioSlider(mx);
   ['pill','panel'].forEach(function(p) {
-    document.getElementById(p+'-rmin').value = mn;
-    document.getElementById(p+'-rmax').value = mx;
+    var rmin = document.getElementById(p+'-rmin');
+    var rmax = document.getElementById(p+'-rmax');
+    var tmin = document.getElementById(p+'-txt-min');
+    var tmax = document.getElementById(p+'-txt-max');
+    var lmin = document.getElementById(p+'-precio-min-lbl');
+    var lmax = document.getElementById(p+'-precio-max-lbl');
+    if (rmin) rmin.value = mn;
+    if (rmax) rmax.value = mx;
+    if (tmin) tmin.value = minLbl;
+    if (tmax) tmax.value = maxLbl;
+    if (lmin) lmin.textContent = minLbl;
+    if (lmax) lmax.textContent = maxLbl;
     _actualizarFill(p, mn, mx);
     _buildHistogram(p+'-histogram', mn, mx);
-    document.getElementById(p+'-txt-min').value = minLbl;
-    document.getElementById(p+'-txt-max').value = maxLbl;
-    document.getElementById(p+'-precio-min-lbl').textContent = minLbl;
-    document.getElementById(p+'-precio-max-lbl').textContent = maxLbl;
   });
   var activo = mn > 0 || mx < PRECIO_MAX_TOTAL;
-  document.getElementById('pill-precio').classList.toggle('has-value', activo);
-  document.getElementById('pill-precio-lbl').textContent = activo
-    ? (minLbl + ' — ' + maxLbl) : 'Precio';
+  var pillEl = document.getElementById('pill-precio');
+  var pillLbl = document.getElementById('pill-precio-lbl');
+  if (pillEl) pillEl.classList.toggle('has-value', activo);
+  if (pillLbl) pillLbl.textContent = activo ? (minLbl + ' — ' + maxLbl) : 'Precio';
   _actualizarClearAll();
 }
 
