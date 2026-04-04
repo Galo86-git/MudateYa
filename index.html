@@ -360,11 +360,13 @@ nav{
 .precio-histogram{display:flex;align-items:flex-end;gap:1px;height:48px;margin-bottom:0}
 .precio-histogram-bar{flex:1;background:var(--border2);border-radius:2px 2px 0 0;min-height:2px;transition:background .2s}
 .precio-histogram-bar.in-range{background:var(--blue)}
-.precio-slider-track-wrap{position:relative;height:6px;background:var(--border2);border-radius:3px;margin:0 0 16px}
+.precio-slider-track-wrap{position:relative;height:6px;background:var(--border2);border-radius:3px;margin:12px 0 16px}
 .precio-slider-fill{position:absolute;top:0;height:6px;background:var(--blue);border-radius:3px;pointer-events:none}
-.precio-slider-input{position:absolute;width:calc(100% + 20px);left:-10px;top:-7px;height:20px;opacity:0;cursor:pointer;margin:0;pointer-events:none;z-index:3}
-.precio-slider-input::-webkit-slider-thumb{pointer-events:all;width:20px;height:20px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab;-webkit-appearance:none;appearance:none}
-.precio-slider-input::-moz-range-thumb{pointer-events:all;width:16px;height:16px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab}
+.precio-slider-input{position:absolute;width:100%;left:0;top:50%;transform:translateY(-50%);height:20px;opacity:0;cursor:pointer;margin:0;z-index:3;pointer-events:all;-webkit-appearance:none;appearance:none}
+.precio-slider-input::-webkit-slider-thumb{width:20px;height:20px;border-radius:50%;cursor:grab;-webkit-appearance:none;appearance:none}
+.precio-slider-input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;cursor:grab;border:none;background:transparent}
+.precio-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;z-index:2}
+.precio-slider-inputs-wrap{position:absolute;inset:0;z-index:3}
 .precio-inputs-row{display:flex;gap:8px;margin-top:4px}
 .precio-input-box{flex:1;border:1px solid var(--border2);border-radius:8px;padding:8px 10px}
 .precio-input-box-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;font-family:var(--mono)}
@@ -885,8 +887,12 @@ footer{background:#003580;padding:1.5rem}
           <div class="precio-histogram" id="pill-histogram"></div>
           <div class="precio-slider-track-wrap" id="pill-track">
             <div class="precio-slider-fill" id="pill-precio-fill"></div>
-            <input class="precio-slider-input" type="range" id="pill-rmin" min="0" max="600000" step="10000" value="0" oninput="onPrecioSlider()">
-            <input class="precio-slider-input" type="range" id="pill-rmax" min="0" max="600000" step="10000" value="600000" oninput="onPrecioSlider()">
+            <div class="precio-thumb" id="pill-thumb-min"></div>
+            <div class="precio-thumb" id="pill-thumb-max"></div>
+            <div class="precio-slider-inputs-wrap">
+              <input class="precio-slider-input" type="range" id="pill-rmin" min="0" max="600000" step="10000" value="0" oninput="onPrecioSlider()">
+              <input class="precio-slider-input" type="range" id="pill-rmax" min="0" max="600000" step="10000" value="600000" oninput="onPrecioSlider()">
+            </div>
           </div>
           <div class="precio-inputs-row">
             <div class="precio-input-box">
@@ -929,8 +935,12 @@ footer{background:#003580;padding:1.5rem}
           <div class="precio-histogram" id="panel-histogram"></div>
           <div class="precio-slider-track-wrap">
             <div class="precio-slider-fill" id="panel-precio-fill"></div>
-            <input class="precio-slider-input" type="range" id="panel-rmin" min="0" max="600000" step="10000" value="0" oninput="onPrecioPanelSlider()">
-            <input class="precio-slider-input" type="range" id="panel-rmax" min="0" max="600000" step="10000" value="600000" oninput="onPrecioPanelSlider()">
+            <div class="precio-thumb" id="panel-thumb-min"></div>
+            <div class="precio-thumb" id="panel-thumb-max"></div>
+            <div class="precio-slider-inputs-wrap">
+              <input class="precio-slider-input" type="range" id="panel-rmin" min="0" max="600000" step="10000" value="0" oninput="onPrecioPanelSlider()">
+              <input class="precio-slider-input" type="range" id="panel-rmax" min="0" max="600000" step="10000" value="600000" oninput="onPrecioPanelSlider()">
+            </div>
           </div>
           <div class="precio-inputs-row">
             <div class="precio-input-box">
@@ -1821,13 +1831,17 @@ function _buildHistogram(containerId, mn, mx) {
   el.innerHTML = html;
 }
 
-function _actualizarFill(fillId, minId, maxId) {
+function _actualizarFill(fillId, minId, maxId, thumbMinId, thumbMaxId) {
   var mn = parseInt(document.getElementById(minId).value);
   var mx = parseInt(document.getElementById(maxId).value);
   var pct1 = mn / PRECIO_MAX_TOTAL * 100;
   var pct2 = mx / PRECIO_MAX_TOTAL * 100;
   var fill = document.getElementById(fillId);
   if (fill) { fill.style.left = pct1+'%'; fill.style.width = (pct2-pct1)+'%'; }
+  var tMin = document.getElementById(thumbMinId);
+  var tMax = document.getElementById(thumbMaxId);
+  if (tMin) tMin.style.left = pct1+'%';
+  if (tMax) tMax.style.left = pct2+'%';
 }
 
 function _syncPrecioUI(mn, mx) {
@@ -1840,7 +1854,7 @@ function _syncPrecioUI(mn, mx) {
   document.getElementById('pill-precio-max-lbl').textContent = maxLbl;
   document.getElementById('pill-min-box').textContent = minLbl;
   document.getElementById('pill-max-box').textContent = maxLbl;
-  _actualizarFill('pill-precio-fill','pill-rmin','pill-rmax');
+  _actualizarFill('pill-precio-fill','pill-rmin','pill-rmax','pill-thumb-min','pill-thumb-max');
   _buildHistogram('pill-histogram', mn, mx);
   // Panel
   document.getElementById('panel-rmin').value = mn;
@@ -1849,7 +1863,7 @@ function _syncPrecioUI(mn, mx) {
   document.getElementById('panel-precio-max-lbl').textContent = maxLbl;
   document.getElementById('panel-min-box').textContent = minLbl;
   document.getElementById('panel-max-box').textContent = maxLbl;
-  _actualizarFill('panel-precio-fill','panel-rmin','panel-rmax');
+  _actualizarFill('panel-precio-fill','panel-rmin','panel-rmax','panel-thumb-min','panel-thumb-max');
   _buildHistogram('panel-histogram', mn, mx);
   // Label del pill
   var activo = mn > 0 || mx < PRECIO_MAX_TOTAL;
