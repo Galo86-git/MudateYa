@@ -490,7 +490,7 @@ function renderMudanzasTabs() {
         var on = _tabMudanzas===t.id;
         return '<button onclick="setTabMudanzas(\''+t.id+'\')" style="'
           +'display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:none;'
-          +'font-size:12px;font-weight:600;font-family:\'Outfit\',sans-serif;cursor:pointer;white-space:nowrap;'
+          +'font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap;'
           +'border-bottom:2px solid '+(on?t.color:'transparent')+';color:'+(on?t.color:'#64748B')+';transition:all .2s">'
           +t.label
           +(t.count>0?'<span style="background:'+(on?t.color:'#F5F7FA')+';color:'+(on?'#041A0E':'#64748B')+';font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid var(--border2)">'+t.count+'</span>':'')
@@ -755,7 +755,7 @@ async function pagarAnticipo(m) {
     +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span>Anticipo (50%)</span><span style="color:var(--blue);font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span></div>'
     +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono)"><span>Saldo al completar</span><span>$'+anticipo.toLocaleString('es-AR')+'</span></div>'
     +'</div>'
-    +'<button id="btnPagarAnticipo" style="width:100%;padding:13px;border-radius:10px;border:none;background:#009EE3;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Outfit\',sans-serif;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px">'
+    +'<button id="btnPagarAnticipo" style="width:100%;padding:13px;border-radius:10px;border:none;background:#009EE3;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px">'
     +'💳 Pagar $'+anticipo.toLocaleString('es-AR')+' con Mercado Pago</button>'
     +'<button onclick="document.getElementById(\'pagoModal\').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--mono)">Ahora no</button>'
     +'</div>';
@@ -870,7 +870,7 @@ function abrirCalificacion(idx){
     + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Calificar mudancero</div>'
     + '<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+(m.mudancero&&m.mudancero.nombre?m.mudancero.nombre:'Mudancero')+' · '+esc(m.desde)+' → '+esc(m.hasta)+'</div>'
     + '<div class="stars-row" id="starsRow">'+[1,2,3,4,5].map(function(n){ return '<span class="star" onclick="setStar('+n+')" onmouseover="hoverStar('+n+')" onmouseout="renderStarsUI()">★</span>'; }).join('')+'</div>'
-    + '<div style="margin:1rem 0"><textarea id="calComentario" rows="3" placeholder="Contá tu experiencia (opcional)…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:\'Outfit\',sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical"></textarea></div>'
+    + '<div style="margin:1rem 0"><textarea id="calComentario" rows="3" placeholder="Contá tu experiencia (opcional)…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical"></textarea></div>'
     + '<div style="display:flex;gap:8px;justify-content:flex-end">'
     + '<button class="btn btn-ghost" onclick="document.getElementById(\'calModal\').remove()">Cancelar</button>'
     + '<button class="btn btn-green" onclick="guardarCalificacion()">Enviar calificación</button>'
