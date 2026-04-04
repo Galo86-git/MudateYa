@@ -1748,20 +1748,19 @@ function renderResultados() {
     if (m.verificadoVehiculo)  tags += '<span class="mud-tag mud-tag-blue">🚛 '+m.vehiculo+'</span>';
     var emailEnc = m.email.replace(/\./g,'__dot__').replace(/@/g,'__at__');
     var precioFmt = '$' + precio.toLocaleString('es-AR');
-    return '<div class="mud-card'+(sel?' sel':'')+'" data-email="'+m.email+'" id="card-'+emailEnc+'">'
+    return '<div class="mud-card'+(sel?' sel':'')+'" data-email="'+m.email+'" id="card-'+emailEnc+'" onclick="toggleSel(\''+m.email+'\',event)">'
       + '<div class="mud-card-foto">'
-      +   '<div class="mud-sel-check" onclick="toggleSel(\''+m.email+'\',event)">'
+      +   '<div class="mud-sel-check">'
       +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
       +   '</div>'
       +   fotoHtml
       + '</div>'
       + '<div class="mud-card-body">'
-      +   '<div class="mud-card-nombre" onclick="verPerfil(\''+m.email+'\')">'+m.nombre+'</div>'
+      +   '<div class="mud-card-nombre">'+m.nombre+'</div>'
       +   '<div class="mud-card-empresa">'+(m.empresa||'Independiente')+'</div>'
       +   '<div class="mud-tags">'+tags+'</div>'
       +   '<div class="mud-card-zona">📍 '+(m.zonaBase||'')+'</div>'
       +   '<div class="mud-card-trabajos">'+m.trabajosCompletados+' trabajos · '+m.nroResenas+' reseñas</div>'
-      // Precio + rating visible en mobile (dentro del body)
       +   '<div class="mud-mobile-footer">'
       +     '<div class="mud-mobile-precio"><small>precio estimado</small>'+precioFmt+'</div>'
       +     '<div class="mud-mobile-rating">'
@@ -1769,7 +1768,7 @@ function renderResultados() {
       +       '<span class="mud-mobile-rating-lbl">'+ratingLabel+'</span>'
       +     '</div>'
       +   '</div>'
-      +   '<button class="mud-mobile-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
+      +   '<button class="mud-mobile-ver" onclick="event.stopPropagation();verPerfil(\''+m.email+'\')">Ver perfil →</button>'
       + '</div>'
       + '<div class="mud-card-precio">'
       +   '<div class="mud-rating-box">'
@@ -1782,8 +1781,8 @@ function renderResultados() {
       +     '<div class="mud-precio-num">'+precioFmt+'</div>'
       +     '<div class="mud-precio-sub">precio estimado</div>'
       +   '</div>'
-      +   '<button class="btn-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
-      +   '<button class="btn-sel-toggle" onclick="toggleSel(\''+m.email+'\',event)">'+(sel?'✓ Seleccionado':'Seleccionar')+'</button>'
+      +   '<button class="btn-ver" onclick="event.stopPropagation();verPerfil(\''+m.email+'\')">Ver perfil →</button>'
+      +   '<button class="btn-sel-toggle" onclick="event.stopPropagation();toggleSel(\''+m.email+'\',event)">'+(sel?'✓ Seleccionado':'Seleccionar')+'</button>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1983,7 +1982,12 @@ function abrirFiltrosMobile() {
 }
 
 function cerrarFiltrosMobile(e) {
+  // Si viene de click en el overlay (fondo oscuro), cerrar
+  // Si viene sin argumento (desde botón), cerrar siempre
   if (e && e.target !== document.getElementById('filtrosMobileSheet')) return;
+  _cerrarSheet();
+}
+function _cerrarSheet() {
   document.getElementById('filtrosMobileSheet').classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -2105,8 +2109,7 @@ function mfAplicar() {
   _filtros.precioMin = _mfTemp.precioMin;
   _filtros.precioMax = _mfTemp.precioMax;
   _syncUI(_filtros.precioMin, _filtros.precioMax);
-  cerrarFiltrosMobile();
-  // Asegurar datos y mostrar sección SIEMPRE
+  _cerrarSheet();
   if (!_todos.length) _todos = _MOCK;
   document.getElementById('resultados').classList.add('show');
   renderResultados();
