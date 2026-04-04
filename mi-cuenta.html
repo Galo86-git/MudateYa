@@ -583,12 +583,56 @@ async function loadPedidos(){
     var r2 = await fetch('/api/cotizaciones?action=mis-cotizaciones&email='+encodeURIComponent(currentUser.email));
     var d2 = await r2.json();
     misCotizaciones = d2.mudanzas || [];
+    // Si no hay mudanzas reales, mostrar ejemplos para demostración
+    if (mudanzasDisponibles.length === 0 && misCotizaciones.length === 0) {
+      mudanzasDisponibles = _getMockPedidos();
+    }
     renderPedidos();
   }catch(e){
-    mudanzasDisponibles = [];
+    mudanzasDisponibles = _getMockPedidos();
     misCotizaciones = [];
     renderPedidos();
   }
+}
+
+function _getMockPedidos() {
+  var ahora = new Date();
+  var expira1 = new Date(ahora.getTime() + 20*3600000).toISOString();
+  var expira2 = new Date(ahora.getTime() + 18*3600000).toISOString();
+  var expira3 = new Date(ahora.getTime() + 6*3600000).toISOString();
+  return [
+    {
+      id:'DEMO-001', clienteNombre:'Juan García', clienteEmail:'juan@demo.com',
+      desde:'Palermo, CABA', hasta:'San Isidro, GBA Norte',
+      ambientes:'3 ambientes', fecha:'Esta semana', tipo:'mudanza',
+      precio_estimado:680000, distanciaKm:28,
+      estado:'buscando', cotizaciones:[], expira:expira1,
+      fechaPublicacion: ahora.toISOString(),
+      modoCotizacion:'abierto', mudancerosInvitados:[],
+      _esDemo: true,
+    },
+    {
+      id:'DEMO-002', clienteNombre:'María López', clienteEmail:'maria@demo.com',
+      desde:'Belgrano, CABA', hasta:'Quilmes, GBA Sur',
+      ambientes:'2 ambientes', fecha:'Próxima semana', tipo:'mudanza',
+      precio_estimado:550000, distanciaKm:35,
+      estado:'buscando', cotizaciones:[], expira:expira2,
+      fechaPublicacion: ahora.toISOString(),
+      modoCotizacion:'abierto', mudancerosInvitados:[],
+      _esDemo: true,
+    },
+    {
+      id:'DEMO-003', clienteNombre:'Carlos Ruiz', clienteEmail:'carlos@demo.com',
+      desde:'Caballito, CABA', hasta:'Caballito, CABA',
+      ambientes:'Flete', fecha:'Hoy', tipo:'flete',
+      servicios:'Heladera + lavarropas',
+      precio_estimado:180000, distanciaKm:5,
+      estado:'buscando', cotizaciones:[], expira:expira3,
+      fechaPublicacion: ahora.toISOString(),
+      modoCotizacion:'abierto', mudancerosInvitados:[],
+      _esDemo: true,
+    },
+  ];
 }
 
 var _tabActiva = 'disponibles';
@@ -695,6 +739,7 @@ function renderCardDisponible(m) {
   var expira = new Date(m.expira);
   var hs = Math.max(0, Math.round((expira - new Date()) / 3600000));
   var esFlete = m.ambientes === 'Flete';
+  var esDemo = !!m._esDemo;
   var fotosHtml = '';
   if (m.fotos && m.fotos.length) {
     fotosHtml = '<div style="display:flex;gap:6px;margin-bottom:10px">'
@@ -703,7 +748,8 @@ function renderCardDisponible(m) {
         }).join('')
       + '</div>';
   }
-  return '<div class="pedido-card nuevo">'
+  return '<div class="pedido-card nuevo"'+(esDemo?' style="opacity:.85;border-style:dashed"':'')+'>'
+    +(esDemo?'<div style="font-size:10px;color:#F59E0B;font-family:var(--mono);margin-bottom:8px;display:flex;align-items:center;gap:5px"><span style="background:#FEF3C7;border:1px solid #FCD34D;padding:2px 7px;border-radius:4px;font-weight:600">EJEMPLO</span> Publicá tu primera mudanza para ver pedidos reales</div>':'')
     +'<div class="pedido-header"><div>'
     +'<div class="pedido-ruta">'+esc(m.desde)+' → '+esc(m.hasta)+'</div>'
     +'<div class="pedido-fecha">📅 '+(m.fecha||'A confirmar')+' · '+(esFlete?'🚛 Flete':m.ambientes||'—')+'</div>'
@@ -718,8 +764,11 @@ function renderCardDisponible(m) {
     +'<div class="pedido-precio">$'+parseInt(m.precio_estimado||0).toLocaleString('es-AR')+'</div>'
     +'<div style="font-size:10px;color:'+(hs<4?'var(--red)':'var(--amber)')+';font-family:var(--mono);margin-top:3px">⏱ Expira en '+hs+'hs</div>'
     +'</div><div class="pedido-actions" style="display:flex;gap:6px">'
-    +'<button class="btn btn-red" style="font-size:12px;padding:8px 12px" onclick="rechazarPedido(\''+m.id+'\',this)">✕ Pasar</button>'
-    +'<button class="btn btn-green" onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))">💰 Cotizar</button>'
+    +(esDemo
+      ? '<button class="btn" style="font-size:12px;padding:8px 12px;background:var(--bg2);color:var(--text3);cursor:default" disabled>💰 Cotizar</button>'
+      : '<button class="btn btn-red" style="font-size:12px;padding:8px 12px" onclick="rechazarPedido(\''+m.id+'\',this)">✕ Pasar</button>'
+        +'<button class="btn btn-green" onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))">💰 Cotizar</button>'
+    )
     +'</div></div>'
     +'</div>';
 }
