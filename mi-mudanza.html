@@ -5,67 +5,67 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Mi mudanza — MudateYa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080E0C;--bg2:#0D1410;--surface:#172018;--surface2:#1D2820;
-  --border:#213029;--border2:#2A3C32;
-  --emerald:#22C36A;--emerald-glow:rgba(34,195,106,.18);--emerald-subtle:rgba(34,195,106,.08);
-  --sky:#29B6F6;--sky-subtle:rgba(41,182,246,.08);
-  --red:#FF5252;--red-subtle:rgba(255,82,82,.08);
-  --amber:#FFB300;--amber-subtle:rgba(255,179,0,.08);
-  --text:#E8F5EE;--text2:#7AADA0;--text3:#3D6458;
+  --bg:#FFFFFF;--bg2:#F5F7FA;--surface:#FFFFFF;--surface2:#F5F7FA;
+  --border:#E2E8F0;--border2:#CBD5E1;
+  --blue:#1A6FFF;--blue-glow:rgba(26,111,255,.15);--blue-light:#EEF4FF;
+  --green:#22C36A;--green-light:rgba(34,195,106,.1);
+  --red:#EF4444;--red-light:rgba(239,68,68,.08);
+  --amber:#F59E0B;--amber-light:rgba(245,158,11,.08);
+  --text:#0F1923;--text2:#475569;--text3:#64748B;
   --mono:'DM Mono',monospace;
 }
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:#fff;color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:var(--bg);position:relative;overflow:hidden}
-#loginScreen::before{content:'';position:absolute;top:-200px;right:-150px;width:600px;height:600px;background:radial-gradient(circle,var(--emerald-glow) 0%,transparent 65%);pointer-events:none}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:#fff;position:relative;overflow:hidden}
+#loginScreen::before{content:'';position:absolute;top:-200px;right:-150px;width:600px;height:600px;background:radial-gradient(circle,var(--blue-glow) 0%,transparent 65%);pointer-events:none}
 #loginScreen::after{content:'';position:absolute;bottom:-200px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,var(--sky-glow) 0%,transparent 65%);pointer-events:none}
-.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:2.5rem 2rem;max-width:400px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.5);position:relative;z-index:1}
+.login-card{background:#fff;border:1px solid #E2E8F0;border-radius:24px;padding:2.5rem 2rem;max-width:400px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.1);position:relative;z-index:1}
 .login-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;margin-bottom:.3rem}
-.login-logo span{color:var(--emerald)}
+.login-logo span{color:var(--blue)}
 .login-sub{font-size:13px;color:var(--text2);margin-bottom:.5rem;line-height:1.6}
 .login-note{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1rem}
 
 #appScreen{display:none;min-height:100vh}
 
-.nav{position:sticky;top:0;z-index:200;background:rgba(8,14,12,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:58px}
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;text-decoration:none;color:var(--text)}
-.nav-logo span{color:var(--emerald)}
+.nav{position:sticky;top:0;z-index:200;background:#003580;border-bottom:2px solid #22C36A;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:58px}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;text-decoration:none;color:#fff}
+.nav-logo span{color:var(--blue)}
 .nav-right{display:flex;align-items:center;gap:10px}
-.nav-avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--border2)}
-.nav-name{font-size:12px;color:var(--text2)}
-.btn-logout{font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:all .2s}
-.btn-logout:hover{color:var(--red);border-color:var(--red)}
-.btn-new{background:var(--emerald);color:#041A0E;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;transition:all .2s}
-.btn-new:hover{background:#2EDB7A}
+.nav-avatar{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.3)}
+.nav-name{font-size:12px;color:rgba(255,255,255,.85)}
+.btn-logout{font-size:11px;color:rgba(255,255,255,.8);background:none;border:1px solid rgba(255,255,255,.3);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:all .2s}
+.btn-logout:hover{color:#fff;border-color:#fff}
+.btn-new{background:var(--blue);color:#fff;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:none;transition:all .2s}
+.btn-new:hover{background:var(--blue-dark)}
 
 .app-body{display:flex;min-height:calc(100vh - 58px)}
 
-.sidebar{width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:1.2rem 0;position:sticky;top:58px;height:calc(100vh - 58px)}
-.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 1.2rem;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
+.sidebar{width:200px;flex-shrink:0;background:#F5F7FA;border-right:1px solid #E2E8F0;padding:1.2rem 0;position:sticky;top:58px;height:calc(100vh - 58px)}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 1.2rem;font-size:13px;color:#475569;cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
 .sidebar-item:hover{background:var(--surface);color:var(--text)}
-.sidebar-item.active{background:var(--emerald-subtle);color:var(--emerald);border-left-color:var(--emerald)}
+.sidebar-item.active{background:#EEF4FF;color:#1A6FFF;border-left-color:#1A6FFF}
 .sidebar-icon{font-size:14px;width:18px;text-align:center}
 
 .main{flex:1;padding:1.8rem;overflow-x:hidden;min-width:0}
 .page{display:none}
 .page.active{display:block;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem;color:#0F1923}
 
-.mudanza-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:1.4rem;margin-bottom:1rem;transition:border-color .2s}
-.mudanza-card:hover{border-color:rgba(34,195,106,.3)}
+.mudanza-card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:1.4rem;margin-bottom:1rem;transition:border-color .2s}
+.mudanza-card:hover{border-color:rgba(26,111,255,.25)}
 .mudanza-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem}
 .mudanza-ruta{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
 .mudanza-fecha{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .mudanza-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
 .meta-tag{font-size:11px;color:var(--text2);background:var(--surface2);padding:4px 10px;border-radius:6px;font-family:var(--mono)}
 .mudanza-mudancero{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);margin-bottom:1rem}
-.mud-avatar{width:36px;height:36px;border-radius:8px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--emerald);font-family:var(--mono);flex-shrink:0}
+.mud-avatar{width:36px;height:36px;border-radius:8px;background:var(--blue-light);border:1px solid rgba(26,111,255,.25);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--blue);font-family:var(--mono);flex-shrink:0}
 .mud-name{font-size:13px;font-weight:500;color:var(--text)}
 .mud-tel{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .mudanza-actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -73,44 +73,44 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .stepper{display:flex;gap:0;margin-bottom:1rem}
 .step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
 .step-item:not(:last-child)::after{content:'';position:absolute;top:12px;left:50%;right:-50%;height:2px;background:var(--border);z-index:0}
-.step-item.done::after,.step-item.active::after{background:var(--emerald)}
+.step-item.done::after,.step-item.active::after{background:var(--blue)}
 .step-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text3);position:relative;z-index:1;transition:all .3s}
-.step-item.done .step-dot{background:var(--emerald);border-color:var(--emerald);color:#041A0E}
-.step-item.active .step-dot{background:var(--emerald-subtle);border-color:var(--emerald);color:var(--emerald);box-shadow:0 0 0 4px var(--emerald-subtle)}
+.step-item.done .step-dot{background:var(--blue);border-color:var(--blue);color:#fff}
+.step-item.active .step-dot{background:var(--blue-light);border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 4px var(--blue-light)}
 .step-label{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:5px;text-align:center;letter-spacing:.3px}
-.step-item.active .step-label{color:var(--emerald)}
+.step-item.active .step-label{color:var(--blue)}
 
 .stars-row{display:flex;gap:6px;margin:8px 0}
 .star{font-size:1.5rem;cursor:pointer;transition:transform .1s;opacity:.4}
 .star.sel{opacity:1}
 .star:hover{transform:scale(1.15)}
 
-.pago-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem}
+.pago-card{background:#F5F7FA;border:1px solid #E2E8F0;border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem}
 .pago-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
 .pago-row:last-child{border-bottom:none;padding-top:8px;margin-top:4px}
 .pago-label{color:var(--text3);font-family:var(--mono)}
 .pago-val{color:var(--text2);font-weight:500}
-.pago-val.green{color:var(--emerald)}
+.pago-val.green{color:var(--blue)}
 .pago-val.amber{color:var(--amber)}
 
 .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;font-size:10px;font-family:var(--mono);font-weight:600}
-.badge.confirmada{background:var(--emerald-subtle);color:var(--emerald);border:1px solid rgba(34,195,106,.2)}
-.badge.en-curso{background:var(--sky-subtle);color:var(--sky);border:1px solid rgba(41,182,246,.2)}
-.badge.pendiente{background:var(--amber-subtle);color:var(--amber);border:1px solid rgba(255,179,0,.2)}
+.badge.confirmada{background:var(--blue-light);color:var(--blue);border:1px solid rgba(26,111,255,.2)}
+.badge.en-curso{background:var(--green-light);color:var(--green);border:1px solid rgba(34,195,106,.2)}
+.badge.pendiente{background:var(--amber-light);color:var(--amber);border:1px solid rgba(255,179,0,.2)}
 .badge.completada{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
 
 .empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
 .empty-icon{font-size:2.5rem;margin-bottom:10px}
 .empty-title{font-size:16px;font-weight:500;color:var(--text2);margin-bottom:6px}
-.btn-start{display:inline-block;margin-top:1rem;background:var(--emerald);color:#041A0E;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;transition:all .2s}
-.btn-start:hover{background:#2EDB7A}
+.btn-start{display:inline-block;margin-top:1rem;background:var(--blue);color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;transition:all .2s}
+.btn-start:hover{background:var(--blue-dark)}
 .loading{text-align:center;padding:3rem;color:var(--text3);font-family:var(--mono);font-size:12px}
 /* ── TRUCK LOADER ── */
 .truck-loader{text-align:center;padding:3rem 1rem}
 .truck-scene{position:relative;width:280px;height:100px;margin:0 auto 1rem}
 .truck-body{position:absolute;bottom:22px;left:0;animation:truckDrive 1.2s ease-in-out infinite alternate}
 .truck-road{position:absolute;bottom:8px;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent 0%,var(--border2) 20%,var(--border2) 80%,transparent 100%);overflow:hidden}
-.truck-road::after{content:'';position:absolute;top:0;left:-60px;width:40px;height:3px;background:var(--emerald);opacity:.4;animation:roadLine 0.6s linear infinite}
+.truck-road::after{content:'';position:absolute;top:0;left:-60px;width:40px;height:3px;background:var(--blue);opacity:.4;animation:roadLine 0.6s linear infinite}
 .truck-msg{font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:.3px;animation:msgFade 2s ease-in-out infinite}
 @keyframes truckDrive{0%{transform:translateY(0)}50%{transform:translateY(-3px)}100%{transform:translateY(0)}}
 @keyframes roadLine{to{left:220px}}
@@ -120,52 +120,52 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .truck-scene{position:relative;width:280px;height:100px;margin:0 auto 1rem}
 .truck-body{position:absolute;bottom:22px;left:0;animation:truckDrive 1.2s ease-in-out infinite alternate}
 .truck-road{position:absolute;bottom:8px;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent 0%,var(--border2) 20%,var(--border2) 80%,transparent 100%);overflow:hidden}
-.truck-road::after{content:'';position:absolute;top:0;left:-60px;width:40px;height:3px;background:var(--emerald);opacity:.4;animation:roadLine 0.6s linear infinite}
+.truck-road::after{content:'';position:absolute;top:0;left:-60px;width:40px;height:3px;background:var(--blue);opacity:.4;animation:roadLine 0.6s linear infinite}
 .truck-wheel{position:absolute;bottom:-8px;width:14px;height:14px;border-radius:50%;background:var(--surface2);border:2px solid var(--border2);animation:wheelSpin .5s linear infinite}
 .truck-wheel.front{right:6px}
 .truck-wheel.rear{left:18px}
-.truck-wheel.sel{border-color:var(--emerald)}
+.truck-wheel.sel{border-color:var(--blue)}
 .truck-msg{font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:.3px;animation:msgFade 2s ease-in-out infinite}
 @keyframes truckDrive{0%{transform:translateY(0)}50%{transform:translateY(-3px)}100%{transform:translateY(0)}}
 @keyframes wheelSpin{to{transform:rotate(360deg)}}
 @keyframes roadLine{to{left:220px}}
 @keyframes msgFade{0%,100%{opacity:.4}50%{opacity:1}}
-.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:#1A6FFF;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.btn{padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
-.btn-green{background:var(--emerald);color:#041A0E}
-.btn-green:hover{background:#2EDB7A}
+.btn{padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-green{background:var(--blue);color:#fff}
+.btn-green:hover{background:var(--blue-dark)}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
-.btn-ghost:hover{border-color:var(--emerald);color:var(--emerald)}
-.btn-sky{background:var(--sky-subtle);color:var(--sky);border:1px solid rgba(41,182,246,.2)}
-.btn-sky:hover{background:var(--sky);color:white}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn-sky{background:var(--green-light);color:var(--green);border:1px solid rgba(34,195,106,.2)}
+.btn-sky:hover{background:var(--green);color:white}
 
 /* ── MODAL PRESUPUESTO PDF ── */
-.ppto-modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
+.ppto-modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem}
 .ppto-modal-overlay.open{display:flex;animation:fadeIn .2s ease}
-.ppto-modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:1.6rem;max-width:480px;width:100%;position:relative;box-shadow:0 40px 100px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto}
-.ppto-close{position:absolute;top:1rem;right:1rem;background:var(--surface2);border:1px solid var(--border);color:var(--text3);width:28px;height:28px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ppto-modal{background:#fff;border:1px solid #E2E8F0;border-radius:20px;padding:1.6rem;max-width:480px;width:100%;position:relative;box-shadow:0 40px 100px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto}
+.ppto-close{position:absolute;top:1rem;right:1rem;background:#F5F7FA;border:1px solid #E2E8F0;color:var(--text3);width:28px;height:28px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .ppto-close:hover{color:var(--text);border-color:var(--border2)}
 .ppto-header{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-.ppto-avatar{width:44px;height:44px;border-radius:10px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--emerald);font-family:var(--mono);flex-shrink:0}
+.ppto-avatar{width:44px;height:44px;border-radius:10px;background:var(--blue-light);border:1px solid rgba(26,111,255,.25);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--blue);font-family:var(--mono);flex-shrink:0}
 .ppto-mud-name{font-size:15px;font-weight:600;color:var(--text)}
-.ppto-badge{font-size:10px;font-family:var(--mono);color:var(--emerald);background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);padding:2px 8px;border-radius:4px;margin-top:3px;display:inline-block}
+.ppto-badge{font-size:10px;font-family:var(--mono);color:var(--blue);background:var(--blue-light);border:1px solid rgba(26,111,255,.2);padding:2px 8px;border-radius:4px;margin-top:3px;display:inline-block}
 .ppto-section{margin-bottom:1rem}
 .ppto-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:8px}
 .ppto-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
 .ppto-row:last-child{border-bottom:none}
 .ppto-row-label{font-size:11px;font-weight:600;color:var(--text3);font-family:var(--mono);min-width:80px;padding-top:1px}
 .ppto-row-val{font-size:13px;color:var(--text);flex:1;line-height:1.4}
-.ppto-price-box{background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.25);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
-.ppto-price-num{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--emerald);letter-spacing:1px}
+.ppto-price-box{background:var(--blue-light);border:1px solid rgba(26,111,255,.2);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.ppto-price-num{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--blue);letter-spacing:1px}
 .ppto-price-label{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:2px}
 .ppto-price-sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
-.ppto-nota{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);font-style:italic;line-height:1.5;margin-bottom:1rem}
+.ppto-nota{background:#F5F7FA;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);font-style:italic;line-height:1.5;margin-bottom:1rem}
 .ppto-actions{display:flex;gap:8px;margin-top:1rem}
-.ppto-btn-aceptar{flex:1;padding:13px;border-radius:10px;border:none;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
-.ppto-btn-aceptar:hover{background:#2EDB7A;transform:translateY(-1px)}
-.ppto-btn-cerrar{padding:13px 20px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.ppto-btn-aceptar{flex:1;padding:13px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.ppto-btn-aceptar:hover{background:var(--blue-dark);transform:translateY(-1px)}
+.ppto-btn-cerrar{padding:13px 20px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
 .ppto-btn-cerrar:hover{border-color:var(--border);color:var(--text)}
 
 @media(max-width:768px){
@@ -187,22 +187,22 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
         <svg width="280" height="136" viewBox="0 0 440 220" fill="none" xmlns="http://www.w3.org/2000/svg">
           <style>.ltw{animation:ltw .6s linear infinite}.ltw2{animation:ltw2 .6s linear infinite}.ltw3{animation:ltw3 .6s linear infinite}@keyframes ltw{to{transform:rotate(360deg)}}@keyframes ltw2{to{transform:rotate(360deg)}}@keyframes ltw3{to{transform:rotate(360deg)}}.ltb{animation:ltb 1.3s ease-in-out infinite alternate}@keyframes ltb{0%{transform:translateY(0)}100%{transform:translateY(-7px)}}</style>
           <g class="ltb">
-            <rect x="10" y="20" width="250" height="90" rx="6" fill="#172018" stroke="#2A3C32" stroke-width="1.5"/>
-            <rect x="16" y="27" width="238" height="22" rx="3" fill="#1D2820"/>
-            <rect x="16" y="52" width="238" height="50" rx="3" fill="#22C36A" opacity=".08"/>
+            <rect x="10" y="20" width="250" height="90" rx="6" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="1.5"/>
+            <rect x="16" y="27" width="238" height="22" rx="3" fill="#EEF4FF"/>
+            <rect x="16" y="52" width="238" height="50" rx="3" fill="#1A6FFF" opacity=".08"/>
             <rect x="16" y="52" width="238" height="50" rx="3" fill="none" stroke="#22C36A" stroke-width="1" opacity=".25"/>
             <line x1="16" y1="51" x2="264" y2="51" stroke="#22C36A" stroke-width="1" opacity=".3"/>
             <line x1="16" y1="103" x2="264" y2="103" stroke="#22C36A" stroke-width="1" opacity=".3"/>
-            <text x="135" y="86" font-family="'Bebas Neue',sans-serif" font-size="36" fill="#22C36A" opacity=".95" letter-spacing="4" text-anchor="middle">MUDATEYA</text>
-            <rect x="260" y="36" width="150" height="74" rx="6" fill="#1D2820" stroke="#2A3C32" stroke-width="1.5"/>
-            <rect x="281" y="46" width="84" height="44" rx="4" fill="#22C36A" opacity=".15"/>
+            <text x="135" y="86" font-family="'Bebas Neue',sans-serif" font-size="36" fill="#1A6FFF" opacity=".95" letter-spacing="4" text-anchor="middle">MUDATEYA</text>
+            <rect x="260" y="36" width="150" height="74" rx="6" fill="#EEF4FF" stroke="#E2E8F0" stroke-width="1.5"/>
+            <rect x="281" y="46" width="84" height="44" rx="4" fill="#1A6FFF" opacity=".15"/>
             <rect x="281" y="46" width="84" height="44" rx="4" fill="none" stroke="#22C36A" stroke-width="1" opacity=".4"/>
             <line x1="323" y1="46" x2="323" y2="90" stroke="#22C36A" stroke-width="1" opacity=".3"/>
-            <rect x="366" y="57" width="32" height="18" rx="3" fill="#22C36A" opacity=".8"/>
-            <rect x="263" y="36" width="120" height="8" rx="2" fill="#213029"/>
-            <g class="ltw" style="transform-origin:80px 165px"><circle cx="80" cy="165" r="22" fill="#172018" stroke="#2A3C32" stroke-width="2.5"/><circle cx="80" cy="165" r="11" fill="#1D2820" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="80" cy="165" r="4" fill="#22C36A" opacity=".5"/><line x1="80" y1="154" x2="80" y2="176" stroke="#2A3C32" stroke-width="1.5"/><line x1="69" y1="165" x2="91" y2="165" stroke="#2A3C32" stroke-width="1.5"/></g>
-            <g class="ltw2" style="transform-origin:200px 165px"><circle cx="200" cy="165" r="22" fill="#172018" stroke="#2A3C32" stroke-width="2.5"/><circle cx="200" cy="165" r="11" fill="#1D2820" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="200" cy="165" r="4" fill="#22C36A" opacity=".5"/><line x1="200" y1="154" x2="200" y2="176" stroke="#2A3C32" stroke-width="1.5"/><line x1="189" y1="165" x2="211" y2="165" stroke="#2A3C32" stroke-width="1.5"/></g>
-            <g class="ltw3" style="transform-origin:340px 165px"><circle cx="340" cy="165" r="22" fill="#172018" stroke="#2A3C32" stroke-width="2.5"/><circle cx="340" cy="165" r="11" fill="#1D2820" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="340" cy="165" r="4" fill="#22C36A" opacity=".5"/><line x1="340" y1="154" x2="340" y2="176" stroke="#2A3C32" stroke-width="1.5"/><line x1="329" y1="165" x2="351" y2="165" stroke="#2A3C32" stroke-width="1.5"/></g>
+            <rect x="366" y="57" width="32" height="18" rx="3" fill="#1A6FFF" opacity=".8"/>
+            <rect x="263" y="36" width="120" height="8" rx="2" fill="#E2E8F0"/>
+            <g class="ltw" style="transform-origin:80px 165px"><circle cx="80" cy="165" r="22" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2.5"/><circle cx="80" cy="165" r="11" fill="#EEF4FF" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="80" cy="165" r="4" fill="#1A6FFF" opacity=".5"/><line x1="80" y1="154" x2="80" y2="176" stroke="#E2E8F0" stroke-width="1.5"/><line x1="69" y1="165" x2="91" y2="165" stroke="#E2E8F0" stroke-width="1.5"/></g>
+            <g class="ltw2" style="transform-origin:200px 165px"><circle cx="200" cy="165" r="22" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2.5"/><circle cx="200" cy="165" r="11" fill="#EEF4FF" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="200" cy="165" r="4" fill="#1A6FFF" opacity=".5"/><line x1="200" y1="154" x2="200" y2="176" stroke="#E2E8F0" stroke-width="1.5"/><line x1="189" y1="165" x2="211" y2="165" stroke="#E2E8F0" stroke-width="1.5"/></g>
+            <g class="ltw3" style="transform-origin:340px 165px"><circle cx="340" cy="165" r="22" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2.5"/><circle cx="340" cy="165" r="11" fill="#EEF4FF" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="340" cy="165" r="4" fill="#1A6FFF" opacity=".5"/><line x1="340" y1="154" x2="340" y2="176" stroke="#E2E8F0" stroke-width="1.5"/><line x1="329" y1="165" x2="351" y2="165" stroke="#E2E8F0" stroke-width="1.5"/></g>
             <line x1="0" y1="188" x2="440" y2="188" stroke="#213029" stroke-width="1.5"/>
           </g>
         </svg>
@@ -215,7 +215,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
       <p class="login-sub">Iniciá sesión para publicar tu mudanza y seguir el estado en tiempo real.</p>
       <div style="margin:1.5rem 0" id="googleBtn"></div>
       <div class="login-note">🔒 Solo usamos tu email para identificarte · No publicamos nada en tu cuenta</div>
-      <a href="/" style="display:inline-block;margin-top:1rem;font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono)" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">← Volver al inicio</a>
+      <a href="/" style="display:inline-block;margin-top:1rem;font-size:11px;color:var(--text3);text-decoration:none;font-family:var(--mono)" onmouseover="this.style.color='#0F1923'" onmouseout="this.style.color='#64748B'">← Volver al inicio</a>
     </div>
   </div>
 </div>
@@ -359,16 +359,16 @@ function showApp(){
 function pedirCelular() {
   var modal = document.createElement('div');
   modal.id = 'celModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1.2rem';
-  modal.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:22px;padding:2rem 1.6rem;max-width:380px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
+  modal.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1.2rem';
+  modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:22px;padding:2rem 1.6rem;max-width:380px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
     +'<div style="font-size:2.2rem;margin-bottom:10px">📱</div>'
     +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--text);margin-bottom:6px">Tu número de celular</div>'
     +'<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.4rem">Para que el mudancero que elijas pueda coordinarse con vos.</div>'
     +'<input id="celInput" type="tel" placeholder="+54 9 11 1234-5678"'
-    +' style="width:100%;padding:12px 14px;border:1px solid var(--border2);border-radius:10px;font-size:15px;font-family:Outfit,sans-serif;color:var(--text);background:var(--surface2);outline:none;text-align:center;margin-bottom:8px"'
+    +' style="width:100%;padding:12px 14px;border:1px solid var(--border2);border-radius:10px;font-size:15px;font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none;text-align:center;color:#0F1923;margin-bottom:8px"'
     +' onkeydown="if(event.key===\'Enter\') guardarCelular()"/>'
     +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:1.2rem">🔒 Solo lo ve el mudancero que aceptés · Nunca se comparte con nadie más</div>'
-    +'<button onclick="guardarCelular()" style="width:100%;padding:13px;border-radius:10px;border:none;background:var(--emerald);color:#041A0E;font-size:14px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;margin-bottom:8px">Guardar →</button>'
+    +'<button onclick="guardarCelular()" style="width:100%;padding:13px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">Guardar →</button>'
     +'<button onclick="document.getElementById(\'celModal\').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--mono)">Ahora no</button>'
     +'</div>';
   document.body.appendChild(modal);
@@ -410,24 +410,24 @@ function truckLoader(msg) {
     +'.tb{animation:tb 1.3s ease-in-out infinite alternate}@keyframes tb{0%{transform:translateY(0)}100%{transform:translateY(-7px)}}'
     +'</style>'
     +'<g class="tb">'
-    +'<rect x="10" y="20" width="250" height="90" rx="6" fill="#172018" stroke="#2A3C32" stroke-width="1.5"/>'
-    +'<rect x="16" y="27" width="238" height="22" rx="3" fill="#1D2820"/>'
-    +'<rect x="16" y="52" width="238" height="50" rx="3" fill="#22C36A" opacity=".08"/>'
+    +'<rect x="10" y="20" width="250" height="90" rx="6" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="1.5"/>'
+    +'<rect x="16" y="27" width="238" height="22" rx="3" fill="#EEF4FF"/>'
+    +'<rect x="16" y="52" width="238" height="50" rx="3" fill="#1A6FFF" opacity=".08"/>'
     +'<rect x="16" y="52" width="238" height="50" rx="3" fill="none" stroke="#22C36A" stroke-width="1" opacity=".25"/>'
     +'<line x1="16" y1="51" x2="264" y2="51" stroke="#22C36A" stroke-width="1" opacity=".3"/>'
     +'<line x1="16" y1="103" x2="264" y2="103" stroke="#22C36A" stroke-width="1" opacity=".3"/>'
-    +'<text x="135" y="86" font-family="\'Bebas Neue\',sans-serif" font-size="36" fill="#22C36A" opacity=".95" letter-spacing="4" text-anchor="middle">MUDATEYA</text>'
-    +'<rect x="260" y="36" width="150" height="74" rx="6" fill="#1D2820" stroke="#2A3C32" stroke-width="1.5"/>'
-    +'<rect x="281" y="46" width="84" height="44" rx="4" fill="#22C36A" opacity=".15"/>'
+    +'<text x="135" y="86" font-family="\'Bebas Neue\',sans-serif" font-size="36" fill="#1A6FFF" opacity=".95" letter-spacing="4" text-anchor="middle">MUDATEYA</text>'
+    +'<rect x="260" y="36" width="150" height="74" rx="6" fill="#EEF4FF" stroke="#E2E8F0" stroke-width="1.5"/>'
+    +'<rect x="281" y="46" width="84" height="44" rx="4" fill="#1A6FFF" opacity=".15"/>'
     +'<rect x="281" y="46" width="84" height="44" rx="4" fill="none" stroke="#22C36A" stroke-width="1" opacity=".4"/>'
     +'<line x1="323" y1="46" x2="323" y2="90" stroke="#22C36A" stroke-width="1" opacity=".3"/>'
-    +'<rect x="366" y="57" width="32" height="18" rx="3" fill="#22C36A" opacity=".8"/>'
-    +'<polygon points="398,61 435,48 435,76 398,73" fill="#22C36A" opacity=".08"/>'
-    +'<rect x="263" y="56" width="14" height="40" rx="3" fill="#172018" stroke="#213029" stroke-width="1"/>'
-    +'<rect x="263" y="36" width="120" height="8" rx="2" fill="#213029"/>'
-    +'<g class="tw" style="transform-origin:80px 165px"><circle cx="80" cy="165" r="22" fill="#172018" stroke="#2A3C32" stroke-width="2.5"/><circle cx="80" cy="165" r="11" fill="#1D2820" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="80" cy="165" r="4" fill="#22C36A" opacity=".5"/><line x1="80" y1="154" x2="80" y2="176" stroke="#2A3C32" stroke-width="1.5"/><line x1="69" y1="165" x2="91" y2="165" stroke="#2A3C32" stroke-width="1.5"/></g>'
-    +'<g class="tw2" style="transform-origin:200px 165px"><circle cx="200" cy="165" r="22" fill="#172018" stroke="#2A3C32" stroke-width="2.5"/><circle cx="200" cy="165" r="11" fill="#1D2820" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="200" cy="165" r="4" fill="#22C36A" opacity=".5"/><line x1="200" y1="154" x2="200" y2="176" stroke="#2A3C32" stroke-width="1.5"/><line x1="189" y1="165" x2="211" y2="165" stroke="#2A3C32" stroke-width="1.5"/></g>'
-    +'<g class="tw3" style="transform-origin:340px 165px"><circle cx="340" cy="165" r="22" fill="#172018" stroke="#2A3C32" stroke-width="2.5"/><circle cx="340" cy="165" r="11" fill="#1D2820" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="340" cy="165" r="4" fill="#22C36A" opacity=".5"/><line x1="340" y1="154" x2="340" y2="176" stroke="#2A3C32" stroke-width="1.5"/><line x1="329" y1="165" x2="351" y2="165" stroke="#2A3C32" stroke-width="1.5"/></g>'
+    +'<rect x="366" y="57" width="32" height="18" rx="3" fill="#1A6FFF" opacity=".8"/>'
+    +'<polygon points="398,61 435,48 435,76 398,73" fill="#1A6FFF" opacity=".08"/>'
+    +'<rect x="263" y="56" width="14" height="40" rx="3" fill="#F5F7FA" stroke="#213029" stroke-width="1"/>'
+    +'<rect x="263" y="36" width="120" height="8" rx="2" fill="#E2E8F0"/>'
+    +'<g class="tw" style="transform-origin:80px 165px"><circle cx="80" cy="165" r="22" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2.5"/><circle cx="80" cy="165" r="11" fill="#EEF4FF" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="80" cy="165" r="4" fill="#1A6FFF" opacity=".5"/><line x1="80" y1="154" x2="80" y2="176" stroke="#E2E8F0" stroke-width="1.5"/><line x1="69" y1="165" x2="91" y2="165" stroke="#E2E8F0" stroke-width="1.5"/></g>'
+    +'<g class="tw2" style="transform-origin:200px 165px"><circle cx="200" cy="165" r="22" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2.5"/><circle cx="200" cy="165" r="11" fill="#EEF4FF" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="200" cy="165" r="4" fill="#1A6FFF" opacity=".5"/><line x1="200" y1="154" x2="200" y2="176" stroke="#E2E8F0" stroke-width="1.5"/><line x1="189" y1="165" x2="211" y2="165" stroke="#E2E8F0" stroke-width="1.5"/></g>'
+    +'<g class="tw3" style="transform-origin:340px 165px"><circle cx="340" cy="165" r="22" fill="#F5F7FA" stroke="#E2E8F0" stroke-width="2.5"/><circle cx="340" cy="165" r="11" fill="#EEF4FF" stroke="#22C36A" stroke-width="1.5" opacity=".7"/><circle cx="340" cy="165" r="4" fill="#1A6FFF" opacity=".5"/><line x1="340" y1="154" x2="340" y2="176" stroke="#E2E8F0" stroke-width="1.5"/><line x1="329" y1="165" x2="351" y2="165" stroke="#E2E8F0" stroke-width="1.5"/></g>'
     +'<line x1="0" y1="188" x2="440" y2="188" stroke="#213029" stroke-width="1.5"/>'
     +'</g>'
     +'</svg>'
@@ -477,7 +477,7 @@ function renderMudanzasTabs() {
     { id:'buscando',  label:'Buscando',    count:buscando.length,  color:'var(--amber)' },
     { id:'cotizados', label:'Cotizaciones', count:conCotz.length,   color:'var(--sky)' },
     { id:'aceptadas', label:'Confirmadas',  count:aceptadas.length, color:'var(--emerald)' },
-    { id:'expiradas', label:'Expiradas',    count:expiradas.length, color:'var(--text3)' },
+    { id:'expiradas', label:'Expiradas',    count:expiradas.length, color:'#64748B' },
   ];
 
   var tabsHtml = '<div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.2rem;overflow-x:auto">'
@@ -486,9 +486,9 @@ function renderMudanzasTabs() {
         return '<button onclick="setTabMudanzas(\''+t.id+'\')" style="'
           +'display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:none;'
           +'font-size:12px;font-weight:600;font-family:\'Outfit\',sans-serif;cursor:pointer;white-space:nowrap;'
-          +'border-bottom:2px solid '+(on?t.color:'transparent')+';color:'+(on?t.color:'var(--text3)')+';transition:all .2s">'
+          +'border-bottom:2px solid '+(on?t.color:'transparent')+';color:'+(on?t.color:'#64748B')+';transition:all .2s">'
           +t.label
-          +(t.count>0?'<span style="background:'+(on?t.color:'var(--surface2)')+';color:'+(on?'#041A0E':'var(--text3)')+';font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid var(--border2)">'+t.count+'</span>':'')
+          +(t.count>0?'<span style="background:'+(on?t.color:'#F5F7FA')+';color:'+(on?'#041A0E':'#64748B')+';font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid var(--border2)">'+t.count+'</span>':'')
           +'</button>';
       }).join('')
     +'</div>';
@@ -499,7 +499,7 @@ function renderMudanzasTabs() {
            : expiradas;
 
   var emptyMsgs = {
-    buscando:  '⏳ No tenés mudanzas buscando cotizaciones.<br><br><a href="/" style="background:var(--emerald);color:#041A0E;padding:11px 24px;border-radius:9px;text-decoration:none;font-weight:700;font-size:13px">Publicar mudanza →</a>',
+    buscando:  '⏳ No tenés mudanzas buscando cotizaciones.<br><br><a href="/" style="background:var(--blue);color:#fff;padding:11px 24px;border-radius:9px;text-decoration:none;font-weight:700;font-size:13px">Publicar mudanza →</a>',
     cotizados: '📬 No tenés cotizaciones pendientes de revisar.',
     aceptadas: '✅ Cuando aceptes una cotización aparece acá.',
     expiradas: '⏱ No tenés mudanzas expiradas sin cotizar.'
@@ -537,7 +537,7 @@ function renderMudanzaCard(m, idx){
           var isAceptada = m.cotizacionAceptada && m.cotizacionAceptada.id === c.id;
           var mData = JSON.stringify(m).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
           var cData = JSON.stringify(c).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-          return '<div style="background:var(--surface2);border:1px solid '+(isAceptada?'var(--emerald)':'var(--border)')+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+          return '<div style="background:var(--surface2);border:1px solid '+(isAceptada?'var(--emerald)':'#E2E8F0')+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
             // Fila superior: nombre + precio
             + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(isAceptada||m.estado==='cotizacion_aceptada'?'0':'8px')+'">'
             +   '<div style="flex:1">'
@@ -545,14 +545,14 @@ function renderMudanzaCard(m, idx){
             +     (c.tiempoEstimado?'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">⏱ '+c.tiempoEstimado+'</div>':'')
             +   '</div>'
             +   '<div style="text-align:right;flex-shrink:0">'
-            +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--emerald);letter-spacing:.5px">$'+c.precio.toLocaleString('es-AR')+'</div>'
-            +     (isAceptada ? '<div style="font-size:10px;color:var(--emerald);font-family:var(--mono)">✓ Aceptada</div>' : '')
+            +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--blue);letter-spacing:.5px">$'+c.precio.toLocaleString('es-AR')+'</div>'
+            +     (isAceptada ? '<div style="font-size:10px;color:var(--blue);font-family:var(--mono)">✓ Aceptada</div>' : '')
             +   '</div>'
             + '</div>'
             // Botones — solo si no está aceptada ni hay otra aceptada
             + ((!isAceptada && m.estado !== 'cotizacion_aceptada') ? (
                 '<div style="display:flex;gap:6px;margin-top:8px;align-items:center">'
-                + '<a class="btn btn-ghost" style="font-size:12px;padding:8px 14px;text-decoration:none;border-color:rgba(34,195,106,.3);color:var(--emerald)" '
+                + '<a class="btn btn-ghost" style="font-size:12px;padding:8px 14px;text-decoration:none;border-color:rgba(26,111,255,.25);color:var(--blue)" '
                 +   'href="/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'" target="_blank">'
                 +   '📄 Ver presupuesto</a>'
                 + '<button class="btn btn-green" style="font-size:12px;padding:8px 18px;margin-left:auto" '
@@ -599,14 +599,14 @@ function renderMudanzaCard(m, idx){
         + '<button class="btn btn-ghost" style="font-size:11px;color:var(--text3);border-style:dashed" onclick="simularPago(\''+m.id+'\',\'anticipo\',this)" title="Solo para pruebas">🧪 Simular</button>'
         : '')
     +   (m.anticipoPagado && !m.saldoPagado && m.estado!=='completada'
-        ? '<span style="font-size:11px;color:var(--emerald);font-family:var(--mono);padding:8px 0">✓ Anticipo pagado</span>'
+        ? '<span style="font-size:11px;color:var(--blue);font-family:var(--mono);padding:8px 0">✓ Anticipo pagado</span>'
         : '')
     // Botón pagar saldo — aparece cuando el mudancero marca completada
     +   (m.estado==='completada' && m.cotizacionAceptada && !m.saldoPagado
         ? '<button id="btnPagarSaldo_'+m.id+'" class="btn" style="background:#009EE3;color:white;font-size:13px;padding:10px 18px" onclick="pagarSaldo(\''+m.id+'\')">💳 Pagar saldo final ($'+Math.round((m.cotizacionAceptada.precio||0)*0.5).toLocaleString('es-AR')+')</button>'
         + '<button class="btn btn-ghost" style="font-size:11px;color:var(--text3);border-style:dashed" onclick="simularPago(\''+m.id+'\',\'saldo\',this)" title="Solo para pruebas">🧪 Simular</button>'
         : '')
-    +   (m.saldoPagado ? '<span style="font-size:12px;color:var(--emerald);font-family:var(--mono);padding:8px 0">✓ Saldo pagado</span>' : '')
+    +   (m.saldoPagado ? '<span style="font-size:12px;color:var(--blue);font-family:var(--mono);padding:8px 0">✓ Saldo pagado</span>' : '')
     + '</div>'
     + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: '+m.id+'</div>'
     + '</div>';
@@ -740,14 +740,14 @@ async function pagarAnticipo(m) {
   // Mostrar modal de confirmación antes de ir a MP
   var modal = document.createElement('div');
   modal.id = 'pagoModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1.2rem';
-  modal.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:22px;padding:2rem 1.6rem;max-width:400px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
+  modal.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1.2rem';
+  modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:22px;padding:2rem 1.6rem;max-width:400px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
     +'<div style="font-size:2rem;text-align:center;margin-bottom:12px">💳</div>'
     +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--text);margin-bottom:6px;text-align:center">Confirmá el anticipo</div>'
-    +'<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.4rem;text-align:center">Para reservar a <strong style="color:var(--text)">'+cot.mudanceroNombre+'</strong> necesitás abonar el 50% de anticipo.</div>'
-    +'<div style="background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.2rem">'
+    +'<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.4rem;text-align:center">Para reservar a <strong style="color:#0F1923">'+cot.mudanceroNombre+'</strong> necesitás abonar el 50% de anticipo.</div>'
+    +'<div style="background:var(--blue-light);border:1px solid rgba(26,111,255,.2);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.2rem">'
     +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span>Total mudanza</span><span>$'+precio.toLocaleString('es-AR')+'</span></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span>Anticipo (50%)</span><span style="color:var(--emerald);font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span>Anticipo (50%)</span><span style="color:var(--blue);font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span></div>'
     +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono)"><span>Saldo al completar</span><span>$'+anticipo.toLocaleString('es-AR')+'</span></div>'
     +'</div>'
     +'<button id="btnPagarAnticipo" style="width:100%;padding:13px;border-radius:10px;border:none;background:#009EE3;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Outfit\',sans-serif;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px">'
@@ -845,7 +845,7 @@ function renderCalificaciones(){
     return;
   }
   document.getElementById('calificacionesList').innerHTML = completadas.map(function(m){
-    return '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:1.2rem;margin-bottom:10px">'
+    return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:1.2rem;margin-bottom:10px">'
       + '<div style="font-size:14px;font-weight:500;margin-bottom:4px">'+(m.mudancero&&m.mudancero.nombre?m.mudancero.nombre:'Mudancero')+'</div>'
       + '<div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">'+m.desde+' → '+m.hasta+'</div>'
       + (m.calificado
@@ -860,8 +860,8 @@ function abrirCalificacion(idx){
   var m = mudanzasData[idx];
   var modal = document.createElement('div');
   modal.id = 'calModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
-  modal.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:1.8rem;max-width:420px;width:100%">'
+  modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:20px;padding:1.8rem;max-width:420px;width:100%">'
     + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Calificar mudancero</div>'
     + '<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+(m.mudancero&&m.mudancero.nombre?m.mudancero.nombre:'Mudancero')+' · '+m.desde+' → '+m.hasta+'</div>'
     + '<div class="stars-row" id="starsRow">'+[1,2,3,4,5].map(function(n){ return '<span class="star" onclick="setStar('+n+')" onmouseover="hoverStar('+n+')" onmouseout="renderStarsUI()">★</span>'; }).join('')+'</div>'
