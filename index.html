@@ -888,8 +888,8 @@ footer{background:#003580;padding:1.5rem}
             <div class="precio-slider-fill" id="pill-precio-fill"></div>
             <div class="precio-thumb" id="pill-thumb-min" style="z-index:4"></div>
             <div class="precio-thumb" id="pill-thumb-max" style="z-index:4"></div>
-            <input class="precio-slider-input" type="range" id="pill-rmin" min="0" max="600000" step="10000" value="0" style="z-index:5" oninput="onPrecioSlider('pill')">
-            <input class="precio-slider-input" type="range" id="pill-rmax" min="0" max="600000" step="10000" value="600000" style="z-index:5" oninput="onPrecioSlider('pill')">
+            <input class="precio-slider-input" type="range" id="pill-rmin" min="0" max="2000000" step="50000" value="0" style="z-index:5" oninput="onPrecioSlider('pill')">
+            <input class="precio-slider-input" type="range" id="pill-rmax" min="0" max="2000000" step="50000" value="2000000" style="z-index:5" oninput="onPrecioSlider('pill')">
           </div>
           <div class="precio-inputs-row">
             <div class="precio-input-box">
@@ -934,8 +934,8 @@ footer{background:#003580;padding:1.5rem}
             <div class="precio-slider-fill" id="panel-precio-fill"></div>
             <div class="precio-thumb" id="panel-thumb-min" style="z-index:4"></div>
             <div class="precio-thumb" id="panel-thumb-max" style="z-index:4"></div>
-            <input class="precio-slider-input" type="range" id="panel-rmin" min="0" max="600000" step="10000" value="0" style="z-index:5" oninput="onPrecioSlider('panel')">
-            <input class="precio-slider-input" type="range" id="panel-rmax" min="0" max="600000" step="10000" value="600000" style="z-index:5" oninput="onPrecioSlider('panel')">
+            <input class="precio-slider-input" type="range" id="panel-rmin" min="0" max="2000000" step="50000" value="0" style="z-index:5" oninput="onPrecioSlider('panel')">
+            <input class="precio-slider-input" type="range" id="panel-rmax" min="0" max="2000000" step="50000" value="2000000" style="z-index:5" oninput="onPrecioSlider('panel')">
           </div>
           <div class="precio-inputs-row">
             <div class="precio-input-box">
@@ -1128,26 +1128,26 @@ try { _currentUser = JSON.parse(sessionStorage.getItem('googleUser') || sessionS
 // MOCK DATA
 // ══════════════════════════════════════════
 var _MOCK = [
-  {email:'carlos.gomez@mock.com',nombre:'Carlos Gómez',empresa:'Mudanzas Gómez',zonaBase:'Palermo, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:42,trabajosCompletados:38,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:55000,flete:18000},fotoUrl:''},
-  {email:'roberto.silva@mock.com',nombre:'Roberto Silva',empresa:'Silva Fletes',zonaBase:'Quilmes, GBA Sur',vehiculo:'Camioneta / furgón pequeño',calificacion:4.6,nroResenas:27,trabajosCompletados:24,verificadoIdentidad:true,verificadoVehiculo:false,verificadoSeguro:false,precios:{amb1:42000,flete:14000},fotoUrl:''},
-  {email:'diego.fernandez@mock.com',nombre:'Diego Fernández',empresa:'',zonaBase:'Caballito, CABA',vehiculo:'Camión grande',calificacion:5.0,nroResenas:15,trabajosCompletados:13,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:70000,flete:22000},fotoUrl:''},
-  {email:'martin.lopez@mock.com',nombre:'Martín López',empresa:'Mudanzas del Norte',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:61,trabajosCompletados:55,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:60000,flete:20000},fotoUrl:''},
-  {email:'pablo.torres@mock.com',nombre:'Pablo Torres',empresa:'',zonaBase:'Flores, CABA',vehiculo:'Camioneta / furgón pequeño',calificacion:4.3,nroResenas:9,trabajosCompletados:8,verificadoIdentidad:false,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:38000,flete:12000},fotoUrl:''},
-  {email:'lucas.ramirez@mock.com',nombre:'Lucas Ramírez',empresa:'Fletes Rápidos BA',zonaBase:'Lanús, GBA Sur',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:33,trabajosCompletados:30,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:52000,flete:17000},fotoUrl:''},
-  {email:'gustavo.perez@mock.com',nombre:'Gustavo Pérez',empresa:'Perez Mudanzas',zonaBase:'Belgrano, CABA',vehiculo:'Camión grande',calificacion:4.9,nroResenas:88,trabajosCompletados:79,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:72000,flete:23000},fotoUrl:''},
-  {email:'andres.ruiz@mock.com',nombre:'Andrés Ruiz',empresa:'TransMud SRL',zonaBase:'Vicente López, GBA Norte',vehiculo:'Camión grande',calificacion:4.7,nroResenas:54,trabajosCompletados:48,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:65000,flete:21000},fotoUrl:''},
-  {email:'nicolas.castro@mock.com',nombre:'Nicolás Castro',empresa:'Castro e Hijos',zonaBase:'Morón, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.6,nroResenas:41,trabajosCompletados:37,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:53000,flete:17000},fotoUrl:''},
-  {email:'rodrigo.molina@mock.com',nombre:'Rodrigo Molina',empresa:'MoliMud',zonaBase:'Almagro, CABA',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:45,trabajosCompletados:41,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:58000,flete:19000},fotoUrl:''},
-  {email:'damian.ortiz@mock.com',nombre:'Damián Ortiz',empresa:'Ortiz Transportes',zonaBase:'Palermo, CABA',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:102,trabajosCompletados:95,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:95000,flete:30000},fotoUrl:''},
-  {email:'hugo.vargas@mock.com',nombre:'Hugo Vargas',empresa:'Vargas e Hijos',zonaBase:'Castelar, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:71,trabajosCompletados:65,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:61000,flete:20000},fotoUrl:''},
-  {email:'pablo.miranda@mock.com',nombre:'Pablo Miranda',empresa:'Miranda Logística',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:83,trabajosCompletados:76,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:92000,flete:29000},fotoUrl:''},
-  {email:'oscar.vera@mock.com',nombre:'Óscar Vera',empresa:'Vera Transportes',zonaBase:'Córdoba Capital',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:93,trabajosCompletados:84,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:62000,flete:20000},fotoUrl:''},
-  {email:'cristobal.paz@mock.com',nombre:'Cristóbal Paz',empresa:'PazMud',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:115,trabajosCompletados:105,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:98000,flete:32000},fotoUrl:''},
-  {email:'marcelo.ponce@mock.com',nombre:'Marcelo Ponce',empresa:'Ponce & Hermanos',zonaBase:'Devoto, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:76,trabajosCompletados:69,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:59000,flete:19000},fotoUrl:''},
-  {email:'hector.aguirre@mock.com',nombre:'Héctor Aguirre',empresa:'Aguirre Trans',zonaBase:'Liniers, CABA',vehiculo:'Camión grande',calificacion:4.7,nroResenas:58,trabajosCompletados:52,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:69000,flete:22000},fotoUrl:''},
-  {email:'maximiliano.gil@mock.com',nombre:'Maximiliano Gil',empresa:'Gil & Asociados',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.8,nroResenas:57,trabajosCompletados:51,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:88000,flete:28000},fotoUrl:''},
-  {email:'victor.parra@mock.com',nombre:'Víctor Parra',empresa:'ParraMud SRL',zonaBase:'San Justo, GBA Oeste',vehiculo:'Camión grande',calificacion:4.6,nroResenas:47,trabajosCompletados:42,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:68000,flete:22000},fotoUrl:''},
-  {email:'walter.rojas@mock.com',nombre:'Walter Rojas',empresa:'Rojas Mudanzas',zonaBase:'San Telmo, CABA',vehiculo:'Camión grande',calificacion:4.6,nroResenas:38,trabajosCompletados:34,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:63000,flete:21000},fotoUrl:''},
+  {email:'carlos.gomez@mock.com',nombre:'Carlos Gómez',empresa:'Mudanzas Gómez',zonaBase:'Palermo, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:42,trabajosCompletados:38,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:450000,flete:150000},fotoUrl:''},
+  {email:'roberto.silva@mock.com',nombre:'Roberto Silva',empresa:'Silva Fletes',zonaBase:'Quilmes, GBA Sur',vehiculo:'Camioneta / furgón pequeño',calificacion:4.6,nroResenas:27,trabajosCompletados:24,verificadoIdentidad:true,verificadoVehiculo:false,verificadoSeguro:false,precios:{amb1:380000,flete:120000},fotoUrl:''},
+  {email:'diego.fernandez@mock.com',nombre:'Diego Fernández',empresa:'',zonaBase:'Caballito, CABA',vehiculo:'Camión grande',calificacion:5.0,nroResenas:15,trabajosCompletados:13,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:520000,flete:180000},fotoUrl:''},
+  {email:'martin.lopez@mock.com',nombre:'Martín López',empresa:'Mudanzas del Norte',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión mediano',calificacion:4.5,nroResenas:61,trabajosCompletados:55,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:430000,flete:145000},fotoUrl:''},
+  {email:'pablo.torres@mock.com',nombre:'Pablo Torres',empresa:'',zonaBase:'Flores, CABA',vehiculo:'Camioneta / furgón pequeño',calificacion:4.3,nroResenas:9,trabajosCompletados:8,verificadoIdentidad:false,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:360000,flete:110000},fotoUrl:''},
+  {email:'lucas.ramirez@mock.com',nombre:'Lucas Ramírez',empresa:'Fletes Rápidos BA',zonaBase:'Lanús, GBA Sur',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:33,trabajosCompletados:30,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:400000,flete:130000},fotoUrl:''},
+  {email:'gustavo.perez@mock.com',nombre:'Gustavo Pérez',empresa:'Perez Mudanzas',zonaBase:'Belgrano, CABA',vehiculo:'Camión grande',calificacion:4.9,nroResenas:88,trabajosCompletados:79,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:510000,flete:175000},fotoUrl:''},
+  {email:'andres.ruiz@mock.com',nombre:'Andrés Ruiz',empresa:'TransMud SRL',zonaBase:'Vicente López, GBA Norte',vehiculo:'Camión grande',calificacion:4.7,nroResenas:54,trabajosCompletados:48,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:470000,flete:160000},fotoUrl:''},
+  {email:'nicolas.castro@mock.com',nombre:'Nicolás Castro',empresa:'Castro e Hijos',zonaBase:'Morón, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.6,nroResenas:41,trabajosCompletados:37,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:410000,flete:135000},fotoUrl:''},
+  {email:'rodrigo.molina@mock.com',nombre:'Rodrigo Molina',empresa:'MoliMud',zonaBase:'Almagro, CABA',vehiculo:'Camión mediano',calificacion:4.7,nroResenas:45,trabajosCompletados:41,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:440000,flete:148000},fotoUrl:''},
+  {email:'damian.ortiz@mock.com',nombre:'Damián Ortiz',empresa:'Ortiz Transportes',zonaBase:'Palermo, CABA',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:102,trabajosCompletados:95,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:550000,flete:200000},fotoUrl:''},
+  {email:'hugo.vargas@mock.com',nombre:'Hugo Vargas',empresa:'Vargas e Hijos',zonaBase:'Castelar, GBA Oeste',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:71,trabajosCompletados:65,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:420000,flete:140000},fotoUrl:''},
+  {email:'pablo.miranda@mock.com',nombre:'Pablo Miranda',empresa:'Miranda Logística',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:83,trabajosCompletados:76,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:480000,flete:165000},fotoUrl:''},
+  {email:'oscar.vera@mock.com',nombre:'Óscar Vera',empresa:'Vera Transportes',zonaBase:'Córdoba Capital',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:93,trabajosCompletados:84,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:415000,flete:138000},fotoUrl:''},
+  {email:'cristobal.paz@mock.com',nombre:'Cristóbal Paz',empresa:'PazMud',zonaBase:'San Isidro, GBA Norte',vehiculo:'Camión con hidrogrúa',calificacion:4.9,nroResenas:115,trabajosCompletados:105,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:560000,flete:210000},fotoUrl:''},
+  {email:'marcelo.ponce@mock.com',nombre:'Marcelo Ponce',empresa:'Ponce & Hermanos',zonaBase:'Devoto, CABA',vehiculo:'Camión mediano',calificacion:4.8,nroResenas:76,trabajosCompletados:69,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:435000,flete:147000},fotoUrl:''},
+  {email:'hector.aguirre@mock.com',nombre:'Héctor Aguirre',empresa:'Aguirre Trans',zonaBase:'Liniers, CABA',vehiculo:'Camión grande',calificacion:4.7,nroResenas:58,trabajosCompletados:52,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:490000,flete:168000},fotoUrl:''},
+  {email:'maximiliano.gil@mock.com',nombre:'Maximiliano Gil',empresa:'Gil & Asociados',zonaBase:'Rosario, Santa Fe',vehiculo:'Camión con hidrogrúa',calificacion:4.8,nroResenas:57,trabajosCompletados:51,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:530000,flete:190000},fotoUrl:''},
+  {email:'victor.parra@mock.com',nombre:'Víctor Parra',empresa:'ParraMud SRL',zonaBase:'San Justo, GBA Oeste',vehiculo:'Camión grande',calificacion:4.6,nroResenas:47,trabajosCompletados:42,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:true,precios:{amb1:460000,flete:158000},fotoUrl:''},
+  {email:'walter.rojas@mock.com',nombre:'Walter Rojas',empresa:'Rojas Mudanzas',zonaBase:'San Telmo, CABA',vehiculo:'Camión grande',calificacion:4.6,nroResenas:38,trabajosCompletados:34,verificadoIdentidad:true,verificadoVehiculo:true,verificadoSeguro:false,precios:{amb1:445000,flete:150000},fotoUrl:''},
 ];
 
 // ══════════════════════════════════════════
@@ -1799,7 +1799,7 @@ function togglePill(el, key) {}
 // ══════════════════════════════════════════
 // FILTRO PRECIO
 // ══════════════════════════════════════════
-var PRECIO_MAX_TOTAL = 600000;
+var PRECIO_MAX_TOTAL = 2000000;
 var PRECIO_BINS = 20;
 
 function fmtPrecioSlider(n) {
@@ -1911,6 +1911,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ══════════════════════════════════════════
+// ESTIMADOR DE PRECIO
+// ══════════════════════════════════════════
+// Precios calibrados abril 2026 — traslado sin embalaje, CABA/GBA
+// Referencia: servicio completo (con embalaje) multiplicado x 0.65
+var _TABLA_PRECIOS_MUD = {
+  1: 450000,   // monoambiente
+  2: 550000,   // 2 ambientes
+  3: 680000,   // 3 ambientes
+  4: 860000,   // 4 ambientes
+  5: 1050000,  // 5 ambientes
+  6: 1180000,  // 6+ ambientes
+};
+function _estimarPrecioMudanza(ambientes) {
+  var amb = Math.max(1, Math.min(parseInt(ambientes)||1, 6));
+  return _TABLA_PRECIOS_MUD[amb] || _TABLA_PRECIOS_MUD[6];
+}
+
+// ══════════════════════════════════════════
 // PUBLICAR
 // ══════════════════════════════════════════
 function pedirCotizacion() {
@@ -1936,7 +1954,7 @@ async function _publicar(modo) {
         desde:_busqueda.desde, hasta:_busqueda.hasta,
         ambientes:_busqueda.tipo==='mudanza' ? (_busqueda.ambientes+' ambientes') : 'Flete',
         fecha:_busqueda.fecha, servicios:objetos, zonaBase:_busqueda.desde,
-        precio_estimado:_busqueda.tipo==='mudanza' ? (50000+(_busqueda.ambientes-1)*30000) : 20000,
+        precio_estimado:_busqueda.tipo==='mudanza' ? _estimarPrecioMudanza(_busqueda.ambientes) : 180000,
         tipo:_busqueda.tipo, modoCotizacion:modo,
         mudancerosInvitados:modo==='dirigido' ? Array.from(_sel) : [],
       })
