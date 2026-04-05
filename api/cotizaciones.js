@@ -602,6 +602,60 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, invitados: m.mudancerosInvitados });
     }
 
+    // ── ADMIN: listar todos los mudanceros desde Redis ─────────────
+    if (action === 'admin-mudanceros' && req.method === 'GET') {
+      const adminEmail = process.env.ADMIN_EMAIL || 'jgalozaldivar@gmail.com';
+      const { token } = req.query;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(403).json({ error: 'Sin permiso' });
+      }
+      const todos = await getJSON('mudanceros:todos') || [];
+      const pendientes = await getJSON('mudanceros:pendientes') || [];
+      const lista = [];
+      for (const email of todos) {
+        try {
+          const p = await getJSON(`mudancero:perfil:${email}`);
+          if (!p) continue;
+          lista.push({
+            id: p.id, email: p.email, nombre: p.nombre, empresa: p.empresa || '',
+            telefono: p.telefono, cuil: p.cuil || '', zonaBase: p.zonaBase,
+            zonasExtra: p.zonasExtra || '', vehiculo: p.vehiculo,
+            cantVehiculos: p.cantVehiculos || '1', equipo: p.equipo || '',
+            servicios: p.servicios || '', dias: p.dias || '', horarios: p.horarios || '',
+            estado: p.estado || 'pendiente',
+            fechaRegistro: p.fechaRegistro || '',
+            cuilVerificado: p.cuilVerificado || false,
+            dniLegible: (p.dniAnalisis || {}).legible || false,
+            metodoCobro: p.metodoCobro || '', cbu: p.cbu || '', emailMP: p.emailMP || '',
+            extra: p.extra || '',
+          });
+        } catch(e) { continue; }
+      }
+      return res.status(200).json({ ok: true, mudanceros: lista, total: lista.length });
+    }
+
+    // ── ADMIN: aprobar o rechazar mudancero ────────────────────────
+    if (action === 'admin-aprobar-mudancero' && req.method === 'POST') {
+      const { token, email, nuevoEstado } = req.body;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(403).json({ error: 'Sin permiso' });
+      }
+      if (!email || !['aprobado','rechazado','pendiente'].includes(nuevoEstado)) {
+        return res.status(400).json({ error: 'Datos inválidos' });
+      }
+      const perfil = await getJSON(`mudancero:perfil:${email}`);
+      if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado' });
+      perfil.estado = nuevoEstado;
+      await setJSON(`mudancero:perfil:${email}`, perfil);
+      // Mover de pendientes a todos si se aprueba
+      if (nuevoEstado === 'aprobado') {
+        const pendientes = await getJSON('mudanceros:pendientes') || [];
+        const nuevoPendientes = pendientes.filter(e => e !== email);
+        await setJSON('mudanceros:pendientes', nuevoPendientes);
+      }
+      return res.status(200).json({ ok: true, estado: nuevoEstado });
+    }
+
     // Catálogo público de mudanceros verificados (para modo dirigido)
     if (action === 'catalogo' && req.method === 'GET') {
       const { zona } = req.query;
