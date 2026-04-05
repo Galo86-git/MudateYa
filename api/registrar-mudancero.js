@@ -232,67 +232,55 @@ module.exports = async function handler(req, res) {
 // ── EMAIL AL ADMIN ───────────────────────────────────────────────
 async function notificarAdmin(perfil) {
   const resend    = new Resend(process.env.RESEND_API_KEY);
-  const adminMail = process.env.ADMIN_EMAIL;
-  if (!process.env.RESEND_API_KEY || !adminMail) return;
+  const adminMail = process.env.ADMIN_EMAIL || 'jgalozaldivar@gmail.com';
+  if (!process.env.RESEND_API_KEY) return;
 
   const dni  = perfil.dniAnalisis || {};
   const afip = perfil.cuilAfip    || {};
+  const siteUrl = process.env.SITE_URL || 'https://mudateya.ar';
 
   const badgeCuil = perfil.cuilVerificado
-    ? `<span style="background:#0D2018;color:#22C36A;padding:3px 10px;border-radius:4px;font-size:11px">✓ CUIL verificado en AFIP</span>`
+    ? `<span style="background:#F0FFF4;color:#16A34A;border:1px solid #BBF7D0;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600">✓ CUIL verificado en AFIP</span>`
     : perfil.cuilAdvertencia
-    ? `<span style="background:#2D1F0E;color:#F59E0B;padding:3px 10px;border-radius:4px;font-size:11px">⚠ AFIP no disponible al registrar</span>`
-    : `<span style="background:#1E1E1E;color:#7AADA0;padding:3px 10px;border-radius:4px;font-size:11px">— CUIL no ingresado</span>`;
+    ? `<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600">⚠ AFIP no disponible</span>`
+    : `<span style="background:#F4F6F9;color:#94A3B8;border:1px solid #E2E8F0;padding:3px 10px;border-radius:4px;font-size:11px">— Sin CUIL</span>`;
 
   await resend.emails.send({
-    from:    'MudateYa <onboarding@resend.dev>',
+    from:    'MudateYa <noreply@mudateya.ar>',
     to:      adminMail,
-    subject: `🚛 Nuevo mudancero — ${perfil.nombre} · ${perfil.zonaBase} · ${perfil.id}`,
+    subject: `🚛 Nuevo mudancero — ${perfil.nombre} · ${perfil.zonaBase}`,
     html: `
-<div style="font-family:Arial,sans-serif;max-width:600px;background:#0D1410;color:#E8F5EE;border-radius:16px;overflow:hidden">
-  <div style="background:#22C36A;padding:18px 22px">
-    <h2 style="margin:0;color:#041A0E">🚛 Nuevo mudancero registrado</h2>
+<div style="font-family:Inter,Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+  <div style="background:#003580;padding:20px 28px">
+    <span style="font-size:20px;font-weight:900;color:#ffffff;letter-spacing:1px">Mudate</span><span style="font-size:20px;font-weight:900;color:#22C36A;letter-spacing:1px">Ya</span>
+    <span style="margin-left:10px;background:#22C36A;color:#003580;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px">NUEVO MUDANCERO</span>
   </div>
-  <div style="padding:22px">
-    <table style="width:100%;border-collapse:collapse">
-      <tr><td style="color:#7AADA0;padding:6px 0;width:35%">Nombre</td>
-          <td><strong>${perfil.nombre}</strong>${perfil.empresa ? ` · ${perfil.empresa}` : ''}</td></tr>
-      <tr><td style="color:#7AADA0;padding:6px 0">Email</td><td>${perfil.email}</td></tr>
-      <tr><td style="color:#7AADA0;padding:6px 0">Teléfono</td><td>${perfil.telefono}</td></tr>
-      <tr><td style="color:#7AADA0;padding:6px 0">CUIL</td>
-          <td>${perfil.cuil || '—'} ${badgeCuil}
-          ${afip.nombre ? `<br><small style="color:#5A8A78">AFIP: ${afip.nombre} ${afip.apellido} · ${afip.estadoClave}</small>` : ''}</td></tr>
-      <tr><td style="color:#7AADA0;padding:6px 0">Zona</td>
-          <td>${perfil.zonaBase}${perfil.zonasExtra ? ` · ${perfil.zonasExtra}` : ''}</td></tr>
-      <tr><td style="color:#7AADA0;padding:6px 0">Vehículo</td>
-          <td>${perfil.vehiculo} · ${perfil.cantVehiculos} unid. · ${perfil.equipo}</td></tr>
-      <tr><td style="color:#7AADA0;padding:6px 0">Servicios</td>
-          <td style="font-size:12px">${perfil.servicios}</td></tr>
-    </table>
+  <div style="padding:28px">
+    <h2 style="margin:0 0 6px;font-size:18px;color:#0F1923">🚛 ${perfil.nombre}${perfil.empresa ? ' · ' + perfil.empresa : ''}</h2>
+    <p style="font-size:13px;color:#475569;margin:0 0 20px">${perfil.zonaBase} · ${perfil.vehiculo}</p>
 
-    <div style="background:#172018;border-radius:10px;padding:12px 16px;margin:14px 0">
-      <div style="font-size:11px;color:#5A8A78;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">DNI análisis IA</div>
-      <div style="font-size:13px">
-        ${dni.numero_dni ? `DNI: <strong>${dni.numero_dni}</strong> · ` : ''}
-        ${dni.apellido || ''} ${dni.nombres || ''}<br>
-        ${dni.fecha_vencimiento ? `Vence: ${dni.fecha_vencimiento} · ` : ''}
-        Legible: <strong style="color:${dni.legible ? '#22C36A' : '#F59E0B'}">${dni.legible ? '✓ SI' : '✗ NO'}</strong>
-      </div>
+    <div style="background:#F4F6F9;border:1px solid #E2E8F0;border-radius:12px;padding:18px;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;padding:6px 0;width:35%;border-bottom:1px solid #E2E8F0">Email</td><td style="font-size:13px;color:#0F1923;padding:6px 0;border-bottom:1px solid #E2E8F0">${perfil.email}</td></tr>
+        <tr><td style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;padding:6px 0;border-bottom:1px solid #E2E8F0">Teléfono</td><td style="font-size:13px;color:#0F1923;padding:6px 0;border-bottom:1px solid #E2E8F0">${perfil.telefono}</td></tr>
+        <tr><td style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;padding:6px 0;border-bottom:1px solid #E2E8F0">CUIL</td><td style="font-size:13px;padding:6px 0;border-bottom:1px solid #E2E8F0">${perfil.cuil || '—'} ${badgeCuil}</td></tr>
+        <tr><td style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;padding:6px 0;border-bottom:1px solid #E2E8F0">Zona</td><td style="font-size:13px;color:#0F1923;padding:6px 0;border-bottom:1px solid #E2E8F0">${perfil.zonaBase}${perfil.zonasExtra ? ' · ' + perfil.zonasExtra : ''}</td></tr>
+        <tr><td style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;padding:6px 0;border-bottom:1px solid #E2E8F0">Vehículo</td><td style="font-size:13px;color:#0F1923;padding:6px 0;border-bottom:1px solid #E2E8F0">${perfil.vehiculo} · ${perfil.cantVehiculos} unid.</td></tr>
+        <tr><td style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;padding:6px 0;border-bottom:1px solid #E2E8F0">Servicios</td><td style="font-size:12px;color:#0F1923;padding:6px 0;border-bottom:1px solid #E2E8F0">${perfil.servicios}</td></tr>
+        <tr><td style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;padding:6px 0">DNI</td><td style="font-size:13px;padding:6px 0">${dni.numero_dni ? 'DNI: <strong>' + dni.numero_dni + '</strong> · ' + (dni.apellido||'') + ' ' + (dni.nombres||'') : '—'} ${dni.legible !== undefined ? '<span style="color:' + (dni.legible?'#16A34A':'#F59E0B') + '">' + (dni.legible?'✓ Legible':'⚠ Ilegible') + '</span>' : ''}</td></tr>
+      </table>
     </div>
 
-    <div style="background:#172018;border-radius:10px;padding:12px 16px;margin:14px 0">
-      <div style="font-size:11px;color:#5A8A78;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Cobro</div>
-      <div style="font-size:13px">
-        ${perfil.metodoCobro === 'cbu' ? `CBU/Alias: ${perfil.cbu}` : `MP: ${perfil.emailMP}`}
-        ${perfil.titularCuenta ? ` · ${perfil.titularCuenta}` : ''}
-      </div>
+    <div style="background:#EEF4FF;border:1px solid #C7D9FF;border-radius:10px;padding:12px 16px;margin-bottom:20px">
+      <div style="font-size:11px;color:#94A3B8;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Cobro</div>
+      <div style="font-size:13px;color:#0F1923">${perfil.metodoCobro === 'cbu' ? 'CBU/Alias: ' + perfil.cbu : 'Mercado Pago: ' + perfil.emailMP}${perfil.titularCuenta ? ' · ' + perfil.titularCuenta : ''}</div>
     </div>
 
-    <a href="${process.env.SITE_URL || 'https://mudateya.vercel.app'}/admin"
-       style="display:inline-block;margin-top:8px;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">
-      Revisar y aprobar →
-    </a>
-    <p style="color:#3D6458;font-size:11px;margin-top:16px">ID: ${perfil.id} · ${perfil.fechaRegistro}</p>
+    <a href="${siteUrl}/admin" style="display:block;text-align:center;background:#1A6FFF;color:#ffffff;padding:13px 24px;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700">Revisar y aprobar →</a>
+    <p style="font-size:11px;color:#94A3B8;text-align:center;margin-top:10px;font-family:monospace">${perfil.id}</p>
+  </div>
+  <div style="background:#F4F6F9;border-top:1px solid #E2E8F0;padding:14px 28px;text-align:center">
+    <p style="font-size:11px;color:#94A3B8;margin:0;font-family:monospace">MudateYa · mudateya.ar</p>
   </div>
 </div>`,
   });
