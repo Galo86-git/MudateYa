@@ -355,6 +355,7 @@ nav{
 #pillOverlay{display:none;position:fixed;inset:0;z-index:198;background:rgba(0,0,0,.4);touch-action:none}
 body.pill-open #pillOverlay{display:block}
 @media(max-width:768px){
+  .hide-mobile{display:none!important;}
   .pill-dropdown{
     position:fixed!important;top:auto!important;left:0!important;right:0!important;bottom:0!important;
     border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.2);
@@ -961,7 +962,7 @@ footer{background:#003580;padding:1.5rem}
         <span class="mob-bar-ruta" id="mob-ruta">—</span>
         <span class="mob-bar-det" id="mob-det">—</span>
       </div>
-      <button class="mob-btn-filtros" id="mobBtnFiltros" onclick="abrirFiltrosMobile()" ontouchend="event.preventDefault();abrirFiltrosMobile()">
+      <button class="mob-btn-filtros" id="mobBtnFiltros" onclick="abrirFiltrosMobile()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
         Filtros
         <span class="mob-filtros-count" id="mobFiltrosCount" style="display:none">0</span>
@@ -1141,7 +1142,7 @@ footer{background:#003580;padding:1.5rem}
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <!-- Buscador por nombre — desktop -->
-          <div style="position:relative">
+          <div style="position:relative" class="hide-mobile">
             <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.35" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F1923" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" id="buscarNombreDesk" placeholder="Buscar por nombre…" oninput="filtrarPorNombre(this.value)" style="padding:8px 12px 8px 30px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none;width:200px;transition:border-color .2s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border2)'" />
           </div>
@@ -2078,19 +2079,20 @@ function togglePill(el, key) {}
 var _mfTemp = { orden:'cal', verifs:new Set(), vehiculos:new Set(), zonas:new Set(), precioMin:0, precioMax:2000000 };
 
 function abrirFiltrosMobile() {
-  if (!_todos.length) _todos = _MOCK;
-  _mfTemp.orden = _filtros.orden;
-  _mfTemp.verifs = new Set(_filtros.verifs);
-  _mfTemp.vehiculos = new Set(_filtros.vehiculos);
-  _mfTemp.zonas = new Set(_filtros.zonas);
-  _mfTemp.precioMin = _filtros.precioMin;
-  _mfTemp.precioMax = _filtros.precioMax;
-  _mfRefrescarUI();
-  // Chip Todos activo por defecto si no hay filtro de precio
-  if (_filtros.precioMin === 0 && _filtros.precioMax >= PRECIO_MAX_TOTAL) {
-    document.querySelectorAll('.mf-precio-chip').forEach(function(c){ c.classList.remove('active'); });
-    var c0 = document.getElementById('mfp-0'); if(c0) c0.classList.add('active');
-  }
+  try {
+    if (!_todos.length) _todos = _MOCK;
+    _mfTemp.orden = _filtros.orden;
+    _mfTemp.verifs = new Set(_filtros.verifs);
+    _mfTemp.vehiculos = new Set(_filtros.vehiculos);
+    _mfTemp.zonas = new Set(_filtros.zonas);
+    _mfTemp.precioMin = _filtros.precioMin;
+    _mfTemp.precioMax = _filtros.precioMax;
+    try { _mfRefrescarUI(); } catch(e) { console.warn('mfRefrescarUI:', e); }
+    if (_filtros.precioMin === 0 && _filtros.precioMax >= PRECIO_MAX_TOTAL) {
+      document.querySelectorAll('.mf-precio-chip').forEach(function(c){ c.classList.remove('active'); });
+      var c0 = document.getElementById('mfp-0'); if(c0) c0.classList.add('active');
+    }
+  } catch(e) { console.warn('abrirFiltrosMobile error:', e); }
   document.getElementById('filtrosMobileSheet').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
