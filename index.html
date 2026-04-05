@@ -373,10 +373,12 @@ body.pill-open #pillOverlay{display:block}
 .precio-histogram{display:flex;align-items:flex-end;gap:1px;height:48px;margin-bottom:0}
 .precio-histogram-bar{flex:1;background:var(--border2);border-radius:2px 2px 0 0;min-height:2px;transition:background .2s}
 .precio-histogram-bar.in-range{background:var(--blue)}
-.precio-slider-track-wrap{position:relative;height:6px;background:var(--border2);border-radius:3px;margin:18px 4px 20px;cursor:pointer}
+.precio-slider-track-wrap{position:relative;height:6px;background:var(--border2);border-radius:3px;margin:18px 4px 20px}
 .precio-slider-fill{position:absolute;top:0;height:6px;background:var(--blue);border-radius:3px;pointer-events:none}
-.precio-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab;z-index:2;transition:box-shadow .15s;touch-action:none}
-.precio-thumb:active{cursor:grabbing;box-shadow:0 0 0 6px rgba(26,111,255,.2)}
+.precio-slider-input{position:absolute;width:100%;left:0;top:50%;transform:translateY(-50%);height:20px;opacity:0;cursor:pointer;margin:0;pointer-events:all;-webkit-appearance:none;appearance:none;background:transparent}
+.precio-slider-input::-webkit-slider-thumb{width:22px;height:22px;border-radius:50%;cursor:grab;-webkit-appearance:none;background:var(--blue)}
+.precio-slider-input::-moz-range-thumb{width:22px;height:22px;border-radius:50%;cursor:grab;border:2px solid #fff;background:var(--blue)}
+.precio-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;z-index:2}
 .precio-inputs-row{display:flex;gap:8px;margin-top:4px}
 .precio-input-box{flex:1;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;cursor:text;transition:border-color .2s}
 .precio-input-box:focus-within{border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,111,255,.1)}
@@ -1063,10 +1065,12 @@ footer{background:#003580;padding:1.5rem}
             <span id="panel-precio-max-lbl">Sin límite</span>
           </div>
           <div class="precio-histogram" id="panel-histogram"></div>
-          <div class="precio-slider-track-wrap" id="panel-track" onmousedown="sliderTrackClick('panel',event)">
+          <div class="precio-slider-track-wrap" id="panel-track">
             <div class="precio-slider-fill" id="panel-precio-fill"></div>
-            <div class="precio-thumb" id="panel-thumb-min" onmousedown="sliderDragStart('panel','min',event)" ontouchstart="sliderDragStart('panel','min',event)"></div>
-            <div class="precio-thumb" id="panel-thumb-max" onmousedown="sliderDragStart('panel','max',event)" ontouchstart="sliderDragStart('panel','max',event)"></div>
+            <div class="precio-thumb" id="panel-thumb-min"></div>
+            <div class="precio-thumb" id="panel-thumb-max"></div>
+            <input class="precio-slider-input" type="range" id="panel-rmin" min="0" max="2000000" step="50000" value="0" oninput="onPrecioSlider('min')">
+            <input class="precio-slider-input" type="range" id="panel-rmax" min="0" max="2000000" step="50000" value="2000000" oninput="onPrecioSlider('max')">
           </div>
           <div class="precio-inputs-row">
             <div class="precio-input-box">
@@ -2276,15 +2280,12 @@ function _actualizarFill(prefix, mn, mx) {
 function _syncUI(mn, mx) {
   var minLbl = fmtPrecioSlider(mn);
   var maxLbl = fmtPrecioSlider(mx);
-  // Solo actualiza el panel (pill y panel comparten el mismo estado)
-  var tmin = document.getElementById('panel-txt-min');
-  var tmax = document.getElementById('panel-txt-max');
-  var lmin = document.getElementById('panel-precio-min-lbl');
-  var lmax = document.getElementById('panel-precio-max-lbl');
-  if (tmin) tmin.value = minLbl;
-  if (tmax) tmax.value = maxLbl;
-  if (lmin) lmin.textContent = minLbl;
-  if (lmax) lmax.textContent = maxLbl;
+  var rmin = document.getElementById('panel-rmin'); if(rmin) rmin.value = mn;
+  var rmax = document.getElementById('panel-rmax'); if(rmax) rmax.value = mx;
+  var tmin = document.getElementById('panel-txt-min'); if(tmin) tmin.value = minLbl;
+  var tmax = document.getElementById('panel-txt-max'); if(tmax) tmax.value = maxLbl;
+  var lmin = document.getElementById('panel-precio-min-lbl'); if(lmin) lmin.textContent = minLbl;
+  var lmax = document.getElementById('panel-precio-max-lbl'); if(lmax) lmax.textContent = maxLbl;
   _actualizarFill('panel', mn, mx);
   _buildHistogram('panel-histogram', mn, mx);
   var activo = mn > 0 || mx < PRECIO_MAX_TOTAL;
@@ -2357,8 +2358,28 @@ function sliderDragEnd() {
   document.removeEventListener('touchend', sliderDragEnd);
 }
 
-function onPrecioSlider(prefix) {
-  // Mantener para compatibilidad — ya no se usa con inputs range
+function onPrecioSlider(side) {
+  var mn = parseInt(document.getElementById('panel-rmin').value);
+  var mx = parseInt(document.getElementById('panel-rmax').value);
+  // Evitar cruce — el input que se movió cede
+  if (mn >= mx) {
+    if (side === 'min') {
+      mn = mx - 50000;
+      document.getElementById('panel-rmin').value = mn;
+    } else {
+      mx = mn + 50000;
+      document.getElementById('panel-rmax').value = mx;
+    }
+  }
+  _filtros.precioMin = Math.max(0, mn);
+  _filtros.precioMax = Math.min(PRECIO_MAX_TOTAL, mx);
+  // Actualizar z-index: el thumb que se movió va arriba
+  var rmin = document.getElementById('panel-rmin');
+  var rmax = document.getElementById('panel-rmax');
+  if (side === 'min') { rmin.style.zIndex = 5; rmax.style.zIndex = 4; }
+  else                { rmax.style.zIndex = 5; rmin.style.zIndex = 4; }
+  _syncUI(_filtros.precioMin, _filtros.precioMax);
+  renderResultados();
 }
 
 function onPrecioTextChange(prefix, side, val) {
