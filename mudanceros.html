@@ -314,11 +314,11 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       <div class="section-title">Precios base</div>
       <div class="section-sub">Precios orientativos en ARS — podés ajustarlos por cotización</div>
       <div class="field-grid" style="gap:8px">
-        <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p1" placeholder="45.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p2" placeholder="65.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p3" placeholder="85.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p4" placeholder="110.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">Flete / envío chico</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="pflete" placeholder="18.000" min="0"/></div></div>
+        <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p1" placeholder="700.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p2" placeholder="800.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p3" placeholder="900.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p4" placeholder="1.100.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">Flete / envío chico</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="pflete" placeholder="180.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
       </div>
     </div>
 
@@ -833,11 +833,11 @@ document.getElementById('regForm').addEventListener('submit',async function(e){
     dias:getChips('chips-dias').join(', '),
     horarios:getChips('chips-horarios').join(', '),
     anticipacion:document.getElementById('anticipacion').value,
-    precio1amb:document.getElementById('p1').value||'',
-    precio2amb:document.getElementById('p2').value||'',
-    precio3amb:document.getElementById('p3').value||'',
-    precio4amb:document.getElementById('p4').value||'',
-    precioFlete:document.getElementById('pflete').value||'',
+    precio1amb:document.getElementById('p1').value.replace(/\./g,'')||'',
+    precio2amb:document.getElementById('p2').value.replace(/\./g,'')||'',
+    precio3amb:document.getElementById('p3').value.replace(/\./g,'')||'',
+    precio4amb:document.getElementById('p4').value.replace(/\./g,'')||'',
+    precioFlete:document.getElementById('pflete').value.replace(/\./g,'')||'',
     extra:document.getElementById('extra').value.trim(),
     foto:fotoBase64,
     fotoCamion:fotoCamionBase64,
@@ -869,6 +869,16 @@ document.getElementById('regForm').addEventListener('submit',async function(e){
     setTimeout(()=>errDiv.remove(),5000);
   }
 });
+
+function fmtPrecioInput(el) {
+  var pos = el.selectionStart;
+  var raw = el.value.replace(/\D/g,'');
+  if (!raw) { el.value = ''; return; }
+  var formatted = parseInt(raw).toLocaleString('es-AR');
+  el.value = formatted;
+  // Mantener cursor al final
+  el.setSelectionRange(el.value.length, el.value.length);
+}
 </script>
 </body>
 </html>
