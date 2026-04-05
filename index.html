@@ -373,12 +373,10 @@ body.pill-open #pillOverlay{display:block}
 .precio-histogram{display:flex;align-items:flex-end;gap:1px;height:48px;margin-bottom:0}
 .precio-histogram-bar{flex:1;background:var(--border2);border-radius:2px 2px 0 0;min-height:2px;transition:background .2s}
 .precio-histogram-bar.in-range{background:var(--blue)}
-.precio-slider-track-wrap{position:relative;height:6px;background:var(--border2);border-radius:3px;margin:18px 0 20px}
+.precio-slider-track-wrap{position:relative;height:6px;background:var(--border2);border-radius:3px;margin:18px 4px 20px;cursor:pointer}
 .precio-slider-fill{position:absolute;top:0;height:6px;background:var(--blue);border-radius:3px;pointer-events:none}
-.precio-slider-input{position:absolute;width:100%;left:0;top:50%;transform:translateY(-50%);height:20px;opacity:0;cursor:pointer;margin:0;pointer-events:all;-webkit-appearance:none;appearance:none}
-.precio-slider-input::-webkit-slider-thumb{width:22px;height:22px;border-radius:50%;cursor:grab;-webkit-appearance:none;appearance:none}
-.precio-slider-input::-moz-range-thumb{width:22px;height:22px;border-radius:50%;cursor:grab;border:none;background:transparent}
-.precio-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;z-index:2;transition:box-shadow .15s}
+.precio-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab;z-index:2;transition:box-shadow .15s;touch-action:none}
+.precio-thumb:active{cursor:grabbing;box-shadow:0 0 0 6px rgba(26,111,255,.2)}
 .precio-inputs-row{display:flex;gap:8px;margin-top:4px}
 .precio-input-box{flex:1;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;cursor:text;transition:border-color .2s}
 .precio-input-box:focus-within{border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,111,255,.1)}
@@ -1011,19 +1009,16 @@ footer{background:#003580;padding:1.5rem}
         <!-- Precio -->
         <div class="mob-fs-section" style="border-bottom:none">
           <div class="mob-fs-title">Precio estimado</div>
-          <div class="precio-range-header" style="margin-bottom:14px">
-            <span id="mf-precio-min-lbl">$ 0</span>
-            <span style="color:var(--text3)">—</span>
-            <span id="mf-precio-max-lbl">Sin límite</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="mf-precio-chips">
+            <div class="mob-fs-chip mf-precio-chip" id="mfp-0" onclick="mfSetPrecio(0,2000000,this)">Todos</div>
+            <div class="mob-fs-chip mf-precio-chip" id="mfp-1" onclick="mfSetPrecio(0,400000,this)">Hasta $400k</div>
+            <div class="mob-fs-chip mf-precio-chip" id="mfp-2" onclick="mfSetPrecio(0,600000,this)">Hasta $600k</div>
+            <div class="mob-fs-chip mf-precio-chip" id="mfp-3" onclick="mfSetPrecio(0,800000,this)">Hasta $800k</div>
+            <div class="mob-fs-chip mf-precio-chip" id="mfp-4" onclick="mfSetPrecio(0,1000000,this)">Hasta $1M</div>
+            <div class="mob-fs-chip mf-precio-chip" id="mfp-5" onclick="mfSetPrecio(0,1500000,this)">Hasta $1,5M</div>
+            <div class="mob-fs-chip mf-precio-chip" id="mfp-6" onclick="mfSetPrecio(1000000,2000000,this)">Más de $1M</div>
           </div>
-          <div class="precio-histogram" id="mf-histogram"></div>
-          <div class="precio-slider-track-wrap">
-            <div class="precio-slider-fill" id="mf-precio-fill"></div>
-            <div class="precio-thumb" id="mf-thumb-min" style="z-index:4"></div>
-            <div class="precio-thumb" id="mf-thumb-max" style="z-index:4"></div>
-            <input class="precio-slider-input" type="range" id="mf-rmin" min="0" max="2000000" step="50000" value="0" style="z-index:5" oninput="onMfPrecioSlider()">
-            <input class="precio-slider-input" type="range" id="mf-rmax" min="0" max="2000000" step="50000" value="2000000" style="z-index:5" oninput="onMfPrecioSlider()">
-          </div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:10px" id="mf-precio-lbl-sel">Sin filtro de precio</div>
         </div>
 
       </div>
@@ -1068,12 +1063,10 @@ footer{background:#003580;padding:1.5rem}
             <span id="panel-precio-max-lbl">Sin límite</span>
           </div>
           <div class="precio-histogram" id="panel-histogram"></div>
-          <div class="precio-slider-track-wrap">
+          <div class="precio-slider-track-wrap" id="panel-track" onmousedown="sliderTrackClick('panel',event)">
             <div class="precio-slider-fill" id="panel-precio-fill"></div>
-            <div class="precio-thumb" id="panel-thumb-min" style="z-index:4"></div>
-            <div class="precio-thumb" id="panel-thumb-max" style="z-index:4"></div>
-            <input class="precio-slider-input" type="range" id="panel-rmin" min="0" max="2000000" step="50000" value="0" style="z-index:5" oninput="onPrecioSlider('panel')">
-            <input class="precio-slider-input" type="range" id="panel-rmax" min="0" max="2000000" step="50000" value="2000000" style="z-index:5" oninput="onPrecioSlider('panel')">
+            <div class="precio-thumb" id="panel-thumb-min" onmousedown="sliderDragStart('panel','min',event)" ontouchstart="sliderDragStart('panel','min',event)"></div>
+            <div class="precio-thumb" id="panel-thumb-max" onmousedown="sliderDragStart('panel','max',event)" ontouchstart="sliderDragStart('panel','max',event)"></div>
           </div>
           <div class="precio-inputs-row">
             <div class="precio-input-box">
@@ -2028,7 +2021,6 @@ function togglePill(el, key) {}
 var _mfTemp = { orden:'cal', verifs:new Set(), vehiculos:new Set(), zonas:new Set(), precioMin:0, precioMax:2000000 };
 
 function abrirFiltrosMobile() {
-  // Si no hay datos todavía, cargar mocks para que el contador funcione
   if (!_todos.length) _todos = _MOCK;
   _mfTemp.orden = _filtros.orden;
   _mfTemp.verifs = new Set(_filtros.verifs);
@@ -2037,6 +2029,11 @@ function abrirFiltrosMobile() {
   _mfTemp.precioMin = _filtros.precioMin;
   _mfTemp.precioMax = _filtros.precioMax;
   _mfRefrescarUI();
+  // Chip Todos activo por defecto si no hay filtro de precio
+  if (_filtros.precioMin === 0 && _filtros.precioMax >= PRECIO_MAX_TOTAL) {
+    document.querySelectorAll('.mf-precio-chip').forEach(function(c){ c.classList.remove('active'); });
+    var c0 = document.getElementById('mfp-0'); if(c0) c0.classList.add('active');
+  }
   document.getElementById('filtrosMobileSheet').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -2104,30 +2101,51 @@ function mfToggleChip(el, key) {
   _mfActualizarContador();
 }
 
-function onMfPrecioSlider() {
-  var mn = parseInt(document.getElementById('mf-rmin').value);
-  var mx = parseInt(document.getElementById('mf-rmax').value);
-  if (mn >= mx) {
-    if (document.activeElement === document.getElementById('mf-rmin')) { mn = Math.max(0, mx-50000); document.getElementById('mf-rmin').value=mn; }
-    else { mx = Math.min(PRECIO_MAX_TOTAL, mn+50000); document.getElementById('mf-rmax').value=mx; }
-  }
+function mfSetPrecio(mn, mx, el) {
   _mfTemp.precioMin = mn;
   _mfTemp.precioMax = mx;
-  _mfActualizarPrecioUI();
+  // Activar chip seleccionado
+  document.querySelectorAll('.mf-precio-chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  // Actualizar label
+  var lbl = document.getElementById('mf-precio-lbl-sel');
+  if (lbl) {
+    if (mx >= 2000000 && mn === 0) {
+      lbl.textContent = 'Sin filtro de precio';
+    } else if (mn === 0) {
+      lbl.textContent = 'Hasta $' + (mx/1000).toFixed(0) + '.000';
+    } else {
+      lbl.textContent = 'Más de $' + (mn/1000).toFixed(0) + '.000';
+    }
+  }
   _mfActualizarContador();
 }
 
 function _mfActualizarPrecioUI() {
+  // Sincronizar chips con el estado actual de _mfTemp
   var mn = _mfTemp.precioMin, mx = _mfTemp.precioMax;
-  document.getElementById('mf-precio-min-lbl').textContent = fmtPrecioSlider(mn);
-  document.getElementById('mf-precio-max-lbl').textContent = fmtPrecioSlider(mx);
-  var pct1 = mn/PRECIO_MAX_TOTAL*100, pct2 = mx/PRECIO_MAX_TOTAL*100;
-  var fill = document.getElementById('mf-precio-fill');
-  if (fill) { fill.style.left=pct1+'%'; fill.style.width=(pct2-pct1)+'%'; }
-  var tm = document.getElementById('mf-thumb-min'), tM = document.getElementById('mf-thumb-max');
-  if (tm) tm.style.left=pct1+'%';
-  if (tM) tM.style.left=pct2+'%';
-  _buildHistogram('mf-histogram', mn, mx);
+  document.querySelectorAll('.mf-precio-chip').forEach(function(c){ c.classList.remove('active'); });
+  if (mn === 0 && mx >= 2000000) {
+    var c0 = document.getElementById('mfp-0'); if(c0) c0.classList.add('active');
+  } else if (mn === 0 && mx === 400000) {
+    var c1 = document.getElementById('mfp-1'); if(c1) c1.classList.add('active');
+  } else if (mn === 0 && mx === 600000) {
+    var c2 = document.getElementById('mfp-2'); if(c2) c2.classList.add('active');
+  } else if (mn === 0 && mx === 800000) {
+    var c3 = document.getElementById('mfp-3'); if(c3) c3.classList.add('active');
+  } else if (mn === 0 && mx === 1000000) {
+    var c4 = document.getElementById('mfp-4'); if(c4) c4.classList.add('active');
+  } else if (mn === 0 && mx === 1500000) {
+    var c5 = document.getElementById('mfp-5'); if(c5) c5.classList.add('active');
+  } else if (mn === 1000000) {
+    var c6 = document.getElementById('mfp-6'); if(c6) c6.classList.add('active');
+  }
+  var lbl = document.getElementById('mf-precio-lbl-sel');
+  if (lbl) {
+    if (mn === 0 && mx >= 2000000) lbl.textContent = 'Sin filtro de precio';
+    else if (mn === 0) lbl.textContent = 'Hasta $' + (mx/1000).toFixed(0) + '.000';
+    else lbl.textContent = 'Más de $' + (mn/1000).toFixed(0) + '.000';
+  }
 }
 
 function _mfActualizarContador() {
@@ -2158,6 +2176,9 @@ function _mfActualizarContador() {
 
 function mfLimpiarTodo() {
   _mfTemp = { orden:'cal', verifs:new Set(), vehiculos:new Set(), zonas:new Set(), precioMin:0, precioMax:PRECIO_MAX_TOTAL };
+  document.querySelectorAll('.mf-precio-chip').forEach(function(c){ c.classList.remove('active'); });
+  var c0 = document.getElementById('mfp-0'); if(c0) c0.classList.add('active');
+  var lbl = document.getElementById('mf-precio-lbl-sel'); if(lbl) lbl.textContent = 'Sin filtro de precio';
   _mfRefrescarUI();
 }
 
@@ -2255,22 +2276,17 @@ function _actualizarFill(prefix, mn, mx) {
 function _syncUI(mn, mx) {
   var minLbl = fmtPrecioSlider(mn);
   var maxLbl = fmtPrecioSlider(mx);
-  ['pill','panel'].forEach(function(p) {
-    var rmin = document.getElementById(p+'-rmin');
-    var rmax = document.getElementById(p+'-rmax');
-    var tmin = document.getElementById(p+'-txt-min');
-    var tmax = document.getElementById(p+'-txt-max');
-    var lmin = document.getElementById(p+'-precio-min-lbl');
-    var lmax = document.getElementById(p+'-precio-max-lbl');
-    if (rmin) rmin.value = mn;
-    if (rmax) rmax.value = mx;
-    if (tmin) tmin.value = minLbl;
-    if (tmax) tmax.value = maxLbl;
-    if (lmin) lmin.textContent = minLbl;
-    if (lmax) lmax.textContent = maxLbl;
-    _actualizarFill(p, mn, mx);
-    _buildHistogram(p+'-histogram', mn, mx);
-  });
+  // Solo actualiza el panel (pill y panel comparten el mismo estado)
+  var tmin = document.getElementById('panel-txt-min');
+  var tmax = document.getElementById('panel-txt-max');
+  var lmin = document.getElementById('panel-precio-min-lbl');
+  var lmax = document.getElementById('panel-precio-max-lbl');
+  if (tmin) tmin.value = minLbl;
+  if (tmax) tmax.value = maxLbl;
+  if (lmin) lmin.textContent = minLbl;
+  if (lmax) lmax.textContent = maxLbl;
+  _actualizarFill('panel', mn, mx);
+  _buildHistogram('panel-histogram', mn, mx);
   var activo = mn > 0 || mx < PRECIO_MAX_TOTAL;
   var pillEl = document.getElementById('pill-precio');
   var pillLbl = document.getElementById('pill-precio-lbl');
@@ -2279,19 +2295,70 @@ function _syncUI(mn, mx) {
   _actualizarClearAll();
 }
 
-function onPrecioSlider(prefix) {
-  var mnEl = document.getElementById(prefix+'-rmin');
-  var mxEl = document.getElementById(prefix+'-rmax');
-  var mn = parseInt(mnEl.value);
-  var mx = parseInt(mxEl.value);
-  if (mn >= mx) {
-    if (document.activeElement === mnEl) { mn = Math.max(0, mx - 10000); mnEl.value = mn; }
-    else { mx = Math.min(PRECIO_MAX_TOTAL, mn + 10000); mxEl.value = mx; }
+// ══════════════════════════════════════════
+// SLIDER DE PRECIO — DRAG PURO (sin input range)
+// ══════════════════════════════════════════
+var _sliderDrag = null;
+
+function sliderTrackClick(prefix, e) {
+  if (e.target.classList.contains('precio-thumb')) return;
+  var track = document.getElementById(prefix+'-track');
+  var rect = track.getBoundingClientRect();
+  var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  var val = Math.round(pct * PRECIO_MAX_TOTAL / 50000) * 50000;
+  var mn = _filtros.precioMin, mx = _filtros.precioMax;
+  // Asignar al thumb más cercano
+  if (Math.abs(val - mn) <= Math.abs(val - mx)) {
+    mn = Math.min(val, mx - 50000);
+  } else {
+    mx = Math.max(val, mn + 50000);
+  }
+  _filtros.precioMin = Math.max(0, mn);
+  _filtros.precioMax = Math.min(PRECIO_MAX_TOTAL, mx);
+  _syncUI(_filtros.precioMin, _filtros.precioMax);
+  renderResultados();
+}
+
+function sliderDragStart(prefix, side, e) {
+  e.preventDefault();
+  e.stopPropagation();
+  _sliderDrag = { prefix: prefix, side: side };
+  document.addEventListener('mousemove', sliderDragMove);
+  document.addEventListener('mouseup', sliderDragEnd);
+  document.addEventListener('touchmove', sliderDragMove, { passive: false });
+  document.addEventListener('touchend', sliderDragEnd);
+}
+
+function sliderDragMove(e) {
+  if (!_sliderDrag) return;
+  e.preventDefault();
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  var track = document.getElementById(_sliderDrag.prefix+'-track');
+  var rect = track.getBoundingClientRect();
+  var pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  var val = Math.round(pct * PRECIO_MAX_TOTAL / 50000) * 50000;
+  var mn = _filtros.precioMin, mx = _filtros.precioMax;
+  if (_sliderDrag.side === 'min') {
+    mn = Math.max(0, Math.min(val, mx - 50000));
+  } else {
+    mx = Math.min(PRECIO_MAX_TOTAL, Math.max(val, mn + 50000));
   }
   _filtros.precioMin = mn;
   _filtros.precioMax = mx;
   _syncUI(mn, mx);
   renderResultados();
+}
+
+function sliderDragEnd() {
+  _sliderDrag = null;
+  document.removeEventListener('mousemove', sliderDragMove);
+  document.removeEventListener('mouseup', sliderDragEnd);
+  document.removeEventListener('touchmove', sliderDragMove);
+  document.removeEventListener('touchend', sliderDragEnd);
+}
+
+function onPrecioSlider(prefix) {
+  // Mantener para compatibilidad — ya no se usa con inputs range
 }
 
 function onPrecioTextChange(prefix, side, val) {
