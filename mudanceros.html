@@ -379,8 +379,9 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
     <!-- ── SECCIÓN 8: FOTOS DEL VEHÍCULO ── -->
     <div class="form-section">
       <div class="section-title">Fotos del vehículo</div>
-      <div class="section-sub">Requerido · Se muestran en tu perfil para generar confianza</div>
+      <div class="section-sub">Requerido · Se muestran en tu perfil para generar confianza · Agregá todas las que quieras</div>
       <div class="foto-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <!-- Camión — requerido -->
         <div>
           <div class="field-label" style="margin-bottom:8px">Foto del camión <span style="color:var(--emerald)">*</span></div>
           <div class="upload-area" id="uploadAreaCamion" onclick="document.getElementById('fotoCamionInput').click()">
@@ -391,8 +392,9 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           </div>
           <input type="file" id="fotoCamionInput" accept="image/*" onchange="previewFotoCamion(this)" style="display:none"/>
         </div>
+        <!-- Patente — opcional -->
         <div>
-          <div class="field-label" style="margin-bottom:8px">Foto de la patente <span style="color:var(--emerald)">*</span></div>
+          <div class="field-label" style="margin-bottom:8px">Foto de la patente <span style="color:var(--text3);font-weight:400">(opcional)</span></div>
           <div class="upload-area" id="uploadAreaPatente" onclick="document.getElementById('fotoPatenteInput').click()">
             <img id="fotoPatentePreview" class="upload-preview" alt="preview patente"/>
             <div class="upload-icon" id="uploadIconPatente">🔢</div>
@@ -401,6 +403,15 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           </div>
           <input type="file" id="fotoPatenteInput" accept="image/*" onchange="previewFotoPatente(this)" style="display:none"/>
         </div>
+      </div>
+
+      <!-- Fotos adicionales -->
+      <div style="margin-top:1.2rem">
+        <div class="field-label" style="margin-bottom:8px">Fotos adicionales <span style="color:var(--text3);font-weight:400">(opcional)</span></div>
+        <div id="fotosExtrasGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px"></div>
+        <button type="button" onclick="agregarFotoExtra()" style="display:flex;align-items:center;gap:6px;background:none;border:1.5px dashed var(--border2);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--text2);cursor:pointer;font-family:Inter,sans-serif;transition:all .2s;width:100%;justify-content:center">
+          <span style="font-size:18px">+</span> Agregar otra foto
+        </button>
       </div>
     </div>
 
@@ -652,6 +663,72 @@ function previewFotoPatente(input){
   }
 }
 
+var _fotosExtras = [];
+var _fotoExtraIdx = 0;
+
+function agregarFotoExtra() {
+  var idx = _fotoExtraIdx++;
+  var inputId = 'fotoExtra-' + idx;
+  var grid = document.getElementById('fotosExtrasGrid');
+
+  var wrapper = document.createElement('div');
+  wrapper.id = 'fotoExtraWrap-' + idx;
+  wrapper.style.cssText = 'position:relative';
+
+  var area = document.createElement('div');
+  area.className = 'upload-area';
+  area.style.cssText = 'min-height:100px;cursor:pointer;position:relative';
+  area.innerHTML = '<div style="font-size:24px;margin-bottom:4px">📷</div>'
+    + '<div style="font-size:12px;color:var(--text3)">Subir foto</div>'
+    + '<img id="prev-' + idx + '" style="max-width:80px;max-height:80px;border-radius:8px;display:none;object-fit:cover;margin:0 auto" alt=""/>';
+  area.onclick = function(){ document.getElementById(inputId).click(); };
+
+  // Botón eliminar
+  var btnElim = document.createElement('button');
+  btnElim.type = 'button';
+  btnElim.innerHTML = '✕';
+  btnElim.style.cssText = 'position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1;padding:0;display:none';
+  btnElim.onclick = function(e){
+    e.stopPropagation();
+    _fotosExtras = _fotosExtras.filter(function(f){ return f.idx !== idx; });
+    wrapper.remove();
+  };
+
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.id = inputId;
+  input.accept = 'image/*';
+  input.style.display = 'none';
+  input.onchange = function(){
+    if (!this.files || !this.files[0]) return;
+    var reader = new FileReader();
+    var file = this.files[0];
+    reader.onload = function(e){
+      var b64 = e.target.result;
+      // Actualizar o agregar
+      var existing = _fotosExtras.find(function(f){ return f.idx === idx; });
+      if (existing) existing.b64 = b64;
+      else _fotosExtras.push({ idx: idx, b64: b64 });
+      // Preview
+      var prev = document.getElementById('prev-' + idx);
+      prev.src = b64; prev.style.display = 'block';
+      area.querySelector('div').style.display = 'none';
+      area.querySelectorAll('div')[1].style.display = 'none';
+      area.classList.add('has-file');
+      btnElim.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  wrapper.appendChild(area);
+  wrapper.appendChild(btnElim);
+  wrapper.appendChild(input);
+  grid.appendChild(wrapper);
+
+  // Trigger click automáticamente
+  setTimeout(function(){ input.click(); }, 100);
+}
+
 // ── CUIL: FORMATO Y VALIDACIÓN AFIP ─────────────────────────────
 function formatCUIL(input) {
   // Auto-formatea mientras escribe: "20123456789" → "20-12345678-9"
@@ -807,7 +884,6 @@ document.getElementById('regForm').addEventListener('submit',async function(e){
   var fotoCamionInput=document.getElementById('fotoCamionInput');
   var fotoPatenteInput=document.getElementById('fotoPatenteInput');
   if(!fotoCamionInput.files||!fotoCamionInput.files[0]){flashUpload('uploadAreaCamion');return;}
-  if(!fotoPatenteInput.files||!fotoPatenteInput.files[0]){flashUpload('uploadAreaPatente');return;}
 
   var btn=document.getElementById('btnSubmit');
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Enviando…';
@@ -842,6 +918,7 @@ document.getElementById('regForm').addEventListener('submit',async function(e){
     foto:fotoBase64,
     fotoCamion:fotoCamionBase64,
     fotoPatente:fotoPatenteBase64,
+    fotosExtras: _fotosExtras.map(function(f){ return f.b64; }),
     // DNI
     dniFrente: dniData.frente ? 'data:' + dniData.frente.mediaType + ';base64,' + dniData.frente.b64 : '',
     dniDorso:  dniData.dorso  ? 'data:' + dniData.dorso.mediaType  + ';base64,' + dniData.dorso.b64  : '',
