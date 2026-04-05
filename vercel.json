@@ -5,13 +5,15 @@
     { "src": "/admin", "dest": "/admin.html" },
     { "src": "/mudanceros", "dest": "/mudanceros.html" },
     { "src": "/mudanceros-catalogo", "dest": "/mudanceros-catalogo.html" },
-    { "src": "/mudancero", "dest": "/mudancero-perfil.html" },
     { "src": "/mi-cuenta", "dest": "/mi-cuenta.html" },
     { "src": "/mi-mudanza", "dest": "/mi-mudanza.html" },
     { "src": "/pago-exitoso", "dest": "/pago-exitoso.html" },
     { "src": "/terminos", "dest": "/terminos.html" },
     { "src": "/privacidad", "dest": "/privacidad.html" },
     { "src": "/contacto", "dest": "/contacto.html" },
+    { "src": "/mudancero", "dest": "/mudancero-perfil.html" },
+    { "src": "/mudanzas-en-(.*)", "dest": "/api/seo-zonas" },
+    { "src": "/fletes-en-(.*)", "dest": "/api/seo-zonas" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
