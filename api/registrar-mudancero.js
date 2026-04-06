@@ -123,7 +123,8 @@ module.exports = async function handler(req, res) {
       }
 
       // Si AFIP responde y el CUIL existe → cruzamos con el nombre del DNI
-      if (cuilResultado.valido === true && dniAnalisis) {
+      // Solo si tenemos nombre real de AFIP (no validación local)
+      if (cuilResultado.valido === true && dniAnalisis && cuilResultado.estadoClave !== 'VALIDADO_LOCAL') {
         const norm = s => (s || '').toLowerCase()
           .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           .replace(/[^a-z ]/g, '').trim();
