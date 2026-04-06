@@ -126,44 +126,8 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Faltan fotos del vehículo' });
     }
 
-    // ── VALIDAR CUIL CONTRA AFIP ────────────────────────────────
-    let cuilResultado = null;
-    if (cuil) {
-      cuilResultado = await validarCUIL(cuil);
-
-      // Si AFIP responde y el CUIL no existe → bloqueamos
-      if (cuilResultado.valido === false) {
-        return res.status(400).json({
-          error: cuilResultado.error || 'CUIL inválido',
-          campo: 'cuil'
-        });
-      }
-
-      // Si AFIP responde y el CUIL existe → cruzamos con el nombre del DNI
-      // Solo si tenemos nombre real de AFIP (no validación local)
-      if (cuilResultado.valido === true && dniAnalisis && cuilResultado.estadoClave !== 'VALIDADO_LOCAL') {
-        const norm = s => (s || '').toLowerCase()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z ]/g, '').trim();
-
-        const nombreAfip = norm(cuilResultado.nombre + ' ' + cuilResultado.apellido + ' ' + cuilResultado.razonSocial);
-        const apellidoDNI = norm(dniAnalisis.apellido || '');
-        const nombresDNI  = norm(dniAnalisis.nombres  || '');
-
-        const primerApellidoDNI = apellidoDNI.split(' ')[0];
-        const primerNombreDNI   = nombresDNI.split(' ')[0];
-
-        const coincide = (primerApellidoDNI && nombreAfip.includes(primerApellidoDNI)) ||
-                         (primerNombreDNI   && nombreAfip.includes(primerNombreDNI));
-
-        if (!coincide && primerApellidoDNI) {
-          return res.status(400).json({
-            error: `El CUIL ingresado pertenece a "${(cuilResultado.nombre + ' ' + cuilResultado.apellido).trim()}" pero el DNI dice "${dniAnalisis.nombres} ${dniAnalisis.apellido}". Verificá que sea tu propio CUIL.`,
-            campo: 'cuil'
-          });
-        }
-      }
-    }
+    // ── CUIL — guardar sin validar, el admin verifica manualmente ──
+    let cuilResultado = { valido: null, estadoClave: 'SIN_VERIFICAR' };
 
     // ── VERIFICAR DUPLICADO ─────────────────────────────────────
     const existente = await getJSON(`mudancero:perfil:${email}`);
