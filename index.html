@@ -1012,6 +1012,13 @@ footer{background:#003580;padding:1.5rem}
           </div>
         </div>
 
+        <!-- Sin estrés -->
+        <div class="mob-fs-section">
+          <div class="mob-fs-chip" id="mfsc-sin-estres" onclick="mfToggleChip(this,'sin-estres')" style="width:100%;justify-content:center;padding:12px">
+            ✨ Solo mudanza sin estrés (servicio completo)
+          </div>
+        </div>
+
         <!-- Vehículo -->
         <div class="mob-fs-section">
           <div class="mob-fs-title">Tipo de vehículo</div>
@@ -1276,7 +1283,7 @@ var _fechaFlete = 'Hoy';
 var _busqueda = {};
 var _todos = [];
 var _sel = new Set();
-var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set(), precioMin:0, precioMax:2000000 };
+var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set(), precioMin:0, precioMax:2000000, sinEstres:false };
 var _buscarNombre = '';
 
 function filtrarPorNombre(val) {
@@ -1801,6 +1808,7 @@ function renderResultados() {
     var haystack = ((m.nombre||'') + ' ' + (m.empresa||'')).toLowerCase();
     return haystack.includes(_buscarNombre);
   });
+  if (_filtros.sinEstres) lista = lista.filter(function(m){ return m.sinEstres; });
   if (_filtros.vehiculos.size) lista = lista.filter(function(m){ return _filtros.vehiculos.has(m.vehiculo); });
   if (_filtros.zonas.size)     lista = lista.filter(function(m){ return Array.from(_filtros.zonas).some(function(z){ return (m.zonaBase||'').includes(z); }); });
   if (_filtros.verifs.has('id'))  lista = lista.filter(function(m){ return m.verificadoIdentidad; });
@@ -1852,6 +1860,7 @@ function renderResultados() {
       ? '<img src="'+m.fotoUrl+'" alt="Camión de '+m.nombre+'">'
       : '<div class="mud-foto-ph"><div class="mud-foto-truck">🚛</div><div class="mud-foto-initials">'+initials+'</div></div>';
     var tags = '';
+    if (m.sinEstres)            tags += '<span class="mud-tag" style="background:#FFF7ED;color:#C05621;border:1px solid #FED7AA">✨ Sin estrés</span>';
     if (m.verificadoIdentidad) tags += '<span class="mud-tag mud-tag-green">✓ Verificado</span>';
     if (m.verificadoSeguro)    tags += '<span class="mud-tag mud-tag-green">🛡 Seguro</span>';
     if (m.verificadoVehiculo)  tags += '<span class="mud-tag mud-tag-blue">🚛 '+m.vehiculo+'</span>';
@@ -2076,7 +2085,7 @@ function togglePill(el, key) {}
 // ══════════════════════════════════════════
 
 // Estado temporal del sheet (se aplica al tocar "Ver resultados")
-var _mfTemp = { orden:'cal', verifs:new Set(), vehiculos:new Set(), zonas:new Set(), precioMin:0, precioMax:2000000 };
+var _mfTemp = { orden:'cal', verifs:new Set(), vehiculos:new Set(), zonas:new Set(), precioMin:0, precioMax:2000000, sinEstres:false };
 
 function abrirFiltrosMobile() {
   try {
@@ -2087,6 +2096,7 @@ function abrirFiltrosMobile() {
     _mfTemp.zonas = new Set(_filtros.zonas);
     _mfTemp.precioMin = _filtros.precioMin;
     _mfTemp.precioMax = _filtros.precioMax;
+    _mfTemp.sinEstres = _filtros.sinEstres || false;
     try { _mfRefrescarUI(); } catch(e) { console.warn('mfRefrescarUI:', e); }
     if (_filtros.precioMin === 0 && _filtros.precioMax >= PRECIO_MAX_TOTAL) {
       document.querySelectorAll('.mf-precio-chip').forEach(function(c){ c.classList.remove('active'); });
@@ -2154,7 +2164,8 @@ function mfToggleChip(el, key) {
   var verifMap = {'verif-id':'id','verif-veh':'veh','verif-seg':'seg'};
   var vehMap = {'veh-cam-g':'Camión grande','veh-cam-m':'Camión mediano','veh-fur':'Camioneta / furgón pequeño','veh-gru':'Camión con hidrogrúa'};
   var zonaMap = {'zona-caba':'CABA','zona-gban':'GBA Norte','zona-gbas':'GBA Sur','zona-gbao':'GBA Oeste','zona-ros':'Rosario','zona-cor':'Córdoba'};
-  if (verifMap[key]) { if(activo) _mfTemp.verifs.add(verifMap[key]); else _mfTemp.verifs.delete(verifMap[key]); }
+  if (key === 'sin-estres') { _mfTemp.sinEstres = activo; }
+  else if (verifMap[key]) { if(activo) _mfTemp.verifs.add(verifMap[key]); else _mfTemp.verifs.delete(verifMap[key]); }
   else if (vehMap[key]) { if(activo) _mfTemp.vehiculos.add(vehMap[key]); else _mfTemp.vehiculos.delete(vehMap[key]); }
   else if (zonaMap[key]) { if(activo) _mfTemp.zonas.add(zonaMap[key]); else _mfTemp.zonas.delete(zonaMap[key]); }
   _mfActualizarContador();
@@ -2215,6 +2226,7 @@ function _mfActualizarContador() {
   if (_mfTemp.verifs.has('id'))  lista = lista.filter(function(m){ return m.verificadoIdentidad; });
   if (_mfTemp.verifs.has('veh')) lista = lista.filter(function(m){ return m.verificadoVehiculo; });
   if (_mfTemp.verifs.has('seg')) lista = lista.filter(function(m){ return m.verificadoSeguro; });
+  if (_mfTemp.sinEstres) lista = lista.filter(function(m){ return m.sinEstres; });
   if (_mfTemp.precioMin > 0 || _mfTemp.precioMax < PRECIO_MAX_TOTAL) {
     var _amb = Math.max(1, parseInt(_busqueda.ambientes) || 1);
     lista = lista.filter(function(m) {
@@ -2225,7 +2237,7 @@ function _mfActualizarContador() {
   }
   var n = lista.length;
   var hayFiltros = _mfTemp.vehiculos.size || _mfTemp.zonas.size || _mfTemp.verifs.size
-    || _mfTemp.orden !== 'cal' || _mfTemp.precioMin > 0 || _mfTemp.precioMax < PRECIO_MAX_TOTAL;
+    || _mfTemp.orden !== 'cal' || _mfTemp.precioMin > 0 || _mfTemp.precioMax < PRECIO_MAX_TOTAL || _mfTemp.sinEstres;
   var countEl = document.getElementById('mobFiltrosCount');
   if (countEl) { countEl.style.display = hayFiltros ? 'inline-flex' : 'none'; countEl.textContent = hayFiltros ? '!' : ''; }
   var btnCount = document.getElementById('mobAplicarCount');
@@ -2249,6 +2261,7 @@ function mfAplicar() {
     _filtros.zonas = new Set(_mfTemp.zonas);
     _filtros.precioMin = _mfTemp.precioMin;
     _filtros.precioMax = _mfTemp.precioMax;
+    _filtros.sinEstres = _mfTemp.sinEstres || false;
   } catch(e) { console.error('mfAplicar filtros:', e); }
   // Cerrar sheet incondicionalmente
   var sheet = document.getElementById('filtrosMobileSheet');
