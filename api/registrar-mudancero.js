@@ -89,7 +89,7 @@ module.exports = async function handler(req, res) {
       vehiculo, cantVehiculos, equipo,
       servicios, dias, horarios, anticipacion,
       precio1amb, precio2amb, precio3amb, precio4amb, precioFlete,
-      extra,
+      extra, sinEstres,
       foto, fotoCamion, fotoPatente,
       dniFrente, dniDorso, dniAnalisis,
       metodoCobro, cbu, emailMP, titularCuenta,
@@ -178,6 +178,7 @@ module.exports = async function handler(req, res) {
       },
 
       extra: extra || '',
+      sinEstres: sinEstres === true || sinEstres === 'true' || false,
       foto: foto || '', fotoCamion: fotoCamion || '', fotoPatente: fotoPatente || '',
       dniFrente: dniFrente || '', dniDorso: dniDorso || '',
       dniAnalisis: dniAnalisis || null,
