@@ -357,6 +357,28 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
           </div>
           <div style="padding:0 1.2rem 1rem;font-size:11px;color:var(--text3);font-family:var(--mono)">🔒 Solo usamos estos datos para transferirte tus ganancias · Nunca se comparten con clientes</div>
         </div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-header"><span class="card-title">📸 Fotos del perfil</span></div>
+          <div style="padding:1.2rem;display:grid;gap:16px">
+            <div>
+              <div class="field-label" style="margin-bottom:8px">Foto de perfil / logo</div>
+              <div style="display:flex;align-items:center;gap:16px">
+                <div id="pf-foto-preview" style="width:72px;height:72px;border-radius:50%;background:#003580;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;flex-shrink:0;overflow:hidden;border:2px solid #E2E8F0"></div>
+                <div>
+                  <button type="button" onclick="document.getElementById('pf-foto-input').click()" style="background:#EEF4FF;color:#1A6FFF;border:1px solid #C7D9FF;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Cambiar foto</button>
+                  <div style="font-size:11px;color:#94A3B8;margin-top:4px;font-family:monospace">Máx. 5MB · Se comprime automáticamente</div>
+                </div>
+              </div>
+              <input type="file" id="pf-foto-input" accept="image/*" style="display:none" onchange="pfPreviewFoto(this)"/>
+            </div>
+            <div>
+              <div class="field-label" style="margin-bottom:8px">Fotos del vehículo</div>
+              <div id="pf-fotos-veh-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+              <button type="button" onclick="document.getElementById('pf-fotos-veh-input').click()" style="background:#F4F6F9;color:#475569;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">+ Agregar fotos del vehículo</button>
+              <input type="file" id="pf-fotos-veh-input" accept="image/*" multiple style="display:none" onchange="pfAgregarFotosVeh(this)"/>
+            </div>
+          </div>
+        </div>
         <div class="card" style="margin-bottom:1.5rem">
           <div class="card-header"><span class="card-title">📝 Presentación</span></div>
           <div style="padding:1.2rem">
@@ -447,6 +469,10 @@ async function initApp(){
     var d = await r.json();
     if(!d.found){ showScreen('notFound'); return; }
     mudanceroData = d.mudancero;
+    // Guardar perfil completo de Redis para fotos y campos nuevos
+    if (d.perfil) {
+      window._perfilRedis = d.perfil;
+    }
   }catch(e){
     mudanceroData = {nombre:currentUser.name, estado:'Pendiente', zona:'CABA'};
   }
@@ -583,56 +609,12 @@ async function loadPedidos(){
     var r2 = await fetch('/api/cotizaciones?action=mis-cotizaciones&email='+encodeURIComponent(currentUser.email));
     var d2 = await r2.json();
     misCotizaciones = d2.mudanzas || [];
-    // Si no hay mudanzas reales, mostrar ejemplos para demostración
-    if (mudanzasDisponibles.length === 0 && misCotizaciones.length === 0) {
-      mudanzasDisponibles = _getMockPedidos();
-    }
     renderPedidos();
   }catch(e){
-    mudanzasDisponibles = _getMockPedidos();
+    mudanzasDisponibles = [];
     misCotizaciones = [];
     renderPedidos();
   }
-}
-
-function _getMockPedidos() {
-  var ahora = new Date();
-  var expira1 = new Date(ahora.getTime() + 20*3600000).toISOString();
-  var expira2 = new Date(ahora.getTime() + 18*3600000).toISOString();
-  var expira3 = new Date(ahora.getTime() + 6*3600000).toISOString();
-  return [
-    {
-      id:'DEMO-001', clienteNombre:'Juan García', clienteEmail:'juan@demo.com',
-      desde:'Palermo, CABA', hasta:'San Isidro, GBA Norte',
-      ambientes:'3 ambientes', fecha:'Esta semana', tipo:'mudanza',
-      precio_estimado:680000, distanciaKm:28,
-      estado:'buscando', cotizaciones:[], expira:expira1,
-      fechaPublicacion: ahora.toISOString(),
-      modoCotizacion:'abierto', mudancerosInvitados:[],
-      _esDemo: true,
-    },
-    {
-      id:'DEMO-002', clienteNombre:'María López', clienteEmail:'maria@demo.com',
-      desde:'Belgrano, CABA', hasta:'Quilmes, GBA Sur',
-      ambientes:'2 ambientes', fecha:'Próxima semana', tipo:'mudanza',
-      precio_estimado:550000, distanciaKm:35,
-      estado:'buscando', cotizaciones:[], expira:expira2,
-      fechaPublicacion: ahora.toISOString(),
-      modoCotizacion:'abierto', mudancerosInvitados:[],
-      _esDemo: true,
-    },
-    {
-      id:'DEMO-003', clienteNombre:'Carlos Ruiz', clienteEmail:'carlos@demo.com',
-      desde:'Caballito, CABA', hasta:'Caballito, CABA',
-      ambientes:'Flete', fecha:'Hoy', tipo:'flete',
-      servicios:'Heladera + lavarropas',
-      precio_estimado:180000, distanciaKm:5,
-      estado:'buscando', cotizaciones:[], expira:expira3,
-      fechaPublicacion: ahora.toISOString(),
-      modoCotizacion:'abierto', mudancerosInvitados:[],
-      _esDemo: true,
-    },
-  ];
 }
 
 var _tabActiva = 'disponibles';
@@ -739,7 +721,6 @@ function renderCardDisponible(m) {
   var expira = new Date(m.expira);
   var hs = Math.max(0, Math.round((expira - new Date()) / 3600000));
   var esFlete = m.ambientes === 'Flete';
-  var esDemo = !!m._esDemo;
   var fotosHtml = '';
   if (m.fotos && m.fotos.length) {
     fotosHtml = '<div style="display:flex;gap:6px;margin-bottom:10px">'
@@ -748,8 +729,7 @@ function renderCardDisponible(m) {
         }).join('')
       + '</div>';
   }
-  return '<div class="pedido-card nuevo"'+(esDemo?' style="opacity:.85;border-style:dashed"':'')+'>'
-    +(esDemo?'<div style="font-size:10px;color:#F59E0B;font-family:var(--mono);margin-bottom:8px;display:flex;align-items:center;gap:5px"><span style="background:#FEF3C7;border:1px solid #FCD34D;padding:2px 7px;border-radius:4px;font-weight:600">EJEMPLO</span> Publicá tu primera mudanza para ver pedidos reales</div>':'')
+  return '<div class="pedido-card nuevo">'
     +'<div class="pedido-header"><div>'
     +'<div class="pedido-ruta">'+esc(m.desde)+' → '+esc(m.hasta)+'</div>'
     +'<div class="pedido-fecha">📅 '+(m.fecha||'A confirmar')+' · '+(esFlete?'🚛 Flete':m.ambientes||'—')+'</div>'
@@ -764,11 +744,8 @@ function renderCardDisponible(m) {
     +'<div class="pedido-precio">$'+parseInt(m.precio_estimado||0).toLocaleString('es-AR')+'</div>'
     +'<div style="font-size:10px;color:'+(hs<4?'var(--red)':'var(--amber)')+';font-family:var(--mono);margin-top:3px">⏱ Expira en '+hs+'hs</div>'
     +'</div><div class="pedido-actions" style="display:flex;gap:6px">'
-    +(esDemo
-      ? '<button class="btn" style="font-size:12px;padding:8px 12px;background:var(--bg2);color:var(--text3);cursor:default" disabled>💰 Cotizar</button>'
-      : '<button class="btn btn-red" style="font-size:12px;padding:8px 12px" onclick="rechazarPedido(\''+m.id+'\',this)">✕ Pasar</button>'
-        +'<button class="btn btn-green" onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))">💰 Cotizar</button>'
-    )
+    +'<button class="btn btn-red" style="font-size:12px;padding:8px 12px" onclick="rechazarPedido(\''+m.id+'\',this)">✕ Pasar</button>'
+    +'<button class="btn btn-green" onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))">💰 Cotizar</button>'
     +'</div></div>'
     +'</div>';
 }
@@ -882,134 +859,35 @@ async function rechazarPedido(mudanzaId, btn) {
 
 function abrirCotizacion(mudanza){
   if(!mudanza) return;
-  var esFlete = mudanza.tipo==='flete' || mudanza.ambientes==='Flete';
-  var TABLA_BASE = {1:450000,2:550000,3:680000,4:860000,5:1050000,6:1180000};
-  var ambNum = parseInt((mudanza.ambientes||'2').replace(/\D/g,''))||2;
-  var baseDefault = esFlete ? 180000 : (TABLA_BASE[Math.min(ambNum,6)]||550000);
-  var distKm = parseInt(mudanza.distanciaKm||0);
-
-  var fs = 'width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface2);outline:none';
-  var ls = 'font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px';
-  var mf = 'width:100%;padding:10px 14px 10px 26px;border:1px solid var(--border2);border-radius:10px;font-size:14px;font-family:var(--mono);color:var(--text);background:var(--surface2);outline:none;font-weight:600';
-
+  var ps = parseInt(mudanza.precio_estimado||0);
   var modal = document.createElement('div');
   modal.id = 'cotModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto';
-  modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:20px;padding:1.8rem;max-width:500px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.4)">'
-    +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.3rem">Enviar cotizacion</div>'
-    +'<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+esc(mudanza.desde)+' <b>→</b> '+esc(mudanza.hasta)+' · '+esc(mudanza.ambientes||'')+'</div>'
+  modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:20px;padding:1.8rem;max-width:460px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
+    +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Enviar cotización</div>'
+    +'<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+mudanza.desde+' → '+mudanza.hasta+' · '+(mudanza.ambientes||'')+'</div>'
     +'<div style="display:flex;flex-direction:column;gap:12px">'
-    // Precio base
-    +'<div><label style="'+ls+'">Precio base — carga y descarga <span style="color:#1A6FFF">*</span></label>'
-    +'<div style="position:relative"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text3);font-family:var(--mono)">$</span>'
-    +'<input type="number" id="cot-base" value="'+baseDefault+'" min="0" oninput="recalcTotal()" style="'+mf+'"/></div>'
-    +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Mano de obra, equipo, carga y descarga</div></div>'
-    // Precio km
-    +'<div style="background:#EEF4FF;border:1px solid #C7D9FF;border-radius:12px;padding:14px">'
-    +'<label style="'+ls+'">Precio por kilometro</label>'
-    +'<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">'
-    +'<div style="position:relative;flex:1"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text3);font-family:var(--mono)">$</span>'
-    +'<input type="number" id="cot-km" value="0" min="0" oninput="recalcTotal()" style="'+mf+'"/></div>'
-    +'<div style="font-size:13px;color:var(--text2);white-space:nowrap">/km</div>'
-    +'</div>'
-    +'<div style="display:flex;align-items:center;justify-content:space-between">'
-    +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)" id="cot-dist-lbl">'
-    +(distKm > 0 ? '&#128205; Distancia: <strong style="color:#003580">'+distKm+' km</strong> (solo se cobra la ida)' : '<span>&#128205; Calculando distancia...</span>')
-    +'</div>'
-    +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Sug: $1.200-$2.500/km</div>'
-    +'</div>'
-    +'<input type="hidden" id="cot-dist-km" value="'+distKm+'"/>'
-    +'</div>'
-    // Total
-    +'<div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">'
-    +'<div><div style="font-size:10px;color:#16A34A;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Total cotizado</div>'
-    +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px" id="cot-desglose">Base + distancia</div></div>'
-    +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.8rem;color:#16A34A;letter-spacing:.5px" id="cot-total">$'+baseDefault.toLocaleString('es-AR')+'</div>'
-    +'</div>'
-    // Tiempo y nota
-    +'<div><label style="'+ls+'">Tiempo estimado del servicio</label>'
-    +'<input type="text" id="cot-tiempo" placeholder="Ej: 3-4 horas" style="'+fs+'"/></div>'
-    +'<div><label style="'+ls+'">Nota para el cliente</label>'
-    +'<textarea id="cot-nota" rows="3" placeholder="Describe tu propuesta: que incluye, experiencia, condiciones..." style="'+fs+';resize:vertical;line-height:1.55"></textarea></div>'
+    +'<div><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Tu precio ($ARS) <span style="color:#1A6FFF">*</span></label>'
+    +'<div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:12px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span>'
+    +'<input type="number" id="cot-precio" value="'+ps+'" min="0" style="width:100%;padding:11px 14px 11px 26px;border:1px solid var(--border2);border-radius:10px;font-size:14px;font-family:var(--mono);color:var(--text);background:var(--surface2);outline:none;font-weight:600"/></div>'
+    +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px">Precio estimado del cliente: $'+ps.toLocaleString('es-AR')+'</div></div>'
+    +'<div><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Tiempo estimado</label>'
+    +'<input type="text" id="cot-tiempo" placeholder="Ej: 3-4 horas" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface2);outline:none"/></div>'
+    +'<div><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Nota para el cliente</label>'
+    +'<textarea id="cot-nota" rows="3" placeholder="Describí tu propuesta: experiencia, qué incluye, condiciones…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical;line-height:1.55"></textarea></div>'
     +'</div>'
     +'<div style="display:flex;gap:8px;margin-top:1.2rem;justify-content:flex-end">'
     +'<button class="btn btn-ghost" onclick="document.getElementById(\'cotModal\').remove()">Cancelar</button>'
-    +'<button class="btn btn-green" id="btnEnviarCot" onclick="enviarCotizacion(\''+mudanza.id+'\')">Enviar cotizacion</button>'
+    +'<button class="btn btn-green" id="btnEnviarCot" onclick="enviarCotizacion(\''+mudanza.id+'\')">Enviar cotización →</button>'
     +'</div></div>';
-
   document.body.appendChild(modal);
-
-  if (!distKm) {
-    calcularDistanciaModal(mudanza.desde, mudanza.hasta);
-  } else {
-    var kmSug = distKm > 400 ? 2000 : distKm > 80 ? 1800 : distKm > 30 ? 1500 : 0;
-    document.getElementById('cot-km').value = kmSug;
-    recalcTotal();
-  }
-}
-
-
-function calcularDistanciaModal(desde, hasta) {
-  var GMAPS_KEY = 'AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8';
-  function doCalc() {
-    var svc = new google.maps.DistanceMatrixService();
-    svc.getDistanceMatrix({
-      origins: [desde + ', Argentina'],
-      destinations: [hasta + ', Argentina'],
-      travelMode: google.maps.TravelMode.DRIVING,
-      unitSystem: google.maps.UnitSystem.METRIC,
-    }, function(result, status) {
-      if (status !== 'OK') return;
-      var elem = result.rows[0].elements[0];
-      if (elem.status !== 'OK') return;
-      var km = Math.round(elem.distance.value / 1000);
-      var lbl = document.getElementById('cot-dist-lbl');
-      var hidden = document.getElementById('cot-dist-km');
-      if (!lbl || !hidden) return;
-      hidden.value = km;
-      lbl.innerHTML = '&#128205; Distancia: <strong style="color:#003580">'+km+' km</strong> (solo se cobra la ida)';
-      var kmSug = km > 400 ? 2000 : km > 80 ? 1800 : km > 30 ? 1500 : 0;
-      document.getElementById('cot-km').value = kmSug;
-      recalcTotal();
-    });
-  }
-  if (typeof google !== 'undefined' && google.maps && google.maps.DistanceMatrixService) {
-    doCalc();
-  } else {
-    var s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key='+GMAPS_KEY+'&libraries=places&language=es&region=AR';
-    s.onload = doCalc;
-    document.head.appendChild(s);
-  }
-}
-
-function recalcTotal() {
-  var base = parseInt(document.getElementById('cot-base').value)||0;
-  var km   = parseInt(document.getElementById('cot-km').value)||0;
-  var dist = parseInt((document.getElementById('cot-dist-km')||{}).value)||0;
-  var total = base + (km * dist);
-  var totalEl = document.getElementById('cot-total');
-  if (totalEl) totalEl.textContent = '$' + total.toLocaleString('es-AR');
-  var desgEl = document.getElementById('cot-desglose');
-  if (desgEl) {
-    if (km > 0 && dist > 0) {
-      desgEl.textContent = 'Base $'+base.toLocaleString('es-AR')+' + '+dist+'km x $'+km.toLocaleString('es-AR')+'/km';
-    } else if (km === 0) {
-      desgEl.textContent = 'Sin costo por km — solo traslado local';
-    } else {
-      desgEl.textContent = 'Calculando distancia...';
-    }
-  }
 }
 
 async function enviarCotizacion(mudanzaId){
-  var base = parseInt(document.getElementById('cot-base').value)||0;
-  var precioKm = parseInt(document.getElementById('cot-km').value)||0;
-  var distKm = parseInt((document.getElementById('cot-dist-km')||{}).value)||0;
+  var precio = document.getElementById('cot-precio').value;
   var nota = document.getElementById('cot-nota').value.trim();
   var tiempo = document.getElementById('cot-tiempo').value.trim();
-  var precio = base + (precioKm * distKm);
-  if(!precio || precio<=0){ alert('Ingresá un precio válido'); return; }
+  if(!precio || parseInt(precio)<=0){ alert('Ingresá un precio válido'); return; }
   var btn = document.getElementById('btnEnviarCot');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;vertical-align:middle;display:inline-block"></span>Enviando…';
@@ -1017,18 +895,7 @@ async function enviarCotizacion(mudanzaId){
   try{
     var r = await fetch('/api/cotizaciones?action=cotizar',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        mudanzaId,
-        mudanceroEmail: currentUser.email,
-        mudanceroNombre: m[1]||currentUser.name,
-        mudanceroTel: m[3]||'',
-        precio,
-        precioBase: base,
-        precioKm,
-        distanciaKm: distKm,
-        nota,
-        tiempoEstimado: tiempo
-      })
+      body:JSON.stringify({mudanzaId, mudanceroEmail:currentUser.email, mudanceroNombre:m[1]||currentUser.name, mudanceroTel:m[3]||'', precio:parseInt(precio), nota, tiempoEstimado:tiempo})
     });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
@@ -1135,6 +1002,24 @@ function loadPerfil(){
   document.querySelectorAll('#pf-dias .chip').forEach(function(c){ if(sd.includes(c.textContent.trim())) c.classList.add('sel'); });
   var sh = m[13]||'';
   document.querySelectorAll('#pf-horarios .chip').forEach(function(c){ if(sh.includes(c.textContent.trim())) c.classList.add('sel'); });
+  // Cargar fotos desde perfil Redis
+  if (window._perfilRedis) {
+    pfCargarFotosActuales(window._perfilRedis);
+    // Precios desde Redis (más precisos que el array de Sheets)
+    var pr = window._perfilRedis.precios || {};
+    if (pr.amb1) setVal('pf-p1', pr.amb1);
+    if (pr.amb2) setVal('pf-p2', pr.amb2);
+    if (pr.amb3) setVal('pf-p3', pr.amb3);
+    if (pr.amb4) setVal('pf-p4', pr.amb4);
+    if (pr.flete) setVal('pf-pflete', pr.flete);
+    // Datos bancarios desde Redis
+    if (window._perfilRedis.metodoCobro) setSelect('pf-metodoCobro', window._perfilRedis.metodoCobro);
+    if (window._perfilRedis.cbu) setVal('pf-cbu', window._perfilRedis.cbu);
+    if (window._perfilRedis.emailMP) setVal('pf-emailMP', window._perfilRedis.emailMP);
+    if (window._perfilRedis.titularCuenta) setVal('pf-titular', window._perfilRedis.titularCuenta);
+    if (window._perfilRedis.sitioWeb) setVal('pf-sitioWeb', window._perfilRedis.sitioWeb);
+    toggleMetodoCobroPanel();
+  }
 }
 
 function toggleMetodoCobroPanel(){
@@ -1146,6 +1031,93 @@ function toggleMetodoCobroPanel(){
 function setVal(id,val){ var e=document.getElementById(id); if(e) e.value=val; }
 function setSelect(id,val){ var e=document.getElementById(id); if(!e) return; for(var i=0;i<e.options.length;i++){ if(e.options[i].value===val||e.options[i].text===val){ e.selectedIndex=i; break; } } }
 
+// ── FOTOS PERFIL ─────────────────────────────────────────────────
+var _pfFotoNueva = '';
+var _pfFotosVehNuevas = [];
+
+function pfComprimirImagen(dataUrl, callback) {
+  var img = new Image();
+  img.onload = function() {
+    var MAX = 900;
+    var w = img.width, h = img.height;
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else       { w = Math.round(w * MAX / h); h = MAX; }
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.72));
+  };
+  img.src = dataUrl;
+}
+
+function pfPreviewFoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    pfComprimirImagen(e.target.result, function(b64) {
+      _pfFotoNueva = b64;
+      var prev = document.getElementById('pf-foto-preview');
+      prev.innerHTML = '<img src="' + b64 + '" style="width:100%;height:100%;object-fit:cover"/>';
+    });
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function pfAgregarFotosVeh(input) {
+  if (!input.files || !input.files.length) return;
+  var grid = document.getElementById('pf-fotos-veh-grid');
+  Array.from(input.files).forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      pfComprimirImagen(e.target.result, function(b64) {
+        _pfFotosVehNuevas.push(b64);
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:72px;height:72px';
+        var img = document.createElement('img');
+        img.src = b64;
+        img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0';
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.innerHTML = '✕';
+        btn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
+        btn.onclick = function() {
+          _pfFotosVehNuevas.splice(_pfFotosVehNuevas.indexOf(b64), 1);
+          wrap.remove();
+        };
+        wrap.appendChild(img); wrap.appendChild(btn);
+        grid.appendChild(wrap);
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function pfCargarFotosActuales(perfil) {
+  // Mostrar foto de perfil actual
+  var prev = document.getElementById('pf-foto-preview');
+  if (perfil.foto) {
+    prev.innerHTML = '<img src="' + perfil.foto + '" style="width:100%;height:100%;object-fit:cover"/>';
+  } else {
+    var initials = (perfil.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
+    prev.textContent = initials;
+  }
+  // Mostrar fotos del vehículo actuales
+  var grid = document.getElementById('pf-fotos-veh-grid');
+  var fotos = perfil.fotosVehiculo || (perfil.fotoCamion ? [perfil.fotoCamion] : []);
+  fotos.forEach(function(url) {
+    if (!url) return;
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:72px;height:72px';
+    var img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0';
+    wrap.appendChild(img);
+    grid.appendChild(wrap);
+  });
+}
+
 async function guardarPerfil(){
   var btn=document.getElementById('btnGuardar'), msg=document.getElementById('perfilMsg');
   btn.disabled=true;
@@ -1153,12 +1125,40 @@ async function guardarPerfil(){
   var servicios=Array.from(document.querySelectorAll('#pf-servicios .sel')).map(function(c){return c.textContent.trim();}).join(', ');
   var dias=Array.from(document.querySelectorAll('#pf-dias .sel')).map(function(c){return c.textContent.trim();}).join(', ');
   var horarios=Array.from(document.querySelectorAll('#pf-horarios .sel')).map(function(c){return c.textContent.trim();}).join(', ');
-  var datos={nombre:document.getElementById('pf-nombre').value.trim(),empresa:document.getElementById('pf-empresa').value.trim(),telefono:document.getElementById('pf-tel').value.trim(),email:currentUser.email,zonaBase:document.getElementById('pf-zona').value,zonasExtra:document.getElementById('pf-zonas-extra').value.trim(),vehiculo:document.getElementById('pf-vehiculo').value,cantVehiculos:document.getElementById('pf-cant-vehiculos').value,equipo:document.getElementById('pf-equipo').value,servicios,dias,horarios,anticipacion:document.getElementById('pf-anticipacion').value,precio1amb:document.getElementById('pf-p1').value,precio2amb:document.getElementById('pf-p2').value,precio3amb:document.getElementById('pf-p3').value,precio4amb:document.getElementById('pf-p4').value,precioFlete:document.getElementById('pf-pflete').value,extra:document.getElementById('pf-notas').value.trim()};
-  localStorage.setItem('banking_'+currentUser.email, JSON.stringify({metodoCobro:document.getElementById('pf-metodoCobro').value,cbu:document.getElementById('pf-cbu').value.trim(),emailMP:document.getElementById('pf-emailMP').value.trim(),titular:document.getElementById('pf-titular').value.trim()}));
+  var datos={
+    nombre:document.getElementById('pf-nombre').value.trim(),
+    empresa:document.getElementById('pf-empresa').value.trim(),
+    telefono:document.getElementById('pf-tel').value.trim(),
+    email:currentUser.email,
+    zonaBase:document.getElementById('pf-zona').value,
+    zonasExtra:document.getElementById('pf-zonas-extra').value.trim(),
+    vehiculo:document.getElementById('pf-vehiculo').value,
+    cantVehiculos:document.getElementById('pf-cant-vehiculos').value,
+    equipo:document.getElementById('pf-equipo').value,
+    servicios,dias,horarios,
+    anticipacion:document.getElementById('pf-anticipacion').value,
+    precio1amb:document.getElementById('pf-p1').value,
+    precio2amb:document.getElementById('pf-p2').value,
+    precio3amb:document.getElementById('pf-p3').value,
+    precio4amb:document.getElementById('pf-p4').value,
+    precioFlete:document.getElementById('pf-pflete').value,
+    extra:document.getElementById('pf-notas').value.trim(),
+    metodoCobro:document.getElementById('pf-metodoCobro').value,
+    cbu:document.getElementById('pf-cbu').value.trim(),
+    emailMP:document.getElementById('pf-emailMP').value.trim(),
+    titularCuenta:document.getElementById('pf-titular').value.trim(),
+  };
+  // Agregar fotos nuevas si las hay
+  if (_pfFotoNueva) datos.foto = _pfFotoNueva;
+  if (_pfFotosVehNuevas.length) datos.fotosVehiculo = _pfFotosVehNuevas;
+  localStorage.setItem('banking_'+currentUser.email, JSON.stringify({metodoCobro:datos.metodoCobro,cbu:datos.cbu,emailMP:datos.emailMP,titular:datos.titularCuenta}));
   try{
     var r=await fetch('/api/actualizar-mudancero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});
     var d=await r.json();
     if(d.error) throw new Error(d.error);
+    // Resetear fotos nuevas — ya guardadas
+    _pfFotoNueva = '';
+    _pfFotosVehNuevas = [];
     btn.disabled=false; btn.innerHTML='✓ Guardado';
     msg.textContent='Cambios guardados '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
     setTimeout(function(){ btn.innerHTML='Guardar cambios'; msg.textContent=''; },3000);
