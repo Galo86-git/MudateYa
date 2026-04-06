@@ -4,7 +4,6 @@
 // Las fotos se suben a Vercel Blob (no se guardan en Redis)
 
 const { Resend } = require('resend');
-const { put }    = require('@vercel/blob');
 
 // ── REDIS ────────────────────────────────────────────────────────
 async function redisCall(method, ...args) {
@@ -28,24 +27,6 @@ async function setJSON(key, value, exSeconds) {
   var str = JSON.stringify(value);
   if (exSeconds) await redisCall('SET', key, str, 'EX', String(exSeconds));
   else           await redisCall('SET', key, str);
-}
-
-// ── SUBIR IMAGEN A VERCEL BLOB ───────────────────────────────────
-// Recibe un data URL ("data:image/jpeg;base64,XXXX"), lo sube a Blob
-// y devuelve la URL pública. Si no hay imagen devuelve ''.
-async function subirImagen(dataUrl, carpeta, nombre) {
-  if (!dataUrl) return '';
-  var match = dataUrl.match(/^data:([a-zA-Z0-9+\/]+\/[a-zA-Z0-9+\/]+);base64,(.+)$/);
-  if (!match) return '';
-  var mediaType = match[1];
-  var ext = mediaType.split('/')[1].replace('jpeg', 'jpg');
-  var buffer = Buffer.from(match[2], 'base64');
-  var pathname = carpeta + '/' + nombre + '-' + Date.now() + '.' + ext;
-  var result = await put(pathname, buffer, {
-    access: 'public',
-    contentType: mediaType,
-  });
-  return result.url;
 }
 
 // ── VALIDAR CUIL CONTRA AFIP ─────────────────────────────────────
@@ -272,49 +253,7 @@ async function notificarAdmin(perfil) {
   // Bloques de fotos para el email (links directos a Blob)
   var bloquesFotos = '';
   if (perfil.dniFrente || perfil.dniDorso) {
-    bloquesFotos += '<div style="background:#172018;border-radius:10px;padding:12px 16px;margin:14px 0">';
-    bloquesFotos += '<div style="font-size:11px;color:#5A8A78;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Fotos DNI</div>';
-    bloquesFotos += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
-    if (perfil.dniFrente)   bloquesFotos += '<a href="' + perfil.dniFrente   + '" target="_blank"><img src="' + perfil.dniFrente   + '" style="max-width:160px;max-height:100px;border-radius:6px;border:1px solid #2D4A3E" alt="DNI frente"/></a>';
-    if (perfil.dniDorso)    bloquesFotos += '<a href="' + perfil.dniDorso    + '" target="_blank"><img src="' + perfil.dniDorso    + '" style="max-width:160px;max-height:100px;border-radius:6px;border:1px solid #2D4A3E" alt="DNI dorso"/></a>';
-    bloquesFotos += '</div></div>';
-  }
-  if (perfil.fotoCamion || perfil.fotoPatente) {
-    bloquesFotos += '<div style="background:#172018;border-radius:10px;padding:12px 16px;margin:14px 0">';
-    bloquesFotos += '<div style="font-size:11px;color:#5A8A78;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Fotos vehículo</div>';
-    bloquesFotos += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
-    if (perfil.fotoCamion)  bloquesFotos += '<a href="' + perfil.fotoCamion  + '" target="_blank"><img src="' + perfil.fotoCamion  + '" style="max-width:160px;max-height:100px;border-radius:6px;border:1px solid #2D4A3E" alt="Camión"/></a>';
-    if (perfil.fotoPatente) bloquesFotos += '<a href="' + perfil.fotoPatente + '" target="_blank"><img src="' + perfil.fotoPatente + '" style="max-width:160px;max-height:100px;border-radius:6px;border:1px solid #2D4A3E" alt="Patente"/></a>';
-    bloquesFotos += '</div></div>';
-  }
-
-  await resend.emails.send({
-    from:    'MudateYa <noreply@mudateya.ar>',
-    to:      adminMail,
-    subject: '🚛 Nuevo mudancero — ' + perfil.nombre + ' · ' + perfil.zonaBase + ' · ' + perfil.id,
-    html: '<div style="font-family:Arial,sans-serif;max-width:600px;background:#0D1410;color:#E8F5EE;border-radius:16px;overflow:hidden">' +
-      '<div style="background:#22C36A;padding:18px 22px">' +
-        '<h2 style="margin:0;color:#041A0E">🚛 Nuevo mudancero registrado</h2>' +
-      '</div>' +
-      '<div style="padding:22px">' +
-        '<table style="width:100%;border-collapse:collapse">' +
-          '<tr><td style="color:#7AADA0;padding:6px 0;width:35%">Nombre</td>' +
-              '<td><strong>' + perfil.nombre + '</strong>' + (perfil.empresa ? ' · ' + perfil.empresa : '') + '</td></tr>' +
-          '<tr><td style="color:#7AADA0;padding:6px 0">Email</td><td>' + perfil.email + '</td></tr>' +
-          '<tr><td style="color:#7AADA0;padding:6px 0">Teléfono</td><td>' + perfil.telefono + '</td></tr>' +
-          '<tr><td style="color:#7AADA0;padding:6px 0">CUIL</td>' +
-              '<td>' + (perfil.cuil || '—') + ' ' + badgeCuil +
-              (afip.nombre ? '<br><small style="color:#5A8A78">AFIP: ' + afip.nombre + ' ' + afip.apellido + ' · ' + afip.estadoClave + '</small>' : '') + '</td></tr>' +
-          '<tr><td style="color:#7AADA0;padding:6px 0">Zona</td>' +
-              '<td>' + perfil.zonaBase + (perfil.zonasExtra ? ' · ' + perfil.zonasExtra : '') + '</td></tr>' +
-          '<tr><td style="color:#7AADA0;padding:6px 0">Vehículo</td>' +
-              '<td>' + perfil.vehiculo + ' · ' + perfil.cantVehiculos + ' unid. · ' + perfil.equipo + '</td></tr>' +
-          '<tr><td style="color:#7AADA0;padding:6px 0">Servicios</td>' +
-              '<td style="font-size:12px">' + perfil.servicios + '</td></tr>' +
-        '</table>' +
-
-        '<div style="background:#172018;border-radius:10px;padding:12px 16px;margin:14px 0">' +
-          '<div style="font-size:11px;color:#5A8A78;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">DNI análisis IA</div>' +
+    bloquesFotos +=
           '<div style="font-size:13px">' +
             (dni.numero_dni ? 'DNI: <strong>' + dni.numero_dni + '</strong> · ' : '') +
             (dni.apellido || '') + ' ' + (dni.nombres || '') + '<br>' +
