@@ -121,9 +121,7 @@ module.exports = async function handler(req, res) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Email inválido' });
     }
-    if (!dniFrente) {
-      return res.status(400).json({ error: 'Falta la foto del frente del DNI' });
-    }
+    // DNI no es bloqueante — el admin verifica manualmente
     if (!fotoCamion && !req.body.fotosVehiculo?.length) {
       return res.status(400).json({ error: 'Faltan fotos del vehículo' });
     }
