@@ -76,10 +76,10 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 .upload-text{font-size:13px;color:#475569;margin-bottom:3px}
 .upload-sub{font-size:11px;color:#64748B;font-family:var(--mono)}
 .upload-preview{max-width:100px;max-height:100px;border-radius:8px;margin:0 auto 6px;display:none;object-fit:cover}
-.form-footer{padding:1.5rem 2rem;background:#F5F7FA;border-top:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.form-footer{padding:1.5rem 2rem;background:#EEF4FF;border-top:2px solid #1A6FFF;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .footer-note{font-size:11px;color:#64748B;font-family:var(--mono)}
-.btn-submit{background:var(--emerald);color:#fff;border:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:8px;transition:all .2s;letter-spacing:.2px;}
-.btn-submit:hover{background:#17A356;transform:translateY(-1px);box-shadow:0 6px 24px var(--emerald-glow)}
+.btn-submit{background:#1A6FFF;color:#fff;border:none;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:8px;transition:all .2s;letter-spacing:.2px;box-shadow:0 4px 16px rgba(26,111,255,.35);}
+.btn-submit:hover{background:#0F52CC;transform:translateY(-1px);box-shadow:0 6px 24px rgba(26,111,255,.45)}
 .btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
 .success-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem}
 .success-overlay.show{display:flex}
@@ -90,8 +90,8 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 .success-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:1.4rem;text-align:left}
 .success-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#475569}
 .success-step-num{width:22px;height:22px;border-radius:50%;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);color:var(--emerald);font-size:11px;font-weight:700;font-family:var(--mono);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.btn-home{display:block;width:100%;padding:13px;border-radius:12px;border:none;background:var(--emerald);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:none;transition:all .2s;text-align:center}
-.btn-home:hover{background:#17A356}
+.btn-home{display:block;width:100%;padding:14px;border-radius:12px;border:2px solid #1A6FFF;background:#fff;color:#1A6FFF;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:none;transition:all .2s;text-align:center}
+.btn-home:hover{background:#1A6FFF;color:#fff}
 .field-error{font-size:10px;color:#EF4444;font-family:var(--mono);display:none}
 .field.has-error input,.field.has-error select,.field.has-error textarea{border-color:#ff6b6b}
 .field.has-error .field-error{display:block}
@@ -101,7 +101,6 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 .cuil-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);color:#F59E0B}
 .cuil-error{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:#ff6b6b}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* ── DNI ANALYSIS RESULT ── */
 .dni-result{display:none;background:#F5F7FA;border:1px solid rgba(34,195,106,.25);border-radius:12px;padding:1rem 1.2rem;margin-top:1rem;animation:fadeUp .3s ease}
 .dni-result.show{display:block}
 .dni-result-title{font-size:10px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -134,11 +133,11 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
   <a href="/" class="nav-back">← Volver al inicio</a>
 </nav>
 <div class="hero">
-  <span class="hero-badge">🚛 Para mudanceros</span>
-  <h1>SUMARTE ES<br><em>GRATIS</em></h1>
+  <span class="hero-badge">🚛 Para mudanceros y fleteros</span>
+  <h1>SUMATE COMO<br><em>MUDANCERO</em><br>O FLETERO</h1>
   <p>Completá el formulario y empezá a recibir clientes en menos de 24 horas. Sin costos fijos — solo pagás cuando concretás un trabajo.</p>
   <div class="hero-stats">
-    <div class="hstat"><div class="hstat-n">+9.800</div><div class="hstat-l">mudanzas realizadas</div></div>
+    <div class="hstat"><div class="hstat-n">✓</div><div class="hstat-l">Clientes verificados</div></div>
     <div class="hstat"><div class="hstat-n">$0</div><div class="hstat-l">costo fijo mensual</div></div>
     <div class="hstat"><div class="hstat-n">24hs</div><div class="hstat-l">para empezar a recibir pedidos</div></div>
   </div>
@@ -175,12 +174,14 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           <div style="display:flex;gap:8px;align-items:flex-start">
             <input type="text" id="cuil" placeholder="20-12345678-9 o 30-12345678-9" maxlength="13"
               oninput="formatCUIL(this)"
-              onblur="verificarCUIL()"
               style="flex:1"/>
-            <div id="cuil-badge" style="display:none;padding:9px 14px;border-radius:10px;font-size:12px;font-family:var(--mono);white-space:nowrap;flex-shrink:0"></div>
           </div>
-          <span class="field-error" id="cuil-error">CUIL inválido o no encontrado en AFIP</span>
-          <span style="font-size:10px;color:#64748B;font-family:var(--mono)" id="cuil-hint">Persona física: 20/27-... · Empresa: 30/33-... · Se verifica en AFIP</span>
+          <span style="font-size:10px;color:#64748B;font-family:var(--mono)">Persona física: 20/27-... · Empresa: 30/33-...</span>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label class="field-label">Sitio web o Instagram <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+          <input type="text" id="sitioWeb" placeholder="https://www.tumudanza.com.ar o @tumudanza"/>
+          <span style="font-size:11px;color:#94A3B8;font-family:var(--mono)">Se muestra en tu perfil público para generar más confianza</span>
         </div>
       </div>
     </div>
@@ -260,6 +261,18 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
     <div class="form-section">
       <div class="section-title">Servicios que ofrecés</div>
       <div class="section-sub">Seleccioná todos los que apliquen</div>
+
+      <div id="sinEstresBox" style="border:2px solid #E2E8F0;border-radius:14px;padding:16px;margin-bottom:16px;cursor:pointer;transition:all .2s" onclick="toggleSinEstres()">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✨</div>
+          <div style="flex:1">
+            <div style="font-weight:700;color:#0F1923;font-size:14px">Ofrezco servicio "Sin estrés" (premium)</div>
+            <div style="font-size:12px;color:#475569;margin-top:2px">Embalaje, desembalaje, armado de muebles, electrodomésticos, cortinas, cuadros — entregás la llave y el cliente entra a una casa impecable.</div>
+          </div>
+          <div id="sinEstresCheck" style="width:22px;height:22px;border-radius:50%;border:2px solid #E2E8F0;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s"></div>
+        </div>
+      </div>
+
       <div class="chips-grid" id="chips-servicios">
         <div class="chip sel" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Mudanzas completas</div>
         <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🏢</span>Mudanzas de oficina</div>
@@ -314,11 +327,11 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       <div class="section-title">Precios base</div>
       <div class="section-sub">Precios orientativos en ARS — podés ajustarlos por cotización</div>
       <div class="field-grid" style="gap:8px">
-        <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p1" placeholder="45.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p2" placeholder="65.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p3" placeholder="85.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="p4" placeholder="110.000" min="0"/></div></div>
-        <div class="precio-row"><span class="precio-label">Flete / envío chico</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="number" id="pflete" placeholder="18.000" min="0"/></div></div>
+        <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p1" placeholder="700.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p2" placeholder="800.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p3" placeholder="900.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p4" placeholder="1.100.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        <div class="precio-row"><span class="precio-label">Flete / envío chico</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="pflete" placeholder="180.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
       </div>
     </div>
 
@@ -328,8 +341,6 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       <div class="section-sub">Requerido · Analizamos las fotos automáticamente · Solo tarda unos segundos</div>
 
       <div class="foto-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-
-        <!-- FRENTE -->
         <div>
           <div class="field-label" style="margin-bottom:8px">DNI frente <span style="color:var(--emerald)">*</span></div>
           <div class="upload-area" id="uploadDniFrente" onclick="document.getElementById('dniFrente').click()">
@@ -340,8 +351,6 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           </div>
           <input type="file" id="dniFrente" accept="image/*" style="display:none" onchange="onDNIUpload(this,'frente')"/>
         </div>
-
-        <!-- DORSO -->
         <div>
           <div class="field-label" style="margin-bottom:8px">DNI dorso <span style="color:var(--emerald)">*</span></div>
           <div class="upload-area" id="uploadDniDorso" onclick="document.getElementById('dniDorso').click()">
@@ -353,55 +362,21 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           <input type="file" id="dniDorso" accept="image/*" style="display:none" onchange="onDNIUpload(this,'dorso')"/>
         </div>
       </div>
-
-      <!-- LOADING -->
-      <div class="dni-loading" id="dni-loading">
-        <span class="spinner-dark" style="width:14px;height:14px;flex-shrink:0"></span>
-        Analizando DNI con IA…
-      </div>
-
-      <!-- ERROR -->
-      <div class="dni-error" id="dni-error"></div>
-
-      <!-- RESULTADO DEL ANÁLISIS -->
-      <div class="dni-result" id="dni-result">
-        <div class="dni-result-title">
-          <span id="dni-result-icon">✦</span> Análisis del DNI
-        </div>
-        <div id="dni-result-rows"></div>
-        <div style="margin-top:10px;font-size:10px;color:#64748B;font-family:var(--mono)">
-          🔒 Datos usados solo para verificación interna · No se comparten con clientes
-        </div>
-      </div>
-
     </div>
 
     <!-- ── SECCIÓN 8: FOTOS DEL VEHÍCULO ── -->
     <div class="form-section">
       <div class="section-title">Fotos del vehículo</div>
-      <div class="section-sub">Requerido · Se muestran en tu perfil para generar confianza</div>
-      <div class="foto-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-        <div>
-          <div class="field-label" style="margin-bottom:8px">Foto del camión <span style="color:var(--emerald)">*</span></div>
-          <div class="upload-area" id="uploadAreaCamion" onclick="document.getElementById('fotoCamionInput').click()">
-            <img id="fotoCamionPreview" class="upload-preview" alt="preview camión"/>
-            <div class="upload-icon" id="uploadIconCamion">🚛</div>
-            <div class="upload-text" id="uploadTextCamion">Sacá foto o subí imagen</div>
-            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
-          </div>
-          <input type="file" id="fotoCamionInput" accept="image/*" onchange="previewFotoCamion(this)" style="display:none"/>
-        </div>
-        <div>
-          <div class="field-label" style="margin-bottom:8px">Foto de la patente <span style="color:var(--emerald)">*</span></div>
-          <div class="upload-area" id="uploadAreaPatente" onclick="document.getElementById('fotoPatenteInput').click()">
-            <img id="fotoPatentePreview" class="upload-preview" alt="preview patente"/>
-            <div class="upload-icon" id="uploadIconPatente">🔢</div>
-            <div class="upload-text" id="uploadTextPatente">Sacá foto o subí imagen</div>
-            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
-          </div>
-          <input type="file" id="fotoPatenteInput" accept="image/*" onchange="previewFotoPatente(this)" style="display:none"/>
-        </div>
+      <div class="section-sub">Requerido · Se muestran en tu perfil · Podés seleccionar varias a la vez</div>
+
+      <div class="upload-area" id="uploadAreaCamion" onclick="document.getElementById('fotoCamionInput').click()">
+        <img id="fotoCamionPreview" class="upload-preview" alt="preview camión" style="display:none"/>
+        <div class="upload-icon" id="uploadIconCamion">🚛</div>
+        <div class="upload-text" id="uploadTextCamion">Sacá fotos o subí imágenes</div>
+        <div class="upload-sub">Seleccioná una o varias · Cámara o galería · Máx. 5MB c/u</div>
       </div>
+      <input type="file" id="fotoCamionInput" accept="image/*" multiple onchange="onFotosVehiculo(this)" style="display:none"/>
+      <div id="fotosVehiculoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
     </div>
 
     <!-- ── SECCIÓN 9: FOTO PERFIL ── -->
@@ -414,15 +389,15 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
         <div class="upload-text" id="uploadText">Sacá foto o elegí de la galería</div>
         <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
       </div>
-      <input type="file" id="fotoInput" accept="image/*" onchange="previewFoto(this)" style="display:none"/>
+      <input type="file" id="fotoInput" accept="image/*" onchange="onFotoPerfil(this)" style="display:none"/>
     </div>
 
     <!-- ── SECCIÓN 10: EXTRA ── -->
     <div class="form-section">
-      <div class="section-title">Algo más que quieras contar</div>
-      <div class="section-sub">Experiencia, especialidades, lo que quieras destacar</div>
+      <div class="section-title">Contá tu experiencia <span style="font-size:13px;color:var(--emerald);font-family:var(--mono);font-weight:400;letter-spacing:0">— recomendado</span></div>
+      <div class="section-sub">Los clientes eligen más a quienes cuentan quiénes son · Te diferencia de la competencia</div>
       <div class="field">
-        <textarea id="extra" placeholder="Ej: 10 años de experiencia, especializado en mudanzas de pianos, camión con hidráulica para pisos altos sin ascensor..."></textarea>
+        <textarea id="extra" placeholder="Ej: Tengo 10 años haciendo mudanzas en CABA y GBA. Me especializo en pisos sin ascensor y objetos delicados como pianos. Trabajo con mi equipo de confianza, somos puntuales y cuidadosos..."></textarea>
       </div>
     </div>
 
@@ -485,14 +460,17 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 
 <script>
 // ── ESTADO GLOBAL ────────────────────────────────────────────────
-var dniData   = { frente: null, dorso: null, analisis: null, ok: false };
+var dniData      = { frente: null, dorso: null, analisis: null, ok: false };
+var _sinEstres   = false;
 // URLs de Blob — se llenan al seleccionar cada foto
-var fotoUrls  = { perfil: '', camion: '', patente: '', dniFrente: '', dniDorso: '' };
-// Carpeta temporal hasta conocer el ID del mudancero
-var _carpetaTmp = 'mudanceros/tmp-' + Date.now();
+var _urlPerfil   = '';
+var _urlsVehiculo = []; // array de URLs de las fotos del vehículo
+var _urlDniFrente = '';
+var _urlDniDorso  = '';
+// Carpeta tmp única por sesión
+var _carpetaTmp  = 'mudanceros/tmp-' + Date.now();
 
 // ── HELPER: SUBIR ARCHIVO A BLOB ─────────────────────────────────
-// Sube el File binario directo — sin base64, sin límite de tamaño
 async function subirABlob(file, carpeta, nombre) {
   var res = await fetch('/api/upload-foto', {
     method: 'POST',
@@ -508,407 +486,278 @@ async function subirABlob(file, carpeta, nombre) {
   return json.url;
 }
 
-// ── HELPER: MOSTRAR ESTADO EN ÁREA DE UPLOAD ─────────────────────
-function setUploadEstado(areaId, previewId, iconId, textId, dataUrl, texto) {
-  var preview = document.getElementById(previewId);
-  var icon    = document.getElementById(iconId);
-  var text    = document.getElementById(textId);
-  var area    = document.getElementById(areaId);
-  if (preview) { preview.src = dataUrl; preview.style.display = 'block'; }
-  if (icon)    icon.style.display = 'none';
-  if (text)    text.textContent = texto;
-  if (area)    area.classList.add('has-file');
-}
-
-function setUploadSubiendo(textId) {
-  var el = document.getElementById(textId);
-  if (el) el.textContent = 'Subiendo… ⏳';
-}
-
-function setUploadError(areaId, textId) {
-  var el   = document.getElementById(textId);
-  var area = document.getElementById(areaId);
-  if (el)   el.textContent = '⚠ Error — intentá de nuevo';
-  if (area) area.style.borderColor = '#ff6b6b';
-}
-
-// ── DNI: UPLOAD + PREVIEW + TRIGGER ANÁLISIS ────────────────────
+// ── DNI UPLOAD ───────────────────────────────────────────────────
 function onDNIUpload(input, lado) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
-
-  // Preview inmediato con FileReader (solo para mostrar la imagen)
   var reader = new FileReader();
   reader.onload = function(e) {
     var b64    = e.target.result.split(',')[1];
     var dataUrl = e.target.result;
-
-    setUploadEstado(
-      'uploadDni' + cap(lado),
-      'dni' + cap(lado) + '-preview',
-      'dni' + cap(lado) + '-icon',
-      'dni' + cap(lado) + '-text',
-      dataUrl,
-      lado === 'frente' ? 'Subiendo frente… ⏳' : 'Subiendo dorso… ⏳'
-    );
-
-    // Guardar b64 para el análisis de IA (analizar-foto lo necesita)
+    // Preview
+    var preview = document.getElementById('dni' + cap(lado) + '-preview');
+    var icon    = document.getElementById('dni' + cap(lado) + '-icon');
+    var text    = document.getElementById('dni' + cap(lado) + '-text');
+    var area    = document.getElementById('uploadDni' + cap(lado));
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    icon.style.display = 'none';
+    text.textContent = 'Subiendo… ⏳';
+    area.classList.add('has-file');
+    // Guardar b64 para referencia local
     dniData[lado] = { b64: b64, mediaType: file.type || 'image/jpeg', dataUrl: dataUrl };
-
-    // Subir a Blob en paralelo con el análisis
+    // Subir a Blob
     subirABlob(file, _carpetaTmp, 'dni-' + lado)
       .then(function(url) {
-        fotoUrls[lado === 'frente' ? 'dniFrente' : 'dniDorso'] = url;
-        var textEl = document.getElementById('dni' + cap(lado) + '-text');
-        if (textEl) textEl.textContent = lado === 'frente' ? 'Frente cargado ✓' : 'Dorso cargado ✓';
+        if (lado === 'frente') { _urlDniFrente = url; }
+        else                   { _urlDniDorso  = url; }
+        text.textContent = lado === 'frente' ? 'Frente cargado ✓' : 'Dorso cargado ✓';
       })
       .catch(function() {
-        setUploadError('uploadDni' + cap(lado), 'dni' + cap(lado) + '-text');
+        text.textContent = '⚠ Error — intentá de nuevo';
+        area.style.borderColor = '#ff6b6b';
       });
-
-    // Analizar con IA si tenemos los dos lados
-    if (dniData.frente && dniData.dorso) {
-      analizarDNI();
-    }
   };
   reader.readAsDataURL(file);
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-// ── DNI: LLAMADA A LA API DE ANÁLISIS ───────────────────────────
-async function analizarDNI() {
-  dniData.analisis = null;
-  dniData.ok = false;
-  document.getElementById('dni-result').classList.remove('show');
-  document.getElementById('dni-error').classList.remove('show');
-  document.getElementById('dni-loading').classList.add('show');
-
-  try {
-    var response = await fetch('/api/analizar-foto', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        images: [
-          { data: dniData.frente.b64, mediaType: dniData.frente.mediaType },
-          { data: dniData.dorso.b64,  mediaType: dniData.dorso.mediaType  }
-        ],
-        prompt: 'Estas son las dos caras del DNI argentino de una persona. Extraé la siguiente información en JSON puro sin markdown:\n{\n  "tipo_documento": "DNI",\n  "numero_dni": "...",\n  "apellido": "...",\n  "nombres": "...",\n  "fecha_nacimiento": "DD/MM/AAAA",\n  "fecha_vencimiento": "DD/MM/AAAA",\n  "cuil": "...",\n  "sexo": "M o F",\n  "nacionalidad": "...",\n  "legible": true o false,\n  "advertencias": []\n}\nSi algún campo no es visible, ponelo como null. El campo legible es false si alguna cara está borrosa o ilegible.'
-      })
-    });
-
-    var data = await response.json();
-    document.getElementById('dni-loading').classList.remove('show');
-    if (data.error && !data.analisis) throw new Error(data.error);
-    var analisis = data.analisis || data;
-    dniData.analisis = analisis;
-    mostrarResultadoDNI(analisis);
-
-  } catch(e) {
-    document.getElementById('dni-loading').classList.remove('show');
-    var errEl = document.getElementById('dni-error');
-    errEl.textContent = '⚠ No pudimos analizar el DNI: ' + e.message + '. Podés continuar igual, lo revisamos manualmente.';
-    errEl.classList.add('show');
-    dniData.ok = true;
-  }
-}
-
-function mostrarResultadoDNI(a) {
-  var legible = a.legible !== false;
-  dniData.ok = legible;
-  var icon = document.getElementById('dni-result-icon');
-  icon.textContent = legible ? '✓' : '⚠';
-  icon.style.color = legible ? 'var(--emerald)' : '#F59E0B';
-  var rows = '';
-  if (a.numero_dni)        rows += row('Número DNI',    a.numero_dni,        legible);
-  if (a.apellido)          rows += row('Apellido',      a.apellido,          legible);
-  if (a.nombres)           rows += row('Nombres',       a.nombres,           legible);
-  if (a.fecha_nacimiento)  rows += row('Nacimiento',    a.fecha_nacimiento,  true);
-  if (a.fecha_vencimiento) rows += row('Vencimiento',   a.fecha_vencimiento, venceOk(a.fecha_vencimiento));
-  if (a.cuil)              rows += row('CUIL',          a.cuil,              true);
-  if (a.sexo)              rows += row('Sexo',          a.sexo,              true);
-  if (!legible)            rows += row('Estado', 'Imágenes poco legibles — intentá con mejor iluminación', false);
-  if (a.advertencias && a.advertencias.length) rows += row('Avisos', a.advertencias.join(' · '), false);
-  document.getElementById('dni-result-rows').innerHTML = rows;
-  document.getElementById('dni-result').classList.add('show');
-  if (!legible) {
-    var errEl = document.getElementById('dni-error');
-    errEl.textContent = '⚠ Las imágenes no están suficientemente claras. Por favor subí fotos con buena iluminación y sin reflejos.';
-    errEl.classList.add('show');
-  }
-}
-
-function row(label, val, ok) {
-  var cls = ok ? 'ok' : 'warn';
-  return '<div class="dni-row"><span class="dni-label">' + label + '</span><span class="dni-val ' + cls + '">' + (val || '—') + '</span></div>';
-}
-
-function venceOk(fecha) {
-  if (!fecha) return true;
-  try {
-    var parts = fecha.split('/');
-    if (parts.length !== 3) return true;
-    var d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    return d > new Date();
-  } catch(e) { return true; }
-}
-
-// ── FOTOS DE VEHÍCULO Y PERFIL ───────────────────────────────────
-function previewFoto(input) {
+// ── FOTO PERFIL ──────────────────────────────────────────────────
+function onFotoPerfil(input) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
   var reader = new FileReader();
   reader.onload = function(e) {
-    setUploadEstado('uploadArea', 'fotoPreview', 'uploadIcon', 'uploadText', e.target.result, 'Subiendo… ⏳');
+    var preview = document.getElementById('fotoPreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('uploadIcon').style.display = 'none';
+    document.getElementById('uploadText').textContent = 'Subiendo… ⏳';
+    document.getElementById('uploadArea').classList.add('has-file');
     subirABlob(file, _carpetaTmp, 'perfil')
       .then(function(url) {
-        fotoUrls.perfil = url;
+        _urlPerfil = url;
         document.getElementById('uploadText').textContent = 'Foto cargada ✓';
       })
-      .catch(function() { setUploadError('uploadArea', 'uploadText'); });
+      .catch(function() {
+        document.getElementById('uploadText').textContent = '⚠ Error — intentá de nuevo';
+      });
   };
   reader.readAsDataURL(file);
 }
 
-function previewFotoCamion(input) {
-  if (!input.files || !input.files[0]) return;
-  var file = input.files[0];
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    setUploadEstado('uploadAreaCamion', 'fotoCamionPreview', 'uploadIconCamion', 'uploadTextCamion', e.target.result, 'Subiendo… ⏳');
-    subirABlob(file, _carpetaTmp, 'camion')
-      .then(function(url) {
-        fotoUrls.camion = url;
-        document.getElementById('uploadTextCamion').textContent = 'Foto del camión cargada ✓';
-      })
-      .catch(function() { setUploadError('uploadAreaCamion', 'uploadTextCamion'); });
-  };
-  reader.readAsDataURL(file);
+// ── FOTOS VEHÍCULO (múltiples) ───────────────────────────────────
+function onFotosVehiculo(input) {
+  if (!input.files || !input.files.length) return;
+  var grid = document.getElementById('fotosVehiculoGrid');
+  Array.from(input.files).forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataUrl = e.target.result;
+      // Preview thumbnail con spinner mientras sube
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:80px;height:80px';
+      var thumb = document.createElement('img');
+      thumb.src = dataUrl;
+      thumb.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);opacity:.7';
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(0,0,0,.15)';
+      overlay.innerHTML = '<span class="spinner"></span>';
+      wrap.appendChild(thumb);
+      wrap.appendChild(overlay);
+      grid.appendChild(wrap);
+      // Actualizar texto
+      document.getElementById('uploadIconCamion').style.display = 'none';
+      document.getElementById('uploadTextCamion').textContent = 'Subiendo fotos… ⏳';
+      document.getElementById('uploadAreaCamion').classList.add('has-file');
+      // Subir a Blob
+      var idx = _urlsVehiculo.length;
+      _urlsVehiculo.push(null); // placeholder
+      subirABlob(file, _carpetaTmp, 'vehiculo-' + idx)
+        .then(function(url) {
+          _urlsVehiculo[idx] = url;
+          thumb.style.opacity = '1';
+          overlay.remove();
+          // Botón eliminar
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.innerHTML = '✕';
+          btn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
+          btn.onclick = function() {
+            _urlsVehiculo.splice(idx, 1);
+            wrap.remove();
+            var count = _urlsVehiculo.filter(Boolean).length;
+            if (count === 0) {
+              document.getElementById('uploadIconCamion').style.display = '';
+              document.getElementById('uploadTextCamion').textContent = 'Sacá fotos o subí imágenes';
+              document.getElementById('uploadAreaCamion').classList.remove('has-file');
+            } else {
+              document.getElementById('uploadTextCamion').textContent = count + ' foto' + (count > 1 ? 's' : '') + ' cargada' + (count > 1 ? 's' : '') + ' ✓  (tocá para agregar más)';
+            }
+          };
+          wrap.appendChild(btn);
+          // Actualizar contador
+          var total = _urlsVehiculo.filter(Boolean).length;
+          document.getElementById('uploadTextCamion').textContent = total + ' foto' + (total > 1 ? 's' : '') + ' cargada' + (total > 1 ? 's' : '') + ' ✓  (tocá para agregar más)';
+        })
+        .catch(function() {
+          overlay.innerHTML = '<span style="color:#ff6b6b;font-size:18px">⚠</span>';
+        });
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
 }
 
-function previewFotoPatente(input) {
-  if (!input.files || !input.files[0]) return;
-  var file = input.files[0];
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    setUploadEstado('uploadAreaPatente', 'fotoPatentePreview', 'uploadIconPatente', 'uploadTextPatente', e.target.result, 'Subiendo… ⏳');
-    subirABlob(file, _carpetaTmp, 'patente')
-      .then(function(url) {
-        fotoUrls.patente = url;
-        document.getElementById('uploadTextPatente').textContent = 'Foto de la patente cargada ✓';
-      })
-      .catch(function() { setUploadError('uploadAreaPatente', 'uploadTextPatente'); });
-  };
-  reader.readAsDataURL(file);
+// ── SIN ESTRÉS ───────────────────────────────────────────────────
+function toggleSinEstres() {
+  _sinEstres = !_sinEstres;
+  var box   = document.getElementById('sinEstresBox');
+  var check = document.getElementById('sinEstresCheck');
+  if (_sinEstres) {
+    box.style.borderColor = '#F59E0B';
+    box.style.background  = '#FFFBEB';
+    check.style.background   = '#F59E0B';
+    check.style.borderColor  = '#F59E0B';
+    check.innerHTML = '<span style="color:#fff;font-size:13px;font-weight:700">✓</span>';
+  } else {
+    box.style.borderColor = '#E2E8F0';
+    box.style.background  = '';
+    check.style.background  = '';
+    check.style.borderColor = '#E2E8F0';
+    check.innerHTML = '';
+  }
 }
 
-// ── CUIL: FORMATO Y VALIDACIÓN AFIP ─────────────────────────────
+// ── CUIL FORMATO ─────────────────────────────────────────────────
 function formatCUIL(input) {
   var v = input.value.replace(/\D/g, '').slice(0, 11);
   if (v.length > 10)      input.value = v.slice(0,2) + '-' + v.slice(2,10) + '-' + v.slice(10);
   else if (v.length > 2)  input.value = v.slice(0,2) + '-' + v.slice(2);
   else                    input.value = v;
-  setBadgeCuil('', '');
 }
 
-var _cuilUltimoVerificado = '';
-
-async function verificarCUIL() {
-  var raw = document.getElementById('cuil').value.replace(/[-\s]/g, '');
-  if (raw.length !== 11) return;
-  if (raw === _cuilUltimoVerificado) return; // no repetir misma consulta
-  _cuilUltimoVerificado = raw;
-
-  setBadgeCuil('load', '');
-
-  try {
-    var r = await fetch('/api/validar-cuil?cuil=' + raw);
-    var d = await r.json();
-
-    if (d.valido === true) {
-      var tipo = d.esEmpresa ? 'Empresa' : 'Persona Física';
-      setBadgeCuil('ok', '✓ ' + tipo + ' · ' + (d.formateado || ''));
-      document.getElementById('f-cuil').classList.remove('has-error');
-    } else if (d.valido === false) {
-      setBadgeCuil('err', '✗ ' + (d.error || 'CUIL/CUIT inválido'));
-      document.getElementById('cuil-error').textContent = d.error || 'CUIL/CUIT inválido';
-      document.getElementById('f-cuil').classList.add('has-error');
-    } else {
-      setBadgeCuil('warn', '⚠ No se pudo verificar');
-    }
-  } catch(e) {
-    setBadgeCuil('warn', '⚠ Sin conexión');
-  }
-}
-
-function setBadgeCuil(tipo, texto) {
-  var badge = document.getElementById('cuil-badge');
-  badge.className = '';
-  if (tipo === 'load') {
-    badge.style.display = 'flex';
-    badge.style.alignItems = 'center';
-    badge.style.gap = '6px';
-    badge.innerHTML = '<span class="spinner-dark" style="width:12px;height:12px"></span> Consultando AFIP…';
-    badge.style.background = '#F5F7FA';
-    badge.style.border = '1px solid #E2E8F0';
-    badge.style.color = '#64748B';
-  } else if (tipo === 'ok') {
-    badge.style.display = 'block';
-    badge.className = 'cuil-ok';
-    badge.style.padding = '9px 14px';
-    badge.style.borderRadius = '10px';
-    badge.style.fontSize = '12px';
-    badge.style.fontFamily = 'var(--mono)';
-    badge.textContent = texto;
-  } else if (tipo === 'warn') {
-    badge.style.display = 'block';
-    badge.className = 'cuil-warn';
-    badge.style.padding = '9px 14px';
-    badge.style.borderRadius = '10px';
-    badge.style.fontSize = '12px';
-    badge.style.fontFamily = 'var(--mono)';
-    badge.textContent = texto;
-  } else if (tipo === 'err') {
-    badge.style.display = 'block';
-    badge.className = 'cuil-error';
-    badge.style.padding = '9px 14px';
-    badge.style.borderRadius = '10px';
-    badge.style.fontSize = '12px';
-    badge.style.fontFamily = 'var(--mono)';
-    badge.textContent = texto;
-  } else {
-    badge.style.display = 'none';
-    badge.textContent = '';
-  }
-}
-// ── FIN CUIL ─────────────────────────────────────────────────────
+function setBadgeCuil() {}  // ya no hay badge en el HTML, se deja vacío para no romper si algo lo llama
 
 // ── HELPERS ──────────────────────────────────────────────────────
-function toggleMetodoCobro(){
-  var metodo=document.getElementById('metodoCobro').value;
-  document.getElementById('wrap-cbu').style.display=metodo==='cbu'?'':'none';
-  document.getElementById('wrap-mp').style.display=metodo==='mp'?'':'none';
+function toggleMetodoCobro() {
+  var metodo = document.getElementById('metodoCobro').value;
+  document.getElementById('wrap-cbu').style.display = metodo === 'cbu' ? '' : 'none';
+  document.getElementById('wrap-mp').style.display  = metodo === 'mp'  ? '' : 'none';
 }
-function toggleChip(el,group){
-  if(group==='distancia'){document.querySelectorAll('#chips-distancia .chip').forEach(function(c){c.classList.remove('sel');});}
+function toggleChip(el, group) {
+  if (group === 'distancia') {
+    document.querySelectorAll('#chips-distancia .chip').forEach(function(c) { c.classList.remove('sel'); });
+  }
   el.classList.toggle('sel');
 }
-function getChips(containerId){return Array.from(document.querySelectorAll('#'+containerId+' .sel')).map(function(c){return c.textContent.trim();});}
-function validateField(id,condition){
-  var field=document.getElementById('f-'+id);
-  if(!field)return true;
-  if(!condition){field.classList.add('has-error');return false;}
-  field.classList.remove('has-error');return true;
+function getChips(containerId) {
+  return Array.from(document.querySelectorAll('#' + containerId + ' .sel')).map(function(c) { return c.textContent.trim(); });
 }
-function flashUpload(areaId){
-  var el=document.getElementById(areaId);
-  el.style.border='2px solid #ff6b6b';
-  el.scrollIntoView({behavior:'smooth',block:'center'});
-  setTimeout(function(){el.style.border='';},3000);
+function validateField(id, condition) {
+  var field = document.getElementById('f-' + id);
+  if (!field) return true;
+  if (!condition) { field.classList.add('has-error'); return false; }
+  field.classList.remove('has-error'); return true;
+}
+function flashUpload(areaId) {
+  var el = document.getElementById(areaId);
+  el.style.border = '2px solid #ff6b6b';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(function() { el.style.border = ''; }, 3000);
+}
+function fmtPrecioInput(el) {
+  var raw = el.value.replace(/\D/g, '');
+  if (!raw) { el.value = ''; return; }
+  el.value = parseInt(raw).toLocaleString('es-AR');
+  el.setSelectionRange(el.value.length, el.value.length);
 }
 
 // ── SUBMIT ───────────────────────────────────────────────────────
 document.getElementById('regForm').addEventListener('submit', async function(e) {
   e.preventDefault();
 
-  // Validar campos básicos
   var nombre   = document.getElementById('nombre').value.trim();
   var telefono = document.getElementById('telefono').value.trim();
   var email    = document.getElementById('email').value.trim();
   var zonaBase = document.getElementById('zonaBase').value;
   var vehiculo = document.getElementById('vehiculo').value;
   var ok = true;
-  ok = validateField('nombre',    nombre.length > 1)   && ok;
-  ok = validateField('telefono',  telefono.length > 6) && ok;
-  ok = validateField('email',     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
-  ok = validateField('zona-base', zonaBase !== '')      && ok;
-  ok = validateField('vehiculo',  vehiculo !== '')      && ok;
+  ok = validateField('nombre',   nombre.length > 1)   && ok;
+  ok = validateField('telefono', telefono.length > 6) && ok;
+  ok = validateField('email',    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
   if (!ok) {
     var firstErr = document.querySelector('.has-error input, .has-error select');
     if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
-  // Validar DNI obligatorio
+  // DNI frente requerido
   if (!dniData.frente) { flashUpload('uploadDniFrente'); return; }
-  if (!dniData.dorso)  { flashUpload('uploadDniDorso');  return; }
-
-  // Validar que las fotos de DNI ya subieron a Blob
-  if (!fotoUrls.dniFrente || !fotoUrls.dniDorso) {
-    alert('Las fotos del DNI todavía se están subiendo. Esperá un momento e intentá de nuevo.');
+  if (!_urlDniFrente) {
+    alert('La foto del DNI todavía se está subiendo. Esperá un momento e intentá de nuevo.');
     return;
   }
 
-  // Validar fotos del vehículo (que subieron a Blob)
-  if (!fotoUrls.camion)  { flashUpload('uploadAreaCamion');  return; }
-  if (!fotoUrls.patente) { flashUpload('uploadAreaPatente'); return; }
-
-  // Validar coincidencia nombre/DNI
-  if (dniData.analisis && (dniData.analisis.apellido || dniData.analisis.nombres)) {
-    var norm = function(s) { return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z ]/g,'').trim(); };
-    var nombreIngresado = norm(nombre);
-    var apellidoDNI     = norm(dniData.analisis.apellido);
-    var nombresDNI      = norm(dniData.analisis.nombres);
-    var primerApellido  = apellidoDNI.split(' ')[0];
-    var primerNombre    = nombresDNI.split(' ')[0];
-    var coincide = (primerApellido && nombreIngresado.includes(primerApellido)) ||
-                   (primerNombre   && nombreIngresado.includes(primerNombre));
-    if (!coincide) {
-      var fNombre  = document.getElementById('f-nombre');
-      fNombre.classList.add('has-error');
-      var errSpan  = fNombre.querySelector('.field-error');
-      if (errSpan) errSpan.textContent = '⚠ El nombre no coincide con el DNI (' + [dniData.analisis.nombres, dniData.analisis.apellido].filter(Boolean).join(' ') + ')';
-      fNombre.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
+  // Fotos del vehículo requeridas
+  if (_urlsVehiculo.filter(Boolean).length === 0) { flashUpload('uploadAreaCamion'); return; }
+  if (_urlsVehiculo.some(function(u) { return !u; })) {
+    alert('Algunas fotos del vehículo todavía se están subiendo. Esperá un momento e intentá de nuevo.');
+    return;
   }
 
   var btn = document.getElementById('btnSubmit');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Enviando…';
 
-  // Las fotos ya están en Blob — el body es solo texto, sin base64
+  var urlsVehiculoOk = _urlsVehiculo.filter(Boolean);
+
   var data = {
-    nombre:       nombre,
-    telefono:     telefono,
-    email:        email,
-    cuil:         document.getElementById('cuil').value.trim(),
-    empresa:      document.getElementById('empresa').value.trim(),
-    zonaBase:     zonaBase,
-    zonasExtra:   document.getElementById('zonasExtra').value.trim(),
-    distancia:    getChips('chips-distancia').join(', '),
-    vehiculo:     vehiculo,
+    nombre:        nombre,
+    telefono:      telefono,
+    email:         email,
+    cuil:          document.getElementById('cuil').value.trim(),
+    empresa:       document.getElementById('empresa').value.trim(),
+    sitioWeb:      document.getElementById('sitioWeb').value.trim(),
+    zonaBase:      zonaBase,
+    zonasExtra:    document.getElementById('zonasExtra').value.trim(),
+    distancia:     getChips('chips-distancia').join(', '),
+    vehiculo:      vehiculo,
     cantVehiculos: document.getElementById('cantVehiculos').value,
-    equipo:       document.getElementById('equipo').value,
-    servicios:    getChips('chips-servicios').join(', '),
-    dias:         getChips('chips-dias').join(', '),
-    horarios:     getChips('chips-horarios').join(', '),
-    anticipacion: document.getElementById('anticipacion').value,
-    precio1amb:   document.getElementById('p1').value     || '',
-    precio2amb:   document.getElementById('p2').value     || '',
-    precio3amb:   document.getElementById('p3').value     || '',
-    precio4amb:   document.getElementById('p4').value     || '',
-    precioFlete:  document.getElementById('pflete').value || '',
-    extra:        document.getElementById('extra').value.trim(),
-    // URLs de Blob (no base64)
-    foto:        fotoUrls.perfil    || '',
-    fotoCamion:  fotoUrls.camion,
-    fotoPatente: fotoUrls.patente,
-    dniFrente:   fotoUrls.dniFrente,
-    dniDorso:    fotoUrls.dniDorso,
-    dniAnalisis: dniData.analisis || null,
-    fecha:       new Date().toLocaleString('es-AR'),
-    metodoCobro: document.getElementById('metodoCobro').value,
-    cbu:         document.getElementById('cbu').value.trim(),
-    emailMP:     document.getElementById('emailMP').value.trim(),
+    equipo:        document.getElementById('equipo').value,
+    servicios:     getChips('chips-servicios').join(', '),
+    dias:          getChips('chips-dias').join(', '),
+    horarios:      getChips('chips-horarios').join(', '),
+    anticipacion:  document.getElementById('anticipacion').value,
+    precio1amb:    document.getElementById('p1').value.replace(/\./g, '')     || '',
+    precio2amb:    document.getElementById('p2').value.replace(/\./g, '')     || '',
+    precio3amb:    document.getElementById('p3').value.replace(/\./g, '')     || '',
+    precio4amb:    document.getElementById('p4').value.replace(/\./g, '')     || '',
+    precioFlete:   document.getElementById('pflete').value.replace(/\./g, '') || '',
+    extra:         document.getElementById('extra').value.trim(),
+    sinEstres:     _sinEstres,
+    // Fotos — solo URLs de Blob, sin base64
+    foto:          _urlPerfil,
+    fotoCamion:    urlsVehiculoOk[0]    || '',
+    fotoPatente:   '',
+    fotosVehiculo: urlsVehiculoOk,
+    fotosExtras:   urlsVehiculoOk.slice(1),
+    dniFrente:     _urlDniFrente,
+    dniDorso:      _urlDniDorso  || '',
+    dniAnalisis:   dniData.analisis || null,
+    fecha:         new Date().toLocaleString('es-AR'),
+    metodoCobro:   document.getElementById('metodoCobro').value,
+    cbu:           document.getElementById('cbu').value.trim(),
+    emailMP:       document.getElementById('emailMP').value.trim(),
     titularCuenta: document.getElementById('titularCuenta').value.trim(),
   };
 
   try {
     var res  = await fetch('/api/registrar-mudancero', {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body:    JSON.stringify(data),
     });
     var json = await res.json();
     if (json.error) throw new Error(json.error);
