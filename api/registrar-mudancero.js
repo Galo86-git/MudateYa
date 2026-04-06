@@ -103,10 +103,10 @@ module.exports = async function handler(req, res) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Email inválido' });
     }
-    if (!dniFrente || !dniDorso) {
-      return res.status(400).json({ error: 'Faltan fotos del DNI' });
+    if (!dniFrente) {
+      return res.status(400).json({ error: 'Falta la foto del frente del DNI' });
     }
-    if (!fotoCamion || !fotoPatente) {
+    if (!fotoCamion && !req.body.fotosVehiculo?.length) {
       return res.status(400).json({ error: 'Faltan fotos del vehículo' });
     }
 
