@@ -364,9 +364,22 @@ async function loadAll(){
 
 async function loadMudanceros(){
   try{
-    var r = await fetch('/api/admin?type=mudanceros');
+    var r = await fetch('/api/cotizaciones?action=admin-mudanceros&token=mya-admin-2026');
     var d = await r.json();
-    mudancerosData = d.rows || [];
+    // Convertir objetos Redis a arrays compatibles con el panel
+    // Formato: [id, nombre, empresa, telefono, email, zona, zonasExtra, estado_cuil, vehiculo, cant, equipo,
+    //           servicios, dias, horarios, extra, metodoCobro, cbu, emailMP, fechaRegistro, cuilVerificado, dniLegible, estado]
+    mudancerosData = (d.mudanceros || []).map(function(m){
+      return [
+        m.id, m.nombre, m.empresa, m.telefono, m.email,
+        m.zonaBase, m.zonasExtra, m.cuil, m.vehiculo, m.cantVehiculos,
+        m.equipo, m.servicios, m.dias, m.horarios, m.extra,
+        m.metodoCobro, m.cbu, m.emailMP, m.fechaRegistro,
+        m.cuilVerificado ? 'Verificado' : 'No verificado',
+        m.dniLegible ? 'Legible' : 'No legible',
+        m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente'
+      ];
+    });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
     document.getElementById('badgePendientes').textContent = pendientes;
     document.getElementById('badgePendientes').style.display = pendientes > 0 ? '' : 'none';
@@ -379,11 +392,12 @@ async function loadMudanceros(){
 async function loadPagos(){
   try{
     var r = await fetch('/api/admin?type=pagos');
+    if (!r.ok) { pagosData = []; return; }
     var d = await r.json();
     pagosData = d.rows || [];
   }catch(e){
     pagosData = [];
-    console.error('Error cargando pagos:', e);
+    console.warn('Pagos no disponibles:', e.message);
   }
 }
 
@@ -647,10 +661,11 @@ async function cambiarEstado(nuevoEstado){
   var btn = nuevoEstado === 'Aprobado' ? document.getElementById('btnAprobar') : document.getElementById('btnRechazar');
   btn.disabled = true; btn.textContent = 'Guardando…';
   try{
-    var r = await fetch('/api/admin', {
+    var estadoRedis = nuevoEstado === 'Aprobado' ? 'aprobado' : nuevoEstado === 'Rechazado' ? 'rechazado' : 'pendiente';
+    var r = await fetch('/api/cotizaciones?action=admin-aprobar-mudancero', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ tipo:'cambiar-estado-mudancero', email:m[4], nombre:m[1], telefono:m[3], nuevoEstado, rowIndex: currentMudanceroIdx + 2 })
+      body: JSON.stringify({ token:'mya-admin-2026', email:m[4], nuevoEstado:estadoRedis })
     });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
