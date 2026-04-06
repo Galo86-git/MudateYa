@@ -59,7 +59,7 @@ function fmt(n) {
     : '$' + Math.round(n).toLocaleString('es-AR');
 }
 
-function generarHTML(barrio, datos, esFlete, mudanceros) {
+function generarHTML(barrio, datos, esFlete, mudanceros, esSinEstres) {
   const tipoStr = esSinEstres ? 'mudanza sin estrés' : esFlete ? 'flete' : 'mudanza';
   const tiposStr = esFlete ? 'fletes' : 'mudanzas';
   const proveedorStr = esFlete ? 'fletero' : 'mudancero';
@@ -268,7 +268,7 @@ module.exports = async function handler(req, res) {
     }
   } catch(e) { mudanceros = []; }
 
-  const html = generarHTML(barrio, datos, esFlete, mudanceros);
+  const html = generarHTML(barrio, datos, esFlete, mudanceros, esSinEstres);
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
