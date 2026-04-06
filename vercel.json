@@ -14,6 +14,8 @@
     { "src": "/mudancero", "dest": "/mudancero-perfil.html" },
     { "src": "/mudanzas-en-(.*)", "dest": "/api/seo-zonas" },
     { "src": "/fletes-en-(.*)", "dest": "/api/seo-zonas" },
+    { "src": "/mudanza-sin-estres-(.*)", "dest": "/api/seo-zonas" },
+    { "src": "/mudanza-completa-(.*)", "dest": "/api/seo-zonas" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
