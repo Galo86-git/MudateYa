@@ -182,6 +182,11 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           <span class="field-error" id="cuil-error">CUIL inválido o no encontrado en AFIP</span>
           <span style="font-size:10px;color:#64748B;font-family:var(--mono)" id="cuil-hint">Persona física: 20/27-... · Empresa: 30/33-... · Se verifica en AFIP</span>
         </div>
+        <div class="field" style="grid-column:1/-1">
+          <label class="field-label">Sitio web o Instagram <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+          <input type="url" id="sitioWeb" placeholder="https://www.tumudanza.com.ar o @tumudanza"/>
+          <span style="font-size:11px;color:#94A3B8;font-family:var(--mono)">Se muestra en tu perfil público para generar más confianza</span>
+        </div>
       </div>
     </div>
 
@@ -889,6 +894,7 @@ document.getElementById('regForm').addEventListener('submit',async function(e){
     precioFlete:document.getElementById('pflete').value.replace(/\./g,'')||'',
     extra:document.getElementById('extra').value.trim(),
     sinEstres: _sinEstres,
+    sitioWeb:document.getElementById('sitioWeb').value.trim(),
     foto:fotoBase64,
     fotosVehiculo: _fotosVehiculo,
     fotoCamion: _fotosVehiculo[0] || '',
