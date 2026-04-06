@@ -29,48 +29,47 @@ async function setJSON(key, value, exSeconds) {
 }
 
 // ── VALIDAR CUIL CONTRA AFIP ─────────────────────────────────────
-// Usa la API pública de TangoFactura que consulta AFIP sin credenciales
+// Validación local del CUIL/CUIT usando el algoritmo ARCA (sin API externa)
 async function validarCUIL(cuil) {
-  // Limpiar guiones y espacios: "20-12345678-9" → "20123456789"
   const cuilLimpio = cuil.replace(/[-\s]/g, '');
 
   if (!/^\d{11}$/.test(cuilLimpio)) {
     return { valido: false, error: 'El CUIL debe tener 11 dígitos' };
   }
 
-  try {
-    const response = await fetch(
-      `https://afip.tangofactura.com/Rest/GetContribuyenteFull?cuit=${cuilLimpio}`,
-      { headers: { 'Accept': 'application/json' } }
-    );
-
-    if (!response.ok) {
-      return { valido: false, error: 'No se pudo consultar AFIP' };
-    }
-
-    const data = await response.json();
-
-    // TangoFactura devuelve error si el CUIL no existe
-    if (data.errorGetData || !data.Contribuyente) {
-      return { valido: false, error: 'CUIL no encontrado en AFIP' };
-    }
-
-    const contribuyente = data.Contribuyente;
-
-    return {
-      valido:     true,
-      cuil:       cuilLimpio,
-      nombre:     contribuyente.nombre      || '',
-      apellido:   contribuyente.apellido    || '',
-      razonSocial: contribuyente.razonSocial || '',
-      estadoClave: contribuyente.estadoClave || '', // ACTIVO / INACTIVO
-      tipoClave:   contribuyente.tipoClave   || '', // CUIL / CUIT
-    };
-  } catch(e) {
-    console.warn('Error consultando AFIP:', e.message);
-    // No bloqueamos el registro si AFIP falla — seguimos con advertencia
-    return { valido: null, error: 'AFIP no disponible temporalmente', advertencia: true };
+  // Prefijos válidos
+  const prefijo = parseInt(cuilLimpio.slice(0, 2));
+  const prefijosValidos = [20, 23, 24, 25, 26, 27, 30, 33, 34];
+  if (!prefijosValidos.includes(prefijo)) {
+    return { valido: false, error: 'Prefijo de CUIL inválido' };
   }
+
+  // Algoritmo de verificación ARCA
+  const multiplicadores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  let suma = 0;
+  for (let i = 0; i < 10; i++) {
+    suma += parseInt(cuilLimpio[i]) * multiplicadores[i];
+  }
+  const resto = suma % 11;
+  const digitoVerificador = parseInt(cuilLimpio[10]);
+  let dvEsperado;
+  if (resto === 0) dvEsperado = 0;
+  else if (resto === 1) dvEsperado = 9; // caso especial
+  else dvEsperado = 11 - resto;
+
+  if (digitoVerificador !== dvEsperado) {
+    return { valido: false, error: 'CUIL inválido — dígito verificador incorrecto' };
+  }
+
+  return {
+    valido: true,
+    cuil: cuilLimpio,
+    nombre: '',
+    apellido: '',
+    razonSocial: '',
+    estadoClave: 'VALIDADO_LOCAL',
+    tipoClave: prefijo === 30 || prefijo === 33 || prefijo === 34 ? 'CUIT' : 'CUIL',
+  };
 }
 
 // ── HANDLER ──────────────────────────────────────────────────────
