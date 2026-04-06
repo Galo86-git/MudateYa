@@ -1277,6 +1277,20 @@ footer{background:#003580;padding:1.5rem}
 // ══════════════════════════════════════════
 var GMAPS_KEY = 'AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8';
 var _tipo = 'mudanza';
+
+// Formato de precio confiable — no depende de toLocaleString
+function fmtPrecio(n) {
+  if (!n || isNaN(n)) return '$0';
+  var s = Math.round(n).toString();
+  var result = '';
+  var count = 0;
+  for (var i = s.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) result = '.' + result;
+    result = s[i] + result;
+    count++;
+  }
+  return '$' + result;
+}
 var _amb = 2;
 var _fechaLabel = '';
 var _fechaFlete = 'Hoy';
@@ -1649,7 +1663,7 @@ function initMapaMini() {
         var est = _busqueda.tipo === 'flete'
           ? _estimarPrecioFlete(_busqueda.distanciaKm)
           : _estimarPrecioMudanza(_busqueda.ambientes, _busqueda.distanciaKm);
-        resEstimado.textContent = '$' + est.toLocaleString('es-AR');
+        resEstimado.textContent = fmtPrecio(est);
       }
     }
   });
@@ -1784,10 +1798,15 @@ async function cargarResultados() {
     // Normalizar: asegurar que cada mudancero tenga todos los campos necesarios
     _todos = mudanceros.map(function(m) {
       if (!m.precios || typeof m.precios !== 'object') {
-        m.precios = { amb1: 450000, flete: 160000 };
+        m.precios = { amb1: 450000, amb2: 550000, amb3: 680000, amb4: 860000, flete: 160000 };
       }
+      // Mapear campos del formulario (precio1amb → amb1, etc.)
+      if (m.precio1amb && !m.precios.amb1) m.precios.amb1 = parseInt(m.precio1amb);
+      if (m.precio2amb && !m.precios.amb2) m.precios.amb2 = parseInt(m.precio2amb);
+      if (m.precio3amb && !m.precios.amb3) m.precios.amb3 = parseInt(m.precio3amb);
+      if (m.precio4amb && !m.precios.amb4) m.precios.amb4 = parseInt(m.precio4amb);
+      if (m.precioFlete && !m.precios.flete) m.precios.flete = parseInt(m.precioFlete);
       if (!m.precios.amb1 || m.precios.amb1 < 50000) {
-        // Precio viejo (pre-actualización) — escalar
         m.precios.amb1  = Math.max(380000, (m.precios.amb1 || 450000) * 7);
         m.precios.flete = Math.max(130000, (m.precios.flete || 150000) * 7);
       }
@@ -1854,7 +1873,17 @@ function renderResultados() {
   html += lista.map(function(m) {
     var sel = _sel.has(m.email);
     var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
-    var precio = _busqueda.tipo==='flete' ? (m.precios.flete||0) : (m.precios.amb1||0) * Math.max(1,_busqueda.ambientes||2);
+    // Precio: usar el campo específico del formulario según ambientes
+    var precio;
+    if (_busqueda.tipo === 'flete') {
+      precio = parseInt(m.precios.flete) || 0;
+    } else {
+      var amb = Math.max(1, parseInt(_busqueda.ambientes) || 2);
+      var campoAmb = amb === 1 ? 'amb1' : amb === 2 ? 'amb2' : amb === 3 ? 'amb3' : 'amb4';
+      precio = parseInt(m.precios[campoAmb]) || parseInt(m.precios.amb1) || 0;
+      // Si no tiene ese campo específico, estimar desde amb1
+      if (!precio && m.precios.amb1) precio = Math.round(parseInt(m.precios.amb1) * (1 + (amb-1) * 0.15));
+    }
     var ratingLabel = m.calificacion >= 4.8 ? 'Excepcional' : m.calificacion >= 4.5 ? 'Muy bueno' : m.calificacion >= 4 ? 'Bueno' : 'Bien';
     var fotoHtml = m.fotoUrl
       ? '<img src="'+m.fotoUrl+'" alt="Camión de '+m.nombre+'">'
@@ -1865,7 +1894,7 @@ function renderResultados() {
     if (m.verificadoSeguro)    tags += '<span class="mud-tag mud-tag-green">🛡 Seguro</span>';
     if (m.verificadoVehiculo)  tags += '<span class="mud-tag mud-tag-blue">🚛 '+m.vehiculo+'</span>';
     var emailEnc = m.email.replace(/\./g,'__dot__').replace(/@/g,'__at__');
-    var precioFmt = '$' + precio.toLocaleString('es-AR');
+    var precioFmt = fmtPrecio(precio);
     return '<div class="mud-card'+(sel?' sel':'')+'" data-email="'+m.email+'" id="card-'+emailEnc+'" onclick="toggleSel(\''+m.email+'\',event)">'
       + '<div class="mud-card-foto">'
       +   '<div class="mud-sel-check">'
@@ -2309,7 +2338,7 @@ var PRECIO_BINS = 20;
 function fmtPrecioSlider(n) {
   if (n <= 0) return '$ 0';
   if (n >= PRECIO_MAX_TOTAL) return 'Sin límite';
-  return '$ ' + n.toLocaleString('es-AR');
+  return fmtPrecio(n);
 }
 
 function parsePrecioText(s) {
