@@ -139,39 +139,8 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "Falta la foto del DNI" });
     }
 
-    // ── VALIDAR CUIL CONTRA AFIP ────────────────────────────────
+    // ── CUIL — se guarda pero no se valida contra AFIP (verificación manual) ──
     var cuilResultado = null;
-    if (cuil) {
-      cuilResultado = await validarCUIL(cuil);
-
-      if (cuilResultado.valido === false) {
-        return res.status(400).json({
-          error: cuilResultado.error || 'CUIL inválido',
-          campo: 'cuil'
-        });
-      }
-
-      if (cuilResultado.valido === true && dniAnalisis) {
-        var norm = function(s) {
-          return (s || '').toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z ]/g, '').trim();
-        };
-        var nombreAfip      = norm(cuilResultado.nombre + ' ' + cuilResultado.apellido + ' ' + cuilResultado.razonSocial);
-        var apellidoDNI     = norm(dniAnalisis.apellido || '');
-        var nombresDNI      = norm(dniAnalisis.nombres  || '');
-        var primerApellidoDNI = apellidoDNI.split(' ')[0];
-        var primerNombreDNI   = nombresDNI.split(' ')[0];
-        var coincide = (primerApellidoDNI && nombreAfip.includes(primerApellidoDNI)) ||
-                       (primerNombreDNI   && nombreAfip.includes(primerNombreDNI));
-        if (!coincide && primerApellidoDNI) {
-          return res.status(400).json({
-            error: 'El CUIL ingresado pertenece a "' + (cuilResultado.nombre + ' ' + cuilResultado.apellido).trim() + '" pero el DNI dice "' + dniAnalisis.nombres + ' ' + dniAnalisis.apellido + '". Verificá que sea tu propio CUIL.',
-            campo: 'cuil'
-          });
-        }
-      }
-    }
 
     // ── VERIFICAR DUPLICADO ─────────────────────────────────────
     var existente = await getJSON('mudancero:perfil:' + email);
