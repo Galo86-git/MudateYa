@@ -225,7 +225,19 @@ function getDatosExtra(idx) {
 // ══════════════════════════════════════════
 function renderPerfil(m, extra) {
   var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
-  var precio = m.precios ? (m.precios.amb1 || 0) : 0;
+  // Precio según ambientes de la búsqueda
+  var busqueda = {};
+  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual') || '{}'); } catch(e){}
+  var precio;
+  var precios = m.precios || {};
+  if (busqueda.tipo === 'flete') {
+    precio = parseInt(precios.flete) || 0;
+  } else {
+    var amb = Math.max(1, parseInt(busqueda.ambientes) || 1);
+    var campoAmb = amb === 1 ? 'amb1' : amb === 2 ? 'amb2' : amb === 3 ? 'amb3' : 'amb4';
+    precio = parseInt(precios[campoAmb]) || parseInt(precios.amb1) || 0;
+    if (!precio && precios.amb1) precio = Math.round(parseInt(precios.amb1) * (1 + (amb-1) * 0.15));
+  }
   var ratingLabel = m.calificacion >= 4.8 ? 'Excepcional' : m.calificacion >= 4.5 ? 'Muy bueno' : m.calificacion >= 4 ? 'Bueno' : 'Bien';
   var starsHtml = '';
   for (var i = 1; i <= 5; i++) {
