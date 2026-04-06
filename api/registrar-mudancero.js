@@ -179,6 +179,7 @@ module.exports = async function handler(req, res) {
 
       extra: extra || '',
       sinEstres: sinEstres === true || sinEstres === 'true' || false,
+      sitioWeb: req.body.sitioWeb || '',
       foto: foto || '', fotoCamion: fotoCamion || '', fotoPatente: fotoPatente || '',
       dniFrente: dniFrente || '', dniDorso: dniDorso || '',
       dniAnalisis: dniAnalisis || null,
