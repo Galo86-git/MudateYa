@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Método no permitido' });
 
-  var token = process.env.BLOB_FOTOS_READ_WRITE_TOKEN;
+  var token = process.env.BLOB_FOTO_READ_WRITE_TOKEN;
   console.log('TOKEN FOTOS presente:', !!token, '— primeros 10 chars:', token ? token.slice(0,10) : 'UNDEFINED');
 
   try {
