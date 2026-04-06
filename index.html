@@ -2696,7 +2696,7 @@ function _restaurarBusqueda() {
   var busqueda = null;
   try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(err){}
   if (!busqueda || !busqueda.desde || !busqueda.hasta) return;
-  if (_restaurarBusqueda._done) return; // evitar doble ejecución
+  if (_restaurarBusqueda._done) return;
   _restaurarBusqueda._done = true;
   setTimeout(function(){ _restaurarBusqueda._done = false; }, 1000);
 
@@ -2708,15 +2708,18 @@ function _restaurarBusqueda() {
     var sel = JSON.parse(sessionStorage.getItem('seleccionados')||'[]');
     sel.forEach(function(em){ _sel.add(em); });
   } catch(err){}
-  var emailSel = null;
-  try { emailSel = sessionStorage.getItem('ultimoSeleccionado'); } catch(err){}
-  if (emailSel) { sessionStorage.removeItem('ultimoSeleccionado'); _sel.add(emailSel); }
 
+  setTipo(_tipo);
   document.getElementById('resultados').classList.add('show');
   var rd = document.getElementById('res-desde'); if(rd) rd.textContent = busqueda.desde.split(',')[0];
   var rh = document.getElementById('res-hasta'); if(rh) rh.textContent = busqueda.hasta.split(',')[0];
   var rf = document.getElementById('res-fecha'); if(rf) rf.textContent = busqueda.fecha || '';
   var ra = document.getElementById('res-amb');   if(ra) ra.textContent = _amb + ' amb.';
+
+  // Actualizar barra mobile
+  if (typeof _actualizarMobBar === 'function') {
+    _actualizarMobBar(busqueda.desde, busqueda.hasta, busqueda.fecha, _amb, _tipo);
+  }
 
   if (_todos.length > 0) {
     renderResultados();
@@ -2731,12 +2734,22 @@ function _restaurarBusqueda() {
   setTimeout(function(){
     var sec = document.getElementById('resultados');
     if (sec) sec.scrollIntoView({behavior:'instant', block:'start'});
-  }, 80);
+  }, 150);
 }
 
 // Scroll al top siempre al cargar la página
 if (history.scrollRestoration) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
+
+// Restaurar búsqueda al cargar — cubre Android que recarga la página al volver
+document.addEventListener('DOMContentLoaded', function() {
+  var busqueda = null;
+  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
+  if (busqueda && busqueda.desde && busqueda.hasta) {
+    // Hay una búsqueda guardada — restaurar automáticamente
+    setTimeout(function(){ _restaurarBusqueda(); }, 300);
+  }
+});
 
 // pageshow — solo para bfcache (volver del perfil en mobile)
 window.addEventListener('pageshow', function(e) {
@@ -2744,7 +2757,6 @@ window.addEventListener('pageshow', function(e) {
 });
 // visibilitychange — cubre iOS Safari bfcache
 document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'visible' && document.referrer === '') return; // ignorar primer load
   if (document.visibilityState === 'visible') _restaurarBusqueda();
 });
 // Recibir mensajes del perfil (legacy — ya no se usa nueva pestaña pero se mantiene por si acaso)
