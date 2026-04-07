@@ -130,6 +130,25 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
   .metrics-grid{grid-template-columns:1fr 1fr}
   .main{padding:1rem}
 }
+
+/* ── MODAL CONFIRMACIÓN ─────────────────────────────────── */
+.confirm-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:fadeIn .15s ease}
+.confirm-box{background:#fff;border-radius:16px;padding:1.8rem 1.6rem;max-width:380px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:slideUp .15s ease}
+.confirm-icon{font-size:2rem;text-align:center;margin-bottom:.8rem}
+.confirm-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px;color:#0F1923;text-align:center;margin-bottom:.4rem}
+.confirm-msg{font-size:13px;color:#475569;text-align:center;line-height:1.6;margin-bottom:1.4rem}
+.confirm-btns{display:flex;gap:8px;justify-content:center}
+.confirm-btn-cancel{padding:10px 22px;border-radius:10px;border:1px solid #CBD5E1;background:#fff;color:#475569;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.confirm-btn-cancel:hover{border-color:#94A3B8;color:#0F1923}
+.confirm-btn-ok{padding:10px 22px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.confirm-btn-ok.danger{background:#EF4444;color:#fff}
+.confirm-btn-ok.danger:hover{background:#DC2626}
+.confirm-btn-ok.primary{background:#1A6FFF;color:#fff}
+.confirm-btn-ok.primary:hover{background:#0F52CC}
+.confirm-btn-ok.success{background:#22C36A;color:#fff}
+.confirm-btn-ok.success:hover{background:#17A356}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -357,28 +376,6 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
           </div>
           <div style="padding:0 1.2rem 1rem;font-size:11px;color:var(--text3);font-family:var(--mono)">🔒 Solo usamos estos datos para transferirte tus ganancias · Nunca se comparten con clientes</div>
         </div>
-        <div class="card" style="margin-bottom:1rem">
-          <div class="card-header"><span class="card-title">📸 Fotos del perfil</span></div>
-          <div style="padding:1.2rem;display:grid;gap:16px">
-            <div>
-              <div class="field-label" style="margin-bottom:8px">Foto de perfil / logo</div>
-              <div style="display:flex;align-items:center;gap:16px">
-                <div id="pf-foto-preview" style="width:72px;height:72px;border-radius:50%;background:#003580;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;flex-shrink:0;overflow:hidden;border:2px solid #E2E8F0"></div>
-                <div>
-                  <button type="button" onclick="document.getElementById('pf-foto-input').click()" style="background:#EEF4FF;color:#1A6FFF;border:1px solid #C7D9FF;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Cambiar foto</button>
-                  <div style="font-size:11px;color:#94A3B8;margin-top:4px;font-family:monospace">Máx. 5MB · Se comprime automáticamente</div>
-                </div>
-              </div>
-              <input type="file" id="pf-foto-input" accept="image/*" style="display:none" onchange="pfPreviewFoto(this)"/>
-            </div>
-            <div>
-              <div class="field-label" style="margin-bottom:8px">Fotos del vehículo</div>
-              <div id="pf-fotos-veh-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-              <button type="button" onclick="document.getElementById('pf-fotos-veh-input').click()" style="background:#F4F6F9;color:#475569;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:Inter,sans-serif">+ Agregar fotos del vehículo</button>
-              <input type="file" id="pf-fotos-veh-input" accept="image/*" multiple style="display:none" onchange="pfAgregarFotosVeh(this)"/>
-            </div>
-          </div>
-        </div>
         <div class="card" style="margin-bottom:1.5rem">
           <div class="card-header"><span class="card-title">📝 Presentación</span></div>
           <div style="padding:1.2rem">
@@ -469,10 +466,6 @@ async function initApp(){
     var d = await r.json();
     if(!d.found){ showScreen('notFound'); return; }
     mudanceroData = d.mudancero;
-    // Guardar perfil completo de Redis para fotos y campos nuevos
-    if (d.perfil) {
-      window._perfilRedis = d.perfil;
-    }
   }catch(e){
     mudanceroData = {nombre:currentUser.name, estado:'Pendiente', zona:'CABA'};
   }
@@ -821,6 +814,16 @@ function renderCardCotizacion(m) {
 }
 
 async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
+  var cfg = {
+    en_curso:   { icon:'▶️',  titulo:'¿Iniciar la mudanza?',          mensaje:'Confirmá que ya comenzaste el trabajo. El cliente va a ser notificado.',                       textoOk:'Sí, iniciar',    tipo:'primary' },
+    completada: { icon:'✅',  titulo:'¿Marcar como completada?',       mensaje:'Confirmá que el trabajo fue finalizado. Esto habilitará el pago del saldo restante.',          textoOk:'Sí, completar',  tipo:'success' },
+  };
+  var c = cfg[nuevoEstado] || { icon:'⚠️', titulo:'¿Confirmar cambio?', mensaje:'¿Estás seguro de este cambio de estado?', textoOk:'Confirmar', tipo:'primary' };
+  confirmar({ icon:c.icon, titulo:c.titulo, mensaje:c.mensaje, textoOk:c.textoOk, tipo:c.tipo,
+    onOk: function() { _doCambiarEstado(mudanzaId, nuevoEstado, btn); }
+  });
+}
+async function _doCambiarEstado(mudanzaId, nuevoEstado, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
     var r = await fetch('/api/cotizaciones?action=cambiar-estado', {
@@ -841,6 +844,16 @@ async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
 }
 
 async function rechazarPedido(mudanzaId, btn) {
+  confirmar({
+    icon: '🚫',
+    titulo: '¿Pasar este pedido?',
+    mensaje: 'No vas a poder cotizar este pedido más adelante. Solo pasalo si definitivamente no te interesa.',
+    textoOk: 'Sí, pasar',
+    tipo: 'danger',
+    onOk: function() { _doRechazarPedido(mudanzaId, btn); }
+  });
+}
+async function _doRechazarPedido(mudanzaId, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
     await fetch('/api/cotizaciones?action=rechazar', {
@@ -888,6 +901,20 @@ async function enviarCotizacion(mudanzaId){
   var nota = document.getElementById('cot-nota').value.trim();
   var tiempo = document.getElementById('cot-tiempo').value.trim();
   if(!precio || parseInt(precio)<=0){ alert('Ingresá un precio válido'); return; }
+  var precioFmt = '$' + parseInt(precio).toLocaleString('es-AR');
+  confirmar({
+    icon: '💰',
+    titulo: '¿Enviar cotización?',
+    mensaje: 'Vas a cotizar <strong>' + precioFmt + '</strong>. Una vez enviada, el cliente podrá verla y aceptarla.',
+    textoOk: 'Sí, enviar',
+    tipo: 'success',
+    onOk: function() { _doEnviarCotizacion(mudanzaId); }
+  });
+}
+async function _doEnviarCotizacion(mudanzaId){
+  var precio = document.getElementById('cot-precio').value;
+  var nota = document.getElementById('cot-nota').value.trim();
+  var tiempo = document.getElementById('cot-tiempo').value.trim();
   var btn = document.getElementById('btnEnviarCot');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;vertical-align:middle;display:inline-block"></span>Enviando…';
@@ -1002,24 +1029,6 @@ function loadPerfil(){
   document.querySelectorAll('#pf-dias .chip').forEach(function(c){ if(sd.includes(c.textContent.trim())) c.classList.add('sel'); });
   var sh = m[13]||'';
   document.querySelectorAll('#pf-horarios .chip').forEach(function(c){ if(sh.includes(c.textContent.trim())) c.classList.add('sel'); });
-  // Cargar fotos desde perfil Redis
-  if (window._perfilRedis) {
-    pfCargarFotosActuales(window._perfilRedis);
-    // Precios desde Redis (más precisos que el array de Sheets)
-    var pr = window._perfilRedis.precios || {};
-    if (pr.amb1) setVal('pf-p1', pr.amb1);
-    if (pr.amb2) setVal('pf-p2', pr.amb2);
-    if (pr.amb3) setVal('pf-p3', pr.amb3);
-    if (pr.amb4) setVal('pf-p4', pr.amb4);
-    if (pr.flete) setVal('pf-pflete', pr.flete);
-    // Datos bancarios desde Redis
-    if (window._perfilRedis.metodoCobro) setSelect('pf-metodoCobro', window._perfilRedis.metodoCobro);
-    if (window._perfilRedis.cbu) setVal('pf-cbu', window._perfilRedis.cbu);
-    if (window._perfilRedis.emailMP) setVal('pf-emailMP', window._perfilRedis.emailMP);
-    if (window._perfilRedis.titularCuenta) setVal('pf-titular', window._perfilRedis.titularCuenta);
-    if (window._perfilRedis.sitioWeb) setVal('pf-sitioWeb', window._perfilRedis.sitioWeb);
-    toggleMetodoCobroPanel();
-  }
 }
 
 function toggleMetodoCobroPanel(){
@@ -1031,93 +1040,6 @@ function toggleMetodoCobroPanel(){
 function setVal(id,val){ var e=document.getElementById(id); if(e) e.value=val; }
 function setSelect(id,val){ var e=document.getElementById(id); if(!e) return; for(var i=0;i<e.options.length;i++){ if(e.options[i].value===val||e.options[i].text===val){ e.selectedIndex=i; break; } } }
 
-// ── FOTOS PERFIL ─────────────────────────────────────────────────
-var _pfFotoNueva = '';
-var _pfFotosVehNuevas = [];
-
-function pfComprimirImagen(dataUrl, callback) {
-  var img = new Image();
-  img.onload = function() {
-    var MAX = 900;
-    var w = img.width, h = img.height;
-    if (w > MAX || h > MAX) {
-      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-      else       { w = Math.round(w * MAX / h); h = MAX; }
-    }
-    var canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    callback(canvas.toDataURL('image/jpeg', 0.72));
-  };
-  img.src = dataUrl;
-}
-
-function pfPreviewFoto(input) {
-  if (!input.files || !input.files[0]) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    pfComprimirImagen(e.target.result, function(b64) {
-      _pfFotoNueva = b64;
-      var prev = document.getElementById('pf-foto-preview');
-      prev.innerHTML = '<img src="' + b64 + '" style="width:100%;height:100%;object-fit:cover"/>';
-    });
-  };
-  reader.readAsDataURL(input.files[0]);
-}
-
-function pfAgregarFotosVeh(input) {
-  if (!input.files || !input.files.length) return;
-  var grid = document.getElementById('pf-fotos-veh-grid');
-  Array.from(input.files).forEach(function(file) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      pfComprimirImagen(e.target.result, function(b64) {
-        _pfFotosVehNuevas.push(b64);
-        var wrap = document.createElement('div');
-        wrap.style.cssText = 'position:relative;width:72px;height:72px';
-        var img = document.createElement('img');
-        img.src = b64;
-        img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0';
-        var btn = document.createElement('button');
-        btn.type = 'button'; btn.innerHTML = '✕';
-        btn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
-        btn.onclick = function() {
-          _pfFotosVehNuevas.splice(_pfFotosVehNuevas.indexOf(b64), 1);
-          wrap.remove();
-        };
-        wrap.appendChild(img); wrap.appendChild(btn);
-        grid.appendChild(wrap);
-      });
-    };
-    reader.readAsDataURL(file);
-  });
-  input.value = '';
-}
-
-function pfCargarFotosActuales(perfil) {
-  // Mostrar foto de perfil actual
-  var prev = document.getElementById('pf-foto-preview');
-  if (perfil.foto) {
-    prev.innerHTML = '<img src="' + perfil.foto + '" style="width:100%;height:100%;object-fit:cover"/>';
-  } else {
-    var initials = (perfil.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
-    prev.textContent = initials;
-  }
-  // Mostrar fotos del vehículo actuales
-  var grid = document.getElementById('pf-fotos-veh-grid');
-  var fotos = perfil.fotosVehiculo || (perfil.fotoCamion ? [perfil.fotoCamion] : []);
-  fotos.forEach(function(url) {
-    if (!url) return;
-    var wrap = document.createElement('div');
-    wrap.style.cssText = 'position:relative;width:72px;height:72px';
-    var img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = 'width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0';
-    wrap.appendChild(img);
-    grid.appendChild(wrap);
-  });
-}
-
 async function guardarPerfil(){
   var btn=document.getElementById('btnGuardar'), msg=document.getElementById('perfilMsg');
   btn.disabled=true;
@@ -1125,40 +1047,12 @@ async function guardarPerfil(){
   var servicios=Array.from(document.querySelectorAll('#pf-servicios .sel')).map(function(c){return c.textContent.trim();}).join(', ');
   var dias=Array.from(document.querySelectorAll('#pf-dias .sel')).map(function(c){return c.textContent.trim();}).join(', ');
   var horarios=Array.from(document.querySelectorAll('#pf-horarios .sel')).map(function(c){return c.textContent.trim();}).join(', ');
-  var datos={
-    nombre:document.getElementById('pf-nombre').value.trim(),
-    empresa:document.getElementById('pf-empresa').value.trim(),
-    telefono:document.getElementById('pf-tel').value.trim(),
-    email:currentUser.email,
-    zonaBase:document.getElementById('pf-zona').value,
-    zonasExtra:document.getElementById('pf-zonas-extra').value.trim(),
-    vehiculo:document.getElementById('pf-vehiculo').value,
-    cantVehiculos:document.getElementById('pf-cant-vehiculos').value,
-    equipo:document.getElementById('pf-equipo').value,
-    servicios,dias,horarios,
-    anticipacion:document.getElementById('pf-anticipacion').value,
-    precio1amb:document.getElementById('pf-p1').value,
-    precio2amb:document.getElementById('pf-p2').value,
-    precio3amb:document.getElementById('pf-p3').value,
-    precio4amb:document.getElementById('pf-p4').value,
-    precioFlete:document.getElementById('pf-pflete').value,
-    extra:document.getElementById('pf-notas').value.trim(),
-    metodoCobro:document.getElementById('pf-metodoCobro').value,
-    cbu:document.getElementById('pf-cbu').value.trim(),
-    emailMP:document.getElementById('pf-emailMP').value.trim(),
-    titularCuenta:document.getElementById('pf-titular').value.trim(),
-  };
-  // Agregar fotos nuevas si las hay
-  if (_pfFotoNueva) datos.foto = _pfFotoNueva;
-  if (_pfFotosVehNuevas.length) datos.fotosVehiculo = _pfFotosVehNuevas;
-  localStorage.setItem('banking_'+currentUser.email, JSON.stringify({metodoCobro:datos.metodoCobro,cbu:datos.cbu,emailMP:datos.emailMP,titular:datos.titularCuenta}));
+  var datos={nombre:document.getElementById('pf-nombre').value.trim(),empresa:document.getElementById('pf-empresa').value.trim(),telefono:document.getElementById('pf-tel').value.trim(),email:currentUser.email,zonaBase:document.getElementById('pf-zona').value,zonasExtra:document.getElementById('pf-zonas-extra').value.trim(),vehiculo:document.getElementById('pf-vehiculo').value,cantVehiculos:document.getElementById('pf-cant-vehiculos').value,equipo:document.getElementById('pf-equipo').value,servicios,dias,horarios,anticipacion:document.getElementById('pf-anticipacion').value,precio1amb:document.getElementById('pf-p1').value,precio2amb:document.getElementById('pf-p2').value,precio3amb:document.getElementById('pf-p3').value,precio4amb:document.getElementById('pf-p4').value,precioFlete:document.getElementById('pf-pflete').value,extra:document.getElementById('pf-notas').value.trim()};
+  localStorage.setItem('banking_'+currentUser.email, JSON.stringify({metodoCobro:document.getElementById('pf-metodoCobro').value,cbu:document.getElementById('pf-cbu').value.trim(),emailMP:document.getElementById('pf-emailMP').value.trim(),titular:document.getElementById('pf-titular').value.trim()}));
   try{
     var r=await fetch('/api/actualizar-mudancero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});
     var d=await r.json();
     if(d.error) throw new Error(d.error);
-    // Resetear fotos nuevas — ya guardadas
-    _pfFotoNueva = '';
-    _pfFotosVehNuevas = [];
     btn.disabled=false; btn.innerHTML='✓ Guardado';
     msg.textContent='Cambios guardados '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
     setTimeout(function(){ btn.innerHTML='Guardar cambios'; msg.textContent=''; },3000);
@@ -1167,6 +1061,30 @@ async function guardarPerfil(){
     msg.style.color='var(--red)'; msg.textContent='⚠ Error: '+err.message;
     setTimeout(function(){ msg.textContent=''; msg.style.color='#64748B'; },4000);
   }
+}
+
+// ── MODAL DE CONFIRMACIÓN REUTILIZABLE ─────────────────────
+function confirmar(opciones) {
+  // opciones: { titulo, mensaje, textoOk, tipo ('danger'|'primary'|'success'), onOk, icon }
+  var overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  overlay.innerHTML =
+    '<div class="confirm-box">' +
+      '<div class="confirm-icon">' + (opciones.icon || '⚠️') + '</div>' +
+      '<div class="confirm-title">' + (opciones.titulo || '¿Confirmar acción?') + '</div>' +
+      '<div class="confirm-msg">' + (opciones.mensaje || '¿Estás seguro? Esta acción no se puede deshacer.') + '</div>' +
+      '<div class="confirm-btns">' +
+        '<button class="confirm-btn-cancel" id="confirmCancelar">Cancelar</button>' +
+        '<button class="confirm-btn-ok ' + (opciones.tipo || 'primary') + '" id="confirmOk">' + (opciones.textoOk || 'Confirmar') + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('confirmCancelar').onclick = function() { overlay.remove(); };
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  document.getElementById('confirmOk').onclick = function() {
+    overlay.remove();
+    if (opciones.onOk) opciones.onOk();
+  };
 }
 </script>
 </body>
