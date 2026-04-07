@@ -744,7 +744,7 @@ footer{background:#003580;padding:1.5rem}
 <!-- BETA BAR -->
 <div id="betaBar" style="background:#1A6FFF;color:#fff;font-size:12px;font-family:'DM Mono',monospace;text-align:center;padding:8px 1rem;display:flex;align-items:center;justify-content:center;gap:8px;position:relative">
   <span>🚀 MudateYa está en beta · Somos nuevos y queremos mejorar ·</span>
-  <a href="mailto:hola@mudateya.ar" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap">¿Tuviste algún problema? Escribinos</a>
+  <a href="/cdn-cgi/l/email-protection#e0888f8c81a08d95848194859981ce8192" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap">¿Tuviste algún problema? Escribinos</a>
   <button onclick="document.getElementById('betaBar').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.7);font-size:16px;cursor:pointer;line-height:1;padding:0">✕</button>
 </div>
 
@@ -1272,7 +1272,7 @@ footer{background:#003580;padding:1.5rem}
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════════
 // CONSTANTES Y ESTADO
 // ══════════════════════════════════════════
@@ -2515,31 +2515,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ══════════════════════════════════════════
-// ESTIMADOR DE PRECIO — calibrado abril 2026
-// Fuentes: Infobae, iProfesional, MudanzasTodoCórdoba, Retroflet
+// ESTIMADOR DE PRECIO — basado en precios reales del catálogo
+// Usa el promedio de los mudanceros disponibles en _todos.
+// Fallback a valores de referencia si no hay catálogo cargado.
 // ══════════════════════════════════════════
 
-// Base por ambientes — CABA/GBA zona corta (0-30km), traslado sin embalaje
+// Fallback por ambientes (cuando no hay catálogo cargado aún)
 var _BASE_POR_AMB = {
-  1: 700000,    // monoambiente
-  2: 860000,    // 2 ambientes
-  3: 1100000,   // 3 ambientes
-  4: 1400000,   // 4 ambientes
-  5: 1700000,   // 5 ambientes
-  6: 2100000,   // 6+ ambientes
+  1: 700000,
+  2: 860000,
+  3: 1100000,
+  4: 1400000,
+  5: 1700000,
+  6: 2100000,
 };
 
-// Costo por km adicional según distancia (solo ida, promedio camión mediano)
-// Fuente: $1.800-$2.200/km para mudanzas residenciales (2026)
 function _costoKm(distKm) {
-  if (distKm <= 30)  return 0;       // incluido en la base
-  if (distKm <= 100) return 1800;    // zona GBA extendida
-  if (distKm <= 300) return 2000;    // larga distancia cercana
-  if (distKm <= 600) return 2200;    // interprovincial
-  return 2400;                        // larga distancia (>600km, ej CABA→Mendoza)
+  if (distKm <= 30)  return 0;
+  if (distKm <= 100) return 1800;
+  if (distKm <= 300) return 2000;
+  if (distKm <= 600) return 2200;
+  return 2400;
 }
 
-// Multiplicador por distancia (refleja más horas de trabajo)
 function _multDistancia(distKm) {
   if (distKm <= 30)  return 1.0;
   if (distKm <= 100) return 1.25;
@@ -2548,23 +2546,60 @@ function _multDistancia(distKm) {
   return 1.85;
 }
 
+// Obtiene el precio promedio real del catálogo para N ambientes
+function _precioPromedioCatalogo(ambientes, tipo) {
+  if (!_todos || !_todos.length) return null;
+  var amb = Math.max(1, Math.min(parseInt(ambientes)||1, 4));
+  var campoAmb = amb === 1 ? 'amb1' : amb === 2 ? 'amb2' : amb === 3 ? 'amb3' : 'amb4';
+  var precios = [];
+  _todos.forEach(function(m) {
+    if (!m.precios) return;
+    var p = 0;
+    if (tipo === 'flete') {
+      p = parseInt(m.precios.flete) || 0;
+    } else {
+      p = parseInt(m.precios[campoAmb]) || parseInt(m.precios.amb1) || 0;
+      // Si el campo específico no existe, estimar desde amb1
+      if (!m.precios[campoAmb] && m.precios.amb1) {
+        p = Math.round(parseInt(m.precios.amb1) * (1 + (amb - 1) * 0.18));
+      }
+    }
+    if (p > 50000) precios.push(p); // filtrar valores claramente incorrectos
+  });
+  if (!precios.length) return null;
+  // Usar mediana (más robusta que promedio ante outliers)
+  precios.sort(function(a,b){ return a-b; });
+  var mid = Math.floor(precios.length / 2);
+  var mediana = precios.length % 2 !== 0
+    ? precios[mid]
+    : Math.round((precios[mid-1] + precios[mid]) / 2);
+  return mediana;
+}
+
 function _estimarPrecioMudanza(ambientes, distKm) {
   var amb = Math.max(1, Math.min(parseInt(ambientes)||1, 6));
-  var base = _BASE_POR_AMB[amb];
   var km = Math.max(0, distKm || 0);
   var mult = _multDistancia(km);
   var kmExtra = Math.max(0, km - 30);
   var adicionalKm = kmExtra * _costoKm(km);
-  return Math.round((base * mult + adicionalKm) / 1000) * 1000; // redondear a miles
+
+  // Intentar usar precio real del catálogo
+  var baseReal = _precioPromedioCatalogo(amb, 'mudanza');
+  var base = baseReal || _BASE_POR_AMB[Math.min(amb, 6)];
+
+  return Math.round((base * mult + adicionalKm) / 1000) * 1000;
 }
 
 function _estimarPrecioFlete(distKm) {
   var km = Math.max(0, distKm || 0);
-  // Flete base: furgoneta, 2hs mínimo ~$180k zona corta
-  var base = 180000;
   var mult = _multDistancia(km);
   var kmExtra = Math.max(0, km - 30);
-  var adicionalKm = kmExtra * 1200; // furgoneta: ~$1.200/km
+  var adicionalKm = kmExtra * 1200;
+
+  // Intentar usar precio real del catálogo
+  var baseReal = _precioPromedioCatalogo(1, 'flete');
+  var base = baseReal || 180000;
+
   return Math.round((base * mult + adicionalKm) / 1000) * 1000;
 }
 
