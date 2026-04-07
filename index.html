@@ -744,7 +744,7 @@ footer{background:#003580;padding:1.5rem}
 <!-- BETA BAR -->
 <div id="betaBar" style="background:#1A6FFF;color:#fff;font-size:12px;font-family:'DM Mono',monospace;text-align:center;padding:8px 1rem;display:flex;align-items:center;justify-content:center;gap:8px;position:relative">
   <span>🚀 MudateYa está en beta · Somos nuevos y queremos mejorar ·</span>
-  <a href="/cdn-cgi/l/email-protection#7b1314171a3b160e1f1a0f1e021a551a09" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap">¿Tuviste algún problema? Escribinos</a>
+  <a href="mailto:hola@mudateya.ar" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap">¿Tuviste algún problema? Escribinos</a>
   <button onclick="document.getElementById('betaBar').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.7);font-size:16px;cursor:pointer;line-height:1;padding:0">✕</button>
 </div>
 
@@ -1272,7 +1272,7 @@ footer{background:#003580;padding:1.5rem}
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ══════════════════════════════════════════
 // CONSTANTES Y ESTADO
 // ══════════════════════════════════════════
@@ -2594,30 +2594,9 @@ async function _publicar(modo) {
         desde:_busqueda.desde, hasta:_busqueda.hasta,
         ambientes:_busqueda.tipo==='mudanza' ? (_busqueda.ambientes+' ambientes') : 'Flete',
         fecha:_busqueda.fecha, servicios:objetos, zonaBase:_busqueda.desde,
-        precio_estimado:(function(){
-          // Modo dirigido: usar el precio promedio de los mudanceros seleccionados
-          if (modo === 'dirigido' && _sel.size > 0) {
-            var nAmb = Math.max(1, Math.min(parseInt(_busqueda.ambientes)||1, 4));
-            var campo = nAmb===1?'amb1':nAmb===2?'amb2':nAmb===3?'amb3':'amb4';
-            var precios = [];
-            _sel.forEach(function(email) {
-              var m = _todos.find(function(x){ return x.email===email; });
-              if (!m || !m.precios) return;
-              var p = _busqueda.tipo==='flete'
-                ? parseInt(m.precios.flete||0)
-                : parseInt(m.precios[campo]||m.precios.amb1||0);
-              if (p > 10000) precios.push(p);
-            });
-            if (precios.length) {
-              var sum = precios.reduce(function(a,b){return a+b;},0);
-              return Math.round(sum/precios.length/1000)*1000;
-            }
-          }
-          // Modo abierto o sin selección: usar estimador del catálogo
-          return _busqueda.tipo==='mudanza'
-            ? _estimarPrecioMudanza(_busqueda.ambientes, _busqueda.distanciaKm || 15)
-            : _estimarPrecioFlete(_busqueda.distanciaKm || 15);
-        })(),
+        precio_estimado:_busqueda.tipo==='mudanza'
+          ? _estimarPrecioMudanza(_busqueda.ambientes, _busqueda.distanciaKm || 15)
+          : _estimarPrecioFlete(_busqueda.distanciaKm || 15),
         distanciaKm: _busqueda.distanciaKm || null,
         tipo:_busqueda.tipo, modoCotizacion:modo,
         mudancerosInvitados:modo==='dirigido' ? Array.from(_sel) : [],
