@@ -316,53 +316,6 @@ async function generarPDFBase64(datos) {
 }
 
 // ════════════════════════════════════════════════════
-// ESTIMADOR DE PRECIO — basado en perfiles reales de Redis
-// ════════════════════════════════════════════════════
-async function calcularPrecioEstimado(ambientes, distanciaKm, tipo) {
-  try {
-    // Leer todos los perfiles aprobados de Redis
-    var todos = await getJSON('mudanceros:todos') || [];
-    var precios = [];
-    for (var i = 0; i < todos.length; i++) {
-      try {
-        var p = await getJSON('mudancero:perfil:' + todos[i]);
-        if (!p || p.estado !== 'aprobado' || !p.precios) continue;
-        var precio = 0;
-        if (tipo === 'flete') {
-          precio = parseInt(p.precios.flete) || 0;
-        } else {
-          // Mapear ambientes al campo correcto
-          var nAmb = Math.max(1, Math.min(parseInt(ambientes) || 1, 4));
-          var campo = nAmb === 1 ? 'amb1' : nAmb === 2 ? 'amb2' : nAmb === 3 ? 'amb3' : 'amb4';
-          precio = parseInt(p.precios[campo]) || 0;
-          // Fallback: estimar desde amb1 si el campo específico no existe
-          if (!precio && p.precios.amb1) {
-            precio = Math.round(parseInt(p.precios.amb1) * (1 + (nAmb - 1) * 0.25));
-          }
-        }
-        if (precio > 10000) precios.push(precio); // filtrar valores claramente inválidos
-      } catch(e) {}
-    }
-    if (!precios.length) return null;
-    // Mediana
-    precios.sort(function(a, b) { return a - b; });
-    var mid = Math.floor(precios.length / 2);
-    var mediana = precios.length % 2 !== 0
-      ? precios[mid]
-      : Math.round((precios[mid - 1] + precios[mid]) / 2);
-    // Aplicar multiplicador de distancia
-    var km = Math.max(0, distanciaKm || 15);
-    var mult = km <= 30 ? 1.0 : km <= 100 ? 1.25 : km <= 300 ? 1.45 : km <= 600 ? 1.65 : 1.85;
-    var kmExtra = Math.max(0, km - 30);
-    var costoKm = tipo === 'flete' ? 1200 : (km <= 100 ? 1800 : km <= 300 ? 2000 : 2200);
-    var total = Math.round((mediana * mult + kmExtra * costoKm) / 1000) * 1000;
-    return total;
-  } catch(e) {
-    return null;
-  }
-}
-
-// ════════════════════════════════════════════════════
 // HANDLER PRINCIPAL
 // ════════════════════════════════════════════════════
 module.exports = async function handler(req, res) {
@@ -498,15 +451,7 @@ module.exports = async function handler(req, res) {
       // modoCotizacion: 'abierto' (primeros 5) | 'dirigido' (cliente elige mudanceros)
       const modo = modoCotizacion || 'abierto';
       const MAX_COT = 5;
-      // Recalcular precio estimado en el backend con precios reales de Redis
-      // (ignora el valor del frontend que puede ser incorrecto por catálogo no cargado)
-      var precioEstimadoReal = null;
-      try {
-        var nAmbNum = parseInt((ambientes||'1').replace(/\D/g,'')) || 1;
-        precioEstimadoReal = await calcularPrecioEstimado(nAmbNum, parseFloat(req.body.distanciaKm)||15, tipo||'mudanza');
-      } catch(e) {}
-      var precio_estimado_final = precioEstimadoReal || precio_estimado || 0;
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado: precio_estimado_final, tipo: tipo||'mudanza', pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -535,7 +480,6 @@ module.exports = async function handler(req, res) {
       }
 
       // Límite de cotizaciones deshabilitado temporalmente para testing
-      // const maxCot = mudanza.maxCotizaciones || 5;
 
       const cotizacion = { id: 'COT-' + Date.now(), mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio: parseInt(precio), nota: nota||'', tiempoEstimado: tiempoEstimado||'', fecha: new Date().toISOString(), estado: 'pendiente' };
       mudanza.cotizaciones.push(cotizacion);
