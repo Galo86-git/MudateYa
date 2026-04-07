@@ -418,20 +418,8 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // Límite 2: cooldown de 10 minutos entre publicaciones
-      const ultimaPublicacion = await getJSON(`cliente:ultima-pub:${clienteEmail}`);
-      if (ultimaPublicacion) {
-        const diffMs = ahora - new Date(ultimaPublicacion);
-        const COOLDOWN_MS = 10 * 60 * 1000;
-        if (diffMs < COOLDOWN_MS) {
-          const restaMin = Math.ceil((COOLDOWN_MS - diffMs) / 60000);
-          return res.status(429).json({
-            error: `Publicaste hace menos de 10 minutos. Esperá ${restaMin} minuto${restaMin > 1 ? 's' : ''} antes de publicar otro pedido.`,
-            codigo: 'COOLDOWN'
-          });
-        }
-      }
-      await setJSON(`cliente:ultima-pub:${clienteEmail}`, ahora.toISOString(), 600);
+      // Límite 2: cooldown deshabilitado para testing
+      // await setJSON(`cliente:ultima-pub:${clienteEmail}`, ahora.toISOString(), 600);
 
       // Límite 3: máximo 10 pedidos en 24hs
       const MAX_POR_DIA = 10;
