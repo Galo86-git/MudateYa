@@ -802,7 +802,7 @@ async function notificarMudanceros(mudanza) {
           <tr><td style="color:#7AADA0;padding:6px 0">Estimado</td><td style="color:#22C36A;font-weight:700">$${parseInt(mudanza.precio_estimado||0).toLocaleString('es-AR')}</td></tr>
           <tr><td style="color:#7AADA0;padding:6px 0">Expira</td><td style="color:#FFB300">${expira}</td></tr>
         </table>
-        <a href="https://mudateya.vercel.app/mi-cuenta" style="display:inline-block;margin-top:16px;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Cotizar →</a>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;margin-top:16px;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Cotizar →</a>
       </div>
     </div>`,
   });
@@ -850,7 +850,7 @@ async function notificarCliente(mudanza, cotizacion) {
           ${cotizacion.nota ? `<div style="color:#7AADA0;font-size:12px;margin-top:8px;font-style:italic">"${cotizacion.nota}"</div>` : ''}
         </div>
         <p style="color:#7AADA0;font-size:13px">Adjuntamos el detalle completo en PDF.</p>
-        <a href="https://mudateya.vercel.app/mi-mudanza" style="display:inline-block;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Ver todas las cotizaciones →</a>
+        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Ver todas las cotizaciones →</a>
       </div>
     </div>`,
     attachments,
@@ -861,7 +861,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   if (!process.env.RESEND_API_KEY) return;
 
-  const siteUrl = process.env.SITE_URL || 'https://mudateya.vercel.app';
+  const siteUrl = process.env.SITE_URL || 'https://mudateya.ar';
   const precioFmt = '$' + parseInt(cot.precio).toLocaleString('es-AR');
 
   // ── 1. Generar link de pago MP ───────────────────
@@ -1020,7 +1020,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
 async function notificarMudanceroInvitado(mudanza, perfil) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   if (!process.env.RESEND_API_KEY || !perfil.email) return;
-  const siteUrl = process.env.SITE_URL || 'https://mudateya.vercel.app';
+  const siteUrl = process.env.SITE_URL || 'https://mudateya.ar';
   await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>',
     to:   perfil.email,
