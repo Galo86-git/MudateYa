@@ -484,7 +484,8 @@ module.exports = async function handler(req, res) {
 
       // Limite deshabilitado para testing
 
-      const cotizacion = { id: 'COT-' + Date.now(), mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio: parseInt(precio), nota: nota||'', tiempoEstimado: tiempoEstimado||'', fecha: new Date().toISOString(), estado: 'pendiente' };
+      const precioLimpio = parseInt(String(precio).replace(/\./g,'').replace(/[^0-9]/g,'')) || 0;
+      const cotizacion = { id: 'COT-' + Date.now(), mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio: precioLimpio, nota: nota||'', tiempoEstimado: tiempoEstimado||'', fecha: new Date().toISOString(), estado: 'pendiente' };
       mudanza.cotizaciones.push(cotizacion);
 
       // Cierre automatico deshabilitado para testing
@@ -837,7 +838,7 @@ async function notificarCliente(mudanza, cotizacion) {
   await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>',
     to: mudanza.clienteEmail,
-    subject: `💰 Cotización de ${cotizacion.mudanceroNombre} — $${cotizacion.precio.toLocaleString('es-AR')}`,
+    subject: `💰 Cotización de ${cotizacion.mudanceroNombre} — $${String(cotizacion.precio).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`,  
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
       <!-- Header -->
       <div style="background:#003580;padding:20px 28px;display:flex;align-items:center">
