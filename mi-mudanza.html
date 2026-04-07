@@ -296,12 +296,6 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
       <div class="ppto-nota" id="ppto-nota"></div>
     </div>
 
-    <div style="background:#FFF8E6;border:1px solid #F59E0B;border-left:3px solid #F59E0B;border-radius:8px;padding:10px 12px;margin-bottom:12px">
-      <p style="font-size:11px;color:#92400E;line-height:1.6;margin:0;font-family:'DM Mono',monospace">
-        ⚠ <strong>MudateYa solo garantiza pagos realizados a través de su plataforma.</strong> Cualquier pago fuera de la plataforma (efectivo, transferencia directa u otro medio) queda fuera de las garantías de MudateYa y no podremos intervenir ante conflictos.
-      </p>
-    </div>
-
     <div class="ppto-actions">
       <button class="ppto-btn-cerrar" onclick="cerrarPresupuesto()">Cerrar</button>
       <button class="ppto-btn-aceptar" id="ppto-btn-aceptar">Elegir este mudancero →</button>
@@ -314,14 +308,6 @@ var GOOGLE_CLIENT_ID = '';
 
 // ── SEGURIDAD: escapar HTML antes de insertar en innerHTML ──────────
 function esc(s){ if(!s) return ''; var d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
-function fmtFechaMudanza(f) {
-  if (!f || f === '—') return 'A confirmar';
-  // Si es texto libre (Esta semana, etc) devolverlo directo
-  if (isNaN(Date.parse(f))) return f;
-  // Si es fecha ISO o parseable, formatear bonito
-  var d = new Date(f);
-  return d.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-}
 
 var currentUser = null;
 var mudanzasData = [];
@@ -558,7 +544,7 @@ function renderMudanzaCard(m, idx){
           var cData = JSON.stringify(c).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
           return '<div style="background:var(--surface2);border:1px solid '+(isAceptada?'var(--emerald)':'#E2E8F0')+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
             // Fila superior: nombre + precio
-            + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+            + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(isAceptada||m.estado==='cotizacion_aceptada'?'0':'8px')+'">'
             +   '<div style="flex:1">'
             +     '<div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(c.mudanceroNombre)+'</div>'
             +     (c.tiempoEstimado?'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">⏱ '+c.tiempoEstimado+'</div>':'')
@@ -568,15 +554,6 @@ function renderMudanzaCard(m, idx){
             +     (isAceptada ? '<div style="font-size:10px;color:var(--blue);font-family:var(--mono)">✓ Aceptada</div>' : '')
             +   '</div>'
             + '</div>'
-            // Desglose km si aplica
-            + (c.precioKm > 0 && c.distanciaKm > 0
-              ? '<div style="background:#EEF4FF;border-radius:6px;padding:6px 10px;margin-bottom:6px;font-size:11px;font-family:var(--mono);color:var(--text3)">'
-                + '<span style="color:var(--text2)">Base: $'+c.precioBase.toLocaleString('es-AR')+'</span>'
-                + ' &nbsp;+&nbsp; '
-                + '<span style="color:var(--text2)">'+c.distanciaKm+'km × $'+c.precioKm.toLocaleString('es-AR')+'/km</span>'
-                + '</div>'
-              : ''
-            )
             // Botones — solo si no está aceptada ni hay otra aceptada
             + ((!isAceptada && m.estado !== 'cotizacion_aceptada') ? (
                 '<div style="display:flex;gap:6px;margin-top:8px;align-items:center">'
@@ -600,8 +577,7 @@ function renderMudanzaCard(m, idx){
   return '<div class="mudanza-card">'
     + '<div class="mudanza-header">'
     +   '<div><div class="mudanza-ruta">'+esc(m.desde)+' → '+esc(m.hasta)+'</div>'
-    +   '<div class="mudanza-fecha">📅 Mudanza: '+esc(fmtFechaMudanza(m.fecha))+' · '+esc(m.ambientes||'—')+'</div>'
-  +   '<div class="mudanza-fecha" style="margin-top:2px">🗓 Publicado: '+esc(fmtFechaMudanza(m.fechaPublicacion))+'</div></div>'
+    +   '<div class="mudanza-fecha">📅 '+esc(m.fecha||'A confirmar')+' · '+esc(m.ambientes||'—')+'</div></div>'
     +   '<span class="badge '+badgeClass+'">'+badgeText+'</span>'
     + '</div>'
     + '<div class="stepper">'+stepperHtml+'</div>'
@@ -617,7 +593,20 @@ function renderMudanzaCard(m, idx){
         + '</div>' : '')
     + '<div class="mudanza-meta">'
     +   (m.extras ? '<span class="meta-tag">📦 '+m.extras+'</span>' : '')
-    +   (m.precio_estimado ? '<span class="meta-tag">Estimado: $'+parseInt(m.precio_estimado).toLocaleString('es-AR')+'</span>' : '')
+    +   (function(){
+          var cotz = m.cotizaciones || [];
+          if (cotz.length > 0) {
+            var precios = cotz.map(function(c){ return c.precio || 0; }).filter(Boolean).sort(function(a,b){return a-b;});
+            if (precios.length === 1) {
+              return '<span class="meta-tag" style="color:var(--blue);border-color:rgba(26,111,255,.25)">💰 Cotización: $'+precios[0].toLocaleString('es-AR')+'</span>';
+            } else {
+              return '<span class="meta-tag" style="color:var(--blue);border-color:rgba(26,111,255,.25)">💰 Rango: $'+precios[0].toLocaleString('es-AR')+' — $'+precios[precios.length-1].toLocaleString('es-AR')+'</span>';
+            }
+          } else if (m.precio_estimado) {
+            return '<span class="meta-tag">Estimado: $'+parseInt(m.precio_estimado).toLocaleString('es-AR')+'</span>';
+          }
+          return '';
+        })()
     + '</div>'
     + '<div class="mudanza-actions" style="margin-top:8px">'
     +   '<button class="btn btn-ghost" style="font-size:12px" onclick="loadMudanzas()">↻ Actualizar</button>'
