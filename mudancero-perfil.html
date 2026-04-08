@@ -88,21 +88,6 @@ nav{background:var(--navy);height:56px;display:flex;align-items:center;justify-c
 .web-link{color:var(--blue);text-decoration:none;font-size:12px;font-family:var(--mono);display:flex;align-items:center;gap:4px}
 .web-link:hover{text-decoration:underline}
 
-
-/* Modal confirmación cotización */
-.confirm-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
-.confirm-overlay.open{display:flex}
-.confirm-box{background:#fff;border-radius:16px;padding:2rem 1.8rem;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center}
-.confirm-icon{font-size:2.8rem;margin-bottom:.8rem}
-.confirm-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:.4rem}
-.confirm-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.6rem}
-.confirm-nombre{font-weight:700;color:var(--blue)}
-.confirm-btns{display:flex;gap:10px}
-.confirm-btn-cancel{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border2);background:#fff;color:var(--text2);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
-.confirm-btn-cancel:hover{border-color:var(--text2);color:var(--text)}
-.confirm-btn-ok{flex:2;padding:12px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
-.confirm-btn-ok:hover{background:#0F52CC;transform:translateY(-1px)}
-
 /* Lightbox */
 #lightbox{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.9);align-items:center;justify-content:center}
 #lightbox.open{display:flex}
@@ -354,30 +339,23 @@ document.addEventListener('keydown', function(e){ if(e.key==='Escape') cerrarLig
 
 function solicitarCotizacion() {
   var email = new URLSearchParams(location.search).get('id');
+  var busqueda = null;
+  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
   var user = null;
   try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e){}
 
   if (!user) {
-    // No logueado → guardar pending y volver al index a loguearse
+    // No logueado → volver al index a loguearse
     sessionStorage.setItem('pendingMudancero', email);
     window.location.href = '/';
     return;
   }
 
-  var busqueda = null;
-  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
   if (!busqueda || !busqueda.desde || !busqueda.hasta) {
     alert('No encontramos tu búsqueda. Volvé al inicio e ingresá origen y destino.');
     return;
   }
 
-  // Mostrar modal de confirmación
-  var nombre = _mudancero ? (_mudancero.empresa || _mudancero.nombre) : 'este mudancero';
-  document.getElementById('confirmNombre').textContent = nombre;
-  document.getElementById('confirmOverlay').classList.add('open');
-  return;
-
-  // (el resto lo maneja confirmarSolicitud)
   var btn = document.querySelector('.btn-cot');
   btn.disabled = true;
   btn.textContent = 'Publicando…';
@@ -436,61 +414,6 @@ function seleccionarYVolver() {
   history.back();
 }
 
-function cerrarConfirm() {
-  document.getElementById('confirmOverlay').classList.remove('open');
-}
-
-function confirmarSolicitud() {
-  document.getElementById('confirmOverlay').classList.remove('open');
-
-  var email = new URLSearchParams(location.search).get('id');
-  var busqueda = null;
-  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
-  var user = null;
-  try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e){}
-
-  var btn = document.querySelector('.btn-cot');
-  if (btn) { btn.disabled = true; btn.textContent = 'Publicando…'; }
-
-  var esFlete = busqueda.tipo === 'flete';
-  var ambNum = parseInt(busqueda.ambientes) || 2;
-  var precioEst = esFlete ? 180000 : ({1:450000,2:550000,3:680000,4:860000,5:1050000,6:1180000}[Math.min(ambNum,6)] || 550000);
-
-  fetch('/api/cotizaciones?action=publicar', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      clienteEmail: user.email,
-      clienteNombre: user.name,
-      desde: busqueda.desde,
-      hasta: busqueda.hasta,
-      ambientes: esFlete ? 'Flete' : (ambNum + ' ambientes'),
-      fecha: busqueda.fecha || 'A confirmar',
-      tipo: busqueda.tipo || 'mudanza',
-      precio_estimado: precioEst,
-      distanciaKm: busqueda.distanciaKm || 0,
-      modoCotizacion: 'dirigido',
-      mudancerosInvitados: [email],
-    })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    if (d.error) throw new Error(d.error);
-    var nombre = _mudancero ? (_mudancero.empresa || _mudancero.nombre) : 'este mudancero';
-    document.querySelector('.sidebar-card').innerHTML =
-      '<div style="text-align:center;padding:1.2rem">'
-      +'<div style="font-size:2.5rem;margin-bottom:12px">🚀</div>'
-      +'<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">¡Solicitud enviada!</div>'
-      +'<p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem;line-height:1.6">Le enviamos tu pedido a <strong>'+nombre+'</strong>. Te avisamos por email cuando te cotice.</p>'
-      +'<a href="/mi-mudanza" style="display:block;padding:13px;background:var(--blue);color:#fff;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;text-align:center">Ver mis mudanzas →</a>'
-      +'</div>';
-  })
-  .catch(function(e){
-    if (btn) { btn.disabled = false; btn.textContent = 'Solicitar cotización →'; }
-    alert('Error: ' + e.message);
-  });
-}
-
 var _mudancero = null;
 
 // ══════════════════════════════════════════
@@ -523,7 +446,6 @@ var _mudancero = null;
   renderPerfil(m, extra);
 })();
 </script>
-
 <!-- MODAL CONFIRMACIÓN COTIZACIÓN -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
@@ -536,6 +458,5 @@ var _mudancero = null;
     </div>
   </div>
 </div>
-
 </body>
 </html>
