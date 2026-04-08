@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Fondo redondeado azul oscuro -->
+  <rect width="64" height="64" rx="12" fill="#003580"/>
+  <!-- Letra M en Bebas Neue style — trazos manuales -->
+  <!-- M: dos patas, dos diagonales hacia el centro -->
+  <text x="8" y="50" 
+    font-family="Arial Black, Impact, sans-serif" 
+    font-size="44" 
+    font-weight="900" 
+    fill="#FFFFFF"
+    letter-spacing="-2">M</text>
+  <!-- Punto verde acento abajo derecha -->
+  <circle cx="54" cy="52" r="7" fill="#22C36A"/>
+</svg>
