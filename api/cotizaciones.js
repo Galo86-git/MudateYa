@@ -678,6 +678,37 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, invitados: m.mudancerosInvitados });
     }
 
+    // ── Admin: listar pagos ───────────────────────────────────────────
+    if (action === 'admin-pagos' && req.method === 'GET') {
+      const { token } = req.query;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+      const activas = await getJSON('mudanzas:activas') || [];
+      const rows = [];
+      for (const id of activas) {
+        try {
+          const m = await getJSON(`mudanza:${id}`);
+          if (m && (m.anticipoPagado || m.saldoPagado)) {
+            rows.push({
+              id: m.id,
+              desde: m.desde,
+              hasta: m.hasta,
+              clienteEmail: m.clienteEmail,
+              clienteNombre: m.clienteNombre,
+              anticipoPagado: m.anticipoPagado || false,
+              saldoPagado: m.saldoPagado || false,
+              precio_estimado: m.precio_estimado || 0,
+              estado: m.estado,
+              fechaPublicacion: m.fechaPublicacion,
+            });
+          }
+        } catch(e) {}
+      }
+      return res.status(200).json({ rows });
+    }
+
+
     // ── Admin: listar mudanceros ──────────────────────────────────────
     if (action === 'admin-mudanceros' && req.method === 'GET') {
       const { token } = req.query;
