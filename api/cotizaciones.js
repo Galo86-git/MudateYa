@@ -760,10 +760,10 @@ async function notificarMudanceros(mudanza) {
   await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>',
     to: adminEmail,
-    subject: `🚛 Nueva mudanza — ${mudanza.desde} → ${mudanza.hasta} · ${mudanza.id}`,
+    subject: `${mudanza.tipo === 'flete' ? '📦 Nuevo flete' : '🚛 Nueva mudanza'} — ${mudanza.desde} → ${mudanza.hasta} · ${mudanza.id}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
       <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Admin · Nuevo pedido</span></div>
-      <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">🚛 Nueva mudanza · ${mudanza.id}</div>
+      <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${mudanza.tipo === 'flete' ? '📦 Nuevo flete' : '🚛 Nueva mudanza'} · ${mudanza.id}</div>
       <div style="padding:28px">
         <table style="width:100%;border-collapse:collapse">
           <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde}</td></tr>
