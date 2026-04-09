@@ -334,7 +334,7 @@ function renderPerfil(m, extra) {
     +'<div>'
     +'<div class="sidebar-card">'
     +'<div class="precio-desde">Precio desde</div>'
-    +'<div class="precio-num">$'+precio.toLocaleString('es-AR')+'</div>'
+    +'<div class="precio-num">'+fmtPrecio(precio)+'</div>'
     +'<div class="precio-sub">por ambiente · precio estimado</div>'
     +'<button class="btn-cot" onclick="solicitarCotizacion()">Solicitar cotización →</button>'
     +'<div class="divider"></div>'
@@ -356,6 +356,20 @@ function cerrarLightbox() {
   document.getElementById('lightbox').classList.remove('open');
 }
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') cerrarLightbox(); });
+
+// Formato precio confiable
+function fmtPrecio(n) {
+  if (!n || isNaN(n)) return '$0';
+  var s = Math.round(n).toString();
+  var result = '';
+  var count = 0;
+  for (var i = s.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) result = '.' + result;
+    result = s[i] + result;
+    count++;
+  }
+  return '$' + result;
+}
 
 // ── Login modal ──────────────────────────
 var _googlePerfilInited = false;
