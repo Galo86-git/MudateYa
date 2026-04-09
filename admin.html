@@ -99,13 +99,18 @@ tr:hover td{background:rgba(34,195,106,.03)}
 
 .modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem}
 .modal-overlay.open{display:flex}
-.modal{background:#fff;border:1px solid #CBD5E1;border-radius:20px;padding:1.8rem;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.6)}
+.modal{background:#fff;border:1px solid #CBD5E1;border-radius:20px;padding:1.8rem;max-width:680px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.6)}
 .modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:1rem}
-.modal-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:2px solid #22C36A;font-size:12px}
+.modal-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #E2E8F0;font-size:12px}
 .modal-row:last-child{border-bottom:none}
 .modal-label{color:#64748B;font-family:var(--mono)}
-.modal-val{color:#475569;text-align:right;max-width:280px}
+.modal-val{color:#475569;text-align:right;max-width:340px;word-break:break-all}
 .modal-footer{display:flex;gap:8px;margin-top:1.2rem;justify-content:flex-end}
+.modal-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:12px 0}
+.modal-foto-item{border-radius:10px;overflow:hidden;border:1px solid #E2E8F0;aspect-ratio:4/3;background:#F4F6F9;cursor:pointer}
+.modal-foto-item img{width:100%;height:100%;object-fit:cover;transition:opacity .2s}
+.modal-foto-item img:hover{opacity:.85}
+.modal-section{font-size:10px;font-weight:700;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin:14px 0 6px}
 
 .search-bar{display:flex;gap:8px;margin-bottom:1rem}
 .search-input{flex:1;padding:9px 14px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:#0F1923;background:#F5F7FA;outline:none;transition:border-color .2s}
@@ -114,22 +119,6 @@ tr:hover td{background:rgba(34,195,106,.03)}
 
 @media(max-width:900px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.sidebar{display:none}}
 @media(max-width:600px){.metrics-grid{grid-template-columns:1fr 1fr}.admin-main{padding:1rem}}
-
-/* ── MODAL CONFIRMACIÓN ─────────────────────────────────── */
-.confirm-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:fadeIn .15s ease}
-.confirm-box{background:#fff;border-radius:16px;padding:1.8rem 1.6rem;max-width:380px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:slideUp .15s ease}
-.confirm-icon{font-size:2rem;text-align:center;margin-bottom:.8rem}
-.confirm-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px;color:#0F1923;text-align:center;margin-bottom:.4rem}
-.confirm-msg{font-size:13px;color:#475569;text-align:center;line-height:1.6;margin-bottom:1.4rem}
-.confirm-btns{display:flex;gap:8px;justify-content:center}
-.confirm-btn-cancel{padding:10px 22px;border-radius:10px;border:1px solid #CBD5E1;background:#fff;color:#475569;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
-.confirm-btn-cancel:hover{border-color:#94A3B8;color:#0F1923}
-.confirm-btn-ok{padding:10px 22px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
-.confirm-btn-ok.danger{background:#EF4444;color:#fff}.confirm-btn-ok.danger:hover{background:#DC2626}
-.confirm-btn-ok.primary{background:#1A6FFF;color:#fff}.confirm-btn-ok.primary:hover{background:#0F52CC}
-.confirm-btn-ok.success{background:#22C36A;color:#fff}.confirm-btn-ok.success:hover{background:#17A356}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -295,8 +284,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
 
 <script>
 var GOOGLE_CLIENT_ID = '';
-var ADMIN_TOKEN = 'mya-admin-2026';
-  var ADMIN_EMAILS = [];
+var ADMIN_EMAILS = [];
 var currentUser = null;
 var mudancerosData = [];
 var pagosData = [];
@@ -381,9 +369,22 @@ async function loadAll(){
 
 async function loadMudanceros(){
   try{
-    var r = await fetch('/api/admin?type=mudanceros');
+    var r = await fetch('/api/cotizaciones?action=admin-mudanceros&token=mya-admin-2026');
     var d = await r.json();
-    mudancerosData = d.rows || [];
+    // Convertir objetos Redis a arrays compatibles con el panel
+    // Formato: [id, nombre, empresa, telefono, email, zona, zonasExtra, estado_cuil, vehiculo, cant, equipo,
+    //           servicios, dias, horarios, extra, metodoCobro, cbu, emailMP, fechaRegistro, cuilVerificado, dniLegible, estado]
+    mudancerosData = (d.mudanceros || []).map(function(m){
+      return [
+        m.id, m.nombre, m.empresa, m.telefono, m.email,
+        m.zonaBase, m.zonasExtra, m.cuil, m.vehiculo, m.cantVehiculos,
+        m.equipo, m.servicios, m.dias, m.horarios, m.extra,
+        m.metodoCobro, m.cbu, m.emailMP, m.fechaRegistro,
+        m.cuilVerificado ? 'Verificado' : 'No verificado',
+        m.dniLegible ? 'Legible' : 'No legible',
+        m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente'
+      ];
+    });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
     document.getElementById('badgePendientes').textContent = pendientes;
     document.getElementById('badgePendientes').style.display = pendientes > 0 ? '' : 'none';
@@ -395,12 +396,13 @@ async function loadMudanceros(){
 
 async function loadPagos(){
   try{
-    var r = await fetch('/api/admin?type=pagos');
+    var r = await fetch('/api/cotizaciones?action=admin-pagos&token=mya-admin-2026');
+    if (!r.ok) { pagosData = []; return; }
     var d = await r.json();
     pagosData = d.rows || [];
   }catch(e){
     pagosData = [];
-    console.error('Error cargando pagos:', e);
+    console.warn('Pagos no disponibles:', e.message);
   }
 }
 
@@ -547,19 +549,6 @@ function renderTransferencias(){
 }
 
 async function accionTransfer(id, accion){
-  var esConfirmar = accion === 'confirmar';
-  confirmar({
-    icon:    esConfirmar ? '💸' : '🚫',
-    titulo:  esConfirmar ? '¿Confirmar transferencia?' : '¿Rechazar transferencia?',
-    mensaje: esConfirmar
-      ? 'Confirmá que ya realizaste la transferencia al mudancero. Esta acción queda registrada.'
-      : '¿Seguro que querés rechazar esta transferencia? Podés volver a procesarla luego.',
-    textoOk: esConfirmar ? '✓ Sí, confirmar' : '✗ Sí, rechazar',
-    tipo:    esConfirmar ? 'success' : 'danger',
-    onOk: function() { _doAccionTransfer(id, accion); }
-  });
-}
-async function _doAccionTransfer(id, accion){
   var btns = document.querySelectorAll('button');
   try{
     var r = await fetch('/api/transferencias', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, accion }) });
@@ -648,14 +637,77 @@ var CAMPOS = ['Fecha','Nombre','Empresa','Teléfono','Email','Zona base','Zonas 
 
 function getEstado(m){ return m[21] || 'Pendiente'; }
 
-function openModal(idx){
+async function openModal(idx){
   currentMudanceroIdx = idx;
   var m = mudancerosData[idx];
+  var email = m[4];
   document.getElementById('modalNombre').textContent = m[1] || 'Mudancero';
-  document.getElementById('modalContent').innerHTML = CAMPOS.map(function(label, i){
-    if(!m[i] && i > 0) return '';
-    return '<div class="modal-row"><span class="modal-label">'+label+'</span><span class="modal-val">'+(m[i]||'—')+'</span></div>';
+  document.getElementById('modalContent').innerHTML = '<div style="text-align:center;padding:20px;color:#94A3B8;font-size:13px">Cargando datos…</div>';
+  document.getElementById('mudanceroModal').classList.add('open');
+
+  // Cargar perfil completo desde Redis
+  var perfil = null;
+  try {
+    var r = await fetch('/api/mudancero-data?email=' + encodeURIComponent(email));
+    var d = await r.json();
+    if (d.perfil) perfil = d.perfil;
+  } catch(e) {}
+
+  // Datos básicos
+  var filas = [
+    ['Email', email],
+    ['Teléfono', m[3] || (perfil && perfil.telefono) || '—'],
+    ['CUIL/CUIT', m[7] || (perfil && perfil.cuil) || '—'],
+    ['Zona', m[5] || '—'],
+    ['Zonas extra', m[6] || '—'],
+    ['Vehículo', m[8] || '—'],
+    ['Servicios', m[11] || '—'],
+    ['Método cobro', perfil ? (perfil.metodoCobro || '—') : '—'],
+    ['CBU/Alias', perfil ? (perfil.cbu || perfil.emailMP || '—') : '—'],
+    ['Titular', perfil ? (perfil.titularCuenta || '—') : '—'],
+    ['Sitio web', perfil ? (perfil.sitioWeb || '—') : '—'],
+    ['Fecha registro', m[18] || '—'],
+    ['Estado', getEstado(m)],
+  ];
+
+  var html = filas.map(function(f) {
+    return '<div class="modal-row"><span class="modal-label">'+f[0]+'</span><span class="modal-val">'+f[1]+'</span></div>';
   }).join('');
+
+  // Fotos del vehículo
+  if (perfil) {
+    var fotosVeh = perfil.fotosVehiculo || (perfil.fotoCamion ? [perfil.fotoCamion] : []);
+    if (fotosVeh.length) {
+      html += '<div class="modal-section">📸 Fotos del vehículo</div><div class="modal-fotos">';
+      fotosVeh.forEach(function(url) {
+        if (url) html += '<div class="modal-foto-item"><img src="'+url+'" onclick="window.open(\''+url+'\',\'_blank\')" title="Ver foto completa"/></div>';
+      });
+      html += '</div>';
+    }
+
+    // Fotos del DNI
+    if (perfil.dniFrente || perfil.dniDorso) {
+      html += '<div class="modal-section">🪪 Fotos del DNI</div><div class="modal-fotos">';
+      if (perfil.dniFrente) html += '<div class="modal-foto-item"><img src="'+perfil.dniFrente+'" onclick="window.open(\''+perfil.dniFrente+'\',\'_blank\')" title="DNI Frente"/></div>';
+      if (perfil.dniDorso)  html += '<div class="modal-foto-item"><img src="'+perfil.dniDorso+'" onclick="window.open(\''+perfil.dniDorso+'\',\'_blank\')" title="DNI Dorso"/></div>';
+      html += '</div>';
+    } else {
+      html += '<div class="modal-section">🪪 DNI</div><div style="font-size:12px;color:#F59E0B;padding:8px 0">⚠ Sin fotos de DNI — verificar manualmente</div>';
+    }
+
+    // Foto de perfil
+    if (perfil.foto) {
+      html += '<div class="modal-section">👤 Foto de perfil</div><div class="modal-fotos"><div class="modal-foto-item"><img src="'+perfil.foto+'" onclick="window.open(\''+perfil.foto+'\',\'_blank\')"/></div></div>';
+    }
+
+    // Descripción
+    if (perfil.extra) {
+      html += '<div class="modal-section">📝 Descripción</div><div style="font-size:12px;color:#475569;padding:8px;background:#F8FAFC;border-radius:8px;line-height:1.5">'+perfil.extra+'</div>';
+    }
+  }
+
+  document.getElementById('modalContent').innerHTML = html;
+
   var estado = getEstado(m);
   var btnA = document.getElementById('btnAprobar');
   var btnR = document.getElementById('btnRechazar');
@@ -663,7 +715,6 @@ function openModal(idx){
   btnA.textContent = '✓ Aprobar'; btnR.textContent = '✗ Rechazar';
   btnA.style.display = estado === 'Aprobado'  ? 'none' : '';
   btnR.style.display = estado === 'Rechazado' ? 'none' : '';
-  document.getElementById('mudanceroModal').classList.add('open');
 }
 
 function closeModal(){
@@ -674,29 +725,14 @@ function closeModal(){
 async function cambiarEstado(nuevoEstado){
   if(currentMudanceroIdx === null) return;
   var m = mudancerosData[currentMudanceroIdx];
-  var nombre = m[1] || 'este mudancero';
-  var esAprobar = nuevoEstado === 'Aprobado';
-  confirmar({
-    icon:     esAprobar ? '✅' : '🚫',
-    titulo:   esAprobar ? '¿Aprobar a ' + nombre + '?' : '¿Rechazar a ' + nombre + '?',
-    mensaje:  esAprobar
-      ? 'El mudancero va a recibir un email de activación y podrá aceptar pedidos desde ya.'
-      : 'El mudancero será notificado del rechazo. Podés revertirlo manualmente si es necesario.',
-    textoOk:  esAprobar ? '✓ Sí, aprobar' : '✗ Sí, rechazar',
-    tipo:     esAprobar ? 'success' : 'danger',
-    onOk: function() { _doCambiarEstadoAdmin(nuevoEstado); }
-  });
-}
-async function _doCambiarEstadoAdmin(nuevoEstado){
-  if(currentMudanceroIdx === null) return;
-  var m = mudancerosData[currentMudanceroIdx];
   var btn = nuevoEstado === 'Aprobado' ? document.getElementById('btnAprobar') : document.getElementById('btnRechazar');
   btn.disabled = true; btn.textContent = 'Guardando…';
   try{
-    var r = await fetch('/api/admin-aprobar', {
+    var estadoRedis = nuevoEstado === 'Aprobado' ? 'aprobado' : nuevoEstado === 'Rechazado' ? 'rechazado' : 'pendiente';
+    var r = await fetch('/api/cotizaciones?action=admin-aprobar-mudancero', {
       method: 'POST',
-      headers: {'Content-Type':'application/json', 'x-admin-token': ADMIN_TOKEN},
-      body: JSON.stringify({ tipo:'cambiar-estado-mudancero', email:m[4], nombre:m[1], telefono:m[3], nuevoEstado, rowIndex: currentMudanceroIdx + 2 })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ token:'mya-admin-2026', email:m[4], nuevoEstado:estadoRedis })
     });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
@@ -710,29 +746,6 @@ async function _doCambiarEstadoAdmin(nuevoEstado){
     btn.disabled = false;
     btn.textContent = nuevoEstado === 'Aprobado' ? '✓ Aprobar' : '✗ Rechazar';
   }
-}
-
-// ── MODAL DE CONFIRMACIÓN REUTILIZABLE ─────────────────────
-function confirmar(opciones) {
-  var overlay = document.createElement('div');
-  overlay.className = 'confirm-overlay';
-  overlay.innerHTML =
-    '<div class="confirm-box">' +
-      '<div class="confirm-icon">' + (opciones.icon || '⚠️') + '</div>' +
-      '<div class="confirm-title">' + (opciones.titulo || '¿Confirmar acción?') + '</div>' +
-      '<div class="confirm-msg">' + (opciones.mensaje || '¿Estás seguro?') + '</div>' +
-      '<div class="confirm-btns">' +
-        '<button class="confirm-btn-cancel" id="confirmCancelar">Cancelar</button>' +
-        '<button class="confirm-btn-ok ' + (opciones.tipo || 'primary') + '" id="confirmOk">' + (opciones.textoOk || 'Confirmar') + '</button>' +
-      '</div>' +
-    '</div>';
-  document.body.appendChild(overlay);
-  document.getElementById('confirmCancelar').onclick = function() { overlay.remove(); };
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-  document.getElementById('confirmOk').onclick = function() {
-    overlay.remove();
-    if (opciones.onOk) opciones.onOk();
-  };
 }
 </script>
 </body>
