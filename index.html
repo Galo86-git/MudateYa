@@ -785,7 +785,7 @@ function onFechaFlete() {
 }
 
 var _buscarFn = null;
-function _buscarFnImpl() {
+function buscar() {
   if (typeof _buscarFn === 'function') { _buscarFn(); }
 }
 
@@ -1222,7 +1222,6 @@ var _pendingPub = null;
 var _routeMap = null;
 
 try { _currentUser = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
-_buscarFn = _buscarFnImpl;
 
 // ══════════════════════════════════════════
 // MOCK DATA
@@ -1549,7 +1548,7 @@ function verMapa() {
 // ══════════════════════════════════════════
 // BUSCAR
 // ══════════════════════════════════════════
-function buscar() {
+_buscarFn = function() {
   var idDesde = _tipo==='mudanza' ? 'input-desde' : 'input-flete-desde';
   var idHasta = _tipo==='mudanza' ? 'input-hasta' : 'input-flete-hasta';
   var desde = document.getElementById(idDesde).value.trim();
