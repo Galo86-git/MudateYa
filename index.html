@@ -589,6 +589,41 @@ function setTipo(t) {
     if (sub)   sub.textContent   = 'Comparás precios reales de mudanceros verificados y elegís sin compromiso. Publicá gratis.';
   }
 }
+
+// Funciones llamadas desde onclick inline
+function toggleObj(el) { el.classList.toggle('sel'); }
+
+var _fleteObj = '';
+var fleteOtrosTexto = '';
+var _fleteFotoB64 = null;
+var _fleteFotoMime = '';
+
+function selFleteObj(el, tipo) {
+  document.querySelectorAll('#sb-flete .obj-chip').forEach(function(c){ c.classList.remove('sel'); });
+  el.classList.add('sel');
+  _fleteObj = tipo;
+  var box = document.getElementById('flete-otros-box');
+  if (box) box.style.display = tipo === 'otros' ? 'block' : 'none';
+}
+
+function onFleteFoto(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var txtEl = document.getElementById('flete-foto-txt');
+  var estadoEl = document.getElementById('flete-ia-estado');
+  var resultEl = document.getElementById('flete-ia-result');
+  if (txtEl) txtEl.textContent = '\u2713 ' + file.name;
+  if (estadoEl) estadoEl.style.display = 'flex';
+  if (resultEl) resultEl.style.display = 'none';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    _fleteFotoB64 = e.target.result.split(',')[1];
+    _fleteFotoMime = file.type || 'image/jpeg';
+    if (typeof analizarFleteFoto === 'function') analizarFleteFoto();
+  };
+  reader.readAsDataURL(file);
+}
+
 </script>
 </head>
 <body>
@@ -1002,7 +1037,7 @@ function setTipo(t) {
   </div>
 </div>
 
-<script>
+<script data-cfasync="false">
 // ══════════════════════════════════════════
 // CONSTANTES Y ESTADO
 // ══════════════════════════════════════════
@@ -1231,7 +1266,7 @@ document.addEventListener('click', function(e) {
 // ══════════════════════════════════════════
 // MAPS AUTOCOMPLETE
 // ══════════════════════════════════════════
-window.initMaps = function initMaps() {
+window.initMaps = window.initMaps = function initMaps() {
   ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
     var acId = 'ac-' + id.replace('input-','').replace('-desde','desde').replace('-hasta','hasta');
     // fix id mapping
@@ -1699,8 +1734,4 @@ function updateNav() {
 // NAV MOBILE
 // ══════════════════════════════════════════
 function toggleMenu() { document.getElementById('navBurger').classList.toggle('open'); document.getElementById('mobileMenu').classList.toggle('open'); }
-function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open'); }
-
-// Init
-document.addEventListener('DOMContentLoaded', function() { updateNav(); });
-document.getElementById('pubModal').addEventListener('click', fun
+function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open')
