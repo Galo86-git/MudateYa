@@ -784,22 +784,9 @@ function onFechaFlete() {
   if (fp) fp.classList.remove('open');
 }
 
-function buscar() {
-  // Delegamos a la función completa del script principal cuando esté cargado
-  if (typeof _buscarCompleto === 'function') { _buscarCompleto(); return; }
-  var idDesde = _tipo==='mudanza' ? 'input-desde' : 'input-flete-desde';
-  var idHasta = _tipo==='mudanza' ? 'input-hasta' : 'input-flete-hasta';
-  var desde = document.getElementById(idDesde).value.trim();
-  var hasta  = document.getElementById(idHasta).value.trim();
-  if (!desde) { setAddrError(idDesde, '⚠ Ingresá la dirección de origen'); return; }
-  if (!_validAddr[idDesde]) { setAddrError(idDesde, '⚠ Elegí una dirección de la lista de sugerencias'); return; }
-  if (!hasta) { setAddrError(idHasta, '⚠ Ingresá la dirección de destino'); return; }
-  if (!_validAddr[idHasta]) { setAddrError(idHasta, '⚠ Elegí una dirección de la lista de sugerencias'); return; }
-  // Si el script principal ya cargó, buscar ahí
-  if (typeof _busqueda !== 'undefined') {
-    _busqueda = { desde: desde, hasta: hasta, tipo: _tipo, ambientes: _amb, fecha: _fechaLabel || _fechaFlete };
-  }
-  document.getElementById('resultados') && document.getElementById('resultados').classList.add('show');
+var _buscarFn = null;
+function _buscarFnImpl() {
+  if (typeof _buscarFn === 'function') { _buscarFn(); }
 }
 
 </script>
@@ -1235,6 +1222,7 @@ var _pendingPub = null;
 var _routeMap = null;
 
 try { _currentUser = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e) {}
+_buscarFn = _buscarFnImpl;
 
 // ══════════════════════════════════════════
 // MOCK DATA
