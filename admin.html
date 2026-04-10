@@ -119,6 +119,19 @@ tr:hover td{background:rgba(34,195,106,.03)}
 
 @media(max-width:900px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.sidebar{display:none}}
 @media(max-width:600px){.metrics-grid{grid-template-columns:1fr 1fr}.admin-main{padding:1rem}}
+
+/* Modal confirmación aprobar/rechazar */
+.confirm-modal-ov{display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
+.confirm-modal-ov.open{display:flex}
+.confirm-modal-box{background:#fff;border-radius:14px;padding:2rem 1.8rem;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center}
+.confirm-modal-icon{font-size:2.5rem;margin-bottom:.8rem}
+.confirm-modal-title{font-size:17px;font-weight:700;color:#0F1923;margin-bottom:.4rem}
+.confirm-modal-sub{font-size:13px;color:#475569;line-height:1.6;margin-bottom:1.4rem}
+.confirm-modal-btns{display:flex;gap:10px}
+.confirm-modal-cancel{flex:1;padding:11px;border-radius:8px;border:1.5px solid #CBD5E1;background:#fff;color:#475569;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.confirm-modal-ok{flex:2;padding:11px;border-radius:8px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.confirm-modal-ok:hover{opacity:.85}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -724,8 +737,36 @@ function closeModal(){
   currentMudanceroIdx = null;
 }
 
-async function cambiarEstado(nuevoEstado){
+var _pendingEstado = null;
+
+function cambiarEstado(nuevoEstado) {
   if(currentMudanceroIdx === null) return;
+  var m = mudancerosData[currentMudanceroIdx];
+  var nombre = m[1] || 'este mudancero';
+  _pendingEstado = nuevoEstado;
+
+  var esAprobar = nuevoEstado === 'Aprobado';
+  document.getElementById('confirmEstadoIcon').textContent = esAprobar ? '✅' : '❌';
+  document.getElementById('confirmEstadoTitle').textContent = esAprobar ? '¿Aprobás a ' + nombre + '?' : '¿Rechazás a ' + nombre + '?';
+  document.getElementById('confirmEstadoSub').textContent = esAprobar
+    ? 'Le vamos a enviar un email de alta con el link para aceptar los Términos y Condiciones. Una vez que acepte, va a aparecer en el catálogo.'
+    : 'El mudancero no va a poder operar en la plataforma. Esta acción se puede revertir luego.';
+  var okBtn = document.getElementById('confirmEstadoOkBtn');
+  okBtn.textContent = esAprobar ? '✓ Sí, aprobar' : '✗ Sí, rechazar';
+  okBtn.style.background = esAprobar ? '#22C36A' : '#EF4444';
+  okBtn.style.color = '#fff';
+  document.getElementById('confirmEstadoOv').classList.add('open');
+}
+
+function cerrarConfirmEstado() {
+  document.getElementById('confirmEstadoOv').classList.remove('open');
+  _pendingEstado = null;
+}
+
+async function confirmarEstado() {
+  cerrarConfirmEstado();
+  var nuevoEstado = _pendingEstado;
+  if(!nuevoEstado || currentMudanceroIdx === null) return;
   var m = mudancerosData[currentMudanceroIdx];
   var btn = nuevoEstado === 'Aprobado' ? document.getElementById('btnAprobar') : document.getElementById('btnRechazar');
   btn.disabled = true; btn.textContent = 'Guardando…';
@@ -800,5 +841,19 @@ function exportarExcel() {
   XLSX.writeFile(wb, 'mudanceros-mudateya-' + fecha + '.xlsx');
 }
 </script>
+
+<!-- MODAL CONFIRMACIÓN APROBAR/RECHAZAR -->
+<div class="confirm-modal-ov" id="confirmEstadoOv">
+  <div class="confirm-modal-box">
+    <div class="confirm-modal-icon" id="confirmEstadoIcon">⚠️</div>
+    <div class="confirm-modal-title" id="confirmEstadoTitle">¿Confirmás?</div>
+    <div class="confirm-modal-sub" id="confirmEstadoSub"></div>
+    <div class="confirm-modal-btns">
+      <button class="confirm-modal-cancel" onclick="cerrarConfirmEstado()">Cancelar</button>
+      <button class="confirm-modal-ok" id="confirmEstadoOkBtn" onclick="confirmarEstado()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
