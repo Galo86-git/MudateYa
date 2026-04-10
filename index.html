@@ -1283,7 +1283,7 @@ function makeAC(inputId, ddId) {
     if (q.length < 2) { dd.classList.remove('open'); return; }
     deb = setTimeout(function() {
       new google.maps.places.AutocompleteService().getPlacePredictions(
-        { input: q, componentRestrictions:{country:'ar'}, types:['address'] },
+        { input: q, componentRestrictions:{country:'ar'}, types:['geocode'] },
         function(preds, status) {
           dd.innerHTML = '';
           if (status !== google.maps.places.PlacesServiceStatus.OK || !preds) { dd.classList.remove('open'); return; }
