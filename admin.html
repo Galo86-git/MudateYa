@@ -213,6 +213,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
             <option value="Aprobado">Aprobados</option>
             <option value="Rechazado">Rechazados</option>
           </select>
+          <button class="btn-sm" onclick="exportarExcel()" style="background:#22C36A;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⬇ Exportar Excel</button>
         </div>
         <div class="table-card">
           <div id="mudancerosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -746,6 +747,45 @@ async function cambiarEstado(nuevoEstado){
     btn.disabled = false;
     btn.textContent = nuevoEstado === 'Aprobado' ? '✓ Aprobar' : '✗ Rechazar';
   }
+}
+
+function exportarExcel() {
+  if (!mudancerosData || !mudancerosData.length) {
+    alert('No hay mudanceros para exportar.');
+    return;
+  }
+
+  var headers = [
+    'ID', 'Nombre', 'Empresa', 'Teléfono', 'Email',
+    'Zona base', 'Zonas extra', 'CUIL', 'Vehículo', 'Cant. vehículos',
+    'Equipo', 'Servicios', 'Días', 'Horarios', 'Extra',
+    'Método cobro', 'CBU/Alias', 'Email MP', 'Fecha registro',
+    'CUIL verificado', 'DNI legible', 'Estado'
+  ];
+
+  var rows = [headers].concat(mudancerosData.map(function(row) {
+    return row.map(function(cell) {
+      var val = (cell === null || cell === undefined) ? '' : String(cell);
+      // Escapar comas y comillas para CSV
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        val = '"' + val.replace(/"/g, '""') + '"';
+      }
+      return val;
+    });
+  }));
+
+  var csv = rows.map(function(r){ return r.join(','); }).join('\n');
+  var bom = '\uFEFF'; // BOM para que Excel abra en UTF-8
+  var blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  var fecha = new Date().toISOString().slice(0,10);
+  a.download = 'mudanceros-mudateya-' + fecha + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
