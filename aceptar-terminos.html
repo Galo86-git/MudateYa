@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Términos y Condiciones — MudateYa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#003580;--green:#22C36A;--green-lt:#F0FFF4;--green-bd:#BBF7D0;
+  --blue:#1A6FFF;--blue-lt:#EEF4FF;
+  --red:#DC2626;--red-lt:#FEF2F2;--red-bd:#FCA5A5;
+  --text:#0F1923;--text2:#475569;--text3:#94A3B8;
+  --border:#E2E8F0;--border2:#CBD5E1;--bg:#F5F7FA;--bg2:#fff;
+  --r:8px;--r2:12px;--r3:16px;--mono:'DM Mono',monospace;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;padding:2rem 1rem 4rem}
+.container{max-width:660px;margin:0 auto}
+
+/* Logo */
+.logo{text-align:center;margin-bottom:2rem}
+.logo-text{font-size:24px;font-weight:800;color:var(--navy);letter-spacing:.5px}
+.logo-text span{color:var(--green)}
+.logo-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+
+/* Card */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:2rem;margin-bottom:1.2rem}
+
+/* Header del card */
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.card-header-icon{width:44px;height:44px;border-radius:50%;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.card-header-title{font-size:17px;font-weight:700;color:var(--text)}
+.card-header-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:3px}
+
+/* Secciones */
+.section{margin-bottom:1.4rem}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-family:var(--mono);margin-bottom:.6rem}
+.section-text{font-size:13px;color:var(--text2);line-height:1.75}
+
+/* Tabla comisiones */
+.comisiones-table{background:var(--bg);border-radius:var(--r2);padding:1rem 1.2rem;margin:.6rem 0}
+.comision-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+.comision-row:not(:last-child){border-bottom:1px solid var(--border)}
+.comision-label{color:var(--text2)}
+.comision-val{font-weight:600;color:var(--text)}
+
+/* Checkbox area */
+.checkbox-area{display:flex;align-items:flex-start;gap:12px;margin-bottom:1.2rem;cursor:pointer}
+.checkbox-area input[type=checkbox]{width:18px;height:18px;margin-top:1px;flex-shrink:0;cursor:pointer;accent-color:var(--green)}
+.checkbox-area label{font-size:13px;color:var(--text2);cursor:pointer;line-height:1.6}
+
+/* Botones */
+.btns{display:flex;gap:10px}
+.btn-rechazar{flex:1;padding:13px;border-radius:var(--r2);border:1.5px solid var(--border2);background:#fff;color:var(--text2);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-rechazar:hover{border-color:var(--text2);color:var(--text)}
+.btn-aceptar{flex:2;padding:13px;border-radius:var(--r2);border:none;background:var(--border2);color:#fff;font-size:14px;font-weight:700;cursor:not-allowed;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-aceptar.enabled{background:var(--green);cursor:pointer}
+.btn-aceptar.enabled:hover{background:#1DAF5C;transform:translateY(-1px)}
+
+/* Mensajes resultado */
+.msg{display:none;margin-top:1rem;padding:1rem 1.2rem;border-radius:var(--r2);font-size:13px;text-align:center;line-height:1.6}
+.msg.success{background:var(--green-lt);border:1px solid var(--green-bd);color:#166534}
+.msg.error{background:var(--red-lt);border:1px solid var(--red-bd);color:var(--red)}
+
+/* Loading */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Footer */
+.footer{text-align:center;margin-top:1.5rem;font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* Estado cargando */
+.loading-state{text-align:center;padding:4rem 2rem;color:var(--text3)}
+.loading-icon{font-size:2.5rem;margin-bottom:1rem}
+
+@media(max-width:600px){
+  body{padding:1.2rem .8rem 3rem}
+  .card{padding:1.4rem 1.2rem}
+  .btns{flex-direction:column}
+  .btn-rechazar,.btn-aceptar{flex:none}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="logo">
+    <div class="logo-text">Mudate<span>Ya</span></div>
+    <div class="logo-sub">mudateya.ar</div>
+  </div>
+
+  <!-- Estado: cargando -->
+  <div id="stateLoading" class="card" style="text-align:center;padding:3rem">
+    <div style="font-size:2rem;margin-bottom:1rem">🔄</div>
+    <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Verificando tu link…</div>
+    <div style="font-size:13px;color:var(--text2)">Un momento por favor.</div>
+  </div>
+
+  <!-- Estado: token inválido / expirado -->
+  <div id="stateError" class="card" style="display:none;text-align:center;padding:3rem">
+    <div style="font-size:2.5rem;margin-bottom:1rem">😕</div>
+    <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">Link inválido o expirado</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.65" id="errorMsg">Este link ya fue usado o expiró. Contactanos para recibir uno nuevo.</p>
+    <a href="mailto:hola@mudateya.ar" style="display:inline-block;padding:11px 24px;background:var(--navy);color:#fff;border-radius:var(--r2);text-decoration:none;font-size:13px;font-weight:700">Contactar soporte →</a>
+  </div>
+
+  <!-- Estado: ya aceptados -->
+  <div id="stateYaAcepto" class="card" style="display:none;text-align:center;padding:3rem">
+    <div style="font-size:2.5rem;margin-bottom:1rem">✅</div>
+    <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">¡Ya aceptaste los términos!</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.65">Tu cuenta está activa. Ya aparecés en el catálogo de MudateYa y podés recibir pedidos.</p>
+    <a href="https://mudateya.ar/mi-cuenta" style="display:block;padding:13px;background:var(--blue);color:#fff;border-radius:var(--r2);text-decoration:none;font-size:14px;font-weight:700;text-align:center">Ir a mi cuenta →</a>
+  </div>
+
+  <!-- Estado: formulario términos -->
+  <div id="stateForm" style="display:none">
+
+    <!-- Card términos -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">📋</div>
+        <div>
+          <div class="card-header-title">Términos y condiciones de uso</div>
+          <div class="card-header-sub">Para prestadores de servicio · MudateYa · Versión 1.0 · Abril 2026</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:1.4rem">
+        Bienvenido a MudateYa. Al aceptar estos términos confirmás que leíste, entendiste y acordás con las condiciones bajo las cuales vas a prestar servicios a través de nuestra plataforma.
+      </p>
+
+      <div class="section">
+        <div class="section-label">1. Qué es MudateYa</div>
+        <div class="section-text">MudateYa es un marketplace digital que conecta a personas que necesitan mudarse o fletar con prestadores de servicio verificados. No somos una empresa de mudanzas ni empleamos a los prestadores — actuamos como intermediarios tecnológicos entre cliente y prestador.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">2. Cómo funciona</div>
+        <div class="section-text">Los clientes publican su mudanza o flete en la plataforma. Como prestador aprobado, vas a recibir pedidos en tu zona, cotizás libremente y si el cliente te elige, acordás los detalles y realizás el servicio. El pago se procesa a través de Mercado Pago — el cliente paga el 50% de anticipo al confirmar y el 50% restante al completar el servicio.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">3. Comisiones vigentes</div>
+        <div class="comisiones-table">
+          <div class="comision-row">
+            <span class="comision-label">🏠 Mudanzas</span>
+            <span class="comision-val">15% sobre el total del servicio</span>
+          </div>
+          <div class="comision-row">
+            <span class="comision-label">📦 Fletes</span>
+            <span class="comision-val">20% sobre el total del servicio</span>
+          </div>
+        </div>
+        <div class="section-text">Estas comisiones aplican sobre el precio total que acordás con el cliente, incluyendo ayudantes u otros servicios adicionales. No hay costos fijos ni suscripción mensual — solo pagás cuando completás un trabajo.<br><br>
+        Las comisiones pueden ajustarse en el futuro según el crecimiento de la plataforma, cambios en costos operativos o condiciones del mercado. Cualquier modificación será comunicada con al menos 30 días de anticipación por email.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">4. Tus obligaciones como prestador</div>
+        <div class="section-text">Al usar MudateYa te comprometés a brindar el servicio acordado en tiempo y forma · tratar a los clientes con respeto y profesionalismo · mantener actualizados tus datos, vehículo y disponibilidad · no acordar pagos por fuera de la plataforma (el pago off-platform puede resultar en la suspensión de tu cuenta) · cumplir con la normativa vigente en materia laboral, vehicular e impositiva.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">5. Calificaciones y reputación</div>
+        <div class="section-text">Una vez completado el servicio, el cliente puede dejarte una calificación y reseña pública. Una buena reputación mejora tu visibilidad y te ayuda a conseguir más pedidos. MudateYa no edita ni elimina reseñas verídicas.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">6. Causas de suspensión</div>
+        <div class="section-text">MudateYa puede suspender o eliminar una cuenta por: incumplimiento de servicios acordados · denuncias reiteradas de clientes · datos falsos en el perfil · acuerdos de pago fuera de la plataforma · conducta inapropiada o violenta.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">7. Responsabilidad</div>
+        <div class="section-text">MudateYa actúa como intermediario y no se hace responsable por daños, accidentes o incumplimientos durante la prestación del servicio. Cada prestador opera de forma independiente y es responsable de su trabajo. Recomendamos contar con seguro propio.</div>
+      </div>
+
+      <div class="section" style="margin-bottom:0">
+        <div class="section-label">8. Jurisdicción</div>
+        <div class="section-text">Estos términos se rigen por las leyes de la República Argentina. Ante cualquier conflicto, ambas partes se someten a la jurisdicción de los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires.</div>
+      </div>
+    </div>
+
+    <!-- Card aceptación -->
+    <div class="card">
+      <div class="checkbox-area">
+        <input type="checkbox" id="ckTerminos"/>
+        <label for="ckTerminos">Leí y acepto los Términos y Condiciones de MudateYa, incluyendo las comisiones vigentes del <strong>15% para mudanzas</strong> y <strong>20% para fletes</strong>.</label>
+      </div>
+      <div class="btns">
+        <button class="btn-rechazar" onclick="rechazar()">No acepto</button>
+        <button class="btn-aceptar" id="btnAceptar" onclick="aceptar()" disabled>Acepto los términos →</button>
+      </div>
+      <div class="msg" id="msgResult"></div>
+    </div>
+
+  </div>
+
+  <div class="footer">MudateYa · mudateya.ar · hola&#64;mudateya&#46;ar</div>
+
+</div>
+
+<script>
+var _token = new URLSearchParams(location.search).get('token');
+var _nombre = '';
+
+function mostrar(id) {
+  ['stateLoading','stateError','stateYaAcepto','stateForm'].forEach(function(s){
+    document.getElementById(s).style.display = s === id ? '' : 'none';
+  });
+}
+
+// Verificar token al cargar
+(function init() {
+  if (!_token) {
+    document.getElementById('errorMsg').textContent = 'Link inválido. Contactanos a hola@mudateya.ar';
+    mostrar('stateError');
+    return;
+  }
+
+  // Verificar con el backend
+  fetch('/api/cotizaciones?action=verificar-terminos-token&token=' + encodeURIComponent(_token))
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      if (d.error) {
+        document.getElementById('errorMsg').textContent = d.error === 'Token inválido o expirado'
+          ? 'Este link ya fue usado o expiró. Contactanos a hola@mudateya.ar para recibir uno nuevo.'
+          : d.error;
+        mostrar('stateError');
+        return;
+      }
+      if (d.yaAcepto) {
+        mostrar('stateYaAcepto');
+        return;
+      }
+      _nombre = d.nombre || '';
+      mostrar('stateForm');
+    })
+    .catch(function() {
+      // Si el endpoint no existe todavía, mostrar el form igual
+      mostrar('stateForm');
+    });
+})();
+
+// Habilitar botón al marcar checkbox
+document.getElementById('ckTerminos').addEventListener('change', function() {
+  var btn = document.getElementById('btnAceptar');
+  btn.disabled = !this.checked;
+  btn.classList.toggle('enabled', this.checked);
+});
+
+function aceptar() {
+  var ck = document.getElementById('ckTerminos');
+  if (!ck.checked) return;
+  var btn = document.getElementById('btnAceptar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Procesando…';
+
+  fetch('/api/cotizaciones?action=aceptar-terminos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: _token })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    if (d.error) throw new Error(d.error);
+    // Éxito
+    document.getElementById('stateForm').style.display = 'none';
+    mostrar('stateYaAcepto');
+  })
+  .catch(function(e) {
+    btn.disabled = false;
+    btn.innerHTML = 'Acepto los términos →';
+    btn.classList.add('enabled');
+    var msg = document.getElementById('msgResult');
+    msg.className = 'msg error';
+    msg.style.display = 'block';
+    msg.textContent = 'Error: ' + e.message + '. Intentá nuevamente o contactá a hola@mudateya.ar';
+  });
+}
+
+function rechazar() {
+  var msg = document.getElementById('msgResult');
+  msg.className = 'msg error';
+  msg.style.display = 'block';
+  msg.textContent = 'Rechazaste los términos. Tu cuenta no será activada. Si cambiás de opinión, contactanos a hola@mudateya.ar';
+}
+</script>
+</body>
+</html>
