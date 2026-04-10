@@ -753,6 +753,22 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, estado: perfil.estado });
     }
 
+    // ── Verificar token de términos (GET) ────────────────────────────
+    if (action === 'verificar-terminos-token' && req.method === 'GET') {
+      const { token } = req.query;
+      if (!token) return res.status(400).json({ error: 'Falta token' });
+      const datos = await getJSON(`terminos:token:${token}`);
+      if (!datos) return res.status(400).json({ error: 'Token inválido o expirado' });
+      const perfil = await getJSON(`mudancero:perfil:${datos.email}`);
+      if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
+      return res.status(200).json({
+        ok: true,
+        nombre: perfil.nombre || '',
+        yaAcepto: perfil.terminosAceptados === true
+      });
+    }
+
+
     // ── Aceptar términos y condiciones ───────────────────────────────
     if (action === 'aceptar-terminos' && req.method === 'POST') {
       const { token } = req.body;
