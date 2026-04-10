@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="cf-2fa-verify" content="disabled"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>MudateYa — Cotizá tu mudanza · Argentina</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -536,14 +535,6 @@ footer{background:#003580;padding:1.5rem}
   .mud-card-foto{width:120px;height:120px}
   .mud-card-precio{display:none}
   .mud-card-body{padding:.8rem}
-  /* Mobile footer dentro del body */
-  .mud-mobile-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
-  .mud-mobile-precio{font-size:17px;font-weight:700;color:var(--text);line-height:1}
-  .mud-mobile-precio small{font-size:10px;font-weight:400;color:var(--text2);display:block;font-family:var(--mono)}
-  .mud-mobile-rating{display:inline-flex;align-items:center;gap:5px}
-  .mud-mobile-rating-num{background:var(--blue);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:5px}
-  .mud-mobile-rating-lbl{font-size:11px;color:var(--text2)}
-  .mud-mobile-ver{display:block;width:100%;margin-top:8px;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;font-family:'Inter',sans-serif;text-align:center;cursor:pointer}
 }
 @media(max-width:600px){
   nav{padding:0 1rem}
@@ -562,154 +553,7 @@ footer{background:#003580;padding:1.5rem}
   .card-rapida{flex-direction:column;text-align:center}
   .btn-cr{width:100%}
 }
-@media(min-width:901px){
-  .mud-mobile-footer{display:none}
-  .mud-mobile-ver{display:none}
-}
 </style>
-<script>
-var _tipo = 'mudanza';
-function setTipo(t) {
-  _tipo = t;
-  var tabMud = document.getElementById('tab-mud');
-  var tabFle = document.getElementById('tab-flete');
-  var sbMud  = document.getElementById('sb-mudanza');
-  var sbFle  = document.getElementById('sb-flete');
-  var title  = document.getElementById('heroTitle');
-  var sub    = document.getElementById('heroSub');
-  if (tabMud) tabMud.classList.toggle('active', t==='mudanza');
-  if (tabFle) tabFle.classList.toggle('active', t==='flete');
-  if (sbMud)  sbMud.style.display  = t==='mudanza' ? '' : 'none';
-  if (sbFle)  sbFle.style.display  = t==='flete'   ? '' : 'none';
-  if (t === 'flete') {
-    if (title) title.textContent = 'Cotizá tu flete con los mejores de Argentina';
-    if (sub)   sub.textContent   = 'Encontrá fleteros verificados cerca tuyo. Comparás precios y elegís. Publicá gratis.';
-  } else {
-    if (title) title.textContent = 'Cotizá tu mudanza con los mejores de Argentina';
-    if (sub)   sub.textContent   = 'Comparás precios reales de mudanceros verificados y elegís sin compromiso. Publicá gratis.';
-  }
-}
-
-// Funciones llamadas desde onclick inline
-function toggleObj(el) { el.classList.toggle('sel'); }
-var _fleteObj = '';
-var fleteOtrosTexto = '';
-var _fleteFotoB64 = null;
-var _fleteFotoMime = '';
-function selFleteObj(el, tipo) {
-  document.querySelectorAll('#sb-flete .obj-chip').forEach(function(c){ c.classList.remove('sel'); });
-  el.classList.add('sel');
-  _fleteObj = tipo;
-  var box = document.getElementById('flete-otros-box');
-  if (box) box.style.display = tipo === 'otros' ? 'block' : 'none';
-}
-function onFleteFoto(input) {
-  var file = input.files[0];
-  if (!file) return;
-  var txtEl = document.getElementById('flete-foto-txt');
-  var estadoEl = document.getElementById('flete-ia-estado');
-  var resultEl = document.getElementById('flete-ia-result');
-  if (txtEl) txtEl.textContent = '✓ ' + file.name;
-  if (estadoEl) estadoEl.style.display = 'flex';
-  if (resultEl) resultEl.style.display = 'none';
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    _fleteFotoB64 = e.target.result.split(',')[1];
-    _fleteFotoMime = file.type || 'image/jpeg';
-    if (typeof analizarFleteFoto === 'function') analizarFleteFoto();
-  };
-  reader.readAsDataURL(file);
-}
-
-
-window.initMaps = function initMaps() {
-  ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
-    var acId = 'ac-' + id.replace('input-','').replace('-desde','desde').replace('-hasta','hasta');
-    // fix id mapping
-    var ddId = {
-      'input-desde':'ac-desde',
-      'input-hasta':'ac-hasta',
-      'input-flete-desde':'ac-flete-desde',
-      'input-flete-hasta':'ac-flete-hasta'
-    }[id];
-    makeAC(id, ddId);
-  });
-  // Iniciar mapa mini si resultados ya visibles
-  if (document.getElementById('resultados').classList.contains('show')) initMapaMini();
-}
-</script>
-<script data-cfasync="false">
-var _validAddr = {};
-function setAddrError(inputId, msg) {
-  var inp = document.getElementById(inputId);
-  if (!inp) return;
-  inp.style.border = '2px solid #FF5252';
-  inp.style.background = 'rgba(255,82,82,.06)';
-  var errId = inputId + '-err';
-  var existing = document.getElementById(errId);
-  if (existing) existing.remove();
-  var err = document.createElement('div');
-  err.id = errId;
-  err.style.cssText = 'position:absolute;top:calc(100% + 4px);left:0;right:0;background:#FF5252;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;z-index:999;font-family:monospace;box-shadow:0 4px 12px rgba(255,82,82,.3)';
-  err.textContent = msg;
-  inp.parentElement.style.position = 'relative';
-  inp.parentElement.appendChild(err);
-  setTimeout(function(){
-    inp.style.border = '';
-    inp.style.background = '';
-    if (err.parentElement) err.remove();
-  }, 3000);
-  inp.focus();
-}
-function makeAC(inputId, ddId) {
-  var input = document.getElementById(inputId);
-  var dd = document.getElementById(ddId);
-  if (!input || !dd) return;
-  var deb;
-  input.addEventListener('input', function() {
-    clearTimeout(deb);
-    _validAddr[inputId] = false;
-    var q = this.value.trim();
-    if (q.length < 2) { dd.classList.remove('open'); return; }
-    deb = setTimeout(function() {
-      new google.maps.places.AutocompleteService().getPlacePredictions(
-        { input: q, componentRestrictions:{country:'ar'}, types:['geocode'] },
-        function(preds, status) {
-          dd.innerHTML = '';
-          if (status !== google.maps.places.PlacesServiceStatus.OK || !preds) { dd.classList.remove('open'); return; }
-          preds.slice(0,5).forEach(function(s) {
-            var li = document.createElement('li');
-            li.className = 'ac-item';
-            li.textContent = s.description;
-            li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
-            li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
-            dd.appendChild(li);
-          });
-          dd.classList.add('open');
-        }
-      );
-    }, 280);
-  });
-  input.addEventListener('blur', function(){ setTimeout(function(){ dd.classList.remove('open'); }, 200); });
-  input.addEventListener('keydown', function(e) {
-    var items = dd.querySelectorAll('.ac-item');
-    var active = dd.querySelector('.kb');
-    var idx = active ? Array.from(items).indexOf(active) : -1;
-    if (e.key === 'ArrowDown') { e.preventDefault(); if (active) active.classList.remove('kb'); var n = items[idx+1]||items[0]; if(n){ n.classList.add('kb'); } }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); if (active) active.classList.remove('kb'); var p = items[idx-1]||items[items.length-1]; if(p){ p.classList.add('kb'); } }
-    else if (e.key === 'Enter' && active) { e.preventDefault(); _validAddr[inputId] = true; active.dispatchEvent(new MouseEvent('mousedown')); }
-    else if (e.key === 'Escape') { dd.classList.remove('open'); }
-  });
-  input.addEventListener('click', function(e){ e.stopPropagation(); });
-}
-window.initMaps = function() {
-  ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
-    var ddMap = {'input-desde':'ac-desde','input-hasta':'ac-hasta','input-flete-desde':'ac-flete-desde','input-flete-hasta':'ac-flete-hasta'};
-    makeAC(id, ddMap[id]);
-  });
-};
-</script>
-<script data-cfasync="false" async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR" onload="initMaps()"></script>
 </head>
 <body>
 
@@ -1062,7 +906,7 @@ window.initMaps = function() {
       </a>
 
     </div>
-    <p style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2rem">¿Querés ser partner? <span style="color:var(--blue);font-weight:600;cursor:pointer" onclick="window.location.href='mail'+('to:hola@')+'mudateya.ar'">Escribinos →</span></p>
+    <p style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2rem">¿Querés ser partner? <a href="mailto:hola@mudateya.ar" style="color:var(--blue);text-decoration:none;font-weight:600">Escribinos →</a></p>
   </div>
 </section>
 
@@ -1122,7 +966,7 @@ window.initMaps = function() {
   </div>
 </div>
 
-<script data-cfasync="false">
+<script>
 // ══════════════════════════════════════════
 // CONSTANTES Y ESTADO
 // ══════════════════════════════════════════
@@ -1351,7 +1195,21 @@ document.addEventListener('click', function(e) {
 // ══════════════════════════════════════════
 // MAPS AUTOCOMPLETE
 // ══════════════════════════════════════════
-// initMaps definido en head
+function initMaps() {
+  ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
+    var acId = 'ac-' + id.replace('input-','').replace('-desde','desde').replace('-hasta','hasta');
+    // fix id mapping
+    var ddId = {
+      'input-desde':'ac-desde',
+      'input-hasta':'ac-hasta',
+      'input-flete-desde':'ac-flete-desde',
+      'input-flete-hasta':'ac-flete-hasta'
+    }[id];
+    makeAC(id, ddId);
+  });
+  // Iniciar mapa mini si resultados ya visibles
+  if (document.getElementById('resultados').classList.contains('show')) initMapaMini();
+}
 // Flags de validación por input
 var _validAddr = {};
 
@@ -1390,7 +1248,7 @@ function makeAC(inputId, ddId) {
     if (q.length < 2) { dd.classList.remove('open'); return; }
     deb = setTimeout(function() {
       new google.maps.places.AutocompleteService().getPlacePredictions(
-        { input: q, componentRestrictions:{country:'ar'}, types:['geocode'] },
+        { input: q, componentRestrictions:{country:'ar'}, types:['geocode','establishment'] },
         function(preds, status) {
           dd.innerHTML = '';
           if (status !== google.maps.places.PlacesServiceStatus.OK || !preds) { dd.classList.remove('open'); return; }
@@ -1419,7 +1277,12 @@ function makeAC(inputId, ddId) {
   });
   input.addEventListener('click', function(e){ e.stopPropagation(); });
 }
-// Maps cargado desde head
+(function() {
+  var s = document.createElement('script');
+  s.src = 'https://maps.googleapis.com/maps/api/js?key='+GMAPS_KEY+'&libraries=places&language=es&region=AR&callback=initMaps&loading=async';
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
+})();
 
 // ══════════════════════════════════════════
 // MAPA MINI
@@ -1617,16 +1480,8 @@ function renderResultados() {
       +   '<div class="mud-card-nombre" onclick="verPerfil(\''+m.email+'\')">'+m.nombre+'</div>'
       +   '<div class="mud-card-empresa">'+(m.empresa||'Independiente')+'</div>'
       +   '<div class="mud-tags">'+tags+'</div>'
-      +   '<div class="mud-card-zona">📍 '+(m.zonaBase||'')+'</div>'
+      +   '<div class="mud-card-zona">📍 '+( m.zonaBase||'')+'</div>'
       +   '<div class="mud-card-trabajos">'+m.trabajosCompletados+' trabajos · '+m.nroResenas+' reseñas</div>'
-      +   '<div class="mud-mobile-footer">'
-      +     '<div class="mud-mobile-precio"><small>desde</small>'+fmtPrecio(precio)+'</div>'
-      +     '<div class="mud-mobile-rating">'
-      +       '<span class="mud-mobile-rating-num">'+m.calificacion.toFixed(1)+'</span>'
-      +       '<span class="mud-mobile-rating-lbl">'+ratingLabel+'</span>'
-      +     '</div>'
-      +   '</div>'
-      +   '<button class="mud-mobile-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
       + '</div>'
       + '<div class="mud-card-precio">'
       +   '<div class="mud-rating-box">'
@@ -1636,7 +1491,7 @@ function renderResultados() {
       +   '</div>'
       +   '<div class="mud-precio-box">'
       +     '<div class="mud-precio-desde">desde</div>'
-      +     '<div class="mud-precio-num">'+fmtPrecio(precio)+'</div>'
+      +     '<div class="mud-precio-num">$'+precio.toLocaleString('es-AR')+'</div>'
       +     '<div class="mud-precio-sub">precio estimado</div>'
       +   '</div>'
       +   '<button class="btn-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
@@ -1799,4 +1654,12 @@ function updateNav() {
 // NAV MOBILE
 // ══════════════════════════════════════════
 function toggleMenu() { document.getElementById('navBurger').classList.toggle('open'); document.getElementById('mobileMenu').classList.toggle('open'); }
-function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open')
+function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open'); }
+
+// Init
+document.addEventListener('DOMContentLoaded', function() { updateNav(); });
+document.getElementById('pubModal').addEventListener('click', function(e){ if(e.target===this && document.getElementById('pub-ok').style.display!=='none'){this.classList.remove('open'); document.body.style.overflow='';} });
+document.getElementById('loginModal').addEventListener('click', function(e){ if(e.target===this) cerrarLogin(); });
+</script>
+</body>
+</html>
