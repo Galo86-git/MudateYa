@@ -728,7 +728,7 @@ module.exports = async function handler(req, res) {
 
     // ── Admin: aprobar / rechazar mudancero ──────────────────────────
     if (action === 'admin-aprobar-mudancero' && req.method === 'POST') {
-      const { token, email, nuevoEstado } = req.body;
+      const { token, email, nuevoEstado, verificadoIdentidad, verificadoVehiculo } = req.body;
       if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
         return res.status(401).json({ error: 'Token inválido' });
       }
@@ -742,6 +742,9 @@ module.exports = async function handler(req, res) {
       perfil.fechaCambioEstado = new Date().toISOString();
       if (nuevoEstado === 'aprobado') {
         perfil.terminosAceptados = perfil.terminosAceptados || false;
+        // Setear verificaciones si se pasan explícitamente
+        if (verificadoIdentidad !== undefined) perfil.verificadoIdentidad = verificadoIdentidad;
+        if (verificadoVehiculo  !== undefined) perfil.verificadoVehiculo  = verificadoVehiculo;
       }
       await setJSON(`mudancero:perfil:${email}`, perfil);
 
@@ -751,6 +754,25 @@ module.exports = async function handler(req, res) {
       }
 
       return res.status(200).json({ ok: true, estado: perfil.estado });
+    }
+
+    // ── Verificar todos los aprobados (one-shot) ─────────────────────
+    if (action === 'admin-verificar-todos' && req.method === 'POST') {
+      const { token } = req.body;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+      const todos = await getJSON('mudanceros:todos') || [];
+      var actualizados = [];
+      for (const email of todos) {
+        const perfil = await getJSON(`mudancero:perfil:${email}`);
+        if (!perfil || perfil.estado !== 'aprobado') continue;
+        perfil.verificadoIdentidad = true;
+        perfil.verificadoVehiculo  = true;
+        await setJSON(`mudancero:perfil:${email}`, perfil);
+        actualizados.push(email);
+      }
+      return res.status(200).json({ ok: true, actualizados });
     }
 
     // ── Verificar token de términos (GET) ────────────────────────────
