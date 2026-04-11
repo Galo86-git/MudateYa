@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin Fotos — MudateYa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f8fafc;color:#0f172a;padding:2rem}
+h1{font-size:1.4rem;font-weight:700;color:#003580;margin-bottom:.4rem}
+.subtitle{font-size:13px;color:#64748b;margin-bottom:1.5rem}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.info{flex:1;min-width:180px}
+.nombre{font-weight:600;font-size:15px}
+.email{font-size:12px;color:#64748b;margin-top:2px}
+.estado{font-size:11px;padding:2px 8px;border-radius:4px;display:inline-block;margin-top:5px;font-weight:500}
+.estado.aprobado{background:#dcfce7;color:#15803d}
+.estado.pendiente{background:#fef9c3;color:#854d0e}
+.estado.rechazado{background:#fee2e2;color:#b91c1c}
+.fotos{display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-end}
+.foto-block{display:flex;flex-direction:column;gap:6px;align-items:center}
+.foto-label{font-size:11px;color:#64748b;font-weight:500;text-align:center}
+.foto-preview{width:80px;height:80px;border-radius:8px;border:1px solid #e2e8f0;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#94a3b8;overflow:hidden;flex-shrink:0}
+.foto-preview img{width:80px;height:80px;object-fit:cover;border-radius:8px;display:block}
+.btn-subir{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid #003580;color:#003580;background:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .15s}
+.btn-subir:hover{background:#003580;color:#fff}
+.btn-subir:disabled{opacity:.5;cursor:not-allowed}
+.tag-ok{font-size:11px;color:#22c36a;font-weight:600;display:none;margin-left:4px}
+.tag-err{font-size:11px;color:#ef4444;font-weight:600;display:none;margin-left:4px}
+input[type=file]{display:none}
+.loader{text-align:center;padding:3rem;color:#64748b;font-size:14px}
+.empty{text-align:center;padding:3rem;color:#94a3b8;font-size:14px}
+</style>
+</head>
+<body>
+
+<h1>🖼 Admin Fotos — MudateYa</h1>
+<p class="subtitle">Subí o actualizá las fotos de perfil y camión de cada mudancero.</p>
+<div id="lista"><div class="loader">Cargando mudanceros…</div></div>
+
+<script>
+var ADMIN_TOKEN = 'mya-admin-2026';
+
+window.addEventListener('DOMContentLoaded', function() {
+  cargar();
+});
+
+async function cargar() {
+  try {
+    var r = await fetch('/api/admin-fotos?token=' + ADMIN_TOKEN);
+    var d = await r.json();
+    var lista = document.getElementById('lista');
+    if (!d.mudanceros || !d.mudanceros.length) {
+      lista.innerHTML = '<div class="empty">No hay mudanceros registrados.</div>';
+      return;
+    }
+    lista.innerHTML = d.mudanceros.map(function(m) {
+      var key = encodeKey(m.email);
+      return '<div class="card" id="card-' + key + '">'
+        + '<div class="info">'
+        +   '<div class="nombre">' + esc(m.nombre) + '</div>'
+        +   '<div class="email">' + esc(m.email) + '</div>'
+        +   '<span class="estado ' + (m.estado||'') + '">' + (m.estado||'—') + '</span>'
+        + '</div>'
+        + '<div class="fotos">'
+        +   fotoBlock(m.email, 'perfil',  m.foto,       'Foto perfil')
+        +   fotoBlock(m.email, 'camion',  m.fotoCamion, 'Foto camión')
+        + '</div>'
+        + '<div style="display:flex;align-items:center;min-width:80px">'
+        +   '<span class="tag-ok" id="ok-' + key + '">✓ Guardado</span>'
+        +   '<span class="tag-err" id="err-' + key + '">✗ Error</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('lista').innerHTML = '<div class="loader">Error: ' + e.message + '</div>';
+  }
+}
+
+function fotoBlock(email, tipo, url, label) {
+  var key  = encodeKey(email);
+  var inId = 'input-' + tipo + '-' + key;
+  var prev = url
+    ? '<img src="' + url + '" onerror="this.style.display=\'none\'">'
+    : '📷';
+  return '<div class="foto-block">'
+    + '<div class="foto-label">' + label + '</div>'
+    + '<div class="foto-preview" id="prev-' + tipo + '-' + key + '">' + prev + '</div>'
+    + '<button class="btn-subir" id="btn-' + tipo + '-' + key + '" onclick="triggerInput(\'' + inId + '\')">Subir foto</button>'
+    + '<input type="file" id="' + inId + '" accept="image/*" onchange="onFotoChange(this,\'' + email + '\',\'' + tipo + '\')">'
+    + '</div>';
+}
+
+function triggerInput(id) {
+  document.getElementById(id).click();
+}
+
+async function onFotoChange(input, email, tipo) {
+  var file = input.files[0];
+  if (!file) return;
+
+  var key = encodeKey(email);
+  var btn = document.getElementById('btn-' + tipo + '-' + key);
+  var okEl  = document.getElementById('ok-'  + key);
+  var errEl = document.getElementById('err-' + key);
+
+  btn.textContent = 'Subiendo…';
+  btn.disabled    = true;
+  okEl.style.display  = 'none';
+  errEl.style.display = 'none';
+
+  try {
+    // 1. Subir a Vercel Blob
+    var r1 = await fetch('/api/upload-foto', {
+      method:  'POST',
+      headers: {
+        'Content-Type': file.type || 'image/jpeg',
+        'x-carpeta':    'mudanceros/perfiles',
+        'x-nombre':     tipo + '-' + Date.now(),
+      },
+      body: file,
+    });
+    var d1 = await r1.json();
+    if (!d1.ok) throw new Error(d1.error || 'Error subiendo foto');
+
+    // 2. Actualizar preview
+    var prevEl = document.getElementById('prev-' + tipo + '-' + key);
+    prevEl.innerHTML = '<img src="' + d1.url + '">';
+
+    // 3. Guardar URL en Redis
+    var payload = { email: email };
+    payload[tipo === 'perfil' ? 'foto' : 'fotoCamion'] = d1.url;
+
+    var r2 = await fetch('/api/admin-fotos', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+      body:    JSON.stringify(payload),
+    });
+    var d2 = await r2.json();
+    if (!d2.ok) throw new Error(d2.error || 'Error guardando en Redis');
+
+    okEl.style.display = 'inline';
+    setTimeout(function() { okEl.style.display = 'none'; }, 4000);
+
+  } catch(e) {
+    errEl.textContent   = '✗ ' + e.message;
+    errEl.style.display = 'inline';
+  } finally {
+    btn.textContent = 'Subir foto';
+    btn.disabled    = false;
+    input.value     = '';
+  }
+}
+
+function encodeKey(email) {
+  return email.replace(/[^a-z0-9]/gi, '_');
+}
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
