@@ -1009,6 +1009,7 @@ function mostrarFotoErr(key, msg) {
 }
 
 function fotoKey(s) { return (s||'').replace(/[^a-z0-9]/gi, '_'); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function exportarExcel() {
   if (!mudancerosData || !mudancerosData.length) {
