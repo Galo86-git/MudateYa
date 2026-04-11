@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Método no permitido' });
 
-  var token = process.env.BLOB_FOTO_READ_WRITE_TOKEN;
+  var token = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
   console.log('TOKEN FOTOS presente:', !!token, '— primeros 10 chars:', token ? token.slice(0,10) : 'UNDEFINED');
 
   try {
@@ -42,4 +42,8 @@ module.exports = async function handler(req, res) {
     console.error('Error en upload-foto:', e.message);
     return res.status(500).json({ error: e.message });
   }
+};
+
+module.exports.config = {
+  api: { bodyParser: false },
 };
