@@ -644,40 +644,30 @@ function makeAC(inputId, ddId) {
     var q = this.value.trim();
     if (q.length < 2) { dd.classList.remove('open'); return; }
     deb = setTimeout(function() {
-      google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-        input: q,
-        includedRegionCodes: ['ar']
-      }).then(function(resp) {
-        dd.innerHTML = '';
-        var suggs = resp.suggestions || [];
-        if (!suggs.length) { dd.classList.remove('open'); return; }
-        suggs.slice(0,5).forEach(function(s) {
-          var desc = s.placePrediction ? s.placePrediction.text.text : (s.text ? s.text.text : '');
-          if (!desc) return;
-          var li = document.createElement('li');
-          li.className = 'ac-item';
-          li.textContent = desc;
-          function seleccionar(e) {
-            e.preventDefault();
-            var partes = desc.split(',');
-            var tieneNumero = /[0-9]/.test(partes[0]);
-            if (!tieneNumero) {
-              input.value = '';
+      new google.maps.places.AutocompleteService().getPlacePredictions(
+        { input: q, componentRestrictions:{country:'ar'}, types:['geocode'] },
+        function(preds, status) {
+          dd.innerHTML = '';
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !preds) { dd.classList.remove('open'); return; }
+          preds.slice(0,5).forEach(function(s) {
+            var li = document.createElement('li');
+            li.className = 'ac-item';
+            li.textContent = s.description;
+            function seleccionar(e) {
+              e.preventDefault();
+              var desc = s.description;
+              input.value = desc;
               dd.classList.remove('open');
-              setAddrError(inputId, '⚠ Ingresá la calle y el número (ej: Av. Corrientes 1234)');
-              return;
+              _validAddr[inputId] = true;
+              input.style.border=''; input.style.background='';
             }
-            input.value = desc;
-            dd.classList.remove('open');
-            _validAddr[inputId] = true;
-            input.style.border=''; input.style.background='';
-          }
-          li.addEventListener('mousedown', seleccionar);
-          li.addEventListener('touchend', seleccionar);
-          dd.appendChild(li);
-        });
-        dd.classList.add('open');
-      }).catch(function() { dd.classList.remove('open'); });
+            li.addEventListener('mousedown', seleccionar);
+            li.addEventListener('touchend', seleccionar);
+            dd.appendChild(li);
+          });
+          dd.classList.add('open');
+        }
+      );
     }, 280);
   });
   input.addEventListener('blur', function(){ setTimeout(function(){ dd.classList.remove('open'); }, 200); });
@@ -790,7 +780,7 @@ function buscar() {
 }
 
 </script>
-<script data-cfasync="false" async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&v=beta" onload="initMaps()"></script>
+<script data-cfasync="false" async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR" onload="initMaps()"></script>
 </head>
 <body>
 
