@@ -55,6 +55,9 @@ nav{background:var(--navy);height:56px;display:flex;align-items:center;justify-c
 /* Secciones */
 .card{background:#fff;border-radius:var(--r3);border:1px solid var(--border);padding:1.4rem;margin-bottom:1.2rem}
 .card-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.5px;color:var(--text);margin-bottom:1rem}
+.servicios-grid{display:flex;flex-wrap:wrap;gap:8px}
+.servicio-chip{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D;font-size:12px;font-weight:500;font-family:'Inter',sans-serif}
+.servicio-chip svg{flex-shrink:0}
 .desc-text{font-size:14px;color:var(--text2);line-height:1.75;font-weight:300}
 
 /* Galería */
@@ -319,6 +322,26 @@ function renderPerfil(m, extra) {
     +'<div class="card-title">Sobre nosotros</div>'
     +'<p class="desc-text">'+extra.descripcion+'</p>'
     +'</div>'
+
+    // Servicios
+    +(m.servicios ? (function() {
+      var ICONOS = {
+        'embalaje':'📦', 'desembalaje':'📦', 'desmontaje':'🔧', 'montaje':'🔧',
+        'piano':'🎹', 'caja fuerte':'🔒', 'arte':'🖼️', 'plantas':'🌿',
+        'electrodomésticos':'🏠', 'oficina':'🏢', 'guardamuebles':'🏭',
+        'limpieza':'🧹', 'escaleras':'🪜', 'ascensor':'🛗', 'flete':'🚛',
+        'seguro':'🛡', 'larga distancia':'📍',
+      };
+      var chips = m.servicios.split(',').map(function(s) {
+        s = s.trim();
+        if (!s) return '';
+        var icono = '✓';
+        var sl = s.toLowerCase();
+        Object.keys(ICONOS).forEach(function(k) { if (sl.includes(k)) icono = ICONOS[k]; });
+        return '<div class="servicio-chip">'+icono+' '+s+'</div>';
+      }).join('');
+      return '<div class="card"><div class="card-title">Servicios incluidos</div><div class="servicios-grid">'+chips+'</div></div>';
+    })() : '')
 
     // Galería
     +'<div class="card">'
