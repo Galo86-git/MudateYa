@@ -788,6 +788,18 @@ module.exports = async function handler(req, res) {
 
     // Catálogo público de mudanceros verificados (para modo dirigido)
     if (action === 'catalogo' && req.method === 'GET') {
+      // Helper: normaliza zonaBase al formato de los filtros del frontend
+      function normalizarZona(zonaBase) {
+        if (!zonaBase) return zonaBase;
+        var z = zonaBase.toLowerCase();
+        if (z.startsWith('caba')) return 'CABA';
+        if (z.startsWith('gba norte')) return 'GBA Norte';
+        if (z.startsWith('gba sur') || z.startsWith('gba este')) return 'GBA Sur';
+        if (z.startsWith('gba oeste')) return 'GBA Oeste';
+        if (z.includes('rosario')) return 'Rosario';
+        if (z.includes('córdoba') || z.includes('cordoba')) return 'Córdoba';
+        return zonaBase;
+      }
       const { zona } = req.query;
       const todos = await getJSON('mudanceros:todos') || [];
       const catalogo = [];
@@ -800,26 +812,30 @@ module.exports = async function handler(req, res) {
               !(p.zonasExtra||'').toLowerCase().includes(zona.toLowerCase())) continue;
           // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
           catalogo.push({
-            email:              p.email,
-            nombre:             p.nombre,
-            empresa:            p.empresa       || '',
-            zonaBase:           p.zonaBase,
-            zonasExtra:         p.zonasExtra    || '',
-            vehiculo:           p.vehiculo,
-            servicios:          p.servicios     || '',
-            calificacion:       p.calificacion  || 0,
-            nroResenas:         p.nroResenas    || 0,
-            trabajosCompletados: p.trabajosCompletados || 0,
-            verificadoIdentidad: p.verificadoIdentidad || false,
-            verificadoVehiculo:  p.verificadoVehiculo  || false,
-            verificadoSeguro:    p.verificadoSeguro     || false,
-            foto:               p.foto          || '',
-            fotoCamion:         p.fotoCamion    || '',
-            precios:            p.precios       || {},
-            horarios:           p.horarios      || '',
-            dias:               p.dias          || '',
-            anticipacion:       p.anticipacion  || '',
-            extra:              p.extra         || '',
+            email:               p.email,
+            nombre:              p.nombre,
+            empresa:             p.empresa             || '',
+            zonaBase:            normalizarZona(p.zonaBase),
+            zonaBaseRaw:         p.zonaBase             || '',
+            zonasExtra:          p.zonasExtra           || '',
+            vehiculo:            p.vehiculo,
+            servicios:           p.servicios            || '',
+            calificacion:        p.calificacion         || 0,
+            nroResenas:          p.nroResenas           || 0,
+            trabajosCompletados: p.trabajosCompletados  || 0,
+            verificadoIdentidad: p.verificadoIdentidad  || false,
+            verificadoVehiculo:  p.verificadoVehiculo   || false,
+            verificadoSeguro:    p.verificadoSeguro      || false,
+            foto:                p.foto                 || '',
+            fotoCamion:          p.fotoCamion           || '',
+            fotosVehiculo:       p.fotosVehiculo        || (p.fotoCamion ? [p.fotoCamion] : []),
+            precios:             p.precios              || {},
+            horarios:            p.horarios             || '',
+            dias:                p.dias                 || '',
+            anticipacion:        p.anticipacion         || '',
+            extra:               p.extra                || '',
+            sitioWeb:            p.sitioWeb             || '',
+            añosExp:             p.añosExp              || '',
           });
         } catch(e) {}
       }
