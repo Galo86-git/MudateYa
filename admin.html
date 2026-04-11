@@ -957,6 +957,7 @@ async function onFotoCamionChange(input, email) {
 }
 
 async function eliminarFotoPerfil(email) {
+  if (!confirm('¿Eliminás la foto de perfil de este mudancero? Esta acción no se puede deshacer.')) return;
   var key = fotoKey(email);
   _fotosEstado[email].foto = '';
   document.getElementById('fperfil-' + key).innerHTML = '<span style="font-size:11px;color:#94A3B8;font-family:var(--mono)">Sin foto</span>';
@@ -965,6 +966,7 @@ async function eliminarFotoPerfil(email) {
 }
 
 async function eliminarFotoCamion(email, idx) {
+  if (!confirm('¿Eliminás esta foto del vehículo? Esta acción no se puede deshacer.')) return;
   _fotosEstado[email].fotosVehiculo.splice(idx, 1);
   renderCamionFotos(email);
   try { await guardarFotosRedis(email); mostrarFotoOk(fotoKey(email)); }
