@@ -298,7 +298,10 @@ function renderPerfil(m, extra) {
     // Hero
     +'<div class="hero-card">'
     +'<div class="hero-cover"><div class="hero-cover-pattern"></div>'
-    +'<div class="hero-avatar">'+initials+'</div></div>'
+    +(m.foto
+      ? '<img class="hero-avatar" src="'+m.foto+'" alt="'+m.nombre+'" style="object-fit:cover">'
+      : '<div class="hero-avatar">'+initials+'</div>')
+    +'</div>'
     +'<div class="hero-body">'
     +'<div class="hero-name">'+(m.empresa||m.nombre)+'</div>'
     +'<div class="hero-empresa">'+(m.empresa ? 'Propietario: '+m.nombre : 'Prestador independiente')+'</div>'
@@ -509,7 +512,6 @@ var _mudancero = null;
   var m = null;
   try { m = JSON.parse(sessionStorage.getItem('perfilMudancero')); } catch(e){}
 
-  // Intentar obtener email de la URL como fallback
   var urlEmail = null;
   try {
     var params = new URLSearchParams(window.location.search);
@@ -529,6 +531,25 @@ var _mudancero = null;
     return;
   }
 
+  function renderConDatos(datos) {
+    _mudancero = datos;
+    var em = datos.email || '';
+    var idx = 0;
+    for (var i = 0; i < em.length; i++) idx += em.charCodeAt(i);
+    idx = idx % 50;
+    var extra = getDatosExtra(idx);
+    // Fotos reales tienen prioridad sobre las de stock
+    if (datos.fotosVehiculo && datos.fotosVehiculo.length) {
+      extra.fotos = datos.fotosVehiculo;
+    } else if (datos.fotoCamion) {
+      extra.fotos = [datos.fotoCamion];
+    }
+    if (datos.extra)    extra.descripcion = datos.extra;
+    if (datos.sitioWeb) extra.sitioWeb    = datos.sitioWeb;
+    if (datos.añosExp)  extra.añosExp     = datos.añosExp;
+    renderPerfil(datos, extra);
+  }
+
   // Siempre buscar datos frescos de Redis
   fetch('/api/cotizaciones?action=catalogo')
     .then(function(r){ return r.json(); })
@@ -536,36 +557,14 @@ var _mudancero = null;
       var lista = d.mudanceros || [];
       var fresco = lista.find(function(x){ return x.email === email; });
       if (fresco) {
-        // Mergear con sessionStorage — Redis tiene prioridad para fotos
         m = Object.assign({}, m || {}, fresco);
         sessionStorage.setItem('perfilMudancero', JSON.stringify(m));
       }
-      renderConDatos(m || { email: email, nombre: email });
+      renderConDatos(m || { email: email, nombre: email, calificacion: 0, nroResenas: 0, trabajosCompletados: 0 });
     })
     .catch(function() {
-      // Si falla el fetch, usar lo que hay en sessionStorage
-      renderConDatos(m || { email: email, nombre: email });
+      renderConDatos(m || { email: email, nombre: email, calificacion: 0, nroResenas: 0, trabajosCompletados: 0 });
     });
-
-  function renderConDatos(datos) {
-    _mudancero = datos;
-    var idx = 0;
-    var em = datos.email || '';
-    for (var i = 0; i < em.length; i++) idx += em.charCodeAt(i);
-    idx = idx % 50;
-    var extra = getDatosExtra(idx);
-    // Usar fotos reales si existen
-    if (datos.fotosVehiculo && datos.fotosVehiculo.length) {
-      extra.fotos = datos.fotosVehiculo;
-    } else if (datos.fotoCamion) {
-      extra.fotos = [datos.fotoCamion];
-    }
-    // Usar descripción real si existe
-    if (datos.extra) extra.descripcion = datos.extra;
-    // Usar sitio web real si existe
-    if (datos.sitioWeb) extra.sitioWeb = datos.sitioWeb;
-    renderPerfil(datos, extra);
-  }
 })();
 </script>
 <!-- MODAL CONFIRMACIÓN COTIZACIÓN -->
