@@ -315,6 +315,7 @@
     background:#fff;border-bottom:1px solid var(--border);
     padding:.6rem 1rem;gap:6px;overflow-x:auto;
     scrollbar-width:none;
+    position:sticky;top:100px;z-index:99;
   }
   .filtros-mobile-bar::-webkit-scrollbar{display:none}
   .filtro-pill{
@@ -391,6 +392,17 @@
   .res-ruta{font-size:12px;color:var(--text2);margin-top:1px}
   .res-count{font-size:13px;color:var(--text2)}
   .res-count strong{color:var(--text)}
+  .buscador-nombre{
+    display:flex;align-items:center;gap:8px;
+    background:#F8FAFC;border:1.5px solid var(--border2);border-radius:10px;
+    padding:8px 12px;transition:border-color .2s;
+  }
+  .buscador-nombre:focus-within{border-color:var(--blue);background:#fff}
+  .buscador-nombre input{
+    border:none;background:none;outline:none;font-size:13px;
+    font-family:'Inter',sans-serif;color:var(--text);width:100%;min-width:0;
+  }
+  .buscador-nombre input::placeholder{color:var(--text3)}
 
   /* Opción rápida card */
   .card-rapida{
@@ -1204,6 +1216,10 @@
           </div>
           <div class="res-count" id="resCount"></div>
         </div>
+        <div class="buscador-nombre" style="margin-bottom:1rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="buscarNombre" placeholder="Buscar por nombre o empresa…" oninput="renderResultados()"/>
+        </div>
         <div id="listaRes">
           <div class="no-results"><span class="spinner"></span> Cargando…</div>
         </div>
@@ -1769,6 +1785,7 @@
     _filtros.vehiculos.clear(); _filtros.zonas.clear(); _filtros.verifs.clear(); _filtros.servicios.clear(); _filtros.orden='cal';
     document.querySelectorAll('.filtro-opt input[type=checkbox], .drawer-opt input[type=checkbox], .filtro-serv-dest input, .drawer-serv-dest input').forEach(function(i){ i.checked=false; });
     document.querySelectorAll('input[name=orden], input[name=ordenDrawer]').forEach(function(i,idx){ i.checked=idx===0; });
+    var bn = document.getElementById('buscarNombre'); if (bn) bn.value = '';
     actualizarBadge();
     cargarResultados();
     setTimeout(function(){ sec.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
@@ -1792,6 +1809,11 @@
   }
   function renderResultados() {
     var lista = _todos.slice();
+    // Filtro por nombre/empresa
+    var textoBusq = (document.getElementById('buscarNombre') ? document.getElementById('buscarNombre').value : '').toLowerCase().trim();
+    if (textoBusq) lista = lista.filter(function(m){
+      return (m.nombre||'').toLowerCase().includes(textoBusq) || (m.empresa||'').toLowerCase().includes(textoBusq);
+    });
     // Filtros
     if (_filtros.vehiculos.size) lista = lista.filter(function(m){ return _filtros.vehiculos.has(m.vehiculo); });
     if (_filtros.zonas.size)     lista = lista.filter(function(m){ return Array.from(_filtros.zonas).some(function(z){ return (m.zonaBase||'').includes(z); }); });
@@ -1811,7 +1833,7 @@
     }
     // Orden
     lista.sort(function(a,b){
-      if (_filtros.orden==='precio') return (parseInt(String(a.precios.amb1||0).replace(/\./g,''))||0)-(parseInt(String(b.precios.amb1||0).replace(/\./g,''))||0);
+      if (_filtros.orden==='precio') return (a.precios.amb1||0)-(b.precios.amb1||0);
       if (_filtros.orden==='trab')   return (b.trabajosCompletados||0)-(a.trabajosCompletados||0);
       return (b.calificacion||0)-(a.calificacion||0);
     });
@@ -1840,16 +1862,7 @@
     html += lista.map(function(m) {
       var sel = _sel.has(m.email);
       var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
-      var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
-      var precio = _busqueda.tipo==='flete'
-        ? pAmt(m.precios.flete)
-        : (function(){
-            var amb = Math.max(1, _busqueda.ambientes || 2);
-            var claves = ['amb1','amb2','amb3','amb4'];
-            var clave = claves[Math.min(amb,4)-1] || 'amb1';
-            var precioAmb = pAmt(m.precios[clave]) || pAmt(m.precios.amb1);
-            return precioAmb;
-          })();
+      var precio = _busqueda.tipo==='flete' ? (m.precios.flete||0) : (m.precios.amb1||0) * Math.max(1,_busqueda.ambientes||2);
       var ratingLabel = m.calificacion >= 4.8 ? 'Excepcional' : m.calificacion >= 4.5 ? 'Muy bueno' : m.calificacion >= 4 ? 'Bueno' : 'Bien';
       var fotoHtml = (m.foto || m.fotoUrl)
         ? '<img src="'+(m.foto||m.fotoUrl)+'" alt="'+m.nombre+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
