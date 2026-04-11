@@ -325,6 +325,63 @@ nav{
 .filtro-pill:hover{border-color:var(--blue);color:var(--blue)}
 .filtro-pill.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
 
+/* Botón filtros mobile */
+.btn-filtros-mobile{
+  display:none;align-items:center;gap:6px;
+  background:#fff;border:1.5px solid var(--border2);border-radius:20px;
+  padding:7px 14px;font-size:13px;font-weight:600;color:var(--text);
+  cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;
+}
+.btn-filtros-mobile:hover{border-color:var(--blue);color:var(--blue)}
+.btn-filtros-mobile .flt-badge{
+  background:var(--blue);color:#fff;font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:10px;display:none;
+}
+.btn-filtros-mobile .flt-badge.show{display:inline}
+
+/* Drawer filtros mobile */
+.filtros-drawer-ov{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
+.filtros-drawer-ov.open{display:block}
+.filtros-drawer{
+  position:fixed;bottom:0;left:0;right:0;z-index:601;
+  background:#fff;border-radius:20px 20px 0 0;
+  padding:0;max-height:85vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .3s ease;
+}
+.filtros-drawer.open{transform:translateY(0)}
+.drawer-handle{width:40px;height:4px;background:#E2E8F0;border-radius:2px;margin:12px auto 0}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem .8rem;border-bottom:1px solid var(--border)}
+.drawer-title{font-size:15px;font-weight:700;color:var(--text)}
+.drawer-close{background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;padding:0}
+.drawer-body{padding:1rem 1.2rem 2rem}
+.drawer-section{margin-bottom:1.4rem}
+.drawer-section-h{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.7rem;font-family:var(--mono)}
+.drawer-opts{display:flex;flex-direction:column;gap:6px}
+.drawer-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text);transition:background .15s}
+.drawer-opt:hover{background:#F8FAFC}
+.drawer-opt input{accent-color:var(--blue);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.drawer-serv-dest{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;
+  border:1.5px solid var(--border);background:#fff;transition:all .2s;margin-bottom:8px;
+}
+.drawer-serv-dest.guardamuebles{border-color:#7C3AED;color:#7C3AED;background:#F5F3FF}
+.drawer-serv-dest.premium{border-color:#F59E0B;color:#B45309;background:#FFFBEB}
+.drawer-serv-dest input{accent-color:currentColor;width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.drawer-footer{padding:1rem 1.2rem;border-top:1px solid var(--border);display:flex;gap:8px;background:#fff;position:sticky;bottom:0}
+.drawer-btn-apply{flex:1;background:var(--blue);color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.drawer-btn-clear{background:#fff;color:var(--text2);border:1px solid var(--border2);padding:12px 16px;border-radius:10px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* Servicios destacados en panel desktop */
+.filtro-serv-dest{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border-radius:8px;border:1.5px solid var(--border);
+  cursor:pointer;font-size:12px;font-weight:600;margin-bottom:6px;transition:all .2s;
+}
+.filtro-serv-dest.guardamuebles{border-color:#7C3AED;color:#7C3AED;background:#F5F3FF}
+.filtro-serv-dest.premium{border-color:#F59E0B;color:#B45309;background:#FFFBEB}
+.filtro-serv-dest input{accent-color:currentColor;width:14px;height:14px;cursor:pointer;flex-shrink:0}
+
 /* Header resultados */
 .res-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -533,6 +590,7 @@ footer{background:#003580;padding:1.5rem}
   .res-body{grid-template-columns:1fr;padding:.8rem 1rem}
   .filtros{display:none}
   .filtros-mobile-bar{display:flex}
+  .btn-filtros-mobile{display:flex}
   .mud-card{grid-template-columns:120px 1fr}
   .mud-card-foto{width:120px;height:120px}
   .mud-card-precio{display:none}
@@ -1005,15 +1063,82 @@ function buscar() {
   </div>
 
   <!-- Filtros mobile -->
-  <div class="filtros-mobile-bar" id="filtrosMobileBar">
-    <div class="filtro-pill" onclick="togglePill(this,'ord-cal')">⭐ Mejor calificación</div>
-    <div class="filtro-pill" onclick="togglePill(this,'ord-precio')">💰 Menor precio</div>
-    <div class="filtro-pill" onclick="togglePill(this,'veh-cam-g')">🚛 Camión grande</div>
-    <div class="filtro-pill" onclick="togglePill(this,'veh-cam-m')">🚚 Camión mediano</div>
-    <div class="filtro-pill" onclick="togglePill(this,'verif-id')">✅ Verificado</div>
-    <div class="filtro-pill" onclick="togglePill(this,'verif-seg')">🛡 Con seguro</div>
-    <div class="filtro-pill" onclick="togglePill(this,'zona-caba')">📍 CABA</div>
-    <div class="filtro-pill" onclick="togglePill(this,'zona-gba')">📍 GBA</div>
+  <!-- BOTÓN FILTROS MOBILE -->
+  <div id="filtrosMobileBar" style="display:none;background:#fff;border-bottom:1px solid var(--border);padding:.6rem 1rem;align-items:center;gap:8px">
+    <button class="btn-filtros-mobile" id="btnFiltrosMobile" onclick="abrirDrawerFiltros()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+      Filtros
+      <span class="flt-badge" id="fltBadge">0</span>
+    </button>
+    <div style="flex:1;overflow-x:auto;display:flex;gap:6px;scrollbar-width:none" id="activePills"></div>
+  </div>
+
+  <!-- DRAWER FILTROS MOBILE -->
+  <div class="filtros-drawer-ov" id="filtrosDrawerOv" onclick="cerrarDrawerFiltros()"></div>
+  <div class="filtros-drawer" id="filtrosDrawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-header">
+      <span class="drawer-title">Filtros</span>
+      <button class="drawer-close" onclick="cerrarDrawerFiltros()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <!-- Servicios destacados -->
+      <div class="drawer-section">
+        <div class="drawer-section-h">⭐ Servicios destacados</div>
+        <label class="drawer-serv-dest guardamuebles">
+          <input type="checkbox" id="dFiltGuarda" onchange="toggleFServicio('Guardamuebles',this)"/>
+          🏭 Guardamuebles
+        </label>
+        <label class="drawer-serv-dest premium">
+          <input type="checkbox" id="dFiltPremium" onchange="toggleFServicio('Mudanza premium',this)"/>
+          ⭐ Mudanza premium
+        </label>
+      </div>
+      <!-- Ordenar -->
+      <div class="drawer-section">
+        <div class="drawer-section-h">Ordenar por</div>
+        <div class="drawer-opts">
+          <label class="drawer-opt"><input type="radio" name="ordenDrawer" checked onchange="setOrden('cal');actualizarBadge()"/> Mejor calificación</label>
+          <label class="drawer-opt"><input type="radio" name="ordenDrawer" onchange="setOrden('precio');actualizarBadge()"/> Menor precio</label>
+          <label class="drawer-opt"><input type="radio" name="ordenDrawer" onchange="setOrden('trab');actualizarBadge()"/> Más trabajos</label>
+        </div>
+      </div>
+      <!-- Vehículo -->
+      <div class="drawer-section">
+        <div class="drawer-section-h">Vehículo</div>
+        <div class="drawer-opts">
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFV('Camión grande',this);actualizarBadge()"/> 🚛 Camión grande</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFV('Camión mediano',this);actualizarBadge()"/> 🚚 Camión mediano</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFV('Camioneta / furgón pequeño',this);actualizarBadge()"/> 🚐 Camioneta / furgón</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFV('Camión con hidrogrúa',this);actualizarBadge()"/> 🏗 Con hidrogrúa</label>
+        </div>
+      </div>
+      <!-- Zona -->
+      <div class="drawer-section">
+        <div class="drawer-section-h">Zona</div>
+        <div class="drawer-opts">
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('CABA',this);actualizarBadge()"/> 📍 CABA</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('GBA Norte',this);actualizarBadge()"/> 📍 GBA Norte</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('GBA Sur',this);actualizarBadge()"/> 📍 GBA Sur</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('GBA Oeste',this);actualizarBadge()"/> 📍 GBA Oeste</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Rosario',this);actualizarBadge()"/> 📍 Rosario</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Córdoba',this);actualizarBadge()"/> 📍 Córdoba</label>
+        </div>
+      </div>
+      <!-- Verificaciones -->
+      <div class="drawer-section">
+        <div class="drawer-section-h">Verificaciones</div>
+        <div class="drawer-opts">
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFVer('id',this);actualizarBadge()"/> ✅ Identidad verificada</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFVer('veh',this);actualizarBadge()"/> 🚛 Vehículo verificado</label>
+          <label class="drawer-opt"><input type="checkbox" onchange="toggleFVer('seg',this);actualizarBadge()"/> 🛡 Con seguro</label>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="drawer-btn-clear" onclick="limpiarFiltros();actualizarBadge()">Limpiar</button>
+      <button class="drawer-btn-apply" onclick="cerrarDrawerFiltros()">Ver resultados</button>
+    </div>
   </div>
 
   <div class="res-body" id="resBody">
@@ -1050,6 +1175,19 @@ function buscar() {
         <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('id',this)"/> ✅ Identidad verificada</label></div>
         <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('veh',this)"/> 🚛 Vehículo verificado</label></div>
         <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('seg',this)"/> 🛡 Con seguro</label></div>
+      </div>
+      <div class="filtro-section">
+        <div class="filtro-h">Servicios</div>
+        <label class="filtro-serv-dest guardamuebles">
+          <input type="checkbox" onchange="toggleFServicio('Guardamuebles',this)"/>
+          🏭 Guardamuebles
+        </label>
+        <label class="filtro-serv-dest premium">
+          <input type="checkbox" onchange="toggleFServicio('Mudanza premium',this)"/>
+          ⭐ Mudanza premium
+        </label>
+        <div class="filtro-opt" style="margin-top:4px"><label><input type="checkbox" onchange="toggleFServicio('Embalaje incluido',this)"/> 📦 Embalaje incluido</label></div>
+        <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFServicio('Desmontaje y montaje',this)"/> 🔧 Desmontaje y montaje</label></div>
       </div>
       <button class="btn-clear" onclick="limpiarFiltros()">Limpiar filtros</button>
     </div>
@@ -1216,7 +1354,7 @@ var _fechaFlete = 'Hoy';
 var _busqueda = {};
 var _todos = [];
 var _sel = new Set();
-var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set() };
+var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set(), servicios:new Set() };
 var _googleInited = false;
 var _currentUser = null;
 var _pendingPub = null;
@@ -1652,6 +1790,13 @@ function renderResultados() {
   if (_filtros.verifs.has('id'))  lista = lista.filter(function(m){ return m.verificadoIdentidad; });
   if (_filtros.verifs.has('veh')) lista = lista.filter(function(m){ return m.verificadoVehiculo; });
   if (_filtros.verifs.has('seg')) lista = lista.filter(function(m){ return m.verificadoSeguro; });
+  if (_filtros.servicios && _filtros.servicios.size) {
+    lista = lista.filter(function(m) {
+      if (!m.servicios) return false;
+      var sl = m.servicios.toLowerCase();
+      return Array.from(_filtros.servicios).every(function(s) { return sl.includes(s.toLowerCase()); });
+    });
+  }
   // Orden
   lista.sort(function(a,b){
     if (_filtros.orden==='precio') return (a.precios.amb1||0)-(b.precios.amb1||0);
@@ -1765,11 +1910,40 @@ function toggleFVer(v,el) {
   if(_filtros.verifs.has(v)) _filtros.verifs.delete(v); else _filtros.verifs.add(v);
   renderResultados();
 }
+function toggleFServicio(v, el) {
+  if (!_filtros.servicios) _filtros.servicios = new Set();
+  if (_filtros.servicios.has(v)) _filtros.servicios.delete(v); else _filtros.servicios.add(v);
+  renderResultados();
+  actualizarBadge();
+}
 function limpiarFiltros() {
   _filtros.vehiculos.clear(); _filtros.zonas.clear(); _filtros.verifs.clear(); _filtros.orden='cal';
-  document.querySelectorAll('.filtro-opt input').forEach(function(i){ i.checked=false; });
-  document.querySelectorAll('input[name=orden]').forEach(function(i,idx){ i.checked=idx===0; });
+  if (_filtros.servicios) _filtros.servicios.clear();
+  document.querySelectorAll('.filtro-opt input, .drawer-opt input, .filtro-serv-dest input, .drawer-serv-dest input').forEach(function(i){ i.checked=false; });
+  document.querySelectorAll('input[name=orden], input[name=ordenDrawer]').forEach(function(i,idx){ i.checked=idx===0; });
   renderResultados();
+  actualizarBadge();
+}
+
+// ── DRAWER MOBILE ─────────────────────────────────────────────────
+function abrirDrawerFiltros() {
+  document.getElementById('filtrosDrawerOv').classList.add('open');
+  document.getElementById('filtrosDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarDrawerFiltros() {
+  document.getElementById('filtrosDrawerOv').classList.remove('open');
+  document.getElementById('filtrosDrawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function actualizarBadge() {
+  var n = (_filtros.vehiculos ? _filtros.vehiculos.size : 0)
+        + (_filtros.zonas ? _filtros.zonas.size : 0)
+        + (_filtros.verifs ? _filtros.verifs.size : 0)
+        + (_filtros.servicios ? _filtros.servicios.size : 0)
+        + (_filtros.orden !== 'cal' ? 1 : 0);
+  var badge = document.getElementById('fltBadge');
+  if (badge) { badge.textContent = n; badge.classList.toggle('show', n > 0); }
 }
 function togglePill(el, key) {
   el.classList.toggle('active');
