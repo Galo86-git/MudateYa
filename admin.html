@@ -120,6 +120,30 @@ tr:hover td{background:rgba(34,195,106,.03)}
 @media(max-width:900px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.sidebar{display:none}}
 @media(max-width:600px){.metrics-grid{grid-template-columns:1fr 1fr}.admin-main{padding:1rem}}
 
+/* Fotos admin */
+.fotos-mud-card{display:flex;align-items:flex-start;gap:1.2rem;padding:1rem 1.2rem;border-bottom:1px solid #E2E8F0;flex-wrap:wrap}
+.fotos-mud-card:last-child{border-bottom:none}
+.fotos-mud-info{min-width:160px;flex:0 0 160px}
+.fotos-mud-nombre{font-weight:600;font-size:13px;color:#0F1923}
+.fotos-mud-email{font-size:11px;color:#64748B;font-family:var(--mono);margin-top:2px;word-break:break-all}
+.fotos-mud-estado{font-size:10px;padding:2px 7px;border-radius:4px;display:inline-block;margin-top:4px;font-weight:600}
+.fotos-mud-estado.aprobado{background:#dcfce7;color:#15803d}
+.fotos-mud-estado.pendiente{background:#fef9c3;color:#854d0e}
+.fotos-mud-estado.rechazado{background:#fee2e2;color:#b91c1c}
+.fotos-section{flex:1;min-width:0}
+.fotos-section-label{font-size:10px;font-weight:700;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.fotos-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px}
+.foto-thumb-wrap{position:relative;width:72px;height:72px;flex-shrink:0}
+.foto-thumb-wrap img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;cursor:pointer;display:block}
+.foto-thumb-wrap .foto-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,.85);color:#fff;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:opacity .15s}
+.foto-thumb-wrap .foto-del:hover{background:#ef4444}
+.foto-perfil-wrap{position:relative;width:56px;height:56px;flex-shrink:0}
+.foto-perfil-wrap img{width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid #E2E8F0;cursor:pointer;display:block}
+.foto-perfil-wrap .foto-del{position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,.85);color:#fff;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700}
+.fotos-upload-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.foto-tag-ok{font-size:11px;color:#22C36A;font-weight:600;display:none;margin-left:6px}
+.foto-tag-err{font-size:11px;color:#EF4444;font-weight:600;display:none;margin-left:6px}
+
 /* Modal confirmación aprobar/rechazar */
 .confirm-modal-ov{display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
 .confirm-modal-ov.open{display:flex}
@@ -182,6 +206,9 @@ tr:hover td{background:rgba(34,195,106,.03)}
       </a>
       <a class="sidebar-item" onclick="showPage('zonas',event)" href="#">
         <span class="sidebar-icon">🗺️</span> Zonas
+      </a>
+      <a class="sidebar-item" onclick="showPage('fotos',event)" href="#">
+        <span class="sidebar-icon">🖼️</span> Fotos
       </a>
     </div>
 
@@ -280,6 +307,18 @@ tr:hover td{background:rgba(34,195,106,.03)}
         </div>
       </div>
 
+      <!-- FOTOS -->
+      <div class="page" id="page-fotos">
+        <div class="page-title">Fotos de mudanceros</div>
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">🖼️ Gestión de fotos</span>
+            <button class="btn-sm" onclick="cargarFotos()">↻ Actualizar</button>
+          </div>
+          <div id="fotosAdminList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -374,6 +413,7 @@ function showPage(name, e){
   if(name === 'pagos') renderPagosFull();
   if(name === 'zonas') renderZonas();
   if(name === 'transferencias') loadTransferencias();
+  if(name === 'fotos') cargarFotos();
 }
 
 // ── DATA LOADING ───────────────────────────────────────────────────────────
@@ -791,7 +831,186 @@ async function confirmarEstado() {
   }
 }
 
-function exportarExcel() {
+// ── FOTOS ──────────────────────────────────────────────────────────────────
+var _fotosEstado = {}; // email -> { foto, fotosVehiculo[] }
+
+async function cargarFotos() {
+  var container = document.getElementById('fotosAdminList');
+  container.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  try {
+    var r = await fetch('/api/admin-fotos?token=mya-admin-2026');
+    var d = await r.json();
+    if (!d.mudanceros || !d.mudanceros.length) {
+      container.innerHTML = '<div class="empty"><div class="empty-icon">🖼️</div>No hay mudanceros registrados.</div>';
+      return;
+    }
+    _fotosEstado = {};
+    var html = '';
+    d.mudanceros.forEach(function(m) {
+      var fotos = m.fotosVehiculo && m.fotosVehiculo.length ? m.fotosVehiculo : (m.fotoCamion ? [m.fotoCamion] : []);
+      _fotosEstado[m.email] = { foto: m.foto || '', fotosVehiculo: fotos.slice() };
+      var key = fotoKey(m.email);
+      html += '<div class="fotos-mud-card" id="fmc-' + key + '">'
+        + '<div class="fotos-mud-info">'
+        +   '<div class="fotos-mud-nombre">' + esc(m.nombre) + '</div>'
+        +   '<div class="fotos-mud-email">' + esc(m.email) + '</div>'
+        +   '<span class="fotos-mud-estado ' + (m.estado||'') + '">' + (m.estado||'—') + '</span>'
+        + '</div>'
+        + '<div class="fotos-section">'
+        +   '<div class="fotos-section-label">Foto de perfil</div>'
+        +   '<div class="fotos-row" id="fperfil-' + key + '">'
+        +     (m.foto
+                ? '<div class="foto-perfil-wrap"><img src="' + m.foto + '" onclick="window.open(\'' + m.foto + '\',\'_blank\')" title="Ver"><div class="foto-del" onclick="eliminarFotoPerfil(\'' + m.email + '\')">✕</div></div>'
+                : '<span style="font-size:11px;color:#94A3B8;font-family:var(--mono)">Sin foto</span>')
+        +   '</div>'
+        +   '<div class="fotos-upload-btns">'
+        +     '<button class="btn-sm" onclick="triggerFotoInput(\'finp-perfil-' + key + '\')">⬆ Subir perfil</button>'
+        +     '<input type="file" id="finp-perfil-' + key + '" accept="image/*" onchange="onFotoPerfilChange(this,\'' + m.email + '\')">'
+        +     '<span class="foto-tag-ok" id="fok-' + key + '">✓ Guardado</span>'
+        +     '<span class="foto-tag-err" id="ferr-' + key + '"></span>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="fotos-section">'
+        +   '<div class="fotos-section-label">Fotos camión / vehículo</div>'
+        +   '<div class="fotos-row" id="fcamion-' + key + '"></div>'
+        +   '<div class="fotos-upload-btns">'
+        +     '<button class="btn-sm" onclick="triggerFotoInput(\'finp-camion-' + key + '\')">⬆ Agregar fotos</button>'
+        +     '<input type="file" id="finp-camion-' + key + '" accept="image/*" multiple onchange="onFotoCamionChange(this,\'' + m.email + '\')">'
+        +   '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    container.innerHTML = html;
+    // Renderizar fotos camión
+    d.mudanceros.forEach(function(m) { renderCamionFotos(m.email); });
+  } catch(e) {
+    container.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderCamionFotos(email) {
+  var key = fotoKey(email);
+  var container = document.getElementById('fcamion-' + key);
+  if (!container) return;
+  var fotos = _fotosEstado[email] ? _fotosEstado[email].fotosVehiculo : [];
+  if (!fotos.length) {
+    container.innerHTML = '<span style="font-size:11px;color:#94A3B8;font-family:var(--mono)">Sin fotos</span>';
+    return;
+  }
+  container.innerHTML = fotos.map(function(url, i) {
+    if (!url) return '<div class="foto-thumb-wrap"><div style="width:72px;height:72px;border-radius:8px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94A3B8">⏳</div></div>';
+    return '<div class="foto-thumb-wrap">'
+      + '<img src="' + url + '" onclick="window.open(\'' + url + '\',\'_blank\')" title="Ver foto">'
+      + '<div class="foto-del" onclick="eliminarFotoCamion(\'' + email + '\',' + i + ')">✕</div>'
+      + '</div>';
+  }).join('');
+}
+
+function triggerFotoInput(id) {
+  var el = document.getElementById(id);
+  if (el) el.click();
+}
+
+async function onFotoPerfilChange(input, email) {
+  var file = input.files[0];
+  if (!file) return;
+  var key = fotoKey(email);
+  var btn = input.previousElementSibling;
+  btn.disabled = true; btn.textContent = 'Subiendo…';
+  try {
+    var url = await subirFotoBlob(file, 'mudanceros/perfiles', 'perfil-' + Date.now());
+    _fotosEstado[email].foto = url;
+    var container = document.getElementById('fperfil-' + key);
+    container.innerHTML = '<div class="foto-perfil-wrap"><img src="' + url + '" onclick="window.open(\'' + url + '\',\'_blank\')"><div class="foto-del" onclick="eliminarFotoPerfil(\'' + email + '\')">✕</div></div>';
+    await guardarFotosRedis(email);
+    mostrarFotoOk(key);
+  } catch(e) { mostrarFotoErr(key, e.message); }
+  finally { btn.disabled = false; btn.textContent = '⬆ Subir perfil'; input.value = ''; }
+}
+
+async function onFotoCamionChange(input, email) {
+  var files = Array.prototype.slice.call(input.files);
+  if (!files.length) return;
+  input.value = '';
+  var key = fotoKey(email);
+  for (var i = 0; i < files.length; i++) _fotosEstado[email].fotosVehiculo.push(null);
+  renderCamionFotos(email);
+  var promises = files.map(function(file, i) {
+    return subirFotoBlob(file, 'mudanceros/camiones', 'camion-' + Date.now() + '-' + i)
+      .then(function(url) {
+        var idx = _fotosEstado[email].fotosVehiculo.indexOf(null);
+        if (idx !== -1) _fotosEstado[email].fotosVehiculo[idx] = url;
+        renderCamionFotos(email);
+      });
+  });
+  try {
+    await Promise.all(promises);
+    _fotosEstado[email].fotosVehiculo = _fotosEstado[email].fotosVehiculo.filter(Boolean);
+    renderCamionFotos(email);
+    await guardarFotosRedis(email);
+    mostrarFotoOk(key);
+  } catch(e) {
+    _fotosEstado[email].fotosVehiculo = _fotosEstado[email].fotosVehiculo.filter(Boolean);
+    renderCamionFotos(email);
+    mostrarFotoErr(key, e.message);
+  }
+}
+
+async function eliminarFotoPerfil(email) {
+  var key = fotoKey(email);
+  _fotosEstado[email].foto = '';
+  document.getElementById('fperfil-' + key).innerHTML = '<span style="font-size:11px;color:#94A3B8;font-family:var(--mono)">Sin foto</span>';
+  try { await guardarFotosRedis(email); mostrarFotoOk(key); }
+  catch(e) { mostrarFotoErr(key, e.message); }
+}
+
+async function eliminarFotoCamion(email, idx) {
+  _fotosEstado[email].fotosVehiculo.splice(idx, 1);
+  renderCamionFotos(email);
+  try { await guardarFotosRedis(email); mostrarFotoOk(fotoKey(email)); }
+  catch(e) { mostrarFotoErr(fotoKey(email), e.message); }
+}
+
+async function subirFotoBlob(file, carpeta, nombre) {
+  var r = await fetch('/api/upload-foto', {
+    method: 'POST',
+    headers: { 'Content-Type': file.type || 'image/jpeg', 'x-carpeta': carpeta, 'x-nombre': nombre },
+    body: file,
+  });
+  var d = await r.json();
+  if (!d.ok) throw new Error(d.error || 'Error subiendo foto');
+  return d.url;
+}
+
+async function guardarFotosRedis(email) {
+  var fotos = _fotosEstado[email].fotosVehiculo.filter(Boolean);
+  var r = await fetch('/api/admin-fotos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': 'mya-admin-2026' },
+    body: JSON.stringify({ email: email, foto: _fotosEstado[email].foto || '', fotoCamion: fotos[0] || '', fotosVehiculo: fotos }),
+  });
+  var d = await r.json();
+  if (!d.ok) throw new Error(d.error || 'Error guardando');
+}
+
+function mostrarFotoOk(key) {
+  var el = document.getElementById('fok-' + key);
+  if (!el) return;
+  el.style.display = 'inline';
+  setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+
+function mostrarFotoErr(key, msg) {
+  var el = document.getElementById('ferr-' + key);
+  if (!el) return;
+  el.textContent = '✗ ' + msg;
+  el.style.display = 'inline';
+  setTimeout(function() { el.style.display = 'none'; }, 5000);
+}
+
+function fotoKey(s) { return (s||'').replace(/[^a-z0-9]/gi, '_'); }
+
+
   if (!mudancerosData || !mudancerosData.length) {
     alert('No hay mudanceros para exportar.');
     return;
