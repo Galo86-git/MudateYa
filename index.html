@@ -756,8 +756,24 @@
                 var desc = s.description;
                 input.value = desc;
                 dd.classList.remove('open');
-                _validAddr[inputId] = true;
-                input.style.border=''; input.style.background='';
+                // Validar que la dirección tenga número
+                if (/\d/.test(desc)) {
+                  _validAddr[inputId] = true;
+                  input.style.border=''; input.style.background='';
+                } else {
+                  _validAddr[inputId] = false;
+                  input.style.border='2px solid #FF5252';
+                  input.style.background='rgba(255,82,82,.04)';
+                  var errDiv = document.createElement('div');
+                  errDiv.style.cssText='position:absolute;top:calc(100% + 4px);left:0;right:0;background:#FF5252;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;z-index:999;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(255,82,82,.3)';
+                  errDiv.textContent='⚠ Ingresá la calle y el número (ej: Av. Santa Fe 1234)';
+                  input.parentElement.style.position='relative';
+                  var old = input.parentElement.querySelector('.addr-err');
+                  if (old) old.remove();
+                  errDiv.className='addr-err';
+                  input.parentElement.appendChild(errDiv);
+                  setTimeout(function(){ input.style.border=''; input.style.background=''; if(errDiv.parentElement) errDiv.remove(); }, 3500);
+                }
               }
               li.addEventListener('mousedown', seleccionar);
               li.addEventListener('touchend', seleccionar);
@@ -1664,8 +1680,30 @@
               var li = document.createElement('li');
               li.className = 'ac-item';
               li.textContent = s.description;
-              li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
-              li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
+              function selAddr(e) {
+                e.preventDefault();
+                input.value = s.description;
+                dd.classList.remove('open');
+                if (/\d/.test(s.description)) {
+                  _validAddr[inputId] = true;
+                  input.style.border=''; input.style.background='';
+                } else {
+                  _validAddr[inputId] = false;
+                  input.style.border='2px solid #FF5252';
+                  input.style.background='rgba(255,82,82,.04)';
+                  var errDiv = document.createElement('div');
+                  errDiv.style.cssText='position:absolute;top:calc(100% + 4px);left:0;right:0;background:#FF5252;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;z-index:999;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(255,82,82,.3)';
+                  errDiv.textContent='⚠ Ingresá la calle y el número (ej: Av. Santa Fe 1234)';
+                  input.parentElement.style.position='relative';
+                  var old = input.parentElement.querySelector('.addr-err');
+                  if (old) old.remove();
+                  errDiv.className='addr-err';
+                  input.parentElement.appendChild(errDiv);
+                  setTimeout(function(){ input.style.border=''; input.style.background=''; if(errDiv.parentElement) errDiv.remove(); }, 3500);
+                }
+              }
+              li.addEventListener('mousedown', selAddr);
+              li.addEventListener('touchend', selAddr);
               dd.appendChild(li);
             });
             dd.classList.add('open');
