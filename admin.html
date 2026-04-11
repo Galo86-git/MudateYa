@@ -1010,7 +1010,7 @@ function mostrarFotoErr(key, msg) {
 
 function fotoKey(s) { return (s||'').replace(/[^a-z0-9]/gi, '_'); }
 
-
+function exportarExcel() {
   if (!mudancerosData || !mudancerosData.length) {
     alert('No hay mudanceros para exportar.');
     return;
