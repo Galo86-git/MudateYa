@@ -1865,4 +1865,9 @@ function closeMenu()  { document.getElementById('navBurger').classList.remove('o
 
 // Init
 document.addEventListener('DOMContentLoaded', function() { updateNav(); });
-document.getElementById('pubModal').addEventListener('click', function(e){ if(e.target===this &
+document.getElementById('pubModal').addEventListener('click', function(e){ if(e.target===this) { document.getElementById('pubModal').classList.remove('open'); } });
+document.getElementById('loginModal') && document.getElementById('loginModal').addEventListener('click', function(e){ if(e.target===this) cerrarLogin(); });
+
+</script>
+</body>
+</html>
