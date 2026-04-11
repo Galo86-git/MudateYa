@@ -683,7 +683,14 @@ function makeAC(inputId, ddId) {
   input.addEventListener('click', function(e){ e.stopPropagation(); });
 }
 
-// initMaps se define junto a la carga dinámica de Maps más abajo
+window.initMaps = function() {
+  ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
+    var ddId = {'input-desde':'ac-desde','input-hasta':'ac-hasta','input-flete-desde':'ac-flete-desde','input-flete-hasta':'ac-flete-hasta'}[id];
+    makeAC(id, ddId);
+  });
+  if (document.getElementById('resultados') && document.getElementById('resultados').classList.contains('show')) initMapaMini();
+};
+
 function scrollToHero() {
   var hero = document.getElementById('hero') || document.querySelector('.hero');
   if (hero) hero.scrollIntoView({behavior:'smooth'});
@@ -775,6 +782,7 @@ function buscar() {
 }
 
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMaps" async defer></script>
 </head>
 <body>
 
@@ -1483,21 +1491,6 @@ function makeAC(inputId, ddId) {
   });
   input.addEventListener('click', function(e){ e.stopPropagation(); });
 }
-(function() {
-  // Definir callback ANTES de insertar el script — evita race condition si Maps carga desde cache
-  window.initMaps = function() {
-    ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
-      var ddId = {'input-desde':'ac-desde','input-hasta':'ac-hasta','input-flete-desde':'ac-flete-desde','input-flete-hasta':'ac-flete-hasta'}[id];
-      makeAC(id, ddId);
-    });
-    if (document.getElementById('resultados') && document.getElementById('resultados').classList.contains('show')) initMapaMini();
-  };
-  var s = document.createElement('script');
-  s.src = 'https://maps.googleapis.com/maps/api/js?key='+GMAPS_KEY+'&libraries=places&language=es&region=AR&callback=initMaps&loading=async';
-  s.async = true; s.defer = true;
-  document.head.appendChild(s);
-})();
-
 // ══════════════════════════════════════════
 // MAPA MINI
 // ══════════════════════════════════════════
