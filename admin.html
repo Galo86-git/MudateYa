@@ -156,6 +156,27 @@ tr:hover td{background:rgba(34,195,106,.03)}
 .confirm-modal-ok{flex:2;padding:11px;border-radius:8px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s}
 .confirm-modal-ok:hover{opacity:.85}
 
+/* ── COTIZACIONES ── */
+.cot-table{width:100%;border-collapse:collapse;font-size:13px}
+.cot-table th{background:var(--bg);padding:9px 12px;text-align:left;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+.cot-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.cot-table tr:last-child td{border-bottom:none}
+.cot-table tr:hover td{background:#F8FAFC}
+.cot-estado{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;font-family:var(--mono);white-space:nowrap}
+.cot-estado.pendiente{background:#FEF9C3;color:#854D0E}
+.cot-estado.cotizado{background:#EFF6FF;color:#1D4ED8}
+.cot-estado.aceptado{background:#F0FDF4;color:#15803D}
+.cot-estado.pagado{background:#DCFCE7;color:#15803D}
+.cot-estado.completado{background:#003580;color:#fff}
+.cot-estado.cancelado{background:#FEE2E2;color:#B91C1C}
+.cot-tipo{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;font-family:var(--mono)}
+.cot-tipo.mudanza{background:#EEF4FF;color:#1A6FFF}
+.cot-tipo.flete{background:#FEF3C7;color:#D97706}
+.cot-ruta{font-size:12px;color:var(--text2);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cot-email{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.cot-stat-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;text-align:center}
+.cot-stat-num{font-family:var(--mono);font-weight:700;font-size:1.4rem;color:var(--navy)}
+.cot-stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -209,6 +230,9 @@ tr:hover td{background:rgba(34,195,106,.03)}
       </a>
       <a class="sidebar-item" onclick="showPage('fotos',event)" href="#">
         <span class="sidebar-icon">🖼️</span> Fotos
+      </a>
+      <a class="sidebar-item" onclick="showPage('cotizaciones',event)" href="#">
+        <span class="sidebar-icon">📋</span> Cotizaciones
       </a>
     </div>
 
@@ -316,6 +340,62 @@ tr:hover td{background:rgba(34,195,106,.03)}
             <button class="btn-sm" onclick="cargarFotos()">↻ Actualizar</button>
           </div>
           <div id="fotosAdminList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-cotizaciones">
+        <div class="page-title">Solicitudes de cotización</div>
+
+        <!-- FILTROS -->
+        <div class="table-card" style="margin-bottom:14px">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Tipo</div>
+              <select id="cot-filtro-tipo" onchange="filtrarCotizaciones()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff">
+                <option value="">Todos</option>
+                <option value="mudanza">Mudanza</option>
+                <option value="flete">Flete</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Estado</div>
+              <select id="cot-filtro-estado" onchange="filtrarCotizaciones()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="cotizado">Cotizado</option>
+                <option value="aceptado">Aceptado</option>
+                <option value="pagado">Pagado</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Desde</div>
+              <input type="date" id="cot-filtro-desde" onchange="filtrarCotizaciones()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"/>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Hasta</div>
+              <input type="date" id="cot-filtro-hasta" onchange="filtrarCotizaciones()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"/>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Buscar</div>
+              <input type="text" id="cot-filtro-q" oninput="filtrarCotizaciones()" placeholder="Email, dirección…" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);width:180px"/>
+            </div>
+            <button class="btn-sm" onclick="limpiarFiltrosCot()">✕ Limpiar</button>
+            <button class="btn-sm primary" onclick="cargarCotizaciones()" style="margin-left:auto">↻ Actualizar</button>
+          </div>
+        </div>
+
+        <!-- STATS RÁPIDAS -->
+        <div id="cotStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+
+        <!-- TABLA -->
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">📋 Solicitudes</span>
+            <span id="cotCount" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
+          </div>
+          <div id="cotizacionesList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
       </div>
 
@@ -1076,6 +1156,124 @@ function exportarExcel() {
     </div>
   </div>
 </div>
+
+<script>
+// ══════════════════════════════════════════
+// COTIZACIONES
+// ══════════════════════════════════════════
+var _cotizacionesData = [];
+
+async function cargarCotizaciones() {
+  document.getElementById('cotizacionesList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  try {
+    var r = await fetch('/api/cotizaciones?action=admin-listar&token=mya-admin-2026');
+    var d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'Error');
+    _cotizacionesData = (d.pedidos || []).sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
+    filtrarCotizaciones();
+  } catch(e) {
+    document.getElementById('cotizacionesList').innerHTML = '<div style="padding:2rem;text-align:center;color:#EF4444">Error al cargar: '+esc(e.message)+'</div>';
+  }
+}
+
+function filtrarCotizaciones() {
+  var tipo   = document.getElementById('cot-filtro-tipo').value;
+  var estado = document.getElementById('cot-filtro-estado').value;
+  var desde  = document.getElementById('cot-filtro-desde').value;
+  var hasta  = document.getElementById('cot-filtro-hasta').value;
+  var q      = (document.getElementById('cot-filtro-q').value||'').toLowerCase().trim();
+
+  var data = _cotizacionesData.filter(function(p) {
+    if (tipo   && p.tipo !== tipo) return false;
+    if (estado && (p.estado||'pendiente') !== estado) return false;
+    if (desde) {
+      var d = new Date(desde); d.setHours(0,0,0,0);
+      if ((p.fecha||0) < d.getTime()) return false;
+    }
+    if (hasta) {
+      var h = new Date(hasta); h.setHours(23,59,59,999);
+      if ((p.fecha||0) > h.getTime()) return false;
+    }
+    if (q) {
+      var hay = (p.email||'') + ' ' + (p.desde||'') + ' ' + (p.hasta||'') + ' ' + (p.id||'');
+      if (hay.toLowerCase().indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+
+  renderStats(data);
+  renderTabla(data);
+}
+
+function renderStats(data) {
+  var tot = data.length;
+  var mud = data.filter(function(p){ return p.tipo==='mudanza'; }).length;
+  var flt = data.filter(function(p){ return p.tipo==='flete'; }).length;
+  var pag = data.filter(function(p){ return p.estado==='pagado'||p.estado==='completado'; }).length;
+
+  document.getElementById('cotStats').innerHTML =
+    stat('📋', tot, 'Total') +
+    stat('🚛', mud, 'Mudanzas') +
+    stat('📦', flt, 'Fletes') +
+    stat('💳', pag, 'Pagados');
+}
+
+function stat(icon, num, label) {
+  return '<div class="cot-stat-box"><div style="font-size:1.3rem">'+icon+'</div><div class="cot-stat-num">'+num+'</div><div class="cot-stat-label">'+label+'</div></div>';
+}
+
+function renderTabla(data) {
+  document.getElementById('cotCount').textContent = data.length + ' solicitudes';
+  if (!data.length) {
+    document.getElementById('cotizacionesList').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text3)">No hay solicitudes con los filtros aplicados.</div>';
+    return;
+  }
+
+  var html = '<div style="overflow-x:auto"><table class="cot-table"><thead><tr>'
+    + '<th>ID</th><th>Tipo</th><th>Fecha</th><th>Cliente</th>'
+    + '<th>Ruta</th><th>Estado</th><th>Mudancero</th><th>Monto</th>'
+    + '</tr></thead><tbody>';
+
+  data.forEach(function(p) {
+    var fecha = p.fecha ? new Date(p.fecha).toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    var estado = p.estado || 'pendiente';
+    var monto  = p.monto ? '$'+parseInt(p.monto).toLocaleString('es-AR') : '—';
+    var desde  = (p.desde||'').split(',')[0];
+    var hasta  = (p.hasta||'').split(',')[0];
+    var mud    = p.mudanceroNombre || p.mudanceroEmail || '—';
+
+    html += '<tr>'
+      + '<td><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">'+(p.id||'—').slice(-6)+'</span></td>'
+      + '<td><span class="cot-tipo '+esc(p.tipo||'')+'">'+(p.tipo==='flete'?'📦 Flete':'🚛 Mudanza')+'</span></td>'
+      + '<td style="font-size:12px;white-space:nowrap">'+esc(fecha)+'</td>'
+      + '<td><div style="font-size:13px;font-weight:500">'+esc(p.nombre||'—')+'</div><div class="cot-email">'+esc(p.email||'—')+'</div></td>'
+      + '<td><div class="cot-ruta">'+esc(desde)+' → '+esc(hasta)+'</div></td>'
+      + '<td><span class="cot-estado '+esc(estado)+'">'+esc(estado)+'</span></td>'
+      + '<td style="font-size:12px;color:var(--text2)">'+esc(mud)+'</td>'
+      + '<td style="font-family:var(--mono);font-weight:700;font-size:13px;color:var(--navy)">'+esc(monto)+'</td>'
+      + '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  document.getElementById('cotizacionesList').innerHTML = html;
+}
+
+function limpiarFiltrosCot() {
+  document.getElementById('cot-filtro-tipo').value = '';
+  document.getElementById('cot-filtro-estado').value = '';
+  document.getElementById('cot-filtro-desde').value = '';
+  document.getElementById('cot-filtro-hasta').value = '';
+  document.getElementById('cot-filtro-q').value = '';
+  filtrarCotizaciones();
+}
+
+// Cargar al abrir la sección
+var _showPageOrig = showPage;
+showPage = function(name, e) {
+  _showPageOrig(name, e);
+  if (name === 'cotizaciones' && !_cotizacionesData.length) cargarCotizaciones();
+};
+</script>
 
 </body>
 </html>
