@@ -1094,6 +1094,13 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ mudanzas });
     }
 
+    if (action === 'encuesta' && req.method === 'POST') {
+      const { respuesta } = req.body;
+      if (respuesta !== 'si' && respuesta !== 'no') return res.status(400).json({ error: 'Respuesta inválida' });
+      const total = await redisCall('INCR', 'encuesta:packs:' + respuesta);
+      return res.status(200).json({ ok: true, total: parseInt(total) });
+    }
+
     return res.status(400).json({ error: 'Acción no reconocida' });
 
   } catch(e) {
