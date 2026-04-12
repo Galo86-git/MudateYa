@@ -568,7 +568,7 @@
   .steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin-top:2rem;border-radius:var(--r2);overflow:hidden}
   .step-block{background:#fff;padding:1.8rem 1.5rem;transition:background .2s}
   .step-block:hover{background:var(--bg2)}
-  .step-num{font-size:2.8rem;font-weight:900;color:#1A6FFF;font-family:'Bebas Neue',sans-serif;margin-bottom:.7rem;line-height:1}
+  .step-num{font-size:2.8rem;font-weight:900;color:var(--blue-light);font-family:'Bebas Neue',sans-serif;margin-bottom:.7rem;line-height:1}
   .step-block h3{font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text)}
   .step-block p{font-size:13px;color:var(--text2);line-height:1.65;font-weight:300}
 
@@ -883,6 +883,15 @@
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMaps" async defer></script>
   </head>
   <body>
+
+  <!-- BANNER ENCUESTA PACKS -->
+  <div id="encuestaBanner" style="background:linear-gradient(90deg,#003580 0%,#1A6FFF 100%);padding:12px 16px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;position:relative;z-index:301;border-bottom:2px solid #22C36A">
+    <span style="font-size:13px;font-weight:700;color:#fff;font-family:'Inter',sans-serif;text-align:center;flex-shrink:0">🏠 ¿Necesitás servicios para tu nueva casa?</span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="document.getElementById('encuestaBanner').style.display='none';document.getElementById('packs').scrollIntoView({behavior:'smooth'})" style="background:#22C36A;color:#fff;border:none;font-size:13px;font-weight:700;padding:8px 20px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">👍 Sí</button>
+      <button onclick="document.getElementById('encuestaBanner').style.display='none'" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:13px;font-weight:600;padding:8px 20px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">No, gracias</button>
+    </div>
+  </div>
 
   <!-- BANNER MODO BETA -->
   <div id="betaBanner" style="background:#0a0a0a;color:#22C36A;text-align:center;padding:10px 16px;font-size:13px;font-family:'DM Mono',monospace;position:relative;z-index:300;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid #22C36A;letter-spacing:.3px">
@@ -1331,6 +1340,62 @@
 
       </div>
       <p style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2rem">¿Querés ser partner? <a href="/cdn-cgi/l/email-protection#71191e1d10575247454a1c04151005140810575245474a1003" style="color:var(--blue);text-decoration:none;font-weight:600">Escribinos →</a></p>
+    </div>
+  </section>
+
+  <!-- PACKS MYA -->
+  <section id="packs" style="padding:4rem 1.5rem;background:linear-gradient(135deg,#003580 0%,#001f4d 100%);text-align:center;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;opacity:.05;background-image:url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E\")"></div>
+    <div style="position:relative;max-width:960px;margin:0 auto">
+      <div style="display:inline-block;background:#22C36A;color:#fff;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:1px;padding:5px 14px;border-radius:20px;margin-bottom:1rem;text-transform:uppercase">🚀 Próximamente</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.6);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase;margin-bottom:.6rem">Servicios adicionales</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;letter-spacing:.5px;margin-bottom:.6rem">¿Qué más necesitás?</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.6);max-width:480px;margin:0 auto 2rem;line-height:1.6">Estamos trabajando en esto para vos. Muy pronto vas a poder contratar todo para tu nueva casa en un solo lugar.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.2rem;max-width:880px;margin:0 auto">
+
+        <!-- Pack Esencial -->
+        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:1.6rem;text-align:left;backdrop-filter:blur(4px)">
+          <div style="font-size:2rem;margin-bottom:.8rem">⚡</div>
+          <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:.4rem">Pack Esencial</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:1.1rem;line-height:1.5">Lo que necesitás el primer día en tu nueva casa.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">✂ Limpieza</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🔑 Cerrajero</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">⚡ Electricista</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">📶 Internet</span>
+          </div>
+        </div>
+
+        <!-- Pack Completo -->
+        <div style="background:rgba(255,255,255,.11);border:2px solid #22C36A;border-radius:16px;padding:1.6rem;text-align:left;position:relative;backdrop-filter:blur(4px)">
+          <div style="position:absolute;top:-1px;right:1.2rem;background:#22C36A;color:#fff;font-size:10px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:.6px;padding:4px 10px;border-radius:0 0 8px 8px">MÁS POPULAR</div>
+          <div style="font-size:2rem;margin-bottom:.8rem">🏠</div>
+          <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:.4rem">Pack Completo</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:1.1rem;line-height:1.5">Todo para instalarte sin preocupaciones en la primera semana.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">✂ Limpieza</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🔑 Cerrajero</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">⚡ Electricista</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">📶 Internet</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🎨 Pintura</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🔧 Plomero</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🛡 Seguro hogar</span>
+          </div>
+        </div>
+
+        <!-- Pack Seguridad -->
+        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:1.6rem;text-align:left;backdrop-filter:blur(4px)">
+          <div style="font-size:2rem;margin-bottom:.8rem">🔒</div>
+          <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:.4rem">Pack Seguridad</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:1.1rem;line-height:1.5">Protegé tu nueva casa desde el primer día.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🔑 Cerrajero</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🚨 Alarma</span>
+            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:4px 10px;border-radius:6px">🛡 Seguro hogar</span>
+          </div>
+        </div>
+
+      </div>
     </div>
   </section>
 
