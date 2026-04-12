@@ -483,6 +483,23 @@ module.exports = async function handler(req, res) {
       const todosIdx = await getJSON('mudanzas:todos') || [];
       if (!todosIdx.includes(id)) todosIdx.push(id);
       await setJSON('mudanzas:todos', todosIdx);
+      // Registro centralizado de clientes
+      const clientePerfil = await getJSON(`cliente:perfil:${clienteEmail}`) || {
+        email: clienteEmail,
+        nombre: clienteNombre || '',
+        wa: clienteWA || '',
+        fechaRegistro: new Date().toISOString(),
+        mudanzas: 0,
+        estado: 'activo',
+      };
+      clientePerfil.nombre     = clienteNombre || clientePerfil.nombre;
+      clientePerfil.wa         = clienteWA || clientePerfil.wa;
+      clientePerfil.mudanzas   = (clientePerfil.mudanzas || 0) + 1;
+      clientePerfil.ultimaActividad = new Date().toISOString();
+      await setJSON(`cliente:perfil:${clienteEmail}`, clientePerfil);
+      const clientesTodos = await getJSON('clientes:todos') || [];
+      if (!clientesTodos.includes(clienteEmail)) clientesTodos.push(clienteEmail);
+      await setJSON('clientes:todos', clientesTodos);
       try { await notificarMudanceros(mudanza); } catch(e) { console.error(e.message); }
       return res.status(200).json({ ok: true, id, mudanza });
     }
@@ -680,6 +697,51 @@ module.exports = async function handler(req, res) {
         } catch(e) { console.warn('Error notificando mudancero:', e.message); }
       }
       return res.status(200).json({ ok: true, invitados: m.mudancerosInvitados });
+    }
+
+    // ── Admin: listar usuarios/clientes ──────────────────────────────
+    if (action === 'admin-usuarios' && req.method === 'GET') {
+      const { token } = req.query;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+      // Obtener emails del índice centralizado
+      let emails = await getJSON('clientes:todos') || [];
+      // Fallback: reconstruir desde todos los pedidos si el índice está vacío
+      if (!emails.length) {
+        const ids = await getJSON('mudanzas:todos') || [];
+        const emailSet = new Set();
+        for (const id of ids) {
+          const p = await getJSON(`mudanza:${id}`);
+          if (p && p.clienteEmail) emailSet.add(p.clienteEmail);
+        }
+        emails = Array.from(emailSet);
+        // Persistir para la próxima vez
+        if (emails.length) await setJSON('clientes:todos', emails);
+      }
+      const clientes = [];
+      for (const email of emails) {
+        // Intentar leer perfil guardado
+        let perfil = await getJSON(`cliente:perfil:${email}`);
+        if (!perfil) {
+          // Reconstruir desde sus pedidos
+          const pedidosIds = await getJSON(`cliente:${email}`) || [];
+          let nombre = '', wa = '', ultimaActividad = null, totalMudanzas = pedidosIds.length;
+          for (const pid of pedidosIds) {
+            const p = await getJSON(`mudanza:${pid}`);
+            if (!p) continue;
+            if (!nombre && p.clienteNombre) nombre = p.clienteNombre;
+            if (!wa && p.clienteWA) wa = p.clienteWA;
+            if (!ultimaActividad || p.fechaPublicacion > ultimaActividad) ultimaActividad = p.fechaPublicacion;
+          }
+          perfil = { email, nombre, wa, mudanzas: totalMudanzas, ultimaActividad, fechaRegistro: ultimaActividad, estado: 'activo' };
+        }
+        clientes.push(perfil);
+      }
+      clientes.sort(function(a, b) {
+        return new Date(b.ultimaActividad || 0) - new Date(a.ultimaActividad || 0);
+      });
+      return res.status(200).json({ ok: true, clientes, total: clientes.length });
     }
 
     // ── Admin: listar pagos ───────────────────────────────────────────
