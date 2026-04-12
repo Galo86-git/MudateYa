@@ -479,6 +479,10 @@ module.exports = async function handler(req, res) {
       const globalIdx = await getJSON('mudanzas:activas') || [];
       if (!globalIdx.includes(id)) globalIdx.push(id);
       await setJSON('mudanzas:activas', globalIdx, 604800);
+      // Índice permanente sin TTL para admin
+      const todosIdx = await getJSON('mudanzas:todos') || [];
+      if (!todosIdx.includes(id)) todosIdx.push(id);
+      await setJSON('mudanzas:todos', todosIdx);
       try { await notificarMudanceros(mudanza); } catch(e) { console.error(e.message); }
       return res.status(200).json({ ok: true, id, mudanza });
     }
@@ -781,36 +785,54 @@ module.exports = async function handler(req, res) {
       if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
         return res.status(401).json({ error: 'Token inválido' });
       }
-      const ids = await getJSON('mudanzas:activas') || [];
+
+      // Usar índice permanente. Si no existe aún, hacer KEYS como fallback
+      let ids = await getJSON('mudanzas:todos') || [];
+      if (!ids.length) {
+        // Fallback: buscar todos los keys mudanza:* via KEYS
+        try {
+          const keysRaw = await redisCall('KEYS', 'mudanza:*');
+          if (Array.isArray(keysRaw)) {
+            ids = keysRaw.map(k => k.replace('mudanza:', ''));
+          }
+        } catch(e) { /* ignorar si KEYS falla */ }
+      }
+
       const pedidos = [];
       for (const id of ids) {
         const p = await getJSON(`mudanza:${id}`);
         if (!p) continue;
-        // Enriquecer con nombre del mudancero si hay uno aceptado
+        // Nombre del mudancero aceptado si existe
         let mudanceroNombre = null;
         if (p.mudanceroAceptado) {
-          const mPerf = await getJSON(`mudancero:perfil:${p.mudanceroAceptado}`);
-          if (mPerf) mudanceroNombre = mPerf.nombre || mPerf.empresa || p.mudanceroAceptado;
+          try {
+            const mPerf = await getJSON(`mudancero:perfil:${p.mudanceroAceptado}`);
+            if (mPerf) mudanceroNombre = mPerf.nombre || mPerf.empresa || p.mudanceroAceptado;
+          } catch(e) {}
         }
         pedidos.push({
-          id:               p.id,
-          tipo:             p.tipo || 'mudanza',
-          fecha:            p.creadoEn || p.fecha || null,
-          email:            p.clienteEmail || p.email || null,
-          nombre:           p.clienteNombre || p.nombre || null,
-          desde:            p.desde || null,
-          hasta:            p.hasta || null,
-          fechaMudanza:     p.fecha || null,
-          estado:           p.estado || 'pendiente',
-          monto:            p.montoTotal || p.monto || null,
-          mudanceroEmail:   p.mudanceroAceptado || null,
-          mudanceroNombre:  mudanceroNombre,
-          cotizaciones:     (p.cotizaciones || []).length,
-          ambientes:        p.ambientes || null,
+          id:              p.id || id,
+          tipo:            p.tipo || 'mudanza',
+          fecha:           p.fechaPublicacion || p.creadoEn || null,
+          email:           p.clienteEmail || null,
+          nombre:          p.clienteNombre || null,
+          desde:           p.desde || null,
+          hasta:           p.hasta || null,
+          fechaMudanza:    p.fecha || null,
+          estado:          p.estado || 'buscando',
+          monto:           p.montoTotal || p.monto || null,
+          mudanceroEmail:  p.mudanceroAceptado || null,
+          mudanceroNombre: mudanceroNombre,
+          cotizaciones:    (p.cotizaciones || []).length,
+          ambientes:       p.ambientes || null,
         });
       }
+
       // Ordenar por fecha descendente
-      pedidos.sort(function(a, b) { return (b.fecha || 0) - (a.fecha || 0); });
+      pedidos.sort(function(a, b) {
+        return new Date(b.fecha || 0) - new Date(a.fecha || 0);
+      });
+
       return res.status(200).json({ ok: true, pedidos, total: pedidos.length });
     }
 
