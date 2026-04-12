@@ -378,6 +378,19 @@ tr:hover td{background:rgba(34,195,106,.03)}
               <input type="date" id="cot-filtro-hasta" onchange="filtrarCotizaciones()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"/>
             </div>
             <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ordenar por</div>
+              <select id="cot-orden" onchange="filtrarCotizaciones()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:#fff">
+                <option value="fecha-desc">Fecha ↓</option>
+                <option value="fecha-asc">Fecha ↑</option>
+                <option value="id-desc">ID ↓</option>
+                <option value="id-asc">ID ↑</option>
+                <option value="email-asc">Email A→Z</option>
+                <option value="email-desc">Email Z→A</option>
+                <option value="monto-desc">Monto ↓</option>
+                <option value="monto-asc">Monto ↑</option>
+              </select>
+            </div>
+            <div>
               <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Buscar</div>
               <input type="text" id="cot-filtro-q" oninput="filtrarCotizaciones()" placeholder="Email, dirección…" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);width:180px"/>
             </div>
@@ -1182,23 +1195,41 @@ function filtrarCotizaciones() {
   var desde  = document.getElementById('cot-filtro-desde').value;
   var hasta  = document.getElementById('cot-filtro-hasta').value;
   var q      = (document.getElementById('cot-filtro-q').value||'').toLowerCase().trim();
+  var orden  = document.getElementById('cot-orden').value;
 
   var data = _cotizacionesData.filter(function(p) {
     if (tipo   && p.tipo !== tipo) return false;
-    if (estado && (p.estado||'pendiente') !== estado) return false;
-    if (desde) {
-      var d = new Date(desde); d.setHours(0,0,0,0);
-      if ((p.fecha||0) < d.getTime()) return false;
-    }
-    if (hasta) {
-      var h = new Date(hasta); h.setHours(23,59,59,999);
-      if ((p.fecha||0) > h.getTime()) return false;
+    if (estado && (p.estado||'buscando') !== estado) return false;
+    if (desde || hasta) {
+      // p.fecha puede ser ISO string o timestamp numérico
+      var ts = p.fecha ? new Date(p.fecha).getTime() : 0;
+      if (desde) {
+        var d = new Date(desde); d.setHours(0,0,0,0);
+        if (!ts || ts < d.getTime()) return false;
+      }
+      if (hasta) {
+        var h = new Date(hasta); h.setHours(23,59,59,999);
+        if (!ts || ts > h.getTime()) return false;
+      }
     }
     if (q) {
-      var hay = (p.email||'') + ' ' + (p.desde||'') + ' ' + (p.hasta||'') + ' ' + (p.id||'');
+      var hay = (p.email||'') + ' ' + (p.desde||'') + ' ' + (p.hasta||'') + ' ' + (p.id||'') + ' ' + (p.nombre||'');
       if (hay.toLowerCase().indexOf(q) === -1) return false;
     }
     return true;
+  });
+
+  // Ordenamiento
+  data.sort(function(a, b) {
+    if (orden === 'fecha-desc') return new Date(b.fecha||0) - new Date(a.fecha||0);
+    if (orden === 'fecha-asc')  return new Date(a.fecha||0) - new Date(b.fecha||0);
+    if (orden === 'id-desc')    return (b.id||'') > (a.id||'') ? 1 : -1;
+    if (orden === 'id-asc')     return (a.id||'') > (b.id||'') ? 1 : -1;
+    if (orden === 'email-asc')  return (a.email||'').localeCompare(b.email||'');
+    if (orden === 'email-desc') return (b.email||'').localeCompare(a.email||'');
+    if (orden === 'monto-desc') return (parseInt(b.monto)||0) - (parseInt(a.monto)||0);
+    if (orden === 'monto-asc')  return (parseInt(a.monto)||0) - (parseInt(b.monto)||0);
+    return 0;
   });
 
   renderStats(data);
@@ -1264,6 +1295,7 @@ function limpiarFiltrosCot() {
   document.getElementById('cot-filtro-desde').value = '';
   document.getElementById('cot-filtro-hasta').value = '';
   document.getElementById('cot-filtro-q').value = '';
+  document.getElementById('cot-orden').value = 'fecha-desc';
   filtrarCotizaciones();
 }
 
