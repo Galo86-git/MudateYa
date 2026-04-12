@@ -775,6 +775,45 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, actualizados });
     }
 
+    // ── Admin: listar todas las cotizaciones/pedidos (GET) ───────────
+    if (action === 'admin-listar' && req.method === 'GET') {
+      const { token } = req.query;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+      const ids = await getJSON('mudanzas:activas') || [];
+      const pedidos = [];
+      for (const id of ids) {
+        const p = await getJSON(`mudanza:${id}`);
+        if (!p) continue;
+        // Enriquecer con nombre del mudancero si hay uno aceptado
+        let mudanceroNombre = null;
+        if (p.mudanceroAceptado) {
+          const mPerf = await getJSON(`mudancero:perfil:${p.mudanceroAceptado}`);
+          if (mPerf) mudanceroNombre = mPerf.nombre || mPerf.empresa || p.mudanceroAceptado;
+        }
+        pedidos.push({
+          id:               p.id,
+          tipo:             p.tipo || 'mudanza',
+          fecha:            p.creadoEn || p.fecha || null,
+          email:            p.clienteEmail || p.email || null,
+          nombre:           p.clienteNombre || p.nombre || null,
+          desde:            p.desde || null,
+          hasta:            p.hasta || null,
+          fechaMudanza:     p.fecha || null,
+          estado:           p.estado || 'pendiente',
+          monto:            p.montoTotal || p.monto || null,
+          mudanceroEmail:   p.mudanceroAceptado || null,
+          mudanceroNombre:  mudanceroNombre,
+          cotizaciones:     (p.cotizaciones || []).length,
+          ambientes:        p.ambientes || null,
+        });
+      }
+      // Ordenar por fecha descendente
+      pedidos.sort(function(a, b) { return (b.fecha || 0) - (a.fecha || 0); });
+      return res.status(200).json({ ok: true, pedidos, total: pedidos.length });
+    }
+
     // ── Verificar token de términos (GET) ────────────────────────────
     if (action === 'verificar-terminos-token' && req.method === 'GET') {
       const { token } = req.query;
