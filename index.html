@@ -905,7 +905,7 @@
         <a href="#" onclick="abrirLogin(event)" class="btn-nav-solid">Iniciar sesión</a>
       </div>
       <div id="nav-with-session" style="display:none;align-items:center;gap:10px">
-        <img id="navAvatar" class="nav-avatar" src="" alt="" style="display:none"/>
+        <img id="navAvatar" class="nav-avatar" src="" alt=""/>
         <span id="navUserName" class="nav-user-name"></span>
         <a href="/mi-mudanza" class="btn-nav-outline" style="font-size:11px">Mis mudanzas</a>
         <button onclick="logout()" class="btn-nav-outline" style="font-size:11px;cursor:pointer">Salir</button>
@@ -1322,7 +1322,7 @@
         </a>
 
       </div>
-      <p style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2rem">¿Querés ser partner? <a href="/cdn-cgi/l/email-protection#71191e1d10575247454a1c04151005140810575245474a1003" style="color:var(--blue);text-decoration:none;font-weight:600">Escribinos →</a></p>
+      <p style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2rem">¿Querés ser partner? <a href="mailto:hola@mudateya.ar" style="color:var(--blue);text-decoration:none;font-weight:600">Escribinos →</a></p>
     </div>
   </section>
 
@@ -2244,7 +2244,7 @@
     var ns=document.getElementById('nav-no-session'), ws=document.getElementById('nav-with-session');
     if (_currentUser) {
       ns.style.display='none'; ws.style.display='flex';
-      var av=document.getElementById('navAvatar'); if(av){ av.src=_currentUser.picture||''; av.style.display=_currentUser.picture?'block':'none'; }
+      var av=document.getElementById('navAvatar'); if(av) av.src=_currentUser.picture||'';
       var nm=document.getElementById('navUserName'); if(nm) nm.textContent=_currentUser.name.split(' ')[0];
     } else { ns.style.display='flex'; ws.style.display='none'; }
   }
