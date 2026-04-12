@@ -1373,7 +1373,28 @@
   <!-- MODAL PUBLICANDO -->
   <div class="modal-ov" id="pubModal">
     <div class="modal-box" style="max-width:360px;text-align:center">
-      <div id="pub-ing" style="padding:1rem 0">
+
+      <!-- PASO 0: Pedir WhatsApp -->
+      <div id="pub-wa" style="padding:1rem 0">
+        <div style="font-size:2.5rem;margin-bottom:12px">📱</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:.4rem">¿Cuál es tu WhatsApp?</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:.8rem">El mudancero necesita tu número para coordinarse con vos y confirmar la mudanza.</p>
+        <div style="background:#EEF4FF;border:1px solid #C7D9FF;border-radius:var(--r);padding:10px 12px;margin-bottom:1rem;font-size:12px;color:#1A6FFF;text-align:left;display:flex;gap:8px;align-items:flex-start">
+          <span style="flex-shrink:0">🔒</span>
+          <span>Tu número solo se comparte con el mudancero que elijas. No lo usamos para publicidad.</span>
+        </div>
+        <div style="position:relative;margin-bottom:.5rem">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);pointer-events:none">+54</span>
+          <input id="wa-input" type="tel" placeholder="11 1234-5678"
+            style="width:100%;padding:11px 12px 11px 44px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;font-family:'Inter',sans-serif;outline:none"
+            oninput="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter') confirmarWA()"/>
+        </div>
+        <div id="wa-err" style="font-size:12px;color:#EF4444;margin-bottom:.8rem;display:none">Ingresá un número válido (mín. 8 dígitos)</div>
+        <button onclick="confirmarWA()" style="width:100%;padding:13px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Continuar →</button>
+      </div>
+
+      <div id="pub-ing" style="display:none;padding:1rem 0">
         <div style="position:relative;width:52px;height:52px;margin:0 auto 1rem">
           <span class="spinner" style="position:absolute;inset:0;width:52px;height:52px;border-width:3px;display:block"></span>
           <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px">🚛</span>
@@ -2062,17 +2083,52 @@
     if (!_currentUser) { _pendingPub='abierto'; abrirLogin(); return; }
     _publicar('abierto');
   }
+  var _modoPublicacion = null;
   async function _publicar(modo) {
-    document.getElementById('pub-ing').style.display='block';
-    document.getElementById('pub-ok').style.display='none';
+    _modoPublicacion = modo;
+    // Si ya tenemos WA guardado, saltar el paso
+    var waGuardado = window._clienteWA || (_currentUser ? localStorage.getItem('clienteWA_'+_currentUser.email)||'' : '');
+    if (waGuardado && waGuardado.replace(/\D/g,'').length >= 8) {
+      document.getElementById('pub-wa').style.display = 'none';
+      _ejecutarPublicacion(modo, waGuardado);
+      return;
+    }
+    // Mostrar paso WA
+    document.getElementById('pub-wa').style.display = 'block';
+    document.getElementById('pub-ing').style.display = 'none';
+    document.getElementById('pub-ok').style.display = 'none';
+    document.getElementById('pubModal').classList.add('open');
+    setTimeout(function(){ var el = document.getElementById('wa-input'); if(el) el.focus(); }, 200);
+  }
+
+  function confirmarWA() {
+    var input = document.getElementById('wa-input');
+    var wa = input ? input.value.trim() : '';
+    var digits = wa.replace(/\D/g,'');
+    if (digits.length < 8) {
+      document.getElementById('wa-err').style.display = 'block';
+      if (input) input.style.borderColor = '#EF4444';
+      return;
+    }
+    document.getElementById('wa-err').style.display = 'none';
+    if (_currentUser) {
+      localStorage.setItem('clienteWA_'+_currentUser.email, wa);
+      window._clienteWA = wa;
+    }
+    document.getElementById('pub-wa').style.display = 'none';
+    _ejecutarPublicacion(_modoPublicacion, wa);
+  }
+
+  async function _ejecutarPublicacion(modo, clienteWA) {
+    document.getElementById('pub-ing').style.display = 'block';
+    document.getElementById('pub-ok').style.display = 'none';
     document.getElementById('pubModal').classList.add('open');
     var objetos = Array.from(document.querySelectorAll('.obj-chip.sel')).map(function(e){ return e.textContent.trim(); }).join(', ');
-    var clienteWA = window._clienteWA || (_currentUser ? localStorage.getItem('clienteWA_'+_currentUser.email)||'' : '');
     try {
       await fetch('/api/cotizaciones?action=publicar', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
-          clienteEmail:_currentUser.email, clienteNombre:_currentUser.name, clienteWA:clienteWA,
+          clienteEmail:_currentUser.email, clienteNombre:_currentUser.name, clienteWA:clienteWA||'',
           desde:_busqueda.desde, hasta:_busqueda.hasta,
           ambientes:_busqueda.tipo==='mudanza' ? (_busqueda.ambientes+' ambientes') : 'Flete',
           fecha:_busqueda.fecha, servicios:objetos, zonaBase:_busqueda.desde,
