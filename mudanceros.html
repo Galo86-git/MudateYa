@@ -167,8 +167,8 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
         </div>
         <div class="field" id="f-email">
           <label class="field-label">Email <span>*</span></label>
-          <input type="email" id="email" placeholder="tunombre@gmail.com"/>
-          <span class="field-hint">⚠ Solo se aceptan cuentas de Gmail. Con este email vas a ingresar a tu cuenta.</span>
+          <input type="text" id="email" placeholder="tunombre@gmail.com" onblur="validarEmailGmail()"/>
+          <span class="field-hint">⚠ Solo se aceptan cuentas de Gmail.</span>
           <span class="field-error">Ingresá un email de Gmail válido (@gmail.com)</span>
         </div>
         <div class="field" id="f-cuil" style="grid-column:1/-1">
@@ -677,6 +677,14 @@ function fmtPrecioInput(el) {
 }
 
 // ── SUBMIT ───────────────────────────────────────────────────────
+function validarEmailGmail() {
+  var val = document.getElementById('email').value.trim();
+  var field = document.getElementById('f-email');
+  if (val.length === 0) { field.classList.remove('has-error'); return; }
+  if (!/^[^\s@]+@gmail\.com$/.test(val)) { field.classList.add('has-error'); }
+  else { field.classList.remove('has-error'); }
+}
+
 document.getElementById('regForm').addEventListener('submit', async function(e) {
   e.preventDefault();
 
