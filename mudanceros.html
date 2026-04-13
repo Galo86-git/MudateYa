@@ -167,8 +167,9 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
         </div>
         <div class="field" id="f-email">
           <label class="field-label">Email <span>*</span></label>
-          <input type="email" id="email" placeholder="juan@email.com"/>
-          <span class="field-error">Ingresá un email válido</span>
+          <input type="email" id="email" placeholder="tunombre@gmail.com"/>
+          <span class="field-hint">⚠ Solo se aceptan cuentas de Gmail. Con este email vas a ingresar a tu cuenta.</span>
+          <span class="field-error">Ingresá un email de Gmail válido (@gmail.com)</span>
         </div>
         <div class="field" id="f-cuil" style="grid-column:1/-1">
           <label class="field-label">CUIL / CUIT <span>*</span></label>
@@ -687,7 +688,7 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
   var ok = true;
   ok = validateField('nombre',   nombre.length > 1)   && ok;
   ok = validateField('telefono', telefono.length > 6) && ok;
-  ok = validateField('email',    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
+  ok = validateField('email',    /^[^\s@]+@gmail\.com$/.test(email)) && ok;
   if (!ok) {
     var firstErr = document.querySelector('.has-error input, .has-error select');
     if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
