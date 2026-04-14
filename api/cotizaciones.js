@@ -866,7 +866,7 @@ module.exports = async function handler(req, res) {
       if (!email || !cambios) return res.status(400).json({ error: 'Faltan datos' });
       const perfil = await getJSON(`mudancero:perfil:${email}`);
       if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado' });
-      const camposPermitidos = ['nombre','telefono','zonaBase','zonasExtra','vehiculo','servicios'];
+      const camposPermitidos = ['nombre','telefono','email','zonaBase','zonasExtra','vehiculo','servicios'];
       camposPermitidos.forEach(function(k) {
         if (cambios[k] !== undefined && cambios[k] !== '') perfil[k] = cambios[k];
       });
