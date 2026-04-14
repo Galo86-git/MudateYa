@@ -838,51 +838,19 @@ function renderPagos(){
     return;
   }
   var html = mudanzasData.map(function(m){
-    if(!m.cotizacionAceptada && !m.anticipoPagado) return '';
-    var mud = m.cotizacionAceptada || {};
-    var precio = parseInt(mud.precio||0);
-    if(!precio) return '';
-    var anticipo = Math.round(precio * 0.5);
-    var ruta = esc(m.desde).split(',')[0] + ' → ' + esc(m.hasta).split(',')[0];
-    var mudancero = esc(mud.mudanceroNombre||'—');
-
-    // ── Fila anticipo ─────────────────────────────────
-    var filaAnticipo = '<div class="pago-card" style="margin-bottom:12px">'
-      + '<div class="pago-row" style="background:var(--bg);border-radius:8px 8px 0 0;padding:10px 14px">'
-      +   '<span class="pago-label" style="font-weight:700;color:var(--navy)">Mudanza</span>'
-      +   '<span class="pago-val" style="font-size:12px">'+ruta+'</span>'
-      + '</div>'
-      + '<div class="pago-row"><span class="pago-label">Mudancero</span><span class="pago-val">'+mudancero+'</span></div>'
-      + '<div class="pago-row"><span class="pago-label">Concepto</span><span class="pago-val">50% anticipo</span></div>'
-      + '<div class="pago-row"><span class="pago-label">Método</span><span class="pago-val">💳 Mercado Pago</span></div>'
-      + '<div class="pago-row"><span class="pago-label">Monto</span><span class="pago-val green" style="font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span></div>'
-      + (m.anticipoPagado
-          ? '<div class="pago-row"><span class="pago-label">Estado</span><span class="pago-val" style="color:#17A356;font-weight:600">✓ Pagado</span></div>'
-          : '<div class="pago-row"><span class="pago-label">Estado</span><span class="pago-val" style="color:var(--text3)">Pendiente</span></div>')
-      + '</div>';
-
-    // ── Fila saldo ────────────────────────────────────
-    var filaSaldo = '<div class="pago-card">'
-      + '<div class="pago-row" style="background:var(--bg);border-radius:8px 8px 0 0;padding:10px 14px">'
-      +   '<span class="pago-label" style="font-weight:700;color:var(--navy)">Mudanza</span>'
-      +   '<span class="pago-val" style="font-size:12px">'+ruta+'</span>'
-      + '</div>'
-      + '<div class="pago-row"><span class="pago-label">Mudancero</span><span class="pago-val">'+mudancero+'</span></div>'
-      + '<div class="pago-row"><span class="pago-label">Concepto</span><span class="pago-val">50% saldo final</span></div>'
-      + '<div class="pago-row"><span class="pago-label">Método</span><span class="pago-val">💳 Mercado Pago</span></div>'
-      + '<div class="pago-row"><span class="pago-label">Monto</span><span class="pago-val green" style="font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span></div>'
-      + (m.saldoPagado
-          ? '<div class="pago-row"><span class="pago-label">Estado</span><span class="pago-val" style="color:#17A356;font-weight:600">✓ Pagado</span></div>'
-          : '<div class="pago-row"><span class="pago-label">Estado</span>'
-            + (m.estado==='completada' && m.anticipoPagado
-                ? '<span class="pago-val" style="color:#F59E0B;font-weight:600">⚡ Pendiente de pago</span>'
-                : '<span class="pago-val" style="color:var(--text3)">A pagar al completar</span>')
-            + '</div>')
-      + '</div>';
-
-    return filaAnticipo + filaSaldo;
+    if(m.cotizacionAceptada || m.precio){
+      var mud = m.cotizacionAceptada || {};
+      var precio = mud.precio || parseInt(m.precio||0);
+      return '<div class="pago-card">'
+        + '<div class="pago-row"><span class="pago-label">Mudanza</span><span class="pago-val">'+esc(m.desde)+' → '+esc(m.hasta)+'</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Mudancero</span><span class="pago-val">'+esc(mud.mudanceroNombre||'—')+'</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Método</span><span class="pago-val">💳 Mercado Pago</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Total</span><span class="pago-val green">$'+precio.toLocaleString('es-AR')+'</span></div>'
+        + '<div class="pago-row"><span class="pago-label">Fecha</span><span class="pago-val">'+(m.fecha||'—')+'</span></div>'
+        + '</div>';
+    }
+    return '';
   }).filter(Boolean).join('');
-
   document.getElementById('pagosList').innerHTML = html || '<div class="empty"><div class="empty-icon">💳</div>Sin pagos aún</div>';
 }
 
@@ -891,53 +859,81 @@ var calIdx = null;
 var calStars = 0;
 
 function renderCalificaciones(){
-  var completadas = mudanzasData.filter(function(m){ return m.paso >= 4; });
+  // Solo mudanzas completadas Y con saldo pagado
+  var completadas = mudanzasData.filter(function(m){ return m.estado === 'completada' && m.saldoPagado; });
   if(completadas.length === 0){
-    document.getElementById('calificacionesList').innerHTML = '<div class="empty"><div class="empty-icon">⭐</div>Las calificaciones aparecen cuando completás una mudanza</div>';
+    // Verificar si hay completadas sin saldo para dar mensaje útil
+    var sinSaldo = mudanzasData.filter(function(m){ return m.estado === 'completada' && !m.saldoPagado; });
+    if(sinSaldo.length > 0){
+      document.getElementById('calificacionesList').innerHTML = '<div class="empty"><div class="empty-icon">⭐</div>Las calificaciones se habilitan cuando pagás el saldo final</div>';
+    } else {
+      document.getElementById('calificacionesList').innerHTML = '<div class="empty"><div class="empty-icon">⭐</div>Las calificaciones aparecen cuando completás una mudanza</div>';
+    }
     return;
   }
   document.getElementById('calificacionesList').innerHTML = completadas.map(function(m){
+    var cot = m.cotizacionAceptada || {};
+    var nombreMudancero = cot.mudanceroNombre || 'Mudancero';
+    var ruta = esc(m.desde).split(',')[0] + ' → ' + esc(m.hasta).split(',')[0];
     return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:1.2rem;margin-bottom:10px">'
-      + '<div style="font-size:14px;font-weight:500;margin-bottom:4px">'+(m.mudancero&&m.mudancero.nombre?m.mudancero.nombre:'Mudancero')+'</div>'
-      + '<div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">'+esc(m.desde)+' → '+esc(m.hasta)+'</div>'
+      + '<div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px">'+esc(nombreMudancero)+'</div>'
+      + '<div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">'+ruta+'</div>'
       + (m.calificado
-          ? '<div style="color:var(--amber);font-size:1.2rem">'+'★'.repeat(m.estrellas||5)+'</div><div style="font-size:12px;color:var(--text2);margin-top:6px">'+(m.comentario||'')+'</div>'
-          : '<button class="btn btn-sky" onclick="abrirCalificacion('+mudanzasData.indexOf(m)+')" style="font-size:12px">⭐ Calificar</button>')
+          ? '<div style="color:#F59E0B;font-size:1.3rem;margin-bottom:4px">'+'★'.repeat(m.estrellas||5)+'☆'.repeat(5-(m.estrellas||5))+'</div>'
+            + (m.comentario ? '<div style="font-size:13px;color:var(--text2);margin-top:4px;font-style:italic">"'+esc(m.comentario)+'"</div>' : '')
+          : '<button class="btn btn-sky" onclick="abrirCalificacion(''+m.id+'')" style="font-size:12px">⭐ Calificar a '+esc(nombreMudancero.split(' ')[0])+'</button>')
       + '</div>';
   }).join('');
 }
 
-function abrirCalificacion(idx){
-  calIdx = idx; calStars = 0;
-  var m = mudanzasData[idx];
+function abrirCalificacion(mudanzaId){
+  var m = mudanzasData.find(function(x){ return x.id === mudanzaId; });
+  if(!m) return;
+  calIdx = mudanzasData.indexOf(m);
+  calStars = 0;
+  var cot = m.cotizacionAceptada || {};
+  var nombreMudancero = cot.mudanceroNombre || 'Mudancero';
+  var ruta = esc(m.desde).split(',')[0] + ' → ' + esc(m.hasta).split(',')[0];
   var modal = document.createElement('div');
   modal.id = 'calModal';
   modal.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
   modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:20px;padding:1.8rem;max-width:420px;width:100%">'
-    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Calificar mudancero</div>'
-    + '<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+(m.mudancero&&m.mudancero.nombre?m.mudancero.nombre:'Mudancero')+' · '+esc(m.desde)+' → '+esc(m.hasta)+'</div>'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--navy);margin-bottom:.4rem">Calificar mudancero</div>'
+    + '<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">'+esc(nombreMudancero)+' · '+ruta+'</div>'
     + '<div class="stars-row" id="starsRow">'+[1,2,3,4,5].map(function(n){ return '<span class="star" onclick="setStar('+n+')" onmouseover="hoverStar('+n+')" onmouseout="renderStarsUI()">★</span>'; }).join('')+'</div>'
-    + '<div style="margin:1rem 0"><textarea id="calComentario" rows="3" placeholder="Contá tu experiencia (opcional)…" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:\'Outfit\',sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical"></textarea></div>'
+    + '<div style="margin:1rem 0"><textarea id="calComentario" rows="3" placeholder="Contá tu experiencia (opcional)…" style="width:100%;padding:10px 14px;border:1px solid #E2E8F0;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;resize:vertical"></textarea></div>'
     + '<div style="display:flex;gap:8px;justify-content:flex-end">'
     + '<button class="btn btn-ghost" onclick="document.getElementById(\'calModal\').remove()">Cancelar</button>'
-    + '<button class="btn btn-green" onclick="guardarCalificacion()">Enviar calificación</button>'
+    + '<button class="btn btn-green" onclick="guardarCalificacion(\''+mudanzaId+'\')">Enviar calificación</button>'
     + '</div></div>';
   document.body.appendChild(modal);
+  renderStarsUI();
 }
 
 function hoverStar(n){ document.querySelectorAll('.star').forEach(function(s,i){ s.classList.toggle('sel',i<n); }); }
 function setStar(n){ calStars=n; renderStarsUI(); }
 function renderStarsUI(){ document.querySelectorAll('.star').forEach(function(s,i){ s.classList.toggle('sel',i<calStars); }); }
 
-function guardarCalificacion(){
+async function guardarCalificacion(mudanzaId){
   if(calStars===0){ alert('Seleccioná al menos 1 estrella'); return; }
   var comentario = document.getElementById('calComentario').value.trim();
-  mudanzasData[calIdx].calificado = true;
-  mudanzasData[calIdx].estrellas = calStars;
-  mudanzasData[calIdx].comentario = comentario;
-  document.getElementById('calModal').remove();
-  loadMudanzas();
-  renderCalificaciones();
+  var btn = document.querySelector('#calModal .btn-green');
+  if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  try{
+    var r = await fetch('/api/cotizaciones?action=calificar', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ mudanzaId: mudanzaId, estrellas: calStars, comentario: comentario, clienteEmail: currentUser.email })
+    });
+    var d = await r.json();
+    if(d.error) throw new Error(d.error);
+    document.getElementById('calModal').remove();
+    await loadMudanzas();
+    renderCalificaciones();
+  }catch(e){
+    alert('Error al guardar: '+e.message);
+    if(btn){ btn.disabled=false; btn.textContent='Enviar calificación'; }
+  }
 }
 
 // ── NAVEGACIÓN ─────────────────────────────────────────────────────────────
