@@ -640,6 +640,8 @@ module.exports = async function handler(req, res) {
       if (tipoPago === 'saldo')    m.saldoPagado = true;
       m.ultimoUpdatePago = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      // ── Enviar email al mudancero ──────────────────────────────────────
+      try { await notificarMudanceroPago(m, tipoPago); } catch(e) { console.warn('Email pago error:', e.message); }
       return res.status(200).json({ ok: true });
     }
     if (action === 'cambiar-estado' && req.method === 'POST') {
@@ -1458,6 +1460,59 @@ async function logPedidoSheets(mudanza) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(row),
+  });
+}
+
+async function notificarMudanceroPago(mudanza, tipoPago) {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada;
+  if (!cot || !cot.mudanceroEmail) return;
+
+  const esAnticipo = tipoPago === 'anticipo';
+  const precioTotal = cot.precio || 0;
+  const esFlete = (mudanza.tipo || '').toLowerCase() === 'flete';
+  const comisionPct = esFlete ? 0.20 : 0.15;
+  const monto = Math.round(precioTotal * 0.5);
+  const montoFmt = '$' + monto.toLocaleString('es-AR');
+  const netoMudancero = Math.round(precioTotal * (1 - comisionPct));
+  const netoFmt = '$' + netoMudancero.toLocaleString('es-AR');
+  const nombre = (cot.mudanceroNombre || 'Mudancero').split(' ')[0];
+
+  const subject = esAnticipo
+    ? `💰 Anticipo recibido — ${mudanza.desde?.split(',')[0]} → ${mudanza.hasta?.split(',')[0]}`
+    : `✅ Saldo final recibido — Mudanza completamente pagada`;
+
+  const mensajePrincipal = esAnticipo
+    ? `<strong>${nombre}</strong>, el cliente pagó el anticipo del 50% (${montoFmt}). Ya podés coordinar la mudanza.`
+    : `<strong>${nombre}</strong>, el cliente pagó el saldo final (${montoFmt}). La mudanza está completamente pagada. Procesaremos tu liquidación en los próximos días hábiles.`;
+
+  const accion = esAnticipo
+    ? `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en mi cuenta →</a>`
+    : `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver liquidación →</a>`;
+
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: cot.mudanceroEmail,
+    subject,
+    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px">
+        <span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span>
+        <span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">${esAnticipo ? '💰 Anticipo recibido' : '✅ Pago completado'}</span>
+      </div>
+      <div style="padding:28px">
+        <p style="font-size:15px;color:#0F1923;margin-bottom:20px;line-height:1.6">${mensajePrincipal}</p>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde || '—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta || '—'}</td></tr>
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${mudanza.fecha || '—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">${esAnticipo ? 'Anticipo recibido' : 'Saldo recibido'}</td><td style="color:#17A356;font-weight:700;font-size:14px;padding:7px 0">${montoFmt}</td></tr>
+          ${!esAnticipo ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">A liquidar (neto)</td><td style="color:#17A356;font-weight:700;font-size:14px">${netoFmt}</td></tr>` : ''}
+        </table>
+        ${accion}
+      </div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+    </div>`,
   });
 }
 
