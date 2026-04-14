@@ -1563,7 +1563,7 @@ function activarEdicion(){
       + '<label style="font-size:11px;color:#64748B;font-family:monospace;text-transform:uppercase;letter-spacing:.5px">'+c.label+'</label>'
       + (c.readonly
           ? '<div style="font-size:13px;color:#94A3B8;padding:7px 10px;background:#F8FAFC;border-radius:6px;border:1px solid #E2E8F0">'+c.val+'</div>'
-          : '<input id="edit-'+c.key+'" value="'+c.val.replace(/"/g,"&quot;")+'" style="font-size:13px;padding:7px 10px;border:1px solid #CBD5E1;border-radius:6px;outline:none;font-family:Inter,sans-serif;color:#0F1923" onfocus="this.style.borderColor='#1A6FFF'" onblur="this.style.borderColor='#CBD5E1'"/>')
+          : '<input id="edit-'+c.key+'" value="'+c.val.replace(/"/g,"&quot;")+'" style="font-size:13px;padding:7px 10px;border:1px solid #CBD5E1;border-radius:6px;outline:none;font-family:Inter,sans-serif;color:#0F1923" onfocus="this.style.borderColor=&quot;#1A6FFF&quot;" onblur="this.style.borderColor=&quot;#CBD5E1&quot;"/>')
       + '</div>';
   });
   form += '</div>';
