@@ -905,7 +905,7 @@ function renderCalificaciones(){
       + (m.calificado
           ? '<div style="color:#F59E0B;font-size:1.3rem;margin-bottom:4px">'+'★'.repeat(m.estrellas||5)+'☆'.repeat(5-(m.estrellas||5))+'</div>'
             + (m.comentario ? '<div style="font-size:13px;color:var(--text2);margin-top:4px;font-style:italic">"'+esc(m.comentario)+'"</div>' : '')
-          : '<button class="btn btn-sky" onclick="abrirCalificacion(''+m.id+'')" style="font-size:12px">⭐ Calificar a '+esc(nombreMudancero.split(' ')[0])+'</button>')
+          : '<button class="btn btn-sky" onclick="abrirCalificacion('\''+m.id+'\'')" style="font-size:12px">⭐ Calificar a '+esc(nombreMudancero.split(' ')[0])+'</button>')
       + '</div>';
   }).join('');
 }
