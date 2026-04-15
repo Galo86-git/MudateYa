@@ -355,6 +355,9 @@ async function enviarEmailAltaMudancero(perfil) {
             '<tr><td style="padding:4px 0">📦 Fletes</td><td style="text-align:right;font-weight:700;color:#003580">20% por trabajo completado</td></tr>' +
             '<tr><td colspan="2" style="padding:4px 0;color:#94A3B8;font-size:11px">Solo pagás comisión cuando completás un trabajo. Sin costos fijos.</td></tr>' +
           '</table>' +
+          '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:12px;color:#64748B;line-height:1.6">' +
+            '💸 <strong>Liquidación:</strong> dentro de los <strong>15 días hábiles</strong> posteriores a la confirmación del pago del cliente.' +
+          '</div>' +
         '</div>' +
         '<div style="text-align:center"><a href="https://mudateya.ar/mi-cuenta" style="color:#1A6FFF;font-size:13px;text-decoration:none">Ver mi cuenta en MudateYa →</a></div>' +
       '</div>' +
