@@ -1160,12 +1160,43 @@
         <div class="drawer-section">
           <div class="drawer-section-h">Zona</div>
           <div class="drawer-opts">
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:4px 10px 2px;pointer-events:none">Buenos Aires</div>
             <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('CABA',this);actualizarBadge()"/> 📍 CABA</label>
             <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('GBA Norte',this);actualizarBadge()"/> 📍 GBA Norte</label>
             <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('GBA Sur',this);actualizarBadge()"/> 📍 GBA Sur</label>
             <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('GBA Oeste',this);actualizarBadge()"/> 📍 GBA Oeste</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('GBA Este',this);actualizarBadge()"/> 📍 GBA Este</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('La Plata',this);actualizarBadge()"/> 📍 La Plata</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Mar del Plata',this);actualizarBadge()"/> 📍 Mar del Plata</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Bahía Blanca',this);actualizarBadge()"/> 📍 Bahía Blanca</label>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 2px;pointer-events:none">Centro</div>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Córdoba Capital',this);actualizarBadge()"/> 📍 Córdoba Capital</label>
             <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Rosario',this);actualizarBadge()"/> 📍 Rosario</label>
-            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Córdoba',this);actualizarBadge()"/> 📍 Córdoba</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Santa Fe',this);actualizarBadge()"/> 📍 Santa Fe</label>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 2px;pointer-events:none">Cuyo</div>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Mendoza',this);actualizarBadge()"/> 📍 Mendoza</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('San Juan',this);actualizarBadge()"/> 📍 San Juan</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('San Luis',this);actualizarBadge()"/> 📍 San Luis</label>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 2px;pointer-events:none">Norte</div>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Tucumán',this);actualizarBadge()"/> 📍 Tucumán</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Salta',this);actualizarBadge()"/> 📍 Salta</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Jujuy',this);actualizarBadge()"/> 📍 Jujuy</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Santiago del Estero',this);actualizarBadge()"/> 📍 Santiago del Estero</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Catamarca',this);actualizarBadge()"/> 📍 Catamarca</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('La Rioja',this);actualizarBadge()"/> 📍 La Rioja</label>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 2px;pointer-events:none">Litoral</div>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Entre Ríos',this);actualizarBadge()"/> 📍 Entre Ríos</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Corrientes',this);actualizarBadge()"/> 📍 Corrientes</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Misiones',this);actualizarBadge()"/> 📍 Misiones</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Chaco',this);actualizarBadge()"/> 📍 Chaco</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Formosa',this);actualizarBadge()"/> 📍 Formosa</label>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 2px;pointer-events:none">Patagonia</div>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Neuquén',this);actualizarBadge()"/> 📍 Neuquén</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Bariloche',this);actualizarBadge()"/> 📍 Bariloche</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Río Negro',this);actualizarBadge()"/> 📍 Río Negro</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Chubut',this);actualizarBadge()"/> 📍 Chubut</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Santa Cruz',this);actualizarBadge()"/> 📍 Santa Cruz</label>
+            <label class="drawer-opt"><input type="checkbox" onchange="toggleFZ('Tierra del Fuego',this);actualizarBadge()"/> 📍 Tierra del Fuego</label>
           </div>
         </div>
         <!-- Verificaciones -->
@@ -1207,12 +1238,43 @@
         </div>
         <div class="filtro-section">
           <div class="filtro-h">Zona</div>
+          <div class="filtro-opt" style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding-bottom:0;cursor:default;pointer-events:none">Buenos Aires</div>
           <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('CABA',this)"/> CABA</label></div>
           <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('GBA Norte',this)"/> GBA Norte</label></div>
           <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('GBA Sur',this)"/> GBA Sur</label></div>
           <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('GBA Oeste',this)"/> GBA Oeste</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('GBA Este',this)"/> GBA Este</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('La Plata',this)"/> La Plata</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Mar del Plata',this)"/> Mar del Plata</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Bahía Blanca',this)"/> Bahía Blanca</label></div>
+          <div class="filtro-opt" style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding-top:6px;padding-bottom:0;cursor:default;pointer-events:none">Centro</div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Córdoba Capital',this)"/> Córdoba Capital</label></div>
           <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Rosario',this)"/> Rosario</label></div>
-          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Córdoba',this)"/> Córdoba</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Santa Fe',this)"/> Santa Fe</label></div>
+          <div class="filtro-opt" style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding-top:6px;padding-bottom:0;cursor:default;pointer-events:none">Cuyo</div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Mendoza',this)"/> Mendoza</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('San Juan',this)"/> San Juan</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('San Luis',this)"/> San Luis</label></div>
+          <div class="filtro-opt" style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding-top:6px;padding-bottom:0;cursor:default;pointer-events:none">Norte</div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Tucumán',this)"/> Tucumán</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Salta',this)"/> Salta</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Jujuy',this)"/> Jujuy</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Santiago del Estero',this)"/> Santiago del Estero</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Catamarca',this)"/> Catamarca</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('La Rioja',this)"/> La Rioja</label></div>
+          <div class="filtro-opt" style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding-top:6px;padding-bottom:0;cursor:default;pointer-events:none">Litoral</div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Entre Ríos',this)"/> Entre Ríos</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Corrientes',this)"/> Corrientes</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Misiones',this)"/> Misiones</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Chaco',this)"/> Chaco</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Formosa',this)"/> Formosa</label></div>
+          <div class="filtro-opt" style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding-top:6px;padding-bottom:0;cursor:default;pointer-events:none">Patagonia</div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Neuquén',this)"/> Neuquén</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Bariloche',this)"/> Bariloche</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Río Negro',this)"/> Río Negro</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Chubut',this)"/> Chubut</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Santa Cruz',this)"/> Santa Cruz</label></div>
+          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFZ('Tierra del Fuego',this)"/> Tierra del Fuego</label></div>
         </div>
         <div class="filtro-section">
           <div class="filtro-h">Verificaciones</div>
