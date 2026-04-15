@@ -1932,10 +1932,27 @@
   async function cargarResultados() {
     document.getElementById('listaRes').innerHTML = '<div class="no-results"><span class="spinner"></span> Buscando…</div>';
     try {
-      var r = await fetch('/api/cotizaciones?action=catalogo');
+      var idDesde = _tipo==='mudanza' ? 'input-desde' : 'input-flete-desde';
+      var idHasta = _tipo==='mudanza' ? 'input-hasta' : 'input-flete-hasta';
+      var desdeVal = (document.getElementById(idDesde)||{}).value || '';
+      var hastaVal = (document.getElementById(idHasta)||{}).value || '';
+      var url = '/api/cotizaciones?action=catalogo'
+        + (desdeVal ? '&desde=' + encodeURIComponent(desdeVal) : '')
+        + (hastaVal ? '&hasta=' + encodeURIComponent(hastaVal) : '');
+      var r = await fetch(url);
       var d = await r.json();
-      _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : _MOCK;
-    } catch(e) { _todos = _MOCK; }
+      if (d.sinCobertura) {
+        _todos = [];
+        document.getElementById('listaRes').innerHTML = '<div class="no-results" style="padding:3rem;text-align:center">'
+          + '<div style="font-size:40px;margin-bottom:12px">🗺️</div>'
+          + '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Todavía no tenemos mudanceros en tu zona</div>'
+          + '<div style="font-size:13px;color:var(--text3);line-height:1.6">Estamos creciendo. Publicá tu mudanza igual y te avisamos cuando haya mudanceros disponibles en tu zona.</div>'
+          + '</div>';
+        document.getElementById('resCount').innerHTML = '<strong>0</strong> disponibles';
+        return;
+      }
+      _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
+    } catch(e) { _todos = []; }
     renderResultados();
   }
   function renderResultados() {
