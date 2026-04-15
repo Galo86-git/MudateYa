@@ -756,15 +756,8 @@
                 var desc = s.description;
                 input.value = desc;
                 dd.classList.remove('open');
-                // Validar que la dirección tenga número (ej: "Av. Corrientes 1234")
-                var tieneNumero = /\d/.test(desc.split(',')[0]);
-                if (!tieneNumero) {
-                  _validAddr[inputId] = false;
-                  setAddrError(inputId, '⚠ Ingresá la dirección con número (ej: Corrientes 1234)');
-                } else {
-                  _validAddr[inputId] = true;
-                  input.style.border=''; input.style.background='';
-                }
+                _validAddr[inputId] = true;
+                input.style.border=''; input.style.background='';
               }
               li.addEventListener('mousedown', seleccionar);
               li.addEventListener('touchend', seleccionar);
@@ -1817,7 +1810,9 @@
     var idHasta = _tipo==='mudanza' ? 'input-hasta' : 'input-flete-hasta';
     var desde = document.getElementById(idDesde).value.trim();
     var hasta  = document.getElementById(idHasta).value.trim();
-    // Validar que ambas direcciones fueron elegidas del autocomplete
+    // Validar que ambas direcciones fueron elegidas del autocomplete y tienen número
+    var tieneNumDesde = /\d/.test((desde||'').split(',')[0]);
+    var tieneNumHasta = /\d/.test((hasta||'').split(',')[0]);
     if (!desde) {
       setAddrError(idDesde, '⚠ Ingresá la dirección de origen');
       return;
@@ -1826,12 +1821,20 @@
       setAddrError(idDesde, '⚠ Elegí una dirección de la lista de sugerencias');
       return;
     }
+    if (!tieneNumDesde) {
+      setAddrError(idDesde, '⚠ Ingresá la dirección con número (ej: Corrientes 1234)');
+      return;
+    }
     if (!hasta) {
       setAddrError(idHasta, '⚠ Ingresá la dirección de destino');
       return;
     }
     if (!_validAddr[idHasta]) {
       setAddrError(idHasta, '⚠ Elegí una dirección de la lista de sugerencias');
+      return;
+    }
+    if (!tieneNumHasta) {
+      setAddrError(idHasta, '⚠ Ingresá la dirección con número (ej: Av. Rivadavia 1234)');
       return;
     }
     // Validar fecha obligatoria
