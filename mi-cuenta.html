@@ -257,13 +257,53 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
               <label class="field-label">Zona base</label>
               <select id="pf-zona">
                 <option value="">Seleccioná tu zona principal</option>
-                <option>CABA — zona norte</option><option>CABA — zona sur</option>
-                <option>CABA — zona oeste</option><option>CABA — zona centro</option>
-                <option>GBA Norte (San Isidro, Vicente López, etc.)</option>
-                <option>GBA Sur (Quilmes, Avellaneda, etc.)</option>
-                <option>GBA Oeste (Morón, Ituzaingó, etc.)</option>
-                <option>GBA Este (Lanús, Lomas de Zamora, etc.)</option>
-                <option>Rosario</option><option>Córdoba Capital</option><option>Otra ciudad</option>
+                <optgroup label="── Buenos Aires ──">
+                  <option>CABA — zona norte</option>
+                  <option>CABA — zona sur</option>
+                  <option>CABA — zona oeste</option>
+                  <option>CABA — zona centro</option>
+                  <option>GBA Norte (San Isidro, Vicente López, etc.)</option>
+                  <option>GBA Sur (Quilmes, Avellaneda, etc.)</option>
+                  <option>GBA Oeste (Morón, Ituzaingó, etc.)</option>
+                  <option>GBA Este (Lanús, Lomas de Zamora, etc.)</option>
+                  <option>La Plata</option>
+                  <option>Mar del Plata</option>
+                  <option>Bahía Blanca</option>
+                </optgroup>
+                <optgroup label="── Centro ──">
+                  <option>Córdoba Capital</option>
+                  <option>Rosario</option>
+                  <option>Santa Fe</option>
+                </optgroup>
+                <optgroup label="── Cuyo ──">
+                  <option>Mendoza</option>
+                  <option>San Juan</option>
+                  <option>San Luis</option>
+                </optgroup>
+                <optgroup label="── Norte ──">
+                  <option>Tucumán</option>
+                  <option>Salta</option>
+                  <option>Jujuy</option>
+                  <option>Santiago del Estero</option>
+                  <option>Catamarca</option>
+                  <option>La Rioja</option>
+                </optgroup>
+                <optgroup label="── Litoral ──">
+                  <option>Entre Ríos</option>
+                  <option>Corrientes</option>
+                  <option>Misiones</option>
+                  <option>Chaco</option>
+                  <option>Formosa</option>
+                </optgroup>
+                <optgroup label="── Patagonia ──">
+                  <option>Neuquén</option>
+                  <option>Bariloche</option>
+                  <option>Río Negro</option>
+                  <option>Chubut</option>
+                  <option>Santa Cruz</option>
+                  <option>Tierra del Fuego</option>
+                </optgroup>
+                <option value="">— Otra ciudad —</option>
               </select>
             </div>
             <div class="field"><label class="field-label">Zonas adicionales</label><input type="text" id="pf-zonas-extra" placeholder="Ej: Tigre, San Fernando, Escobar"/></div>
