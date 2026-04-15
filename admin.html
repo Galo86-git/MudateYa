@@ -956,9 +956,16 @@ async function openModal(idx){
 
   document.getElementById('modalContent').innerHTML = html;
 
+  // Limpiar botones dinámicos que pudieran quedar de una edición anterior
+  var viejoBtnG = document.getElementById('btnGuardar');
+  if (viejoBtnG) viejoBtnG.remove();
+  document.querySelector('.modal-footer').querySelectorAll('button').forEach(function(b){ if(b.textContent==='Cancelar') b.remove(); });
+
   var estado = getEstado(m);
+  var btnE = document.getElementById('btnEditar');
   var btnA = document.getElementById('btnAprobar');
   var btnR = document.getElementById('btnRechazar');
+  btnE.style.display = '';
   btnA.disabled = false; btnR.disabled = false;
   btnA.textContent = '✓ Aprobar'; btnR.textContent = '✗ Rechazar';
   btnA.style.display = estado === 'Aprobado'  ? 'none' : '';
@@ -1690,6 +1697,11 @@ function activarEdicion(){
   document.getElementById('btnRechazar').style.display = 'none';
 
   var footer = document.querySelector('.modal-footer');
+  // Limpiar botones dinámicos anteriores para evitar duplicados
+  var viejoBtnG = document.getElementById('btnGuardar');
+  if (viejoBtnG) viejoBtnG.remove();
+  footer.querySelectorAll('button').forEach(function(b){ if(b.textContent==='Cancelar') b.remove(); });
+
   var btnGuardar = document.createElement('button');
   btnGuardar.className = 'btn-sm primary';
   btnGuardar.id = 'btnGuardar';
