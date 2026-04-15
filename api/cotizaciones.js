@@ -1048,16 +1048,33 @@ module.exports = async function handler(req, res) {
         if (z.includes('córdoba') || z.includes('cordoba')) return 'Córdoba';
         return zonaBase;
       }
-      const { zona } = req.query;
+      const { zona, desde, hasta } = req.query;
+
+      function normStr(s) {
+        return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+      }
+      var _sw = ['de','del','la','las','los','el','en','y','av','ave','avenida','calle','provincia','ciudad','argentina','ar'];
+      function palabrasZona(str) {
+        return normStr(str).split(/[\s,]+/).filter(function(p){ return p.length > 2 && !_sw.includes(p); });
+      }
+      var textoBusqueda = zona || ((desde||'') + ' ' + (hasta||''));
+      var palabrasBuscadas = palabrasZona(textoBusqueda);
+      function cubreZona(perfil) {
+        if (!palabrasBuscadas.length) return true;
+        var cobertura = normStr((perfil.zonaBase||'') + ' ' + (perfil.zonasExtra||''));
+        var palabrasCobertura = palabrasZona(cobertura);
+        if (palabrasBuscadas.some(function(p){ return cobertura.includes(p); })) return true;
+        if (palabrasCobertura.some(function(pc){ return palabrasBuscadas.some(function(pb){ return pb.includes(pc) || pc.includes(pb); }); })) return true;
+        return false;
+      }
+
       const todos = await getJSON('mudanceros:todos') || [];
       const catalogo = [];
       for (const email of todos) {
         try {
           const p = await getJSON(`mudancero:perfil:${email}`);
           if (!p || p.estado !== 'aprobado') continue;
-          // Filtrar por zona si se especifica
-          if (zona && p.zonaBase && !p.zonaBase.toLowerCase().includes(zona.toLowerCase()) &&
-              !(p.zonasExtra||'').toLowerCase().includes(zona.toLowerCase())) continue;
+          if (palabrasBuscadas.length > 0 && !cubreZona(p)) continue;
           // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
           catalogo.push({
             email:               p.email,
@@ -1089,7 +1106,7 @@ module.exports = async function handler(req, res) {
       }
       // Ordenar por calificación desc
       catalogo.sort((a,b) => (b.calificacion - a.calificacion) || (b.trabajosCompletados - a.trabajosCompletados));
-      return res.status(200).json({ mudanceros: catalogo });
+      return res.status(200).json({ mudanceros: catalogo, sinCobertura: catalogo.length === 0 && palabrasBuscadas.length > 0 });
     }
 
     if (action === 'rechazar' && req.method === 'POST') {
