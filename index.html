@@ -756,8 +756,15 @@
                 var desc = s.description;
                 input.value = desc;
                 dd.classList.remove('open');
-                _validAddr[inputId] = true;
-                input.style.border=''; input.style.background='';
+                // Validar que la dirección tenga número (ej: "Av. Corrientes 1234")
+                var tieneNumero = /\d/.test(desc.split(',')[0]);
+                if (!tieneNumero) {
+                  _validAddr[inputId] = false;
+                  setAddrError(inputId, '⚠ Ingresá la dirección con número (ej: Corrientes 1234)');
+                } else {
+                  _validAddr[inputId] = true;
+                  input.style.border=''; input.style.background='';
+                }
               }
               li.addEventListener('mousedown', seleccionar);
               li.addEventListener('touchend', seleccionar);
