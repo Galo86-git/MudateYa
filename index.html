@@ -1837,8 +1837,8 @@
               var li = document.createElement('li');
               li.className = 'ac-item';
               li.textContent = s.description;
-              li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
-              li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; });
+              li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; try{localStorage.setItem('mya_addr_'+inputId, s.description);}catch(ex){} });
+              li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; try{localStorage.setItem('mya_addr_'+inputId, s.description);}catch(ex){} });
               dd.appendChild(li);
             });
             dd.classList.add('open');
@@ -1854,8 +1854,35 @@
       if (e.key === 'ArrowDown') { e.preventDefault(); if (active) active.classList.remove('kb'); var n = items[idx+1]||items[0]; if(n){ n.classList.add('kb'); n.scrollIntoView({block:'nearest'}); } }
       else if (e.key === 'ArrowUp') { e.preventDefault(); if (active) active.classList.remove('kb'); var p = items[idx-1]||items[items.length-1]; if(p){ p.classList.add('kb'); p.scrollIntoView({block:'nearest'}); } }
       else if (e.key === 'Enter' && active) { e.preventDefault(); _validAddr[inputId] = true; active.dispatchEvent(new MouseEvent('mousedown')); }
+      else if (e.key === 'Tab' && dd.classList.contains('open') && items.length) {
+        // Tab selecciona el item resaltado, o el primero si ninguno está resaltado
+        var target = active || items[0];
+        if (target) {
+          e.preventDefault();
+          _validAddr[inputId] = true;
+          input.value = target.textContent;
+          dd.classList.remove('open');
+          input.style.border=''; input.style.background='';
+          // Guardar en localStorage
+          try { localStorage.setItem('mya_addr_' + inputId, input.value); } catch(ex){}
+          // Mover foco al siguiente input
+          var nextId = {
+            'input-desde': 'input-hasta',
+            'input-hasta': 'input-desde',
+            'input-flete-desde': 'input-flete-hasta',
+            'input-flete-hasta': 'input-flete-desde'
+          }[inputId];
+          var nextEl = nextId ? document.getElementById(nextId) : null;
+          if (nextEl) { setTimeout(function(){ nextEl.focus(); }, 50); }
+        }
+      }
       else if (e.key === 'Escape') { dd.classList.remove('open'); }
     });
+    // Guardar en localStorage al seleccionar con mouse/touch también
+    var _guardarAddr = function() {
+      try { localStorage.setItem('mya_addr_' + inputId, input.value); } catch(ex){}
+    };
+    input.addEventListener('change', _guardarAddr);
     input.addEventListener('click', function(e){ e.stopPropagation(); });
   }
   // ══════════════════════════════════════════
@@ -2440,7 +2467,20 @@
   }
 
   // Init
-  document.addEventListener('DOMContentLoaded', function() { updateNav(); });
+  document.addEventListener('DOMContentLoaded', function() {
+    updateNav();
+    // Restaurar últimas direcciones
+    var ids = ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'];
+    ids.forEach(function(id) {
+      try {
+        var saved = localStorage.getItem('mya_addr_' + id);
+        if (saved) {
+          var el = document.getElementById(id);
+          if (el) { el.value = saved; _validAddr[id] = true; }
+        }
+      } catch(ex){}
+    });
+  });
   document.getElementById('pubModal').addEventListener('click', function(e){ if(e.target===this) { document.getElementById('pubModal').classList.remove('open'); } });
   document.getElementById('loginModal') && document.getElementById('loginModal').addEventListener('click', function(e){ if(e.target===this) cerrarLogin(); });
 
