@@ -2015,6 +2015,50 @@
   }
 
   // ══════════════════════════════════════════
+  // DETECCIÓN DE ZONA
+  // ══════════════════════════════════════════
+  function detectarZona(desde, hasta) {
+    var texto = (desde + ' ' + hasta).toLowerCase();
+
+    // Keywords AMBA — si la búsqueda es en AMBA no filtramos por zona específica,
+    // mostramos todos los de CABA + GBA
+    var kwAmba = ['caba','palermo','belgrano','caballito','flores','almagro','boedo','balvanera',
+      'recoleta','retiro','san telmo','la boca','barracas','mataderos','liniers','devoto',
+      'villa urquiza','coghlan','saavedra','nuñez','colegiales','chacarita','paternal',
+      'villa crespo','once','congreso','microcentro','puerto madero',
+      'san isidro','vicente lopez','olivos','martinez','boulogne','beccar','tigre',
+      'san fernando','quilmes','avellaneda','lanus','lomas de zamora','banfield',
+      'moron','ituzaingo','castelar','haedo','ramos mejia','san justo','merlo',
+      'la matanza','florencio varela','berazategui','san martin','tres de febrero',
+      'maipu','palermo','gba','amba','conurbano','gran buenos aires','buenos aires'];
+
+    var kwCordoba = ['córdoba','cordoba','villa carlos paz','rio cuarto','villa maria'];
+    var kwRosario = ['rosario','santa fe','rafaela','venado tuerto'];
+    var kwMendoza = ['mendoza','san rafael','godoy cruz','lujan de cuyo'];
+    var kwTucuman = ['tucumán','tucuman','san miguel de tucuman'];
+    var kwSalta   = ['salta','jujuy','san salvador'];
+    var kwNeuquen = ['neuquén','neuquen','bariloche','cipoletti'];
+    var kwMdp     = ['mar del plata','mdp'];
+    var kwLaPlata = ['la plata','berisso','ensenada'];
+    var kwBahia   = ['bahía blanca','bahia blanca'];
+
+    // Verificar si la búsqueda está en AMBA
+    for (var i=0; i<kwAmba.length; i++) { if (texto.includes(kwAmba[i])) return 'GBA'; }
+    // Otras ciudades
+    for (var i=0; i<kwCordoba.length; i++) { if (texto.includes(kwCordoba[i])) return 'Córdoba Capital'; }
+    for (var i=0; i<kwRosario.length; i++) { if (texto.includes(kwRosario[i])) return 'Rosario'; }
+    for (var i=0; i<kwMendoza.length; i++) { if (texto.includes(kwMendoza[i])) return 'Mendoza'; }
+    for (var i=0; i<kwTucuman.length; i++) { if (texto.includes(kwTucuman[i])) return 'Tucumán'; }
+    for (var i=0; i<kwSalta.length;   i++) { if (texto.includes(kwSalta[i]))   return 'Salta'; }
+    for (var i=0; i<kwNeuquen.length; i++) { if (texto.includes(kwNeuquen[i])) return 'Neuquén'; }
+    for (var i=0; i<kwMdp.length;     i++) { if (texto.includes(kwMdp[i]))     return 'Mar del Plata'; }
+    for (var i=0; i<kwLaPlata.length; i++) { if (texto.includes(kwLaPlata[i])) return 'La Plata'; }
+    for (var i=0; i<kwBahia.length;   i++) { if (texto.includes(kwBahia[i]))   return 'Bahía Blanca'; }
+
+    return ''; // Sin zona detectada — devuelve todos
+  }
+
+  // ══════════════════════════════════════════
   // CARGAR Y RENDERIZAR RESULTADOS
   // ══════════════════════════════════════════
   async function cargarResultados() {
@@ -2024,9 +2068,12 @@
       var idHasta = _tipo==='mudanza' ? 'input-hasta' : 'input-flete-hasta';
       var desdeVal = (document.getElementById(idDesde)||{}).value || '';
       var hastaVal = (document.getElementById(idHasta)||{}).value || '';
+
+      // Detectar zona AMBA para incluir todos los mudanceros de CABA y GBA
+      var zonaParam = detectarZona(desdeVal, hastaVal);
+
       var url = '/api/cotizaciones?action=catalogo'
-        + (desdeVal ? '&desde=' + encodeURIComponent(desdeVal) : '')
-        + (hastaVal ? '&hasta=' + encodeURIComponent(hastaVal) : '');
+        + (zonaParam ? '&zona=' + encodeURIComponent(zonaParam) : '');
       var r = await fetch(url);
       var d = await r.json();
       if (d.sinCobertura) {
