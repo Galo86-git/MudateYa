@@ -1415,75 +1415,7 @@
   </section>
 
   <!-- LLAMADOR FLOTANTE PACKS -->
-  <div id="packLlamador" style="position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);z-index:500;pointer-events:all">
-    <button onclick="document.getElementById('packs').style.display='block';setTimeout(function(){document.getElementById('packs').scrollIntoView({behavior:'smooth',block:'start'})},60)" style="background:#003580;color:#fff;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;padding:11px 22px;border-radius:12px;border:1.5px solid #22C36A;box-shadow:0 4px 24px rgba(0,53,128,.4);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-      ¿Te sería útil esto? <span style="font-size:16px">👇</span>
-    </button>
-  </div>
 
-  <!-- PACKS MYA -->
-  <section id="packs" style="display:none;padding:4rem 1.2rem 3rem;background:linear-gradient(135deg,#003580 0%,#001f4d 100%);text-align:center;position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;opacity:.05;background-image:url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E\")"></div>
-    <div style="position:relative;max-width:860px;margin:0 auto">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#fff;letter-spacing:.5px;margin-bottom:.6rem">¿Qué más necesitás?</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.65);max-width:460px;margin:0 auto 2rem;line-height:1.65">Tu mudanza no termina cuando llega el camión. Por eso estamos construyendo todo lo que necesitás para instalarte de verdad.</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;max-width:840px;margin:0 auto 2.5rem">
-
-        <!-- Pack Esencial -->
-        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:1.4rem;text-align:left">
-          <div style="font-size:1.8rem;margin-bottom:.7rem">⚡</div>
-          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:.3rem">Pack Esencial</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:1rem;line-height:1.5">Lo que necesitás el primer día en tu nueva casa.</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px">
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">✂ Limpieza</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🔑 Cerrajero</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">⚡ Electricista</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">📶 Internet</span>
-          </div>
-        </div>
-
-        <!-- Pack Completo -->
-        <div style="background:rgba(255,255,255,.11);border:2px solid #22C36A;border-radius:14px;padding:1.4rem;text-align:left;position:relative">
-          <div style="position:absolute;top:-1px;right:1rem;background:#22C36A;color:#fff;font-size:10px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:.5px;padding:3px 9px;border-radius:0 0 7px 7px">MÁS POPULAR</div>
-          <div style="font-size:1.8rem;margin-bottom:.7rem">🏠</div>
-          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:.3rem">Pack Completo</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:1rem;line-height:1.5">Todo para instalarte sin preocupaciones en la primera semana.</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px">
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">✂ Limpieza</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🔑 Cerrajero</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">⚡ Electricista</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">📶 Internet</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🎨 Pintura</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🔧 Plomero</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🛡 Seguro hogar</span>
-          </div>
-        </div>
-
-        <!-- Pack Seguridad -->
-        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:1.4rem;text-align:left">
-          <div style="font-size:1.8rem;margin-bottom:.7rem">🔒</div>
-          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:.3rem">Pack Seguridad</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:1rem;line-height:1.5">Protegé tu nueva casa desde el primer día.</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px">
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🔑 Cerrajero</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🚨 Alarma</span>
-            <span style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:11px;padding:3px 9px;border-radius:5px">🛡 Seguro hogar</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Botones encuesta -->
-      <div style="border-top:1px solid rgba(255,255,255,.12);padding-top:2rem">
-        <div style="font-size:14px;color:rgba(255,255,255,.8);font-weight:600;margin-bottom:1rem">¿Te resultaría útil este servicio?</div>
-        <div style="display:flex;gap:10px;justify-content:center">
-          <button id="packSi" onclick="registrarEncuesta('si')" style="background:#22C36A;color:#fff;border:none;font-size:15px;font-weight:700;padding:13px 36px;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;min-width:100px;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">👍 Sí</button>
-          <button id="packNo" onclick="registrarEncuesta('no')" style="background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;min-width:100px;transition:opacity .2s" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">No</button>
-        </div>
-      </div>
-
-    </div>
-  </section>
 
   <footer>
     <div class="footer-inner">
@@ -2443,28 +2375,6 @@
   // ══════════════════════════════════════════
   function toggleMenu() { document.getElementById('navBurger').classList.toggle('open'); document.getElementById('mobileMenu').classList.toggle('open'); }
   function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open'); }
-
-  // ── Encuesta Packs ───────────────────────────
-  function registrarEncuesta(respuesta) {
-    var siBtn = document.getElementById('packSi');
-    var noBtn = document.getElementById('packNo');
-    var llamador = document.getElementById('packLlamador');
-    if (siBtn) siBtn.disabled = true;
-    if (noBtn) noBtn.disabled = true;
-
-    fetch('/api/cotizaciones?action=encuesta', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ respuesta: respuesta })
-    }).catch(function(){});
-
-    // Reemplazar botones con mensaje de gracias
-    var btnWrap = siBtn ? siBtn.parentNode : null;
-    if (btnWrap) {
-      btnWrap.innerHTML = '<div style="background:rgba(34,195,106,.15);border:1px solid rgba(34,195,106,.3);color:#22C36A;font-size:14px;font-weight:600;padding:13px 28px;border-radius:10px;display:inline-block">¡Gracias por tu respuesta! 🙌</div>';
-    }
-    if (llamador) setTimeout(function(){ llamador.style.display='none'; }, 400);
-  }
 
   // Init
   document.addEventListener('DOMContentLoaded', function() {
