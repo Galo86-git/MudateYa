@@ -245,30 +245,30 @@ async function notificarAdmin(perfil) {
   var afip = perfil.cuilAfip    || {};
 
   var badgeCuil = perfil.cuilVerificado
-    ? '<span style="background:#0D2018;color:#22C36A;padding:3px 10px;border-radius:4px;font-size:11px">✓ CUIL verificado en AFIP</span>'
+    ? '<span style="background:#EEF4FF;color:#1A6FFF;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600">✓ CUIL verificado</span>'
     : perfil.cuilAdvertencia
-    ? '<span style="background:#2D1F0E;color:#F59E0B;padding:3px 10px;border-radius:4px;font-size:11px">⚠ AFIP no disponible al registrar</span>'
-    : '<span style="background:#1E1E1E;color:#7AADA0;padding:3px 10px;border-radius:4px;font-size:11px">— CUIL no ingresado</span>';
+    ? '<span style="background:#FEF9C3;color:#B45309;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600">⚠ AFIP no disponible al registrar</span>'
+    : '<span style="background:#F1F5F9;color:#64748B;padding:3px 10px;border-radius:4px;font-size:11px">— CUIL no ingresado</span>';
 
   // Bloques de fotos para el email (links directos a Blob)
   var bloquesFotos = '';
   if (perfil.dniFrente || perfil.dniDorso) {
     bloquesFotos =
-      '<div style="background:#172018;border-radius:10px;padding:12px 16px;margin:14px 0">' +
-        '<div style="font-size:11px;color:#5A8A78;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">DNI</div>' +
-        '<div style="font-size:13px">' +
-          (dni.numero_dni ? 'DNI: <strong>' + dni.numero_dni + '</strong> · ' : '') +
+      '<div style="background:#F5F7FA;border-radius:10px;padding:12px 16px;margin:14px 0;border:1px solid #E2E8F0">' +
+        '<div style="font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700">DNI</div>' +
+        '<div style="font-size:13px;color:#475569">' +
+          (dni.numero_dni ? 'DNI: <strong style="color:#0F1923">' + dni.numero_dni + '</strong> · ' : '') +
           (dni.apellido || '') + ' ' + (dni.nombres || '') + '<br>' +
           (dni.fecha_vencimiento ? 'Vence: ' + dni.fecha_vencimiento + ' · ' : '') +
-          'Legible: <strong style="color:' + (dni.legible ? '#22C36A' : '#F59E0B') + '">' + (dni.legible ? '✓ SI' : '✗ NO') + '</strong>' +
+          'Legible: <strong style="color:' + (dni.legible ? '#22C36A' : '#EF4444') + '">' + (dni.legible ? '✓ SI' : '✗ NO') + '</strong>' +
         '</div>' +
       '</div>';
   }
 
   var bloquesCobro =
-    '<div style="background:#172018;border-radius:10px;padding:12px 16px;margin:14px 0">' +
-      '<div style="font-size:11px;color:#5A8A78;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Cobro</div>' +
-      '<div style="font-size:13px">' +
+    '<div style="background:#F5F7FA;border-radius:10px;padding:12px 16px;margin:14px 0;border:1px solid #E2E8F0">' +
+      '<div style="font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700">Cobro</div>' +
+      '<div style="font-size:13px;color:#475569">' +
         (perfil.metodoCobro === 'cbu' ? 'CBU/Alias: ' + perfil.cbu : 'MP: ' + perfil.emailMP) +
         (perfil.titularCuenta ? ' · ' + perfil.titularCuenta : '') +
       '</div>' +
@@ -279,21 +279,33 @@ async function notificarAdmin(perfil) {
     to:      adminMail,
     subject: '🚛 Nuevo mudancero — ' + perfil.nombre + ' · ' + perfil.id,
     html:
-      '<div style="font-family:Arial,sans-serif;max-width:560px;background:#0D1410;color:#E8F5EE;border-radius:16px;overflow:hidden">' +
-      '<div style="background:#22C36A;padding:18px 22px"><h2 style="margin:0;color:#041A0E">🚛 Nuevo mudancero · ' + perfil.id + '</h2></div>' +
-      '<div style="padding:22px">' +
-      '<p><strong>' + perfil.nombre + '</strong>' + (perfil.empresa ? ' · ' + perfil.empresa : '') + '</p>' +
-      '<p style="color:#7AADA0">Email: ' + perfil.email + ' · Tel: ' + perfil.telefono + '</p>' +
-      '<p style="color:#7AADA0">Zona: ' + perfil.zonaBase + ' · Vehículo: ' + perfil.vehiculo + '</p>' +
-      badgeCuil +
-      bloquesFotos +
-      bloquesCobro +
-      '<a href="' + (process.env.SITE_URL || 'https://mudateya.ar') + '/admin"' +
-         ' style="display:inline-block;margin-top:16px;background:#22C36A;color:#041A0E;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">' +
-        'Revisar y aprobar →' +
-      '</a>' +
-      '<p style="color:#3D6458;font-size:11px;margin-top:16px">ID: ' + perfil.id + ' · ' + perfil.fechaRegistro + '</p>' +
-      '</div></div>',
+      '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">' +
+      '<div style="background:#003580;padding:20px 28px;display:flex;align-items:center">' +
+        '<span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span>' +
+        '<span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span>' +
+        '<span style="font-size:12px;color:rgba(255,255,255,.6);margin-left:12px">Nuevo mudancero registrado</span>' +
+      '</div>' +
+      '<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:10px 28px;font-size:13px;color:#1A6FFF;font-weight:600">' +
+        '🚛 ' + perfil.id +
+      '</div>' +
+      '<div style="padding:24px 28px">' +
+        '<p style="font-size:16px;font-weight:700;color:#0F1923;margin:0 0 4px">' + perfil.nombre + (perfil.empresa ? ' · <span style="font-weight:400;color:#475569">' + perfil.empresa + '</span>' : '') + '</p>' +
+        '<p style="font-size:13px;color:#64748B;margin:0 0 16px">Email: ' + perfil.email + ' · Tel: ' + perfil.telefono + '</p>' +
+        '<table style="width:100%;border-collapse:collapse;margin-bottom:16px">' +
+          '<tr><td style="color:#64748B;padding:6px 0;font-size:13px;width:35%">Zona</td><td style="font-size:13px;color:#0F1923;font-weight:600">' + perfil.zonaBase + '</td></tr>' +
+          '<tr style="background:#F5F7FA"><td style="color:#64748B;padding:6px 6px;font-size:13px">Vehículo</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:6px 0">' + perfil.vehiculo + '</td></tr>' +
+        '</table>' +
+        badgeCuil +
+        bloquesFotos +
+        bloquesCobro +
+        '<a href="' + (process.env.SITE_URL || 'https://mudateya.ar') + '/admin"' +
+           ' style="display:inline-block;margin-top:16px;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">' +
+          'Revisar y aprobar →' +
+        '</a>' +
+        '<p style="color:#94A3B8;font-size:11px;margin-top:16px;font-family:monospace">ID: ' + perfil.id + ' · ' + perfil.fechaRegistro + '</p>' +
+      '</div>' +
+      '<div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>' +
+      '</div>',
   });
 }
 
