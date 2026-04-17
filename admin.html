@@ -883,15 +883,51 @@ function filterMudanceros(){
     var matchE = !estado || getEstado(m) === estado;
     return matchQ && matchE;
   });
-  document.getElementById('mudancerosList').innerHTML = filtered.length === 0
-    ? '<div class="empty"><div class="empty-icon">🔍</div>Sin resultados</div>'
-    : '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody>'
+
+  if (filtered.length === 0) {
+    document.getElementById('mudancerosList').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>Sin resultados</div>';
+    return;
+  }
+
+  var isMobile = window.innerWidth <= 768;
+
+  if (isMobile) {
+    // Render como cards en mobile
+    document.getElementById('mudancerosList').innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;padding:12px">'
+      + filtered.map(function(m){
+          var idx = mudancerosData.indexOf(m);
+          var est = getEstado(m);
+          var badgeColor = est === 'Aprobado' ? '#22C36A' : est === 'Rechazado' ? '#EF4444' : '#F59E0B';
+          var badgeBg = est === 'Aprobado' ? 'rgba(34,195,106,.1)' : est === 'Rechazado' ? 'rgba(239,68,68,.08)' : 'rgba(245,158,11,.08)';
+          return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+            +   '<div>'
+            +     '<div style="font-size:14px;font-weight:600;color:#0F1923">'+(m[1]||'—')+'</div>'
+            +     '<div style="font-size:11px;color:#64748B;font-family:var(--mono)">'+(m[4]||'')+'</div>'
+            +   '</div>'
+            +   '<span style="background:'+badgeBg+';color:'+badgeColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px">'+est+'</span>'
+            + '</div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Zona</div><div style="font-size:12px;color:#475569">'+(m[5]||'—')+'</div></div>'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Vehículo</div><div style="font-size:12px;color:#475569">'+(m[8]||'—')+'</div></div>'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Teléfono</div><div style="font-size:12px;color:#475569">'+(m[3]||'—')+'</div></div>'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Empresa</div><div style="font-size:12px;color:#475569">'+(m[2]||'Independiente')+'</div></div>'
+            + '</div>'
+            + '<button class="btn-sm primary" style="width:100%;padding:10px;border-radius:8px;font-size:13px" onclick="openModal('+idx+')">Ver perfil completo →</button>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  } else {
+    // Render como tabla en desktop
+    document.getElementById('mudancerosList').innerHTML =
+      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody>'
       + filtered.map(function(m){
           var idx = mudancerosData.indexOf(m);
           var est = getEstado(m);
           return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td class="td-mono">'+(m[3]||'—')+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
         }).join('')
       + '</tbody></table>';
+  }
 }
 
 // ── TRANSFERENCIAS ─────────────────────────────────────────────────────────
@@ -1481,6 +1517,44 @@ function renderTabla(data) {
   document.getElementById('cotCount').textContent = data.length + ' solicitudes';
   if (!data.length) {
     document.getElementById('cotizacionesList').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text3)">No hay solicitudes con los filtros aplicados.</div>';
+    return;
+  }
+
+  var isMobile = window.innerWidth <= 768;
+
+  if (isMobile) {
+    var html = '<div style="display:flex;flex-direction:column;gap:10px;padding:12px">';
+    data.forEach(function(p) {
+      var fecha  = p.fecha ? new Date(p.fecha).toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      var estado = p.estado || 'buscando';
+      var monto  = p.monto ? '$'+parseInt(p.monto).toLocaleString('es-AR') : '—';
+      var desde  = (p.desde||'').split(',')[0];
+      var hasta  = (p.hasta||'').split(',')[0];
+      var nCot   = p.cotizaciones || 0;
+      var estadoColor = estado==='completada'||estado==='pagado' ? '#22C36A' : estado==='buscando' ? '#F59E0B' : estado==='cotizacion_aceptada' ? '#1A6FFF' : '#64748B';
+      var estadoBg   = estado==='completada'||estado==='pagado' ? 'rgba(34,195,106,.1)' : estado==='buscando' ? 'rgba(245,158,11,.08)' : estado==='cotizacion_aceptada' ? '#EEF4FF' : '#F5F7FA';
+
+      html += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;cursor:pointer" onclick="abrirPedidoModal(\''+esc(p.id)+'\')">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        +   '<div style="display:flex;align-items:center;gap:8px">'
+        +     '<span class="cot-tipo '+(p.tipo||'')+'">'+(p.tipo==='flete'?'📦 Flete':'🚛 Mudanza')+'</span>'
+        +     '<span style="font-family:var(--mono);font-size:10px;color:#94A3B8">'+(p.id||'').slice(-6)+'</span>'
+        +   '</div>'
+        +   '<span style="background:'+estadoBg+';color:'+estadoColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px">'+estado+'</span>'
+        + '</div>'
+        + '<div style="font-size:13px;font-weight:600;color:#0F1923;margin-bottom:2px">'+esc(p.nombre||'—')+'</div>'
+        + '<div style="font-size:11px;color:#64748B;margin-bottom:8px">'+esc(desde)+' → '+esc(hasta)+'</div>'
+        + '<div style="display:flex;align-items:center;justify-content:space-between">'
+        +   '<span style="font-size:11px;color:#64748B">'+fecha+'</span>'
+        +   '<div style="display:flex;align-items:center;gap:8px">'
+        +     (nCot > 0 ? '<span style="background:#EEF4FF;color:#1A6FFF;font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px">'+nCot+' cot.</span>' : '<span style="font-size:11px;color:#94A3B8">Sin cotizaciones</span>')
+        +     (p.monto ? '<span style="font-family:var(--mono);font-weight:700;font-size:13px;color:#003580">'+monto+'</span>' : '')
+        +   '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+    document.getElementById('cotizacionesList').innerHTML = html;
     return;
   }
 
