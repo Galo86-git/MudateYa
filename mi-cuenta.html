@@ -128,7 +128,41 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
 @media(max-width:768px){
   .sidebar{display:none}
   .metrics-grid{grid-template-columns:1fr 1fr}
-  .main{padding:1rem}
+  .main{padding:.9rem .9rem 80px}
+  .page-title{font-size:1.3rem;margin-bottom:1rem}
+  .app-body{padding-bottom:0}
+  /* grillas a 1 col en mobile */
+  .card [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  .field-grid.cols2,.field-grid.cols3{grid-template-columns:1fr!important}
+}
+
+/* ── BOTTOM NAV MOBILE ── */
+.mc-mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:#003580;border-top:2px solid #22C36A;
+  padding:6px 0 max(6px, env(safe-area-inset-bottom));
+}
+.mc-mobile-nav-inner{display:flex;justify-content:space-around;align-items:center}
+.mc-nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:4px 8px;cursor:pointer;border:none;background:none;
+  color:rgba(255,255,255,.5);font-size:9px;font-family:var(--mono);
+  letter-spacing:.3px;text-transform:uppercase;position:relative;
+  transition:color .2s;min-width:60px;
+}
+.mc-nav-item.active{color:#22C36A}
+.mc-nav-item svg{width:22px;height:22px;stroke-width:1.8}
+.mc-nav-badge{
+  position:absolute;top:0;right:8px;
+  background:#EF4444;color:#fff;font-size:8px;font-weight:700;
+  width:14px;height:14px;border-radius:50%;display:none;
+  align-items:center;justify-content:center;font-family:var(--mono);
+}
+.mc-nav-badge.show{display:flex}
+
+@media(max-width:768px){
+  .mc-mobile-nav{display:block}
 }
 </style>
 </head>
@@ -209,6 +243,29 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
       <a class="sidebar-item" onclick="showPage('perfil',event)" href="#">
         <span class="sidebar-icon">⚙️</span> Mi perfil
       </a>
+    </div>
+
+    <!-- BOTTOM NAV MOBILE -->
+    <div class="mc-mobile-nav">
+      <div class="mc-mobile-nav-inner">
+        <button class="mc-nav-item active" id="mcnav-pedidos" onclick="showPage('pedidos',event);setMcNav('pedidos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          Pedidos
+          <span class="mc-nav-badge" id="mcnav-badge-pedidos">0</span>
+        </button>
+        <button class="mc-nav-item" id="mcnav-historial" onclick="showPage('historial',event);setMcNav('historial')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Historial
+        </button>
+        <button class="mc-nav-item" id="mcnav-ganancias" onclick="showPage('ganancias',event);setMcNav('ganancias')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Ganancias
+        </button>
+        <button class="mc-nav-item" id="mcnav-perfil" onclick="showPage('perfil',event);setMcNav('perfil')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Mi perfil
+        </button>
+      </div>
     </div>
 
     <div class="main">
@@ -570,6 +627,12 @@ function showPage(name, e){
   if(name==='ganancias') loadGanancias();
 }
 
+function setMcNav(name) {
+  document.querySelectorAll('.mc-nav-item').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('mcnav-' + name);
+  if(btn) btn.classList.add('active');
+}
+
 function truckLoader(msg) {
   msg = msg || 'Cargando…';
   return '<div class="truck-loader">'
@@ -663,6 +726,9 @@ function renderPedidos(){
   var badge = document.getElementById('badgeNuevos');
   badge.textContent = mudanzasDisponibles.length;
   badge.style.display = mudanzasDisponibles.length > 0 ? '' : 'none';
+  // Badge mobile nav
+  var mbadge = document.getElementById('mcnav-badge-pedidos');
+  if(mbadge){ mbadge.textContent = mudanzasDisponibles.length; mbadge.classList.toggle('show', mudanzasDisponibles.length > 0); }
 
   // Tabs header
   var tabs = [
