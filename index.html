@@ -1923,26 +1923,23 @@
     if (_tipo === 'flete') {
       var tieneObj = !!_fleteObj;
       var tieneFoto = !!_fleteFotoB64;
-      var tieneOtros = (document.getElementById('flete-otros-input') || {}).value && (document.getElementById('flete-otros-input').value.trim().length > 2);
-      if (!tieneObj && !tieneFoto && !tieneOtros) {
-        // Mostrar error en el área de chips
-        var chipsArea = document.querySelector('#sb-flete .obj-chip[onclick*="selFleteObj"]');
+      var otrosInput = document.getElementById('flete-otros-input');
+      var otrosTexto = otrosInput ? otrosInput.value.trim() : '';
+      var tieneOtros = otrosTexto.length > 2;
+
+      // No eligió nada
+      if (!tieneObj && !tieneFoto) {
         var errObj = document.getElementById('flete-obj-err');
         if (!errObj) {
           errObj = document.createElement('div');
           errObj.id = 'flete-obj-err';
           errObj.style.cssText = 'font-size:11px;color:#FF5252;font-family:Inter,sans-serif;margin-top:4px;display:flex;align-items:center;gap:4px';
-          errObj.innerHTML = '⚠ Seleccioná un tipo de objeto o subí una foto para continuar';
+          errObj.innerHTML = '⚠ Seleccioná qué objeto querés fletar para continuar';
           var objRow = document.querySelector('#sb-flete [style*="¿Qué objeto?"]');
           if (!objRow) objRow = document.querySelector('#sb-flete .obj-chip[onclick*="selFleteObj"]').closest('div').parentElement;
           objRow.parentElement.insertBefore(errObj, objRow.nextSibling);
         }
-        // Highlight chips con borde rojo
-        document.querySelectorAll('#sb-flete .obj-chip').forEach(function(ch){
-          ch.style.borderColor = '#FF5252';
-          ch.style.color = '#FF5252';
-        });
-        // Highlight botón foto
+        document.querySelectorAll('#sb-flete .obj-chip').forEach(function(ch){ ch.style.borderColor='#FF5252'; ch.style.color='#FF5252'; });
         var fotoLabel = document.getElementById('flete-foto-label');
         if (fotoLabel) fotoLabel.style.borderColor = '#FF5252';
         setTimeout(function(){
@@ -1950,6 +1947,20 @@
           document.querySelectorAll('#sb-flete .obj-chip').forEach(function(ch){ ch.style.borderColor=''; ch.style.color=''; });
           if (fotoLabel) fotoLabel.style.borderColor = '';
         }, 3000);
+        return;
+      }
+
+      // Eligió "Otros" pero no escribió descripción
+      if (_fleteObj === 'otros' && !tieneOtros) {
+        if (otrosInput) {
+          otrosInput.style.borderColor = '#FF5252';
+          otrosInput.focus();
+          otrosInput.placeholder = '⚠ Describí el objeto antes de continuar';
+          setTimeout(function(){
+            otrosInput.style.borderColor = '';
+            otrosInput.placeholder = '¿Qué es? Ej: Lavarropas, mesa de billar, piano…';
+          }, 3000);
+        }
         return;
       }
     }
