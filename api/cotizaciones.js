@@ -1222,31 +1222,82 @@ module.exports = async function handler(req, res) {
 async function notificarMudanceros(mudanza) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const adminEmail = process.env.ADMIN_EMAIL;
-  if (!process.env.RESEND_API_KEY || !adminEmail) return;
+  if (!process.env.RESEND_API_KEY) return;
+
   const expira = new Date(mudanza.expira).toLocaleString('es-AR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
-  await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
-    to: adminEmail,
-    subject: `${mudanza.tipo === 'flete' ? '📦 Nuevo flete' : '🚛 Nueva mudanza'} — ${mudanza.desde} → ${mudanza.hasta} · ${mudanza.id}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Admin · Nuevo pedido</span></div>
-      <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${mudanza.tipo === 'flete' ? '📦 Nuevo flete' : '🚛 Nueva mudanza'} · ${mudanza.id}</div>
-      <div style="padding:28px">
-        <table style="width:100%;border-collapse:collapse">
-          <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.fecha}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Estimado</td><td style="color:#17A356;font-weight:700;font-size:14px">$${parseInt(mudanza.precio_estimado||0).toLocaleString('es-AR')}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:7px 0">${expira}</td></tr>
-        </table>
-        <div style="margin-top:20px">
-          <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Cotizar →</a>
-        </div>
+  const esFlete = mudanza.tipo === 'flete';
+  const tipoLabel = esFlete ? '📦 Nuevo flete' : '🚛 Nueva mudanza';
+
+  const emailHtml = (nombreMudancero) => `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+    <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
+    <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${tipoLabel} · ${mudanza.id}</div>
+    <div style="padding:28px">
+      <p style="font-size:15px;color:#0F1923;margin:0 0 20px">Hola${nombreMudancero ? ' ' + nombreMudancero : ''}, hay un nuevo pedido disponible en tu zona.</p>
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
+        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.fecha}</td></tr>
+        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Precio estimado</td><td style="color:#17A356;font-weight:700;font-size:14px">$${parseInt(mudanza.precio_estimado||0).toLocaleString('es-AR')}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:7px 0">${expira}</td></tr>
+      </table>
+      <div style="margin-top:20px">
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Cotizar ahora →</a>
       </div>
-      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
-    </div>`,
-  });
+      <p style="font-size:12px;color:#94A3B8;margin-top:16px">Entrá a tu cuenta para ver los detalles completos y enviar tu cotización.</p>
+    </div>
+    <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
+  </div>`;
+
+  // 1. Notificar al admin siempre
+  if (adminEmail) {
+    try {
+      await resend.emails.send({
+        from: 'MudateYa <noreply@mudateya.ar>',
+        to: adminEmail,
+        subject: `${tipoLabel} — ${mudanza.desde} → ${mudanza.hasta} · ${mudanza.id}`,
+        html: emailHtml('Admin'),
+      });
+    } catch(e) { console.error('Email admin error:', e.message); }
+  }
+
+  // 2. Notificar a mudanceros aprobados
+  // Si es modo dirigido, solo notificar a los invitados
+  // Si es abierto, notificar a todos los aprobados
+  try {
+    const todosEmails = await getJSON('mudanceros:todos') || [];
+    const destinatarios = [];
+
+    for (const email of todosEmails) {
+      try {
+        const p = await getJSON(`mudancero:perfil:${email}`);
+        if (!p || p.estado !== 'aprobado') continue;
+        if (!p.email) continue;
+
+        // Modo dirigido: solo los invitados
+        if (mudanza.modoCotizacion === 'dirigido') {
+          if (!(mudanza.mudancerosInvitados || []).includes(email)) continue;
+        }
+
+        destinatarios.push({ email: p.email, nombre: p.nombre || '' });
+      } catch(e) { /* ignorar errores individuales */ }
+    }
+
+    // Enviar en lotes de 5 para no saturar la API
+    for (let i = 0; i < destinatarios.length; i += 5) {
+      const lote = destinatarios.slice(i, i + 5);
+      await Promise.all(lote.map(function(dest) {
+        return resend.emails.send({
+          from: 'MudateYa <noreply@mudateya.ar>',
+          to: dest.email,
+          subject: `${tipoLabel} disponible — ${mudanza.desde} → ${mudanza.hasta}`,
+          html: emailHtml(dest.nombre),
+        }).catch(function(e) { console.error('Email mudancero error:', dest.email, e.message); });
+      }));
+    }
+  } catch(e) {
+    console.error('Error notificando mudanceros:', e.message);
+  }
 }
 
 async function notificarCliente(mudanza, cotizacion) {
