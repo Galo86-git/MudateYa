@@ -120,6 +120,68 @@ tr:hover td{background:rgba(34,195,106,.03)}
 @media(max-width:900px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.sidebar{display:none}}
 @media(max-width:600px){.metrics-grid{grid-template-columns:1fr 1fr}.admin-main{padding:1rem}}
 
+/* ── BOTTOM NAV MOBILE ── */
+.mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:#003580;border-top:2px solid #22C36A;
+  padding:6px 0 max(6px, env(safe-area-inset-bottom));
+}
+.mobile-nav-inner{display:flex;justify-content:space-around;align-items:center}
+.mobile-nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:4px 8px;cursor:pointer;border:none;background:none;
+  color:rgba(255,255,255,.55);font-size:9px;font-family:var(--mono);
+  letter-spacing:.3px;text-transform:uppercase;position:relative;
+  transition:color .2s;min-width:44px;
+}
+.mobile-nav-item.active{color:#22C36A}
+.mobile-nav-item svg{width:20px;height:20px;stroke-width:1.8}
+.mobile-nav-badge{
+  position:absolute;top:0;right:4px;
+  background:#EF4444;color:#fff;font-size:8px;font-weight:700;
+  width:14px;height:14px;border-radius:50%;display:none;
+  align-items:center;justify-content:center;font-family:var(--mono);
+}
+.mobile-nav-badge.show{display:flex}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .mobile-nav{display:block}
+  .admin-body{padding-bottom:70px}
+  .admin-main{padding:.9rem .9rem 1rem}
+  .page-title{font-size:1.4rem;margin-bottom:1rem}
+  .metrics-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+  .metric-card{padding:.9rem}
+  .metric-val{font-size:1.6rem}
+
+  /* Tablas → cards en mobile */
+  .table-card table{display:none}
+  .mobile-cards{display:flex;flex-direction:column;gap:8px;padding:.8rem}
+
+  /* Search bar */
+  .search-bar{flex-wrap:wrap;gap:8px}
+  .search-bar .search-input{min-width:0}
+  .search-bar select{flex:1!important}
+
+  /* Modal full screen */
+  .modal{max-width:100%!important;max-height:100vh!important;border-radius:0!important;margin:0!important;height:100vh;overflow-y:auto}
+  .modal-overlay{padding:0!important;align-items:flex-end}
+
+  /* Tabla cotizaciones */
+  .cot-table thead{display:none}
+  .cot-table tr{display:block;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;padding:10px 12px}
+  .cot-table td{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border:none;font-size:12px}
+  .cot-table td:before{content:attr(data-label);color:var(--text3);font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;margin-right:8px}
+
+  /* Ocultar cols no esenciales en mobile */
+  th:nth-child(n+6), td:nth-child(n+6){display:none}
+
+  /* Admin nav */
+  .admin-nav{padding:0 1rem}
+  .nav-name{display:none}
+}
+
 /* Fotos admin */
 .fotos-mud-card{display:flex;align-items:flex-start;gap:1.2rem;padding:1rem 1.2rem;border-bottom:1px solid #E2E8F0;flex-wrap:wrap}
 .fotos-mud-card:last-child{border-bottom:none}
@@ -286,6 +348,41 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <a class="sidebar-item" onclick="showPage('cotizaciones',event)" href="#">
         <span class="sidebar-icon">📋</span> Cotizaciones
       </a>
+    </div>
+
+    <!-- BOTTOM NAV MOBILE -->
+    <div class="mobile-nav">
+      <div class="mobile-nav-inner">
+        <button class="mobile-nav-item active" id="mnav-dashboard" onclick="showPage('dashboard',event);setMobileNav('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </button>
+        <button class="mobile-nav-item" id="mnav-mudanceros" onclick="showPage('mudanceros',event);setMobileNav('mudanceros')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          Mudanceros
+          <span class="mobile-nav-badge" id="mnav-badge-mudanceros">0</span>
+        </button>
+        <button class="mobile-nav-item" id="mnav-cotizaciones" onclick="showPage('cotizaciones',event);setMobileNav('cotizaciones')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          Pedidos
+        </button>
+        <button class="mobile-nav-item" id="mnav-pagos" onclick="showPage('pagos',event);setMobileNav('pagos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Pagos
+        </button>
+        <button class="mobile-nav-item" id="mnav-mas" onclick="toggleMobileMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          Más
+        </button>
+      </div>
+    </div>
+
+    <!-- MOBILE EXTRA MENU -->
+    <div id="mobileExtraMenu" style="display:none;position:fixed;bottom:62px;left:0;right:0;z-index:299;background:#003580;border-top:1px solid rgba(255,255,255,.15);padding:8px 0;box-shadow:0 -4px 20px rgba(0,0,0,.3)">
+      <button onclick="showPage('usuarios',event);setMobileNav('usuarios');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">👥 Usuarios</button>
+      <button onclick="showPage('fotos',event);setMobileNav('fotos');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🖼️ Fotos</button>
+      <button onclick="showPage('zonas',event);setMobileNav('zonas');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🗺️ Zonas</button>
+      <button onclick="showPage('transferencias',event);setMobileNav('transferencias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🏦 Transferencias</button>
     </div>
 
     <div class="admin-main">
@@ -593,6 +690,23 @@ function showPage(name, e){
   if(name === 'zonas') renderZonas();
   if(name === 'transferencias') loadTransferencias();
   if(name === 'fotos') cargarFotos();
+  // cerrar menu extra mobile si estaba abierto
+  var em = document.getElementById('mobileExtraMenu');
+  if(em) em.style.display = 'none';
+}
+
+function setMobileNav(name) {
+  document.querySelectorAll('.mobile-nav-item').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('mnav-' + name);
+  if(btn) btn.classList.add('active');
+  else document.getElementById('mnav-mas').classList.add('active');
+}
+
+function toggleMobileMenu() {
+  var em = document.getElementById('mobileExtraMenu');
+  if(!em) return;
+  em.style.display = em.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('mnav-mas').classList.toggle('active', em.style.display !== 'none');
 }
 
 // ── DATA LOADING ───────────────────────────────────────────────────────────
@@ -636,6 +750,9 @@ async function loadMudanceros(){
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
     document.getElementById('badgePendientes').textContent = pendientes;
     document.getElementById('badgePendientes').style.display = pendientes > 0 ? '' : 'none';
+    // Sincronizar badge mobile
+    var mb = document.getElementById('mnav-badge-mudanceros');
+    if(mb){ mb.textContent = pendientes; mb.classList.toggle('show', pendientes > 0); }
   }catch(e){
     mudancerosData = [];
     console.error('Error cargando mudanceros:', e);
