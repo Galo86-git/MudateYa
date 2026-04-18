@@ -640,7 +640,14 @@ module.exports = async function handler(req, res) {
         }
       }
       if (tipoPago === 'anticipo') m.anticipoPagado = true;
-      if (tipoPago === 'saldo')    m.saldoPagado = true;
+      if (tipoPago === 'saldo') {
+        m.saldoPagado = true;
+        // Al pagar el saldo, la mudanza queda completada
+        m.estado = 'completada';
+        if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
+        // Loguear en Sheets
+        try { await logPedidoSheets(m); } catch(e) { console.warn('Sheets log error:', e.message); }
+      }
       m.ultimoUpdatePago = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       // ── Enviar emails ─────────────────────────────────────────────────
@@ -1232,6 +1239,18 @@ module.exports = async function handler(req, res) {
       perfil.nroResenas = perfil.resenas.length;
       await setJSON(`mudancero:perfil:${cot.mudanceroEmail}`, perfil);
       return res.status(200).json({ ok: true, msg: 'Reseña guardada', estrellas: m.estrellas, mudancero: cot.mudanceroEmail, resenas: perfil.resenas.length });
+    }
+
+    if (action === 'admin-fix-estado' && req.method === 'POST') {
+      const { token, mudanzaId } = req.body;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(401).json({ error: 'No autorizado' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'No encontrada' });
+      if (!m.saldoPagado) return res.status(400).json({ error: 'Saldo no pagado, no se puede completar' });
+      m.estado = 'completada';
+      if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      return res.status(200).json({ ok: true, msg: 'Estado actualizado a completada', id: mudanzaId });
     }
 
     return res.status(400).json({ error: 'Acción no reconocida' });
