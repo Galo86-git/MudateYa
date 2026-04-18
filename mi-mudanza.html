@@ -246,7 +246,7 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
 <!-- APP -->
 <div id="appScreen">
   <nav class="nav">
-    <a href="/mi-mudanza" class="nav-logo">Mudate<span>Ya</span></a>
+    <a href="/" class="nav-logo">Mudate<span>Ya</span></a>
     <div class="nav-right">
       <a href="/" class="btn-new">+ Nueva mudanza</a>
       <img id="navAvatar" class="nav-avatar" src="" alt=""/>
@@ -365,7 +365,11 @@ window.onload = async function(){
     try{
       var _p = JSON.parse(saved);
       if(_p._expires && Date.now() > _p._expires){ sessionStorage.removeItem('clienteUser'); sessionStorage.removeItem('googleUser'); }
-      else { currentUser = _p; showApp(); return; }
+      else {
+        // Si tiene rol mudancero, no mostrar dashboard de cliente
+        if(sessionStorage.getItem('rolMudancero') === '1') { window.location.href = '/mi-cuenta'; return; }
+        currentUser = _p; showApp(); return;
+      }
     }catch(e){}
   }
 
@@ -388,6 +392,8 @@ function handleCredential(response){
   var _cs = {...currentUser, _expires: Date.now()+604800000};
   sessionStorage.setItem('clienteUser', JSON.stringify(_cs));
   sessionStorage.setItem('googleUser', JSON.stringify(_cs));
+  sessionStorage.setItem('rolCliente', '1');
+  sessionStorage.removeItem('rolMudancero');
   showApp();
   // Pedir celular si no lo tiene guardado
   var wa = localStorage.getItem('clienteWA_' + currentUser.email);
