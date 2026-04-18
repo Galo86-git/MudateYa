@@ -1219,6 +1219,19 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ si: parseInt(si) || 0, no: parseInt(no) || 0 });
     }
 
+    if (action === 'admin-patch-perfil' && req.method === 'POST') {
+      const { token, email, trabajosCompletados, calificacion, nroResenas } = req.body;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(401).json({ error: 'No autorizado' });
+      if (!email) return res.status(400).json({ error: 'Falta email' });
+      const perfil = await getJSON(`mudancero:perfil:${email}`);
+      if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
+      if (trabajosCompletados !== undefined) perfil.trabajosCompletados = parseInt(trabajosCompletados);
+      if (calificacion !== undefined) perfil.calificacion = parseFloat(calificacion);
+      if (nroResenas !== undefined) perfil.nroResenas = parseInt(nroResenas);
+      await setJSON(`mudancero:perfil:${email}`, perfil);
+      return res.status(200).json({ ok: true, trabajosCompletados: perfil.trabajosCompletados, calificacion: perfil.calificacion, nroResenas: perfil.nroResenas });
+    }
+
     if (action === 'admin-fix-resena' && req.method === 'POST') {
       const { token, mudanzaId } = req.body;
       if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(401).json({ error: 'No autorizado' });
