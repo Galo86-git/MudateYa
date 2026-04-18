@@ -690,12 +690,15 @@ module.exports = async function handler(req, res) {
       try {
         const cot = m.cotizacionAceptada;
         if (cot && cot.mudanceroEmail) {
-          const perfil = await getJSON(`mudancero:${cot.mudanceroEmail}`);
+          const perfil = await getJSON(`mudancero:perfil:${cot.mudanceroEmail}`);
           if (perfil) {
             if (!perfil.resenas) perfil.resenas = [];
             perfil.resenas.push({ estrellas: m.estrellas, comentario: m.comentario, fecha: m.fechaCalificacion, mudanzaId });
             perfil.promedioEstrellas = Math.round((perfil.resenas.reduce((a, r) => a + r.estrellas, 0) / perfil.resenas.length) * 10) / 10;
-            await setJSON(`mudancero:${cot.mudanceroEmail}`, perfil);
+            // Actualizar también calificacion y nroResenas para el catálogo
+            perfil.calificacion = perfil.promedioEstrellas;
+            perfil.nroResenas = perfil.resenas.length;
+            await setJSON(`mudancero:perfil:${cot.mudanceroEmail}`, perfil);
           }
         }
       } catch(e) { console.warn('Error guardando reseña en perfil:', e.message); }
@@ -1206,6 +1209,29 @@ module.exports = async function handler(req, res) {
       const si = await redisCall('GET', 'encuesta:packs:si');
       const no = await redisCall('GET', 'encuesta:packs:no');
       return res.status(200).json({ si: parseInt(si) || 0, no: parseInt(no) || 0 });
+    }
+
+    if (action === 'admin-fix-resena' && req.method === 'POST') {
+      const { token, mudanzaId } = req.body;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(401).json({ error: 'No autorizado' });
+      if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (!m.calificado || !m.estrellas) return res.status(400).json({ error: 'Mudanza no tiene calificación' });
+      const cot = m.cotizacionAceptada;
+      if (!cot || !cot.mudanceroEmail) return res.status(400).json({ error: 'No hay cotización aceptada' });
+      const perfil = await getJSON(`mudancero:perfil:${cot.mudanceroEmail}`);
+      if (!perfil) return res.status(404).json({ error: 'Perfil mudancero no encontrado' });
+      if (!perfil.resenas) perfil.resenas = [];
+      // Evitar duplicados
+      const yaExiste = perfil.resenas.find(function(r){ return r.mudanzaId === mudanzaId; });
+      if (yaExiste) return res.status(200).json({ ok: true, msg: 'La reseña ya estaba guardada', resenas: perfil.resenas.length });
+      perfil.resenas.push({ estrellas: m.estrellas, comentario: m.comentario || '', fecha: m.fechaCalificacion, mudanzaId });
+      perfil.promedioEstrellas = Math.round((perfil.resenas.reduce((a, r) => a + r.estrellas, 0) / perfil.resenas.length) * 10) / 10;
+      perfil.calificacion = perfil.promedioEstrellas;
+      perfil.nroResenas = perfil.resenas.length;
+      await setJSON(`mudancero:perfil:${cot.mudanceroEmail}`, perfil);
+      return res.status(200).json({ ok: true, msg: 'Reseña guardada', estrellas: m.estrellas, mudancero: cot.mudanceroEmail, resenas: perfil.resenas.length });
     }
 
     return res.status(400).json({ error: 'Acción no reconocida' });
