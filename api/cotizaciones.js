@@ -705,6 +705,7 @@ module.exports = async function handler(req, res) {
             // Actualizar también calificacion y nroResenas para el catálogo
             perfil.calificacion = perfil.promedioEstrellas;
             perfil.nroResenas = perfil.resenas.length;
+            perfil.trabajosCompletados = (perfil.trabajosCompletados || 0) + 1;
             await setJSON(`mudancero:perfil:${cot.mudanceroEmail}`, perfil);
           }
         }
@@ -1237,6 +1238,7 @@ module.exports = async function handler(req, res) {
       perfil.promedioEstrellas = Math.round((perfil.resenas.reduce((a, r) => a + r.estrellas, 0) / perfil.resenas.length) * 10) / 10;
       perfil.calificacion = perfil.promedioEstrellas;
       perfil.nroResenas = perfil.resenas.length;
+      perfil.trabajosCompletados = (perfil.trabajosCompletados || 0) + 1;
       await setJSON(`mudancero:perfil:${cot.mudanceroEmail}`, perfil);
       return res.status(200).json({ ok: true, msg: 'Reseña guardada', estrellas: m.estrellas, mudancero: cot.mudanceroEmail, resenas: perfil.resenas.length });
     }
