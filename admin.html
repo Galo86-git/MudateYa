@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js" data-cfasync="false"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -2256,8 +2257,7 @@ async function guardarEdicion(){
   </div>
 </div>
 
-<!-- QRCode CDN para QR semilla -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+<!-- QRCode se carga en el <head> -->
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -2676,7 +2676,12 @@ async function guardarConfig() {
 // ── QR SEMILLA ──
 function renderQRSemilla() {
   var canvas = document.getElementById('qrSemilla');
-  if (!canvas || typeof QRCode === 'undefined') return;
+  if (!canvas) return;
+  if (typeof QRCode === 'undefined') {
+    // QRCode aún no cargó, reintentar en 300ms
+    setTimeout(renderQRSemilla, 300);
+    return;
+  }
   QRCode.toCanvas(canvas, 'https://mudateya.ar/aliados', {
     width: 280, margin: 1,
     color: { dark: '#003580', light: '#FFFFFF' }
@@ -2684,6 +2689,10 @@ function renderQRSemilla() {
 }
 
 function descargarQRSemilla() {
+  if (typeof QRCode === 'undefined') {
+    alert('La librería QRCode no cargó. Revisá tu conexión y recargá la página.');
+    return;
+  }
   var SIZE = 1200;
   var canvas = document.createElement('canvas');
   canvas.width = SIZE; canvas.height = SIZE + 240;
