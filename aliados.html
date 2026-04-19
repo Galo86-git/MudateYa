@@ -493,40 +493,62 @@ var _aliado = null;
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
-window.addEventListener('load', function(){ inicializar(); });
+window.addEventListener('load', function(){
+  // Timeout de seguridad: si a los 10s seguimos en loading, forzar login
+  setTimeout(function(){
+    var loading = document.getElementById('state-loading');
+    if (loading && !loading.classList.contains('hide')) {
+      console.warn('[Aliados] Timeout de carga — mostrando login');
+      mostrarToast('La carga tardó demasiado. Pedí otro link de acceso.', true);
+      mostrarLogin();
+    }
+  }, 10000);
+  inicializar();
+});
 
 async function inicializar() {
-  try { await cargarConfig(); } catch(e) { console.warn(e); }
+  console.log('[Aliados] Inicializando...');
+  try { await cargarConfig(); } catch(e) { console.warn('[Aliados] Config falló:', e); }
 
   var urlParams = new URLSearchParams(window.location.search);
   var paramToken = urlParams.get('token');
   var savedToken = localStorage.getItem('aliadoSession');
+  console.log('[Aliados] paramToken:', !!paramToken, '| savedToken:', !!savedToken);
 
   // Caso 1: llega con ?token=... (magic link)
   if (paramToken) {
     try {
+      console.log('[Aliados] Verificando magic link...');
       var r = await fetch('/api/aliados?action=verify-magiclink&token=' + encodeURIComponent(paramToken));
       var d = await r.json();
-      if (r.ok && d.ok) {
+      console.log('[Aliados] Verify response:', r.status, d);
+      if (r.ok && d.ok && d.sessionToken) {
         localStorage.setItem('aliadoSession', d.sessionToken);
         _session = d.sessionToken;
         // Limpiar URL
-        history.replaceState({}, '', '/aliados');
+        try { history.replaceState({}, '', '/aliados'); } catch(e){}
         return cargarPanel();
       } else {
         mostrarToast(d.error || 'Link inválido o expirado', true);
+        // Fallback: si tiene sesión previa, intentar con esa
+        if (savedToken) {
+          _session = savedToken;
+          return cargarPanel();
+        }
+        return mostrarLogin();
       }
     } catch(e) {
+      console.error('[Aliados] Error verify:', e);
       mostrarToast('Error al validar link', true);
+      if (savedToken) { _session = savedToken; return cargarPanel(); }
+      return mostrarLogin();
     }
   }
 
   // Caso 2: hay sesión guardada
   if (savedToken) {
     _session = savedToken;
-    var pr = await fetch('/api/aliados?action=panel&token=' + encodeURIComponent(savedToken));
-    if (pr.ok) return cargarPanel();
-    localStorage.removeItem('aliadoSession');
+    return cargarPanel();
   }
 
   // Caso 3: primera vez
@@ -679,36 +701,62 @@ async function pedirMagicLink() {
 // PANEL
 // ═══════════════════════════════════════════════════════════
 async function cargarPanel() {
+  console.log('[Aliados] cargarPanel()...');
   if (!_session) _session = localStorage.getItem('aliadoSession');
-  if (!_session) return mostrarRegister();
+  if (!_session) { console.log('[Aliados] Sin sesión'); return mostrarRegister(); }
 
   ocultarTodos();
   document.getElementById('state-loading').classList.remove('hide');
 
   try {
     var r = await fetch('/api/aliados?action=panel&token=' + encodeURIComponent(_session));
+    console.log('[Aliados] Panel response status:', r.status);
     if (!r.ok) {
+      console.warn('[Aliados] Panel falló, borrando sesión');
       localStorage.removeItem('aliadoSession');
+      _session = null;
       return mostrarLogin();
     }
     var d = await r.json();
+    console.log('[Aliados] Panel data:', d);
+    if (!d || !d.aliado) {
+      console.error('[Aliados] Panel sin datos de aliado');
+      return mostrarLogin();
+    }
     _aliado = d.aliado;
-    renderPanel(d);
+    try {
+      renderPanel(d);
+    } catch(renderErr) {
+      console.error('[Aliados] Error en renderPanel:', renderErr);
+      mostrarToast('Error al mostrar panel. Revisá consola.', true);
+    }
     ocultarTodos();
     document.getElementById('state-panel').classList.remove('hide');
   } catch(e) {
+    console.error('[Aliados] Error cargar panel:', e);
     mostrarToast('Error al cargar panel', true);
     mostrarLogin();
   }
 }
 
 function renderPanel(d) {
-  document.getElementById('pNombre').textContent = d.aliado.nombre.split(' ')[0];
-  document.getElementById('pEdif').textContent = d.aliado.edificio;
-  document.getElementById('pSlug').textContent = d.aliado.slug;
-  document.getElementById('pLink').textContent = 'mudateya.ar/r/' + d.aliado.slug;
+  var a = d.aliado || {};
+  var b = d.balance || {};
+  // Defaults defensivos
+  b.enCurso = b.enCurso || { count:0, monto:0 };
+  b.acreditadas = b.acreditadas || { count:0, monto:0 };
+  b.pagadas = b.pagadas || { count:0, monto:0 };
+  b.trimestre = b.trimestre || { count:0, umbral:3, bonoPct:0.2, bono:0 };
+  b.anio = b.anio || { count:0, umbral:10, bonoPct:0.1, bono:0 };
+  b.pendientePago = b.pendientePago || 0;
+  b.historial = b.historial || [];
 
-  var b = d.balance;
+  var nombreCompleto = a.nombre || 'Aliado';
+  document.getElementById('pNombre').textContent = nombreCompleto.split(' ')[0];
+  document.getElementById('pEdif').textContent = a.edificio || '';
+  document.getElementById('pSlug').textContent = a.slug || '—';
+  document.getElementById('pLink').textContent = 'mudateya.ar/r/' + (a.slug || '');
+
   document.getElementById('sEnCurso').textContent = b.enCurso.count;
   document.getElementById('sEnCursoMonto').textContent = '$' + formatoAR(b.enCurso.monto);
   document.getElementById('sAcred').textContent = b.acreditadas.count;
@@ -718,8 +766,8 @@ function renderPanel(d) {
   document.getElementById('sPend').textContent = '$' + formatoAR(b.pendientePago);
 
   // Progreso trimestral
-  var tC = b.trimestre.count;
-  var tU = b.trimestre.umbral;
+  var tC = b.trimestre.count || 0;
+  var tU = b.trimestre.umbral || 3;
   document.getElementById('trimCount').textContent = tC;
   document.getElementById('trimUmbralTxt').textContent = tU;
   document.getElementById('trimBar').style.width = Math.min(100, (tC/tU)*100) + '%';
@@ -729,12 +777,12 @@ function renderPanel(d) {
     trimMsg.textContent = '✓ Calificás. Bono proyectado: $' + formatoAR(b.trimestre.bono);
   } else {
     trimMsg.className = 'progress-msg';
-    trimMsg.textContent = 'Te faltan ' + (tU - tC) + ' operaciones para cobrar el bono de este trimestre (' + Math.round(b.trimestre.bonoPct*100) + '%).';
+    trimMsg.textContent = 'Te faltan ' + (tU - tC) + ' operaciones para cobrar el bono de este trimestre (' + Math.round((b.trimestre.bonoPct||0)*100) + '%).';
   }
 
   // Progreso anual
-  var aC = b.anio.count;
-  var aU = b.anio.umbral;
+  var aC = b.anio.count || 0;
+  var aU = b.anio.umbral || 10;
   document.getElementById('annCount').textContent = aC;
   document.getElementById('annUmbralTxt').textContent = aU;
   document.getElementById('annBar').style.width = Math.min(100, (aC/aU)*100) + '%';
@@ -744,7 +792,7 @@ function renderPanel(d) {
     annMsg.textContent = '✓ Calificás. Bono anual proyectado: $' + formatoAR(b.anio.bono);
   } else {
     annMsg.className = 'progress-msg';
-    annMsg.textContent = 'Te faltan ' + (aU - aC) + ' operaciones en el año para cobrar el bono anual (' + Math.round(b.anio.bonoPct*100) + '%).';
+    annMsg.textContent = 'Te faltan ' + (aU - aC) + ' operaciones en el año para cobrar el bono anual (' + Math.round((b.anio.bonoPct||0)*100) + '%).';
   }
 
   // Historial
@@ -755,11 +803,13 @@ function renderPanel(d) {
   } else {
     var html = '<div class="op-list">';
     for (var i=0; i<hist.length; i++) {
-      var h = hist[i];
-      var fecha = new Date(h.creadaEn).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'2-digit' });
-      var tipoClass = h.tipo === 'flete' ? 'flete' : (h.tipo.indexOf('bono')===0 ? 'bono' : 'mudanza');
-      var tipoLbl = h.tipo === 'flete' ? 'Flete' : (h.tipo === 'bono_trimestral' ? 'Bono trim.' : (h.tipo === 'bono_anual' ? 'Bono anual' : 'Mudanza'));
-      var estadoLbl = ({en_curso:'En curso', acreditada:'Acreditada', pagada:'Pagada', cancelada:'Cancelada'})[h.estado] || h.estado;
+      var h = hist[i] || {};
+      var fechaObj = h.creadaEn ? new Date(h.creadaEn) : new Date();
+      var fecha = isNaN(fechaObj) ? '—' : fechaObj.toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'2-digit' });
+      var tipo = h.tipo || 'mudanza';
+      var tipoClass = tipo === 'flete' ? 'flete' : (tipo.indexOf('bono')===0 ? 'bono' : 'mudanza');
+      var tipoLbl = tipo === 'flete' ? 'Flete' : (tipo === 'bono_trimestral' ? 'Bono trim.' : (tipo === 'bono_anual' ? 'Bono anual' : 'Mudanza'));
+      var estadoLbl = ({en_curso:'En curso', acreditada:'Acreditada', pagada:'Pagada', cancelada:'Cancelada'})[h.estado] || (h.estado || '—');
       html += '<div class="op-item">' +
         '<div class="op-left">' +
           '<div><span class="op-tipo ' + tipoClass + '">' + tipoLbl + '</span><span class="op-estado ' + h.estado + '">' + estadoLbl + '</span></div>' +
