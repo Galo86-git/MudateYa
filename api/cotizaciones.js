@@ -366,6 +366,58 @@ async function enviarEmailAltaMudancero(perfil) {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// HELPERS PARA PROGRAMA DE ALIADOS
+// ═══════════════════════════════════════════════════════════════════
+// Llama internamente al endpoint /api/aliados con header de autenticación interna.
+// No usamos import directo para mantener los endpoints desacoplados.
+async function aliadosCall(actionName, body) {
+  try {
+    var url = 'https://mudateya.ar/api/aliados?action=' + actionName;
+    var r = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.INTERNAL_API_SECRET || ''
+      },
+      body: JSON.stringify(body || {})
+    });
+    if (!r.ok) return { ok:false };
+    return await r.json();
+  } catch(e) {
+    console.warn('aliadosCall error:', e.message);
+    return { ok:false };
+  }
+}
+
+// Crea atribución al publicar si el cliente viene con ref válida
+async function hookCrearAtribucion(mudanzaId, refSlug, tipo) {
+  if (!refSlug || !mudanzaId) return;
+  try {
+    await aliadosCall('internal-crear-atribucion', {
+      mudanzaId: mudanzaId,
+      slug: String(refSlug).toUpperCase().trim(),
+      tipo: tipo || 'mudanza'
+    });
+  } catch(e) { console.warn('hookCrearAtribucion:', e.message); }
+}
+
+// Acredita la atribución al completarse la mudanza (saldo pagado)
+async function hookAcreditarAliado(mudanzaId) {
+  if (!mudanzaId) return;
+  try {
+    await aliadosCall('internal-acreditar', { mudanzaId: mudanzaId });
+  } catch(e) { console.warn('hookAcreditarAliado:', e.message); }
+}
+
+// Cancela la atribución si la mudanza se elimina o cancela
+async function hookCancelarAtribucion(mudanzaId) {
+  if (!mudanzaId) return;
+  try {
+    await aliadosCall('internal-cancelar', { mudanzaId: mudanzaId });
+  } catch(e) { console.warn('hookCancelarAtribucion:', e.message); }
+}
+
 module.exports = async function handler(req, res) {
   // ── CORS: solo aceptar requests desde mudateya.ar ──────────────
   const allowedOrigins = [
@@ -442,7 +494,7 @@ module.exports = async function handler(req, res) {
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
-      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos } = req.body;
+      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
@@ -504,6 +556,10 @@ module.exports = async function handler(req, res) {
       if (!clientesTodos.includes(clienteEmail)) clientesTodos.push(clienteEmail);
       await setJSON('clientes:todos', clientesTodos);
       try { await notificarMudanceros(mudanza); } catch(e) { console.error(e.message); }
+      // ── Hook aliados: crear atribución si el cliente vino por un link de aliado ──
+      if (refAliado) {
+        try { await hookCrearAtribucion(id, refAliado, tipo || 'mudanza'); } catch(e) { console.warn('Hook aliado publicar:', e.message); }
+      }
       return res.status(200).json({ ok: true, id, mudanza });
     }
 
@@ -647,6 +703,8 @@ module.exports = async function handler(req, res) {
         if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
         // Loguear en Sheets
         try { await logPedidoSheets(m); } catch(e) { console.warn('Sheets log error:', e.message); }
+        // ── Hook aliados: acreditar comisión (la mudanza está completa + 100% pagada) ──
+        try { await hookAcreditarAliado(mudanzaId); } catch(e) { console.warn('Hook aliado acreditar:', e.message); }
       }
       m.ultimoUpdatePago = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
@@ -726,6 +784,8 @@ module.exports = async function handler(req, res) {
       // Sacar de la lista activa
       const activas = await getJSON('mudanzas:activas') || [];
       await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId), 604800);
+      // ── Hook aliados: cancelar atribución si existía ──
+      try { await hookCancelarAtribucion(mudanzaId); } catch(e) { console.warn('Hook aliado cancelar:', e.message); }
       return res.status(200).json({ ok: true });
     }
     // Modo dirigido: cliente invita a mudanceros específicos
