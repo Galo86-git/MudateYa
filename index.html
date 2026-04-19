@@ -2365,6 +2365,17 @@
     document.getElementById('pub-ok').style.display = 'none';
     document.getElementById('pubModal').classList.add('open');
     var objetos = Array.from(document.querySelectorAll('.obj-chip.sel')).map(function(e){ return e.textContent.trim(); }).join(', ');
+    // ── Leer cookie de referido de aliado (mya_ref) ──
+    var refAliado = null;
+    try {
+      var m = document.cookie.match(/(?:^|;\s*)mya_ref=([A-Z0-9]{4,5})(?:;|$)/);
+      if (m && m[1]) refAliado = m[1];
+      if (!refAliado) {
+        var ls = localStorage.getItem('mya_ref');
+        var exp = localStorage.getItem('mya_ref_exp');
+        if (ls && exp && new Date(exp) > new Date()) refAliado = ls;
+      }
+    } catch(e){}
     try {
       await fetch('/api/cotizaciones?action=publicar', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -2376,6 +2387,7 @@
           precio_estimado:_busqueda.tipo==='mudanza' ? (50000+(_busqueda.ambientes-1)*30000) : 20000,
           tipo:_busqueda.tipo, modoCotizacion:modo,
           mudancerosInvitados:modo==='dirigido' ? Array.from(_sel) : [],
+          refAliado: refAliado
         })
       });
     } catch(e) { console.warn(e.message); }
