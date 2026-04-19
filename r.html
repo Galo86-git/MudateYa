@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>MudateYa</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#003580;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;text-align:center}
+  .box{max-width:400px}
+  .logo{font-family:'Bebas Neue',Impact,sans-serif;font-size:44px;letter-spacing:3px;margin-bottom:20px}
+  .logo span{color:#22C36A}
+  .msg{font-size:15px;opacity:.9;margin-bottom:8px}
+  .spin{display:inline-block;width:28px;height:28px;border:3px solid rgba(255,255,255,.2);border-top-color:#22C36A;border-radius:50%;animation:sp 1s linear infinite;margin-top:16px}
+  @keyframes sp { to { transform:rotate(360deg) } }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">MUDATE<span>YA</span></div>
+  <div class="msg" id="msg">Llevándote al inicio...</div>
+  <div class="spin"></div>
+</div>
+<script>
+(function(){
+  // Obtener slug del query param (setea vercel.json rewrite)
+  var urlParams = new URLSearchParams(window.location.search);
+  var slug = (urlParams.get('s') || '').toUpperCase().trim();
+
+  // Validar formato (4-5 caracteres alfanuméricos)
+  if (!/^[A-Z0-9]{4,5}$/.test(slug)) {
+    window.location.replace('/');
+    return;
+  }
+
+  // Verificar que el slug exista y esté activo
+  fetch('/api/aliados?action=lookup&slug=' + encodeURIComponent(slug))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.ok) {
+        // Setear cookie de atribución — 90 días, path raíz, SameSite=Lax
+        var days = 90;
+        var exp = new Date();
+        exp.setTime(exp.getTime() + days*24*60*60*1000);
+        var cookieStr = 'mya_ref=' + slug + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+        // Si es HTTPS, agregamos Secure
+        if (window.location.protocol === 'https:') cookieStr += '; Secure';
+        document.cookie = cookieStr;
+        // Guardar también en localStorage por si las cookies son rechazadas
+        try { localStorage.setItem('mya_ref', slug); localStorage.setItem('mya_ref_exp', exp.toISOString()); } catch(e){}
+        document.getElementById('msg').textContent = 'Recomendado por ' + (d.nombre || 'un aliado') + ' · Redirigiendo...';
+      }
+      // Redirigir a la home en todos los casos (aunque el slug sea inválido, el usuario no debería quedarse acá)
+      setTimeout(function(){ window.location.replace('/'); }, 700);
+    })
+    .catch(function(){
+      setTimeout(function(){ window.location.replace('/'); }, 700);
+    });
+})();
+</script>
+</body>
+</html>
