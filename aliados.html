@@ -206,6 +206,81 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   .ejemplo strong{color:var(--green);font-weight:700}
   .ejemplo .num{font-family:var(--mono);color:var(--navy);font-weight:700}
 
+  /* ── CALCULADORA INTERACTIVA ── */
+  .calc{background:#fff;border:2px solid var(--navy);border-radius:var(--r2);padding:18px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,53,128,.08)}
+  .calc-head{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+  .calc-ico{font-size:28px;flex-shrink:0}
+  .calc-title{font-size:15px;font-weight:700;color:var(--navy);line-height:1.2}
+  .calc-sub{font-size:11px;color:var(--text3);margin-top:2px}
+  .calc-slider-wrap{margin-bottom:14px}
+  .calc-slider-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:13px;color:var(--text2)}
+  .calc-slider-label strong{font-size:22px;color:var(--navy);font-family:var(--mono);font-weight:700}
+  .calc-slider-hint{color:var(--green);font-weight:600;font-size:12px}
+  .calc-slider{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:linear-gradient(to right,var(--green) 0%,var(--green) var(--fill,20%),var(--bg) var(--fill,20%),var(--bg) 100%);outline:none;cursor:pointer}
+  .calc-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:var(--navy);border:3px solid #fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .15s}
+  .calc-slider::-webkit-slider-thumb:active{transform:scale(1.2)}
+  .calc-slider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--navy);border:3px solid #fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  .calc-slider-axis{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px;padding:0 4px}
+  .calc-tabs{display:flex;gap:6px;margin-bottom:14px;padding:4px;background:var(--bg);border-radius:8px}
+  .calc-tab{flex:1;padding:8px;border:none;background:transparent;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;border-radius:6px;font-family:inherit;transition:all .2s}
+  .calc-tab.active{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .calc-result{background:var(--bg);border-radius:8px;padding:12px}
+  .calc-result-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;color:var(--text2)}
+  .calc-result-row .num{font-family:var(--mono);color:var(--navy);font-weight:600}
+  .calc-result-total{display:flex;justify-content:space-between;align-items:center;padding:12px 0 4px;border-top:2px dashed var(--green);margin-top:6px;font-size:14px;font-weight:700;color:var(--navy)}
+  .num-big{font-family:var(--mono);font-size:22px;color:var(--green);font-weight:800}
+
+  /* ── PANEL HERO MEJORADO ── */
+  .panel-hero{background:linear-gradient(135deg,var(--navy) 0%,#002860 100%);color:#fff;padding:22px 20px;border-radius:var(--r2);margin-bottom:14px;position:relative;overflow:hidden}
+  .panel-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;background:radial-gradient(circle,rgba(34,195,106,.25),transparent 70%);border-radius:50%}
+  .panel-hero-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1;margin-bottom:12px}
+  .panel-hi{font-size:12px;opacity:.85;margin-bottom:2px;letter-spacing:.3px}
+  .panel-name{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:1.2px;color:#fff;line-height:1}
+  .panel-edif{font-size:11px;color:rgba(255,255,255,.75);margin-top:4px;font-family:var(--mono)}
+  .panel-slug{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:var(--green);border-radius:6px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1.5px;flex-shrink:0}
+  .panel-hero-money{display:flex;align-items:baseline;gap:8px;margin-top:8px;position:relative;z-index:1}
+  .panel-hero-money .lbl{font-size:12px;color:rgba(255,255,255,.8)}
+  .panel-hero-money .val{font-family:var(--mono);font-size:32px;font-weight:800;color:var(--green);letter-spacing:-.5px}
+  .panel-hero-money .sub{font-size:10px;color:rgba(255,255,255,.6);font-family:var(--mono)}
+
+  /* ── PROGRESO BONOS MEJORADO ── */
+  .bono-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px;transition:all .2s}
+  .bono-card.ok{border-color:var(--green);background:linear-gradient(135deg,#F0FDF4 0%,#fff 100%)}
+  .bono-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+  .bono-card-title{font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
+  .bono-card-sub{font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+  .bono-card-potencial{font-family:var(--mono);font-weight:700;color:var(--green);font-size:14px;text-align:right;white-space:nowrap}
+  .bono-card-potencial-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.3px}
+  .bono-pills{display:flex;gap:4px;margin:10px 0}
+  .bono-pill{flex:1;height:7px;border-radius:3px;background:var(--bg);transition:background .4s}
+  .bono-pill.filled{background:linear-gradient(90deg,var(--blue),var(--green))}
+  .bono-pill.filled.ok{background:var(--green)}
+  .bono-msg{font-size:11px;color:var(--text2);line-height:1.5}
+  .bono-msg strong{color:var(--navy);font-weight:700}
+  .bono-msg.motivado{color:var(--green);font-weight:600}
+
+  /* ── OP CARD MEJORADO ── */
+  .op-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;transition:all .15s}
+  .op-card:hover{border-color:var(--blue);transform:translateX(2px)}
+  .op-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px}
+  .op-card-main{flex:1;min-width:0}
+  .op-card-tipo{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--navy)}
+  .op-card-tipo-ico{font-size:14px}
+  .op-card-fecha{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+  .op-card-monto{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--navy);text-align:right;flex-shrink:0}
+  .op-card-estado{display:inline-block;font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600;font-family:var(--mono);margin-top:4px}
+  .op-card-estado.en_curso{background:#FEF9C3;color:#854D0E}
+  .op-card-estado.acreditada{background:#D1FAE5;color:#047857}
+  .op-card-estado.pagada{background:#DBEAFE;color:#1E40AF}
+  .op-card-estado.cancelada{background:#FEE2E2;color:#B91C1C}
+
+  /* ── QR TIPS ── */
+  .qr-tips{background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);border:1px solid #FDE68A;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#92400E}
+  .qr-tips strong{color:#78350F}
+  .qr-tips ul{list-style:none;padding:0;margin:6px 0 0}
+  .qr-tips li{padding:2px 0;line-height:1.5}
+  .qr-tips li::before{content:'→ ';color:var(--green);font-weight:700}
+
   @media(max-width:480px){
     h1{font-size:1.7rem}
     .hero h1{font-size:2rem}
@@ -258,8 +333,47 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
       </div>
     </div>
 
-    <div class="ejemplo" id="ejemploGanancia">
-      <strong>Ejemplo:</strong> si cerrás <span class="num">4 mudanzas al mes</span>, te llevás <strong>$1.560.000 al año</strong> entre fijos, trimestrales y anual.
+    <!-- Calculadora interactiva de ganancia -->
+    <div class="calc">
+      <div class="calc-head">
+        <div class="calc-ico">💸</div>
+        <div class="calc-txt">
+          <div class="calc-title">Calculá cuánto podés ganar</div>
+          <div class="calc-sub">Ajustá el slider según tu estimación</div>
+        </div>
+      </div>
+      <div class="calc-slider-wrap">
+        <div class="calc-slider-label">
+          <span><strong id="calcOps">4</strong> operaciones por mes</span>
+          <span class="calc-slider-hint" id="calcTipo">mudanzas</span>
+        </div>
+        <input id="calcSlider" type="range" min="1" max="20" value="4" oninput="updateCalc()" class="calc-slider"/>
+        <div class="calc-slider-axis">
+          <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span>
+        </div>
+      </div>
+      <div class="calc-tabs">
+        <button class="calc-tab active" id="calcTabMud" onclick="setCalcTipo('mud')">📦 Mudanzas</button>
+        <button class="calc-tab" id="calcTabFle" onclick="setCalcTipo('fle')">🚚 Fletes</button>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-row">
+          <span>Fijos al año</span>
+          <span id="calcFijos" class="num">$1.200.000</span>
+        </div>
+        <div class="calc-result-row">
+          <span>Bono trimestral (+20%)</span>
+          <span id="calcTrim" class="num">$240.000</span>
+        </div>
+        <div class="calc-result-row">
+          <span>Bono anual (+10%)</span>
+          <span id="calcAnual" class="num">$120.000</span>
+        </div>
+        <div class="calc-result-total">
+          <span>Total al año</span>
+          <span id="calcTotal" class="num-big">$1.560.000</span>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -361,16 +475,31 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   <!-- ═══ ESTADO 6: PANEL DEL ALIADO ═══ -->
   <div id="state-panel" class="hide">
-    <div class="panel-head">
-      <div class="hi">Hola <span id="pNombre"></span></div>
-      <h1 id="pTituloSaludo">TU PANEL</h1>
-      <div class="ed" id="pEdif"></div>
-      <div class="slug-tag">Código: <span id="pSlug"></span></div>
+    <!-- HERO con destacado de ganancia -->
+    <div class="panel-hero">
+      <div class="panel-hero-top">
+        <div>
+          <div class="panel-hi">Hola, <span id="pNombre"></span> 👋</div>
+          <div class="panel-name" id="pTituloSaludo">TU PANEL</div>
+          <div class="panel-edif" id="pEdif"></div>
+        </div>
+        <div class="panel-slug">
+          <span>🔑</span>
+          <span id="pSlug"></span>
+        </div>
+      </div>
+      <div class="panel-hero-money">
+        <div>
+          <div class="lbl">Pendiente de cobro</div>
+          <div class="val" id="pHeroPend">$0</div>
+          <div class="sub" id="pHeroSub">Se transfiere el 10 de cada mes</div>
+        </div>
+      </div>
     </div>
 
     <!-- Acciones rápidas -->
     <div class="actions-row">
-      <button class="btn" onclick="abrirQR()">📱 Ver mi QR</button>
+      <button class="btn" onclick="abrirQR()">📱 Mi QR</button>
       <button class="btn btn-sec" onclick="compartirWA()">💬 Compartir</button>
     </div>
 
@@ -379,9 +508,9 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
       <button class="btn-copy" id="btnCopiar" onclick="copiarLink()">Copiar</button>
     </div>
 
-    <!-- Stats mes en curso -->
+    <!-- Stats compactas -->
     <div class="card card-tight">
-      <h2>Tu actividad</h2>
+      <h2 style="margin-bottom:10px">📊 Tu actividad</h2>
       <div class="stats-grid">
         <div class="stat yellow">
           <div class="stat-lbl">En curso</div>
@@ -394,54 +523,64 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
           <div class="stat-sub" id="sAcredMonto">$0</div>
         </div>
         <div class="stat">
-          <div class="stat-lbl">Pagadas (año)</div>
+          <div class="stat-lbl">Pagadas</div>
           <div class="stat-val" id="sPagadas">0</div>
           <div class="stat-sub" id="sPagadasMonto">$0</div>
         </div>
         <div class="stat">
-          <div class="stat-lbl">A cobrar el 10</div>
-          <div class="stat-val" id="sPend">$0</div>
-          <div class="stat-sub">del próximo mes</div>
+          <div class="stat-lbl">Total año</div>
+          <div class="stat-val" id="sTotalAnio">0</div>
+          <div class="stat-sub" id="sTotalAnioMonto">$0</div>
         </div>
       </div>
     </div>
 
-    <!-- Progreso Trimestral -->
-    <div class="card card-tight">
-      <div class="progress">
-        <div class="progress-head">
-          <div class="progress-title">🏆 Bono trimestral</div>
-          <div class="progress-val"><span id="trimCount">0</span> / <span id="trimUmbralTxt">3</span> ops</div>
+    <!-- Progreso de Bonos (cards independientes) -->
+    <h2 style="margin:22px 0 8px;padding:0 4px">🎯 Objetivos</h2>
+    <div class="bono-card" id="bonoTrimCard">
+      <div class="bono-card-head">
+        <div>
+          <div class="bono-card-title">🏆 Bono trimestral</div>
+          <div class="bono-card-sub"><span id="trimCount">0</span>/<span id="trimUmbralTxt">3</span> operaciones · este trimestre</div>
         </div>
-        <div class="progress-bar"><div class="progress-fill" id="trimBar" style="width:0%"></div></div>
-        <div class="progress-msg" id="trimMsg"></div>
+        <div>
+          <div class="bono-card-potencial-lbl">Potencial</div>
+          <div class="bono-card-potencial" id="bonoTrimPot">$0</div>
+        </div>
       </div>
+      <div class="bono-pills" id="trimPills"></div>
+      <div class="bono-msg" id="trimMsg"></div>
+    </div>
 
-      <div class="progress">
-        <div class="progress-head">
-          <div class="progress-title">🎁 Bono anual</div>
-          <div class="progress-val"><span id="annCount">0</span> / <span id="annUmbralTxt">10</span> ops</div>
+    <div class="bono-card" id="bonoAnualCard">
+      <div class="bono-card-head">
+        <div>
+          <div class="bono-card-title">🎁 Bono anual</div>
+          <div class="bono-card-sub"><span id="annCount">0</span>/<span id="annUmbralTxt">10</span> operaciones · este año</div>
         </div>
-        <div class="progress-bar"><div class="progress-fill" id="annBar" style="width:0%"></div></div>
-        <div class="progress-msg" id="annMsg"></div>
+        <div>
+          <div class="bono-card-potencial-lbl">Potencial</div>
+          <div class="bono-card-potencial" id="bonoAnualPot">$0</div>
+        </div>
       </div>
+      <div class="bono-pills" id="annPills"></div>
+      <div class="bono-msg" id="annMsg"></div>
     </div>
 
     <!-- Historial -->
-    <div class="card card-tight">
-      <h2>Historial de operaciones</h2>
-      <div id="histWrap">
-        <div class="empty">
-          <div class="empty-ico">📋</div>
-          <div>Cuando un vecino pida una mudanza o flete por tu link, vas a verla acá.</div>
-        </div>
+    <h2 style="margin:22px 0 8px;padding:0 4px">📋 Historial</h2>
+    <div id="histWrap">
+      <div class="card card-tight empty">
+        <div class="empty-ico">✨</div>
+        <div>Todavía no hay operaciones por tu link</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Cuando un vecino pida una mudanza o flete por tu link, va a aparecer acá.</div>
       </div>
     </div>
 
     <!-- Footer del panel -->
-    <div style="text-align:center;padding:20px 16px;color:var(--text3);font-size:12px">
-      <a onclick="cerrarSesion()" style="color:var(--text2);cursor:pointer">Cerrar sesión</a>
-      <div style="margin-top:8px">mudateya.ar</div>
+    <div style="text-align:center;padding:24px 16px 40px;color:var(--text3);font-size:12px">
+      <a onclick="cerrarSesion()" style="color:var(--text2);cursor:pointer;text-decoration:underline">Cerrar sesión</a>
+      <div style="margin-top:10px;font-family:var(--mono);font-size:11px">mudateya.ar · aliados</div>
     </div>
   </div>
 
@@ -454,11 +593,20 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
       <div class="modal-title">Tu QR personal</div>
       <button class="modal-close" onclick="cerrarQR()">×</button>
     </div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5">Descargá e imprimí este QR. Pegalo en el ascensor, el hall, o mandalo por WhatsApp al grupo de vecinos.</p>
+    <div class="qr-tips">
+      <strong>💡 Ideas para compartir tu QR:</strong>
+      <ul>
+        <li>Pegalo en el ascensor o hall del edificio</li>
+        <li>Mandalo al grupo de WhatsApp de vecinos</li>
+        <li>Pasalo en tu feed de Instagram o stories</li>
+        <li>Imprimilo en tarjetas chicas para repartir</li>
+      </ul>
+    </div>
     <div class="qr-preview" id="qrPreview">
       <canvas id="qrCanvas" width="320" height="320"></canvas>
     </div>
-    <button class="btn" onclick="descargarQR()">⬇️ Descargar QR (PNG)</button>
+    <button class="btn" onclick="descargarQR()">⬇️ Descargar PNG (1024px)</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="compartirWA()">💬 Compartir por WhatsApp</button>
   </div>
 </div>
 
@@ -575,18 +723,47 @@ async function cargarConfig() {
   document.getElementById('ben-fle-lbl').textContent = '$' + formatoAR(_config.fijoFlete) + ' por flete';
   document.getElementById('ben-tri-lbl').textContent = '+' + Math.round(_config.trimPct*100) + '% bono trimestral';
   document.getElementById('ben-ann-lbl').textContent = '+' + Math.round(_config.anualPct*100) + '% bono anual';
-  // Actualizar ejemplo
-  var mesTotal = 4 * _config.fijoMudanza;
-  var anoBase = mesTotal * 12;
-  var trimBono = mesTotal * 3 * _config.trimPct * 4;
-  var annBono = anoBase * _config.anualPct;
-  var total = anoBase + trimBono + annBono;
-  document.getElementById('ejemploGanancia').innerHTML = '<strong>Ejemplo:</strong> si cerrás <span class="num">4 mudanzas al mes</span>, te llevás <strong>$' + formatoAR(total) + ' al año</strong> entre fijos, trimestrales y anual.';
+  // Inicializar calculadora
+  updateCalc();
   // Si programa cerrado
   if (_config.programaAbierto === false) {
     document.getElementById('btnRegister').textContent = 'Programa cerrado a nuevas inscripciones';
     document.getElementById('btnRegister').disabled = true;
   }
+}
+
+// ── CALCULADORA INTERACTIVA ──
+var _calcTipo = 'mud'; // 'mud' o 'fle'
+
+function setCalcTipo(t){
+  _calcTipo = t;
+  document.getElementById('calcTabMud').classList.toggle('active', t === 'mud');
+  document.getElementById('calcTabFle').classList.toggle('active', t === 'fle');
+  document.getElementById('calcTipo').textContent = t === 'mud' ? 'mudanzas' : 'fletes';
+  updateCalc();
+}
+
+function updateCalc(){
+  if (!_config) return;
+  var ops = parseInt(document.getElementById('calcSlider').value) || 4;
+  var fijo = _calcTipo === 'mud' ? _config.fijoMudanza : _config.fijoFlete;
+  var opsAnual = ops * 12;
+  var opsTrim = ops * 3;
+  var montoAnual = opsAnual * fijo;
+  var montoTrim = opsTrim * fijo;
+  // Bonos (solo si cumple umbrales)
+  var bonoTrim = opsTrim >= _config.trimUmbral ? Math.round(montoTrim * _config.trimPct) * 4 : 0;
+  var bonoAnual = opsAnual >= _config.anualUmbral ? Math.round(montoAnual * _config.anualPct) : 0;
+  var total = montoAnual + bonoTrim + bonoAnual;
+  document.getElementById('calcOps').textContent = ops;
+  document.getElementById('calcFijos').textContent = '$' + formatoAR(montoAnual);
+  document.getElementById('calcTrim').textContent = bonoTrim ? '$' + formatoAR(bonoTrim) : 'No calificás aún';
+  document.getElementById('calcAnual').textContent = bonoAnual ? '$' + formatoAR(bonoAnual) : 'No calificás aún';
+  document.getElementById('calcTotal').textContent = '$' + formatoAR(total);
+  // Fill visual del slider
+  var slider = document.getElementById('calcSlider');
+  var pct = ((ops - 1) / 19) * 100;
+  slider.style.setProperty('--fill', pct + '%');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -767,74 +944,132 @@ function renderPanel(d) {
 
   var nombreCompleto = a.nombre || 'Aliado';
   document.getElementById('pNombre').textContent = nombreCompleto.split(' ')[0];
-  document.getElementById('pEdif').textContent = a.edificio || '';
+  document.getElementById('pTituloSaludo').textContent = 'TU PANEL';
+  document.getElementById('pEdif').textContent = '📍 ' + (a.edificio || '');
   document.getElementById('pSlug').textContent = a.slug || '—';
   document.getElementById('pLink').textContent = 'mudateya.ar/r/' + (a.slug || '');
 
+  // Hero money (pendiente de cobro es lo más importante)
+  document.getElementById('pHeroPend').textContent = '$' + formatoAR(b.pendientePago);
+  var heroSub = document.getElementById('pHeroSub');
+  if (b.pendientePago > 0) {
+    heroSub.textContent = 'Lo cobrás el 10 del próximo mes 🎉';
+  } else if (b.enCurso.monto > 0) {
+    heroSub.textContent = 'Tenés $' + formatoAR(b.enCurso.monto) + ' en curso — se acreditan al completarse';
+  } else {
+    heroSub.textContent = 'Empezá compartiendo tu link personal 👇';
+  }
+
+  // Stats compactas
   document.getElementById('sEnCurso').textContent = b.enCurso.count;
   document.getElementById('sEnCursoMonto').textContent = '$' + formatoAR(b.enCurso.monto);
   document.getElementById('sAcred').textContent = b.acreditadas.count;
   document.getElementById('sAcredMonto').textContent = '$' + formatoAR(b.acreditadas.monto);
   document.getElementById('sPagadas').textContent = b.pagadas.count;
   document.getElementById('sPagadasMonto').textContent = '$' + formatoAR(b.pagadas.monto);
-  document.getElementById('sPend').textContent = '$' + formatoAR(b.pendientePago);
+  var totalAnioOps = b.acreditadas.count + b.pagadas.count;
+  var totalAnioMonto = b.acreditadas.monto + b.pagadas.monto;
+  document.getElementById('sTotalAnio').textContent = totalAnioOps;
+  document.getElementById('sTotalAnioMonto').textContent = '$' + formatoAR(totalAnioMonto);
 
-  // Progreso trimestral
+  // ── Progreso trimestral (pills) ──
   var tC = b.trimestre.count || 0;
   var tU = b.trimestre.umbral || 3;
+  var tPct = b.trimestre.bonoPct || 0.2;
   document.getElementById('trimCount').textContent = tC;
   document.getElementById('trimUmbralTxt').textContent = tU;
-  document.getElementById('trimBar').style.width = Math.min(100, (tC/tU)*100) + '%';
+  var trimPills = '';
+  var pillCount = Math.max(tU, 5); // al menos 5 pills visualmente
+  for (var p=0; p<pillCount; p++) {
+    var filled = p < tC;
+    var okPill = p < tU && tC >= tU;
+    trimPills += '<div class="bono-pill' + (filled ? ' filled' : '') + (okPill ? ' ok' : '') + '"></div>';
+  }
+  document.getElementById('trimPills').innerHTML = trimPills;
+  // Bono proyectado trimestral
+  var bonoProyTrim = tC >= tU ? (b.trimestre.bono || Math.round(tC * (b.trimestre.monto / Math.max(tC,1)) * tPct)) : Math.round(tU * 25000 * tPct); // estimación si no llega
+  document.getElementById('bonoTrimPot').textContent = '$' + formatoAR(tC >= tU ? b.trimestre.bono : Math.round(b.trimestre.monto * tPct));
   var trimMsg = document.getElementById('trimMsg');
+  var trimCard = document.getElementById('bonoTrimCard');
   if (tC >= tU) {
-    trimMsg.className = 'progress-msg ok';
-    trimMsg.textContent = '✓ Calificás. Bono proyectado: $' + formatoAR(b.trimestre.bono);
+    trimMsg.className = 'bono-msg motivado';
+    trimMsg.innerHTML = '✓ <strong>¡Ya calificás!</strong> Con cada operación nueva sumás más al bono.';
+    trimCard.classList.add('ok');
   } else {
-    trimMsg.className = 'progress-msg';
-    trimMsg.textContent = 'Te faltan ' + (tU - tC) + ' operaciones para cobrar el bono de este trimestre (' + Math.round((b.trimestre.bonoPct||0)*100) + '%).';
+    trimMsg.className = 'bono-msg';
+    var faltan = tU - tC;
+    trimMsg.innerHTML = 'Te falta' + (faltan > 1 ? 'n ' + faltan : ' 1') + ' operación' + (faltan > 1 ? 'es' : '') + ' para desbloquear el <strong>+' + Math.round(tPct*100) + '%</strong>';
+    trimCard.classList.remove('ok');
   }
 
-  // Progreso anual
+  // ── Progreso anual (pills) ──
   var aC = b.anio.count || 0;
   var aU = b.anio.umbral || 10;
+  var aPct = b.anio.bonoPct || 0.1;
   document.getElementById('annCount').textContent = aC;
   document.getElementById('annUmbralTxt').textContent = aU;
-  document.getElementById('annBar').style.width = Math.min(100, (aC/aU)*100) + '%';
+  var annPills = '';
+  for (var q=0; q<aU; q++) {
+    var aFilled = q < aC;
+    var aOkPill = aC >= aU;
+    annPills += '<div class="bono-pill' + (aFilled ? ' filled' : '') + (aOkPill ? ' ok' : '') + '"></div>';
+  }
+  document.getElementById('annPills').innerHTML = annPills;
+  document.getElementById('bonoAnualPot').textContent = '$' + formatoAR(aC >= aU ? b.anio.bono : Math.round(b.anio.monto * aPct));
   var annMsg = document.getElementById('annMsg');
+  var annCard = document.getElementById('bonoAnualCard');
   if (aC >= aU) {
-    annMsg.className = 'progress-msg ok';
-    annMsg.textContent = '✓ Calificás. Bono anual proyectado: $' + formatoAR(b.anio.bono);
+    annMsg.className = 'bono-msg motivado';
+    annMsg.innerHTML = '✓ <strong>¡Ya calificás!</strong> Se liquida en diciembre.';
+    annCard.classList.add('ok');
   } else {
-    annMsg.className = 'progress-msg';
-    annMsg.textContent = 'Te faltan ' + (aU - aC) + ' operaciones en el año para cobrar el bono anual (' + Math.round((b.anio.bonoPct||0)*100) + '%).';
+    annMsg.className = 'bono-msg';
+    var aFaltan = aU - aC;
+    annMsg.innerHTML = 'Te falta' + (aFaltan > 1 ? 'n ' + aFaltan : ' 1') + ' operación' + (aFaltan > 1 ? 'es' : '') + ' más este año para el <strong>+' + Math.round(aPct*100) + '%</strong> anual';
+    annCard.classList.remove('ok');
   }
 
-  // Historial
+  // ── Historial mejorado ──
   var hist = b.historial || [];
   var hw = document.getElementById('histWrap');
   if (hist.length === 0) {
-    hw.innerHTML = '<div class="empty"><div class="empty-ico">📋</div><div>Cuando un vecino pida una mudanza o flete por tu link, vas a verla acá.</div></div>';
+    hw.innerHTML = '<div class="card card-tight empty"><div class="empty-ico">✨</div><div>Todavía no hay operaciones por tu link</div><div style="font-size:11px;color:var(--text3);margin-top:6px">Cuando un vecino pida una mudanza o flete por tu link, va a aparecer acá.</div></div>';
   } else {
-    var html = '<div class="op-list">';
+    var html = '';
     for (var i=0; i<hist.length; i++) {
       var h = hist[i] || {};
       var fechaObj = h.creadaEn ? new Date(h.creadaEn) : new Date();
-      var fecha = isNaN(fechaObj) ? '—' : fechaObj.toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'2-digit' });
+      var fechaRel = fechaRelativa(fechaObj);
       var tipo = h.tipo || 'mudanza';
-      var tipoClass = tipo === 'flete' ? 'flete' : (tipo.indexOf('bono')===0 ? 'bono' : 'mudanza');
-      var tipoLbl = tipo === 'flete' ? 'Flete' : (tipo === 'bono_trimestral' ? 'Bono trim.' : (tipo === 'bono_anual' ? 'Bono anual' : 'Mudanza'));
-      var estadoLbl = ({en_curso:'En curso', acreditada:'Acreditada', pagada:'Pagada', cancelada:'Cancelada'})[h.estado] || (h.estado || '—');
-      html += '<div class="op-item">' +
-        '<div class="op-left">' +
-          '<div><span class="op-tipo ' + tipoClass + '">' + tipoLbl + '</span><span class="op-estado ' + h.estado + '">' + estadoLbl + '</span></div>' +
-          '<div class="op-fecha" style="margin-top:4px">' + fecha + (h.concepto ? ' · ' + h.concepto : '') + '</div>' +
+      var tipoIco = tipo === 'flete' ? '🚚' : (tipo === 'bono_trimestral' ? '🏆' : (tipo === 'bono_anual' ? '🎁' : '📦'));
+      var tipoLbl = tipo === 'flete' ? 'Flete' : (tipo === 'bono_trimestral' ? 'Bono trimestral' : (tipo === 'bono_anual' ? 'Bono anual' : 'Mudanza'));
+      var estadoLbl = ({en_curso:'⏳ En curso', acreditada:'✅ Acreditada', pagada:'💰 Pagada', cancelada:'❌ Cancelada'})[h.estado] || (h.estado || '—');
+      html += '<div class="op-card">' +
+        '<div class="op-card-top">' +
+          '<div class="op-card-main">' +
+            '<div class="op-card-tipo"><span class="op-card-tipo-ico">' + tipoIco + '</span>' + tipoLbl + '</div>' +
+            '<div class="op-card-fecha">' + fechaRel + (h.concepto ? ' · ' + h.concepto : '') + '</div>' +
+          '</div>' +
+          '<div class="op-card-monto">$' + formatoAR(h.monto) + '</div>' +
         '</div>' +
-        '<div class="op-monto">$' + formatoAR(h.monto) + '</div>' +
+        '<div><span class="op-card-estado ' + h.estado + '">' + estadoLbl + '</span></div>' +
       '</div>';
     }
-    html += '</div>';
     hw.innerHTML = html;
   }
+}
+
+// Helper: fecha relativa
+function fechaRelativa(d) {
+  if (!d || isNaN(d)) return '—';
+  var ahora = new Date();
+  var diffMs = ahora - d;
+  var diffDias = Math.floor(diffMs / (1000*60*60*24));
+  if (diffDias === 0) return 'Hoy';
+  if (diffDias === 1) return 'Ayer';
+  if (diffDias < 7) return 'Hace ' + diffDias + ' días';
+  if (diffDias < 30) return 'Hace ' + Math.floor(diffDias/7) + ' sem.';
+  return d.toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'2-digit' });
 }
 
 // ═══════════════════════════════════════════════════════════
