@@ -25,6 +25,15 @@ async function setJSON(key, value, exSeconds) {
 }
 async function delKey(key) { await redisCall('del', key); }
 
+// Helpers para strings planos (sin JSON.stringify/parse)
+async function setString(key, value, exSeconds) {
+  if (exSeconds) await redisCall('setex', key, exSeconds, String(value));
+  else await redisCall('set', key, String(value));
+}
+async function getString(key) {
+  return await redisCall('get', key);
+}
+
 // ── Constantes ──────────────────────────────────────────────────────
 var ADMIN_FALLBACK = 'mya-admin-2026';
 var MAGIC_LINK_TTL = 900; // 15 minutos
@@ -247,6 +256,8 @@ async function crearAtribucion(mudanzaId, slug, tipo) {
   try {
     var aliadoEmail = await redisCall('get', 'aliado:slug:' + slug);
     if (!aliadoEmail) return { ok:false, motivo:'slug_invalido' };
+    // Sanitizar: si viene con comillas de JSON.stringify previo
+    aliadoEmail = String(aliadoEmail).replace(/^"(.*)"$/, '$1');
     var aliado = await getJSON('aliado:' + aliadoEmail);
     if (!aliado || aliado.estado !== 'activo') return { ok:false, motivo:'aliado_inactivo' };
     var cfg = await getConfig();
@@ -318,6 +329,7 @@ module.exports = async function handler(req, res) {
       if (!slug) return res.status(400).json({ error: 'Falta slug' });
       var email = await redisCall('get', 'aliado:slug:' + slug);
       if (!email) return res.status(404).json({ ok:false });
+      email = String(email).replace(/^"(.*)"$/, '$1');
       var aliado = await getJSON('aliado:' + email);
       if (!aliado || aliado.estado !== 'activo') return res.status(404).json({ ok:false });
       return res.status(200).json({ ok:true, slug: slug, nombre: aliado.nombre, edificio: aliado.edificio });
@@ -369,8 +381,8 @@ module.exports = async function handler(req, res) {
         creadoEn: new Date().toISOString()
       };
       await setJSON('aliado:' + email, aliado);
-      await setJSON('aliado:slug:' + slug, email); // lookup rápido
-      await setJSON('aliado:session:' + sessionToken, email, SESSION_TTL);
+      await setString('aliado:slug:' + slug, email); // lookup rápido (string plano)
+      await setString('aliado:session:' + sessionToken, email, SESSION_TTL);
 
       // Índice global para el admin
       var todosIdx = await getJSON('aliados:todos') || [];
@@ -417,7 +429,7 @@ module.exports = async function handler(req, res) {
       if (!aliadoObj) return res.status(404).json({ error: 'Aliado no encontrado' });
       // Generar nuevo session token
       var newSession = Math.random().toString(36).substring(2) + Date.now().toString(36) + Math.random().toString(36).substring(2);
-      await setJSON('aliado:session:' + newSession, aliadoEmail, SESSION_TTL);
+      await setString('aliado:session:' + newSession, aliadoEmail, SESSION_TTL);
       aliadoObj.sessionToken = newSession;
       aliadoObj.ultimoLogin = new Date().toISOString();
       await setJSON('aliado:' + aliadoEmail, aliadoObj);
@@ -432,6 +444,8 @@ module.exports = async function handler(req, res) {
       if (!panelToken) return res.status(401).json({ error: 'Sin token' });
       var panelEmail = await redisCall('get', 'aliado:session:' + panelToken);
       if (!panelEmail) return res.status(401).json({ error: 'Sesión expirada' });
+      // Sanitizar: si viene con comillas de un JSON.stringify previo, quitarlas
+      panelEmail = String(panelEmail).replace(/^"(.*)"$/, '$1');
       var panelAliado = await getJSON('aliado:' + panelEmail);
       if (!panelAliado) return res.status(404).json({ error: 'Aliado no encontrado' });
       var balance = await calcularBalance(panelEmail);
@@ -458,6 +472,7 @@ module.exports = async function handler(req, res) {
       var upToken = String((req.body||{}).token || '');
       var upEmail = await redisCall('get', 'aliado:session:' + upToken);
       if (!upEmail) return res.status(401).json({ error: 'Sesión expirada' });
+      upEmail = String(upEmail).replace(/^"(.*)"$/, '$1');
       var upAliado = await getJSON('aliado:' + upEmail);
       if (!upAliado) return res.status(404).json({ error: 'No encontrado' });
       var upBody = req.body || {};
