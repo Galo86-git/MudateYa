@@ -43,6 +43,7 @@ var SESSION_TTL = 60 * 60 * 24 * 30; // 30 días
 var CONFIG_DEFAULT = {
   fijoMudanza: 25000,
   fijoFlete: 10000,
+  fijoAlta: 5500,
   trimPct: 0.20,
   trimUmbral: 3,
   anualPct: 0.10,
@@ -327,6 +328,98 @@ async function crearAtribucion(mudanzaId, slug, tipo) {
   }
 }
 
+// ── Altas de mudanceros/fleteros ──
+// Se dispara cuando un mudancero se registra con cookie mya_ref activa.
+// Arranca en 'en_curso' y pasa a 'acreditada' cuando el admin lo aprueba.
+async function crearAtribucionAlta(mudanceroEmail, slug, tipoAlta) {
+  try {
+    if (!mudanceroEmail || !slug) return { ok:false, motivo:'datos_invalidos' };
+    var aliadoEmail = await redisCall('get', 'aliado:slug:' + slug);
+    if (!aliadoEmail) return { ok:false, motivo:'slug_invalido' };
+    aliadoEmail = String(aliadoEmail).replace(/^"(.*)"$/, '$1');
+    var aliado = await getJSON('aliado:' + aliadoEmail);
+    if (!aliado || aliado.estado !== 'activo') return { ok:false, motivo:'aliado_inactivo' };
+
+    // Tie-break: si ya existe atribución de alta para este mudancero, la nueva pisa a la vieja
+    // (última cookie activa gana). Pero si la anterior ya está acreditada/pagada, no se pisa.
+    var prev = await getJSON('atribucion:alta:' + mudanceroEmail);
+    if (prev && (prev.estado === 'acreditada' || prev.estado === 'pagada')) {
+      return { ok:false, motivo:'ya_acreditada_a_otro' };
+    }
+    // Si había una previa 'en_curso' de otro aliado, desvincularla del índice del aliado viejo
+    if (prev && prev.aliadoEmail && prev.aliadoEmail !== aliadoEmail) {
+      try {
+        var viejo = await getJSON('aliado:' + prev.aliadoEmail);
+        if (viejo && Array.isArray(viejo.atribuciones)) {
+          viejo.atribuciones = viejo.atribuciones.filter(function(id){ return id !== 'alta:' + mudanceroEmail; });
+          await setJSON('aliado:' + prev.aliadoEmail, viejo);
+        }
+      } catch(ex) {}
+    }
+
+    var cfg = await getConfig();
+    var atribId = 'alta:' + mudanceroEmail;
+    var atrib = {
+      mudanzaId: atribId,
+      mudanceroEmail: mudanceroEmail,
+      aliadoEmail: aliadoEmail,
+      aliadoSlug: slug,
+      aliadoNombre: aliado.nombre,
+      tipo: tipoAlta === 'fletero' ? 'alta_fletero' : 'alta_mudancero',
+      monto: cfg.fijoAlta || 5500,
+      estado: 'en_curso',
+      creadaEn: new Date().toISOString(),
+      completadaEn: null,
+      canceladaEn: null,
+      pagadaEn: null
+    };
+    await setJSON('atribucion:' + atribId, atrib);
+    aliado.atribuciones = aliado.atribuciones || [];
+    if (!aliado.atribuciones.includes(atribId)) {
+      aliado.atribuciones.push(atribId);
+      await setJSON('aliado:' + aliadoEmail, aliado);
+    }
+    return { ok:true };
+  } catch(e) {
+    console.error('crearAtribucionAlta:', e.message);
+    return { ok:false, motivo:'error' };
+  }
+}
+
+async function acreditarAlta(mudanceroEmail) {
+  try {
+    if (!mudanceroEmail) return { ok:false };
+    var atribId = 'alta:' + mudanceroEmail;
+    var atrib = await getJSON('atribucion:' + atribId);
+    if (!atrib) return { ok:false, motivo:'sin_atribucion' };
+    if (atrib.estado !== 'en_curso') return { ok:false, motivo:'estado_' + atrib.estado };
+    atrib.estado = 'acreditada';
+    atrib.completadaEn = new Date().toISOString();
+    await setJSON('atribucion:' + atribId, atrib);
+    return { ok:true };
+  } catch(e) {
+    console.error('acreditarAlta:', e.message);
+    return { ok:false };
+  }
+}
+
+async function cancelarAlta(mudanceroEmail) {
+  try {
+    if (!mudanceroEmail) return { ok:false };
+    var atribId = 'alta:' + mudanceroEmail;
+    var atrib = await getJSON('atribucion:' + atribId);
+    if (!atrib) return { ok:false, motivo:'sin_atribucion' };
+    if (atrib.estado === 'pagada') return { ok:false, motivo:'ya_pagada' };
+    atrib.estado = 'cancelada';
+    atrib.canceladaEn = new Date().toISOString();
+    await setJSON('atribucion:' + atribId, atrib);
+    return { ok:true };
+  } catch(e) {
+    console.error('cancelarAlta:', e.message);
+    return { ok:false };
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // HANDLER PRINCIPAL
 // ══════════════════════════════════════════════════════════════════════
@@ -552,6 +645,35 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(r3);
     }
 
+    // ── Altas (internal) ──
+    if (action === 'internal-alta-crear' && req.method === 'POST') {
+      var secA = req.headers['x-internal-secret'];
+      if (secA !== process.env.INTERNAL_API_SECRET) {
+        return res.status(403).json({ error: 'Sin autorización' });
+      }
+      var bA = req.body || {};
+      var rA = await crearAtribucionAlta(bA.mudanceroEmail, bA.slug, bA.tipo);
+      return res.status(200).json(rA);
+    }
+
+    if (action === 'internal-alta-acreditar' && req.method === 'POST') {
+      var secB = req.headers['x-internal-secret'];
+      if (secB !== process.env.INTERNAL_API_SECRET) {
+        return res.status(403).json({ error: 'Sin autorización' });
+      }
+      var rB = await acreditarAlta((req.body||{}).mudanceroEmail);
+      return res.status(200).json(rB);
+    }
+
+    if (action === 'internal-alta-cancelar' && req.method === 'POST') {
+      var secC = req.headers['x-internal-secret'];
+      if (secC !== process.env.INTERNAL_API_SECRET) {
+        return res.status(403).json({ error: 'Sin autorización' });
+      }
+      var rC = await cancelarAlta((req.body||{}).mudanceroEmail);
+      return res.status(200).json(rC);
+    }
+
     // ══════ ADMIN ══════
 
     if (action === 'admin-list' && req.method === 'GET') {
@@ -664,6 +786,48 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok:true, totalPagado: totalPagado });
     }
 
+    // ── Admin: acreditar/cancelar altas manualmente ──
+    if (action === 'admin-acreditar-alta' && req.method === 'POST') {
+      var admTokA = req.headers['x-admin-token'];
+      if (admTokA !== process.env.ADMIN_TOKEN && admTokA !== ADMIN_FALLBACK) {
+        return res.status(403).json({ error: 'No autorizado' });
+      }
+      var rAA = await acreditarAlta((req.body||{}).mudanceroEmail);
+      return res.status(200).json(rAA);
+    }
+
+    if (action === 'admin-cancelar-alta' && req.method === 'POST') {
+      var admTokC = req.headers['x-admin-token'];
+      if (admTokC !== process.env.ADMIN_TOKEN && admTokC !== ADMIN_FALLBACK) {
+        return res.status(403).json({ error: 'No autorizado' });
+      }
+      var rCA = await cancelarAlta((req.body||{}).mudanceroEmail);
+      return res.status(200).json(rCA);
+    }
+
+    // Admin: listar altas pendientes de acreditación
+    if (action === 'admin-altas-pendientes' && req.method === 'GET') {
+      var admTokLA = req.query.token || req.headers['x-admin-token'];
+      if (admTokLA !== process.env.ADMIN_TOKEN && admTokLA !== ADMIN_FALLBACK) {
+        return res.status(403).json({ error: 'No autorizado' });
+      }
+      var idxLA = await getJSON('aliados:todos') || [];
+      var pendientes = [];
+      for (var ia=0; ia<idxLA.length; ia++) {
+        var aLA = await getJSON('aliado:' + idxLA[ia]);
+        if (!aLA || !aLA.atribuciones) continue;
+        for (var ja=0; ja<aLA.atribuciones.length; ja++) {
+          var id = aLA.atribuciones[ja];
+          if (typeof id !== 'string' || id.indexOf('alta:') !== 0) continue;
+          var atLA = await getJSON('atribucion:' + id);
+          if (!atLA || atLA.estado !== 'en_curso') continue;
+          pendientes.push(atLA);
+        }
+      }
+      pendientes.sort(function(a,b){ return new Date(b.creadaEn) - new Date(a.creadaEn); });
+      return res.status(200).json({ ok:true, pendientes: pendientes, total: pendientes.length });
+    }
+
     if (action === 'admin-cambiar-estado' && req.method === 'POST') {
       var admToken4 = req.headers['x-admin-token'];
       if (admToken4 !== process.env.ADMIN_TOKEN && admToken4 !== ADMIN_FALLBACK) {
@@ -698,6 +862,7 @@ module.exports = async function handler(req, res) {
       var newCfg = Object.assign({}, currentCfg);
       if (typeof cuBody.fijoMudanza === 'number') newCfg.fijoMudanza = cuBody.fijoMudanza;
       if (typeof cuBody.fijoFlete === 'number') newCfg.fijoFlete = cuBody.fijoFlete;
+      if (typeof cuBody.fijoAlta === 'number') newCfg.fijoAlta = cuBody.fijoAlta;
       if (typeof cuBody.trimPct === 'number') newCfg.trimPct = cuBody.trimPct;
       if (typeof cuBody.trimUmbral === 'number') newCfg.trimUmbral = cuBody.trimUmbral;
       if (typeof cuBody.anualPct === 'number') newCfg.anualPct = cuBody.anualPct;
