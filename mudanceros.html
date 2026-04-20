@@ -797,6 +797,16 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
     cbu:           document.getElementById('cbu').value.trim(),
     emailMP:       document.getElementById('emailMP').value.trim(),
     titularCuenta: document.getElementById('titularCuenta').value.trim(),
+    refAliado:     (function(){
+      // Lee cookie mya_ref (seteada por /r/XXXX) y localStorage de fallback
+      try {
+        var m = document.cookie.match(/(?:^|;\s*)mya_ref=([^;]+)/);
+        if (m && m[1]) return decodeURIComponent(m[1]).toUpperCase();
+        var ls = localStorage.getItem('mya_ref');
+        if (ls) return String(ls).toUpperCase();
+      } catch(e) {}
+      return null;
+    })(),
   };
 
   try {
