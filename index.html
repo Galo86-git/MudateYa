@@ -1261,8 +1261,6 @@
         <div class="drawer-section">
           <div class="drawer-section-h">Verificaciones</div>
           <div class="drawer-opts">
-            <label class="drawer-opt"><input type="checkbox" onchange="toggleFVer('id',this);actualizarBadge()"/> ✅ Identidad verificada</label>
-            <label class="drawer-opt"><input type="checkbox" onchange="toggleFVer('veh',this);actualizarBadge()"/> 🚛 Vehículo verificado</label>
             <label class="drawer-opt"><input type="checkbox" onchange="toggleFVer('seg',this);actualizarBadge()"/> 🛡 Con seguro</label>
           </div>
         </div>
@@ -1332,8 +1330,6 @@
         </div>
         <div class="filtro-section">
           <div class="filtro-h">Verificaciones</div>
-          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('id',this)"/> ✅ Identidad verificada</label></div>
-          <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('veh',this)"/> 🚛 Vehículo verificado</label></div>
           <div class="filtro-opt"><label><input type="checkbox" onchange="toggleFVer('seg',this)"/> 🛡 Con seguro</label></div>
         </div>
         <div class="filtro-section">
@@ -1943,10 +1939,6 @@
     // Filtros
     if (_filtros.vehiculos.size) lista = lista.filter(function(m){ return _filtros.vehiculos.has(m.vehiculo); });
     if (_filtros.zonas.size)     lista = lista.filter(function(m){ return Array.from(_filtros.zonas).some(function(z){ return (m.zonaBase||'').includes(z); }); });
-    if (_filtros.verifs.has('id'))  lista = lista.filter(function(m){ return m.verificadoIdentidad; });
-    if (_filtros.verifs.has('veh')) lista = lista.filter(function(m){
-      return m.verificadoVehiculo || (m.servicios && m.servicios.toLowerCase().includes('vehículo'));
-    });
     if (_filtros.verifs.has('seg')) lista = lista.filter(function(m){
       return m.verificadoSeguro || (m.servicios && m.servicios.toLowerCase().includes('seguro'));
     });
