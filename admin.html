@@ -1509,16 +1509,78 @@ function renderZonas(){
   aprobados.forEach(function(m){ var z = m[5]||'Sin zona'; zonaCount[z] = (zonaCount[z]||0)+1; });
   var totalAprobados = aprobados.length || 1;
   var sorted = Object.entries(zonaCount).sort(function(a,b){ return b[1]-a[1]; });
-  document.getElementById('zonasMetrics').innerHTML = sorted.slice(0,4).map(function(entry){
-    return '<div class="metric-card green"><div class="metric-label">'+entry[0]+'</div><div class="metric-val">'+entry[1]+'</div><div class="metric-sub">mudanceros</div></div>';
-  }).join('') || '<div class="loading">Sin datos</div>';
-  document.getElementById('zonasList').innerHTML = sorted.length === 0
-    ? '<div class="empty"><div class="empty-icon">🗺️</div>Sin datos de zonas</div>'
-    : '<table><thead><tr><th>Zona</th><th>Mudanceros</th><th>% del total</th></tr></thead><tbody>'
-      + sorted.map(function(entry){
-          return '<tr><td class="td-name">'+entry[0]+'</td><td class="td-mono">'+entry[1]+'</td><td class="td-mono">'+((entry[1]/totalAprobados)*100).toFixed(1)+'%</td></tr>';
-        }).join('')
-      + '</tbody></table>';
+
+  // Clasificador: AMBA (CABA + GBA) vs Interior (resto Argentina) vs Otros
+  var PROVINCIAS = ['córdoba','cordoba','rosario','santa fe','mendoza','tucumán','tucuman','salta','jujuy','chaco','corrientes','misiones','entre ríos','entre rios','neuquén','neuquen','río negro','rio negro','chubut','santa cruz','tierra del fuego','la pampa','san juan','san luis','la rioja','catamarca','formosa','santiago'];
+  function clasificar(zona) {
+    var z = (zona||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if (z.startsWith('caba') || z.startsWith('gba') || z.includes('buenos aires')) return 'amba';
+    if (PROVINCIAS.some(function(p){ return z.includes(p); })) return 'interior';
+    return 'otros';
+  }
+
+  // Totales por grupo
+  var totalAMBA = 0, totalInt = 0, totalOtros = 0;
+  sorted.forEach(function(e){
+    var g = clasificar(e[0]);
+    if (g==='amba') totalAMBA += e[1];
+    else if (g==='interior') totalInt += e[1];
+    else totalOtros += e[1];
+  });
+
+  function pct(n){ return ((n/totalAprobados)*100).toFixed(1) + '%'; }
+
+  // ── Cards macro: AMBA · Interior · Total ──
+  var cardsHtml = ''
+    +'<div class="metric-card green"><div class="metric-label">AMBA</div><div class="metric-val">'+totalAMBA+'</div><div class="metric-sub">'+pct(totalAMBA)+' del total · CABA + GBA</div></div>'
+    +'<div class="metric-card blue"><div class="metric-label">Interior AR</div><div class="metric-val">'+totalInt+'</div><div class="metric-sub">'+pct(totalInt)+' del total · provincias</div></div>'
+    +(totalOtros > 0 ? '<div class="metric-card"><div class="metric-label">Sin clasificar</div><div class="metric-val">'+totalOtros+'</div><div class="metric-sub">'+pct(totalOtros)+' del total</div></div>' : '')
+    +'<div class="metric-card"><div class="metric-label">Total mudanceros</div><div class="metric-val">'+aprobados.length+'</div><div class="metric-sub">aprobados activos</div></div>';
+  document.getElementById('zonasMetrics').innerHTML = cardsHtml;
+
+  // ── Tabla detallada agrupada: AMBA · Interior · Otros ──
+  if (sorted.length === 0) {
+    document.getElementById('zonasList').innerHTML = '<div class="empty"><div class="empty-icon">🗺️</div>Sin datos de zonas</div>';
+    return;
+  }
+
+  var grupos = { amba: [], interior: [], otros: [] };
+  sorted.forEach(function(e){ grupos[clasificar(e[0])].push(e); });
+
+  var rows = '';
+  function renderGrupoHeader(titulo, subtotal, color) {
+    return '<tr style="background:#F5F7FA"><td colspan="4" style="font-weight:700;color:'+color+';font-size:12px;letter-spacing:.3px;padding:10px 12px">'
+      +'📍 '+titulo+' — '+subtotal+(subtotal===1?' mudancero':' mudanceros')+' · '+pct(subtotal)
+    +'</td></tr>';
+  }
+  function renderFilas(entries, areaLabel, areaColor) {
+    return entries.map(function(e){
+      return '<tr>'
+        +'<td class="td-name">'+e[0]+'</td>'
+        +'<td class="td-mono" style="color:'+areaColor+';font-weight:600">'+areaLabel+'</td>'
+        +'<td class="td-mono">'+e[1]+'</td>'
+        +'<td class="td-mono">'+pct(e[1])+'</td>'
+      +'</tr>';
+    }).join('');
+  }
+
+  if (grupos.amba.length) {
+    rows += renderGrupoHeader('AMBA (CABA + GBA)', totalAMBA, '#22C36A');
+    rows += renderFilas(grupos.amba, 'AMBA', '#22C36A');
+  }
+  if (grupos.interior.length) {
+    rows += renderGrupoHeader('Interior Argentina', totalInt, '#1A6FFF');
+    rows += renderFilas(grupos.interior, 'Interior', '#1A6FFF');
+  }
+  if (grupos.otros.length) {
+    rows += renderGrupoHeader('Sin clasificar', totalOtros, '#64748B');
+    rows += renderFilas(grupos.otros, 'Otros', '#64748B');
+  }
+
+  document.getElementById('zonasList').innerHTML =
+    '<table><thead><tr><th>Zona</th><th>Área</th><th>Mudanceros</th><th>% del total</th></tr></thead><tbody>'
+    +rows
+    +'</tbody></table>';
 }
 
 // ── MODAL MUDANCERO ────────────────────────────────────────────────────────
