@@ -695,7 +695,15 @@ module.exports = async function handler(req, res) {
           // Continuar igual — el webhook es la fuente de verdad
         }
       }
-      if (tipoPago === 'anticipo') m.anticipoPagado = true;
+      if (tipoPago === 'anticipo') {
+        m.anticipoPagado = true;
+        // Guardar el monto exacto del anticipo pagado (50% del precio en ese momento)
+        // Esto es crítico si luego hay ajuste de precio: el saldo se calcula como precio - anticipoMonto
+        if (!m.anticipoMonto) {
+          const cot = m.cotizacionAceptada || {};
+          m.anticipoMonto = Math.round((parseInt(cot.precio || 0)) * 0.5);
+        }
+      }
       if (tipoPago === 'saldo') {
         m.saldoPagado = true;
         // Al pagar el saldo, la mudanza queda completada
@@ -738,6 +746,172 @@ module.exports = async function handler(req, res) {
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       return res.status(200).json({ ok: true, estado });
     }
+
+    // ══ AJUSTE DE PRECIO ══════════════════════════════════════════════════
+    // 1. Mudancero propone un nuevo precio luego del anticipo pagado
+    if (action === 'proponer-ajuste' && req.method === 'POST') {
+      const { mudanzaId, mudanceroEmail, nuevoPrecio, motivo } = req.body;
+      if (!mudanzaId || !mudanceroEmail || !nuevoPrecio || !motivo) {
+        return res.status(400).json({ error: 'Faltan datos (mudanzaId, mudanceroEmail, nuevoPrecio, motivo)' });
+      }
+      const nuevo = parseInt(String(nuevoPrecio).replace(/\D/g, ''), 10);
+      if (!nuevo || nuevo < 1000) return res.status(400).json({ error: 'Precio inválido' });
+      if (motivo.trim().length < 8) return res.status(400).json({ error: 'El motivo debe tener al menos 8 caracteres' });
+
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      const cot = m.cotizacionAceptada;
+      if (!cot || cot.mudanceroEmail !== mudanceroEmail) return res.status(403).json({ error: 'Sin permiso' });
+      if (!m.anticipoPagado) return res.status(400).json({ error: 'Solo se puede ajustar después de que el cliente pagó el anticipo' });
+      if (m.saldoPagado) return res.status(400).json({ error: 'La mudanza ya está pagada completamente' });
+      if (m.ajustePrecio && m.ajustePrecio.estado === 'pendiente_aprobacion') {
+        return res.status(400).json({ error: 'Ya hay un ajuste pendiente de aprobación del cliente' });
+      }
+      if (m.ajustePrecio && (m.ajustePrecio.estado === 'aceptado' || m.ajustePrecio.estado === 'rechazado')) {
+        return res.status(400).json({ error: 'Ya se realizó un ajuste en esta mudanza (solo se permite una vez)' });
+      }
+
+      const precioOriginal = parseInt(cot.precio || 0);
+      const delta = nuevo - precioOriginal;
+      const deltaPct = precioOriginal > 0 ? Math.round((delta / precioOriginal) * 100) : 0;
+
+      m.ajustePrecio = {
+        propuesto: true,
+        montoOriginal: precioOriginal,
+        montoNuevo: nuevo,
+        delta: delta,
+        deltaPct: deltaPct,
+        motivo: String(motivo).slice(0, 500),
+        propuestoEn: new Date().toISOString(),
+        estado: 'pendiente_aprobacion',
+        aceptadoEn: null,
+        rechazadoEn: null,
+        recordatoriosEnviados: 0,
+        ultimoRecordatorio: null
+      };
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+
+      // Alerta admin si +30%
+      if (deltaPct > 30) {
+        try { await notificarAdminAjusteAlto(m); } catch(e) { console.warn('Alerta admin ajuste:', e.message); }
+      }
+      // Email al cliente
+      try { await notificarClienteAjustePropuesto(m); } catch(e) { console.warn('Email cliente ajuste:', e.message); }
+
+      return res.status(200).json({ ok: true, ajuste: m.ajustePrecio });
+    }
+
+    // 2. Cliente acepta el ajuste → se reemplaza el precio, el saldo se recalcula
+    if (action === 'aceptar-ajuste' && req.method === 'POST') {
+      const { mudanzaId, clienteEmail } = req.body;
+      if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
+      if (!m.ajustePrecio || m.ajustePrecio.estado !== 'pendiente_aprobacion') {
+        return res.status(400).json({ error: 'No hay un ajuste pendiente' });
+      }
+
+      // Aplicar el nuevo precio
+      m.ajustePrecio.estado = 'aceptado';
+      m.ajustePrecio.aceptadoEn = new Date().toISOString();
+      m.cotizacionAceptada.precio = m.ajustePrecio.montoNuevo;
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+
+      // Email al mudancero avisando que aceptaron
+      try { await notificarMudanceroAjusteAceptado(m); } catch(e) { console.warn('Email mudancero aceptado:', e.message); }
+      // Email al cliente confirmando
+      try { await notificarClienteAjusteAceptado(m); } catch(e) { console.warn('Email cliente aceptado:', e.message); }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    // 3. Cliente rechaza el ajuste → cancela mudanza + refund del anticipo
+    if (action === 'rechazar-ajuste' && req.method === 'POST') {
+      const { mudanzaId, clienteEmail } = req.body;
+      if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
+      if (!m.ajustePrecio || m.ajustePrecio.estado !== 'pendiente_aprobacion') {
+        return res.status(400).json({ error: 'No hay un ajuste pendiente' });
+      }
+
+      m.ajustePrecio.estado = 'rechazado';
+      m.ajustePrecio.rechazadoEn = new Date().toISOString();
+      m.estado = 'cancelada_por_ajuste';
+      m.canceladaEn = new Date().toISOString();
+
+      // Intentar refund del anticipo en MP
+      let refundOk = false;
+      let refundError = null;
+      if (m.mpAnticipoPagoId) {
+        try {
+          const { MercadoPagoConfig, Payment } = require('mercadopago');
+          const mpClient = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+          // Refund total usando fetch directo al endpoint de MP (el SDK no siempre expone refunds bien)
+          const r = await fetch(`https://api.mercadopago.com/v1/payments/${m.mpAnticipoPagoId}/refunds`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json',
+              'X-Idempotency-Key': `refund-${mudanzaId}-${Date.now()}`
+            }
+          });
+          const rData = await r.json();
+          if (r.ok && (rData.status === 'approved' || rData.id)) {
+            refundOk = true;
+            m.refundAnticipoId = rData.id;
+            m.refundAnticipoEn = new Date().toISOString();
+          } else {
+            refundError = rData.message || 'Error desconocido de MP';
+          }
+        } catch(e) {
+          refundError = e.message;
+          console.error('Error en refund MP:', e.message);
+        }
+      }
+
+      if (refundError) m.refundError = refundError;
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+
+      // Emails
+      try { await notificarMudanceroAjusteRechazado(m); } catch(e) { console.warn('Email mudancero rechazado:', e.message); }
+      try { await notificarClienteMudanzaCancelada(m, refundOk); } catch(e) { console.warn('Email cliente cancelación:', e.message); }
+      if (!refundOk) {
+        try { await notificarAdminRefundManual(m, refundError); } catch(e) { console.warn('Email admin refund:', e.message); }
+      }
+
+      return res.status(200).json({ ok: true, refundOk: refundOk });
+    }
+
+    // 4. Mudancero manda recordatorio al cliente
+    if (action === 'recordar-ajuste' && req.method === 'POST') {
+      const { mudanzaId, mudanceroEmail } = req.body;
+      if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      const cot = m.cotizacionAceptada;
+      if (!cot || cot.mudanceroEmail !== mudanceroEmail) return res.status(403).json({ error: 'Sin permiso' });
+      if (!m.ajustePrecio || m.ajustePrecio.estado !== 'pendiente_aprobacion') {
+        return res.status(400).json({ error: 'No hay un ajuste pendiente' });
+      }
+      // Anti-spam: mínimo 12hs entre recordatorios
+      if (m.ajustePrecio.ultimoRecordatorio) {
+        const horasDesde = (Date.now() - new Date(m.ajustePrecio.ultimoRecordatorio).getTime()) / 3600000;
+        if (horasDesde < 12) {
+          return res.status(429).json({ error: 'Podés enviar un recordatorio cada 12hs. Esperá ' + Math.ceil(12 - horasDesde) + 'hs más.' });
+        }
+      }
+      m.ajustePrecio.recordatoriosEnviados = (m.ajustePrecio.recordatoriosEnviados || 0) + 1;
+      m.ajustePrecio.ultimoRecordatorio = new Date().toISOString();
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+
+      try { await notificarClienteAjustePropuesto(m, true); } catch(e) { console.warn('Email recordatorio:', e.message); }
+      return res.status(200).json({ ok: true, recordatoriosEnviados: m.ajustePrecio.recordatoriosEnviados });
+    }
+    // ══ FIN AJUSTE DE PRECIO ═════════════════════════════════════════════
+
     if (action === 'calificar' && req.method === 'POST') {
       const { mudanzaId, estrellas, comentario, clienteEmail } = req.body;
       if (!mudanzaId || !estrellas || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
@@ -1786,11 +1960,23 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
 }
 
 
+// Calcula el saldo pendiente de pago considerando posibles ajustes de precio.
+// Si el cliente aceptó un ajuste: saldo = precio_nuevo - anticipo_pagado (fijo).
+// Si no hay ajuste: saldo = precio * 0.5 (50% tradicional).
+function calcularSaldo(mudanza) {
+  var cot = mudanza.cotizacionAceptada || {};
+  var precio = parseInt(cot.precio || 0);
+  if (mudanza.anticipoPagado && mudanza.anticipoMonto) {
+    return Math.max(0, precio - mudanza.anticipoMonto);
+  }
+  return Math.round(precio * 0.5);
+}
+
 async function notificarClienteAnticipoPagado(mudanza) {
   if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const cot = mudanza.cotizacionAceptada || {};
-  const saldo = Math.round((cot.precio || 0) * 0.5);
+  const saldo = calcularSaldo(mudanza);
   const saldoFmt = '$' + saldo.toLocaleString('es-AR');
   await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>',
@@ -1818,7 +2004,7 @@ async function notificarClienteSaldoPendiente(mudanza) {
   if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const cot = mudanza.cotizacionAceptada || {};
-  const saldo = Math.round((cot.precio || 0) * 0.5);
+  const saldo = calcularSaldo(mudanza);
   const saldoFmt = '$' + saldo.toLocaleString('es-AR');
   await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>',
@@ -1837,6 +2023,194 @@ async function notificarClienteSaldoPendiente(mudanza) {
         <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Pagar saldo final →</a>
       </div>
       <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+    </div>`,
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// EMAILS — Ajuste de precio
+// ══════════════════════════════════════════════════════════════════════
+
+// Email al cliente cuando el mudancero propone un nuevo precio (inicial o recordatorio)
+async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {
+  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  const ajuste = mudanza.ajustePrecio || {};
+  const origFmt = '$' + (ajuste.montoOriginal || 0).toLocaleString('es-AR');
+  const nuevoFmt = '$' + (ajuste.montoNuevo || 0).toLocaleString('es-AR');
+  const deltaSigno = ajuste.delta >= 0 ? '+' : '';
+  const deltaFmt = deltaSigno + '$' + Math.abs(ajuste.delta || 0).toLocaleString('es-AR') + ' (' + deltaSigno + ajuste.deltaPct + '%)';
+  const subject = esRecordatorio
+    ? `⏰ Recordatorio: ${cot.mudanceroNombre || 'tu mudancero'} espera tu respuesta sobre el nuevo precio`
+    : `⚠️ ${cot.mudanceroNombre || 'Tu mudancero'} propuso un ajuste de precio — ${nuevoFmt}`;
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: mudanza.clienteEmail,
+    subject: subject,
+    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#F59E0B;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.9);margin-left:12px">⚠️ Ajuste de precio propuesto</span></div>
+      <div style="padding:28px">
+        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6">${esRecordatorio ? 'Este es un recordatorio. ' : ''}<strong>${cot.mudanceroNombre || 'Tu mudancero'}</strong> propuso ajustar el precio de tu mudanza.</p>
+        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:12px;color:#92400E;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:10px">Motivo</div>
+          <div style="font-size:14px;color:#0F1923;line-height:1.5">"${(ajuste.motivo||'').replace(/"/g,'&quot;')}"</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Precio original</td><td style="text-align:right;font-size:13px;color:#0F1923;text-decoration:line-through">${origFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Diferencia</td><td style="text-align:right;font-size:13px;color:#F59E0B;font-weight:700">${deltaFmt}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#003580;padding:10px 6px;font-size:14px;font-weight:700">Nuevo precio</td><td style="text-align:right;color:#003580;font-weight:700;font-size:17px;padding:10px 6px">${nuevoFmt}</td></tr>
+        </table>
+        <p style="font-size:13px;color:#64748B;margin-bottom:16px;line-height:1.6">El anticipo que ya pagaste se mantiene. Si aceptás, se ajusta solo el saldo pendiente. Si rechazás, se cancela la mudanza y te devolvemos el anticipo.</p>
+        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver y decidir →</a>
+      </div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+    </div>`,
+  });
+}
+
+// Email al mudancero cuando el cliente acepta el ajuste
+async function notificarMudanceroAjusteAceptado(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  if (!cot.mudanceroEmail) return;
+  const nuevoFmt = '$' + (mudanza.ajustePrecio.montoNuevo || 0).toLocaleString('es-AR');
+  const saldo = calcularSaldo(mudanza);
+  const saldoFmt = '$' + saldo.toLocaleString('es-AR');
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: cot.mudanceroEmail,
+    subject: `✅ El cliente aceptó el ajuste — ${nuevoFmt}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#22C36A;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#003580">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.9);margin-left:12px">✅ Ajuste aceptado</span></div>
+      <div style="padding:28px">
+        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> aceptó el nuevo precio. Ya podés continuar con la mudanza.</p>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Cliente</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.clienteNombre||'—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Nuevo precio</td><td style="color:#22C36A;font-weight:700;font-size:16px;padding:7px 0">${nuevoFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:14px">${saldoFmt}</td></tr>
+        </table>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en mi cuenta →</a>
+      </div>
+    </div>`,
+  });
+}
+
+// Email al cliente confirmando que aceptó el ajuste
+async function notificarClienteAjusteAceptado(mudanza) {
+  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  const nuevoFmt = '$' + (mudanza.ajustePrecio.montoNuevo || 0).toLocaleString('es-AR');
+  const saldo = calcularSaldo(mudanza);
+  const saldoFmt = '$' + saldo.toLocaleString('es-AR');
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: mudanza.clienteEmail,
+    subject: `✅ Ajuste confirmado — Saldo ajustado a ${saldoFmt}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">✅ Ajuste confirmado</span></div>
+      <div style="padding:28px">
+        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6">Confirmamos el nuevo precio de tu mudanza con <strong>${cot.mudanceroNombre || 'tu mudancero'}</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Nuevo precio total</td><td style="color:#003580;font-weight:700;font-size:16px">${nuevoFmt}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Ya abonaste (anticipo)</td><td style="color:#0F1923;font-size:13px;padding:7px 0">$${(mudanza.anticipoMonto||0).toLocaleString('es-AR')}</td></tr>
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Saldo a pagar al completar</td><td style="color:#F59E0B;font-weight:700;font-size:14px">${saldoFmt}</td></tr>
+        </table>
+        <p style="font-size:13px;color:#64748B;line-height:1.6">Cuando tu mudancero marque la mudanza como completada, vas a poder pagar el saldo desde tu panel.</p>
+      </div>
+    </div>`,
+  });
+}
+
+// Email al mudancero cuando el cliente rechaza el ajuste
+async function notificarMudanceroAjusteRechazado(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  if (!cot.mudanceroEmail) return;
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: cot.mudanceroEmail,
+    subject: `❌ El cliente rechazó el ajuste — Mudanza cancelada`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#DC2626;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.9);margin-left:12px">❌ Ajuste rechazado</span></div>
+      <div style="padding:28px">
+        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> rechazó el ajuste de precio que propusiste. La mudanza queda cancelada y le devolvemos el anticipo.</p>
+        <p style="font-size:13px;color:#64748B;margin-bottom:16px;line-height:1.6">No te preocupes, esto no afecta tu calificación. Seguí cotizando otras mudanzas en tu panel.</p>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver panel →</a>
+      </div>
+    </div>`,
+  });
+}
+
+// Email al cliente confirmando cancelación + refund
+async function notificarClienteMudanzaCancelada(mudanza, refundOk) {
+  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  const anticipoFmt = '$' + (mudanza.anticipoMonto || 0).toLocaleString('es-AR');
+  const mensaje = refundOk
+    ? `Procesamos el reintegro de <strong>${anticipoFmt}</strong>. Vas a ver el acreditado en 5 a 10 días hábiles en tu medio de pago original.`
+    : `Estamos procesando el reintegro de <strong>${anticipoFmt}</strong>. Te vamos a contactar dentro de las próximas 24 horas para completar la devolución.`;
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: mudanza.clienteEmail,
+    subject: `Mudanza cancelada — Reintegro en proceso`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Mudanza cancelada</span></div>
+      <div style="padding:28px">
+        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6">Cancelamos tu mudanza con <strong>${cot.mudanceroNombre || 'el mudancero'}</strong> como solicitaste.</p>
+        <p style="font-size:14px;color:#0F1923;margin-bottom:20px;line-height:1.6">${mensaje}</p>
+        <p style="font-size:13px;color:#64748B;line-height:1.6">Si necesitás ayuda con una nueva mudanza, podés publicar un nuevo pedido cuando quieras.</p>
+        <a href="https://mudateya.ar" style="display:inline-block;margin-top:12px;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Nueva mudanza →</a>
+      </div>
+    </div>`,
+  });
+}
+
+// Alerta al admin cuando hay un ajuste muy alto (+30%)
+async function notificarAdminAjusteAlto(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const admin = process.env.ADMIN_EMAIL || 'jgalozaldivar@gmail.com';
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  const ajuste = mudanza.ajustePrecio || {};
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: admin,
+    subject: `⚠️ Ajuste alto (+${ajuste.deltaPct}%) en ${mudanza.id}`,
+    html: `<div style="font-family:Arial,sans-serif;padding:20px">
+      <h3>Ajuste de precio alto detectado</h3>
+      <p><strong>Mudanza:</strong> ${mudanza.id}</p>
+      <p><strong>Cliente:</strong> ${mudanza.clienteNombre} (${mudanza.clienteEmail})</p>
+      <p><strong>Mudancero:</strong> ${cot.mudanceroNombre} (${cot.mudanceroEmail})</p>
+      <p><strong>Original:</strong> $${(ajuste.montoOriginal||0).toLocaleString('es-AR')}</p>
+      <p><strong>Nuevo:</strong> $${(ajuste.montoNuevo||0).toLocaleString('es-AR')} (+${ajuste.deltaPct}%)</p>
+      <p><strong>Motivo:</strong> "${ajuste.motivo||''}"</p>
+      <p><a href="https://mudateya.ar/admin">Ver admin →</a></p>
+    </div>`,
+  });
+}
+
+// Aviso al admin si el refund automático falla
+async function notificarAdminRefundManual(mudanza, error) {
+  if (!process.env.RESEND_API_KEY) return;
+  const admin = process.env.ADMIN_EMAIL || 'jgalozaldivar@gmail.com';
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>',
+    to: admin,
+    subject: `🚨 Refund manual requerido — ${mudanza.id}`,
+    html: `<div style="font-family:Arial,sans-serif;padding:20px">
+      <h3>El refund automático falló — Hay que procesarlo manualmente</h3>
+      <p><strong>Mudanza:</strong> ${mudanza.id}</p>
+      <p><strong>Cliente:</strong> ${mudanza.clienteNombre} (${mudanza.clienteEmail})</p>
+      <p><strong>Monto a reintegrar:</strong> $${(mudanza.anticipoMonto||0).toLocaleString('es-AR')}</p>
+      <p><strong>Payment ID MP:</strong> ${mudanza.mpAnticipoPagoId || '—'}</p>
+      <p><strong>Error:</strong> ${error || 'desconocido'}</p>
+      <p>Hay que hacer el refund a mano desde el panel de MP.</p>
     </div>`,
   });
 }
