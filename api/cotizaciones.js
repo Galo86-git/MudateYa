@@ -290,6 +290,21 @@ async function generarPDFBase64(datos) {
 
   Y += 68;
 
+  // ── 8a. AVISO AJUSTE DE PRECIO ────────────────────────────────────
+  // Cuadro celeste informando que el mudancero puede proponer ajuste si detecta
+  // condiciones no previstas durante el relevamiento.
+  const ajusteY = Y;
+  const ajusteH = 38;
+  fillRect(ML, ajusteY, CW, ajusteH, '#EFF6FF', 5);
+  strokeRect(ML, ajusteY, CW, ajusteH, '#93C5FD', 0.5, 5);
+  fillRect(ML, ajusteY, 4, ajusteH, '#1A6FFF', 0);
+  doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#1E40AF');
+  doc.text('PRECIO SUJETO A AJUSTE', ML + 14, ajusteY + 6, { lineBreak: false });
+  doc.font('Helvetica').fontSize(7).fillColor('#1E3A8A');
+  doc.text('Si al dia de la mudanza hubiera condiciones no previstas (mas volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidis si lo aceptas; si rechazas, recuperas tu anticipo completo.', ML + 14, ajusteY + 18, { width: CW - 28, lineGap: 1 });
+
+  Y += ajusteH + 8;
+
   // ── 8. AVISO PAGO SEGURO ──────────────────────────────────────────
   const avisoY = Y;
   fillRect(ML, avisoY, CW, 26, '#FFFBEB', 5);
@@ -703,16 +718,12 @@ module.exports = async function handler(req, res) {
           const cot = m.cotizacionAceptada || {};
           m.anticipoMonto = Math.round((parseInt(cot.precio || 0)) * 0.5);
         }
-        // Fecha puntual del anticipo (para calcular liquidaciones a 14 días hábiles)
-        if (!m.fechaAnticipoPagado) m.fechaAnticipoPagado = new Date().toISOString();
       }
       if (tipoPago === 'saldo') {
         m.saldoPagado = true;
         // Al pagar el saldo, la mudanza queda completada
         m.estado = 'completada';
         if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
-        // Fecha puntual del saldo (para calcular liquidaciones a 14 días hábiles)
-        if (!m.fechaSaldoPagado) m.fechaSaldoPagado = new Date().toISOString();
         // Loguear en Sheets
         try { await logPedidoSheets(m); } catch(e) { console.warn('Sheets log error:', e.message); }
         // ── Hook aliados: acreditar comisión (la mudanza está completa + 100% pagada) ──
@@ -725,20 +736,7 @@ module.exports = async function handler(req, res) {
       if (tipoPago === 'anticipo') {
         try { await notificarClienteAnticipoPagado(m); } catch(e) { console.warn('Email cliente anticipo error:', e.message); }
       }
-      // Devolver los montos reales para que el frontend (pago-exitoso) pueda mostrarlos
-      // correctamente incluso cuando hubo ajuste de precio (el 50% teórico ya no aplica).
-      const _cot = m.cotizacionAceptada || {};
-      const _precioTotal = parseInt(_cot.precio || 0);
-      const _anticipoReal = parseInt(m.anticipoMonto || Math.round(_precioTotal * 0.5));
-      const _saldoReal = Math.max(0, _precioTotal - _anticipoReal);
-      const _huboAjuste = m.ajustePrecio && m.ajustePrecio.estado === 'aceptado';
-      return res.status(200).json({
-        ok: true,
-        precioTotal: _precioTotal,
-        anticipoMonto: _anticipoReal,
-        saldoMonto: _saldoReal,
-        huboAjuste: !!_huboAjuste
-      });
+      return res.status(200).json({ ok: true });
     }
     if (action === 'cambiar-estado' && req.method === 'POST') {
       const { mudanzaId, estado, mudanceroEmail } = req.body;
@@ -1080,63 +1078,23 @@ module.exports = async function handler(req, res) {
       for (const id of activas) {
         try {
           const m = await getJSON(`mudanza:${id}`);
-          if (!m) continue;
-          if (!m.anticipoPagado && !m.saldoPagado) continue;
-
-          const cot = m.cotizacionAceptada || {};
-          const precioTotal = parseInt(cot.precio || 0);
-          const tipo = m.tipo || 'mudanza';
-          const esFlete = String(tipo).toLowerCase() === 'flete';
-          const feePct = esFlete ? 0.20 : 0.15;
-
-          // 1 registro por pago (anticipo + saldo = 2 filas)
-          if (m.anticipoPagado) {
-            const montoBruto = parseInt(m.anticipoMonto || Math.round(precioTotal * 0.5));
-            const feeAbs = Math.round(montoBruto * feePct);
+          if (m && (m.anticipoPagado || m.saldoPagado)) {
             rows.push({
-              id:            m.id + '-anticipo',
-              mudanzaId:     m.id,
-              tipoPago:      'anticipo',
-              desde:         m.desde,
-              hasta:         m.hasta,
-              clienteEmail:  m.clienteEmail,
+              id: m.id,
+              desde: m.desde,
+              hasta: m.hasta,
+              clienteEmail: m.clienteEmail,
               clienteNombre: m.clienteNombre,
-              tipo,
-              mudancero:     cot.mudanceroNombre || '—',
-              mudanceroEmail:cot.mudanceroEmail || '',
-              precio:        precioTotal,
-              montoPagado:   montoBruto,
-              feePct:        Math.round(feePct * 100),
-              fee:           feeAbs,
-              neto:          montoBruto - feeAbs,
-              fechaPago:     m.fechaAnticipoPagado || m.ultimoUpdatePago || m.fechaPublicacion || null,
-              liquidadoEn:   m.liquidacionAnticipoEn || null,
-              estado:        m.estado,
-            });
-          }
-          if (m.saldoPagado) {
-            const anticipoReal = parseInt(m.anticipoMonto || Math.round(precioTotal * 0.5));
-            const montoBruto = Math.max(0, precioTotal - anticipoReal);
-            const feeAbs = Math.round(montoBruto * feePct);
-            rows.push({
-              id:            m.id + '-saldo',
-              mudanzaId:     m.id,
-              tipoPago:      'saldo',
-              desde:         m.desde,
-              hasta:         m.hasta,
-              clienteEmail:  m.clienteEmail,
-              clienteNombre: m.clienteNombre,
-              tipo,
-              mudancero:     cot.mudanceroNombre || '—',
-              mudanceroEmail:cot.mudanceroEmail || '',
-              precio:        precioTotal,
-              montoPagado:   montoBruto,
-              feePct:        Math.round(feePct * 100),
-              fee:           feeAbs,
-              neto:          montoBruto - feeAbs,
-              fechaPago:     m.fechaSaldoPagado || m.ultimoUpdatePago || m.fechaCompletada || null,
-              liquidadoEn:   m.liquidacionSaldoEn || null,
-              estado:        m.estado,
+              anticipoPagado: m.anticipoPagado || false,
+              saldoPagado: m.saldoPagado || false,
+              precio: m.cotizacionAceptada ? (m.cotizacionAceptada.precio || 0) : (m.precio_estimado || 0),
+              tipo: m.tipo || 'mudanza',
+              mudancero: m.cotizacionAceptada ? (m.cotizacionAceptada.mudanceroNombre || '—') : '—',
+              mudanceroEmail: m.cotizacionAceptada ? (m.cotizacionAceptada.mudanceroEmail || '') : '',
+              fecha: m.fechaPublicacion || '',
+              precio_estimado: m.precio_estimado || 0,
+              estado: m.estado,
+              fechaPublicacion: m.fechaPublicacion,
             });
           }
         } catch(e) {}
@@ -1163,22 +1121,6 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Admin: aprobar / rechazar mudancero ──────────────────────────
-    if (action === 'admin-marcar-liquidado' && req.method === 'POST') {
-      const { token } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
-        return res.status(401).json({ error: 'Token inválido' });
-      }
-      const { mudanzaId, tipoPago } = req.body;
-      if (!mudanzaId || !tipoPago) return res.status(400).json({ error: 'Faltan datos' });
-      const m = await getJSON(`mudanza:${mudanzaId}`);
-      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
-      const ahora = new Date().toISOString();
-      if (tipoPago === 'anticipo') m.liquidacionAnticipoEn = ahora;
-      if (tipoPago === 'saldo')    m.liquidacionSaldoEn = ahora;
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
-      return res.status(200).json({ ok: true, liquidadoEn: ahora });
-    }
-
     if (action === 'admin-editar-mudancero' && req.method === 'POST') {
       const { token, email, cambios } = req.body;
       if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
@@ -1414,38 +1356,6 @@ module.exports = async function handler(req, res) {
           const p = await getJSON(`mudancero:perfil:${email}`);
           if (!p || p.estado !== 'aprobado') continue;
           if (palabrasBuscadas.length > 0 && !cubreZona(p)) continue;
-
-          // Enriquecer reseñas con nombre del cliente (buscando en cada mudanza).
-          // Incluimos todas (con o sin comentario) — el frontend decide el render.
-          var resenasEnriquecidas = [];
-          if (Array.isArray(p.resenas) && p.resenas.length) {
-            for (var i = 0; i < p.resenas.length; i++) {
-              var r = p.resenas[i];
-              if (!r) continue;
-              var autor = 'Cliente';
-              try {
-                if (r.mudanzaId) {
-                  var mR = await getJSON('mudanza:' + r.mudanzaId);
-                  if (mR && mR.clienteNombre) {
-                    // Anonimizar apellido: "Juan Pérez" -> "Juan P."
-                    var partes = String(mR.clienteNombre).trim().split(/\s+/);
-                    if (partes.length >= 2 && partes[1]) {
-                      autor = partes[0] + ' ' + partes[1].charAt(0).toUpperCase() + '.';
-                    } else {
-                      autor = partes[0];
-                    }
-                  }
-                }
-              } catch(_e) {}
-              resenasEnriquecidas.push({
-                estrellas: r.estrellas || 5,
-                comentario: r.comentario || '',
-                fecha: r.fecha || '',
-                autor: autor
-              });
-            }
-          }
-
           // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
           catalogo.push({
             email:               p.email,
@@ -1458,7 +1368,6 @@ module.exports = async function handler(req, res) {
             servicios:           p.servicios            || '',
             calificacion:        p.calificacion         || 0,
             nroResenas:          p.nroResenas           || 0,
-            resenas:             resenasEnriquecidas,
             trabajosCompletados: p.trabajosCompletados  || 0,
             verificadoIdentidad: p.verificadoIdentidad  || false,
             verificadoVehiculo:  p.verificadoVehiculo   || false,
@@ -1755,6 +1664,13 @@ async function notificarCliente(mudanza, cotizacion) {
           ${cotizacion.tiempoEstimado ? `<div style="color:#64748B;font-size:13px;margin-top:6px">⏱ ${cotizacion.tiempoEstimado}</div>` : ''}
           ${cotizacion.nota ? `<div style="color:#475569;font-size:13px;margin-top:8px;font-style:italic;border-top:1px solid #E2E8F0;padding-top:8px">"${cotizacion.nota}"</div>` : ''}
         </div>
+        <!-- Aviso ajuste de precio -->
+        <div style="background:#EFF6FF;border:1px solid #93C5FD;border-left:4px solid #1A6FFF;border-radius:10px;padding:14px 18px;margin:0 0 20px">
+          <div style="font-size:11px;color:#1E40AF;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:6px;font-family:monospace">💡 Precio sujeto a ajuste</div>
+          <div style="color:#1E3A8A;font-size:12.5px;line-height:1.55">
+            Si al día de la mudanza hubiera condiciones no previstas (más volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidís si lo aceptás; si rechazás, <strong>recuperás tu anticipo completo</strong>.
+          </div>
+        </div>
         <p style="color:#64748B;font-size:13px;margin-bottom:20px">El detalle completo está adjunto en PDF.</p>
         <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#1A6FFF;color:#ffffff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mis cotizaciones →</a>
       </div>
@@ -2016,35 +1932,22 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   if (!cot || !cot.mudanceroEmail) return;
 
   const esAnticipo = tipoPago === 'anticipo';
-  const precioTotal = parseInt(cot.precio || 0);
+  const precioTotal = cot.precio || 0;
   const esFlete = (mudanza.tipo || '').toLowerCase() === 'flete';
   const comisionPct = esFlete ? 0.20 : 0.15;
-
-  // Monto REAL de cada pago (no el 50% teórico — puede haber habido ajuste de precio).
-  // Anticipo: lo que efectivamente pagó el cliente (anticipoMonto guardado al pagar).
-  // Saldo: precio_actual - anticipo_real.
-  const anticipoReal = parseInt(mudanza.anticipoMonto || Math.round(precioTotal * 0.5));
-  const saldoReal = Math.max(0, precioTotal - anticipoReal);
-  const monto = esAnticipo ? anticipoReal : saldoReal;
+  const monto = Math.round(precioTotal * 0.5);
   const montoFmt = '$' + monto.toLocaleString('es-AR');
-
-  // Neto a liquidar: se calcula sobre el TOTAL final, no el saldo recibido
   const netoMudancero = Math.round(precioTotal * (1 - comisionPct));
   const netoFmt = '$' + netoMudancero.toLocaleString('es-AR');
   const nombre = (cot.mudanceroNombre || 'Mudancero').split(' ')[0];
-
-  // Labels dinámicos: si hubo ajuste, ya no son "50%" exactos
-  const huboAjuste = mudanza.ajustePrecio && mudanza.ajustePrecio.estado === 'aceptado';
-  const etiquetaAnticipo = huboAjuste ? 'anticipo' : 'anticipo del 50%';
-  const etiquetaSaldo    = huboAjuste ? 'saldo final' : 'saldo final (50%)';
 
   const subject = esAnticipo
     ? `💰 Anticipo recibido — ${mudanza.desde?.split(',')[0]} → ${mudanza.hasta?.split(',')[0]}`
     : `✅ Saldo final recibido — Mudanza completamente pagada`;
 
   const mensajePrincipal = esAnticipo
-    ? `<strong>${nombre}</strong>, el cliente pagó el ${etiquetaAnticipo} (${montoFmt}). Ya podés coordinar la mudanza.`
-    : `<strong>${nombre}</strong>, el cliente pagó el ${etiquetaSaldo} (${montoFmt}). La mudanza está completamente pagada. Procesaremos tu liquidación en los próximos días hábiles.`;
+    ? `<strong>${nombre}</strong>, el cliente pagó el anticipo del 50% (${montoFmt}). Ya podés coordinar la mudanza.`
+    : `<strong>${nombre}</strong>, el cliente pagó el saldo final (${montoFmt}). La mudanza está completamente pagada. Procesaremos tu liquidación en los próximos días hábiles.`;
 
   const accion = esAnticipo
     ? `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en mi cuenta →</a>`
