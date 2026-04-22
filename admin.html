@@ -1331,55 +1331,18 @@ function renderHistorialPagos(){
 // ── ZONAS ──────────────────────────────────────────────────────────────────
 function renderZonas(){
   var aprobados = mudancerosData.filter(function(m){ return getEstado(m) === 'Aprobado'; });
-  // Conteo por zona cruda (para tener el detalle por subzona de AMBA)
   var zonaCount = {};
   aprobados.forEach(function(m){ var z = m[5]||'Sin zona'; zonaCount[z] = (zonaCount[z]||0)+1; });
   var totalAprobados = aprobados.length || 1;
-
-  // Unificar CABA* + GBA* bajo "AMBA (CABA + GBA)" manteniendo el desglose
-  var esAMBA = function(zona){ return /^CABA\b|^GBA\b/i.test(zona); };
-  var unificado = {}; // { 'AMBA (CABA + GBA)': count } o { 'Córdoba Capital': count }
-  var ambaDetalle = []; // [{nombre, count}] para mostrar debajo
-  Object.keys(zonaCount).forEach(function(z){
-    var cnt = zonaCount[z];
-    if (esAMBA(z)) {
-      var k = 'AMBA (CABA + GBA)';
-      unificado[k] = (unificado[k] || 0) + cnt;
-      ambaDetalle.push({ nombre: z, count: cnt });
-    } else {
-      unificado[z] = cnt;
-    }
-  });
-  // Ordenar detalle de AMBA por count desc
-  ambaDetalle.sort(function(a,b){ return b.count - a.count; });
-
-  var sorted = Object.entries(unificado).sort(function(a,b){ return b[1]-a[1]; });
-
-  // Metric cards (top 4)
+  var sorted = Object.entries(zonaCount).sort(function(a,b){ return b[1]-a[1]; });
   document.getElementById('zonasMetrics').innerHTML = sorted.slice(0,4).map(function(entry){
     return '<div class="metric-card green"><div class="metric-label">'+entry[0]+'</div><div class="metric-val">'+entry[1]+'</div><div class="metric-sub">mudanceros</div></div>';
   }).join('') || '<div class="loading">Sin datos</div>';
-
-  // Tabla con desglose inline de AMBA (opción C)
   document.getElementById('zonasList').innerHTML = sorted.length === 0
     ? '<div class="empty"><div class="empty-icon">🗺️</div>Sin datos de zonas</div>'
     : '<table><thead><tr><th>Zona</th><th>Mudanceros</th><th>% del total</th></tr></thead><tbody>'
       + sorted.map(function(entry){
-          var nombre = entry[0];
-          var count = entry[1];
-          var pct = ((count/totalAprobados)*100).toFixed(1)+'%';
-          var nombreCell = '<td class="td-name">'+nombre;
-          // Si es la fila AMBA y hay detalle, agregar subtexto con desglose
-          if (nombre === 'AMBA (CABA + GBA)' && ambaDetalle.length > 0) {
-            var detalle = ambaDetalle.map(function(d){
-              // Acortar etiquetas largas: "GBA Norte (San Isidro, Vicente López, etc.)" → "GBA Norte"
-              var corto = d.nombre.replace(/\s*\([^)]*\)\s*/g, '').trim();
-              return corto + ' <strong>'+d.count+'</strong>';
-            }).join(' · ');
-            nombreCell += '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px;font-weight:400">'+detalle+'</div>';
-          }
-          nombreCell += '</td>';
-          return '<tr>'+nombreCell+'<td class="td-mono">'+count+'</td><td class="td-mono">'+pct+'</td></tr>';
+          return '<tr><td class="td-name">'+entry[0]+'</td><td class="td-mono">'+entry[1]+'</td><td class="td-mono">'+((entry[1]/totalAprobados)*100).toFixed(1)+'%</td></tr>';
         }).join('')
       + '</tbody></table>';
 }
@@ -2417,7 +2380,7 @@ function aliTab(tab) {
   document.querySelector('.ali-tab[data-tab="' + tab + '"]').classList.add('active');
   document.querySelectorAll('.ali-subpage').forEach(function(sp){ sp.style.display = 'none'; });
   document.getElementById('ali-sub-' + tab).style.display = '';
-  if (tab === 'liquidar') renderLiquidaciones();
+  if (tab === 'liquidar') renderAliadosLiquidaciones();
   else if (tab === 'altas') cargarAltasPendientes();
   else if (tab === 'lista') renderAliadosLista();
   else if (tab === 'ranking') cargarRanking('mes');
@@ -2517,7 +2480,7 @@ async function cargarAliados() {
     var d = await aliFetch('/api/aliados?action=admin-list&token=' + ALIT());
     if (d.ok) {
       _aliados = d.aliados || [];
-      renderLiquidaciones();
+      renderAliadosLiquidaciones();
       renderAliadosLista();
     }
   } catch(e) {
@@ -2527,7 +2490,7 @@ async function cargarAliados() {
 }
 
 // ── LIQUIDAR ──
-function renderLiquidaciones() {
+function renderAliadosLiquidaciones() {
   // Solo aliados con monto pendiente > 0
   var conPendiente = _aliados.filter(function(a){ return a.balance.pendientePago > 0; });
   conPendiente.sort(function(a,b){ return b.balance.pendientePago - a.balance.pendientePago; });
