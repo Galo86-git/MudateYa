@@ -1414,6 +1414,38 @@ module.exports = async function handler(req, res) {
           const p = await getJSON(`mudancero:perfil:${email}`);
           if (!p || p.estado !== 'aprobado') continue;
           if (palabrasBuscadas.length > 0 && !cubreZona(p)) continue;
+
+          // Enriquecer reseñas con nombre del cliente (buscando en cada mudanza)
+          // Solo incluimos reseñas con comentario (las silenciosas de solo-estrellas no las mostramos).
+          var resenasEnriquecidas = [];
+          if (Array.isArray(p.resenas) && p.resenas.length) {
+            for (var i = 0; i < p.resenas.length; i++) {
+              var r = p.resenas[i];
+              if (!r || !r.comentario || !String(r.comentario).trim()) continue;
+              var autor = 'Cliente';
+              try {
+                if (r.mudanzaId) {
+                  var mR = await getJSON('mudanza:' + r.mudanzaId);
+                  if (mR && mR.clienteNombre) {
+                    // Anonimizar apellido: "Juan Pérez" -> "Juan P."
+                    var partes = String(mR.clienteNombre).trim().split(/\s+/);
+                    if (partes.length >= 2 && partes[1]) {
+                      autor = partes[0] + ' ' + partes[1].charAt(0).toUpperCase() + '.';
+                    } else {
+                      autor = partes[0];
+                    }
+                  }
+                }
+              } catch(_e) {}
+              resenasEnriquecidas.push({
+                estrellas: r.estrellas || 5,
+                comentario: r.comentario,
+                fecha: r.fecha || '',
+                autor: autor
+              });
+            }
+          }
+
           // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
           catalogo.push({
             email:               p.email,
@@ -1426,6 +1458,7 @@ module.exports = async function handler(req, res) {
             servicios:           p.servicios            || '',
             calificacion:        p.calificacion         || 0,
             nroResenas:          p.nroResenas           || 0,
+            resenas:             resenasEnriquecidas,
             trabajosCompletados: p.trabajosCompletados  || 0,
             verificadoIdentidad: p.verificadoIdentidad  || false,
             verificadoVehiculo:  p.verificadoVehiculo   || false,
