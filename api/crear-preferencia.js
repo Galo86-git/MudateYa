@@ -15,10 +15,13 @@ module.exports = async function handler(req, res) {
     const { mudanceroNombre, monto, desde, hasta, ambientes, mudanzaId, cotizacionId, tipoPago } = req.body;
     if (!monto || monto <= 0) return res.status(400).json({ error: 'Monto inválido' });
 
-    // tipoPago: 'anticipo' (50% al aceptar) | 'saldo' (50% al completar) | undefined (pago único)
-    const esSplit = tipoPago === 'anticipo' || tipoPago === 'saldo';
-    const montoFinal = esSplit ? Math.round(monto * 0.5) : monto;
-    const labelTipo = tipoPago === 'anticipo' ? '50% anticipo' : tipoPago === 'saldo' ? '50% saldo final' : '';
+    // tipoPago: 'anticipo' | 'saldo' | undefined (pago único)
+    // IMPORTANTE: El monto llega ya calculado correctamente desde el frontend.
+    // Antes se multiplicaba por 0.5 acá, pero eso rompe los ajustes de precio
+    // (si hubo ajuste, el saldo NO es el 50% del nuevo precio, sino
+    // precio_nuevo - anticipo_ya_pagado). Confiamos en el monto enviado.
+    const montoFinal = Math.round(Number(monto));
+    const labelTipo = tipoPago === 'anticipo' ? 'Anticipo' : tipoPago === 'saldo' ? 'Saldo final' : '';
     const tituloItem = `MudateYa${labelTipo ? ' — '+labelTipo : ''} · ${mudanceroNombre}`;
 
     const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
