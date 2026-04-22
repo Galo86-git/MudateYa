@@ -70,6 +70,85 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   /* ── CONTAINER ── */
   .wrap{max-width:560px;margin:0 auto;padding:24px 16px 60px}
+  /* En state-register: wrap usa layout ancho para aprovechar desktop */
+  body.register-mode .wrap{max-width:1200px;padding:20px 20px 60px}
+
+  /* ── Landing nueva: hero compacto ── */
+  .lhero{background:linear-gradient(135deg,#003580 0%,#001f4d 100%);color:#fff;border-radius:var(--r2);padding:28px 24px;margin-bottom:20px;position:relative;overflow:hidden}
+  .lhero::before{content:'';position:absolute;inset:0;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
+  .lhero-inner{position:relative;display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center}
+  .lhero h1{color:#fff;font-size:2.4rem;margin-bottom:10px;line-height:1;letter-spacing:1.5px}
+  .lhero-sub{font-size:14.5px;color:rgba(255,255,255,.85);line-height:1.55;margin-bottom:14px}
+  .lhero-sub strong{color:#22C36A}
+  .lhero-bullets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .lhero-bullet{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.92);font-weight:500;padding:8px 12px;background:rgba(255,255,255,.08);border-radius:8px;border:1px solid rgba(255,255,255,.12)}
+  .lhero-bullet::before{content:'✓';color:#22C36A;font-weight:700}
+  @media(max-width:860px){
+    .lhero-inner{grid-template-columns:1fr}
+    .lhero h1{font-size:2rem}
+  }
+
+  /* ── Grid principal 2 columnas ── */
+  .lmain{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+  @media(max-width:900px){.lmain{grid-template-columns:1fr;gap:16px}}
+
+  /* ── Tabs ── */
+  .ltabs{display:flex;gap:2px;background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:4px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none}
+  .ltabs::-webkit-scrollbar{display:none}
+  .ltab{flex:1;padding:11px 14px;border:none;background:transparent;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;transition:all .18s;font-family:'Inter',sans-serif;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ltab:hover{color:var(--text)}
+  .ltab.active{background:var(--navy);color:#fff}
+  .lpanel{display:none}
+  .lpanel.active{display:block}
+  @media(max-width:900px){
+    .ltabs{display:none}
+    .lpanel{display:block !important;margin-bottom:18px}
+  }
+
+  /* ── Grid de beneficios 2 cols en landing ── */
+  .lbens{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.lbens{grid-template-columns:1fr}}
+
+  /* ── FAQs ── */
+  .lfaq{background:#fff;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+  .lfaq-item{border-bottom:1px solid var(--border)}
+  .lfaq-item:last-child{border-bottom:none}
+  .lfaq-q{width:100%;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:transparent;border:none;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);text-align:left;font-family:'Inter',sans-serif;transition:background .15s}
+  .lfaq-q:hover{background:#F8FAFC}
+  .lfaq-q .chev{font-size:18px;color:var(--text3);flex-shrink:0;transition:transform .2s}
+  .lfaq-item.open .lfaq-q .chev{transform:rotate(180deg);color:var(--navy)}
+  .lfaq-a{max-height:0;overflow:hidden;transition:max-height .28s ease;background:#F8FAFC}
+  .lfaq-item.open .lfaq-a{max-height:220px}
+  .lfaq-a-inner{padding:4px 18px 16px;font-size:13.5px;color:var(--text2);line-height:1.65}
+
+  /* ── Sidebar sticky (calc + CTA) ── */
+  .lsidebar{position:sticky;top:16px}
+  .lsidebar .calc{margin:0}
+  .lside-cta{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-top:14px;text-align:center}
+  .lside-cta-title{font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5}
+  .lside-cta-title strong{color:var(--navy)}
+  .lside-cta-btn{display:block;width:100%;background:#22C36A;color:#003580;border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px;transition:background .2s}
+  .lside-cta-btn:hover{background:#1CA85A}
+  .lside-cta-foot{font-size:11px;color:var(--text3);margin-top:10px;font-family:var(--mono)}
+  @media(max-width:900px){
+    .lsidebar{position:static}
+    .lside-cta{margin-top:0;margin-bottom:16px}
+  }
+  @media(min-width:901px){
+    /* En desktop ocultamos la "Cómo funciona" dentro del flow normal — va como tab */
+    body.register-mode > .wrap > #state-register > .comof{display:none}
+  }
+
+  /* ── Cómo funciona dentro del panel de tab (reuso estilos existentes) ── */
+  .lcomof-inline{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:18px 18px 8px}
+  .lcomof-inline .paso{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+  .lcomof-inline .paso:last-child{margin-bottom:0}
+  .lcomof-inline .paso-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--mono)}
+  .lcomof-inline .paso-num.g{background:linear-gradient(135deg,#17A356,var(--green))}
+  .lcomof-inline .paso-txt strong{display:block;font-size:14px;color:var(--navy);margin-bottom:3px}
+  .lcomof-inline .paso-txt span{display:block;font-size:13px;color:var(--text2);line-height:1.55}
+  .lcomof-inline .paso-txt code{font-family:var(--mono);font-size:12px;background:#F5F7FA;padding:1px 6px;border-radius:4px}
+
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:28px 22px;margin-bottom:16px}
   .card-tight{padding:20px 18px}
 
@@ -350,143 +429,224 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   <!-- ═══ ESTADO 2: REGISTRO ═══ -->
   <div id="state-register" class="hide">
-    <div class="hero">
-      <h1>GANÁ CON MUDATEYA</h1>
-      <div class="tag">Registrate, compartí tu QR y cobrá cada vez que alguien de tu red usa MudateYa</div>
-      <div class="hero-list">
-        <div class="hero-list-item">👫 Amigos que se mudan</div>
-        <div class="hero-list-item">💼 Clientes que se mudan</div>
-        <div class="hero-list-item">🏠 Vecinos que se mudan</div>
-        <div class="hero-list-item">🚚 Fleteros / mudanceros</div>
-      </div>
-      <div class="hero-close">En fin, todo suma 💰</div>
-    </div>
-
-    <div class="beneficios">
-      <div class="ben">
-        <div class="ben-ico">💰</div>
-        <div class="ben-txt"><strong id="ben-mud-lbl">$25.000 por mudanza</strong><span>Plata fija por cada mudanza cerrada que viene por tu link</span></div>
-      </div>
-      <div class="ben">
-        <div class="ben-ico">🚚</div>
-        <div class="ben-txt"><strong id="ben-fle-lbl">$10.000 por flete</strong><span>Por cada flete cerrado que viene por tu link</span></div>
-      </div>
-      <div class="ben">
-        <div class="ben-ico">🤝</div>
-        <div class="ben-txt"><strong id="ben-alta-lbl">$5.500 por activación</strong><span>Cada mudancero o fletero que das de alta con tu QR</span></div>
-      </div>
-      <div class="ben">
-        <div class="ben-ico">📈</div>
-        <div class="ben-txt"><strong id="ben-tri-lbl">+20% bono trimestral</strong><span>Con al menos 3 operaciones en el trimestre</span></div>
-      </div>
-      <div class="ben">
-        <div class="ben-ico">🏆</div>
-        <div class="ben-txt"><strong id="ben-ann-lbl">+10% bono anual</strong><span>Con al menos 10 operaciones en el año</span></div>
-      </div>
-    </div>
-
-    <!-- Cómo funciona -->
-    <div class="comof">
-      <div class="comof-head">
-        <div class="comof-ico">🧭</div>
+    <!-- HERO compacto (2 cols en desktop) -->
+    <div class="lhero">
+      <div class="lhero-inner">
         <div>
-          <div class="comof-title">Cómo funciona</div>
-          <div class="comof-sub">De registrarte a cobrar, en 6 pasos</div>
+          <h1>GANÁ CON MUDATEYA</h1>
+          <div class="lhero-sub">Registrate, compartí tu QR y cobrá cada vez que alguien de tu red usa MudateYa. <strong>En fin, todo suma 💰</strong></div>
         </div>
-      </div>
-      <div class="paso">
-        <div class="paso-num">1</div>
-        <div class="paso-txt"><strong>Te registrás gratis</strong><span>Completás el form acá abajo. Te damos un QR y un link único (ej. <code style="font-family:var(--mono);font-size:12px;background:#F5F7FA;padding:1px 6px;border-radius:4px">mudateya.ar/r/A7K2</code>)</span></div>
-      </div>
-      <div class="paso">
-        <div class="paso-num">2</div>
-        <div class="paso-txt"><strong>Compartís tu QR</strong><span>En el ascensor del edificio, grupos de WhatsApp, Instagram, tarjetas personales. Como quieras.</span></div>
-      </div>
-      <div class="paso">
-        <div class="paso-num">3</div>
-        <div class="paso-txt"><strong>Alguien contrata o se suma</strong><span>Cada mudanza, flete o mudancero/fletero que se registre por tu link queda atribuido a vos por 90 días.</span></div>
-      </div>
-      <div class="paso">
-        <div class="paso-num">4</div>
-        <div class="paso-txt"><strong>Seguís tus ganancias en vivo</strong><span>Entrás al panel y ves todo: operaciones en curso, acreditadas y lo que te toca cobrar este mes.</span></div>
-      </div>
-      <div class="paso">
-        <div class="paso-num g">5</div>
-        <div class="paso-txt"><strong>Cobrás los 10 de cada mes</strong><span>Te transferimos por Mercado Pago al alias que dejaste. Sin trámites.</span></div>
-      </div>
-      <div class="paso">
-        <div class="paso-num g">6</div>
-        <div class="paso-txt"><strong>Sumás bonos si escalás</strong><span>+20% trimestral llegando a 3 operaciones, +10% anual llegando a 10. Todo arriba del fijo.</span></div>
+        <div class="lhero-bullets">
+          <div class="lhero-bullet">👫 Amigos que se mudan</div>
+          <div class="lhero-bullet">💼 Clientes que se mudan</div>
+          <div class="lhero-bullet">🏠 Vecinos del edificio</div>
+          <div class="lhero-bullet">🚚 Fleteros / mudanceros</div>
+        </div>
       </div>
     </div>
 
-    <!-- Calculadora interactiva con +/− -->
-    <div class="calc">
-      <div class="calc-head">
-        <div class="calc-ico">💸</div>
-        <div class="calc-txt">
-          <div class="calc-title">Calculá tu ganancia</div>
-          <div class="calc-sub">Refiriendo nomás. Vos compartís el QR, nosotros hacemos el resto.</div>
-        </div>
-      </div>
+    <!-- GRID 2 COLUMNAS: contenido (tabs) + sidebar sticky (calc + CTA) -->
+    <div class="lmain">
 
-      <div class="ejemplo-ops">
-        <div class="counter-row">
-          <span class="ejemplo-label"><span class="ejemplo-ico">📦</span>Mudanzas</span>
-          <div class="counter-ctrls">
-            <button type="button" class="counter-btn" onclick="calcAjustar('mud',-1)" aria-label="Restar mudanza">−</button>
-            <span class="counter-val" id="cntMud">1</span>
-            <button type="button" class="counter-btn" onclick="calcAjustar('mud',1)" aria-label="Sumar mudanza">+</button>
-            <span class="counter-cu num" id="cuMud">$25.000 c/u</span>
+      <!-- ═══ COLUMNA IZQUIERDA: tabs ═══ -->
+      <div>
+
+        <!-- Tabs (se ocultan en mobile — todo se apila) -->
+        <div class="ltabs">
+          <button type="button" class="ltab active" data-tab="beneficios" onclick="switchLandingTab('beneficios')">💰 Beneficios</button>
+          <button type="button" class="ltab" data-tab="como" onclick="switchLandingTab('como')">📖 Cómo funciona</button>
+          <button type="button" class="ltab" data-tab="faq" onclick="switchLandingTab('faq')">💬 FAQs</button>
+        </div>
+
+        <!-- Panel Beneficios (default activo) -->
+        <div class="lpanel active" id="lp-beneficios">
+          <div class="lbens">
+            <div class="ben">
+              <div class="ben-ico">💰</div>
+              <div class="ben-txt"><strong id="ben-mud-lbl">$25.000 por mudanza</strong><span>Plata fija por cada mudanza cerrada que viene por tu link</span></div>
+            </div>
+            <div class="ben">
+              <div class="ben-ico">🚚</div>
+              <div class="ben-txt"><strong id="ben-fle-lbl">$10.000 por flete</strong><span>Por cada flete cerrado que viene por tu link</span></div>
+            </div>
+            <div class="ben">
+              <div class="ben-ico">🤝</div>
+              <div class="ben-txt"><strong id="ben-alta-lbl">$5.500 por activación</strong><span>Cada mudancero o fletero que das de alta con tu QR</span></div>
+            </div>
+            <div class="ben">
+              <div class="ben-ico">📈</div>
+              <div class="ben-txt"><strong id="ben-tri-lbl">+20% bono trimestral</strong><span>Con al menos 3 operaciones en el trimestre</span></div>
+            </div>
+            <div class="ben" style="grid-column:1/-1">
+              <div class="ben-ico">🏆</div>
+              <div class="ben-txt"><strong id="ben-ann-lbl">+10% bono anual</strong><span>Con al menos 10 operaciones en el año. Premios encima del fijo.</span></div>
+            </div>
           </div>
         </div>
-        <div class="counter-row">
-          <span class="ejemplo-label"><span class="ejemplo-ico">🚚</span>Fletes</span>
-          <div class="counter-ctrls">
-            <button type="button" class="counter-btn" onclick="calcAjustar('fle',-1)" aria-label="Restar flete">−</button>
-            <span class="counter-val" id="cntFle">1</span>
-            <button type="button" class="counter-btn" onclick="calcAjustar('fle',1)" aria-label="Sumar flete">+</button>
-            <span class="counter-cu num" id="cuFle">$10.000 c/u</span>
+
+        <!-- Panel Cómo funciona -->
+        <div class="lpanel" id="lp-como">
+          <div class="lcomof-inline">
+            <div class="paso">
+              <div class="paso-num">1</div>
+              <div class="paso-txt"><strong>Te registrás gratis</strong><span>Completás el form. Te damos un QR y un link único (ej. <code>mudateya.ar/r/A7K2</code>)</span></div>
+            </div>
+            <div class="paso">
+              <div class="paso-num">2</div>
+              <div class="paso-txt"><strong>Compartís tu QR</strong><span>En el ascensor, grupos de WhatsApp, Instagram, tarjetas personales. Como quieras.</span></div>
+            </div>
+            <div class="paso">
+              <div class="paso-num">3</div>
+              <div class="paso-txt"><strong>Alguien contrata o se suma</strong><span>Cada mudanza, flete o mudancero/fletero que se registre por tu link queda atribuido a vos por 90 días.</span></div>
+            </div>
+            <div class="paso">
+              <div class="paso-num">4</div>
+              <div class="paso-txt"><strong>Seguís tus ganancias en vivo</strong><span>Entrás al panel y ves todo: operaciones en curso, acreditadas y lo que te toca cobrar este mes.</span></div>
+            </div>
+            <div class="paso">
+              <div class="paso-num g">5</div>
+              <div class="paso-txt"><strong>Cobrás los 10 de cada mes</strong><span>Te transferimos por Mercado Pago al alias que dejaste. Sin trámites.</span></div>
+            </div>
+            <div class="paso">
+              <div class="paso-num g">6</div>
+              <div class="paso-txt"><strong>Sumás bonos si escalás</strong><span>+20% trimestral llegando a 3 operaciones, +10% anual llegando a 10. Todo arriba del fijo.</span></div>
+            </div>
           </div>
         </div>
-        <div class="counter-row">
-          <span class="ejemplo-label"><span class="ejemplo-ico">🤝</span>Altas</span>
-          <div class="counter-ctrls">
-            <button type="button" class="counter-btn" onclick="calcAjustar('alta',-1)" aria-label="Restar alta">−</button>
-            <span class="counter-val" id="cntAlta">1</span>
-            <button type="button" class="counter-btn" onclick="calcAjustar('alta',1)" aria-label="Sumar alta">+</button>
-            <span class="counter-cu num" id="cuAlta">$5.500 c/u</span>
+
+        <!-- Panel FAQs -->
+        <div class="lpanel" id="lp-faq">
+          <div class="lfaq">
+            <div class="lfaq-item">
+              <button type="button" class="lfaq-q" onclick="toggleFaq(this)">
+                <span>¿Cuándo cobro mis comisiones?</span>
+                <span class="chev">⌄</span>
+              </button>
+              <div class="lfaq-a"><div class="lfaq-a-inner">Todos los 10 de cada mes te transferimos a tu alias de Mercado Pago lo acumulado del mes anterior. Sin trámites, sin facturas, sin llamadas.</div></div>
+            </div>
+            <div class="lfaq-item">
+              <button type="button" class="lfaq-q" onclick="toggleFaq(this)">
+                <span>¿Cómo se acreditan las comisiones?</span>
+                <span class="chev">⌄</span>
+              </button>
+              <div class="lfaq-a"><div class="lfaq-a-inner">Las comisiones se acreditan cuando la mudanza o flete queda completado y pagado. Las altas de mudanceros/fleteros se acreditan cuando aprobamos el registro en el admin. Podés seguir el estado de cada operación en tu panel.</div></div>
+            </div>
+            <div class="lfaq-item">
+              <button type="button" class="lfaq-q" onclick="toggleFaq(this)">
+                <span>¿Qué pasa si el cliente cancela?</span>
+                <span class="chev">⌄</span>
+              </button>
+              <div class="lfaq-a"><div class="lfaq-a-inner">Si una mudanza se cancela antes de completarse, la comisión no se acredita. Solo cobrás por operaciones cerradas. No hay comisiones retroactivas ni descuentos por cancelaciones futuras.</div></div>
+            </div>
+            <div class="lfaq-item">
+              <button type="button" class="lfaq-q" onclick="toggleFaq(this)">
+                <span>¿Cuánto tiempo se mantiene la atribución de un contacto?</span>
+                <span class="chev">⌄</span>
+              </button>
+              <div class="lfaq-a"><div class="lfaq-a-inner">Cuando alguien entra por tu QR o link, queda asociado a vos por 90 días. Si contrata una mudanza, flete o se registra como mudancero en ese período, la comisión es tuya.</div></div>
+            </div>
+            <div class="lfaq-item">
+              <button type="button" class="lfaq-q" onclick="toggleFaq(this)">
+                <span>¿Hay límite de cuánta gente puedo referir?</span>
+                <span class="chev">⌄</span>
+              </button>
+              <div class="lfaq-a"><div class="lfaq-a-inner">No hay límite. Cuántas más operaciones traés, más cobrás. Y si superás los umbrales (3 ops/trimestre o 10 ops/año), desbloqueás bonos extra del 20% y 10%.</div></div>
+            </div>
+            <div class="lfaq-item">
+              <button type="button" class="lfaq-q" onclick="toggleFaq(this)">
+                <span>¿Puedo ver quién usó mi link?</span>
+                <span class="chev">⌄</span>
+              </button>
+              <div class="lfaq-a"><div class="lfaq-a-inner">Sí, en tu panel vas a ver el detalle de cada operación atribuida: tipo (mudanza/flete/alta), estado, monto y fecha. Por privacidad no mostramos el nombre completo del cliente, pero sí el contacto y la ruta.</div></div>
+            </div>
           </div>
         </div>
-        <div class="ejemplo-sep"></div>
-        <div class="ejemplo-row">
-          <span class="ejemplo-label"><strong id="ejeOpsMes">3 operaciones por mes</strong></span>
-          <span class="ejemplo-val num"><strong id="ejeMes">$40.500</strong></span>
-        </div>
+
       </div>
 
-      <div class="tot-grid">
-        <div class="tot-card">
-          <div class="tot-lbl">Por mes</div>
-          <div class="tot-val num" id="totMes">$40.500</div>
-          <div class="tot-sub"> </div>
-        </div>
-        <div class="tot-card">
-          <div class="tot-lbl">Por trimestre</div>
-          <div class="tot-val num" id="totTrim">$145.800</div>
-          <div class="tot-sub" id="totTrimSub">+ bono 20%</div>
-        </div>
-        <div class="tot-card tot-card-hl">
-          <div class="tot-lbl">Al año</div>
-          <div class="tot-val num big" id="totAnio">$558.900</div>
-          <div class="tot-sub" id="totAnioSub">+ bonos</div>
+      <!-- ═══ COLUMNA DERECHA: calculadora sticky + CTA ═══ -->
+      <div>
+        <div class="lsidebar">
+
+          <!-- Calculadora interactiva (reutiliza estilos existentes) -->
+          <div class="calc">
+            <div class="calc-head">
+              <div class="calc-ico">💸</div>
+              <div class="calc-txt">
+                <div class="calc-title">Calculá tu ganancia</div>
+                <div class="calc-sub">Tocá los botones</div>
+              </div>
+            </div>
+
+            <div class="ejemplo-ops">
+              <div class="counter-row">
+                <span class="ejemplo-label"><span class="ejemplo-ico">📦</span>Mudanzas</span>
+                <div class="counter-ctrls">
+                  <button type="button" class="counter-btn" onclick="calcAjustar('mud',-1)" aria-label="Restar mudanza">−</button>
+                  <span class="counter-val" id="cntMud">1</span>
+                  <button type="button" class="counter-btn" onclick="calcAjustar('mud',1)" aria-label="Sumar mudanza">+</button>
+                  <span class="counter-cu num" id="cuMud">$25.000 c/u</span>
+                </div>
+              </div>
+              <div class="counter-row">
+                <span class="ejemplo-label"><span class="ejemplo-ico">🚚</span>Fletes</span>
+                <div class="counter-ctrls">
+                  <button type="button" class="counter-btn" onclick="calcAjustar('fle',-1)" aria-label="Restar flete">−</button>
+                  <span class="counter-val" id="cntFle">1</span>
+                  <button type="button" class="counter-btn" onclick="calcAjustar('fle',1)" aria-label="Sumar flete">+</button>
+                  <span class="counter-cu num" id="cuFle">$10.000 c/u</span>
+                </div>
+              </div>
+              <div class="counter-row">
+                <span class="ejemplo-label"><span class="ejemplo-ico">🤝</span>Altas</span>
+                <div class="counter-ctrls">
+                  <button type="button" class="counter-btn" onclick="calcAjustar('alta',-1)" aria-label="Restar alta">−</button>
+                  <span class="counter-val" id="cntAlta">1</span>
+                  <button type="button" class="counter-btn" onclick="calcAjustar('alta',1)" aria-label="Sumar alta">+</button>
+                  <span class="counter-cu num" id="cuAlta">$5.500 c/u</span>
+                </div>
+              </div>
+              <div class="ejemplo-sep"></div>
+              <div class="ejemplo-row">
+                <span class="ejemplo-label"><strong id="ejeOpsMes">3 operaciones por mes</strong></span>
+                <span class="ejemplo-val num"><strong id="ejeMes">$40.500</strong></span>
+              </div>
+            </div>
+
+            <div class="tot-grid">
+              <div class="tot-card">
+                <div class="tot-lbl">Por mes</div>
+                <div class="tot-val num" id="totMes">$40.500</div>
+                <div class="tot-sub"> </div>
+              </div>
+              <div class="tot-card">
+                <div class="tot-lbl">Por trimestre</div>
+                <div class="tot-val num" id="totTrim">$145.800</div>
+                <div class="tot-sub" id="totTrimSub">+ bono 20%</div>
+              </div>
+              <div class="tot-card tot-card-hl">
+                <div class="tot-lbl">Al año</div>
+                <div class="tot-val num big" id="totAnio">$558.900</div>
+                <div class="tot-sub" id="totAnioSub">+ bonos</div>
+              </div>
+            </div>
+
+            <div class="ejemplo-foot" id="ejeFoot">💪 Cumplís los umbrales trimestral (3 ops) y anual (10 ops). Los bonos están incluidos.</div>
+          </div>
+
+          <!-- CTA arriba del form -->
+          <div class="lside-cta">
+            <div class="lside-cta-title">¿Te gustaron los números?<br><strong>Sumate en 2 minutos.</strong></div>
+            <button type="button" class="lside-cta-btn" onclick="scrollToForm()">Registrarme gratis →</button>
+            <div class="lside-cta-foot">Sin comisiones · Sin permanencia</div>
+          </div>
+
         </div>
       </div>
-
-      <div class="ejemplo-foot" id="ejeFoot">💪 Cumplís los umbrales trimestral (3 ops) y anual (10 ops). Los bonos están incluidos.</div>
     </div>
 
-    <div class="card">
+    <!-- ═══ FORM DE REGISTRO ═══ -->
+    <div class="card" id="formRegistro" style="max-width:560px;margin:24px auto 0">
       <h2>Datos del aliado</h2>
 
       <div class="field">
@@ -935,11 +1095,16 @@ function renderEjemplo(){
 // CAMBIO DE ESTADOS
 // ═══════════════════════════════════════════════════════════
 function ocultarTodos() {
+  document.body.classList.remove('register-mode');
   ['state-loading','state-register','state-login','state-sent','state-registered','state-panel'].forEach(function(id){
     document.getElementById(id).classList.add('hide');
   });
 }
-function mostrarRegister() { ocultarTodos(); document.getElementById('state-register').classList.remove('hide'); }
+function mostrarRegister() {
+  ocultarTodos();
+  document.body.classList.add('register-mode');
+  document.getElementById('state-register').classList.remove('hide');
+}
 function mostrarLogin() { ocultarTodos(); document.getElementById('state-login').classList.remove('hide'); }
 function mostrarSent(email) {
   ocultarTodos();
@@ -1415,6 +1580,32 @@ function initMaps() {
     });
   });
 })();
+
+// ═══════════════════════════════════════════════════════════
+// LANDING: tabs + FAQs + scroll al form
+// ═══════════════════════════════════════════════════════════
+function switchLandingTab(name) {
+  document.querySelectorAll('.ltab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.lpanel').forEach(function(p){ p.classList.remove('active'); });
+  var btn = document.querySelector('.ltab[data-tab="'+name+'"]');
+  var panel = document.getElementById('lp-'+name);
+  if (btn) btn.classList.add('active');
+  if (panel) panel.classList.add('active');
+}
+
+function toggleFaq(btn) {
+  var item = btn.parentElement;
+  item.classList.toggle('open');
+}
+
+function scrollToForm() {
+  var f = document.getElementById('formRegistro');
+  if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(function(){
+    var n = document.getElementById('fNombre');
+    if (n) n.focus();
+  }, 400);
+}
 </script>
 
 <!-- Google Maps -->
