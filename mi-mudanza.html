@@ -921,7 +921,14 @@ async function pagarSaldo(mudanzaId) {
   var m = mudanzasData.find(function(x){ return x.id===mudanzaId; });
   if (!m || !m.cotizacionAceptada) return;
   var cot = m.cotizacionAceptada;
-  var saldo = Math.round(cot.precio * 0.5);
+  // Saldo real: si ya hay anticipo pagado, usar ese monto fijo (clave si hubo ajuste de precio).
+  // Si no, fallback al 50% del precio actual.
+  var saldo;
+  if (m.anticipoPagado && m.anticipoMonto) {
+    saldo = Math.max(0, parseInt(cot.precio||0) - parseInt(m.anticipoMonto));
+  } else {
+    saldo = Math.round((cot.precio||0) * 0.5);
+  }
 
   var btn = document.getElementById('btnPagarSaldo_'+mudanzaId);
   if (btn) { btn.disabled = true; btn.textContent = 'Redirigiendo…'; }
@@ -930,7 +937,7 @@ async function pagarSaldo(mudanzaId) {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         mudanceroNombre: cot.mudanceroNombre,
-        monto: cot.precio,
+        monto: saldo,
         desde: m.desde, hasta: m.hasta,
         ambientes: m.ambientes,
         mudanzaId: m.id,
@@ -958,13 +965,23 @@ function renderPagos(){
     var mud = m.cotizacionAceptada || {};
     var precio = parseInt(mud.precio||0);
     if(!precio) return '';
-    var anticipo = Math.round(precio * 0.5);
+    // Anticipo real: si ya se pagó usar el monto fijo guardado (clave tras ajuste de precio).
+    // Si no, estimar como 50% del precio actual.
+    var anticipo = (m.anticipoPagado && m.anticipoMonto)
+      ? parseInt(m.anticipoMonto)
+      : Math.round(precio * 0.5);
+    var saldo = Math.max(0, precio - anticipo);
     var ruta = esc(m.desde).split(',')[0] + ' → ' + esc(m.hasta).split(',')[0];
     var mudancero = esc(mud.mudanceroNombre||'—');
 
+    // Labels: si hubo ajuste aceptado, ya no son "50%" exactos
+    var huboAjuste = m.ajustePrecio && m.ajustePrecio.estado === 'aceptado';
+    var labelAnticipo = huboAjuste ? 'Anticipo' : '50% Anticipo';
+    var labelSaldo    = huboAjuste ? 'Saldo final' : '50% Saldo final';
+
     var filaAnticipo = '<div class="pago-card" style="margin-bottom:10px">'
       + '<div class="pago-row" style="background:var(--bg);padding:8px 12px;border-radius:6px 6px 0 0">'
-      +   '<span class="pago-label" style="font-weight:700;color:var(--navy)">50% Anticipo</span>'
+      +   '<span class="pago-label" style="font-weight:700;color:var(--navy)">'+labelAnticipo+'</span>'
       +   '<span class="pago-val green" style="font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span>'
       + '</div>'
       + '<div class="pago-row"><span class="pago-label">Mudanza</span><span class="pago-val" style="font-size:12px">'+ruta+'</span></div>'
@@ -975,8 +992,8 @@ function renderPagos(){
 
     var filaSaldo = '<div class="pago-card">'
       + '<div class="pago-row" style="background:var(--bg);padding:8px 12px;border-radius:6px 6px 0 0">'
-      +   '<span class="pago-label" style="font-weight:700;color:var(--navy)">50% Saldo final</span>'
-      +   '<span class="pago-val green" style="font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span>'
+      +   '<span class="pago-label" style="font-weight:700;color:var(--navy)">'+labelSaldo+'</span>'
+      +   '<span class="pago-val green" style="font-weight:700">$'+saldo.toLocaleString('es-AR')+'</span>'
       + '</div>'
       + '<div class="pago-row"><span class="pago-label">Mudanza</span><span class="pago-val" style="font-size:12px">'+ruta+'</span></div>'
       + '<div class="pago-row"><span class="pago-label">Mudancero</span><span class="pago-val">'+mudancero+'</span></div>'
