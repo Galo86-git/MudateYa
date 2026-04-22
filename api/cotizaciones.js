@@ -721,7 +721,20 @@ module.exports = async function handler(req, res) {
       if (tipoPago === 'anticipo') {
         try { await notificarClienteAnticipoPagado(m); } catch(e) { console.warn('Email cliente anticipo error:', e.message); }
       }
-      return res.status(200).json({ ok: true });
+      // Devolver los montos reales para que el frontend (pago-exitoso) pueda mostrarlos
+      // correctamente incluso cuando hubo ajuste de precio (el 50% teórico ya no aplica).
+      const _cot = m.cotizacionAceptada || {};
+      const _precioTotal = parseInt(_cot.precio || 0);
+      const _anticipoReal = parseInt(m.anticipoMonto || Math.round(_precioTotal * 0.5));
+      const _saldoReal = Math.max(0, _precioTotal - _anticipoReal);
+      const _huboAjuste = m.ajustePrecio && m.ajustePrecio.estado === 'aceptado';
+      return res.status(200).json({
+        ok: true,
+        precioTotal: _precioTotal,
+        anticipoMonto: _anticipoReal,
+        saldoMonto: _saldoReal,
+        huboAjuste: !!_huboAjuste
+      });
     }
     if (action === 'cambiar-estado' && req.method === 'POST') {
       const { mudanzaId, estado, mudanceroEmail } = req.body;
@@ -1910,22 +1923,35 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   if (!cot || !cot.mudanceroEmail) return;
 
   const esAnticipo = tipoPago === 'anticipo';
-  const precioTotal = cot.precio || 0;
+  const precioTotal = parseInt(cot.precio || 0);
   const esFlete = (mudanza.tipo || '').toLowerCase() === 'flete';
   const comisionPct = esFlete ? 0.20 : 0.15;
-  const monto = Math.round(precioTotal * 0.5);
+
+  // Monto REAL de cada pago (no el 50% teórico — puede haber habido ajuste de precio).
+  // Anticipo: lo que efectivamente pagó el cliente (anticipoMonto guardado al pagar).
+  // Saldo: precio_actual - anticipo_real.
+  const anticipoReal = parseInt(mudanza.anticipoMonto || Math.round(precioTotal * 0.5));
+  const saldoReal = Math.max(0, precioTotal - anticipoReal);
+  const monto = esAnticipo ? anticipoReal : saldoReal;
   const montoFmt = '$' + monto.toLocaleString('es-AR');
+
+  // Neto a liquidar: se calcula sobre el TOTAL final, no el saldo recibido
   const netoMudancero = Math.round(precioTotal * (1 - comisionPct));
   const netoFmt = '$' + netoMudancero.toLocaleString('es-AR');
   const nombre = (cot.mudanceroNombre || 'Mudancero').split(' ')[0];
+
+  // Labels dinámicos: si hubo ajuste, ya no son "50%" exactos
+  const huboAjuste = mudanza.ajustePrecio && mudanza.ajustePrecio.estado === 'aceptado';
+  const etiquetaAnticipo = huboAjuste ? 'anticipo' : 'anticipo del 50%';
+  const etiquetaSaldo    = huboAjuste ? 'saldo final' : 'saldo final (50%)';
 
   const subject = esAnticipo
     ? `💰 Anticipo recibido — ${mudanza.desde?.split(',')[0]} → ${mudanza.hasta?.split(',')[0]}`
     : `✅ Saldo final recibido — Mudanza completamente pagada`;
 
   const mensajePrincipal = esAnticipo
-    ? `<strong>${nombre}</strong>, el cliente pagó el anticipo del 50% (${montoFmt}). Ya podés coordinar la mudanza.`
-    : `<strong>${nombre}</strong>, el cliente pagó el saldo final (${montoFmt}). La mudanza está completamente pagada. Procesaremos tu liquidación en los próximos días hábiles.`;
+    ? `<strong>${nombre}</strong>, el cliente pagó el ${etiquetaAnticipo} (${montoFmt}). Ya podés coordinar la mudanza.`
+    : `<strong>${nombre}</strong>, el cliente pagó el ${etiquetaSaldo} (${montoFmt}). La mudanza está completamente pagada. Procesaremos tu liquidación en los próximos días hábiles.`;
 
   const accion = esAnticipo
     ? `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en mi cuenta →</a>`
