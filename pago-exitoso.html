@@ -83,7 +83,8 @@ nav{background:var(--navy);padding:0 1.5rem;height:56px;display:flex;align-items
 </div>
 
 <script>
-// ── REGISTRAR PAGO EN REDIS ───────────────────────────
+// ── REGISTRAR PAGO EN REDIS + usar los montos reales que devuelve el backend ──
+// (Antes asumíamos que saldo*2 = total, pero eso rompe con ajustes de precio)
 (function registrarPago() {
   var p = new URLSearchParams(window.location.search);
   var mudanzaId = p.get('mudanzaId');
@@ -91,49 +92,92 @@ nav{background:var(--navy);padding:0 1.5rem;height:56px;display:flex;align-items
   var paymentId = p.get('payment_id') || p.get('collection_id');
   var status    = p.get('collection_status') || p.get('status');
 
-  if (!mudanzaId || !tipoPago) return;
-  if (status && status !== 'approved') return;
+  if (!mudanzaId || !tipoPago) { renderSoloConURL(); return; }
+  if (status && status !== 'approved') { renderSoloConURL(); return; }
 
   var key = 'pago_reg_' + mudanzaId + '_' + tipoPago;
-  if (sessionStorage.getItem(key)) { console.log('[pago-exitoso] ya registrado'); return; }
-  sessionStorage.setItem(key, '1');
+  var yaRegistrado = !!sessionStorage.getItem(key);
 
-  fetch('/api/cotizaciones?action=registrar-pago', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-internal-secret': 'mya-internal-2025'
-    },
-    body: JSON.stringify({ mudanzaId: mudanzaId, tipoPago: tipoPago, mpPaymentId: paymentId })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){ console.log('[pago-exitoso] registro ok:', d); })
-  .catch(function(e){ console.warn('[pago-exitoso] error registro:', e.message); });
+  var promise;
+  if (yaRegistrado) {
+    // Ya se registró antes — solo traer datos reales consultando de nuevo (el backend es idempotente)
+    promise = fetch('/api/cotizaciones?action=registrar-pago', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-internal-secret':'mya-internal-2025' },
+      body: JSON.stringify({ mudanzaId: mudanzaId, tipoPago: tipoPago, mpPaymentId: paymentId })
+    });
+  } else {
+    sessionStorage.setItem(key, '1');
+    promise = fetch('/api/cotizaciones?action=registrar-pago', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-internal-secret':'mya-internal-2025' },
+      body: JSON.stringify({ mudanzaId: mudanzaId, tipoPago: tipoPago, mpPaymentId: paymentId })
+    });
+  }
+
+  promise
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      console.log('[pago-exitoso] registro ok:', d);
+      renderPantalla(d || {});
+    })
+    .catch(function(e){
+      console.warn('[pago-exitoso] error registro:', e.message);
+      renderSoloConURL();
+    });
 })();
 
-// ── MOSTRAR DATOS EN PANTALLA ─────────────────────────
-(function() {
+// ── Render con los datos reales del backend ─────────────────────
+function renderPantalla(d) {
   var p = new URLSearchParams(window.location.search);
-  var mudancero = p.get('mudancero') || '—';
-  var monto     = parseInt(p.get('monto') || '0');
+  var mudancero = decodeURIComponent(p.get('mudancero') || '—');
   var tipoPago  = p.get('tipoPago') || 'anticipo';
+  var montoURL  = parseInt(p.get('monto') || '0');
 
-  document.getElementById('sumMudancero').textContent = decodeURIComponent(mudancero);
+  // Preferir los datos reales del backend; fallback a los de la URL si no vienen
+  var anticipoReal = parseInt(d.anticipoMonto || 0) || (tipoPago === 'anticipo' ? montoURL : 0);
+  var saldoReal    = parseInt(d.saldoMonto || 0)    || (tipoPago === 'saldo' ? montoURL : 0);
+  var totalReal    = parseInt(d.precioTotal || 0)   || (anticipoReal + saldoReal);
+  var huboAjuste   = !!d.huboAjuste;
+
+  document.getElementById('sumMudancero').textContent = mudancero;
 
   if (tipoPago === 'saldo') {
     document.getElementById('heroSub').innerHTML = '¡Tu mudanza está <span>completamente pagada</span>! Gracias por usar MudateYa.';
-    document.getElementById('sumMontoLabel').textContent = 'Saldo pagado (50%)';
+    document.getElementById('sumMontoLabel').textContent = huboAjuste ? 'Saldo pagado' : 'Saldo pagado (50%)';
+    document.getElementById('sumMonto').textContent = saldoReal > 0 ? '$' + saldoReal.toLocaleString('es-AR') : '—';
     document.getElementById('sumSaldoLabel').textContent = 'Total pagado';
-    document.getElementById('sumSaldo').textContent = monto > 0 ? '$' + (monto * 2).toLocaleString('es-AR') : '100% pagado';
+    document.getElementById('sumSaldo').textContent = totalReal > 0 ? '$' + totalReal.toLocaleString('es-AR') : '100% pagado';
     document.getElementById('sumSaldo').style.color = 'var(--green)';
   } else {
-    document.getElementById('sumSaldo').textContent = monto > 0 ? '$' + monto.toLocaleString('es-AR') + ' al completar' : '50% al completar la mudanza';
+    // Anticipo pagado
+    document.getElementById('sumMontoLabel').textContent = huboAjuste ? 'Anticipo pagado' : 'Anticipo pagado (50%)';
+    document.getElementById('sumMonto').textContent = anticipoReal > 0 ? '$' + anticipoReal.toLocaleString('es-AR') : '—';
+    document.getElementById('sumSaldoLabel').textContent = huboAjuste ? 'Saldo restante' : 'Saldo restante (50%)';
+    document.getElementById('sumSaldo').textContent = saldoReal > 0 ? '$' + saldoReal.toLocaleString('es-AR') + ' al completar' : 'A pagar al completar';
   }
+}
 
-  document.getElementById('sumMonto').textContent = monto > 0
-    ? '$' + monto.toLocaleString('es-AR')
-    : (tipoPago === 'saldo' ? '50% saldo pagado' : '50% anticipo pagado');
-})();
+// Fallback si no hay conexión con el backend — usa solo lo que venga en la URL
+function renderSoloConURL() {
+  var p = new URLSearchParams(window.location.search);
+  var mudancero = decodeURIComponent(p.get('mudancero') || '—');
+  var monto     = parseInt(p.get('monto') || '0');
+  var tipoPago  = p.get('tipoPago') || 'anticipo';
+
+  document.getElementById('sumMudancero').textContent = mudancero;
+  document.getElementById('sumMonto').textContent = monto > 0 ? '$' + monto.toLocaleString('es-AR') : '—';
+
+  if (tipoPago === 'saldo') {
+    document.getElementById('heroSub').innerHTML = '¡Tu mudanza está <span>completamente pagada</span>! Gracias por usar MudateYa.';
+    document.getElementById('sumMontoLabel').textContent = 'Saldo pagado';
+    document.getElementById('sumSaldoLabel').textContent = 'Mudanza completa';
+    document.getElementById('sumSaldo').textContent = '✓';
+    document.getElementById('sumSaldo').style.color = 'var(--green)';
+  } else {
+    document.getElementById('sumSaldo').textContent = monto > 0 ? '$' + monto.toLocaleString('es-AR') + ' al completar' : 'A pagar al completar';
+  }
+}
 </script>
 </body>
 </html>
