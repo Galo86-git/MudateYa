@@ -1916,54 +1916,220 @@ function mostrarFotoErr(key, msg) {
 function fotoKey(s) { return (s||'').replace(/[^a-z0-9]/gi, '_'); }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function exportarExcel() {
+// ══════════════════════════════════════════════════
+// EXPORT A EXCEL — Completo: Sheets + perfiles Redis
+// ══════════════════════════════════════════════════
+async function exportarExcel() {
   if (!mudancerosData || !mudancerosData.length) {
     alert('No hay mudanceros para exportar.');
     return;
   }
 
+  var btn = document.querySelector('button[onclick="exportarExcel()"]');
+  var btnTxtOriginal = btn ? btn.innerHTML : '';
+  var total = mudancerosData.length;
+
+  function setBtn(txt) { if (btn) { btn.innerHTML = txt; btn.disabled = true; } }
+  function resetBtn() { if (btn) { btn.innerHTML = btnTxtOriginal; btn.disabled = false; } }
+
+  setBtn('⏳ Generando... (0/' + total + ')');
+
+  // ── Helpers ──────────────────────────────────────
+  function cleanCell(v) {
+    if (v === null || v === undefined) return '';
+    var s = String(v);
+    if (s.length > 200 && (s.startsWith('data:') || s.startsWith('http') || s.startsWith('blob'))) return '[foto]';
+    return s;
+  }
+  function fotoUrl(v) {
+    if (!v) return '';
+    var s = String(v);
+    if (s.startsWith('http') || s.startsWith('https')) return s;
+    if (s.startsWith('data:')) return '[base64]';
+    return s.length > 100 ? '[foto]' : s;
+  }
+  function boolTxt(v) {
+    if (v === true || v === 'true' || v === 1 || v === '1' || v === 'SI' || v === 'Si') return 'Sí';
+    if (v === false || v === 'false' || v === 0 || v === '0' || v === '' || v === null || v === undefined) return 'No';
+    return String(v);
+  }
+
+  // ── Emails a buscar en Redis ─────────────────────
+  var emails = mudancerosData.map(function(m) {
+    return Array.isArray(m) ? (m[4] || '') : (m.email || '');
+  }).filter(Boolean);
+
+  // ── Fetch perfiles en batches de 10 ──────────────
+  var perfiles = {};
+  var done = 0;
+
+  async function fetchPerfil(email) {
+    try {
+      var r = await fetch('/api/mudancero-data?email=' + encodeURIComponent(email));
+      var d = await r.json();
+      if (d.mudancero) perfiles[email.toLowerCase().trim()] = d.mudancero;
+    } catch(e) {
+      console.warn('No se pudo traer perfil de', email, e);
+    }
+    done++;
+    setBtn('⏳ Generando... (' + done + '/' + total + ')');
+  }
+
+  try {
+    var BATCH = 10;
+    for (var i = 0; i < emails.length; i += BATCH) {
+      var slice = emails.slice(i, i + BATCH);
+      await Promise.all(slice.map(fetchPerfil));
+    }
+  } catch(e) {
+    console.error('Error fetch perfiles:', e);
+  }
+
+  setBtn('⏳ Armando Excel...');
+
+  // ── Headers: 48 columnas en 11 secciones ─────────
   var headers = [
-    'ID', 'Nombre', 'Empresa', 'Teléfono', 'Email',
-    'Zona base', 'Zonas extra', 'CUIL', 'Vehículo', 'Cant. vehículos',
-    'Equipo', 'Servicios', 'Días', 'Horarios', 'Notas extra',
-    'Método cobro', 'CBU/Alias', 'Email MP', 'Fecha registro',
-    'CUIL verificado', 'DNI legible', 'Estado'
+    // 📇 Identificación (5)
+    'Fecha registro', 'Nombre', 'Empresa', 'Teléfono', 'Email',
+    // 📍 Zonas y vehículo (5)
+    'Zona base', 'Zonas extra', 'Distancia cobertura', 'Vehículo', 'Cant. vehículos',
+    // ⚙️ Operativa (5)
+    'Equipo', 'Servicios', 'Días', 'Horarios', 'Anticipación',
+    // 💰 Precios declarados — Sheets (5)
+    'Precio 1 amb', 'Precio 2 amb', 'Precio 3 amb', 'Precio 4+ amb', 'Precio flete',
+    // 💸 Precios actuales — Redis (5)
+    'Precio 1amb actual', 'Precio 2amb actual', 'Precio 3amb actual', 'Precio 4amb actual', 'Flete actual',
+    // 🆔 Fiscal (3)
+    'CUIL/CUIT', 'CUIL verificado', 'DNI legible',
+    // 🏦 Bancario (4)
+    'Método cobro', 'CBU/Alias', 'Email MP', 'Titular cuenta',
+    // 🌐 Perfil público (3)
+    'Sitio web', 'Años experiencia', 'Descripción',
+    // ✅ Verificaciones (3)
+    'Verif. identidad', 'Verif. vehículo', 'Verif. seguro',
+    // ⭐ Rating (3)
+    'Calificación', 'Nº reseñas', 'Trabajos completados',
+    // 📄 T&C + Meta (7)
+    'T&C aceptados', 'Fecha T&C', 'Notas extra', 'Estado', 'Foto vehículo', 'DNI frente', 'DNI dorso'
   ];
 
-  // Campos a excluir (fotos)
-  var FOTO_KEYS = ['dniFrente','dniDorso','fotoVehiculo','fotoUrl','dniFrente64','dniDorso64'];
+  // ── Armar filas ──────────────────────────────────
+  var rows = mudancerosData.map(function(m) {
+    // Soporta tanto array (Sheets) como objeto
+    var isArr = Array.isArray(m);
+    var get = function(idx, prop) {
+      if (isArr) return m[idx];
+      return m[prop];
+    };
 
-  // Armar rows desde mudancerosData (ya es array de arrays según el map)
-  var wsData = [headers].concat(mudancerosData.map(function(row) {
-    return row.map(function(cell) {
-      if (cell === null || cell === undefined) return '';
-      var s = String(cell);
-      // Truncar si parece base64 o URL de foto
-      if (s.length > 200 && (s.startsWith('data:') || s.startsWith('http') || s.startsWith('blob'))) return '[foto]';
-      return s;
-    });
-  }));
+    var email = (get(4, 'email') || '').toLowerCase().trim();
+    var perfil = perfiles[email] || {};
+    // El perfil puede venir como objeto o como array según el endpoint — normalizo
+    var p = Array.isArray(perfil) ? {} : perfil;
+
+    return [
+      // 📇 Identificación
+      cleanCell(get(0, 'fecha')),
+      cleanCell(get(1, 'nombre')),
+      cleanCell(get(2, 'empresa')),
+      cleanCell(get(3, 'telefono')),
+      cleanCell(get(4, 'email')),
+      // 📍 Zonas y vehículo
+      cleanCell(get(5, 'zonaBase') || get(5, 'zona')),
+      cleanCell(get(6, 'zonasExtra')),
+      cleanCell(get(7, 'distancia')),
+      cleanCell(get(8, 'vehiculo')),
+      cleanCell(get(9, 'cantVehiculos')),
+      // ⚙️ Operativa
+      cleanCell(get(10, 'equipo')),
+      cleanCell(get(11, 'servicios')),
+      cleanCell(get(12, 'dias')),
+      cleanCell(get(13, 'horarios')),
+      cleanCell(get(14, 'anticipacion')),
+      // 💰 Precios declarados (Sheets)
+      cleanCell(get(15, 'precio1amb')),
+      cleanCell(get(16, 'precio2amb')),
+      cleanCell(get(17, 'precio3amb')),
+      cleanCell(get(18, 'precio4amb')),
+      cleanCell(get(19, 'precioFlete')),
+      // 💸 Precios actuales (Redis)
+      cleanCell(p.precio1amb || p.precio_1amb || ''),
+      cleanCell(p.precio2amb || p.precio_2amb || ''),
+      cleanCell(p.precio3amb || p.precio_3amb || ''),
+      cleanCell(p.precio4amb || p.precio_4amb || ''),
+      cleanCell(p.precioFlete || p.precio_flete || ''),
+      // 🆔 Fiscal
+      cleanCell(p.cuil || p.cuit || get(7, 'cuil') || ''),
+      boolTxt(p.cuilVerificado || p.cuil_verificado || get(19, 'cuilVerificado')),
+      boolTxt(p.dniLegible || p.dni_legible || get(20, 'dniLegible')),
+      // 🏦 Bancario
+      cleanCell(p.metodoCobro || p.metodo_cobro || ''),
+      cleanCell(p.cbu || p.alias || ''),
+      cleanCell(p.emailMP || p.email_mp || ''),
+      cleanCell(p.titularCuenta || p.titular_cuenta || p.titular || ''),
+      // 🌐 Perfil público
+      cleanCell(p.sitioWeb || p.sitio_web || p.website || ''),
+      cleanCell(p.añosExp || p.anosExp || p.experiencia || p.años_experiencia || ''),
+      cleanCell(p.descripcion || p.bio || get(20, 'extra') || ''),
+      // ✅ Verificaciones
+      boolTxt(p.verifIdentidad || p.verif_identidad),
+      boolTxt(p.verifVehiculo || p.verif_vehiculo),
+      boolTxt(p.verifSeguro || p.verif_seguro),
+      // ⭐ Rating
+      cleanCell(p.promedioEstrellas || p.calificacion || p.rating || ''),
+      cleanCell((p.resenas && p.resenas.length) || p.numResenas || p.num_resenas || 0),
+      cleanCell(p.trabajosCompletados || p.trabajos_completados || p.completados || 0),
+      // 📄 T&C + Meta
+      boolTxt(p.terminosAceptados || p.terminos_aceptados),
+      cleanCell(p.fechaTerminos || p.fecha_terminos || ''),
+      cleanCell(get(20, 'extra') || p.notas || ''),
+      cleanCell(get(21, 'estado') || p.estado || ''),
+      fotoUrl(p.fotoVehiculo || p.foto_vehiculo || p.fotoUrl),
+      fotoUrl(p.dniFrente || p.dni_frente),
+      fotoUrl(p.dniDorso || p.dni_dorso)
+    ];
+  });
+
+  var wsData = [headers].concat(rows);
 
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(wsData);
 
-  // Ancho de columnas
-  var colWidths = [
-    {wch:18},{wch:22},{wch:22},{wch:16},{wch:28},
-    {wch:22},{wch:22},{wch:16},{wch:22},{wch:10},
-    {wch:16},{wch:22},{wch:16},{wch:16},{wch:20},
-    {wch:14},{wch:22},{wch:28},{wch:20},
-    {wch:16},{wch:14},{wch:12}
+  // Anchos por sección
+  ws['!cols'] = [
+    // Identificación
+    {wch:18},{wch:24},{wch:22},{wch:16},{wch:28},
+    // Zonas/vehículo
+    {wch:20},{wch:24},{wch:14},{wch:22},{wch:10},
+    // Operativa
+    {wch:18},{wch:24},{wch:16},{wch:16},{wch:16},
+    // Precios declarados
+    {wch:14},{wch:14},{wch:14},{wch:14},{wch:14},
+    // Precios actuales
+    {wch:16},{wch:16},{wch:16},{wch:16},{wch:14},
+    // Fiscal
+    {wch:16},{wch:12},{wch:12},
+    // Bancario
+    {wch:14},{wch:22},{wch:26},{wch:22},
+    // Perfil público
+    {wch:24},{wch:10},{wch:30},
+    // Verificaciones
+    {wch:12},{wch:12},{wch:12},
+    // Rating
+    {wch:12},{wch:10},{wch:14},
+    // T&C + Meta
+    {wch:12},{wch:18},{wch:28},{wch:12},{wch:16},{wch:16},{wch:16}
   ];
-  ws['!cols'] = colWidths;
 
-  // Freeze primera fila
+  // Freeze primera fila + primera columna
   ws['!freeze'] = { xSplit: 0, ySplit: 1 };
 
   XLSX.utils.book_append_sheet(wb, ws, 'Mudanceros');
 
   var fecha = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, 'mudanceros-mudateya-' + fecha + '.xlsx');
+
+  resetBtn();
 }
 </script>
 
