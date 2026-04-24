@@ -3515,27 +3515,32 @@ async function asrCargarZonaDetalle() {
     var dZ = await asrFetch('/api/asesores?action=admin-mudanceros-zona&zona=' + encodeURIComponent(zona) + '&token=' + ASRT());
     _asrMudancerasZona = dZ.mudanceras || [];
 
-    // 2. Todas las mudanceras aprobadas del sistema (desde /api/admin?type=mudanceros)
+    // 2. Todas las mudanceras aprobadas del sistema
     if (!_asrMudancerasAprobadas.length) {
-      var rAll = await fetch('/api/admin?type=mudanceros');
+      var rAll = await fetch('/api/cotizaciones?action=admin-mudanceros&token=' + ASRT());
+      if (!rAll.ok) throw new Error('No se pudo cargar la lista de mudanceras (HTTP ' + rAll.status + ')');
       var dAll = await rAll.json();
-      var rows = dAll.rows || [];
-      // rows[i]: [fecha, nombre, empresa, telefono, email, zonaBase, zonasExtra, ..., vehiculo, ...]
-      // Traemos los perfiles completos para saber si tienen preciosPack
+      if (dAll.error) throw new Error(dAll.error);
+      var perfiles = dAll.mudanceros || [];
       _asrMudancerasAprobadas = [];
-      for (var i = 0; i < rows.length; i++) {
-        var row = rows[i];
-        var email = row[4];
-        if (!email) continue;
-        // Verificar estado aprobado desde el row (posición depende del array, usamos getEstado existente)
-        var est = (typeof getEstado === 'function') ? getEstado(row) : '';
-        if (est && est !== 'Aprobado') continue;
+      for (var i = 0; i < perfiles.length; i++) {
+        var p = perfiles[i];
+        if (!p || !p.email) continue;
+        // Solo mudanceras aprobadas
+        if (p.estado && p.estado !== 'aprobado') continue;
+        var pp = p.preciosPack || {};
         _asrMudancerasAprobadas.push({
-          email:   email,
-          nombre:  row[1] || '',
-          empresa: row[2] || row[1] || '',
-          zonaBase:row[5] || '',
-          zonasExtra: row[6] || ''
+          email:       p.email,
+          nombre:      p.nombre || '',
+          empresa:     p.empresa || p.nombre || '',
+          zonaBase:    p.zonaBase || '',
+          zonasExtra:  p.zonasExtra || '',
+          preciosPack: {
+            esencial: Number(pp.esencial) || 0,
+            integral: Number(pp.integral) || 0,
+            llave:    Number(pp.llave)    || 0
+          },
+          tienePack:   (Number(pp.esencial)||0) > 0 || (Number(pp.integral)||0) > 0 || (Number(pp.llave)||0) > 0
         });
       }
     }
@@ -3591,10 +3596,13 @@ function renderZonaEditor(zona) {
       var checked = asignadasEmails.indexOf(m.email) !== -1 ? 'checked' : '';
       var cubre = (m.zonaBase === zona) || (m.zonasExtra && m.zonasExtra.indexOf(zona) !== -1);
       var cubreLbl = cubre ? '<span style="display:inline-block;padding:1px 6px;background:#F0FDF4;color:#15803D;border-radius:8px;font-size:10px;font-weight:600;margin-left:6px">opera en zona</span>' : '';
+      var packLbl = m.tienePack
+        ? '<span style="display:inline-block;padding:1px 6px;background:#E0F2FE;color:#075985;border-radius:8px;font-size:10px;font-weight:600;margin-left:6px">✓ precios pack</span>'
+        : '<span style="display:inline-block;padding:1px 6px;background:#FEF3C7;color:#92400E;border-radius:8px;font-size:10px;font-weight:600;margin-left:6px">⚠ sin precios pack</span>';
       var emailSafe = asrEsc(m.email).replace(/'/g, "\\'");
       h += '<label class="asr-mud-row" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #F1F5F9;cursor:pointer;font-size:13px">' +
         '<input type="checkbox" value="' + asrEsc(m.email) + '" ' + checked + ' onchange="asrMarcarCambioZona()" style="width:18px;height:18px;accent-color:var(--green)"/>' +
-        '<div style="flex:1"><div style="font-weight:600;color:var(--navy)">' + asrEsc(m.empresa || m.nombre) + cubreLbl + '</div>' +
+        '<div style="flex:1"><div style="font-weight:600;color:var(--navy)">' + asrEsc(m.empresa || m.nombre) + cubreLbl + packLbl + '</div>' +
         '<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">' + asrEsc(m.email) + (m.zonaBase ? ' · ' + asrEsc(m.zonaBase) : '') + '</div></div>' +
         '</label>';
     });
