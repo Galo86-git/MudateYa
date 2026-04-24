@@ -99,6 +99,14 @@
   .fld textarea{min-height:70px;resize:vertical}
   .fld-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
+  /* Autocomplete Google Places */
+  .ac-wrap{position:relative}
+  .ac-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px rgba(15,25,35,.1);overflow:hidden;z-index:9999;display:none;list-style:none;padding:0;margin:0;max-height:260px;overflow-y:auto}
+  .ac-drop.open{display:block}
+  .ac-item{padding:11px 14px;font-size:13px;color:var(--text2);cursor:pointer;border-top:1px solid #F1F5F9;transition:background .15s}
+  .ac-item:first-child{border-top:none}
+  .ac-item:hover,.ac-item.kb{background:#F0F7FF;color:var(--blue)}
+
   /* Packs picker */
   .nivel-block{background:#fff;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden}
   .nivel-head{padding:12px 14px;background:linear-gradient(90deg,var(--navy),#0057BF);color:#fff;display:flex;align-items:center;justify-content:space-between}
@@ -230,11 +238,17 @@
       <div class="form-err" id="err-2"></div>
       <div class="fld">
         <label>Origen</label>
-        <input type="text" id="m-origen" placeholder="Av. Santa Fe 2500, CABA"/>
+        <div class="ac-wrap">
+          <input type="text" id="m-origen" placeholder="Av. Santa Fe 2500, CABA" autocomplete="off"/>
+          <ul class="ac-drop" id="ac-origen"></ul>
+        </div>
       </div>
       <div class="fld">
         <label>Destino</label>
-        <input type="text" id="m-destino" placeholder="Av. Libertador 6000, Vicente López"/>
+        <div class="ac-wrap">
+          <input type="text" id="m-destino" placeholder="Av. Libertador 6000, Vicente López" autocomplete="off"/>
+          <ul class="ac-drop" id="ac-destino"></ul>
+        </div>
       </div>
       <div class="fld-row2">
         <div class="fld">
@@ -745,8 +759,60 @@ function fallbackCopy(text, lbl) {
   document.body.removeChild(ta);
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// GOOGLE PLACES AUTOCOMPLETE (origen + destino)
+// ══════════════════════════════════════════════════════════════════════
+function makeACAsesor(inputId, ddId) {
+  var input = document.getElementById(inputId);
+  var dd = document.getElementById(ddId);
+  if (!input || !dd) return;
+  var deb;
+  input.addEventListener('input', function() {
+    clearTimeout(deb);
+    var q = this.value.trim();
+    if (q.length < 2) { dd.classList.remove('open'); return; }
+    deb = setTimeout(function() {
+      if (!window.google || !google.maps || !google.maps.places) return;
+      new google.maps.places.AutocompleteService().getPlacePredictions(
+        { input: q, componentRestrictions:{country:'ar'}, types:['address'] },
+        function(preds, status) {
+          dd.innerHTML = '';
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !preds) { dd.classList.remove('open'); return; }
+          preds.slice(0,5).forEach(function(s) {
+            var li = document.createElement('li');
+            li.className = 'ac-item';
+            li.textContent = s.description;
+            li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
+            li.addEventListener('touchend',  function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
+            dd.appendChild(li);
+          });
+          dd.classList.add('open');
+        }
+      );
+    }, 280);
+  });
+  input.addEventListener('blur', function(){ setTimeout(function(){ dd.classList.remove('open'); }, 200); });
+  input.addEventListener('keydown', function(e) {
+    var items = dd.querySelectorAll('.ac-item');
+    var active = dd.querySelector('.kb');
+    var idx = active ? Array.from(items).indexOf(active) : -1;
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (active) active.classList.remove('kb'); var n = items[idx+1]||items[0]; if(n){ n.classList.add('kb'); n.scrollIntoView({block:'nearest'}); } }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (active) active.classList.remove('kb'); var p = items[idx-1]||items[items.length-1]; if(p){ p.classList.add('kb'); p.scrollIntoView({block:'nearest'}); } }
+    else if (e.key === 'Enter' && active) { e.preventDefault(); active.dispatchEvent(new MouseEvent('mousedown')); }
+    else if (e.key === 'Escape') { dd.classList.remove('open'); }
+  });
+}
+
+// Callback que Google llama cuando termina de cargar la API
+window.initMapsAsesor = function() {
+  makeACAsesor('m-origen',  'ac-origen');
+  makeACAsesor('m-destino', 'ac-destino');
+};
+
 init();
 </script>
+
+<script data-cfasync="false" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMapsAsesor" async defer></script>
 
 </body>
 </html>
