@@ -30,31 +30,52 @@
   .hdr-user .logout:hover{background:rgba(255,255,255,.2)}
 
   /* ── CONTAINER ── */
-  .container{max-width:900px;margin:0 auto;padding:20px 18px 80px}
+  .container{max-width:1100px;margin:0 auto;padding:28px 20px 80px}
 
   /* ── WELCOME ── */
-  .welcome{margin-bottom:20px}
-  .welcome h1{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1.2px;color:var(--navy);line-height:1.1;margin-bottom:4px}
+  .welcome{margin-bottom:24px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .welcome h1{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1.2px;color:var(--navy);line-height:1.1;margin-bottom:4px}
   .welcome p{font-size:13px;color:var(--text2)}
 
-  /* ── STATS ── */
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
-  .stat{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:14px;text-align:center}
-  .stat-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--navy);line-height:1}
+  /* ── STATS (4 chips clickeables — funcionan como filtros también) ── */
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+  @media(min-width:720px){.stats{grid-template-columns:repeat(4,1fr);gap:12px}}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;cursor:pointer;transition:all .18s;position:relative}
+  .stat:hover{border-color:var(--navy);transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,25,35,.06)}
+  .stat.active{border-color:var(--navy);background:#F8FAFF;box-shadow:0 0 0 2px rgba(0,53,128,.08)}
+  .stat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .stat-ico{font-size:16px;opacity:.85}
+  .stat-val{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--navy);line-height:1;letter-spacing:.5px}
   .stat-val.g{color:var(--green)}
-  .stat-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+  .stat-val.amber{color:#D97706}
+  .stat-val.red{color:#EF4444}
+  .stat-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;font-weight:600}
 
   /* ── CTA NUEVO PEDIDO ── */
   .cta-new{background:linear-gradient(135deg,var(--green),#1AA558);color:#fff;border:none;border-radius:var(--r2);padding:18px 20px;width:100%;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .15s,box-shadow .15s}
   .cta-new:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(34,195,106,.3)}
   .cta-new .plus{background:rgba(255,255,255,.2);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:400}
+  .cta-new.compact{width:auto;padding:12px 20px;font-size:14px;margin-bottom:0;flex-shrink:0}
+  .cta-new.compact .plus{width:22px;height:22px;font-size:15px}
+
+  /* ── FILTROS (pill bar) ── */
+  .filter-bar{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+  .filter-bar::-webkit-scrollbar{display:none}
+  .filter-pill{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;font-family:var(--font)}
+  .filter-pill:hover{border-color:var(--text2)}
+  .filter-pill.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .filter-pill .count{opacity:.75;font-weight:500;margin-left:4px}
 
   /* ── PEDIDOS LIST ── */
-  .section-title{font-size:11px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:10px;padding-left:4px}
-  .empty{background:#fff;border:1px dashed var(--border);border-radius:var(--r2);padding:36px 20px;text-align:center;color:var(--text3);font-size:13px}
+  .section-title{font-size:11px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:10px;padding-left:4px;display:flex;align-items:center;justify-content:space-between}
+  .section-title .count-tag{color:var(--text3);font-weight:500;text-transform:none;font-size:11px}
+  .empty{background:#fff;border:1px dashed var(--border);border-radius:var(--r2);padding:48px 20px;text-align:center;color:var(--text3);font-size:13px}
 
-  .ped-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;margin-bottom:10px;transition:border-color .15s}
-  .ped-card:hover{border-color:var(--navy)}
+  .pedidos-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:820px){.pedidos-grid{grid-template-columns:1fr 1fr;gap:14px}}
+
+  .ped-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;transition:border-color .15s,transform .15s,box-shadow .15s;display:flex;flex-direction:column}
+  .ped-card:hover{border-color:var(--navy);transform:translateY(-1px);box-shadow:0 4px 14px rgba(15,25,35,.06)}
   .ped-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
   .ped-cliente{font-weight:700;color:var(--navy);font-size:15px}
   .ped-meta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
@@ -63,11 +84,12 @@
   .ped-estado.enviado{background:#FEF3C7;color:#92400E}
   .ped-estado.elegido{background:#DBEAFE;color:#1E40AF}
   .ped-estado.pagado{background:#DCFCE7;color:#15803D}
+  .ped-estado.expirado{background:#FEE2E2;color:#991B1B}
   .ped-dest{font-size:13px;color:var(--text2);margin-bottom:8px}
   .ped-packs{display:flex;gap:6px;flex-wrap:wrap}
   .ped-pack-chip{font-size:11px;background:var(--bg);padding:4px 9px;border-radius:10px;color:var(--text2);font-family:var(--mono)}
   .ped-pack-chip strong{color:var(--navy)}
-  .ped-acciones{margin-top:10px;padding-top:10px;border-top:1px solid #F1F5F9;display:flex;gap:6px;flex-wrap:wrap}
+  .ped-acciones{margin-top:12px;padding-top:12px;border-top:1px solid #F1F5F9;display:flex;gap:6px;flex-wrap:wrap}
   .ped-btn{font-size:12px;padding:6px 12px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-family:var(--font);color:var(--text2);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
   .ped-btn:hover{background:var(--bg);color:var(--navy)}
   .ped-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
@@ -223,10 +245,11 @@
   .warn-box{padding:12px 14px;background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:var(--r);font-size:12px;color:#92400E;line-height:1.5;margin-bottom:14px}
 
   @media(max-width:480px){
-    .stats{grid-template-columns:1fr 1fr 1fr;gap:6px}
-    .stat{padding:10px 6px}
-    .stat-val{font-size:22px}
-    .stat-lbl{font-size:9px}
+    .stats{grid-template-columns:1fr 1fr;gap:8px}
+    .stat{padding:12px 10px}
+    .stat-val{font-size:26px}
+    .stat-lbl{font-size:10px}
+    .welcome h1{font-size:28px}
   }
 </style>
 </head>
@@ -243,19 +266,49 @@
 <div class="container">
 
   <div class="welcome">
-    <h1 id="welcomeTitle">Hola</h1>
-    <p id="welcomeSub">Cargando panel…</p>
+    <div>
+      <h1 id="welcomeTitle">Hola</h1>
+      <p id="welcomeSub">Cargando panel…</p>
+    </div>
+    <button class="cta-new compact" onclick="fswOpen()"><span class="plus">+</span> Nuevo pedido</button>
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="stat-val" id="s-pedidos">—</div><div class="stat-lbl">Pedidos creados</div></div>
-    <div class="stat"><div class="stat-val" id="s-enviados">—</div><div class="stat-lbl">Enviados</div></div>
-    <div class="stat"><div class="stat-val g" id="s-pagados">—</div><div class="stat-lbl">Pagados</div></div>
+    <div class="stat" onclick="setFilter('todos')" id="st-todos">
+      <div class="stat-head"><span class="stat-ico">📋</span></div>
+      <div class="stat-val" id="s-total">—</div>
+      <div class="stat-lbl">Pedidos totales</div>
+    </div>
+    <div class="stat" onclick="setFilter('pendientes')" id="st-pendientes">
+      <div class="stat-head"><span class="stat-ico">⏳</span></div>
+      <div class="stat-val amber" id="s-pendientes">—</div>
+      <div class="stat-lbl">Pendientes</div>
+    </div>
+    <div class="stat" onclick="setFilter('pagados')" id="st-pagados">
+      <div class="stat-head"><span class="stat-ico">💰</span></div>
+      <div class="stat-val g" id="s-pagados">—</div>
+      <div class="stat-lbl">Pagados</div>
+    </div>
+    <div class="stat" onclick="setFilter('expirados')" id="st-expirados">
+      <div class="stat-head"><span class="stat-ico">⚠️</span></div>
+      <div class="stat-val red" id="s-expirados">—</div>
+      <div class="stat-lbl">Expirados</div>
+    </div>
   </div>
 
-  <button class="cta-new" onclick="fswOpen()"><span class="plus">+</span> Nuevo pedido para cliente</button>
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-pill active" onclick="setFilter('todos')" data-filter="todos">Todos <span class="count" id="f-todos">0</span></button>
+    <button class="filter-pill" onclick="setFilter('borrador')" data-filter="borrador">Borradores <span class="count" id="f-borrador">0</span></button>
+    <button class="filter-pill" onclick="setFilter('enviado')" data-filter="enviado">Enviados <span class="count" id="f-enviado">0</span></button>
+    <button class="filter-pill" onclick="setFilter('elegido')" data-filter="elegido">Elegidos <span class="count" id="f-elegido">0</span></button>
+    <button class="filter-pill" onclick="setFilter('pagado')" data-filter="pagado">Pagados <span class="count" id="f-pagado">0</span></button>
+    <button class="filter-pill" onclick="setFilter('expirado')" data-filter="expirado">Expirados <span class="count" id="f-expirado">0</span></button>
+  </div>
 
-  <div class="section-title">Mis pedidos</div>
+  <div class="section-title">
+    <span>Mis pedidos</span>
+    <span class="count-tag" id="listCountTag"></span>
+  </div>
   <div id="pedidosList">
     <div class="loading-full"><span class="loader-inline"></span></div>
   </div>
@@ -463,6 +516,7 @@
 var TOKEN = localStorage.getItem('asesorToken');
 var ASESOR = null;
 var PEDIDOS = [];
+var CURRENT_FILTER = 'todos';
 var MUDANCERAS_ZONA = [];
 var FSW_STEP = 1;
 var FSW_DATA = { cliente:{}, mudanza:{}, packs:{ esencial:null, integral:null, llave:null } };
@@ -511,9 +565,81 @@ function renderHeader(d) {
 }
 
 function renderStats(s) {
-  document.getElementById('s-pedidos').textContent = s.pedidosCreados || 0;
-  document.getElementById('s-enviados').textContent = s.clientesEnviados || 0;
-  document.getElementById('s-pagados').textContent = s.clientesPagados || 0;
+  // Calculamos desde PEDIDOS (más confiable que stats del backend)
+  var total = PEDIDOS.length;
+  var pendientes = 0, pagados = 0, expirados = 0;
+  var byEstado = { borrador:0, enviado:0, elegido:0, pagado:0, expirado:0 };
+  PEDIDOS.forEach(function(p){
+    var e = p.estado || 'borrador';
+    if (byEstado[e] !== undefined) byEstado[e]++;
+    if (e === 'borrador' || e === 'enviado' || e === 'elegido') pendientes++;
+    else if (e === 'pagado') pagados++;
+    else if (e === 'expirado') expirados++;
+  });
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-pendientes').textContent = pendientes;
+  document.getElementById('s-pagados').textContent = pagados;
+  document.getElementById('s-expirados').textContent = expirados;
+
+  // Contadores en filtros
+  document.getElementById('f-todos').textContent    = total;
+  document.getElementById('f-borrador').textContent = byEstado.borrador;
+  document.getElementById('f-enviado').textContent  = byEstado.enviado;
+  document.getElementById('f-elegido').textContent  = byEstado.elegido;
+  document.getElementById('f-pagado').textContent   = byEstado.pagado;
+  document.getElementById('f-expirado').textContent = byEstado.expirado;
+}
+
+// Filtro seteado desde stats o pill bar
+function setFilter(filter) {
+  CURRENT_FILTER = filter;
+
+  // Update pills
+  var pills = document.querySelectorAll('.filter-pill');
+  pills.forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-filter') === filter);
+  });
+  // Si el filter viene de una stat (pendientes / pagados / expirados / todos),
+  // activamos el pill equivalente si existe
+  var mapStatFilter = {
+    todos:       'todos',
+    pendientes:  null,    // engloba 3 estados, no tiene pill propio
+    pagados:     'pagado',
+    expirados:   'expirado'
+  };
+  var pillTarget = mapStatFilter[filter];
+  if (pillTarget) {
+    pills.forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-filter') === pillTarget);
+    });
+  }
+
+  // Highlight stat card activa
+  ['st-todos','st-pendientes','st-pagados','st-expirados'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  var statMap = { todos:'st-todos', pendientes:'st-pendientes', pagados:'st-pagados', expirados:'st-expirados' };
+  var revMap = { borrador:'st-pendientes', enviado:'st-pendientes', elegido:'st-pendientes', pagado:'st-pagados', expirado:'st-expirados' };
+  var statId = statMap[filter] || revMap[filter] || 'st-todos';
+  var statEl = document.getElementById(statId);
+  if (statEl) statEl.classList.add('active');
+
+  renderPedidos(PEDIDOS);
+}
+
+function getFiltered(lista) {
+  if (CURRENT_FILTER === 'todos') return lista;
+  if (CURRENT_FILTER === 'pendientes') {
+    return lista.filter(function(p){
+      var e = p.estado || 'borrador';
+      return e === 'borrador' || e === 'enviado' || e === 'elegido';
+    });
+  }
+  if (CURRENT_FILTER === 'pagados')   return lista.filter(function(p){ return p.estado === 'pagado'; });
+  if (CURRENT_FILTER === 'expirados') return lista.filter(function(p){ return p.estado === 'expirado'; });
+  // Pills con estado único
+  return lista.filter(function(p){ return (p.estado || 'borrador') === CURRENT_FILTER; });
 }
 
 function esc(s) {
@@ -536,12 +662,35 @@ function fechaCorta(iso) {
 
 function renderPedidos(lista) {
   var wrap = document.getElementById('pedidosList');
+  var countTag = document.getElementById('listCountTag');
+
+  // Vacío absoluto (0 pedidos totales)
   if (!lista.length) {
     wrap.innerHTML = '<div class="empty">Todavía no armaste ningún pedido.<br/><strong style="color:var(--navy)">Tocá "+ Nuevo pedido" arriba para empezar.</strong></div>';
+    if (countTag) countTag.textContent = '';
     return;
   }
-  var h = '';
-  lista.forEach(function(p){
+
+  // Aplicar filtro
+  var filtrados = getFiltered(lista);
+
+  // Contador al lado del título
+  if (countTag) {
+    if (CURRENT_FILTER === 'todos') {
+      countTag.textContent = lista.length + ' total' + (lista.length === 1 ? '' : 'es');
+    } else {
+      countTag.textContent = filtrados.length + ' de ' + lista.length;
+    }
+  }
+
+  // Vacío filtrado (hay pedidos pero ninguno cumple el filtro)
+  if (!filtrados.length) {
+    wrap.innerHTML = '<div class="empty">No hay pedidos con este filtro.<br/><button class="ped-btn" style="margin-top:10px" onclick="setFilter(\'todos\')">Ver todos</button></div>';
+    return;
+  }
+
+  var h = '<div class="pedidos-grid">';
+  filtrados.forEach(function(p){
     var estado = p.estado || 'borrador';
     var cliente = (p.cliente && p.cliente.nombre) || '—';
     var dest = (p.mudanza && p.mudanza.destino) || '—';
@@ -566,6 +715,7 @@ function renderPedidos(lista) {
       '</div>' +
     '</div>';
   });
+  h += '</div>';
   wrap.innerHTML = h;
 }
 
