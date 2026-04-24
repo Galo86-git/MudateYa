@@ -4,6 +4,7 @@
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/admin", "dest": "/admin.html" },
     { "src": "/mudanceros", "dest": "/mudanceros.html" },
+    { "src": "/mudancero", "dest": "/mudancero-perfil.html" },
     { "src": "/mudanceros-catalogo", "dest": "/mudanceros-catalogo.html" },
     { "src": "/mi-cuenta", "dest": "/mi-cuenta.html" },
     { "src": "/mi-mudanza", "dest": "/mi-mudanza.html" },
