@@ -422,6 +422,7 @@ function renderPedidos(lista) {
         '<a class="ped-btn" href="' + clienteUrl + '" target="_blank">👁 Ver lo que ve el cliente</a>' +
         (estado === 'borrador' ? '<button class="ped-btn primary" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Enviar al cliente</button>' : '') +
         (estado !== 'borrador' ? '<button class="ped-btn" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Reenviar</button>' : '') +
+        (estado === 'borrador' ? '<button class="ped-btn" onclick="eliminarPedido(\'' + pIdSafe + '\')" style="color:#EF4444;border-color:#FECACA">🗑 Eliminar</button>' : '') +
       '</div>' +
     '</div>';
   });
@@ -700,6 +701,21 @@ async function reenviarPedido(pedidoId) {
     alert('✓ Email enviado. WhatsApp:\n' + d.waLink);
     // Copiar link al clipboard si se puede
     if (navigator.clipboard) navigator.clipboard.writeText(d.clienteUrl).catch(function(){});
+    init();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function eliminarPedido(pedidoId) {
+  if (!confirm('¿Eliminar este borrador? Esta acción no se puede deshacer.')) return;
+  try {
+    var r = await fetch('/api/asesores?action=eliminar-pedido', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: TOKEN, pedidoId: pedidoId })
+    });
+    var d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Error');
     init();
   } catch(e) {
     alert('Error: ' + e.message);
