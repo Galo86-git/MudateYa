@@ -277,7 +277,7 @@
     <!-- STEP 3: Armar los 3 packs -->
     <div class="fsw-step" data-step="3">
       <h2>Armá los 3 packs</h2>
-      <p class="subtitle">Elegí 1 mudancera para cada nivel. Todas están pre-verificadas para tu zona.</p>
+      <p class="subtitle">Elegí 1 mudancera para cada nivel. Todas están verificadas por MudateYa.</p>
       <div class="form-err" id="err-3"></div>
       <div id="packsPicker">
         <div class="loading-full"><span class="loader-inline"></span></div>
@@ -574,7 +574,7 @@ async function loadMudancerasZona() {
   var wrap = document.getElementById('packsPicker');
   wrap.innerHTML = '<div class="loading-full"><span class="loader-inline"></span></div>';
   try {
-    var r = await fetch('/api/asesores?action=mudanceros-zona&token=' + encodeURIComponent(TOKEN));
+    var r = await fetch('/api/asesores?action=mudanceros-todos&token=' + encodeURIComponent(TOKEN));
     var d = await r.json();
     if (!r.ok || !d.ok) throw new Error(d.error || 'Error');
     // Solo mudanceras con al menos un precio > 0
@@ -592,7 +592,7 @@ function renderPacksPicker() {
   var wrap = document.getElementById('packsPicker');
   if (!MUDANCERAS_ZONA.length) {
     wrap.innerHTML =
-      '<div class="warn-box">⚠ Todavía no hay mudanceras asignadas a tu zona (<strong>' + esc(ASESOR.zona) + '</strong>). Contactanos a <a href="mailto:hola@mudateya.ar" style="color:#92400E;font-weight:700">hola@mudateya.ar</a> y te asignamos las opciones disponibles.</div>';
+      '<div class="warn-box">⚠ Todavía no hay mudanceras con precios de pack cargados en el sistema. Contactanos a <a href="mailto:hola@mudateya.ar" style="color:#92400E;font-weight:700">hola@mudateya.ar</a> para resolverlo.</div>';
     var btn = document.getElementById('btnNext'); if (btn) btn.disabled = true;
     return;
   }
