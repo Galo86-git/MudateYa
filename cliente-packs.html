@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tu mudanza — MudateYa</title>
+<meta name="description" content="Elegí tu pack de mudanza entre 3 opciones con empresas verificadas."/>
+<link rel="icon" href="/favicon.ico"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style data-cfasync="false">
+  :root{
+    --navy:#003580;--green:#22C36A;--blue:#1A6FFF;
+    --text:#0F1923;--text2:#475569;--text3:#94A3B8;
+    --border:#E2E8F0;--bg:#F5F7FA;
+    --r:8px;--r2:12px;
+    --font:'Inter',sans-serif;
+    --mono:'DM Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{font-family:var(--font);color:var(--text);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+  .topbar{background:var(--navy);padding:14px 20px;text-align:center;border-bottom:3px solid var(--green)}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:#fff;text-decoration:none}
+  .logo span{color:var(--green)}
+
+  .container{max-width:760px;margin:0 auto;padding:24px 18px 60px}
+
+  /* ── HERO ── */
+  .hero{text-align:center;margin-bottom:26px}
+  .hero-eyebrow{display:inline-block;padding:4px 12px;background:rgba(34,195,106,.12);color:var(--green);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;border-radius:20px;margin-bottom:12px;font-family:var(--mono)}
+  .hero h1{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1.2px;color:var(--navy);line-height:1.05;margin-bottom:8px}
+  .hero h1 .grn{color:var(--green)}
+  .hero p{font-size:14px;color:var(--text2);max-width:480px;margin:0 auto 16px;line-height:1.55}
+  .hero .asesor-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border:1px solid var(--border);border-radius:22px;font-size:13px;color:var(--text2)}
+  .hero .asesor-chip strong{color:var(--navy)}
+
+  /* ── MUDANZA SUMMARY ── */
+  .mz-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;margin-bottom:22px}
+  .mz-card h3{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:10px}
+  .mz-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px}
+  .mz-grid .lbl{color:var(--text3);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding-top:3px}
+  .mz-grid .val{color:var(--text);font-weight:500}
+
+  /* ── PACKS ── */
+  .packs-section-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--navy);text-align:center;margin:8px 0 16px}
+  .pack{background:#fff;border:2px solid var(--border);border-radius:var(--r2);margin-bottom:14px;overflow:hidden;transition:all .18s}
+  .pack:hover{border-color:#CBD5E1}
+  .pack.recommended{border-color:var(--green);box-shadow:0 8px 24px rgba(34,195,106,.12)}
+  .pack.recommended .pack-header::before{content:'RECOMENDADO';position:absolute;top:8px;right:10px;background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;font-family:var(--mono);letter-spacing:.5px}
+
+  .pack-header{padding:14px 18px;background:linear-gradient(90deg,var(--navy),#0057BF);color:#fff;position:relative}
+  .pack-header .nivel-name{font-weight:700;font-size:16px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+  .pack-header .nivel-sub{font-size:11.5px;opacity:.88;font-family:var(--mono);margin-top:2px}
+
+  .pack-body{padding:16px 18px 18px}
+  .pack-mudancero{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .pack-avatar{flex-shrink:0;width:52px;height:52px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:700;font-size:17px;overflow:hidden;border:2px solid var(--border)}
+  .pack-avatar img{width:100%;height:100%;object-fit:cover}
+  .pack-info{flex:1;min-width:0}
+  .pack-empresa{font-weight:700;color:var(--navy);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pack-stars{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:3px;display:flex;align-items:center;gap:4px}
+  .pack-stars .verified{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:#F0FDF4;color:#15803D;border-radius:10px;font-size:10px;font-weight:700}
+
+  .pack-features{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:14px;padding:12px;background:var(--bg);border-radius:var(--r);font-size:12.5px;color:var(--text2)}
+  .pack-features .feat{display:flex;align-items:center;gap:8px}
+  .pack-features .feat .ic{color:var(--green);font-weight:700;flex-shrink:0}
+
+  .pack-precio-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .pack-precio{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--green);line-height:1;letter-spacing:.5px}
+  .pack-precio-detail{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+
+  .btn-elegir{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:var(--r);font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn-elegir:hover:not(:disabled){background:#1AA558;transform:translateY(-1px)}
+  .btn-elegir:disabled{opacity:.6;cursor:wait}
+
+  /* ── HELP BOX ── */
+  .help-box{background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--r2);padding:14px 16px;font-size:13px;color:#075985;line-height:1.55;margin-top:18px}
+  .help-box strong{color:#0C4A6E}
+
+  /* ── STATES ── */
+  .loading-full{padding:80px 20px;text-align:center;color:var(--text3)}
+  .spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .loader-inline{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
+
+  .error-box,.notice-box{max-width:420px;margin:40px auto;background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:28px 22px;text-align:center}
+  .error-box .ico{font-size:42px;margin-bottom:10px;display:block;color:#EF4444}
+  .notice-box .ico{font-size:42px;margin-bottom:10px;display:block;color:var(--green)}
+  .error-box h2,.notice-box h2{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--navy);letter-spacing:1px;margin-bottom:8px}
+  .error-box p,.notice-box p{font-size:13.5px;color:var(--text2);line-height:1.55;margin-bottom:14px}
+
+  .btn-secondary{display:inline-block;padding:10px 20px;background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:var(--r);text-decoration:none;font-size:13px;font-family:var(--font);font-weight:600}
+  .btn-secondary:hover{background:var(--bg);color:var(--navy)}
+
+  /* ── FOOTER ── */
+  .footer{padding:28px 20px;text-align:center;border-top:1px solid var(--border);margin-top:40px;background:#fff}
+  .footer-links{font-size:11.5px;color:var(--text3)}
+  .footer-links a{color:var(--text2);text-decoration:none;margin:0 8px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="logo">MUDATE<span>YA</span></a>
+</div>
+
+<div class="container" id="mainContainer">
+  <div class="loading-full">
+    <div class="spinner"></div>
+    <div>Cargando tus opciones…</div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-links">
+    <a href="/">MudateYa.ar</a> ·
+    <a href="/terminos">Términos</a> ·
+    <a href="/privacidad">Privacidad</a> ·
+    <a href="/contacto">Contacto</a>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:var(--text3);font-family:var(--mono)">© 2026 MudateYa</div>
+</footer>
+
+<script data-cfasync="false">
+var PEDIDO_ID = (function(){
+  var m = new RegExp('[?&]id=([^&]+)').exec(location.search);
+  return m ? decodeURIComponent(m[1]) : null;
+})();
+
+var PAGO_STATUS = (function(){
+  var m = new RegExp('[?&]pago=([^&]+)').exec(location.search);
+  return m ? decodeURIComponent(m[1]) : null;
+})();
+
+var PEDIDO = null;
+var ASESOR = null;
+
+var NIVELES_DESC = {
+  esencial: 'Mudanza esencial',
+  integral: 'Mudanza integral',
+  llave:    'Llave en mano — todo incluido'
+};
+var NIVELES_FEATURES = {
+  esencial: [
+    { ic:'✓', txt:'Vehículo + chofer' },
+    { ic:'✓', txt:'Carga y descarga' },
+    { ic:'—', txt:'Embalaje a cargo del cliente' }
+  ],
+  integral: [
+    { ic:'✓', txt:'Vehículo + chofer' },
+    { ic:'✓', txt:'Embalaje básico incluido' },
+    { ic:'✓', txt:'Desarmado y armado de muebles' }
+  ],
+  llave: [
+    { ic:'✓', txt:'Todo lo de Integral' },
+    { ic:'✓', txt:'Cajas y papel incluido' },
+    { ic:'✓', txt:'Seguro ampliado' },
+    { ic:'✓', txt:'Limpieza post-mudanza' }
+  ]
+};
+var NIVELES_LABEL = { esencial:'Esencial', integral:'Integral', llave:'Llave en Mano' };
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/[<>&"']/g, function(c){
+    return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function fmt(n){ if (!n && n !== 0) return '—'; return Math.round(Number(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+function fmtFecha(iso){
+  if (!iso) return '—';
+  try{ return new Date(iso + 'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}); }
+  catch(e){ return iso; }
+}
+
+function renderErr(msg, withHome) {
+  document.getElementById('mainContainer').innerHTML =
+    '<div class="error-box">' +
+      '<span class="ico">⚠</span>' +
+      '<h2>No pudimos cargar tu pedido</h2>' +
+      '<p>' + esc(msg) + '</p>' +
+      (withHome ? '<a href="/" class="btn-secondary">Ir a MudateYa</a>' : '') +
+    '</div>';
+}
+
+function renderNotice(ico, title, msg, extraHtml) {
+  document.getElementById('mainContainer').innerHTML =
+    '<div class="notice-box">' +
+      '<span class="ico">' + ico + '</span>' +
+      '<h2>' + esc(title) + '</h2>' +
+      '<p>' + esc(msg) + '</p>' +
+      (extraHtml || '') +
+    '</div>';
+}
+
+async function init() {
+  if (!PEDIDO_ID) {
+    renderErr('El link no incluye un identificador de pedido válido.', true);
+    return;
+  }
+
+  try {
+    var r = await fetch('/api/asesores?action=pedido-cliente&id=' + encodeURIComponent(PEDIDO_ID));
+    var d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Pedido no disponible');
+    PEDIDO = d.pedido;
+    ASESOR = d.asesor || {};
+
+    // Si ya eligió, mostramos estado "ya elegiste"
+    if (PEDIDO.estado === 'elegido' || PEDIDO.estado === 'pagado' || PEDIDO.estado === 'completado') {
+      renderYaElegiste();
+      return;
+    }
+
+    // Manejo de retorno de MP (error/pendiente)
+    if (PAGO_STATUS === 'error') {
+      renderErrorPago();
+      return;
+    }
+    if (PAGO_STATUS === 'pendiente') {
+      renderPagoPendiente();
+      return;
+    }
+
+    renderPedido();
+  } catch(e) {
+    renderErr(e.message || 'Error al cargar el pedido', true);
+  }
+}
+
+function renderPedido() {
+  var p = PEDIDO;
+  var a = ASESOR || {};
+  var asesorLine = '';
+  if (a.nombre) {
+    asesorLine = '<div class="asesor-chip">🤝 Cortesía de <strong>' + esc(a.nombre) + '</strong>' + (a.inmobiliaria ? ' · ' + esc(a.inmobiliaria) : '') + '</div>';
+  }
+
+  var html =
+    '<div class="hero">' +
+      '<div class="hero-eyebrow">Tus 3 opciones premium</div>' +
+      '<h1>Hola ' + esc((p.cliente.nombre || '').split(' ')[0]) + ', <span class="grn">elegí tu mudanza</span></h1>' +
+      '<p>Tres mudanceras verificadas por MudateYa para tu cambio de hogar. Todas con seña del 50% y saldo al completar.</p>' +
+      asesorLine +
+    '</div>' +
+
+    '<div class="mz-card">' +
+      '<h3>📦 Tu mudanza</h3>' +
+      '<div class="mz-grid">' +
+        '<div class="lbl">Origen</div><div class="val">' + esc(p.mudanza.origen) + '</div>' +
+        '<div class="lbl">Destino</div><div class="val">' + esc(p.mudanza.destino) + '</div>' +
+        '<div class="lbl">Fecha</div><div class="val">' + esc(fmtFecha(p.mudanza.fecha)) + '</div>' +
+        (p.mudanza.ambientes ? '<div class="lbl">Ambientes</div><div class="val">' + esc(p.mudanza.ambientes) + '</div>' : '') +
+      '</div>' +
+    '</div>' +
+
+    '<div class="packs-section-title">Elegí tu pack</div>';
+
+  // Packs (Integral marcado como recomendado)
+  (p.packs || []).forEach(function(pack){
+    var nivel = pack.nivel;
+    var featuresHtml = (NIVELES_FEATURES[nivel] || []).map(function(f){
+      return '<div class="feat"><span class="ic">' + f.ic + '</span>' + f.txt + '</div>';
+    }).join('');
+    var estrellasTxt = pack.estrellas ? '★ ' + Number(pack.estrellas).toFixed(1) + (pack.cantResenas ? ' · ' + pack.cantResenas + ' reseñas' : '') : 'Empresa nueva en MudateYa';
+    var iniciales = (pack.empresa || pack.mudanceroNombre || '').split(' ').map(function(x){ return x[0]; }).join('').slice(0,2).toUpperCase();
+    var fotoHtml = pack.foto ? '<img src="' + esc(pack.foto) + '" alt=""/>' : esc(iniciales);
+    var anticipo = Math.round(Number(pack.precio) * 0.5);
+    var recommended = nivel === 'integral' ? 'recommended' : '';
+
+    html += '<div class="pack ' + recommended + '">' +
+      '<div class="pack-header">' +
+        '<div class="nivel-name">' + esc(NIVELES_LABEL[nivel] || nivel) + '</div>' +
+        '<div class="nivel-sub">' + esc(NIVELES_DESC[nivel] || '') + '</div>' +
+      '</div>' +
+      '<div class="pack-body">' +
+        '<div class="pack-mudancero">' +
+          '<div class="pack-avatar">' + fotoHtml + '</div>' +
+          '<div class="pack-info">' +
+            '<div class="pack-empresa">' + esc(pack.empresa || pack.mudanceroNombre) + '</div>' +
+            '<div class="pack-stars">' + esc(estrellasTxt) + ' <span class="verified">✓ Verificada</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pack-features">' + featuresHtml + '</div>' +
+        '<div class="pack-precio-row">' +
+          '<div><div class="pack-precio">$' + fmt(pack.precio) + '</div>' +
+          '<div class="pack-precio-detail">Anticipo 50% · $' + fmt(anticipo) + '</div></div>' +
+        '</div>' +
+        '<button class="btn-elegir" data-nivel="' + esc(nivel) + '" onclick="elegirPack(\'' + esc(nivel) + '\', this)">Elegir este pack y pagar seña</button>' +
+      '</div>' +
+    '</div>';
+  });
+
+  html +=
+    '<div class="help-box">' +
+      '<strong>💡 ¿Cómo sigue?</strong> Elegís un pack → pagás el 50% por Mercado Pago → la mudancera te contacta para coordinar → el día de la mudanza pagás el 50% restante. ¿Dudas? Escribinos a <a href="mailto:hola@mudateya.ar" style="color:#0C4A6E;font-weight:600">hola@mudateya.ar</a>.' +
+    '</div>';
+
+  document.getElementById('mainContainer').innerHTML = html;
+}
+
+async function elegirPack(nivel, btnEl) {
+  if (!confirm('¿Confirmás que querés reservar este pack? Vas a ir a Mercado Pago para pagar el anticipo (50%).')) return;
+  // Deshabilitar todos los botones mientras procesa
+  var allBtns = document.querySelectorAll('.btn-elegir');
+  allBtns.forEach(function(b){ b.disabled = true; });
+  var orig = btnEl.innerHTML;
+  btnEl.innerHTML = '<span class="loader-inline"></span> Creando tu reserva…';
+
+  try {
+    var r = await fetch('/api/asesores?action=cliente-elegir-pack', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ pedidoId: PEDIDO_ID, nivel: nivel })
+    });
+    var d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Error al crear la reserva');
+    // Redirigir a MP
+    if (d.linkPago) {
+      location.href = d.linkPago;
+    } else {
+      throw new Error('No se pudo generar el link de pago');
+    }
+  } catch(e) {
+    allBtns.forEach(function(b){ b.disabled = false; });
+    btnEl.innerHTML = orig;
+    alert('❌ ' + (e.message || 'Error'));
+  }
+}
+
+function renderYaElegiste() {
+  var nivelLbl = NIVELES_LABEL[PEDIDO.nivelElegido] || 'tu pack';
+  var extra = '';
+  if (PEDIDO.estado === 'elegido' && PEDIDO.mudanzaId) {
+    extra = '<p style="margin-bottom:14px">Te enviamos el link de pago por email. Si no lo encontrás, podés revisar el estado acá:</p>' +
+      '<a href="/mi-mudanza" class="btn-secondary" style="display:inline-block;padding:12px 22px;background:#22C36A;color:#fff;border:none;border-radius:8px;text-decoration:none;font-weight:700">Ver mi mudanza</a>';
+  } else if (PEDIDO.estado === 'pagado') {
+    extra = '<p style="margin-bottom:14px">¡Ya pagaste el anticipo! La mudancera se va a contactar pronto.</p>' +
+      '<a href="/mi-mudanza" class="btn-secondary" style="display:inline-block;padding:12px 22px;background:#22C36A;color:#fff;border:none;border-radius:8px;text-decoration:none;font-weight:700">Ver mi mudanza</a>';
+  }
+  renderNotice('✓', 'Ya elegiste ' + nivelLbl, 'Este pedido ya fue procesado.', extra);
+}
+
+function renderErrorPago() {
+  document.getElementById('mainContainer').innerHTML =
+    '<div class="error-box">' +
+      '<span class="ico">❌</span>' +
+      '<h2>No se pudo procesar el pago</h2>' +
+      '<p>Mercado Pago rechazó la transacción. Probá de nuevo o elegí otro pack.</p>' +
+      '<a href="/cliente-packs?id=' + encodeURIComponent(PEDIDO_ID) + '" class="btn-secondary" style="display:inline-block;padding:10px 22px;background:#22C36A;color:#fff;border:none;border-radius:8px;text-decoration:none;font-weight:700">Volver a intentar</a>' +
+    '</div>';
+}
+
+function renderPagoPendiente() {
+  renderNotice('⏳', 'Tu pago está pendiente',
+    'Mercado Pago está procesando tu pago. Puede tomar unos minutos. Te vamos a avisar por email cuando se confirme.',
+    '<a href="/" class="btn-secondary">Ir a MudateYa</a>');
+}
+
+init();
+</script>
+
+</body>
+</html>
