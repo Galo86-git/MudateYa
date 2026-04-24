@@ -4,8 +4,6 @@
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/admin", "dest": "/admin.html" },
     { "src": "/mudanceros", "dest": "/mudanceros.html" },
-    { "src": "/mudancero", "dest": "/mudancero-perfil.html" },
-    { "src": "/mudancero-perfil", "dest": "/mudancero-perfil.html" },
     { "src": "/mudanceros-catalogo", "dest": "/mudanceros-catalogo.html" },
     { "src": "/mi-cuenta", "dest": "/mi-cuenta.html" },
     { "src": "/mi-mudanza", "dest": "/mi-mudanza.html" },
@@ -13,8 +11,10 @@
     { "src": "/terminos", "dest": "/terminos.html" },
     { "src": "/privacidad", "dest": "/privacidad.html" },
     { "src": "/contacto", "dest": "/contacto.html" },
-    { "src": "/aliados", "dest": "/aliados.html" },
-    { "src": "/r/([A-Za-z0-9]{4,5})", "dest": "/r.html?s=$1" },
+    { "src": "/asesores", "dest": "/asesores.html" },
+    { "src": "/asesor-login", "dest": "/asesor-login.html" },
+    { "src": "/asesor-dashboard", "dest": "/asesor-dashboard.html" },
+    { "src": "/cliente-packs", "dest": "/cliente-packs.html" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
