@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mi panel — MudateYa Asesores</title>
+<link rel="icon" href="/favicon.ico"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style data-cfasync="false">
+  :root{
+    --navy:#003580;--green:#22C36A;--blue:#1A6FFF;
+    --text:#0F1923;--text2:#475569;--text3:#94A3B8;
+    --border:#E2E8F0;--bg:#F5F7FA;
+    --r:8px;--r2:12px;
+    --font:'Inter',sans-serif;
+    --mono:'DM Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{font-family:var(--font);color:var(--text);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+  /* ── HEADER ── */
+  .hdr{background:var(--navy);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--green);position:sticky;top:0;z-index:50}
+  .hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#fff;text-decoration:none}
+  .hdr-logo span{color:var(--green)}
+  .hdr-user{color:#fff;font-size:13px;display:flex;align-items:center;gap:10px}
+  .hdr-user .nombre{font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hdr-user .logout{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font)}
+  .hdr-user .logout:hover{background:rgba(255,255,255,.2)}
+
+  /* ── CONTAINER ── */
+  .container{max-width:900px;margin:0 auto;padding:20px 18px 80px}
+
+  /* ── WELCOME ── */
+  .welcome{margin-bottom:20px}
+  .welcome h1{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1.2px;color:var(--navy);line-height:1.1;margin-bottom:4px}
+  .welcome p{font-size:13px;color:var(--text2)}
+
+  /* ── STATS ── */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:14px;text-align:center}
+  .stat-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--navy);line-height:1}
+  .stat-val.g{color:var(--green)}
+  .stat-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+
+  /* ── CTA NUEVO PEDIDO ── */
+  .cta-new{background:linear-gradient(135deg,var(--green),#1AA558);color:#fff;border:none;border-radius:var(--r2);padding:18px 20px;width:100%;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:24px;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .15s,box-shadow .15s}
+  .cta-new:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(34,195,106,.3)}
+  .cta-new .plus{background:rgba(255,255,255,.2);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:400}
+
+  /* ── PEDIDOS LIST ── */
+  .section-title{font-size:11px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:10px;padding-left:4px}
+  .empty{background:#fff;border:1px dashed var(--border);border-radius:var(--r2);padding:36px 20px;text-align:center;color:var(--text3);font-size:13px}
+
+  .ped-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;margin-bottom:10px;transition:border-color .15s}
+  .ped-card:hover{border-color:var(--navy)}
+  .ped-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .ped-cliente{font-weight:700;color:var(--navy);font-size:15px}
+  .ped-meta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+  .ped-estado{flex-shrink:0;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;text-transform:capitalize}
+  .ped-estado.borrador{background:#F1F5F9;color:#64748B}
+  .ped-estado.enviado{background:#FEF3C7;color:#92400E}
+  .ped-estado.elegido{background:#DBEAFE;color:#1E40AF}
+  .ped-estado.pagado{background:#DCFCE7;color:#15803D}
+  .ped-dest{font-size:13px;color:var(--text2);margin-bottom:8px}
+  .ped-packs{display:flex;gap:6px;flex-wrap:wrap}
+  .ped-pack-chip{font-size:11px;background:var(--bg);padding:4px 9px;border-radius:10px;color:var(--text2);font-family:var(--mono)}
+  .ped-pack-chip strong{color:var(--navy)}
+  .ped-acciones{margin-top:10px;padding-top:10px;border-top:1px solid #F1F5F9;display:flex;gap:6px;flex-wrap:wrap}
+  .ped-btn{font-size:12px;padding:6px 12px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-family:var(--font);color:var(--text2);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+  .ped-btn:hover{background:var(--bg);color:var(--navy)}
+  .ped-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+  .ped-btn.primary:hover{background:#1AA558;color:#fff}
+
+  /* ══════════════════════════════════════════════════════════════
+     FSW — Fullscreen wizard
+     ══════════════════════════════════════════════════════════════ */
+  .fsw{position:fixed;inset:0;background:var(--bg);z-index:100;display:none;flex-direction:column}
+  .fsw.open{display:flex}
+  .fsw-header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--green);flex-shrink:0}
+  .fsw-title{color:#fff;font-weight:700;font-size:15px}
+  .fsw-close{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+  .fsw-close:hover{background:rgba(255,255,255,.2)}
+
+  .fsw-progress{height:4px;background:var(--border);flex-shrink:0}
+  .fsw-progress-bar{height:100%;background:var(--green);transition:width .3s}
+
+  .fsw-body{flex:1;overflow-y:auto;padding:22px 18px 100px;-webkit-overflow-scrolling:touch}
+  .fsw-step{display:none;max-width:560px;margin:0 auto}
+  .fsw-step.active{display:block}
+  .fsw-step h2{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--navy);margin-bottom:4px;line-height:1.1}
+  .fsw-step .subtitle{font-size:13px;color:var(--text2);margin-bottom:20px}
+
+  .fld{margin-bottom:14px}
+  .fld label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+  .fld input,.fld select,.fld textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r);font-size:14px;font-family:var(--font);background:#fff}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,53,128,.1)}
+  .fld textarea{min-height:70px;resize:vertical}
+  .fld-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* Packs picker */
+  .nivel-block{background:#fff;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden}
+  .nivel-head{padding:12px 14px;background:linear-gradient(90deg,var(--navy),#0057BF);color:#fff;display:flex;align-items:center;justify-content:space-between}
+  .nivel-head .lvl-name{font-weight:700;font-size:14px}
+  .nivel-head .lvl-desc{font-size:11px;opacity:.85;font-family:var(--mono)}
+  .nivel-opts{padding:8px}
+  .mud-opt{padding:12px;border:2px solid var(--border);border-radius:var(--r);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s}
+  .mud-opt:last-child{margin-bottom:0}
+  .mud-opt:hover{border-color:#CBD5E1}
+  .mud-opt.selected{border-color:var(--green);background:#F0FDF4}
+  .mud-opt .mud-avatar{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:700;font-size:14px;overflow:hidden}
+  .mud-opt .mud-avatar img{width:100%;height:100%;object-fit:cover}
+  .mud-opt .mud-info{flex:1;min-width:0}
+  .mud-opt .mud-nombre{font-weight:700;color:var(--navy);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mud-opt .mud-estrellas{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+  .mud-opt .mud-precio{flex-shrink:0;font-family:var(--mono);font-weight:700;color:var(--green);font-size:15px}
+
+  .nivel-empty{padding:20px;text-align:center;font-size:12px;color:var(--text3);font-style:italic}
+
+  /* Resumen step 4 */
+  .resumen-pack{background:#fff;border-radius:var(--r2);padding:14px;margin-bottom:10px;border-left:4px solid var(--green)}
+  .resumen-pack .rp-lvl{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .resumen-pack .rp-mud{font-weight:700;color:var(--navy);font-size:14px}
+  .resumen-pack .rp-precio{font-family:var(--mono);font-size:18px;color:var(--green);font-weight:700;margin-top:4px}
+
+  /* Confirmación */
+  .conf-ico{font-size:52px;text-align:center;margin:8px auto 16px;display:block}
+  .conf-box{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px}
+  .conf-box h3{font-size:13px;color:var(--navy);margin-bottom:8px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+  .wa-btn{display:flex;align-items:center;gap:10px;width:100%;padding:14px;background:#25D366;color:#fff;border:none;border-radius:var(--r);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--font);text-decoration:none;justify-content:center;margin-bottom:10px}
+  .wa-btn:hover{background:#1FB155}
+  .copy-btn{display:flex;align-items:center;gap:8px;width:100%;padding:11px;background:var(--bg);border:1px dashed var(--border);border-radius:var(--r);font-size:12px;cursor:pointer;font-family:var(--mono);color:var(--text2);justify-content:center}
+  .copy-btn:hover{background:#EDF2F7;color:var(--navy)}
+
+  /* FSW footer (nav) */
+  .fsw-foot{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px 18px;display:flex;gap:10px;z-index:101;box-shadow:0 -4px 12px rgba(15,25,35,.04)}
+  .fsw-btn{flex:1;padding:14px;border-radius:var(--r);border:none;font-weight:700;font-size:14px;cursor:pointer;font-family:var(--font);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+  .fsw-btn.back{background:#fff;border:1px solid var(--border);color:var(--text2);flex:0 0 100px}
+  .fsw-btn.back:hover{background:var(--bg);color:var(--text)}
+  .fsw-btn.next{background:var(--green);color:#fff}
+  .fsw-btn.next:hover:not(:disabled){background:#1AA558}
+  .fsw-btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Loading / msgs */
+  .loader-inline{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-full{padding:80px 20px;text-align:center;color:var(--text3)}
+  .loading-full .loader-inline{border-color:var(--border);border-top-color:var(--navy);width:32px;height:32px;border-width:3px}
+
+  .form-err{padding:10px 14px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:var(--r);font-size:13px;margin-bottom:14px;display:none}
+  .form-err.show{display:block}
+
+  .warn-box{padding:12px 14px;background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:var(--r);font-size:12px;color:#92400E;line-height:1.5;margin-bottom:14px}
+
+  @media(max-width:480px){
+    .stats{grid-template-columns:1fr 1fr 1fr;gap:6px}
+    .stat{padding:10px 6px}
+    .stat-val{font-size:22px}
+    .stat-lbl{font-size:9px}
+  }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <a href="/asesores" class="hdr-logo">MUDATE<span>YA</span></a>
+  <div class="hdr-user">
+    <span class="nombre" id="h-nombre">—</span>
+    <button class="logout" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="welcome">
+    <h1 id="welcomeTitle">Hola</h1>
+    <p id="welcomeSub">Cargando panel…</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="s-pedidos">—</div><div class="stat-lbl">Pedidos creados</div></div>
+    <div class="stat"><div class="stat-val" id="s-enviados">—</div><div class="stat-lbl">Enviados</div></div>
+    <div class="stat"><div class="stat-val g" id="s-pagados">—</div><div class="stat-lbl">Pagados</div></div>
+  </div>
+
+  <button class="cta-new" onclick="fswOpen()"><span class="plus">+</span> Nuevo pedido para cliente</button>
+
+  <div class="section-title">Mis pedidos</div>
+  <div id="pedidosList">
+    <div class="loading-full"><span class="loader-inline"></span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FSW — NUEVO PEDIDO
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="fsw" id="fsw">
+  <div class="fsw-header">
+    <div class="fsw-title" id="fswTitle">Nuevo pedido · 1/4</div>
+    <button class="fsw-close" onclick="fswClose()">×</button>
+  </div>
+  <div class="fsw-progress"><div class="fsw-progress-bar" id="fswProgressBar" style="width:25%"></div></div>
+
+  <div class="fsw-body">
+
+    <!-- STEP 1: Datos del cliente -->
+    <div class="fsw-step active" data-step="1">
+      <h2>Datos del cliente</h2>
+      <p class="subtitle">¿A quién le armás el presupuesto?</p>
+      <div class="form-err" id="err-1"></div>
+      <div class="fld">
+        <label>Nombre y apellido</label>
+        <input type="text" id="c-nombre" placeholder="María Rodríguez"/>
+      </div>
+      <div class="fld">
+        <label>Email</label>
+        <input type="email" id="c-email" placeholder="maria@email.com"/>
+      </div>
+      <div class="fld">
+        <label>Teléfono / WhatsApp</label>
+        <input type="tel" id="c-telefono" placeholder="11 5678 1234"/>
+      </div>
+    </div>
+
+    <!-- STEP 2: Datos de la mudanza -->
+    <div class="fsw-step" data-step="2">
+      <h2>Datos de la mudanza</h2>
+      <p class="subtitle">Info básica para que los mudanceros coticen.</p>
+      <div class="form-err" id="err-2"></div>
+      <div class="fld">
+        <label>Origen</label>
+        <input type="text" id="m-origen" placeholder="Av. Santa Fe 2500, CABA"/>
+      </div>
+      <div class="fld">
+        <label>Destino</label>
+        <input type="text" id="m-destino" placeholder="Av. Libertador 6000, Vicente López"/>
+      </div>
+      <div class="fld-row2">
+        <div class="fld">
+          <label>Fecha estimada</label>
+          <input type="date" id="m-fecha"/>
+        </div>
+        <div class="fld">
+          <label>Ambientes</label>
+          <select id="m-ambientes">
+            <option value="">Elegir…</option>
+            <option value="Monoambiente">Monoambiente</option>
+            <option value="1">1 ambiente</option>
+            <option value="2">2 ambientes</option>
+            <option value="3">3 ambientes</option>
+            <option value="4">4+ ambientes</option>
+            <option value="Flete">Solo flete</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld">
+        <label>Notas (opcional)</label>
+        <textarea id="m-notas" placeholder="Piso, ascensor, cosas delicadas, etc."></textarea>
+      </div>
+    </div>
+
+    <!-- STEP 3: Armar los 3 packs -->
+    <div class="fsw-step" data-step="3">
+      <h2>Armá los 3 packs</h2>
+      <p class="subtitle">Elegí 1 mudancera para cada nivel. Todas están pre-verificadas para tu zona.</p>
+      <div class="form-err" id="err-3"></div>
+      <div id="packsPicker">
+        <div class="loading-full"><span class="loader-inline"></span></div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Revisar y enviar -->
+    <div class="fsw-step" data-step="4">
+      <h2>Revisá y enviá</h2>
+      <p class="subtitle">Confirmá los datos antes de avisarle a tu cliente.</p>
+      <div class="form-err" id="err-4"></div>
+
+      <div class="conf-box">
+        <h3>Cliente</h3>
+        <div id="rev-cliente" style="font-size:14px;color:var(--text2);line-height:1.6"></div>
+      </div>
+
+      <div class="conf-box">
+        <h3>Mudanza</h3>
+        <div id="rev-mudanza" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+      </div>
+
+      <div class="conf-box">
+        <h3>Packs elegidos</h3>
+        <div id="rev-packs"></div>
+      </div>
+    </div>
+
+    <!-- STEP 5: Confirmación (post-envío) -->
+    <div class="fsw-step" data-step="5">
+      <span class="conf-ico">🎉</span>
+      <h2 style="text-align:center">¡Listo!</h2>
+      <p class="subtitle" style="text-align:center">El email ya viaja al cliente. Compartile también por WhatsApp:</p>
+
+      <div id="confActions" style="margin-top:10px">
+        <a id="waSend" class="wa-btn" target="_blank"><span style="font-size:20px">💬</span> Abrir WhatsApp</a>
+        <button class="copy-btn" onclick="copyClienteLink()"><span>🔗</span> <span id="copyLabel">Copiar link para el cliente</span></button>
+      </div>
+
+      <div style="margin-top:20px;text-align:center">
+        <button class="ped-btn primary" onclick="fswClose()" style="padding:10px 18px">Volver al panel</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="fsw-foot" id="fswFoot">
+    <button class="fsw-btn back" id="btnBack" onclick="fswBack()">← Atrás</button>
+    <button class="fsw-btn next" id="btnNext" onclick="fswNext()">Siguiente →</button>
+  </div>
+</div>
+
+<script data-cfasync="false">
+// ══════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════
+var TOKEN = localStorage.getItem('asesorToken');
+var ASESOR = null;
+var PEDIDOS = [];
+var MUDANCERAS_ZONA = [];
+var FSW_STEP = 1;
+var FSW_DATA = { cliente:{}, mudanza:{}, packs:{ esencial:null, integral:null, llave:null } };
+var FSW_RESULT = null; // { pedidoId, waLink, clienteUrl }
+
+var NIVELES_DESC = {
+  esencial: 'Lo esencial: vehículo + chofer',
+  integral: 'Embalaje + desarmado/armado',
+  llave:    'Todo incluido + seguro ampliado'
+};
+
+// ══════════════════════════════════════════════════════════════════════
+// AUTH / INIT
+// ══════════════════════════════════════════════════════════════════════
+if (!TOKEN) { location.replace('/asesores'); }
+
+async function init() {
+  try {
+    var r = await fetch('/api/asesores?action=panel&token=' + encodeURIComponent(TOKEN));
+    var d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Sesión inválida');
+    ASESOR = d.asesor;
+    PEDIDOS = d.pedidos || [];
+    renderHeader(d);
+    renderStats(d.stats || {});
+    renderPedidos(PEDIDOS);
+  } catch(e) {
+    // Sesión caída → volver a login
+    localStorage.removeItem('asesorToken');
+    location.replace('/asesores');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('asesorToken');
+  location.replace('/asesores');
+}
+
+function renderHeader(d) {
+  var nombreCorto = (ASESOR.nombre || '').split(' ')[0];
+  document.getElementById('h-nombre').textContent = nombreCorto || '—';
+  document.getElementById('welcomeTitle').textContent = 'Hola, ' + (nombreCorto || 'Asesor');
+  var sub = ASESOR.inmobiliaria ? ASESOR.inmobiliaria : '';
+  if (ASESOR.zona) sub += (sub ? ' · ' : '') + ASESOR.zona;
+  document.getElementById('welcomeSub').textContent = sub || 'Listo para armar tu primer pedido.';
+}
+
+function renderStats(s) {
+  document.getElementById('s-pedidos').textContent = s.pedidosCreados || 0;
+  document.getElementById('s-enviados').textContent = s.clientesEnviados || 0;
+  document.getElementById('s-pagados').textContent = s.clientesPagados || 0;
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/[<>&"']/g, function(c){
+    return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+function fmt(n) {
+  if (!n && n !== 0) return '—';
+  return Math.round(Number(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function fechaCorta(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}); }
+  catch(e) { return iso; }
+}
+
+function renderPedidos(lista) {
+  var wrap = document.getElementById('pedidosList');
+  if (!lista.length) {
+    wrap.innerHTML = '<div class="empty">Todavía no armaste ningún pedido.<br/><strong style="color:var(--navy)">Tocá "+ Nuevo pedido" arriba para empezar.</strong></div>';
+    return;
+  }
+  var h = '';
+  lista.forEach(function(p){
+    var estado = p.estado || 'borrador';
+    var cliente = (p.cliente && p.cliente.nombre) || '—';
+    var dest = (p.mudanza && p.mudanza.destino) || '—';
+    var fecha = fechaCorta(p.creadoEn);
+    var packs = (p.packs || []).map(function(pk){
+      return '<span class="ped-pack-chip">' + esc(pk.nivel.charAt(0).toUpperCase() + pk.nivel.slice(1)) + ' <strong>$' + fmt(pk.precio) + '</strong></span>';
+    }).join('');
+    var clienteUrl = '/cliente-packs?id=' + encodeURIComponent(p.id);
+    var pIdSafe = esc(p.id).replace(/'/g,"\\'");
+    h += '<div class="ped-card">' +
+      '<div class="ped-top">' +
+        '<div><div class="ped-cliente">' + esc(cliente) + '</div><div class="ped-meta">' + fecha + ' · ' + esc(p.id) + '</div></div>' +
+        '<span class="ped-estado ' + estado + '">' + estado + '</span>' +
+      '</div>' +
+      '<div class="ped-dest">→ ' + esc(dest) + '</div>' +
+      '<div class="ped-packs">' + packs + '</div>' +
+      '<div class="ped-acciones">' +
+        '<a class="ped-btn" href="' + clienteUrl + '" target="_blank">👁 Ver lo que ve el cliente</a>' +
+        (estado === 'borrador' ? '<button class="ped-btn primary" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Enviar al cliente</button>' : '') +
+        (estado !== 'borrador' ? '<button class="ped-btn" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Reenviar</button>' : '') +
+      '</div>' +
+    '</div>';
+  });
+  wrap.innerHTML = h;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// FSW
+// ══════════════════════════════════════════════════════════════════════
+function fswOpen() {
+  FSW_STEP = 1;
+  FSW_DATA = { cliente:{}, mudanza:{}, packs:{ esencial:null, integral:null, llave:null } };
+  FSW_RESULT = null;
+  // Limpiar inputs
+  ['c-nombre','c-email','c-telefono','m-origen','m-destino','m-fecha','m-ambientes','m-notas'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  // Fecha default: mañana
+  var t = new Date(); t.setDate(t.getDate() + 1);
+  document.getElementById('m-fecha').value = t.toISOString().slice(0,10);
+  document.getElementById('fsw').classList.add('open');
+  fswRenderStep();
+  document.body.style.overflow = 'hidden';
+}
+
+function fswClose() {
+  document.getElementById('fsw').classList.remove('open');
+  document.body.style.overflow = '';
+  // Si terminamos un pedido, refrescar panel
+  if (FSW_RESULT) init();
+}
+
+function fswRenderStep() {
+  document.querySelectorAll('.fsw-step').forEach(function(s){ s.classList.remove('active'); });
+  var curr = document.querySelector('.fsw-step[data-step="' + FSW_STEP + '"]');
+  if (curr) curr.classList.add('active');
+  // scroll-top al cambiar
+  var body = document.querySelector('.fsw-body');
+  if (body) body.scrollTop = 0;
+
+  // Progress bar (4 steps visibles — step 5 es confirmación final)
+  var pct = Math.min(100, (FSW_STEP / 4) * 100);
+  document.getElementById('fswProgressBar').style.width = pct + '%';
+  document.getElementById('fswTitle').textContent = FSW_STEP <= 4 ? ('Nuevo pedido · ' + FSW_STEP + '/4') : '¡Pedido enviado!';
+
+  // Footer (nav)
+  var foot = document.getElementById('fswFoot');
+  var btnBack = document.getElementById('btnBack');
+  var btnNext = document.getElementById('btnNext');
+  if (FSW_STEP === 5) {
+    foot.style.display = 'none';
+  } else {
+    foot.style.display = 'flex';
+    btnBack.style.display = FSW_STEP === 1 ? 'none' : '';
+    if (FSW_STEP === 4) {
+      btnNext.textContent = '📧 Enviar al cliente';
+    } else {
+      btnNext.textContent = 'Siguiente →';
+    }
+    btnNext.disabled = false;
+  }
+
+  // Dispatch contenido del step
+  if (FSW_STEP === 3) loadMudancerasZona();
+  if (FSW_STEP === 4) renderRevisar();
+}
+
+function fswBack() {
+  if (FSW_STEP > 1) { FSW_STEP--; fswRenderStep(); }
+}
+
+async function fswNext() {
+  clearErr();
+  if (FSW_STEP === 1) {
+    var c = {
+      nombre:   document.getElementById('c-nombre').value.trim(),
+      email:    document.getElementById('c-email').value.trim().toLowerCase(),
+      telefono: document.getElementById('c-telefono').value.trim()
+    };
+    if (!c.nombre) return showErr(1, 'Ingresá el nombre del cliente.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email)) return showErr(1, 'Email inválido.');
+    if (c.telefono.replace(/\D/g,'').length < 8) return showErr(1, 'Teléfono inválido.');
+    FSW_DATA.cliente = c;
+    FSW_STEP = 2; fswRenderStep(); return;
+  }
+  if (FSW_STEP === 2) {
+    var m = {
+      origen:    document.getElementById('m-origen').value.trim(),
+      destino:   document.getElementById('m-destino').value.trim(),
+      fecha:     document.getElementById('m-fecha').value,
+      ambientes: document.getElementById('m-ambientes').value,
+      notas:     document.getElementById('m-notas').value.trim(),
+      tipo:      document.getElementById('m-ambientes').value === 'Flete' ? 'flete' : 'mudanza'
+    };
+    if (!m.origen) return showErr(2, 'Ingresá el origen.');
+    if (!m.destino) return showErr(2, 'Ingresá el destino.');
+    if (!m.fecha) return showErr(2, 'Elegí una fecha.');
+    if (!m.ambientes) return showErr(2, 'Elegí los ambientes.');
+    FSW_DATA.mudanza = m;
+    FSW_STEP = 3; fswRenderStep(); return;
+  }
+  if (FSW_STEP === 3) {
+    if (!FSW_DATA.packs.esencial) return showErr(3, 'Elegí una mudancera para el pack Esencial.');
+    if (!FSW_DATA.packs.integral) return showErr(3, 'Elegí una mudancera para el pack Integral.');
+    if (!FSW_DATA.packs.llave)    return showErr(3, 'Elegí una mudancera para el pack Llave en Mano.');
+    FSW_STEP = 4; fswRenderStep(); return;
+  }
+  if (FSW_STEP === 4) {
+    await crearYEnviarPedido();
+    return;
+  }
+}
+
+function showErr(step, msg) {
+  var el = document.getElementById('err-' + step);
+  if (el) { el.className = 'form-err show'; el.textContent = msg; el.scrollIntoView({block:'center',behavior:'smooth'}); }
+}
+function clearErr() {
+  document.querySelectorAll('.form-err').forEach(function(e){ e.className = 'form-err'; e.textContent = ''; });
+}
+
+// ── STEP 3: Mudanceras ───────────────────────────────────────────────
+async function loadMudancerasZona() {
+  var wrap = document.getElementById('packsPicker');
+  wrap.innerHTML = '<div class="loading-full"><span class="loader-inline"></span></div>';
+  try {
+    var r = await fetch('/api/asesores?action=mudanceros-zona&token=' + encodeURIComponent(TOKEN));
+    var d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Error');
+    // Solo mudanceras con al menos un precio > 0
+    MUDANCERAS_ZONA = (d.mudanceras || []).filter(function(m){
+      var p = m.preciosPack || {};
+      return (Number(p.esencial)||0) > 0 || (Number(p.integral)||0) > 0 || (Number(p.llave)||0) > 0;
+    });
+    renderPacksPicker();
+  } catch(e) {
+    wrap.innerHTML = '<div style="padding:30px;text-align:center;color:#EF4444;font-size:13px">Error cargando mudanceras: ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderPacksPicker() {
+  var wrap = document.getElementById('packsPicker');
+  if (!MUDANCERAS_ZONA.length) {
+    wrap.innerHTML =
+      '<div class="warn-box">⚠ Todavía no hay mudanceras asignadas a tu zona (<strong>' + esc(ASESOR.zona) + '</strong>). Contactanos a <a href="mailto:hola@mudateya.ar" style="color:#92400E;font-weight:700">hola@mudateya.ar</a> y te asignamos las opciones disponibles.</div>';
+    var btn = document.getElementById('btnNext'); if (btn) btn.disabled = true;
+    return;
+  }
+  var h = '';
+  ['esencial','integral','llave'].forEach(function(nivel){
+    var opts = MUDANCERAS_ZONA.filter(function(m){
+      return (Number((m.preciosPack||{})[nivel]) || 0) > 0;
+    });
+    h += '<div class="nivel-block">' +
+      '<div class="nivel-head">' +
+        '<div><div class="lvl-name">' + (nivel === 'llave' ? 'Llave en Mano' : (nivel.charAt(0).toUpperCase() + nivel.slice(1))) + '</div><div class="lvl-desc">' + esc(NIVELES_DESC[nivel]) + '</div></div>' +
+      '</div>' +
+      '<div class="nivel-opts">';
+    if (!opts.length) {
+      h += '<div class="nivel-empty">No hay mudanceras con precio cargado para este nivel en tu zona.</div>';
+    } else {
+      opts.forEach(function(m){
+        var precio = Number(m.preciosPack[nivel]) || 0;
+        var sel = FSW_DATA.packs[nivel] && FSW_DATA.packs[nivel].mudanceroEmail === m.email;
+        var estrellasTxt = (m.estrellas ? '★ ' + m.estrellas.toFixed(1) : 'Nueva') + (m.cantResenas ? ' · ' + m.cantResenas + ' reseñas' : '');
+        var iniciales = (m.empresa || m.nombre || '').split(' ').map(function(p){ return p[0]; }).join('').slice(0,2).toUpperCase();
+        var fotoHtml = m.foto ? '<img src="' + esc(m.foto) + '" alt=""/>' : esc(iniciales);
+        var emailSafe = esc(m.email).replace(/'/g, "\\'");
+        var nombreSafe = esc(m.empresa || m.nombre).replace(/'/g, "\\'");
+        h += '<div class="mud-opt ' + (sel ? 'selected' : '') + '" onclick="pickMudancera(\'' + nivel + '\',\'' + emailSafe + '\',' + precio + ',\'' + nombreSafe + '\')">' +
+          '<div class="mud-avatar">' + fotoHtml + '</div>' +
+          '<div class="mud-info"><div class="mud-nombre">' + esc(m.empresa || m.nombre) + '</div><div class="mud-estrellas">' + estrellasTxt + '</div></div>' +
+          '<div class="mud-precio">$' + fmt(precio) + '</div>' +
+        '</div>';
+      });
+    }
+    h += '</div></div>';
+  });
+  wrap.innerHTML = h;
+}
+
+function pickMudancera(nivel, email, precio, nombre) {
+  FSW_DATA.packs[nivel] = { nivel: nivel, mudanceroEmail: email, precio: precio, mudanceroNombre: nombre };
+  renderPacksPicker();
+}
+
+// ── STEP 4: Resumen ───────────────────────────────────────────────────
+function renderRevisar() {
+  var c = FSW_DATA.cliente;
+  var m = FSW_DATA.mudanza;
+  var waNum = c.telefono.replace(/\D/g,'');
+  document.getElementById('rev-cliente').innerHTML =
+    '<strong style="color:var(--navy)">' + esc(c.nombre) + '</strong><br/>' +
+    '<span style="font-family:var(--mono);font-size:12px">' + esc(c.email) + ' · ' + esc(c.telefono) + '</span>';
+
+  document.getElementById('rev-mudanza').innerHTML =
+    '<div><strong style="color:var(--navy)">Origen:</strong> ' + esc(m.origen) + '</div>' +
+    '<div><strong style="color:var(--navy)">Destino:</strong> ' + esc(m.destino) + '</div>' +
+    '<div><strong style="color:var(--navy)">Fecha:</strong> ' + esc(m.fecha) + ' · <strong style="color:var(--navy)">Ambientes:</strong> ' + esc(m.ambientes) + '</div>' +
+    (m.notas ? '<div style="margin-top:6px;color:var(--text3)"><em>"' + esc(m.notas) + '"</em></div>' : '');
+
+  var packsH = '';
+  ['esencial','integral','llave'].forEach(function(n){
+    var p = FSW_DATA.packs[n];
+    if (!p) return;
+    packsH += '<div class="resumen-pack">' +
+      '<div class="rp-lvl">' + (n === 'llave' ? 'Llave en Mano' : (n.charAt(0).toUpperCase() + n.slice(1))) + '</div>' +
+      '<div class="rp-mud">' + esc(p.mudanceroNombre) + '</div>' +
+      '<div class="rp-precio">$' + fmt(p.precio) + '</div>' +
+    '</div>';
+  });
+  document.getElementById('rev-packs').innerHTML = packsH;
+}
+
+// ── STEP 5: Crear pedido + enviar ─────────────────────────────────────
+async function crearYEnviarPedido() {
+  var btn = document.getElementById('btnNext');
+  var originalBtn = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader-inline"></span> Enviando…';
+
+  try {
+    // 1) Crear pedido
+    var payload = {
+      token: TOKEN,
+      cliente: FSW_DATA.cliente,
+      mudanza: FSW_DATA.mudanza,
+      packs: ['esencial','integral','llave'].map(function(n){
+        var p = FSW_DATA.packs[n];
+        return { nivel: n, mudanceroEmail: p.mudanceroEmail };
+      })
+    };
+    var r1 = await fetch('/api/asesores?action=crear-pedido', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    var d1 = await r1.json();
+    if (!r1.ok || !d1.ok) throw new Error(d1.error || 'Error creando pedido');
+
+    // 2) Enviar al cliente
+    var r2 = await fetch('/api/asesores?action=enviar-cliente', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: TOKEN, pedidoId: d1.pedidoId })
+    });
+    var d2 = await r2.json();
+    if (!r2.ok || !d2.ok) throw new Error(d2.error || 'Error enviando al cliente');
+
+    FSW_RESULT = {
+      pedidoId:   d1.pedidoId,
+      clienteUrl: d2.clienteUrl,
+      waLink:     d2.waLink,
+      waText:     d2.waText
+    };
+
+    // Actualizar UI confirmación
+    document.getElementById('waSend').href = d2.waLink;
+    FSW_STEP = 5;
+    fswRenderStep();
+  } catch(e) {
+    showErr(4, e.message || 'Error al enviar el pedido');
+    btn.disabled = false;
+    btn.innerHTML = originalBtn;
+  }
+}
+
+// Reenvio desde la lista
+async function reenviarPedido(pedidoId) {
+  if (!confirm('¿Enviar este pedido al cliente por email ahora?')) return;
+  try {
+    var r = await fetch('/api/asesores?action=enviar-cliente', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: TOKEN, pedidoId: pedidoId })
+    });
+    var d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Error');
+    alert('✓ Email enviado. WhatsApp:\n' + d.waLink);
+    // Copiar link al clipboard si se puede
+    if (navigator.clipboard) navigator.clipboard.writeText(d.clienteUrl).catch(function(){});
+    init();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function copyClienteLink() {
+  if (!FSW_RESULT) return;
+  var url = location.origin + FSW_RESULT.clienteUrl;
+  var lbl = document.getElementById('copyLabel');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function(){
+      lbl.textContent = '✓ Copiado';
+      setTimeout(function(){ lbl.textContent = 'Copiar link para el cliente'; }, 1500);
+    }).catch(function(){ fallbackCopy(url, lbl); });
+  } else {
+    fallbackCopy(url, lbl);
+  }
+}
+function fallbackCopy(text, lbl) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); lbl.textContent = '✓ Copiado'; setTimeout(function(){ lbl.textContent = 'Copiar link para el cliente'; }, 1500); }
+  catch(e) {}
+  document.body.removeChild(ta);
+}
+
+init();
+</script>
+
+</body>
+</html>
