@@ -586,6 +586,47 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // ── MUDANCEROS-TODOS (TODAS las mudanceras aprobadas con precios pack) ──
+    // Sin filtro de zona. Se usa mientras no tengamos suficiente cobertura
+    // regional. Cuando haya más zonas, el frontend puede cambiar a mudanceros-zona.
+    if (action === 'mudanceros-todos' && req.method === 'GET') {
+      var mtToken = String(req.query.token || '');
+      var mtSess = await getAsesorDesdeToken(mtToken);
+      if (!mtSess) return res.status(401).json({ error: 'Sesión expirada' });
+
+      // Usamos el índice global de mudanceros del sistema
+      var mtTodosEmails = await getJSON('mudanceros:todos') || [];
+      var mtMudanceras = [];
+      for (var mi = 0; mi < mtTodosEmails.length; mi++) {
+        var mt = await getJSON('mudancero:perfil:' + mtTodosEmails[mi]);
+        if (!mt) continue;
+        if (mt.estado && mt.estado !== 'aprobado') continue;
+        var mtPrecios = mt.preciosPack || {};
+        var mtEsc = Number(mtPrecios.esencial) || 0;
+        var mtInt = Number(mtPrecios.integral) || 0;
+        var mtLla = Number(mtPrecios.llave)    || 0;
+        // Filtramos las que no tienen ningún precio pack cargado
+        if (mtEsc === 0 && mtInt === 0 && mtLla === 0) continue;
+        mtMudanceras.push({
+          email:       mt.email,
+          nombre:      mt.nombre,
+          empresa:     mt.empresa || mt.nombre,
+          foto:        mt.foto || '',
+          estrellas:   mt.promedioEstrellas || 0,
+          cantResenas: (mt.resenas || []).length,
+          zonaBase:    mt.zonaBase || '',
+          preciosPack: { esencial: mtEsc, integral: mtInt, llave: mtLla }
+        });
+      }
+
+      return res.status(200).json({
+        ok: true,
+        mudanceras: mtMudanceras,
+        niveles: NIVELES,
+        nivelesLabel: NIVELES_LABEL
+      });
+    }
+
     // ── CREAR-PEDIDO (asesor guarda los 3 packs + datos del cliente y mudanza) ──
     if (action === 'crear-pedido' && req.method === 'POST') {
       var cpBody = req.body || {};
