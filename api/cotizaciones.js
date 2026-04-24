@@ -1133,6 +1133,15 @@ module.exports = async function handler(req, res) {
       camposPermitidos.forEach(function(k) {
         if (cambios[k] !== undefined && cambios[k] !== '') perfil[k] = cambios[k];
       });
+      // Precios Pack (Plan Referidos) — objeto {esencial, integral, llave}
+      if (cambios.preciosPack && typeof cambios.preciosPack === 'object') {
+        var pp = cambios.preciosPack;
+        perfil.preciosPack = {
+          esencial: Number(pp.esencial) || 0,
+          integral: Number(pp.integral) || 0,
+          llave:    Number(pp.llave)    || 0
+        };
+      }
       perfil.ultimaEdicionAdmin = new Date().toISOString();
       await setJSON(`mudancero:perfil:${email}`, perfil);
       return res.status(200).json({ ok: true });
