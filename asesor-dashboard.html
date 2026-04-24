@@ -108,6 +108,102 @@
   .ped-acciones{margin-top:12px;padding-top:12px;border-top:1px solid #F1F5F9;display:flex;gap:6px;flex-wrap:wrap}
   .ped-btn{font-size:12px;padding:6px 12px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-family:var(--font);color:var(--text2);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
   .ped-btn:hover{background:var(--bg);color:var(--navy)}
+
+  /* ══ CRM TABLE VIEW (desktop) ══ */
+  .pedidos-table-wrap{display:none;background:#fff;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+  @media(min-width:820px){
+    .pedidos-table-wrap{display:block}
+    .pedidos-cards-wrap{display:none}
+  }
+  .pedidos-table{width:100%;border-collapse:collapse;font-size:13px}
+  .pedidos-table thead{background:#FAFBFC;border-bottom:1px solid var(--border)}
+  .pedidos-table th{font-family:var(--mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);padding:12px 14px;text-align:left;white-space:nowrap;user-select:none}
+  .pedidos-table th.sortable{cursor:pointer;transition:color .15s}
+  .pedidos-table th.sortable:hover{color:var(--navy)}
+  .pedidos-table th.sortable.active{color:var(--navy)}
+  .pedidos-table th .sort-arr{display:inline-block;margin-left:4px;font-size:11px;color:var(--text3);transition:all .15s}
+  .pedidos-table th.sortable.active .sort-arr{color:var(--navy)}
+  .pedidos-table th.col-actions{text-align:right;width:90px}
+  .pedidos-table tbody tr{border-bottom:1px solid #F1F5F9;cursor:pointer;transition:background .15s}
+  .pedidos-table tbody tr:last-child{border-bottom:none}
+  .pedidos-table tbody tr:hover{background:#FAFBFC}
+  .pedidos-table td{padding:12px 14px;vertical-align:middle}
+  .pedidos-table td.cel-cliente{font-weight:700;color:var(--navy);min-width:140px}
+  .pedidos-table td.cel-cliente .tiny{display:block;font-weight:500;font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-top:2px;letter-spacing:.2px}
+  .pedidos-table td.cel-fecha{color:var(--text2);font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .pedidos-table td.cel-destino{color:var(--text2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pedidos-table td.cel-pack{font-size:12.5px;white-space:nowrap}
+  .pedidos-table td.cel-pack .medal{margin-right:4px}
+  .pedidos-table td.cel-pack.empty{color:var(--text3);font-style:italic;font-size:12px}
+  .pedidos-table td.cel-monto{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--navy);letter-spacing:.3px;white-space:nowrap;text-align:right}
+  .pedidos-table td.cel-monto.green{color:#15803D}
+  .pedidos-table td.cel-monto .sufijo{font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:2px}
+  .pedidos-table td.cel-actions{text-align:right;white-space:nowrap}
+  .pedidos-table td.cel-actions button,
+  .pedidos-table td.cel-actions a{width:30px;height:30px;padding:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;margin-left:2px}
+  .ped-estado-sm{display:inline-block;padding:3px 9px;border-radius:10px;font-size:10.5px;font-weight:600;text-transform:capitalize;font-family:var(--mono);letter-spacing:.2px}
+  .ped-estado-sm.borrador{background:#F1F5F9;color:#64748B}
+  .ped-estado-sm.enviado{background:#FEF3C7;color:#92400E}
+  .ped-estado-sm.elegido{background:#DBEAFE;color:#1E40AF}
+  .ped-estado-sm.pagado{background:#DCFCE7;color:#15803D}
+  .ped-estado-sm.expirado{background:#FEE2E2;color:#991B1B}
+
+  /* ══ DRAWER (detalle de pedido) ══ */
+  .pd-overlay{position:fixed;inset:0;background:rgba(15,25,35,.55);backdrop-filter:blur(2px);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+  .pd-overlay.open{opacity:1;pointer-events:auto}
+  .pd-drawer{position:fixed;top:0;right:0;bottom:0;width:100%;max-width:520px;background:#fff;z-index:1001;overflow-y:auto;transform:translateX(100%);transition:transform .26s ease;box-shadow:-8px 0 28px rgba(0,0,0,.15);display:flex;flex-direction:column}
+  .pd-drawer.open{transform:translateX(0)}
+  .pd-head{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:2}
+  .pd-head-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--navy);line-height:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pd-head-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+  .pd-close{background:#F1F5F9;border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;color:var(--text2);flex-shrink:0;transition:background .15s}
+  .pd-close:hover{background:#E2E8F0}
+  .pd-body{padding:20px;flex:1}
+  .pd-section{margin-bottom:22px}
+  .pd-section:last-child{margin-bottom:0}
+  .pd-label{font-size:10px;font-family:var(--mono);font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+  .pd-box{background:var(--bg);border-radius:var(--r2);padding:14px 16px}
+  .pd-field{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:13.5px}
+  .pd-field .k{color:var(--text3);flex-shrink:0}
+  .pd-field .v{color:var(--text);text-align:right;word-break:break-word}
+  .pd-field .v a{color:var(--blue);text-decoration:none}
+  .pd-field .v a:hover{text-decoration:underline}
+
+  /* Packs en drawer */
+  .pd-packs{display:flex;flex-direction:column;gap:8px}
+  .pd-pack{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);border:1px solid var(--border);background:#fff}
+  .pd-pack.elegido{border-color:#22C36A;background:linear-gradient(135deg,#F0FDF4 0%,#fff 100%);box-shadow:0 0 0 1px rgba(34,195,106,.2) inset}
+  .pd-pack-medal{font-size:18px;flex-shrink:0}
+  .pd-pack-info{flex:1;min-width:0}
+  .pd-pack-nivel{font-size:13px;font-weight:700;color:var(--navy);line-height:1.2}
+  .pd-pack-emp{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+  .pd-pack-precio{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--navy);letter-spacing:.2px;flex-shrink:0}
+  .pd-pack.elegido .pd-pack-precio{color:#15803D}
+  .pd-pack-check{color:#22C36A;font-weight:700;font-size:13px;flex-shrink:0}
+
+  /* Timeline */
+  .pd-timeline{position:relative;padding-left:22px}
+  .pd-timeline::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--border)}
+  .pd-tl-item{position:relative;padding-bottom:12px}
+  .pd-tl-item:last-child{padding-bottom:0}
+  .pd-tl-item::before{content:'';position:absolute;left:-18px;top:4px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--border)}
+  .pd-tl-item.done::before{background:var(--green);border-color:var(--green)}
+  .pd-tl-item.done .pd-tl-label{color:var(--text)}
+  .pd-tl-label{font-size:13px;font-weight:600;color:var(--text3)}
+  .pd-tl-date{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+
+  /* Acciones drawer */
+  .pd-actions{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .pd-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:var(--r);border:1px solid var(--border);background:#fff;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all .15s}
+  .pd-btn:hover{border-color:var(--navy);color:var(--navy)}
+  .pd-btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  .pd-btn.primary:hover{background:#1DAF5C;color:#fff;border-color:#1DAF5C}
+  .pd-btn.danger{color:#EF4444;border-color:#FECACA}
+  .pd-btn.danger:hover{background:#FEF2F2;color:#DC2626}
+
+  @media(max-width:600px){
+    .pd-drawer{max-width:100%}
+  }
   .ped-btn.primary{background:var(--green);border-color:var(--green);color:#fff}
   .ped-btn.primary:hover{background:#1AA558;color:#fff}
 
@@ -325,11 +421,6 @@
     <div style="display:flex;align-items:center;gap:10px">
       <span>Mis pedidos</span>
       <span class="count-tag" id="listCountTag"></span>
-    </div>
-    <div class="sort-wrap">
-      <span class="sort-lbl">Ordenar:</span>
-      <button class="sort-btn active" data-sort="fecha" onclick="toggleSort('fecha')">Fecha <span class="arr" id="arr-fecha">↓</span></button>
-      <button class="sort-btn" data-sort="monto" onclick="toggleSort('monto')">Monto <span class="arr" id="arr-monto">↓</span></button>
     </div>
   </div>
   <div id="pedidosList">
@@ -701,29 +792,28 @@ function getSorted(lista) {
   return copia;
 }
 
-function toggleSort(by) {
+// Click en header de columna (o uso programático)
+function sortByCol(by) {
   if (SORT.by === by) {
-    // Mismo campo → alternar dirección
     SORT.dir = SORT.dir === 'desc' ? 'asc' : 'desc';
   } else {
-    // Campo distinto → usar ese + descendente por default
     SORT.by = by;
     SORT.dir = 'desc';
   }
-  // Update UI: botones activos + flechitas
-  var btns = document.querySelectorAll('.sort-btn');
-  btns.forEach(function(b){
-    b.classList.toggle('active', b.getAttribute('data-sort') === SORT.by);
-  });
-  var arrow = SORT.dir === 'desc' ? '↓' : '↑';
-  // La flecha va solo en el activo; el otro vuelve a ↓ como neutral
-  var otherBy = by === 'fecha' ? 'monto' : 'fecha';
-  var aActive = document.getElementById('arr-' + SORT.by);
-  var aOther  = document.getElementById('arr-' + otherBy);
-  if (aActive) aActive.textContent = arrow;
-  if (aOther)  aOther.textContent = '↓';
-
   renderPedidos(PEDIDOS);
+}
+
+// Mini formateador para montos compactos ($1.5M, $650K)
+function fmtCompact(n) {
+  var v = Number(n) || 0;
+  if (v >= 1000000) {
+    var m = v / 1000000;
+    return '$' + (m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)) + 'M';
+  }
+  if (v >= 1000) {
+    return '$' + Math.round(v/1000) + 'K';
+  }
+  return '$' + v;
 }
 
 function esc(s) {
@@ -744,21 +834,32 @@ function fechaCorta(iso) {
   catch(e) { return iso; }
 }
 
+// Labels y medallas (globales, compartidas entre render y drawer)
+var NIVEL_MEDAL = { esencial: '🥉', integral: '🥈', llave: '🥇' };
+var NIVEL_LBL   = { esencial: 'Esencial', integral: 'Integral', llave: 'Llave en Mano' };
+
+// Etiquetas para los headers
+var SORT_COLS = [
+  { key: 'cliente', label: 'Cliente', sortable: true },
+  { key: 'fecha',   label: 'Fecha',   sortable: true  },
+  { key: 'destino', label: 'Destino', sortable: false },
+  { key: 'estado',  label: 'Estado',  sortable: true  },
+  { key: 'pack',    label: 'Pack',    sortable: false },
+  { key: 'monto',   label: 'Monto',   sortable: true  }
+];
+
 function renderPedidos(lista) {
   var wrap = document.getElementById('pedidosList');
   var countTag = document.getElementById('listCountTag');
 
-  // Vacío absoluto (0 pedidos totales)
   if (!lista.length) {
     wrap.innerHTML = '<div class="empty">Todavía no armaste ningún pedido.<br/><strong style="color:var(--navy)">Tocá "+ Nuevo pedido" arriba para empezar.</strong></div>';
     if (countTag) countTag.textContent = '';
     return;
   }
 
-  // Aplicar filtro + ordenamiento
   var filtrados = getSorted(getFiltered(lista));
 
-  // Contador al lado del título
   if (countTag) {
     if (CURRENT_FILTER === 'todos') {
       countTag.textContent = lista.length + ' total' + (lista.length === 1 ? '' : 'es');
@@ -767,13 +868,70 @@ function renderPedidos(lista) {
     }
   }
 
-  // Vacío filtrado (hay pedidos pero ninguno cumple el filtro)
   if (!filtrados.length) {
     wrap.innerHTML = '<div class="empty">No hay pedidos con este filtro.<br/><button class="ped-btn" style="margin-top:10px" onclick="setFilter(\'todos\')">Ver todos</button></div>';
     return;
   }
 
-  var h = '<div class="pedidos-grid">';
+  wrap.innerHTML = renderTabla(filtrados) + renderCards(filtrados);
+}
+
+// ══ TABLA (desktop) ══
+function renderTabla(filtrados) {
+  var th = SORT_COLS.map(function(c){
+    if (!c.sortable) {
+      var style2 = c.key === 'monto' ? ' style="text-align:right"' : '';
+      return '<th' + style2 + '>' + esc(c.label) + '</th>';
+    }
+    var activo = SORT.by === c.key;
+    var arr = activo ? (SORT.dir === 'desc' ? '↓' : '↑') : '↕';
+    var keySafe = c.key.replace(/'/g, "\\'");
+    var cls = 'sortable' + (activo ? ' active' : '');
+    var style = c.key === 'monto' ? ' style="text-align:right"' : '';
+    return '<th class="' + cls + '" onclick="sortByCol(\'' + keySafe + '\')"' + style + '>' +
+      esc(c.label) + '<span class="sort-arr">' + arr + '</span>' +
+      '</th>';
+  }).join('') + '<th class="col-actions">Acciones</th>';
+
+  var rows = filtrados.map(function(p){
+    var estado = p.estado || 'borrador';
+    var cliente = (p.cliente && p.cliente.nombre) || '—';
+    var dest = (p.mudanza && p.mudanza.destino) || '—';
+    var pIdSafe = esc(p.id).replace(/'/g,"\\'");
+
+    var packCol;
+    if (p.nivelElegido) {
+      packCol = '<td class="cel-pack"><span class="medal">' + (NIVEL_MEDAL[p.nivelElegido] || '✓') + '</span>' + esc(NIVEL_LBL[p.nivelElegido] || p.nivelElegido) + '</td>';
+    } else {
+      packCol = '<td class="cel-pack empty">Sin elegir aún</td>';
+    }
+
+    var monto = montoPedido(p);
+    var montoCls = p.nivelElegido ? 'green' : '';
+    var montoCol = '<td class="cel-monto ' + montoCls + '">' + fmtCompact(monto) + '</td>';
+
+    var clienteUrl = '/cliente-packs?id=' + encodeURIComponent(p.id);
+    var actions = '<a class="ped-btn" href="' + clienteUrl + '" target="_blank" onclick="event.stopPropagation()" title="Ver lo que ve el cliente">👁</a>' +
+      '<button class="ped-btn" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')" title="' + (estado === 'borrador' ? 'Enviar' : 'Reenviar') + '">📤</button>' +
+      (estado === 'borrador' ? '<button class="ped-btn" style="color:#EF4444;border-color:#FECACA" onclick="event.stopPropagation();eliminarPedido(\'' + pIdSafe + '\')" title="Eliminar">🗑</button>' : '');
+
+    return '<tr onclick="openPedidoDrawer(\'' + pIdSafe + '\')">' +
+      '<td class="cel-cliente">' + esc(cliente) + '<span class="tiny">' + esc(p.id) + '</span></td>' +
+      '<td class="cel-fecha">' + fechaCorta(p.creadoEn) + '</td>' +
+      '<td class="cel-destino" title="' + esc(dest) + '">' + esc(dest) + '</td>' +
+      '<td><span class="ped-estado-sm ' + estado + '">' + esc(estado) + '</span></td>' +
+      packCol +
+      montoCol +
+      '<td class="cel-actions">' + actions + '</td>' +
+    '</tr>';
+  }).join('');
+
+  return '<div class="pedidos-table-wrap"><table class="pedidos-table"><thead><tr>' + th + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+// ══ CARDS (mobile) ══
+function renderCards(filtrados) {
+  var h = '<div class="pedidos-cards-wrap"><div class="pedidos-grid">';
   filtrados.forEach(function(p){
     var estado = p.estado || 'borrador';
     var cliente = (p.cliente && p.cliente.nombre) || '—';
@@ -782,35 +940,29 @@ function renderPedidos(lista) {
     var clienteUrl = '/cliente-packs?id=' + encodeURIComponent(p.id);
     var pIdSafe = esc(p.id).replace(/'/g,"\\'");
 
-    // Labels y medallas por nivel
-    var MEDAL = { esencial: '🥉', integral: '🥈', llave: '🥇' };
-    var LBL = { esencial: 'Esencial', integral: 'Integral', llave: 'Llave en Mano' };
-
-    // Si el cliente ya eligió → bloque destacado con 1 solo pack
     var packsHtml;
     if (p.nivelElegido && (estado === 'elegido' || estado === 'pagado')) {
       var nivel = p.nivelElegido;
       var elegido = (p.packs || []).find(function(pk){ return pk.nivel === nivel; }) || {};
       packsHtml =
         '<div class="ped-elegido">' +
-          '<div class="ped-elegido-medal">' + (MEDAL[nivel] || '✓') + '</div>' +
+          '<div class="ped-elegido-medal">' + (NIVEL_MEDAL[nivel] || '✓') + '</div>' +
           '<div class="ped-elegido-info">' +
             '<div class="ped-elegido-eyebrow">✓ Cliente eligió</div>' +
-            '<div class="ped-elegido-nivel">' + esc(LBL[nivel] || nivel) + '</div>' +
+            '<div class="ped-elegido-nivel">' + esc(NIVEL_LBL[nivel] || nivel) + '</div>' +
             (elegido.empresa ? '<div class="ped-elegido-empresa">' + esc(elegido.empresa) + '</div>' : '') +
           '</div>' +
           '<div class="ped-elegido-precio">$' + fmt(elegido.precio || 0) + '</div>' +
         '</div>';
     } else {
-      // Estados iniciales (borrador / enviado / expirado) → 3 chips
       packsHtml = '<div class="ped-packs">' +
         (p.packs || []).map(function(pk){
-          return '<span class="ped-pack-chip">' + esc(LBL[pk.nivel] || pk.nivel) + ' <strong>$' + fmt(pk.precio) + '</strong></span>';
+          return '<span class="ped-pack-chip">' + esc(NIVEL_LBL[pk.nivel] || pk.nivel) + ' <strong>$' + fmt(pk.precio) + '</strong></span>';
         }).join('') +
       '</div>';
     }
 
-    h += '<div class="ped-card">' +
+    h += '<div class="ped-card" onclick="openPedidoDrawer(\'' + pIdSafe + '\')">' +
       '<div class="ped-top">' +
         '<div><div class="ped-cliente">' + esc(cliente) + '</div><div class="ped-meta">' + fecha + ' · ' + esc(p.id) + '</div></div>' +
         '<span class="ped-estado ' + estado + '">' + estado + '</span>' +
@@ -818,15 +970,158 @@ function renderPedidos(lista) {
       '<div class="ped-dest">→ ' + esc(dest) + '</div>' +
       packsHtml +
       '<div class="ped-acciones">' +
-        '<a class="ped-btn" href="' + clienteUrl + '" target="_blank">👁 Ver lo que ve el cliente</a>' +
-        (estado === 'borrador' ? '<button class="ped-btn primary" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Enviar al cliente</button>' : '') +
-        (estado !== 'borrador' ? '<button class="ped-btn" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Reenviar</button>' : '') +
-        (estado === 'borrador' ? '<button class="ped-btn" onclick="eliminarPedido(\'' + pIdSafe + '\')" style="color:#EF4444;border-color:#FECACA">🗑 Eliminar</button>' : '') +
+        '<a class="ped-btn" href="' + clienteUrl + '" target="_blank" onclick="event.stopPropagation()">👁 Ver lo que ve el cliente</a>' +
+        (estado === 'borrador' ? '<button class="ped-btn primary" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')">📤 Enviar al cliente</button>' : '') +
+        (estado !== 'borrador' ? '<button class="ped-btn" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')">📤 Reenviar</button>' : '') +
+        (estado === 'borrador' ? '<button class="ped-btn" onclick="event.stopPropagation();eliminarPedido(\'' + pIdSafe + '\')" style="color:#EF4444;border-color:#FECACA">🗑 Eliminar</button>' : '') +
       '</div>' +
     '</div>';
   });
-  h += '</div>';
-  wrap.innerHTML = h;
+  h += '</div></div>';
+  return h;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DRAWER — detalle de pedido
+// ══════════════════════════════════════════════════════════════════════
+function openPedidoDrawer(id) {
+  var p = PEDIDOS.find(function(x){ return x.id === id; });
+  if (!p) return;
+  var estado = p.estado || 'borrador';
+  var cliente = p.cliente || {};
+  var mud = p.mudanza || {};
+  var packs = p.packs || [];
+
+  document.getElementById('pdTitle').textContent = cliente.nombre || '—';
+  document.getElementById('pdSub').textContent = p.id + ' · Creado ' + fechaCorta(p.creadoEn);
+
+  var tel = (cliente.telefono || '').replace(/\D/g, '');
+  if (tel && !tel.startsWith('54')) tel = '54' + tel;
+  var waLink = tel ? 'https://wa.me/' + tel : null;
+
+  var clienteUrl = '/cliente-packs?id=' + encodeURIComponent(p.id);
+  var pIdSafe = esc(p.id).replace(/'/g,"\\'");
+
+  var packsHtml = packs.map(function(pk){
+    var esEleg = p.nivelElegido === pk.nivel;
+    return '<div class="pd-pack' + (esEleg ? ' elegido' : '') + '">' +
+      '<div class="pd-pack-medal">' + (NIVEL_MEDAL[pk.nivel] || '•') + '</div>' +
+      '<div class="pd-pack-info">' +
+        '<div class="pd-pack-nivel">' + esc(NIVEL_LBL[pk.nivel] || pk.nivel) + '</div>' +
+        (pk.empresa ? '<div class="pd-pack-emp">' + esc(pk.empresa) + '</div>' : '') +
+      '</div>' +
+      '<div class="pd-pack-precio">$' + fmt(pk.precio) + '</div>' +
+      (esEleg ? '<div class="pd-pack-check">✓</div>' : '') +
+    '</div>';
+  }).join('');
+
+  var steps = [
+    { key: 'creado',   label: 'Creado',           date: p.creadoEn },
+    { key: 'enviado',  label: 'Enviado al cliente', date: p.enviadoEn },
+    { key: 'elegido',  label: 'Cliente eligió pack', date: p.elegidoEn },
+    { key: 'pagado',   label: 'Anticipo pagado',   date: p.pagadoEn }
+  ];
+  var timelineHtml = steps.map(function(s){
+    var done = !!s.date;
+    return '<div class="pd-tl-item ' + (done ? 'done' : '') + '">' +
+      '<div class="pd-tl-label">' + esc(s.label) + '</div>' +
+      (done ? '<div class="pd-tl-date">' + fechaHoraLarga(s.date) + '</div>' : '') +
+    '</div>';
+  }).join('');
+
+  var html = '';
+
+  html += '<div class="pd-section">' +
+    '<div class="pd-label">Estado actual</div>' +
+    '<span class="ped-estado-sm ' + estado + '" style="font-size:12px;padding:5px 12px">' + esc(estado) + '</span>' +
+  '</div>';
+
+  html += '<div class="pd-section">' +
+    '<div class="pd-label">Cliente</div>' +
+    '<div class="pd-box">' +
+      '<div class="pd-field"><span class="k">Nombre</span><span class="v">' + esc(cliente.nombre || '—') + '</span></div>' +
+      '<div class="pd-field"><span class="k">Email</span><span class="v">' + (cliente.email ? '<a href="mailto:' + esc(cliente.email) + '">' + esc(cliente.email) + '</a>' : '—') + '</span></div>' +
+      '<div class="pd-field"><span class="k">Teléfono</span><span class="v">' + (cliente.telefono ? esc(cliente.telefono) : '—') + '</span></div>' +
+    '</div>' +
+  '</div>';
+
+  html += '<div class="pd-section">' +
+    '<div class="pd-label">Mudanza</div>' +
+    '<div class="pd-box">' +
+      '<div class="pd-field"><span class="k">Origen</span><span class="v">' + esc(mud.origen || '—') + '</span></div>' +
+      '<div class="pd-field"><span class="k">Destino</span><span class="v">' + esc(mud.destino || '—') + '</span></div>' +
+      '<div class="pd-field"><span class="k">Fecha</span><span class="v">' + esc(mud.fecha || '—') + '</span></div>' +
+      '<div class="pd-field"><span class="k">Ambientes</span><span class="v">' + esc(mud.ambientes || '—') + '</span></div>' +
+      (mud.notas ? '<div class="pd-field"><span class="k">Notas</span><span class="v">' + esc(mud.notas) + '</span></div>' : '') +
+    '</div>' +
+  '</div>';
+
+  html += '<div class="pd-section">' +
+    '<div class="pd-label">Packs' + (p.nivelElegido ? ' — ✓ elegido resaltado' : '') + '</div>' +
+    '<div class="pd-packs">' + (packsHtml || '<div style="color:var(--text3);font-size:13px">Sin packs definidos</div>') + '</div>' +
+  '</div>';
+
+  html += '<div class="pd-section">' +
+    '<div class="pd-label">Actividad</div>' +
+    '<div class="pd-timeline">' + timelineHtml + '</div>' +
+  '</div>';
+
+  var actionsHtml = '';
+  if (waLink) {
+    actionsHtml += '<a class="pd-btn" href="' + waLink + '" target="_blank" rel="noopener">💬 Abrir WhatsApp</a>';
+  }
+  actionsHtml += '<a class="pd-btn" href="' + clienteUrl + '" target="_blank" rel="noopener">👁 Ver lo que ve el cliente</a>';
+  actionsHtml += '<button class="pd-btn" onclick="copyPedidoLink(\'' + pIdSafe + '\', this)">🔗 Copiar link para el cliente</button>';
+  if (estado === 'borrador') {
+    actionsHtml += '<button class="pd-btn primary" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Enviar al cliente</button>';
+    actionsHtml += '<button class="pd-btn danger" onclick="eliminarPedido(\'' + pIdSafe + '\')">🗑 Eliminar borrador</button>';
+  } else {
+    actionsHtml += '<button class="pd-btn" onclick="reenviarPedido(\'' + pIdSafe + '\')">📤 Reenviar link al cliente</button>';
+  }
+  html += '<div class="pd-section"><div class="pd-label">Acciones</div><div class="pd-actions">' + actionsHtml + '</div></div>';
+
+  document.getElementById('pdBody').innerHTML = html;
+  document.getElementById('pdOverlay').classList.add('open');
+  document.getElementById('pdDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePedidoDrawer() {
+  document.getElementById('pdOverlay').classList.remove('open');
+  document.getElementById('pdDrawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && document.getElementById('pdDrawer') && document.getElementById('pdDrawer').classList.contains('open')) {
+    closePedidoDrawer();
+  }
+});
+
+function copyPedidoLink(id, btn) {
+  var url = location.origin + '/cliente-packs?id=' + encodeURIComponent(id);
+  var done = function(){ var t = btn.innerHTML; btn.innerHTML = '✓ Copiado'; setTimeout(function(){ btn.innerHTML = t; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function(){ fallbackCopyText(url); done(); });
+  } else {
+    fallbackCopyText(url);
+    done();
+  }
+}
+
+function fallbackCopyText(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function fechaHoraLarga(iso) {
+  if (!iso) return '';
+  try {
+    var d = new Date(iso);
+    return d.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) + ' · ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  } catch(e) { return iso; }
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1210,6 +1505,23 @@ init();
 </script>
 
 <script data-cfasync="false" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMapsAsesor" async defer></script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PEDIDO DRAWER (detalle lateral)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="pd-overlay" id="pdOverlay" onclick="closePedidoDrawer()"></div>
+<aside class="pd-drawer" id="pdDrawer" role="dialog" aria-modal="true" aria-labelledby="pdTitle">
+  <div class="pd-head">
+    <div style="min-width:0;flex:1">
+      <div class="pd-head-title" id="pdTitle">—</div>
+      <div class="pd-head-sub" id="pdSub">—</div>
+    </div>
+    <button class="pd-close" onclick="closePedidoDrawer()" aria-label="Cerrar">×</button>
+  </div>
+  <div class="pd-body" id="pdBody">
+    <!-- render dinámico -->
+  </div>
+</aside>
 
 </body>
 </html>
