@@ -446,34 +446,54 @@
   }
   .btn-cr:hover{background:var(--blue-dark)}
 
-  /* Card mudancero estilo Booking */
+  /* ── Grid de mudanceros (3 columnas desktop) ── */
+  .mud-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:1100px){.mud-grid{grid-template-columns:repeat(2,1fr);gap:12px}}
+  @media(max-width:640px){.mud-grid{grid-template-columns:1fr;gap:10px}}
+
+  /* ── Card mudancero estilo MercadoLibre (vertical) ── */
   .mud-card{
     background:#fff;border:1px solid var(--border);border-radius:var(--r2);
-    display:grid;grid-template-columns:200px 1fr auto;
+    display:flex;flex-direction:column;
     overflow:hidden;cursor:pointer;transition:all .2s;
-    margin-bottom:10px;
-    box-shadow:var(--shadow);
+    box-shadow:var(--shadow);position:relative;
   }
-  .mud-card:hover{border-color:var(--blue);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+  .mud-card:hover{border-color:var(--blue);box-shadow:var(--shadow-md);transform:translateY(-2px)}
   .mud-card.sel{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue),var(--shadow-md)}
+
+  /* Foto arriba del card */
   .mud-card-foto{
-    width:200px;height:160px;object-fit:cover;
+    width:100%;aspect-ratio:4/3;
     background:var(--bg3);display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;position:relative;
+    flex-shrink:0;position:relative;overflow:hidden;
   }
   .mud-card-foto img{width:100%;height:100%;object-fit:cover;display:block}
   .mud-foto-ph{
     width:100%;height:100%;
     background:linear-gradient(135deg,#EEF4FF,#E8F5FF);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:6px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
   }
   .mud-foto-initials{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--blue);letter-spacing:2px}
   .mud-foto-truck{font-size:1.5rem}
+
+  /* Badge "Más contratado" tipo ML */
+  .mud-top-badge{
+    position:absolute;top:10px;left:10px;z-index:2;
+    background:#FE6B00;color:#fff;
+    padding:4px 10px;border-radius:3px;
+    font-size:10.5px;font-weight:700;font-family:var(--mono);
+    letter-spacing:.4px;text-transform:uppercase;
+    box-shadow:0 2px 6px rgba(254,107,0,.35);
+  }
+  .mud-top-badge.t1{background:#FE6B00}
+  .mud-top-badge.t2{background:#0C2D7B}
+  .mud-top-badge.t3{background:#535A64}
+
+  /* Check de selección (esquina sup der de la foto) */
   .mud-sel-check{
-    position:absolute;top:8px;left:8px;
-    width:22px;height:22px;border-radius:50%;
-    border:2px solid #fff;background:rgba(255,255,255,.8);
+    position:absolute;top:10px;right:10px;z-index:2;
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid #fff;background:rgba(255,255,255,.9);
     display:flex;align-items:center;justify-content:center;
     transition:all .2s;box-shadow:var(--shadow);
   }
@@ -481,55 +501,56 @@
   .mud-sel-check svg{display:none}
   .mud-card.sel .mud-sel-check svg{display:block}
 
-  .mud-card-body{padding:1rem 1.2rem;min-width:0}
-  .mud-card-nombre{font-size:16px;font-weight:600;color:var(--blue);margin-bottom:2px;cursor:pointer;letter-spacing:-.2px}
-  .mud-card-nombre:hover{text-decoration:underline}
-  .mud-card-empresa{font-size:18px;font-weight:800;color:#003580;margin-bottom:8px;letter-spacing:-.3px;line-height:1.2;cursor:pointer}
+  /* Body del card */
+  .mud-card-body{padding:14px 16px 0;flex:1;display:flex;flex-direction:column;gap:6px}
+  .mud-card-empresa{
+    font-size:15px;font-weight:700;color:#003580;
+    line-height:1.25;letter-spacing:-.2px;cursor:pointer;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
   .mud-card-empresa:hover{color:#1A6FFF}
-  .mud-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+  .mud-tags{display:flex;flex-wrap:wrap;gap:4px}
   .mud-tag{
     display:inline-flex;align-items:center;gap:3px;
-    padding:3px 8px;border-radius:4px;
-    font-size:11px;font-family:var(--mono);
+    padding:2px 7px;border-radius:3px;
+    font-size:10.5px;font-family:var(--mono);white-space:nowrap;
   }
   .mud-tag-green{background:var(--green-light);color:var(--green-dark);border:1px solid rgba(34,195,106,.25)}
   .mud-tag-blue{background:var(--blue-light);color:var(--blue);border:1px solid rgba(26,111,255,.2)}
   .mud-tag-gray{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
-  .mud-card-zona{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;margin-bottom:6px}
-  .mud-card-trabajos{font-size:11px;color:var(--text2);font-family:var(--mono)}
-  .mud-servicios{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
-  .mud-serv-chip{font-size:10px;padding:3px 8px;border-radius:5px;background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D;font-weight:500;white-space:nowrap}
+  .mud-card-zona{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px}
 
-  .mud-card-precio{
-    padding:1rem 1.2rem;
-    display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;
-    border-left:1px solid var(--border);flex-shrink:0;min-width:160px;
+  /* Rating compacto inline */
+  .mud-rating-inline{
+    display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);
   }
-  .mud-rating-box{text-align:right;margin-bottom:.5rem}
-  .mud-rating-num{
-    display:inline-block;background:var(--blue);color:#fff;
-    font-size:13px;font-weight:700;padding:4px 8px;border-radius:6px 6px 6px 0;
-    font-family:'Inter',sans-serif;letter-spacing:.1px;
-  }
-  .mud-rating-label{font-size:11px;color:var(--text2);margin-top:3px}
-  .mud-rating-resenas{font-size:11px;color:var(--text2);font-family:var(--mono)}
-  .mud-precio-box{text-align:right}
-  .mud-precio-desde{font-size:10px;color:var(--text2);font-family:var(--mono)}
-  .mud-precio-num{font-size:22px;font-weight:700;color:var(--text);line-height:1}
-  .mud-precio-sub{font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:.6rem}
+  .mud-rating-inline .star{color:#F59E0B;font-size:13px}
+  .mud-rating-inline b{color:var(--text);font-weight:700}
+
+  .mud-card-trabajos{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+  /* Precio (grande, estilo ML) */
+  .mud-card-precio{padding:4px 16px 12px;margin-top:auto}
+  .mud-precio-desde{font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+  .mud-precio-num{font-size:24px;font-weight:400;color:var(--text);line-height:1;letter-spacing:-.5px}
+  .mud-precio-sub{font-size:10.5px;color:var(--text2);margin-top:2px}
+
+  /* CTAs abajo */
+  .mud-card-actions{padding:0 14px 14px;display:flex;gap:6px}
   .btn-ver{
-    background:var(--blue);color:#fff;
-    border:none;padding:9px 16px;border-radius:var(--r);
+    background:var(--blue);color:#fff;border:none;
+    padding:10px 14px;border-radius:var(--r);
     font-size:13px;font-weight:700;cursor:pointer;
-    font-family:'Inter',sans-serif;transition:all .2s;width:100%;text-align:center;
+    font-family:'Inter',sans-serif;transition:all .2s;
+    flex:1;text-align:center;
   }
   .btn-ver:hover{background:var(--blue-dark)}
   .btn-sel-toggle{
     background:#fff;color:var(--blue);
-    border:1.5px solid var(--blue);padding:7px 14px;border-radius:var(--r);
+    border:1.5px solid var(--blue);padding:9px 14px;border-radius:var(--r);
     font-size:12px;font-weight:600;cursor:pointer;
-    font-family:'Inter',sans-serif;transition:all .2s;width:100%;text-align:center;
-    margin-top:5px;
+    font-family:'Inter',sans-serif;transition:all .2s;
+    flex:1;text-align:center;white-space:nowrap;
   }
   .mud-card.sel .btn-sel-toggle{background:var(--blue-light)}
 
@@ -626,19 +647,6 @@
     .filtros-mobile-bar{display:none!important}
     .btn-filtros-sticky{display:flex}
     .btn-filtros-mobile{display:none}
-    .mud-card{grid-template-columns:120px 1fr}
-    .mud-card-foto{width:120px;height:120px}
-    .mud-card-precio{
-      display:flex;flex-direction:row;align-items:center;justify-content:space-between;
-      border-left:none;border-top:1px solid var(--border);
-      grid-column:1/-1;padding:.7rem 1rem;min-width:0;
-    }
-    .mud-rating-box{display:none}
-    .mud-precio-box{text-align:left}
-    .mud-precio-num{font-size:18px}
-    .btn-ver{width:auto;padding:8px 16px;font-size:12px}
-    .btn-sel-toggle{width:auto;padding:7px 12px;font-size:12px;margin-top:0;margin-left:6px}
-    .mud-card-body{padding:.8rem}
   }
   @media(max-width:600px){
     nav{padding:0 1rem}
@@ -1976,7 +1984,17 @@
       + '<div class="cr-sub">Los primeros 5 mudanceros disponibles en tu zona te cotizan sin que tengas que elegirlos vos.</div></div>'
       + '<button class="btn-cr" onclick="event.stopPropagation();publicarAbierto()">Solicitar →</button>'
       + '</div>';
-    // Cards
+
+    // Top 3 "Más contratados" — se calcula sobre la lista filtrada pero
+    // ordenada por trabajos (independiente del _filtros.orden visible del user,
+    // así el badge tiene sentido siempre).
+    var topTrabajos = lista.slice()
+      .sort(function(a,b){ return (b.trabajosCompletados||0) - (a.trabajosCompletados||0); })
+      .slice(0,3)
+      .map(function(m){ return m.email; });
+
+    // Cards en grid 3 cols
+    html += '<div class="mud-grid">';
     html += lista.map(function(m) {
       var sel = _sel.has(m.email);
       var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
@@ -1989,45 +2007,52 @@
             var clave = claves[Math.min(amb,4)-1] || 'amb1';
             return pAmt(m.precios[clave]) || pAmt(m.precios.amb1);
           })();
-      var ratingLabel = m.calificacion >= 4.8 ? 'Excepcional' : m.calificacion >= 4.5 ? 'Muy bueno' : m.calificacion >= 4 ? 'Bueno' : 'Bien';
       var fotoHtml = (m.foto || m.fotoUrl)
-        ? '<img src="'+(m.foto||m.fotoUrl)+'" alt="'+m.nombre+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="'+(m.foto||m.fotoUrl)+'" alt="'+m.nombre+'">'
         : '<div class="mud-foto-ph"><div class="mud-foto-truck">🚛</div><div class="mud-foto-initials">'+initials+'</div></div>';
+
+      // Tags compactos (máx 2 para no romper layout vertical)
       var tags = '';
       if (m.verificadoIdentidad) tags += '<span class="mud-tag mud-tag-green">✓ Verificado</span>';
-      if (m.verificadoSeguro)    tags += '<span class="mud-tag mud-tag-green">🛡 Seguro</span>';
       if (m.verificadoVehiculo)  tags += '<span class="mud-tag mud-tag-blue">🚛 '+m.vehiculo+'</span>';
+
+      // Badge top 3 (solo si tiene trabajos > 0, sino no tiene sentido)
+      var topIdx = topTrabajos.indexOf(m.email);
+      var topBadge = '';
+      if (topIdx !== -1 && (m.trabajosCompletados||0) > 0) {
+        var pos = topIdx + 1;
+        var lbl = pos + 'º MÁS CONTRATADO';
+        topBadge = '<div class="mud-top-badge t'+pos+'">'+lbl+'</div>';
+      }
+
       var emailEnc = m.email.replace(/\./g,'__dot__').replace(/@/g,'__at__');
-      return '<div class="mud-card'+(sel?' sel':'')+'" data-email="'+m.email+'" id="card-'+emailEnc+'">'
+      return '<div class="mud-card'+(sel?' sel':'')+'" data-email="'+m.email+'" id="card-'+emailEnc+'" onclick="verPerfil(\''+m.email+'\')">'
         + '<div class="mud-card-foto">'
+        +   topBadge
         +   '<div class="mud-sel-check" onclick="toggleSel(\''+m.email+'\',event)">'
-        +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+        +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
         +   '</div>'
         +   fotoHtml
         + '</div>'
         + '<div class="mud-card-body">'
-        +   '<div class="mud-card-empresa" onclick="verPerfil(\''+m.email+'\')">'+(m.empresa||m.nombre)+'</div>'
-        +   '<div class="mud-tags">'+tags+'</div>'
+        +   '<div class="mud-card-empresa">'+(m.empresa||m.nombre)+'</div>'
+        +   (tags ? '<div class="mud-tags">'+tags+'</div>' : '')
+        +   '<div class="mud-rating-inline"><span class="star">★</span><b>'+(m.calificacion||0).toFixed(1)+'</b><span>· '+(m.nroResenas||0)+' reseñas</span></div>'
         +   '<div class="mud-card-zona">📍 '+( m.zonaBase||'')+'</div>'
-        +   '<div class="mud-card-trabajos">'+m.trabajosCompletados+' trabajos · '+m.nroResenas+' reseñas</div>'
-        +   (m.servicios ? '<div class="mud-servicios">'+m.servicios.split(',').slice(0,4).map(function(s){ return '<span class="mud-serv-chip">'+s.trim()+'</span>'; }).join('')+(m.servicios.split(',').length>4?'<span class="mud-serv-chip">+'+( m.servicios.split(',').length-4)+' más</span>':'')+'</div>' : '')
+        +   '<div class="mud-card-trabajos">'+(m.trabajosCompletados||0)+' trabajos completados</div>'
         + '</div>'
         + '<div class="mud-card-precio">'
-        +   '<div class="mud-rating-box">'
-        +     '<div class="mud-rating-num">'+m.calificacion.toFixed(1)+'</div>'
-        +     '<div class="mud-rating-label">'+ratingLabel+'</div>'
-        +     '<div class="mud-rating-resenas">'+m.nroResenas+' reseñas</div>'
-        +   '</div>'
-        +   '<div class="mud-precio-box">'
-        +     '<div class="mud-precio-desde">desde</div>'
-        +     '<div class="mud-precio-num">$'+precio.toLocaleString('es-AR')+'</div>'
-        +     '<div class="mud-precio-sub">precio estimado</div>'
-        +   '</div>'
-        +   '<button class="btn-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil →</button>'
-        +   '<button class="btn-sel-toggle" onclick="toggleSel(\''+m.email+'\',event)">'+(sel?'✓ Seleccionado':'Seleccionar')+'</button>'
+        +   '<div class="mud-precio-desde">Desde</div>'
+        +   '<div class="mud-precio-num">$ '+precio.toLocaleString('es-AR')+'</div>'
+        +   '<div class="mud-precio-sub">precio estimado</div>'
+        + '</div>'
+        + '<div class="mud-card-actions" onclick="event.stopPropagation()">'
+        +   '<button class="btn-ver" onclick="verPerfil(\''+m.email+'\')">Ver perfil</button>'
+        +   '<button class="btn-sel-toggle" onclick="toggleSel(\''+m.email+'\',event)">'+(sel?'✓ Elegido':'Elegir')+'</button>'
         + '</div>'
         + '</div>';
     }).join('');
+    html += '</div>';
     document.getElementById('listaRes').innerHTML = html;
   }
 
@@ -2043,7 +2068,7 @@
     if (card) {
       card.classList.toggle('sel', _sel.has(email));
       var btn = card.querySelector('.btn-sel-toggle');
-      if (btn) btn.textContent = _sel.has(email) ? '✓ Seleccionado' : 'Seleccionar';
+      if (btn) btn.textContent = _sel.has(email) ? '✓ Elegido' : 'Elegir';
     }
     var n = _sel.size;
     document.getElementById('selBar').classList.toggle('show', n>0);
