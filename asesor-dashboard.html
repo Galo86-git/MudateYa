@@ -237,14 +237,14 @@
       <p class="subtitle">Info básica para que los mudanceros coticen.</p>
       <div class="form-err" id="err-2"></div>
       <div class="fld">
-        <label>Origen</label>
+        <label>Origen (con altura)</label>
         <div class="ac-wrap">
           <input type="text" id="m-origen" placeholder="Av. Santa Fe 2500, CABA" autocomplete="off"/>
           <ul class="ac-drop" id="ac-origen"></ul>
         </div>
       </div>
       <div class="fld">
-        <label>Destino</label>
+        <label>Destino (con altura)</label>
         <div class="ac-wrap">
           <input type="text" id="m-destino" placeholder="Av. Libertador 6000, Vicente López" autocomplete="off"/>
           <ul class="ac-drop" id="ac-destino"></ul>
@@ -532,7 +532,9 @@ async function fswNext() {
       tipo:      document.getElementById('m-ambientes').value === 'Flete' ? 'flete' : 'mudanza'
     };
     if (!m.origen) return showErr(2, 'Ingresá el origen.');
+    if (!/\d/.test(m.origen)) return showErr(2, 'El origen tiene que incluir la altura (número de la calle).');
     if (!m.destino) return showErr(2, 'Ingresá el destino.');
+    if (!/\d/.test(m.destino)) return showErr(2, 'El destino tiene que incluir la altura (número de la calle).');
     if (!m.fecha) return showErr(2, 'Elegí una fecha.');
     if (!m.ambientes) return showErr(2, 'Elegí los ambientes.');
     FSW_DATA.mudanza = m;
