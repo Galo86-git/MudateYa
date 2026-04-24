@@ -174,6 +174,62 @@ async function enviarEmailAdminNuevoAsesor(asesor) {
   } catch(e) { console.error('Email admin nuevo asesor:', e.message); }
 }
 
+// ── Email al admin cuando un asesor crea un nuevo pedido ─────────
+async function enviarEmailAdminNuevoPedido(pedido, asesor) {
+  try {
+    var resend = new Resend(process.env.RESEND_API_KEY);
+    var fecha = new Date().toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    var packsRow = '';
+    for (var i = 0; i < pedido.packs.length; i++) {
+      var p = pedido.packs[i];
+      packsRow +=
+        '<tr><td style="padding:4px 0;font-weight:600;color:#003580;width:110px">' + esc(NIVELES_LABEL[p.nivel] || p.nivel) + ':</td>' +
+          '<td style="padding:4px 0">' + esc(p.empresa || p.mudanceroNombre) + ' — <strong style="color:#22C36A;font-family:DM Mono,monospace">$' + Number(p.precio).toLocaleString('es-AR') + '</strong></td></tr>';
+    }
+    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0F1923">' +
+      '<div style="text-align:center;margin-bottom:28px">' +
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#003580">MUDATE</span>' +
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#22C36A">YA</span>' +
+      '</div>' +
+      '<h2 style="color:#003580;font-size:20px;margin-bottom:6px">📋 Nuevo pedido de Asesor</h2>' +
+      '<p style="color:#94A3B8;font-size:12px;margin-bottom:20px">' + fecha + ' · ID: <code style="font-family:DM Mono,monospace">' + esc(pedido.id) + '</code></p>' +
+      '<div style="background:#F5F7FA;border-radius:10px;padding:18px;margin-bottom:14px">' +
+        '<div style="font-size:11px;font-weight:700;color:#64748B;font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Asesor</div>' +
+        '<div style="font-size:14px;color:#0F1923"><strong>' + esc(asesor.nombre) + '</strong>' + (asesor.inmobiliaria ? ' · ' + esc(asesor.inmobiliaria) : '') + '</div>' +
+        '<div style="font-size:12px;color:#64748B;font-family:DM Mono,monospace;margin-top:4px">' + esc(asesor.email) + '</div>' +
+      '</div>' +
+      '<div style="background:#F5F7FA;border-radius:10px;padding:18px;margin-bottom:14px">' +
+        '<div style="font-size:11px;font-weight:700;color:#64748B;font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cliente</div>' +
+        '<div style="font-size:14px;color:#0F1923"><strong>' + esc(pedido.cliente.nombre) + '</strong></div>' +
+        '<div style="font-size:12px;color:#64748B;font-family:DM Mono,monospace;margin-top:4px">' + esc(pedido.cliente.email) + ' · ' + esc(pedido.cliente.telefono) + '</div>' +
+      '</div>' +
+      '<div style="background:#F5F7FA;border-radius:10px;padding:18px;margin-bottom:14px">' +
+        '<div style="font-size:11px;font-weight:700;color:#64748B;font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Mudanza</div>' +
+        '<div style="font-size:13px;color:#475569;line-height:1.6">' +
+          '<div><strong style="color:#003580">Origen:</strong> ' + esc(pedido.mudanza.origen) + '</div>' +
+          '<div><strong style="color:#003580">Destino:</strong> ' + esc(pedido.mudanza.destino) + '</div>' +
+          '<div><strong style="color:#003580">Fecha:</strong> ' + esc(pedido.mudanza.fecha) + ' · <strong style="color:#003580">Ambientes:</strong> ' + esc(pedido.mudanza.ambientes || '—') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="background:#F5F7FA;border-radius:10px;padding:18px;margin-bottom:20px">' +
+        '<div style="font-size:11px;font-weight:700;color:#64748B;font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">3 Packs armados</div>' +
+        '<table style="width:100%;font-size:13px;color:#475569;border-collapse:collapse">' + packsRow + '</table>' +
+      '</div>' +
+      '<div style="text-align:center;margin:20px 0">' +
+        '<a href="https://mudateya.ar/admin" style="display:inline-block;padding:12px 26px;background:#003580;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:13px">Ver en panel admin →</a>' +
+      '</div>' +
+      '<hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">' +
+      '<p style="color:#94A3B8;font-size:11px;text-align:center">Notificación automática · MudateYa</p>' +
+      '</div>';
+    await resend.emails.send({
+      from: 'MudateYa <noreply@mudateya.ar>',
+      to: 'jgalozaldivar@gmail.com',
+      subject: '📋 Nuevo pedido asesor: ' + asesor.nombre + ' → ' + pedido.cliente.nombre,
+      html: html
+    });
+  } catch(e) { console.error('Email admin nuevo pedido:', e.message); }
+}
+
 // ── Email al cliente con los 3 packs armados por el asesor ─────────
 async function enviarEmailClientePacks(pedido, asesor) {
   try {
@@ -222,6 +278,83 @@ async function enviarEmailClientePacks(pedido, asesor) {
   }
 }
 
+// ── Email al mudancero: te eligieron por un pack del Plan Referidos ──
+async function enviarEmailMudanceroPedidoAsesor(mudanza, cot, mudancero) {
+  try {
+    var resend = new Resend(process.env.RESEND_API_KEY);
+    var nivelLbl = NIVELES_LABEL[mudanza.nivelPack] || mudanza.nivelPack;
+    var precioFmt = '$' + Number(cot.precio).toLocaleString('es-AR');
+    var anticipoFmt = '$' + Math.round(Number(cot.precio) * 0.5).toLocaleString('es-AR');
+    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0F1923">' +
+      '<div style="text-align:center;margin-bottom:28px">' +
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#003580">MUDATE</span>' +
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#22C36A">YA</span>' +
+      '</div>' +
+      '<h2 style="color:#003580;font-size:22px;margin-bottom:10px">🎯 Nueva mudanza aceptada — Plan Referidos</h2>' +
+      '<p style="color:#475569;font-size:14px;line-height:1.6;margin-bottom:16px">Hola ' + esc(mudancero.nombre) + ', un asesor inmobiliario eligió tu empresa para el pack <strong>' + esc(nivelLbl) + '</strong> y el cliente ya confirmó. Cuando pague el anticipo vas a poder ver el teléfono en tu panel.</p>' +
+      '<div style="background:#F5F7FA;border-radius:10px;padding:16px;margin-bottom:18px">' +
+        '<table style="width:100%;font-size:14px;color:#475569;border-collapse:collapse">' +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580;width:110px">Cliente:</td><td style="padding:5px 0">' + esc(mudanza.clienteNombre) + '</td></tr>' +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580">Origen:</td><td style="padding:5px 0">' + esc(mudanza.desde) + '</td></tr>' +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580">Destino:</td><td style="padding:5px 0">' + esc(mudanza.hasta) + '</td></tr>' +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580">Fecha:</td><td style="padding:5px 0">' + esc(mudanza.fecha) + '</td></tr>' +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580">Ambientes:</td><td style="padding:5px 0">' + esc(mudanza.ambientes || '—') + '</td></tr>' +
+          (mudanza.notasCliente ? '<tr><td style="padding:5px 0;font-weight:600;color:#003580;vertical-align:top">Notas:</td><td style="padding:5px 0;font-style:italic">' + esc(mudanza.notasCliente) + '</td></tr>' : '') +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580">Pack:</td><td style="padding:5px 0">' + esc(nivelLbl) + '</td></tr>' +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580">Total:</td><td style="padding:5px 0"><strong style="color:#22C36A;font-size:16px">' + precioFmt + '</strong></td></tr>' +
+          '<tr><td style="padding:5px 0;font-weight:600;color:#003580">Anticipo (50%):</td><td style="padding:5px 0;font-family:DM Mono,monospace">' + anticipoFmt + '</td></tr>' +
+        '</table>' +
+      '</div>' +
+      '<div style="text-align:center;margin:24px 0">' +
+        '<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;padding:14px 32px;background:#22C36A;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">Ver en mi panel</a>' +
+      '</div>' +
+      '<p style="color:#94A3B8;font-size:12px;text-align:center;margin-top:18px">El cliente recibió el link para pagar el anticipo. Te avisamos apenas lo pague.</p>' +
+      '<hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">' +
+      '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
+      '</div>';
+    await resend.emails.send({
+      from: 'MudateYa <noreply@mudateya.ar>',
+      to: mudancero.email,
+      subject: '🎯 Nueva mudanza ' + nivelLbl + ' · ' + mudanza.clienteNombre,
+      html: html
+    });
+  } catch(e) { console.error('Email mudancero pedido-asesor:', e.message); }
+}
+
+// ── Email al asesor: tu cliente eligió un pack ──
+async function enviarEmailAsesorClienteEligio(pedido, nivel, mudancero) {
+  try {
+    var resend = new Resend(process.env.RESEND_API_KEY);
+    if (!pedido.asesorEmail) return;
+    var nivelLbl = NIVELES_LABEL[nivel] || nivel;
+    var precio = 0;
+    for (var i = 0; i < pedido.packs.length; i++) {
+      if (pedido.packs[i].nivel === nivel) { precio = pedido.packs[i].precio; break; }
+    }
+    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0F1923">' +
+      '<div style="text-align:center;margin-bottom:28px">' +
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#003580">MUDATE</span>' +
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#22C36A">YA</span>' +
+      '</div>' +
+      '<h2 style="color:#003580;font-size:22px;margin-bottom:10px">✅ Tu cliente eligió un pack</h2>' +
+      '<p style="color:#475569;font-size:15px;line-height:1.6;margin-bottom:16px"><strong>' + esc(pedido.cliente.nombre) + '</strong> eligió el pack <strong>' + esc(nivelLbl) + '</strong> con <strong>' + esc(mudancero.nombre) + '</strong> por <strong style="color:#22C36A">$' + Number(precio).toLocaleString('es-AR') + '</strong>.</p>' +
+      '<p style="color:#475569;font-size:14px;line-height:1.6;margin-bottom:18px">Le enviamos el link para pagar el anticipo (50%). Te vamos a avisar cuando lo complete.</p>' +
+      '<div style="text-align:center;margin:24px 0">' +
+        '<a href="https://mudateya.ar/asesor-dashboard" style="display:inline-block;padding:12px 28px;background:#003580;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">Ver en mi panel</a>' +
+      '</div>' +
+      '<hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0">' +
+      '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
+      '</div>';
+    await resend.emails.send({
+      from: 'MudateYa Asesores <noreply@mudateya.ar>',
+      to: pedido.asesorEmail,
+      subject: '✅ ' + pedido.cliente.nombre + ' eligió ' + nivelLbl,
+      html: html
+    });
+  } catch(e) { console.error('Email asesor cliente eligió:', e.message); }
+}
+
+
 // ── Auth helper: extrae email del asesor desde session token ───────
 async function getAsesorDesdeToken(token) {
   if (!token) return null;
@@ -244,7 +377,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-token, x-internal-secret');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   var action = req.query.action;
@@ -537,6 +670,9 @@ module.exports = async function handler(req, res) {
       listaAsesor.unshift(pedidoId);
       await setJSON('pedidos-asesor:' + cpSess.email, listaAsesor);
 
+      // Notificar al admin
+      try { await enviarEmailAdminNuevoPedido(pedido, cpSess.asesor); } catch(e) { console.warn('Email admin nuevo pedido:', e.message); }
+
       return res.status(200).json({ ok:true, pedidoId: pedidoId, pedido: pedido });
     }
 
@@ -580,6 +716,255 @@ module.exports = async function handler(req, res) {
         waText: waText,
         clienteUrl: link
       });
+    }
+
+    // ── CLIENTE-ELEGIR-PACK (el cliente elige un pack y arranca el pago) ──
+    // Flujo: convierte el pedido-asesor en una mudanza "normal" con cotización
+    // ya aceptada, genera link de MP y devuelve URL para redirigir al cliente.
+    if (action === 'cliente-elegir-pack' && req.method === 'POST') {
+      var cepBody = req.body || {};
+      var cepPedidoId = String(cepBody.pedidoId || '').trim();
+      var cepNivel    = String(cepBody.nivel || '').trim();
+      if (!cepPedidoId)                       return res.status(400).json({ error: 'Falta pedidoId' });
+      if (NIVELES.indexOf(cepNivel) === -1)   return res.status(400).json({ error: 'Nivel inválido' });
+
+      var cepPedido = await getJSON('pedido-asesor:' + cepPedidoId);
+      if (!cepPedido) return res.status(404).json({ error: 'Pedido no encontrado o expirado' });
+
+      // Si ya eligió antes y ya se creó mudanza, devolvemos la que existe
+      if (cepPedido.mudanzaId) {
+        var existente = await getJSON('mudanza:' + cepPedido.mudanzaId);
+        if (existente && existente.linkPagoAnticipo) {
+          return res.status(200).json({
+            ok: true,
+            yaElegido: true,
+            mudanzaId: cepPedido.mudanzaId,
+            linkPago:  existente.linkPagoAnticipo,
+            nivel:     cepPedido.nivelElegido
+          });
+        }
+      }
+
+      // Buscar el pack elegido
+      var packElegido = null;
+      for (var pi = 0; pi < cepPedido.packs.length; pi++) {
+        if (cepPedido.packs[pi].nivel === cepNivel) { packElegido = cepPedido.packs[pi]; break; }
+      }
+      if (!packElegido) return res.status(400).json({ error: 'Este pedido no tiene pack ' + cepNivel });
+
+      // Volver a leer la mudancera para asegurarnos que sigue aprobada
+      var mp = await getJSON('mudancero:perfil:' + packElegido.mudanceroEmail);
+      if (!mp) return res.status(400).json({ error: 'La mudancera ya no está disponible' });
+
+      // ── CREAR MUDANZA "NORMAL" ──
+      var mudanzaId = 'MYA-' + Date.now();
+      var cotizacionId = 'COT-' + Date.now();
+      var cot = {
+        id:              cotizacionId,
+        mudanzaId:       mudanzaId,
+        mudanceroEmail:  mp.email,
+        mudanceroNombre: mp.nombre,
+        mudanceroTel:    mp.telefono || '',
+        precio:          Number(packElegido.precio),
+        nota:            'Pack ' + (NIVELES_LABEL[cepNivel] || cepNivel) + ' · armado por asesor ' + (cepPedido.asesorEmail || ''),
+        tiempoEstimado: '',
+        fecha:           new Date().toISOString(),
+        estado:          'aceptada',
+        // Marca para trazabilidad
+        origenAsesor:    true,
+        asesorEmail:     cepPedido.asesorEmail,
+        nivelPack:       cepNivel,
+        pedidoAsesorId:  cepPedidoId
+      };
+
+      var mudanza = {
+        id:                mudanzaId,
+        clienteEmail:      cepPedido.cliente.email,
+        clienteNombre:     cepPedido.cliente.nombre,
+        clienteWA:         cepPedido.cliente.telefono || '',
+        desde:             cepPedido.mudanza.origen,
+        hasta:             cepPedido.mudanza.destino,
+        ambientes:         cepPedido.mudanza.ambientes || '',
+        fecha:             cepPedido.mudanza.fecha,
+        servicios:         [],
+        extras:            [],
+        zonaBase:          mp.zonaBase || '',
+        precio_estimado:   Number(packElegido.precio),
+        tipo:              cepPedido.mudanza.tipo || 'mudanza',
+        pisoOrigen:        '',
+        pisoDestino:       '',
+        ascOrigen:         '',
+        ascDestino:        '',
+        fotos:             [],
+        estado:            'cotizacion_aceptada',
+        modoCotizacion:    'dirigido',
+        maxCotizaciones:   1,
+        mudancerosInvitados: [mp.email],
+        fechaPublicacion:  new Date().toISOString(),
+        expira:            new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+        cotizaciones:      [cot],
+        cotizacionAceptada: Object.assign({}, cot, {
+          clienteNombre: cepPedido.cliente.nombre,
+          clienteEmail:  cepPedido.cliente.email
+        }),
+        mudanceroAceptado: mp.email,
+        montoTotal:        Number(packElegido.precio),
+        // Marcas de trazabilidad
+        origenAsesor:      true,
+        asesorEmail:       cepPedido.asesorEmail,
+        nivelPack:         cepNivel,
+        pedidoAsesorId:    cepPedidoId,
+        notasCliente:      cepPedido.mudanza.notas || ''
+      };
+
+      // ── GENERAR LINK DE PAGO DEL ANTICIPO (50%) ──
+      var siteUrl = process.env.SITE_URL || 'https://mudateya.ar';
+      var linkPago = siteUrl + '/mi-mudanza';
+      try {
+        var mpLib = require('mercadopago');
+        var client = new mpLib.MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+        var preference = new mpLib.Preference(client);
+        var anticipo = Math.round(Number(packElegido.precio) * 0.5);
+        var result = await preference.create({ body: {
+          items: [{
+            id:          mudanzaId + '-' + cotizacionId + '-anticipo',
+            title:       'MudateYa — Anticipo (50%) · ' + mp.nombre,
+            description: cepPedido.mudanza.origen + ' → ' + cepPedido.mudanza.destino,
+            quantity:    1,
+            unit_price:  anticipo,
+            currency_id: 'ARS'
+          }],
+          back_urls: {
+            success: siteUrl + '/pago-exitoso?mudanzaId=' + mudanzaId + '&cotizacionId=' + cotizacionId + '&monto=' + anticipo + '&mudancero=' + encodeURIComponent(mp.nombre) + '&tipoPago=anticipo',
+            failure: siteUrl + '/cliente-packs?id=' + cepPedidoId + '&pago=error',
+            pending: siteUrl + '/cliente-packs?id=' + cepPedidoId + '&pago=pendiente'
+          },
+          auto_return:          'approved',
+          statement_descriptor: 'MUDATEYA',
+          external_reference:   mudanzaId + '-' + cotizacionId,
+          notification_url:     siteUrl + '/api/webhook-mp',
+          metadata:             { mudanzaId: mudanzaId, cotizacionId: cotizacionId, tipoPago: 'anticipo', pedidoAsesorId: cepPedidoId }
+        }});
+        linkPago = result.init_point || result.initPoint || linkPago;
+      } catch(mpErr) {
+        console.error('Error generando link MP (asesor):', mpErr.message);
+      }
+      mudanza.linkPagoAnticipo = linkPago;
+
+      // ── PERSISTIR TODO (imitando lo que hace 'publicar') ──
+      await setJSON('mudanza:' + mudanzaId, mudanza, 60 * 60 * 24 * 30); // 30 días
+
+      // Índice del cliente
+      var clienteIdx = await getJSON('cliente:' + cepPedido.cliente.email) || [];
+      if (clienteIdx.indexOf(mudanzaId) === -1) clienteIdx.push(mudanzaId);
+      await setJSON('cliente:' + cepPedido.cliente.email, clienteIdx, 60 * 60 * 24 * 30);
+
+      // Perfil del cliente (lo creamos si no existe)
+      var clientePerfil = await getJSON('cliente:perfil:' + cepPedido.cliente.email) || {
+        email:         cepPedido.cliente.email,
+        nombre:        cepPedido.cliente.nombre,
+        wa:            cepPedido.cliente.telefono,
+        fechaRegistro: new Date().toISOString(),
+        mudanzas:      0,
+        estado:        'activo',
+        origenAsesor:  true,
+        asesorEmail:   cepPedido.asesorEmail
+      };
+      clientePerfil.nombre   = cepPedido.cliente.nombre || clientePerfil.nombre;
+      clientePerfil.wa       = cepPedido.cliente.telefono || clientePerfil.wa;
+      clientePerfil.mudanzas = (clientePerfil.mudanzas || 0) + 1;
+      clientePerfil.ultimaActividad = new Date().toISOString();
+      await setJSON('cliente:perfil:' + cepPedido.cliente.email, clientePerfil);
+
+      var clientesTodos = await getJSON('clientes:todos') || [];
+      if (clientesTodos.indexOf(cepPedido.cliente.email) === -1) {
+        clientesTodos.push(cepPedido.cliente.email);
+        await setJSON('clientes:todos', clientesTodos);
+      }
+
+      // Índices globales
+      var globalIdx = await getJSON('mudanzas:activas') || [];
+      if (globalIdx.indexOf(mudanzaId) === -1) globalIdx.push(mudanzaId);
+      await setJSON('mudanzas:activas', globalIdx, 604800);
+
+      var todosIdx = await getJSON('mudanzas:todos') || [];
+      if (todosIdx.indexOf(mudanzaId) === -1) todosIdx.push(mudanzaId);
+      await setJSON('mudanzas:todos', todosIdx);
+
+      // Índice del mudancero
+      var mudIdx = await getJSON('mudancero:' + mp.email) || [];
+      if (mudIdx.indexOf(mudanzaId) === -1) mudIdx.push(mudanzaId);
+      await setJSON('mudancero:' + mp.email, mudIdx, 2592000);
+
+      // ── ACTUALIZAR PEDIDO-ASESOR ──
+      cepPedido.estado         = 'elegido';
+      cepPedido.nivelElegido   = cepNivel;
+      cepPedido.mudanzaId      = mudanzaId;
+      cepPedido.elegidoEn      = new Date().toISOString();
+      await setJSON('pedido-asesor:' + cepPedidoId, cepPedido, PEDIDO_TTL);
+
+      // ── AVISAR AL MUDANCERO + ASESOR ──
+      try { await enviarEmailMudanceroPedidoAsesor(mudanza, cot, mp); } catch(e) { console.warn('Email mudancero asesor:', e.message); }
+      try { await enviarEmailAsesorClienteEligio(cepPedido, cepNivel, mp); } catch(e) { console.warn('Email asesor cliente eligió:', e.message); }
+
+      return res.status(200).json({
+        ok: true,
+        mudanzaId: mudanzaId,
+        linkPago:  linkPago,
+        nivel:     cepNivel
+      });
+    }
+
+    // ── INTERNAL-MARCAR-PAGADO (llamado desde cotizaciones.js vía hook) ──
+    if (action === 'internal-marcar-pagado' && req.method === 'POST') {
+      var intSecret = req.headers['x-internal-secret'];
+      if (intSecret !== process.env.INTERNAL_API_SECRET) {
+        return res.status(401).json({ error: 'No autorizado' });
+      }
+      var impBody = req.body || {};
+      var impPedidoId = String(impBody.pedidoAsesorId || '').trim();
+      var impTipoPago = String(impBody.tipoPago || 'anticipo').trim();
+      if (!impPedidoId) return res.status(400).json({ error: 'Falta pedidoAsesorId' });
+
+      var impPedido = await getJSON('pedido-asesor:' + impPedidoId);
+      if (!impPedido) return res.status(200).json({ ok: true, noop: true }); // no existir no es error
+
+      // Solo actualizamos si avanza el estado
+      if (impTipoPago === 'anticipo' && impPedido.estado !== 'pagado') {
+        impPedido.estado = 'pagado';
+        impPedido.anticipoPagadoEn = new Date().toISOString();
+      } else if (impTipoPago === 'saldo') {
+        impPedido.estado = 'completado';
+        impPedido.completadoEn = new Date().toISOString();
+      }
+      await setJSON('pedido-asesor:' + impPedidoId, impPedido, PEDIDO_TTL);
+      return res.status(200).json({ ok: true, estado: impPedido.estado });
+    }
+
+
+
+    // ── ELIMINAR-PEDIDO (solo borradores, solo el asesor dueño) ──────
+    if (action === 'eliminar-pedido' && req.method === 'POST') {
+      var epBody = req.body || {};
+      var epSess = await getAsesorDesdeToken(String(epBody.token || ''));
+      if (!epSess) return res.status(401).json({ error: 'Sesión expirada' });
+      var epPedidoId = String(epBody.pedidoId || '').trim();
+      if (!epPedidoId) return res.status(400).json({ error: 'Falta pedidoId' });
+      var epPedido = await getJSON('pedido-asesor:' + epPedidoId);
+      if (!epPedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+      if (epPedido.asesorEmail !== epSess.email) {
+        return res.status(403).json({ error: 'Este pedido no es tuyo' });
+      }
+      if (epPedido.estado !== 'borrador') {
+        return res.status(400).json({ error: 'Solo se pueden eliminar pedidos en borrador. Este ya fue ' + epPedido.estado + '.' });
+      }
+      // Borrar el pedido
+      await delKey('pedido-asesor:' + epPedidoId);
+      // Sacarlo del índice del asesor
+      var epLista = await getJSON('pedidos-asesor:' + epSess.email) || [];
+      var epNueva = epLista.filter(function(id){ return id !== epPedidoId; });
+      await setJSON('pedidos-asesor:' + epSess.email, epNueva);
+      return res.status(200).json({ ok: true });
     }
 
     // ══════════════════════════════════════════════════════════════
