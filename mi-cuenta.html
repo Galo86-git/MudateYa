@@ -1168,10 +1168,6 @@ function usarPrecioSugerido(total) {
 
 function abrirCotizacion(mudanza){
   if(!mudanza) return;
-  // ── DEBUG: ver qué datos tenemos ──
-  console.log('[COTIZAR] mudanza:', mudanza);
-  console.log('[COTIZAR] mudanza.km:', mudanza.km, 'mudanza.ambientes:', mudanza.ambientes, 'mudanza.tipo:', mudanza.tipo);
-  console.log('[COTIZAR] perfilRedis.precios:', mudanceroPerfilRedis && mudanceroPerfilRedis.precios);
   var ps = parseInt(mudanza.precio_estimado||0);
 
   // ── Calcular precio precargado: precio_amb_segun_busqueda + (km × precio_por_km) ──
