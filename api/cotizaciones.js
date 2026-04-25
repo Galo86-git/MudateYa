@@ -368,6 +368,8 @@ async function enviarEmailAltaMudancero(perfil) {
           '<table style="width:100%;font-size:13px;color:#475569">' +
             '<tr><td style="padding:4px 0">🏠 Mudanzas</td><td style="text-align:right;font-weight:700;color:#003580">15% por trabajo completado</td></tr>' +
             '<tr><td style="padding:4px 0">📦 Fletes</td><td style="text-align:right;font-weight:700;color:#003580">20% por trabajo completado</td></tr>' +
+            '<tr><td style="padding:4px 0">🏢 Pedidos Plan Referidos</td><td style="text-align:right;font-weight:700;color:#003580">25% por trabajo completado</td></tr>' +
+            '<tr><td colspan="2" style="padding:6px 0 4px;color:#64748B;font-size:11px;font-style:italic">Plan Referidos: pedidos que llegan pre-calificados desde nuestros asesores inmobiliarios aliados.</td></tr>' +
             '<tr><td colspan="2" style="padding:4px 0;color:#94A3B8;font-size:11px">Solo pagás comisión cuando completás un trabajo. Sin costos fijos.</td></tr>' +
           '</table>' +
           '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:12px;color:#64748B;line-height:1.6">' +
