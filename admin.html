@@ -2528,12 +2528,129 @@ function _editSetChips(containerId, valor) {
   });
 }
 
+// Estado de los % de cascada para el modal de admin
+var _edPctState = { integral: 0, llave: 0 };
+
 function _fmtPrecioEdit(el) {
   var raw = el.value.replace(/\D/g,'');
   if (raw) el.value = parseInt(raw,10).toLocaleString('es-AR');
+  // Si es input de la tabla preciosLeads, recalcular cascada
+  if (el.classList && el.classList.contains('edit-leads-input')) {
+    edRecalcularCascada(el);
+  }
 }
 
 function _parsePrecio(v) { return (v||'').replace(/\./g,'').replace(/\s/g,''); }
+
+// ── % de cascada admin ──────────────────────────────────────────
+function edRecalcularCascada(el) {
+  var amb = el.getAttribute('data-amb');
+  var nivel = el.getAttribute('data-nivel');
+  if (!amb || !nivel) return;
+  var v = parseInt(_parsePrecio(el.value)) || 0;
+  if (nivel === 'esencial') {
+    if (_edPctState.integral > 0) {
+      var intInp = document.getElementById('ed-pl-' + amb + '-integral');
+      var newInt = v > 0 ? Math.round(v * (1 + _edPctState.integral / 100)) : 0;
+      if (intInp) intInp.value = newInt > 0 ? newInt.toLocaleString('es-AR') : '';
+      if (_edPctState.llave > 0) {
+        var llaInp = document.getElementById('ed-pl-' + amb + '-llave');
+        var newLla = newInt > 0 ? Math.round(newInt * (1 + _edPctState.llave / 100)) : 0;
+        if (llaInp) llaInp.value = newLla > 0 ? newLla.toLocaleString('es-AR') : '';
+      }
+    }
+  } else if (nivel === 'integral') {
+    if (_edPctState.llave > 0) {
+      var llaInp2 = document.getElementById('ed-pl-' + amb + '-llave');
+      var newLla2 = v > 0 ? Math.round(v * (1 + _edPctState.llave / 100)) : 0;
+      if (llaInp2) llaInp2.value = newLla2 > 0 ? newLla2.toLocaleString('es-AR') : '';
+    }
+  }
+}
+
+function edTogglePctPopup(tipo, ev) {
+  if (ev) ev.stopPropagation();
+  var popup = document.getElementById('ed-pct-' + tipo + '-popup');
+  if (!popup) return;
+  // Cerrar otros
+  document.querySelectorAll('.ed-pct-popup').forEach(function(p){ if (p !== popup) p.style.display = 'none'; });
+  var open = popup.style.display !== 'none' && popup.style.display !== '';
+  popup.style.display = open ? 'none' : 'block';
+  if (!open) {
+    var inp = document.getElementById('ed-pct-' + tipo + '-input');
+    if (inp) {
+      inp.value = _edPctState[tipo] > 0 ? _edPctState[tipo] : '';
+      inp.focus();
+    }
+  }
+}
+
+function edApplyPct(tipo, ev) {
+  if (ev) ev.stopPropagation();
+  var inp = document.getElementById('ed-pct-' + tipo + '-input');
+  var pct = parseFloat((inp && inp.value) || '0');
+  if (!pct || pct <= 0) {
+    if (inp) { inp.style.borderColor = '#EF4444'; inp.focus(); setTimeout(function(){ inp.style.borderColor = ''; }, 1500); }
+    return;
+  }
+  _edPctState[tipo] = pct;
+  var ambs = ['amb1','amb2','amb3','amb4','amb5plus'];
+  ambs.forEach(function(a){
+    var src, dst;
+    if (tipo === 'integral') {
+      src = document.getElementById('ed-pl-'+a+'-esencial');
+      dst = document.getElementById('ed-pl-'+a+'-integral');
+    } else {
+      src = document.getElementById('ed-pl-'+a+'-integral');
+      dst = document.getElementById('ed-pl-'+a+'-llave');
+    }
+    if (!src || !dst) return;
+    var v = parseInt(_parsePrecio(src.value)) || 0;
+    if (v > 0) dst.value = Math.round(v * (1 + pct / 100)).toLocaleString('es-AR');
+  });
+  // Cascadear si se cambió Integral y existe pct Llave
+  if (tipo === 'integral' && _edPctState.llave > 0) {
+    ambs.forEach(function(a){
+      var src = document.getElementById('ed-pl-'+a+'-integral');
+      var dst = document.getElementById('ed-pl-'+a+'-llave');
+      if (!src || !dst) return;
+      var v = parseInt(_parsePrecio(src.value)) || 0;
+      if (v > 0) dst.value = Math.round(v * (1 + _edPctState.llave / 100)).toLocaleString('es-AR');
+    });
+  }
+  edActualizarPctPill(tipo);
+  document.getElementById('ed-pct-' + tipo + '-popup').style.display = 'none';
+}
+
+function edClearPct(tipo, ev) {
+  if (ev) ev.stopPropagation();
+  _edPctState[tipo] = 0;
+  edActualizarPctPill(tipo);
+  document.getElementById('ed-pct-' + tipo + '-popup').style.display = 'none';
+}
+
+function edActualizarPctPill(tipo) {
+  var pill = document.getElementById('ed-pct-' + tipo + '-pill');
+  if (!pill) return;
+  if (_edPctState[tipo] > 0) {
+    pill.style.background = '#22C36A';
+    pill.style.color = '#fff';
+    pill.style.borderColor = '#22C36A';
+    pill.innerHTML = '+ ' + _edPctState[tipo] + '% <span style="margin-left:2px;opacity:.7;font-weight:400">×</span>';
+  } else {
+    pill.style.background = '#EEF4FF';
+    pill.style.color = '#1A6FFF';
+    pill.style.borderColor = '#C7D7F5';
+    pill.innerHTML = '+ %';
+  }
+}
+
+// Click fuera → cerrar popups admin
+document.addEventListener('click', function(ev){
+  if (!ev.target.closest('.ed-pct-popup') && !ev.target.closest('.ed-pct-pill')) {
+    document.querySelectorAll('.ed-pct-popup').forEach(function(p){ p.style.display = 'none'; });
+  }
+});
 
 function activarEdicion(){
   var m = mudancerosData[currentMudanceroIdx];
@@ -2611,7 +2728,38 @@ function activarEdicion(){
   form += '<div class="edit-section-title">Precios Plan Referidos Inmobiliarios — 25% comisión (ARS)</div>';
   form += '<div style="padding:8px 12px;background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:6px;margin-bottom:10px;font-size:11px;color:#92400E;line-height:1.5">Precios que ve el asesor inmobiliario al armar packs para su cliente. 5 tamaños × 3 packs. Dejá en 0 los tamaños que no querés cubrir.</div>';
   form += '<div style="overflow-x:auto;margin-bottom:14px"><table class="edit-leads-table" style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">';
-  form += '<thead><tr><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:left">Tamaño</th><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥉 Esencial</th><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥈 Integral</th><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥇 Llave en Mano</th></tr></thead><tbody>';
+  form += '<thead><tr>'
+    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:left">Tamaño</th>'
+    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥉 Esencial</th>'
+    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center;position:relative">'
+    +   '🥈 Integral'
+    +   '<span class="ed-pct-pill" id="ed-pct-integral-pill" onclick="edTogglePctPopup(\'integral\',event)" style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;background:#EEF4FF;border:1px solid #C7D7F5;border-radius:99px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:#1A6FFF;cursor:pointer;text-transform:none;letter-spacing:0;vertical-align:middle">+ %</span>'
+    +   '<div class="ed-pct-popup" id="ed-pct-integral-popup" style="display:none;position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:50;min-width:200px">'
+    +     '<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px;font-family:DM Mono,monospace">Integral = Esencial + %</div>'
+    +     '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">+</span>'
+    +     '<input type="number" id="ed-pct-integral-input" placeholder="30" min="0" max="500" style="width:60px;padding:5px 8px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;font-family:DM Mono,monospace;text-align:right;outline:none"/>'
+    +     '<span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">%</span></div>'
+    +     '<div style="display:flex;gap:4px;margin-top:8px">'
+    +       '<button onclick="edClearPct(\'integral\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#fff;color:#475569;border:1px solid #CBD5E1">Quitar</button>'
+    +       '<button onclick="edApplyPct(\'integral\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#1A6FFF;color:#fff;border:none">Aplicar</button>'
+    +     '</div>'
+    +   '</div>'
+    + '</th>'
+    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center;position:relative">'
+    +   '🥇 Llave en Mano'
+    +   '<span class="ed-pct-pill" id="ed-pct-llave-pill" onclick="edTogglePctPopup(\'llave\',event)" style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;background:#EEF4FF;border:1px solid #C7D7F5;border-radius:99px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:#1A6FFF;cursor:pointer;text-transform:none;letter-spacing:0;vertical-align:middle">+ %</span>'
+    +   '<div class="ed-pct-popup" id="ed-pct-llave-popup" style="display:none;position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:50;min-width:200px">'
+    +     '<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px;font-family:DM Mono,monospace">Llave = Integral + %</div>'
+    +     '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">+</span>'
+    +     '<input type="number" id="ed-pct-llave-input" placeholder="40" min="0" max="500" style="width:60px;padding:5px 8px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;font-family:DM Mono,monospace;text-align:right;outline:none"/>'
+    +     '<span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">%</span></div>'
+    +     '<div style="display:flex;gap:4px;margin-top:8px">'
+    +       '<button onclick="edClearPct(\'llave\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#fff;color:#475569;border:1px solid #CBD5E1">Quitar</button>'
+    +       '<button onclick="edApplyPct(\'llave\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#1A6FFF;color:#fff;border:none">Aplicar</button>'
+    +     '</div>'
+    +   '</div>'
+    + '</th>'
+    + '</tr></thead><tbody>';
   [['amb1','1 amb'],['amb2','2 amb'],['amb3','3 amb'],['amb4','4 amb'],['amb5plus','5+ amb']].forEach(function(row){
     var amb = row[0], lbl = row[1];
     form += '<tr><td style="padding:6px;font-size:13px;color:#475569;font-weight:500;border-bottom:1px solid #F1F5F9;white-space:nowrap">'+lbl+'</td>';
@@ -2708,6 +2856,11 @@ function activarEdicion(){
         if (v && Number(v) > 0) el.value = parseInt(String(v).replace(/\D/g,''),10).toLocaleString('es-AR');
       });
     });
+    // Cargar % de cascada
+    _edPctState.integral = parseFloat(pl.pctIntegral || 0) || 0;
+    _edPctState.llave    = parseFloat(pl.pctLlave    || 0) || 0;
+    edActualizarPctPill('integral');
+    edActualizarPctPill('llave');
     if (p.servicios) _editSetChips('ed-servicios', p.servicios);
     if (p.dias)      _editSetChips('ed-dias',      p.dias);
     if (p.horarios)  _editSetChips('ed-horarios',  p.horarios);
@@ -2761,8 +2914,11 @@ async function guardarEdicion(){
       if (v > 0) algunoCargado = true;
     });
   });
-  // Solo enviar si al menos uno tiene valor (para no pisar con todo 0 si el admin no tocó)
-  if (algunoCargado) {
+  // Incluir % de cascada
+  preciosLeads.pctIntegral = _edPctState.integral || 0;
+  preciosLeads.pctLlave    = _edPctState.llave    || 0;
+  // Enviar si hay precios cargados o si hay % activos (para poder guardar solo los %)
+  if (algunoCargado || preciosLeads.pctIntegral > 0 || preciosLeads.pctLlave > 0) {
     cambios.preciosLeads = preciosLeads;
   }
 
