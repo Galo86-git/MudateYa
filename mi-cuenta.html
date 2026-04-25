@@ -471,36 +471,36 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
               <thead>
                 <tr>
                   <th>Tamaño</th>
-                  <th>🥉 Esencial</th>
-                  <th>🥈 Integral</th>
-                  <th>🥇 Llave en Mano</th>
+                  <th title="Solo mudanza. Camión + 2 operarios, carga/traslado/descarga, hasta 4 hs de trabajo. El cliente provee el embalaje." style="cursor:help">🥉 Esencial <span style="opacity:.5;font-size:10px">ⓘ</span></th>
+                  <th title="Mudanza completa. Esencial + cajas y material incluidos, equipo de embaladores (3-4 pax) y desembalaje en destino." style="cursor:help">🥈 Integral <span style="opacity:.5;font-size:10px">ⓘ</span></th>
+                  <th title="Te va a trabajar. Integral + desarme y armado de muebles, instalación de TV/electro, limpieza post-mudanza y retiro de cartón." style="cursor:help">🥇 Llave en Mano <span style="opacity:.5;font-size:10px">ⓘ</span></th>
                 </tr>
               </thead>
               <tbody>
                 <tr><td>1 amb</td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb1-esencial" data-amb="amb1" data-nivel="esencial" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb1-integral" data-amb="amb1" data-nivel="integral" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb1-llave" data-amb="amb1" data-nivel="llave" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb1-esencial" data-amb="amb1" data-nivel="esencial" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb1-integral" data-amb="amb1" data-nivel="integral" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb1-llave" data-amb="amb1" data-nivel="llave" placeholder="0"/></div></td>
                 </tr>
                 <tr><td>2 amb</td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb2-esencial" data-amb="amb2" data-nivel="esencial" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb2-integral" data-amb="amb2" data-nivel="integral" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb2-llave" data-amb="amb2" data-nivel="llave" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb2-esencial" data-amb="amb2" data-nivel="esencial" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb2-integral" data-amb="amb2" data-nivel="integral" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb2-llave" data-amb="amb2" data-nivel="llave" placeholder="0"/></div></td>
                 </tr>
                 <tr><td>3 amb</td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb3-esencial" data-amb="amb3" data-nivel="esencial" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb3-integral" data-amb="amb3" data-nivel="integral" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb3-llave" data-amb="amb3" data-nivel="llave" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb3-esencial" data-amb="amb3" data-nivel="esencial" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb3-integral" data-amb="amb3" data-nivel="integral" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb3-llave" data-amb="amb3" data-nivel="llave" placeholder="0"/></div></td>
                 </tr>
                 <tr><td>4 amb</td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb4-esencial" data-amb="amb4" data-nivel="esencial" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb4-integral" data-amb="amb4" data-nivel="integral" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb4-llave" data-amb="amb4" data-nivel="llave" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb4-esencial" data-amb="amb4" data-nivel="esencial" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb4-integral" data-amb="amb4" data-nivel="integral" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb4-llave" data-amb="amb4" data-nivel="llave" placeholder="0"/></div></td>
                 </tr>
                 <tr><td>5+ amb</td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb5plus-esencial" data-amb="amb5plus" data-nivel="esencial" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb5plus-integral" data-amb="amb5plus" data-nivel="integral" placeholder="0"/></div></td>
-                  <td><div class="leads-input-wrap"><span>$</span><input type="number" class="leads-input" id="pl-amb5plus-llave" data-amb="amb5plus" data-nivel="llave" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb5plus-esencial" data-amb="amb5plus" data-nivel="esencial" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb5plus-integral" data-amb="amb5plus" data-nivel="integral" placeholder="0"/></div></td>
+                  <td><div class="leads-input-wrap"><span>$</span><input type="text" inputmode="numeric" oninput="_fmtPrecioLeads(this)" class="leads-input" id="pl-amb5plus-llave" data-amb="amb5plus" data-nivel="llave" placeholder="0"/></div></td>
                 </tr>
               </tbody>
             </table>
@@ -1210,6 +1210,16 @@ function loadPerfil(){
   cargarPreciosLeads();
 }
 
+// Formatea input como moneda argentina (1500000 → 1.500.000) mientras escribe
+function _fmtPrecioLeads(el) {
+  var raw = String(el.value || '').replace(/\D/g,'');
+  el.value = raw ? parseInt(raw,10).toLocaleString('es-AR') : '';
+}
+// Parsea valor formateado a número limpio
+function _parseLeadsValue(v) {
+  return parseInt(String(v||'').replace(/\D/g,''),10) || 0;
+}
+
 // Lee preciosLeads desde Redis y llena la tabla 5×3
 async function cargarPreciosLeads(){
   try {
@@ -1224,7 +1234,7 @@ async function cargarPreciosLeads(){
         var inp = document.getElementById('pl-'+a+'-'+n);
         if (!inp) return;
         var v = pl[a] && pl[a][n] ? pl[a][n] : '';
-        inp.value = v && v > 0 ? v : '';
+        inp.value = v && v > 0 ? Number(v).toLocaleString('es-AR') : '';
       });
     });
   } catch(e) {
@@ -1255,8 +1265,7 @@ async function guardarPerfil(){
     var amb = inp.getAttribute('data-amb');
     var nivel = inp.getAttribute('data-nivel');
     if (!amb || !nivel) return;
-    var v = parseInt(String(inp.value||'').replace(/\./g,'').replace(/,/g,'')) || 0;
-    preciosLeads[amb][nivel] = v;
+    preciosLeads[amb][nivel] = _parseLeadsValue(inp.value);
   });
 
   var datos={nombre:document.getElementById('pf-nombre').value.trim(),empresa:document.getElementById('pf-empresa').value.trim(),telefono:document.getElementById('pf-tel').value.trim(),email:currentUser.email,zonaBase:document.getElementById('pf-zona').value,zonasExtra:document.getElementById('pf-zonas-extra').value.trim(),vehiculo:document.getElementById('pf-vehiculo').value,cantVehiculos:document.getElementById('pf-cant-vehiculos').value,equipo:document.getElementById('pf-equipo').value,servicios,dias,horarios,anticipacion:document.getElementById('pf-anticipacion').value,precio1amb:document.getElementById('pf-p1').value,precio2amb:document.getElementById('pf-p2').value,precio3amb:document.getElementById('pf-p3').value,precio4amb:document.getElementById('pf-p4').value,precioFlete:document.getElementById('pf-pflete').value,extra:document.getElementById('pf-notas').value.trim(),preciosLeads:preciosLeads};
