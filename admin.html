@@ -2608,11 +2608,19 @@ function activarEdicion(){
     form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
   });
 
-  form += '<div class="edit-section-title">Precios Pack — Plan Referidos (ARS)</div>';
-  form += '<div style="padding:8px 12px;background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:6px;margin-bottom:10px;font-size:11px;color:#92400E;line-height:1.5">Precios que ve el asesor inmobiliario al armar packs para su cliente. Dejalos en 0 si esta mudancera no participa del Plan Referidos.</div>';
-  [['ed-pack-esencial','Esencial'],['ed-pack-integral','Integral'],['ed-pack-llave','Llave en Mano']].forEach(function(r){
-    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
+  form += '<div class="edit-section-title">Precios Plan Referidos Inmobiliarios — 25% comisión (ARS)</div>';
+  form += '<div style="padding:8px 12px;background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:6px;margin-bottom:10px;font-size:11px;color:#92400E;line-height:1.5">Precios que ve el asesor inmobiliario al armar packs para su cliente. 5 tamaños × 3 packs. Dejá en 0 los tamaños que no querés cubrir.</div>';
+  form += '<div style="overflow-x:auto;margin-bottom:14px"><table class="edit-leads-table" style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">';
+  form += '<thead><tr><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:left">Tamaño</th><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥉 Esencial</th><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥈 Integral</th><th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥇 Llave en Mano</th></tr></thead><tbody>';
+  [['amb1','1 amb'],['amb2','2 amb'],['amb3','3 amb'],['amb4','4 amb'],['amb5plus','5+ amb']].forEach(function(row){
+    var amb = row[0], lbl = row[1];
+    form += '<tr><td style="padding:6px;font-size:13px;color:#475569;font-weight:500;border-bottom:1px solid #F1F5F9;white-space:nowrap">'+lbl+'</td>';
+    ['esencial','integral','llave'].forEach(function(niv){
+      form += '<td style="padding:5px;border-bottom:1px solid #F1F5F9;text-align:center"><div style="position:relative;display:inline-flex;align-items:center"><span style="position:absolute;left:8px;font-size:12px;color:#94A3B8;font-family:DM Mono,monospace">$</span><input class="edit-leads-input" id="ed-pl-'+amb+'-'+niv+'" data-amb="'+amb+'" data-nivel="'+niv+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)" style="width:100%;max-width:120px;padding:6px 8px 6px 18px;border:1px solid #CBD5E1;border-radius:6px;font-size:12.5px;font-family:DM Mono,monospace;color:#0F1923;background:#fff;outline:none;text-align:right"/></div></td>';
+    });
+    form += '</tr>';
   });
+  form += '</tbody></table></div>';
 
   form += '<div class="edit-section-title">Datos para cobrar</div>';
   form += '<div class="edit-cols2">';
@@ -2678,12 +2686,21 @@ function activarEdicion(){
       var el=document.getElementById(id);
       if(el && precioMap[id]) el.value=parseInt(String(precioMap[id]).replace(/\D/g,''),10).toLocaleString('es-AR');
     });
-    // Precios Pack (Plan Referidos)
-    var pp = p.preciosPack || {};
-    var packMap = {'ed-pack-esencial':pp.esencial, 'ed-pack-integral':pp.integral, 'ed-pack-llave':pp.llave};
-    Object.keys(packMap).forEach(function(id){
-      var el = document.getElementById(id);
-      if (el && packMap[id]) el.value = parseInt(String(packMap[id]).replace(/\D/g,''), 10).toLocaleString('es-AR');
+    // Precios Plan Referidos (5×3)
+    var pl = p.preciosLeads || {};
+    var ambs = ['amb1','amb2','amb3','amb4','amb5plus'];
+    var nivs = ['esencial','integral','llave'];
+    ambs.forEach(function(a){
+      nivs.forEach(function(n){
+        var el = document.getElementById('ed-pl-'+a+'-'+n);
+        if (!el) return;
+        var v = (pl[a] && pl[a][n]) ? pl[a][n] : 0;
+        // Fallback: si no hay preciosLeads pero hay preciosPack viejo, lo usamos para amb2
+        if (!v && a === 'amb2' && p.preciosPack && p.preciosPack[n]) {
+          v = p.preciosPack[n];
+        }
+        if (v && Number(v) > 0) el.value = parseInt(String(v).replace(/\D/g,''),10).toLocaleString('es-AR');
+      });
     });
     if (p.servicios) _editSetChips('ed-servicios', p.servicios);
     if (p.dias)      _editSetChips('ed-dias',      p.dias);
@@ -2727,16 +2744,20 @@ async function guardarEdicion(){
   };
   Object.keys(cambios).forEach(function(k){ if (!cambios[k]) delete cambios[k]; });
 
-  // Precios Pack (Plan Referidos) — se envía como objeto, incluso si alguno es 0
-  var ppEsc = _parsePrecio((document.getElementById('ed-pack-esencial')||{}).value);
-  var ppInt = _parsePrecio((document.getElementById('ed-pack-integral')||{}).value);
-  var ppLla = _parsePrecio((document.getElementById('ed-pack-llave')   ||{}).value);
-  if (ppEsc || ppInt || ppLla) {
-    cambios.preciosPack = {
-      esencial: Number(ppEsc) || 0,
-      integral: Number(ppInt) || 0,
-      llave:    Number(ppLla) || 0
-    };
+  // Precios Plan Referidos (matriz 5×3) — siempre se envía como objeto completo
+  var preciosLeads = { amb1:{}, amb2:{}, amb3:{}, amb4:{}, amb5plus:{} };
+  var algunoCargado = false;
+  ['amb1','amb2','amb3','amb4','amb5plus'].forEach(function(a){
+    ['esencial','integral','llave'].forEach(function(n){
+      var inp = document.getElementById('ed-pl-'+a+'-'+n);
+      var v = inp ? (Number(_parsePrecio(inp.value)) || 0) : 0;
+      preciosLeads[a][n] = v;
+      if (v > 0) algunoCargado = true;
+    });
+  });
+  // Solo enviar si al menos uno tiene valor (para no pisar con todo 0 si el admin no tocó)
+  if (algunoCargado) {
+    cambios.preciosLeads = preciosLeads;
   }
 
   try {
@@ -3595,6 +3616,18 @@ async function asrCargarZonaDetalle() {
         // Solo mudanceras aprobadas
         if (p.estado && p.estado !== 'aprobado') continue;
         var pp = p.preciosPack || {};
+        // Calcular si tiene algún precio cargado, ya sea preciosLeads o preciosPack viejo
+        var tieneAlgo = (Number(pp.esencial)||0) > 0 || (Number(pp.integral)||0) > 0 || (Number(pp.llave)||0) > 0;
+        if (!tieneAlgo && p.preciosLeads) {
+          var pl = p.preciosLeads;
+          ['amb1','amb2','amb3','amb4','amb5plus'].forEach(function(a){
+            if (pl[a]) {
+              if ((Number(pl[a].esencial)||0) > 0 || (Number(pl[a].integral)||0) > 0 || (Number(pl[a].llave)||0) > 0) {
+                tieneAlgo = true;
+              }
+            }
+          });
+        }
         _asrMudancerasAprobadas.push({
           email:       p.email,
           nombre:      p.nombre || '',
@@ -3606,7 +3639,7 @@ async function asrCargarZonaDetalle() {
             integral: Number(pp.integral) || 0,
             llave:    Number(pp.llave)    || 0
           },
-          tienePack:   (Number(pp.esencial)||0) > 0 || (Number(pp.integral)||0) > 0 || (Number(pp.llave)||0) > 0
+          tienePack:   tieneAlgo
         });
       }
     }
