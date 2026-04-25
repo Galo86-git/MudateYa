@@ -1183,6 +1183,17 @@ module.exports = async function handler(req, res) {
           llave:    Number(pp.llave)    || 0
         };
       }
+      // Precios Leads Plan Referidos — matriz 5×3 (5 tamaños × 3 packs)
+      if (cambios.preciosLeads && typeof cambios.preciosLeads === 'object') {
+        var pl = cambios.preciosLeads;
+        perfil.preciosLeads = {
+          amb1:    { esencial: Number(pl.amb1?.esencial)||0,    integral: Number(pl.amb1?.integral)||0,    llave: Number(pl.amb1?.llave)||0    },
+          amb2:    { esencial: Number(pl.amb2?.esencial)||0,    integral: Number(pl.amb2?.integral)||0,    llave: Number(pl.amb2?.llave)||0    },
+          amb3:    { esencial: Number(pl.amb3?.esencial)||0,    integral: Number(pl.amb3?.integral)||0,    llave: Number(pl.amb3?.llave)||0    },
+          amb4:    { esencial: Number(pl.amb4?.esencial)||0,    integral: Number(pl.amb4?.integral)||0,    llave: Number(pl.amb4?.llave)||0    },
+          amb5plus:{ esencial: Number(pl.amb5plus?.esencial)||0,integral: Number(pl.amb5plus?.integral)||0,llave: Number(pl.amb5plus?.llave)||0 }
+        };
+      }
       perfil.ultimaEdicionAdmin = new Date().toISOString();
       await setJSON(`mudancero:perfil:${email}`, perfil);
       return res.status(200).json({ ok: true });
