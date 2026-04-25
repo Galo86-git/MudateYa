@@ -574,7 +574,27 @@ module.exports = async function handler(req, res) {
       // modoCotizacion: 'abierto' (primeros 5) | 'dirigido' (cliente elige mudanceros)
       const modo = modoCotizacion || 'abierto';
       const MAX_COT = 5;
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+
+      // Calcular distancia en km con Google Maps Distance Matrix (silencioso si falla)
+      let kmDistancia = null;
+      try {
+        const gmapsKey = process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8';
+        const dmUrl = 'https://maps.googleapis.com/maps/api/distancematrix/json'
+          + '?origins=' + encodeURIComponent(desde)
+          + '&destinations=' + encodeURIComponent(hasta)
+          + '&mode=driving&language=es&region=ar'
+          + '&key=' + gmapsKey;
+        const dmRes = await fetch(dmUrl);
+        const dmData = await dmRes.json();
+        if (dmData && dmData.rows && dmData.rows[0] && dmData.rows[0].elements && dmData.rows[0].elements[0] && dmData.rows[0].elements[0].status === 'OK') {
+          // distance.value viene en metros
+          kmDistancia = Math.round(dmData.rows[0].elements[0].distance.value / 1000);
+        }
+      } catch(e) {
+        console.warn('Distance Matrix falló:', e.message);
+      }
+
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
