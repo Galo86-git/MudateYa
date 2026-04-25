@@ -740,6 +740,9 @@ async function initApp(){
 
   loadPedidos();
   loadPerfil();
+  // Cargar el perfil completo de Redis al inicio para tener precios.porKm disponible
+  // sin importar a qué tab entre el mudancero (necesario para el desglose en cotizar).
+  cargarPreciosLeads();
 }
 
 function showScreen(name){
@@ -1191,8 +1194,18 @@ function usarPrecioSugerido(total) {
   inp.focus();
 }
 
-function abrirCotizacion(mudanza){
+async function abrirCotizacion(mudanza){
   if(!mudanza) return;
+  // Garantizar que el perfil de Redis esté cargado (incluye precios.porKm).
+  // Si no se llamó cargarPreciosLeads() todavía (ej: el mudancero entró directo a Pedidos
+  // sin pasar por Mi Perfil), lo cargamos ahora.
+  if (!mudanceroPerfilRedis) {
+    try {
+      var r = await fetch('/api/actualizar-mudancero?email=' + encodeURIComponent(currentUser.email));
+      var d = await r.json();
+      if (d && d.ok && d.perfil) mudanceroPerfilRedis = d.perfil;
+    } catch(e) { /* silencioso */ }
+  }
   var ps = parseInt(mudanza.precio_estimado||0);
 
   // ── Calcular precios precargados ──
