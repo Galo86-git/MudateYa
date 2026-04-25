@@ -673,10 +673,6 @@ function renderMudanzaCard(m, idx){
             } else {
               return '<span class="meta-tag" style="color:var(--blue);border-color:rgba(26,111,255,.25)">💰 Rango: $'+precios[0].toLocaleString('es-AR')+' — $'+precios[precios.length-1].toLocaleString('es-AR')+'</span>';
             }
-          } else if (m.precio_estimado) {
-            var pe = parseInt(String(m.precio_estimado||0).replace(/\./g,'').replace(/[^0-9]/g,''))||0;
-            var peFmt = '$'+pe.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-            return '<span class="meta-tag">Estimado: '+peFmt+'</span>';
           }
           return '';
         })()
