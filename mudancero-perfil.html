@@ -763,7 +763,7 @@ function confirmarSolicitud() {
       fecha: busqueda.fecha || 'A confirmar',
       tipo: busqueda.tipo || 'mudanza',
       precio_estimado: precioEst,
-      distanciaKm: busqueda.distanciaKm || 0,
+      km: parseInt(busqueda.km) || 0,
       modoCotizacion: 'dirigido',
       mudancerosInvitados: [email],
     })
