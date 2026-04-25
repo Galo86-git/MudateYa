@@ -124,6 +124,7 @@ module.exports = async function handler(req, res) {
         amb3: data.precio3amb || perfil.precios?.amb3 || '',
         amb4: data.precio4amb || perfil.precios?.amb4 || '',
         flete:data.precioFlete|| perfil.precios?.flete|| '',
+        porKm:data.precioPorKm!== undefined ? data.precioPorKm : (perfil.precios?.porKm || ''),
       },
       // Precios para Leads Plan Referidos Inmobiliarios (25% comisión)
       // Estructura: 5 tamaños × 3 packs. Cada nivel guardado como número (0 si vacío).
