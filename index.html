@@ -1663,6 +1663,27 @@
     // ══════════════════════════════════════════
   // MAPA MINI
   // ══════════════════════════════════════════
+  // Calcula km en background usando DirectionsService (sin pintar mapa).
+  // Guarda el valor en _busqueda.km — se manda al backend al publicar.
+  function _calcularKmBusqueda() {
+    if (!window.google || !_busqueda.desde || !_busqueda.hasta) return;
+    try {
+      var ds = new google.maps.DirectionsService();
+      ds.route({
+        origin: _busqueda.desde + ', Argentina',
+        destination: _busqueda.hasta + ', Argentina',
+        travelMode: google.maps.TravelMode.DRIVING
+      }, function(result, status) {
+        if (status === 'OK' && result && result.routes && result.routes[0] && result.routes[0].legs && result.routes[0].legs[0]) {
+          var leg = result.routes[0].legs[0];
+          if (leg.distance && leg.distance.value) {
+            _busqueda.km = Math.round(leg.distance.value / 1000);
+          }
+        }
+      });
+    } catch(e) { /* silencioso */ }
+  }
+
   function initMapaMini() {
     if (!window.google || !_busqueda.desde || !_busqueda.hasta) return;
     var mapDiv = document.getElementById('mapaDiv');
@@ -1679,6 +1700,10 @@
       if (status === 'OK') {
         renderer.setDirections(result);
         var leg = result.routes[0].legs[0];
+        if (leg && leg.distance && leg.distance.value) {
+          // Guardar km redondeados en la búsqueda (se mandan al backend al publicar)
+          _busqueda.km = Math.round(leg.distance.value / 1000);
+        }
         var distEl = document.getElementById('mapaDistancia');
         if (distEl && leg) {
           distEl.textContent = '📍 ' + leg.distance.text;
@@ -1806,6 +1831,9 @@
 
     var fecha = _tipo==='mudanza' ? (_fechaLabel||'A definir') : _fechaFlete;
     _busqueda = { tipo:_tipo, desde, hasta, fecha, ambientes:_amb };
+    // Calcular km en background (Google Maps lado cliente — la API key del frontend SÍ funciona).
+    // Se guarda en _busqueda.km y luego se manda al backend al publicar.
+    _calcularKmBusqueda();
     // Actualizar sticky bar
     document.getElementById('res-desde').textContent = desde.split(',')[0];
     document.getElementById('res-hasta').textContent  = hasta.split(',')[0];
@@ -2257,7 +2285,8 @@
           precio_estimado:_busqueda.tipo==='mudanza' ? (50000+(_busqueda.ambientes-1)*30000) : 20000,
           tipo:_busqueda.tipo, modoCotizacion:modo,
           mudancerosInvitados:modo==='dirigido' ? Array.from(_sel) : [],
-          refAliado: refAliado
+          refAliado: refAliado,
+          km: _busqueda.km || null
         })
       });
     } catch(e) { console.warn(e.message); }
