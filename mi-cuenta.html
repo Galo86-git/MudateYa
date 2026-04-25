@@ -1186,6 +1186,7 @@ async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
 }
 
 async function rechazarPedido(mudanzaId, btn) {
+  if (!confirm('¿Seguro que querés pasar este pedido?\n\nNo vas a poder cotizarlo después y desaparecerá de tu lista.')) return;
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
     await fetch('/api/cotizaciones?action=rechazar', {
