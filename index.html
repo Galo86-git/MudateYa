@@ -447,9 +447,29 @@
     border-bottom:1px solid var(--border);
     overflow-x:auto;-webkit-overflow-scrolling:touch;
     scrollbar-width:none;
-    /* Sticky: se queda fija al scrollear, debajo del nav (56px) + res-search-bar (~44px) */
-    position:sticky;top:100px;z-index:98;
+    /* Sticky pegado al nav. La info de búsqueda (Desde/Hasta/etc) queda arriba y se esconde con el scroll */
+    position:sticky;top:56px;z-index:98;
     box-shadow:0 2px 8px rgba(0,0,0,.04);
+    align-items:center;
+  }
+  .btn-filtros-mobile-pill{
+    flex-shrink:0;
+    display:inline-flex;align-items:center;gap:5px;
+    padding:8px 14px;border-radius:999px;
+    background:#003580;color:#fff;border:1.5px solid #003580;
+    font-size:13px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;
+  }
+  .btn-filtros-mobile-pill:active{transform:scale(.97)}
+  .btn-filtros-mobile-pill .flt-badge3{
+    background:#22C36A;color:#003580;font-size:10px;font-weight:700;
+    padding:1px 5px;border-radius:8px;display:none;
+    min-width:14px;text-align:center;
+  }
+  .btn-filtros-mobile-pill .flt-badge3.show{display:inline-block}
+  .nivel-bar-divider{
+    width:1px;height:22px;background:var(--border);
+    flex-shrink:0;margin:0 2px;
   }
   .nivel-bar-mobile::-webkit-scrollbar{display:none}
   .nivel-pill{
@@ -771,8 +791,11 @@
     .res-body{grid-template-columns:1fr;padding:.8rem 1rem}
     .filtros{display:none}
     .filtros-mobile-bar{display:none!important}
-    .btn-filtros-sticky{display:flex}
+    .btn-filtros-sticky{display:none} /* el botón Filtros ahora vive en .nivel-bar-mobile */
     .btn-filtros-mobile{display:none}
+    /* En mobile, el search bar deja de ser sticky: se esconde al scrollear.
+       Solo queda sticky la barra de niveles (con el botón Filtros adentro). */
+    .res-search-bar{position:static}
   }
   @media(max-width:600px){
     nav{padding:0 1rem}
@@ -1304,6 +1327,12 @@
 
     <!-- ══ BARRA MOBILE: Tipo de mudanza (visible solo en mobile, fuera del drawer) ══ -->
     <div class="nivel-bar-mobile" id="nivelBarMobile">
+      <button class="btn-filtros-mobile-pill" id="btnFiltrosMobilePill" onclick="abrirDrawerFiltros()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        Filtros
+        <span class="flt-badge3" id="fltBadge3">0</span>
+      </button>
+      <div class="nivel-bar-divider"></div>
       <button class="nivel-pill" id="pillNivelEsencial" onclick="setNivelToggle('esencial',null)">
         <span>📦</span> Esencial
       </button>
@@ -2309,6 +2338,8 @@
     if (badge) { badge.textContent = n; badge.classList.toggle('show', n > 0); }
     var badge2 = document.getElementById('fltBadge2');
     if (badge2) { badge2.textContent = n; badge2.classList.toggle('show', n > 0); }
+    var badge3 = document.getElementById('fltBadge3');
+    if (badge3) { badge3.textContent = n; badge3.classList.toggle('show', n > 0); }
   }
   
   // ══════════════════════════════════════════
