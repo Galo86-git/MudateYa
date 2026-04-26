@@ -431,6 +431,54 @@
   .tg-row.is-on.tg-premium .tg-switch{background:#F59E0B}
   .tg-row.is-on.tg-premium{color:#B45309}
 
+  /* ══ Plan Selector (3 niveles) ══ */
+  .plan-selector{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+    max-width:1200px;margin:0 auto 1.5rem;padding:0 1rem;
+  }
+  .plan-card{
+    position:relative;background:#fff;border:2px solid var(--border);
+    border-radius:var(--r3);padding:18px 16px;cursor:pointer;
+    transition:all .25s ease;display:flex;flex-direction:column;
+    min-height:140px;text-align:left;
+  }
+  .plan-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .plan-card.active{border-color:var(--blue);background:var(--blue-light);box-shadow:0 4px 16px rgba(26,111,255,.15)}
+  .plan-card.active.lvl-integral{border-color:var(--green);background:var(--green-light);box-shadow:0 4px 16px rgba(34,195,106,.15)}
+  .plan-card.active.lvl-llave{border-color:#F59E0B;background:#FFFBEB;box-shadow:0 4px 16px rgba(245,158,11,.18)}
+  .plan-icon{font-size:28px;margin-bottom:6px;line-height:1}
+  .plan-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+  .plan-desc{font-size:12px;color:var(--text2);line-height:1.45;flex:1}
+  .plan-multi{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:8px;letter-spacing:.3px}
+  .plan-card.active .plan-multi{color:var(--text2);font-weight:600}
+  .plan-badge-check{
+    position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;
+    background:var(--blue);color:#fff;display:none;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;
+  }
+  .plan-card.active .plan-badge-check{display:flex}
+  .plan-card.active.lvl-integral .plan-badge-check{background:var(--green)}
+  .plan-card.active.lvl-llave .plan-badge-check{background:#F59E0B}
+  @media(max-width:720px){
+    .plan-selector{grid-template-columns:1fr;gap:8px;padding:0 .8rem}
+    .plan-card{min-height:auto;padding:14px;flex-direction:row;align-items:center;gap:12px}
+    .plan-icon{font-size:24px;margin-bottom:0}
+    .plan-name{font-size:14px;margin-bottom:2px}
+    .plan-desc{font-size:11.5px}
+    .plan-multi{margin-top:0;font-size:10px}
+    .plan-card > div:nth-child(2){flex:1}
+  }
+
+  /* Badge de nivel en card mudancero */
+  .mud-nivel-badge{
+    display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;
+    padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.4px;
+    font-family:var(--mono);
+  }
+  .mud-nivel-badge.esencial{background:var(--blue-light);color:var(--blue-dark)}
+  .mud-nivel-badge.integral{background:var(--green-light);color:var(--green-dark)}
+  .mud-nivel-badge.llave{background:#FFFBEB;color:#B45309;border:1px solid #FCD34D}
+
   /* Header resultados */
   .res-header{
     display:flex;align-items:center;justify-content:space-between;
@@ -1129,6 +1177,37 @@
   <!-- RESULTADOS -->
   <section id="resultados">
 
+    <!-- ══ SELECTOR DE PLAN (3 niveles) ══ -->
+    <div class="plan-selector" id="planSelector">
+      <div class="plan-card active" id="planEsencial" data-nivel="esencial" onclick="setNivel('esencial')">
+        <div class="plan-badge-check">✓</div>
+        <div class="plan-icon">📦</div>
+        <div>
+          <div class="plan-name">Esencial</div>
+          <div class="plan-desc">Carga, transporte y descarga. El servicio básico de mudanza.</div>
+          <div class="plan-multi">Precio base</div>
+        </div>
+      </div>
+      <div class="plan-card lvl-integral" id="planIntegral" data-nivel="integral" onclick="setNivel('integral')">
+        <div class="plan-badge-check">✓</div>
+        <div class="plan-icon">🛠️</div>
+        <div>
+          <div class="plan-name">Integral</div>
+          <div class="plan-desc">Incluye embalaje y desembalaje. Te ahorrás el trabajo de empaquetar.</div>
+          <div class="plan-multi">+50% sobre Esencial</div>
+        </div>
+      </div>
+      <div class="plan-card lvl-llave" id="planLlave" data-nivel="llave" onclick="setNivel('llave')">
+        <div class="plan-badge-check">✓</div>
+        <div class="plan-icon">🔑</div>
+        <div>
+          <div class="plan-name">Llave en mano</div>
+          <div class="plan-desc">Servicio premium "Sin estrés". Embalaje, armado, electrodomésticos, todo listo.</div>
+          <div class="plan-multi">+50% sobre Integral</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Sticky search bar en resultados -->
     <div class="res-search-bar" id="resSearchBar">
       <div class="res-search-inner">
@@ -1538,6 +1617,7 @@
   var _todos = [];
   var _sel = new Set();
   var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set(), servicios:new Set() };
+  var _nivel = 'esencial'; // 'esencial' | 'integral' | 'llave'
   var _googleInited = false;
   var _currentUser = null;
   var _pendingPub = null;
@@ -1976,8 +2056,54 @@
     } catch(e) { _todos = []; }
     renderResultados();
   }
+
+  // ══════════════════════════════════════════
+  // NIVELES (Esencial / Integral / Llave en mano)
+  // ══════════════════════════════════════════
+  // Devuelve qué nivel MÁXIMO ofrece un mudancero según sus servicios cargados.
+  // - 'llave'    = tiene marcado sinEstres (toggle premium en su perfil)
+  // - 'integral' = tiene "Embalaje incluido" en su string de servicios
+  // - 'esencial' = todos los demás (todos los mudanceros ofrecen al menos esto)
+  function nivelMaxMudancero(m) {
+    if (m && m.sinEstres === true) return 'llave';
+    var serv = ((m && m.servicios) || '').toLowerCase();
+    if (serv.indexOf('embalaje incluido') !== -1) return 'integral';
+    return 'esencial';
+  }
+  // ¿El mudancero aplica al nivel pedido? (lógica acumulativa)
+  // - Esencial: todos
+  // - Integral: solo los que llegan a integral o llave
+  // - Llave: solo los que tienen llave
+  function aplicaAlNivel(m, nivel) {
+    var max = nivelMaxMudancero(m);
+    if (nivel === 'esencial') return true;
+    if (nivel === 'integral') return (max === 'integral' || max === 'llave');
+    if (nivel === 'llave')    return (max === 'llave');
+    return true;
+  }
+  // Multiplicador de precio según nivel seleccionado por el cliente
+  function multiplicadorNivel(nivel) {
+    if (nivel === 'integral') return 1.5;
+    if (nivel === 'llave')    return 2.25;
+    return 1; // esencial
+  }
+  // Cambiar nivel desde las cards del selector
+  function setNivel(nivel) {
+    _nivel = nivel;
+    // toggle visual de las 3 cards
+    var ids = { esencial:'planEsencial', integral:'planIntegral', llave:'planLlave' };
+    Object.keys(ids).forEach(function(k){
+      var el = document.getElementById(ids[k]);
+      if (!el) return;
+      if (k === nivel) el.classList.add('active'); else el.classList.remove('active');
+    });
+    renderResultados();
+  }
+
   function renderResultados() {
     var lista = _todos.slice();
+    // Filtro por NIVEL seleccionado (Esencial / Integral / Llave en mano)
+    lista = lista.filter(function(m){ return aplicaAlNivel(m, _nivel); });
     // Filtro por nombre/empresa
     var textoBusq = (document.getElementById('buscarNombre') ? document.getElementById('buscarNombre').value : '').toLowerCase().trim();
     if (textoBusq) lista = lista.filter(function(m){
@@ -2038,7 +2164,7 @@
       var sel = _sel.has(m.email);
       var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
       var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
-      var precio = _busqueda.tipo==='flete'
+      var precioBase = _busqueda.tipo==='flete'
         ? pAmt(m.precios.flete)
         : (function(){
             var amb = Math.max(1, _busqueda.ambientes || 2);
@@ -2046,12 +2172,23 @@
             var clave = claves[Math.min(amb,4)-1] || 'amb1';
             return pAmt(m.precios[clave]) || pAmt(m.precios.amb1);
           })();
+      // Aplicar multiplicador según nivel seleccionado (Esencial=1, Integral=1.5, Llave=2.25)
+      var precio = Math.round(precioBase * multiplicadorNivel(_nivel));
       var fotoHtml = (m.foto || m.fotoUrl)
         ? '<img src="'+(m.foto||m.fotoUrl)+'" alt="'+m.nombre+'">'
         : '<div class="mud-foto-ph"><div class="mud-foto-truck">🚛</div><div class="mud-foto-initials">'+initials+'</div></div>';
 
       // Tags compactos (máx 2 para no romper layout vertical)
       var tags = '';
+      // Badge de nivel del mudancero (según servicios cargados en su perfil)
+      var nivelM = nivelMaxMudancero(m);
+      if (nivelM === 'llave') {
+        tags += '<span class="mud-nivel-badge llave">🔑 Llave en mano</span>';
+      } else if (nivelM === 'integral') {
+        tags += '<span class="mud-nivel-badge integral">🛠️ Integral</span>';
+      } else {
+        tags += '<span class="mud-nivel-badge esencial">📦 Esencial</span>';
+      }
       if (m.verificadoIdentidad) tags += '<span class="mud-tag mud-tag-green">✓ Verificado</span>';
       if (m.verificadoVehiculo)  tags += '<span class="mud-tag mud-tag-blue">🚛 '+m.vehiculo+'</span>';
 
