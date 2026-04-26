@@ -2103,6 +2103,19 @@
     }
     sincronizarTogglesNivel();
     renderResultados();
+    // Scrollear al primer resultado para que el usuario vea el cambio
+    // (sino el cambio pasa "abajo" y parece que no hizo nada)
+    setTimeout(function(){
+      var lista = document.getElementById('listaRes');
+      if (!lista) return;
+      var primera = lista.querySelector('.mud-card');
+      var target = primera || lista;
+      // Offset para no quedar pegado al sticky de niveles (nav 56px + barra niveles ~96px en mobile)
+      var esMobile = window.innerWidth <= 900;
+      var offset = esMobile ? 156 : 80;
+      var y = target.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }, 50);
   }
   // Sincronizar visual de los toggles en desktop (slide) y mobile (pills) según _nivel
   function sincronizarTogglesNivel() {
