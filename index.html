@@ -455,9 +455,9 @@
   .btn-filtros-mobile-pill{
     flex-shrink:0;
     display:inline-flex;align-items:center;gap:5px;
-    padding:8px 14px;border-radius:999px;
+    padding:6px 12px;border-radius:999px;
     background:#003580;color:#fff;border:1.5px solid #003580;
-    font-size:13px;font-weight:600;cursor:pointer;
+    font-size:12px;font-weight:600;cursor:pointer;
     font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;
   }
   .btn-filtros-mobile-pill:active{transform:scale(.97)}
@@ -474,10 +474,10 @@
   .nivel-bar-mobile::-webkit-scrollbar{display:none}
   .nivel-pill{
     flex-shrink:0;
-    display:inline-flex;align-items:center;gap:6px;
-    padding:8px 14px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:5px;
+    padding:6px 12px;border-radius:999px;
     background:#fff;border:1.5px solid var(--border);
-    font-size:13px;font-weight:600;color:var(--text2);
+    font-size:12px;font-weight:600;color:var(--text2);
     cursor:pointer;transition:all .2s;white-space:nowrap;
     font-family:'Inter',sans-serif;
   }
@@ -1327,12 +1327,6 @@
 
     <!-- ══ BARRA MOBILE: Tipo de mudanza (visible solo en mobile, fuera del drawer) ══ -->
     <div class="nivel-bar-mobile" id="nivelBarMobile">
-      <button class="btn-filtros-mobile-pill" id="btnFiltrosMobilePill" onclick="abrirDrawerFiltros()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
-        Filtros
-        <span class="flt-badge3" id="fltBadge3">0</span>
-      </button>
-      <div class="nivel-bar-divider"></div>
       <button class="nivel-pill" id="pillNivelEsencial" onclick="setNivelToggle('esencial',null)">
         <span>📦</span> Esencial
       </button>
@@ -1340,7 +1334,13 @@
         <span>🛠️</span> Integral
       </button>
       <button class="nivel-pill nivel-pill-llave is-on" id="pillNivelLlave" onclick="setNivelToggle('llave',null)">
-        <span>🔑</span> Llave en mano <span class="nivel-llave-badge">PREMIUM</span>
+        <span>🔑</span> Llave en mano
+      </button>
+      <div class="nivel-bar-divider"></div>
+      <button class="btn-filtros-mobile-pill" id="btnFiltrosMobilePill" onclick="abrirDrawerFiltros()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        Filtros
+        <span class="flt-badge3" id="fltBadge3">0</span>
       </button>
     </div>
 
