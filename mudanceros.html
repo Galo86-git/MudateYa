@@ -70,6 +70,68 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 .precio-prefix{position:absolute;left:12px;font-size:13px;color:#64748B;font-family:var(--mono)}
 .precio-input{width:140px;padding:9px 12px 9px 26px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:var(--mono);color:#0F1923;background:#fff;outline:none;transition:border-color .2s}
 .precio-input:focus{border-color:var(--emerald)}
+
+/* ══ CARDS DE SERVICIO (Esencial / Integral / Llave en mano / Flete) ══ */
+.svc-card{
+  border:2px solid #E2E8F0;border-radius:14px;
+  margin-bottom:12px;overflow:hidden;
+  transition:all .2s;background:#fff;
+}
+.svc-card.active{border-color:var(--emerald,#16A34A);box-shadow:0 4px 14px rgba(22,163,74,.1)}
+.svc-card.active.is-llave{border-color:#F59E0B;box-shadow:0 4px 14px rgba(245,158,11,.18)}
+.svc-card-head{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;cursor:pointer;
+}
+.svc-card-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.svc-card-info{flex:1;min-width:0}
+.svc-card-title{font-weight:700;color:#0F1923;font-size:14px;line-height:1.3}
+.svc-card-desc{font-size:12px;color:#475569;margin-top:3px;line-height:1.4}
+.svc-card-check{
+  width:22px;height:22px;border-radius:50%;border:2px solid #E2E8F0;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.svc-card.active .svc-card-check{
+  background:var(--emerald,#16A34A);border-color:var(--emerald,#16A34A);
+}
+.svc-card.active.is-llave .svc-card-check{background:#F59E0B;border-color:#F59E0B}
+.svc-card.active .svc-card-check::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
+.svc-card-precios{
+  display:none;
+  padding:0 16px 16px;
+  display:flex;flex-direction:column;gap:8px;
+  border-top:1px solid #F1F5F9;
+}
+.svc-card:not(.active) .svc-card-precios{display:none}
+.svc-card.precios-error{border-color:#DC2626;animation:shake .3s}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  75%{transform:translateX(4px)}
+}
+
+/* ══ Adicional: Seguro de mudanza ══ */
+.svc-extra{
+  margin-top:8px;padding:12px 14px;
+  background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;
+}
+.svc-extra-label{
+  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+}
+.svc-extra-check{
+  width:20px;height:20px;border-radius:5px;border:2px solid #CBD5E1;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;margin-top:1px;
+}
+.svc-extra.active .svc-extra-check{background:#1A6FFF;border-color:#1A6FFF}
+.svc-extra.active .svc-extra-check::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+.svc-extra-title{font-size:13px;font-weight:600;color:#0F1923}
+.svc-extra-desc{font-size:12px;color:#64748B;margin-top:2px;line-height:1.4}
 .upload-area{border:2px dashed #CBD5E1;border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:#F5F7FA;}
 .upload-area:hover{border-color:var(--emerald);background:var(--emerald-subtle)}
 .upload-area.has-file{border-color:var(--emerald);background:rgba(34,195,106,.06)}
@@ -295,33 +357,91 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       </div>
     </div>
 
-    <!-- ── SECCIÓN 4: SERVICIOS ── -->
+    <!-- ── SECCIÓN 4: SERVICIOS Y PRECIOS ── -->
     <div class="form-section">
-      <div class="section-title">Servicios que ofrecés</div>
-      <div class="section-sub">Seleccioná todos los que apliquen</div>
+      <div class="section-title">Servicios y precios</div>
+      <div class="section-sub">Activá los servicios que ofrecés y cargá los precios base. Si activás un servicio, los precios son obligatorios.</div>
 
-      <div id="sinEstresBox" style="border:2px solid #E2E8F0;border-radius:14px;padding:16px;margin-bottom:16px;cursor:pointer;transition:all .2s" onclick="toggleSinEstres()">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✨</div>
-          <div style="flex:1">
-            <div style="font-weight:700;color:#0F1923;font-size:14px">Ofrezco servicio "Sin estrés" (premium)</div>
-            <div style="font-size:12px;color:#475569;margin-top:2px">Embalaje, desembalaje, armado de muebles, electrodomésticos, cortinas, cuadros — entregás la llave y el cliente entra a una casa impecable.</div>
+      <!-- Card 1: Esencial -->
+      <div class="svc-card" id="svcEsencial">
+        <div class="svc-card-head" onclick="toggleSvc('esencial')">
+          <div class="svc-card-icon" style="background:#EEF4FF;color:#1A6FFF">📦</div>
+          <div class="svc-card-info">
+            <div class="svc-card-title">Mudanza Esencial</div>
+            <div class="svc-card-desc">Carga, transporte y descarga. El servicio básico de mudanza.</div>
           </div>
-          <div id="sinEstresCheck" style="width:22px;height:22px;border-radius:50%;border:2px solid #E2E8F0;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s"></div>
+          <div class="svc-card-check" id="svcEsencialCheck"></div>
+        </div>
+        <div class="svc-card-precios" id="svcEsencialPrecios">
+          <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p1" placeholder="700.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p2" placeholder="800.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p3" placeholder="900.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p4" placeholder="1.100.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
         </div>
       </div>
 
-      <div class="chips-grid" id="chips-servicios">
-        <div class="chip sel" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Mudanzas completas</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🏢</span>Mudanzas de oficina</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🚚</span>Fletes y envíos</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Embalaje incluido</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🔧</span>Desmontaje y montaje</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🏗️</span>Sube / escalera</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🛡️</span>Seguro de mudanza</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">🧹</span>Limpieza post-mudanza</div>
-        <div class="chip" onclick="toggleChip(this,'servicios')"><span class="chip-icon">📦</span>Guardamuebles</div>
+      <!-- Card 2: Integral -->
+      <div class="svc-card" id="svcIntegral">
+        <div class="svc-card-head" onclick="toggleSvc('integral')">
+          <div class="svc-card-icon" style="background:#ECFDF3;color:#16A34A">🛠️</div>
+          <div class="svc-card-info">
+            <div class="svc-card-title">Mudanza Integral</div>
+            <div class="svc-card-desc">Incluye embalaje y desembalaje. El cliente no toca cajas.</div>
+          </div>
+          <div class="svc-card-check" id="svcIntegralCheck"></div>
+        </div>
+        <div class="svc-card-precios" id="svcIntegralPrecios">
+          <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p1" placeholder="1.050.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p2" placeholder="1.200.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p3" placeholder="1.350.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p4" placeholder="1.650.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        </div>
       </div>
+
+      <!-- Card 3: Llave en mano -->
+      <div class="svc-card" id="svcLlave">
+        <div class="svc-card-head" onclick="toggleSvc('llave')">
+          <div class="svc-card-icon" style="background:#FFFBEB;color:#B45309">🔑</div>
+          <div class="svc-card-info">
+            <div class="svc-card-title">Llave en mano <span style="display:inline-block;font-size:9px;font-weight:700;background:#F59E0B;color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:.5px;font-family:var(--mono)">PREMIUM</span></div>
+            <div class="svc-card-desc">Servicio "Sin estrés": embalaje, desembalaje, armado de muebles, electrodomésticos, cortinas, cuadros — el cliente entra a una casa impecable.</div>
+          </div>
+          <div class="svc-card-check" id="svcLlaveCheck"></div>
+        </div>
+        <div class="svc-card-precios" id="svcLlavePrecios">
+          <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p1" placeholder="1.575.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p2" placeholder="1.800.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p3" placeholder="2.025.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+          <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p4" placeholder="2.475.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        </div>
+      </div>
+
+      <!-- Card 4: Flete -->
+      <div class="svc-card" id="svcFlete">
+        <div class="svc-card-head" onclick="toggleSvc('flete')">
+          <div class="svc-card-icon" style="background:#F1F5F9;color:#475569">🚚</div>
+          <div class="svc-card-info">
+            <div class="svc-card-title">Flete / Envío chico</div>
+            <div class="svc-card-desc">Envío de objetos puntuales (heladera, cama, escritorio, etc). No es una mudanza completa.</div>
+          </div>
+          <div class="svc-card-check" id="svcFleteCheck"></div>
+        </div>
+        <div class="svc-card-precios" id="svcFletePrecios">
+          <div class="precio-row"><span class="precio-label">Precio base flete</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="flt-p" placeholder="180.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
+        </div>
+      </div>
+
+      <!-- Adicional: Seguro de mudanza -->
+      <div class="svc-extra">
+        <label class="svc-extra-label" onclick="toggleSeguro(event)">
+          <div class="svc-extra-check" id="svcSeguroCheck"></div>
+          <div>
+            <div class="svc-extra-title">🛡️ Ofrezco seguro de mudanza</div>
+            <div class="svc-extra-desc">El cliente queda cubierto ante daños o pérdidas durante el traslado.</div>
+          </div>
+        </label>
+      </div>
+
     </div>
 
     <!-- ── SECCIÓN 5: DISPONIBILIDAD ── -->
@@ -357,19 +477,6 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
             <option>Mismo día</option><option>24 horas</option><option selected>48 horas</option><option>1 semana</option>
           </select>
         </div>
-      </div>
-    </div>
-
-    <!-- ── SECCIÓN 6: PRECIOS ── -->
-    <div class="form-section">
-      <div class="section-title">Precios base</div>
-      <div class="section-sub">Precios orientativos en ARS — podés ajustarlos por cotización</div>
-      <div class="field-grid" style="gap:8px">
-        <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p1" placeholder="700.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p2" placeholder="800.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p3" placeholder="900.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="p4" placeholder="1.100.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        <div class="precio-row"><span class="precio-label">Flete / envío chico</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="pflete" placeholder="180.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
       </div>
     </div>
 
@@ -499,7 +606,10 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 <script>
 // ── ESTADO GLOBAL ────────────────────────────────────────────────
 var dniData      = { frente: null, dorso: null, analisis: null, ok: false };
-var _sinEstres   = false;
+var _sinEstres   = false; // mantenido por compat — se sincroniza desde _svc.llave
+// Estado de servicios y seguro (nuevo modelo)
+var _svc = { esencial:false, integral:false, llave:false, flete:false };
+var _seguro = false;
 // URLs de Blob — se llenan al seleccionar cada foto
 var _urlPerfil   = '';
 var _urlsVehiculo = []; // array de URLs de las fotos del vehículo
@@ -648,25 +758,81 @@ function onFotosVehiculo(input) {
   input.value = '';
 }
 
-// ── SIN ESTRÉS ───────────────────────────────────────────────────
-function toggleSinEstres() {
-  _sinEstres = !_sinEstres;
-  var box   = document.getElementById('sinEstresBox');
-  var check = document.getElementById('sinEstresCheck');
-  if (_sinEstres) {
-    box.style.borderColor = '#F59E0B';
-    box.style.background  = '#FFFBEB';
-    check.style.background   = '#F59E0B';
-    check.style.borderColor  = '#F59E0B';
-    check.innerHTML = '<span style="color:#fff;font-size:13px;font-weight:700">✓</span>';
+// ── SERVICIOS (4 cards: Esencial / Integral / Llave en mano / Flete) ─────
+function toggleSvc(key) {
+  _svc[key] = !_svc[key];
+  var ids = { esencial:'svcEsencial', integral:'svcIntegral', llave:'svcLlave', flete:'svcFlete' };
+  var card = document.getElementById(ids[key]);
+  if (!card) return;
+  if (_svc[key]) {
+    card.classList.add('active');
+    if (key === 'llave') card.classList.add('is-llave');
   } else {
-    box.style.borderColor = '#E2E8F0';
-    box.style.background  = '';
-    check.style.background  = '';
-    check.style.borderColor = '#E2E8F0';
-    check.innerHTML = '';
+    card.classList.remove('active');
+    if (key === 'llave') card.classList.remove('is-llave');
+    // limpiar precios al desactivar para evitar guardar valores fantasma
+    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
+    if (key === 'flete') {
+      var f = document.getElementById('flt-p'); if (f) f.value = '';
+    } else {
+      ['p1','p2','p3','p4'].forEach(function(n){
+        var el = document.getElementById(prefix+'-'+n); if (el) el.value = '';
+      });
+    }
+    card.classList.remove('precios-error');
   }
+  // Sincronizar _sinEstres con la card de Llave en mano (compat con código viejo)
+  _sinEstres = _svc.llave;
 }
+
+// Validar que las cards activadas tengan al menos un precio cargado
+function validarServiciosPrecios() {
+  var errores = [];
+  Object.keys(_svc).forEach(function(key){
+    if (!_svc[key]) return;
+    var ids = { esencial:'svcEsencial', integral:'svcIntegral', llave:'svcLlave', flete:'svcFlete' };
+    var card = document.getElementById(ids[key]);
+    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
+    var nombre = { esencial:'Esencial', integral:'Integral', llave:'Llave en mano', flete:'Flete' }[key];
+    var hayPrecio = false;
+    if (key === 'flete') {
+      var f = document.getElementById('flt-p');
+      hayPrecio = !!(f && f.value.replace(/\./g,'').trim());
+    } else {
+      ['p1','p2','p3','p4'].forEach(function(n){
+        var el = document.getElementById(prefix+'-'+n);
+        if (el && el.value.replace(/\./g,'').trim()) hayPrecio = true;
+      });
+    }
+    if (card) card.classList.remove('precios-error');
+    if (!hayPrecio) {
+      errores.push(nombre);
+      if (card) card.classList.add('precios-error');
+    }
+  });
+  return errores;
+}
+
+function toggleSeguro(e) {
+  if (e) e.preventDefault();
+  _seguro = !_seguro;
+  var box = document.querySelector('.svc-extra');
+  if (!box) return;
+  if (_seguro) box.classList.add('active'); else box.classList.remove('active');
+}
+
+// Helper: leer precios de una card como objeto {amb1,amb2,amb3,amb4}
+function leerPreciosCard(prefix) {
+  return {
+    amb1: document.getElementById(prefix+'-p1') ? document.getElementById(prefix+'-p1').value.replace(/\./g,'') : '',
+    amb2: document.getElementById(prefix+'-p2') ? document.getElementById(prefix+'-p2').value.replace(/\./g,'') : '',
+    amb3: document.getElementById(prefix+'-p3') ? document.getElementById(prefix+'-p3').value.replace(/\./g,'') : '',
+    amb4: document.getElementById(prefix+'-p4') ? document.getElementById(prefix+'-p4').value.replace(/\./g,'') : ''
+  };
+}
+
+// Compat: función antigua queda como alias para no romper llamadas externas
+function toggleSinEstres() { toggleSvc('llave'); }
 
 // ── CUIL FORMATO ─────────────────────────────────────────────────
 function formatCUIL(input) {
@@ -739,6 +905,23 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
     return;
   }
 
+  // Validar que haya al menos un servicio activo
+  var servActivos = Object.keys(_svc).filter(function(k){ return _svc[k]; });
+  if (servActivos.length === 0) {
+    alert('Tenés que activar al menos un servicio (Esencial, Integral, Llave en mano o Flete).');
+    var firstSvc = document.getElementById('svcEsencial');
+    if (firstSvc) firstSvc.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  // Validar precios cargados en cada servicio activado
+  var erroresPrecios = validarServiciosPrecios();
+  if (erroresPrecios.length > 0) {
+    alert('Cargá al menos un precio en: ' + erroresPrecios.join(', '));
+    var firstErrSvc = document.querySelector('.svc-card.precios-error');
+    if (firstErrSvc) firstErrSvc.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
   // DNI frente requerido
   if (!dniData.frente) { flashUpload('uploadDniFrente'); return; }
   if (!_urlDniFrente) {
@@ -772,17 +955,33 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
     vehiculo:      vehiculo,
     cantVehiculos: document.getElementById('cantVehiculos').value,
     equipo:        document.getElementById('equipo').value,
-    servicios:     getChips('chips-servicios').join(', '),
+    // Servicios activados (nuevo modelo): array con los niveles que ofrece
+    serviciosActivos: Object.keys(_svc).filter(function(k){ return _svc[k]; }),
+    seguroMudanza: _seguro,
+    // Compat: campo "servicios" como string para no romper consumidores viejos
+    servicios:     (function(){
+      var s = [];
+      if (_svc.integral) s.push('Embalaje incluido');
+      if (_svc.flete) s.push('Flete');
+      if (_seguro) s.push('Seguro de mudanza');
+      return s.join(', ');
+    })(),
     dias:          getChips('chips-dias').join(', '),
     horarios:      getChips('chips-horarios').join(', '),
     anticipacion:  document.getElementById('anticipacion').value,
-    precio1amb:    document.getElementById('p1').value.replace(/\./g, '')     || '',
-    precio2amb:    document.getElementById('p2').value.replace(/\./g, '')     || '',
-    precio3amb:    document.getElementById('p3').value.replace(/\./g, '')     || '',
-    precio4amb:    document.getElementById('p4').value.replace(/\./g, '')     || '',
-    precioFlete:   document.getElementById('pflete').value.replace(/\./g, '') || '',
+    // Precios por nivel (nuevo modelo)
+    preciosEsencial: _svc.esencial ? leerPreciosCard('esc') : null,
+    preciosIntegral: _svc.integral ? leerPreciosCard('int') : null,
+    preciosLlave:    _svc.llave    ? leerPreciosCard('llv') : null,
+    precioFleteNuevo: _svc.flete   ? (document.getElementById('flt-p').value.replace(/\./g,'') || '') : '',
+    // Compat con el modelo viejo: usamos los precios de Esencial como fallback genérico
+    precio1amb:    _svc.esencial ? (document.getElementById('esc-p1').value.replace(/\./g,'') || '') : '',
+    precio2amb:    _svc.esencial ? (document.getElementById('esc-p2').value.replace(/\./g,'') || '') : '',
+    precio3amb:    _svc.esencial ? (document.getElementById('esc-p3').value.replace(/\./g,'') || '') : '',
+    precio4amb:    _svc.esencial ? (document.getElementById('esc-p4').value.replace(/\./g,'') || '') : '',
+    precioFlete:   _svc.flete    ? (document.getElementById('flt-p').value.replace(/\./g,'')  || '') : '',
     extra:         document.getElementById('extra').value.trim(),
-    sinEstres:     _sinEstres,
+    sinEstres:     _svc.llave, // sincronizado con la card de Llave en mano
     // Fotos — solo URLs de Blob, sin base64
     foto:          _urlPerfil,
     fotoCamion:    urlsVehiculoOk[0]    || '',
