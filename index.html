@@ -456,7 +456,7 @@
     scrollbar-width:none;
   }
   .nivel-bar-row::-webkit-scrollbar{display:none}
-  .nivel-bar-row-filtros{justify-content:center;overflow:visible}
+  .nivel-bar-row-filtros{justify-content:flex-start;overflow:visible;padding-left:2px}
   .btn-filtros-mobile-pill{
     flex-shrink:0;
     display:inline-flex;align-items:center;gap:5px;
@@ -823,7 +823,7 @@
     .btn-cr{width:100%}
     /* Cards de mudancero estilo Mercado Libre en mobile (compactas, casi 4 por pantalla) */
     .mud-card{border-radius:8px}
-    .mud-card-foto{aspect-ratio:1/1} /* foto cuadrada, no 4:3 */
+    .mud-card-foto{aspect-ratio:16/10} /* foto baja, formato apaisado */
     .mud-card-body{padding:8px 8px 0;gap:3px}
     .mud-card-empresa{
       font-size:12.5px;line-height:1.2;font-weight:600;
