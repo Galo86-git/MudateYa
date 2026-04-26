@@ -431,6 +431,10 @@
   .tg-row.is-on.tg-premium .tg-switch{background:#F59E0B}
   .tg-row.is-on.tg-premium{color:#B45309}
 
+  /* Toggles tipo de mudanza (Llave en mano destacado en amarillo cuando activo) */
+  .tg-row.is-on.tg-nivel-llave .tg-switch{background:#F59E0B}
+  .tg-row.is-on.tg-nivel-llave{color:#B45309;font-weight:600}
+
   /* Badge de nivel en card mudancero */
   .mud-nivel-badge{
     display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;
@@ -1188,14 +1192,24 @@
         <button class="drawer-close" onclick="cerrarDrawerFiltros()">✕</button>
       </div>
       <div class="drawer-body">
-        <!-- Tipo de mudanza (3 niveles) -->
+        <!-- Tipo de mudanza (3 niveles, toggles slide) -->
         <div class="drawer-section">
           <div class="drawer-section-h">Tipo de mudanza</div>
-          <div class="drawer-opts">
-            <label class="drawer-opt"><input type="radio" name="nivelDrawer" id="nivelDrawerEsencial" checked onchange="setNivel('esencial');actualizarBadge()"/> 📦 Esencial <span style="color:var(--text3);font-size:11px;font-weight:400">· precio base</span></label>
-            <label class="drawer-opt"><input type="radio" name="nivelDrawer" id="nivelDrawerIntegral" onchange="setNivel('integral');actualizarBadge()"/> 🛠️ Integral <span style="color:var(--text3);font-size:11px;font-weight:400">· +50%</span></label>
-            <label class="drawer-opt"><input type="radio" name="nivelDrawer" id="nivelDrawerLlave" onchange="setNivel('llave');actualizarBadge()"/> 🔑 Llave en mano <span style="color:var(--text3);font-size:11px;font-weight:400">· +125%</span></label>
-          </div>
+          <label class="tg-row tg-nivel" id="tgNivelDrawerEsencial" onclick="_tgClick(event,this)">
+            <span class="tg-lbl">📦 Esencial</span>
+            <span class="tg-switch"></span>
+            <input type="checkbox" data-nivel="esencial" onchange="setNivelToggle('esencial',this);actualizarBadge()"/>
+          </label>
+          <label class="tg-row tg-nivel" id="tgNivelDrawerIntegral" onclick="_tgClick(event,this)">
+            <span class="tg-lbl">🛠️ Integral</span>
+            <span class="tg-switch"></span>
+            <input type="checkbox" data-nivel="integral" onchange="setNivelToggle('integral',this);actualizarBadge()"/>
+          </label>
+          <label class="tg-row tg-nivel tg-nivel-llave" id="tgNivelDrawerLlave" onclick="_tgClick(event,this)">
+            <span class="tg-lbl">🔑 Llave en mano</span>
+            <span class="tg-switch"></span>
+            <input type="checkbox" data-nivel="llave" onchange="setNivelToggle('llave',this);actualizarBadge()"/>
+          </label>
         </div>
         <!-- Ordenar -->
         <div class="drawer-section">
@@ -1205,30 +1219,6 @@
             <label class="drawer-opt"><input type="radio" name="ordenDrawer" onchange="setOrden('precio');actualizarBadge()"/> Menor precio</label>
             <label class="drawer-opt"><input type="radio" name="ordenDrawer" onchange="setOrden('trab');actualizarBadge()"/> Más trabajos</label>
           </div>
-        </div>
-        <!-- Servicios (toggles iOS) -->
-        <div class="drawer-section">
-          <div class="drawer-section-h">Servicios</div>
-          <label class="tg-row tg-guardamuebles" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">🏭 Guardamuebles</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" id="dFiltGuarda" onchange="toggleFServicio('Guardamuebles',this);actualizarBadge()"/>
-          </label>
-          <label class="tg-row tg-premium" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">⭐ Mudanza premium</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" id="dFiltPremium" onchange="toggleFServicio('premium',this);actualizarBadge()"/>
-          </label>
-          <label class="tg-row" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">📦 Embalaje incluido</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" onchange="toggleFServicio('Embalaje incluido',this);actualizarBadge()"/>
-          </label>
-          <label class="tg-row" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">🔧 Desmontaje y montaje</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" onchange="toggleFServicio('Desmontaje y montaje',this);actualizarBadge()"/>
-          </label>
         </div>
         <!-- Verificaciones -->
         <div class="drawer-section">
@@ -1293,42 +1283,30 @@
           <div class="mapa-mini-btn" onclick="verMapa()">Ver en mapa</div>
         </div>
         <div id="mapaDistancia" style="display:none;font-size:12px;color:#475569;font-family:var(--mono);padding:6px 8px;background:#F5F7FA;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;text-align:center"></div>
-        <!-- Tipo de mudanza (3 niveles) -->
+        <!-- Tipo de mudanza (3 niveles, toggles slide) -->
         <div class="filtro-section">
           <div class="filtro-h">Tipo de mudanza</div>
-          <div class="filtro-opt"><label><input type="radio" name="nivel" id="nivelEsencial" checked onchange="setNivel('esencial')"/> 📦 Esencial <span style="color:var(--text3);font-size:11px;font-weight:400">· precio base</span></label></div>
-          <div class="filtro-opt"><label><input type="radio" name="nivel" id="nivelIntegral" onchange="setNivel('integral')"/> 🛠️ Integral <span style="color:var(--text3);font-size:11px;font-weight:400">· +50%</span></label></div>
-          <div class="filtro-opt"><label><input type="radio" name="nivel" id="nivelLlave" onchange="setNivel('llave')"/> 🔑 Llave en mano <span style="color:var(--text3);font-size:11px;font-weight:400">· +125%</span></label></div>
+          <label class="tg-row tg-nivel" id="tgNivelEsencial" onclick="_tgClick(event,this)">
+            <span class="tg-lbl">📦 Esencial</span>
+            <span class="tg-switch"></span>
+            <input type="checkbox" data-nivel="esencial" onchange="setNivelToggle('esencial',this)"/>
+          </label>
+          <label class="tg-row tg-nivel" id="tgNivelIntegral" onclick="_tgClick(event,this)">
+            <span class="tg-lbl">🛠️ Integral</span>
+            <span class="tg-switch"></span>
+            <input type="checkbox" data-nivel="integral" onchange="setNivelToggle('integral',this)"/>
+          </label>
+          <label class="tg-row tg-nivel tg-nivel-llave" id="tgNivelLlave" onclick="_tgClick(event,this)">
+            <span class="tg-lbl">🔑 Llave en mano</span>
+            <span class="tg-switch"></span>
+            <input type="checkbox" data-nivel="llave" onchange="setNivelToggle('llave',this)"/>
+          </label>
         </div>
         <div class="filtro-section">
           <div class="filtro-h">Ordenar por</div>
           <div class="filtro-opt"><label><input type="radio" name="orden" checked onchange="setOrden('cal')"/> Mejor calificación</label></div>
           <div class="filtro-opt"><label><input type="radio" name="orden" onchange="setOrden('precio')"/> Menor precio</label></div>
           <div class="filtro-opt"><label><input type="radio" name="orden" onchange="setOrden('trab')"/> Más trabajos</label></div>
-        </div>
-        <!-- Servicios (toggles iOS) -->
-        <div class="filtro-section">
-          <div class="filtro-h">Servicios</div>
-          <label class="tg-row tg-guardamuebles" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">🏭 Guardamuebles</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" onchange="toggleFServicio('Guardamuebles',this)"/>
-          </label>
-          <label class="tg-row tg-premium" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">⭐ Mudanza premium</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" onchange="toggleFServicio('premium',this)"/>
-          </label>
-          <label class="tg-row" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">📦 Embalaje incluido</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" onchange="toggleFServicio('Embalaje incluido',this)"/>
-          </label>
-          <label class="tg-row" onclick="_tgClick(event,this)">
-            <span class="tg-lbl">🔧 Desmontaje y montaje</span>
-            <span class="tg-switch"></span>
-            <input type="checkbox" onchange="toggleFServicio('Desmontaje y montaje',this)"/>
-          </label>
         </div>
         <div class="filtro-section">
           <div class="filtro-h">Verificaciones</div>
@@ -2034,17 +2012,40 @@
     if (nivel === 'llave')    return 2.25;
     return 1; // esencial
   }
-  // Cambiar nivel desde el filtro lateral o el drawer mobile
+  // Cambiar nivel desde toggles slide (se comportan como radio: solo uno activo a la vez)
+  // Si el usuario apaga el toggle activo, vuelve a "esencial" por defecto.
+  function setNivelToggle(nivel, inputEl) {
+    var seEncendio = inputEl ? inputEl.checked : true;
+    if (!seEncendio) {
+      // Si apagaron el toggle activo, volvemos al default
+      _nivel = 'esencial';
+    } else {
+      _nivel = nivel;
+    }
+    sincronizarTogglesNivel();
+    renderResultados();
+  }
+  // Sincronizar visual de los toggles en desktop y mobile según _nivel
+  function sincronizarTogglesNivel() {
+    var sets = [
+      { esencial:'tgNivelEsencial',       integral:'tgNivelIntegral',       llave:'tgNivelLlave' },
+      { esencial:'tgNivelDrawerEsencial', integral:'tgNivelDrawerIntegral', llave:'tgNivelDrawerLlave' }
+    ];
+    sets.forEach(function(set){
+      Object.keys(set).forEach(function(k){
+        var row = document.getElementById(set[k]);
+        if (!row) return;
+        var inp = row.querySelector('input[type="checkbox"]');
+        var on  = (k === _nivel);
+        if (inp) inp.checked = on;
+        if (on) row.classList.add('is-on'); else row.classList.remove('is-on');
+      });
+    });
+  }
+  // Alias para compatibilidad si algún otro lugar llama a setNivel viejo
   function setNivel(nivel) {
     _nivel = nivel;
-    // Sincronizar radios del panel lateral (desktop)
-    var idsDesk = { esencial:'nivelEsencial', integral:'nivelIntegral', llave:'nivelLlave' };
-    var rDesk = document.getElementById(idsDesk[nivel]);
-    if (rDesk) rDesk.checked = true;
-    // Sincronizar radios del drawer (mobile)
-    var idsDrw = { esencial:'nivelDrawerEsencial', integral:'nivelDrawerIntegral', llave:'nivelDrawerLlave' };
-    var rDrw = document.getElementById(idsDrw[nivel]);
-    if (rDrw) rDrw.checked = true;
+    sincronizarTogglesNivel();
     renderResultados();
   }
 
