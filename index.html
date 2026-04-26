@@ -2086,32 +2086,57 @@
   // ══════════════════════════════════════════
   // NIVELES (Esencial / Integral / Llave en mano)
   // ══════════════════════════════════════════
-  // Devuelve qué nivel MÁXIMO ofrece un mudancero según sus servicios cargados.
-  // - 'llave'    = tiene marcado sinEstres (toggle premium en su perfil)
-  // - 'integral' = tiene "Embalaje incluido" en su string de servicios
-  // - 'esencial' = todos los demás (todos los mudanceros ofrecen al menos esto)
+  // Nuevo modelo: el mudancero declara explícitamente qué servicios ofrece
+  // a través del array `serviciosActivos` en su perfil (cargado desde mudanceros.html).
+  // Mantenemos compat con el modelo viejo (sinEstres / "Embalaje incluido" en servicios).
+  function ofreceNivel(m, nivel) {
+    if (!m) return false;
+    // Modelo nuevo: array serviciosActivos
+    if (Array.isArray(m.serviciosActivos)) {
+      return m.serviciosActivos.indexOf(nivel) !== -1;
+    }
+    // Compat con datos viejos
+    if (nivel === 'llave')    return m.sinEstres === true;
+    if (nivel === 'integral') return ((m.servicios||'').toLowerCase().indexOf('embalaje incluido') !== -1);
+    if (nivel === 'esencial') return true; // por default todos ofrecen esencial en el modelo viejo
+    return false;
+  }
+  // ¿El mudancero aplica al filtro seleccionado por el cliente?
+  // En el nuevo modelo: aparece SOLO si tiene ese servicio activado (no es acumulativo).
+  function aplicaAlNivel(m, nivel) {
+    return ofreceNivel(m, nivel);
+  }
+  // Helper compat: nivel "máximo" que ofrece el mudancero (para el badge de la card).
+  // Llave > Integral > Esencial.
   function nivelMaxMudancero(m) {
-    if (m && m.sinEstres === true) return 'llave';
-    var serv = ((m && m.servicios) || '').toLowerCase();
-    if (serv.indexOf('embalaje incluido') !== -1) return 'integral';
+    if (ofreceNivel(m, 'llave'))    return 'llave';
+    if (ofreceNivel(m, 'integral')) return 'integral';
+    if (ofreceNivel(m, 'esencial')) return 'esencial';
     return 'esencial';
   }
-  // ¿El mudancero aplica al nivel pedido? (lógica acumulativa)
-  // - Esencial: todos
-  // - Integral: solo los que llegan a integral o llave
-  // - Llave: solo los que tienen llave
-  function aplicaAlNivel(m, nivel) {
-    var max = nivelMaxMudancero(m);
-    if (nivel === 'esencial') return true;
-    if (nivel === 'integral') return (max === 'integral' || max === 'llave');
-    if (nivel === 'llave')    return (max === 'llave');
-    return true;
+  // Devuelve el precio base del mudancero para el nivel y los ambientes pedidos.
+  // En el nuevo modelo lee directamente de m.preciosEsencial / preciosIntegral / preciosLlave.
+  // En el modelo viejo aplica el multiplicador histórico (×1, ×1.5, ×2.25) sobre m.precios.amb*.
+  function precioMudanceroNivel(m, nivel, ambientes) {
+    var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
+    var amb = Math.max(1, ambientes || 2);
+    var clave = ['amb1','amb2','amb3','amb4'][Math.min(amb,4)-1] || 'amb1';
+    // Nuevo modelo: precios cargados por nivel
+    var mapa = { esencial:'preciosEsencial', integral:'preciosIntegral', llave:'preciosLlave' };
+    if (m && m[mapa[nivel]]) {
+      var p = pAmt(m[mapa[nivel]][clave]) || pAmt(m[mapa[nivel]].amb1);
+      if (p > 0) return p;
+    }
+    // Compat con datos viejos: aplica multiplicador
+    var multi = (nivel === 'integral') ? 1.5 : (nivel === 'llave' ? 2.25 : 1);
+    var base = pAmt(m && m.precios && m.precios[clave]) || pAmt(m && m.precios && m.precios.amb1);
+    return Math.round(base * multi);
   }
-  // Multiplicador de precio según nivel seleccionado por el cliente
+  // Compat: la función vieja se mantiene por si algún código la usa
   function multiplicadorNivel(nivel) {
     if (nivel === 'integral') return 1.5;
     if (nivel === 'llave')    return 2.25;
-    return 1; // esencial
+    return 1;
   }
   // Cambiar nivel desde toggles slide (se comportan como radio: solo uno activo a la vez)
   // Si el usuario apaga el toggle activo, vuelve a "esencial" por defecto.
@@ -2230,16 +2255,15 @@
       var sel = _sel.has(m.email);
       var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
       var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
-      var precioBase = _busqueda.tipo==='flete'
-        ? pAmt(m.precios.flete)
-        : (function(){
-            var amb = Math.max(1, _busqueda.ambientes || 2);
-            var claves = ['amb1','amb2','amb3','amb4'];
-            var clave = claves[Math.min(amb,4)-1] || 'amb1';
-            return pAmt(m.precios[clave]) || pAmt(m.precios.amb1);
-          })();
-      // Aplicar multiplicador según nivel seleccionado (Esencial=1, Integral=1.5, Llave=2.25)
-      var precio = Math.round(precioBase * multiplicadorNivel(_nivel));
+      // Cálculo de precio según el tipo de búsqueda y nivel seleccionado.
+      // Si es búsqueda de flete usamos el precio de flete; si es mudanza usamos el helper
+      // precioMudanceroNivel() que lee preciosEsencial/Integral/Llave directamente del perfil.
+      var precio;
+      if (_busqueda.tipo === 'flete') {
+        precio = pAmt(m.precioFleteNuevo) || pAmt(m.precios && m.precios.flete);
+      } else {
+        precio = precioMudanceroNivel(m, _nivel, _busqueda.ambientes);
+      }
       var fotoHtml = (m.foto || m.fotoUrl)
         ? '<img src="'+(m.foto||m.fotoUrl)+'" alt="'+m.nombre+'">'
         : '<div class="mud-foto-ph"><div class="mud-foto-truck">🚛</div><div class="mud-foto-initials">'+initials+'</div></div>';
