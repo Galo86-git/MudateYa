@@ -1294,13 +1294,13 @@
 
     <!-- ══ BARRA MOBILE: Tipo de mudanza (visible solo en mobile, fuera del drawer) ══ -->
     <div class="nivel-bar-mobile" id="nivelBarMobile">
-      <button class="nivel-pill is-on" id="pillNivelEsencial" onclick="setNivelToggle('esencial',null)">
+      <button class="nivel-pill" id="pillNivelEsencial" onclick="setNivelToggle('esencial',null)">
         <span>📦</span> Esencial
       </button>
       <button class="nivel-pill" id="pillNivelIntegral" onclick="setNivelToggle('integral',null)">
         <span>🛠️</span> Integral
       </button>
-      <button class="nivel-pill nivel-pill-llave" id="pillNivelLlave" onclick="setNivelToggle('llave',null)">
+      <button class="nivel-pill nivel-pill-llave is-on" id="pillNivelLlave" onclick="setNivelToggle('llave',null)">
         <span>🔑</span> Llave en mano <span class="nivel-llave-badge">PREMIUM</span>
       </button>
     </div>
@@ -1326,10 +1326,10 @@
             <span class="tg-switch"></span>
             <input type="checkbox" data-nivel="integral" onchange="setNivelToggle('integral',this)"/>
           </label>
-          <label class="tg-row tg-nivel tg-nivel-llave" id="tgNivelLlave" onclick="_tgClick(event,this)">
+          <label class="tg-row tg-nivel tg-nivel-llave is-on" id="tgNivelLlave" onclick="_tgClick(event,this)">
             <span class="tg-lbl">🔑 Llave en mano <span class="nivel-llave-badge">PREMIUM</span></span>
             <span class="tg-switch"></span>
-            <input type="checkbox" data-nivel="llave" onchange="setNivelToggle('llave',this)"/>
+            <input type="checkbox" data-nivel="llave" checked onchange="setNivelToggle('llave',this)"/>
           </label>
         </div>
         <div class="filtro-section">
@@ -1536,7 +1536,7 @@
   var _todos = [];
   var _sel = new Set();
   var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set(), servicios:new Set() };
-  var _nivel = 'esencial'; // 'esencial' | 'integral' | 'llave'
+  var _nivel = 'llave'; // 'esencial' | 'integral' | 'llave'
   var _googleInited = false;
   var _currentUser = null;
   var _pendingPub = null;
