@@ -595,8 +595,9 @@
   .btn-cr:hover{background:var(--blue-dark)}
 
   /* ── Grid de mudanceros (3 columnas desktop) ── */
-  .mud-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  @media(max-width:1100px){.mud-grid{grid-template-columns:repeat(2,1fr);gap:12px}}
+  .mud-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:1100px){.mud-grid{grid-template-columns:repeat(3,1fr);gap:10px}}
+  @media(max-width:820px){.mud-grid{grid-template-columns:repeat(2,1fr);gap:8px}}
   @media(max-width:640px){.mud-grid{grid-template-columns:repeat(2,1fr);gap:8px}}
 
   /* ── Card mudancero estilo MercadoLibre (vertical) ── */
