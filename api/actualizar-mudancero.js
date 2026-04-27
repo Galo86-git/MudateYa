@@ -118,6 +118,16 @@ module.exports = async function handler(req, res) {
       cbu:          data.cbu          !== undefined ? data.cbu : perfil.cbu,
       emailMP:      data.emailMP      !== undefined ? data.emailMP : perfil.emailMP,
       titularCuenta:data.titularCuenta!== undefined ? data.titularCuenta : perfil.titularCuenta,
+      // ── Modelo nuevo: niveles de servicio + precios por nivel ──
+      // Se guardan en Redis para que el catálogo público los vea.
+      serviciosActivos: Array.isArray(data.serviciosActivos)
+        ? data.serviciosActivos
+        : (perfil.serviciosActivos || null),
+      seguroMudanza:    data.seguroMudanza !== undefined ? !!data.seguroMudanza : !!perfil.seguroMudanza,
+      preciosEsencial:  data.preciosEsencial !== undefined ? data.preciosEsencial : (perfil.preciosEsencial || null),
+      preciosIntegral:  data.preciosIntegral !== undefined ? data.preciosIntegral : (perfil.preciosIntegral || null),
+      preciosLlave:     data.preciosLlave    !== undefined ? data.preciosLlave    : (perfil.preciosLlave    || null),
+      precioFleteNuevo: data.precioFleteNuevo!== undefined ? data.precioFleteNuevo: (perfil.precioFleteNuevo|| ''),
       precios: {
         amb1: data.precio1amb || perfil.precios?.amb1 || '',
         amb2: data.precio2amb || perfil.precios?.amb2 || '',
