@@ -300,6 +300,45 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
 .niv-eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .niv-eyebrow .niv-medal{font-size:14px}
 .niv-desc{font-size:11.5px;line-height:1.55;color:var(--text2)}
+
+/* ═════ Vista CRM tipo lista para pedidos ═════ */
+.pd-list-wrap{display:flex;gap:1rem;align-items:flex-start;position:relative}
+.pd-list-col{flex:1;min-width:0;transition:flex .25s ease}
+body.pd-panel-open .pd-list-col{flex:1.3}
+.pd-side-panel{position:sticky;top:1rem;width:0;max-height:calc(100vh - 2rem);overflow:hidden;background:#fff;border:1px solid #E2E8F0;border-radius:14px;transition:width .25s ease,padding .25s ease;flex-shrink:0}
+.pd-side-panel.open{width:520px;overflow-y:auto}
+.pd-detail-content{padding:18px 20px}
+.pd-detail-close{background:#F5F7FA;border:none;width:30px;height:30px;border-radius:8px;font-size:14px;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.pd-detail-close:hover{background:#E2E8F0;color:var(--text)}
+.pd-row-line{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;gap:14px;align-items:center;padding:11px 16px;background:#fff;border:1px solid #E2E8F0;border-radius:10px;margin-bottom:6px;cursor:pointer;user-select:none;transition:all .15s;font-size:13px}
+.pd-row-line:hover{border-color:rgba(26,111,255,.3);background:#FAFBFC}
+.pd-row-line.active{border-color:var(--blue);background:#EEF4FF;box-shadow:0 0 0 3px rgba(26,111,255,.08)}
+.pd-row-line:focus{outline:none;border-color:var(--blue)}
+.pd-st-pill{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:6px;font-family:var(--mono);letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;flex-shrink:0;min-width:90px;justify-content:center}
+.pd-st-pill.pd-disp{background:#FEF3C7;color:#92400E}
+.pd-st-pill.pd-env{background:#EEF4FF;color:#1A6FFF}
+.pd-st-pill.pd-acept{background:#DCFCE7;color:#166534}
+.pd-st-pill.pd-exp{background:#F3F4F6;color:#374151}
+.pd-st-pill.pd-curso{background:#DBEAFE;color:#1E40AF}
+.pd-st-pill.pd-comp{background:#F0F9FF;color:#0369A1}
+.pd-ruta-line{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pd-meta-line{font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap;flex-shrink:0}
+.pd-precio-line{font-size:11.5px;font-family:var(--mono);font-weight:700;color:var(--blue);white-space:nowrap;flex-shrink:0;min-width:90px;text-align:right}
+.pd-arrow{color:var(--text3);font-size:18px;font-weight:700;flex-shrink:0;width:14px;text-align:center;line-height:1}
+.pd-row-line.active .pd-arrow{color:var(--blue)}
+.pd-pack-mini{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.2px;white-space:nowrap;flex-shrink:0;font-family:Inter,sans-serif}
+@media (max-width:900px){
+  .pd-side-panel{position:fixed;top:0;right:0;bottom:0;width:0;max-height:100vh;border-radius:0;border-left:1px solid #E2E8F0;z-index:200;box-shadow:-8px 0 24px rgba(15,25,35,.08)}
+  .pd-side-panel.open{width:90%;max-width:520px}
+  body.pd-panel-open::after{content:'';position:fixed;inset:0;background:rgba(15,25,35,.4);backdrop-filter:blur(2px);z-index:199}
+  body.pd-panel-open .pd-list-col{flex:1}
+}
+@media (max-width:640px){
+  .pd-row-line{grid-template-columns:auto 1fr auto;gap:8px;padding:10px 12px;font-size:12.5px}
+  .pd-meta-line{display:none}
+  .pd-st-pill{min-width:auto;font-size:9.5px;padding:3px 8px}
+  .pd-precio-line{font-size:11px;min-width:70px}
+}
 </style>
 </head>
 <body>
@@ -431,7 +470,12 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
       <!-- PEDIDOS -->
       <div class="page active" id="page-pedidos">
         <div class="page-title">Mis pedidos</div>
-        <div id="pedidosList"><div class="loading"><span class="spinner"></span>Cargando pedidos…</div></div>
+        <div class="pd-list-wrap">
+          <div class="pd-list-col">
+            <div id="pedidosList"><div class="loading"><span class="spinner"></span>Cargando pedidos…</div></div>
+          </div>
+          <aside class="pd-side-panel" id="pdSidePanel" aria-hidden="true"></aside>
+        </div>
       </div>
 
       <!-- HISTORIAL -->
@@ -1111,7 +1155,7 @@ function renderPedidos(){
       }).join('')
     +'</div>';
 
-  // Contenido según tab activa
+  // Contenido según tab activa - vista CRM con filas compactas
   var contentHtml = '';
 
   if (_tabActiva === 'disponibles') {
@@ -1119,41 +1163,141 @@ function renderPedidos(){
       contentHtml = '<div class="empty"><div class="empty-icon">📋</div>No hay mudanzas disponibles en tu zona ahora.<br><span style="font-size:11px;font-family:var(--mono)">Te avisamos por email cuando aparezca una.</span></div>';
     } else {
       mudanzasDisponibles.forEach(function(m){
-        contentHtml += renderCardDisponible(m);
+        contentHtml += renderRowPedido(m, 'disponibles');
       });
     }
   }
-
   else if (_tabActiva === 'enviados') {
     if (enviados.length === 0) {
       contentHtml = '<div class="empty"><div class="empty-icon">✉️</div>No tenés cotizaciones en espera.<br><span style="font-size:11px;font-family:var(--mono)">Cuando enviés una aparece acá hasta que el cliente decida.</span></div>';
     } else {
-      enviados.forEach(function(m){ contentHtml += renderCardCotizacion(m); });
+      enviados.forEach(function(m){ contentHtml += renderRowPedido(m, 'enviados'); });
     }
   }
-
   else if (_tabActiva === 'aceptados') {
     if (aceptados.length === 0) {
       contentHtml = '<div class="empty"><div class="empty-icon">🎉</div>Aún no tenés cotizaciones aceptadas.</div>';
     } else {
-      aceptados.forEach(function(m){ contentHtml += renderCardCotizacion(m); });
+      aceptados.forEach(function(m){ contentHtml += renderRowPedido(m, 'aceptados'); });
     }
   }
-
   else if (_tabActiva === 'expirados') {
     if (expirados.length === 0) {
       contentHtml = '<div class="empty"><div class="empty-icon">⏱</div>Sin cotizaciones expiradas.</div>';
     } else {
       contentHtml += '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">El cliente eligió otro mudancero o la publicación venció.</div>';
-      expirados.forEach(function(m){ contentHtml += renderCardCotizacion(m); });
+      expirados.forEach(function(m){ contentHtml += renderRowPedido(m, 'expirados'); });
     }
   }
 
   document.getElementById('pedidosList').innerHTML = tabsHtml + contentHtml;
+  // Restaurar selección si la había
+  setTimeout(restaurarPedidoSeleccionado, 0);
+}
+
+// ── Fila compacta CRM ──
+function renderRowPedido(m, tipo) {
+  var esFlete = m.ambientes === 'Flete' || m.tipo === 'flete';
+  var packsCfg = {
+    esencial: { nombre:'Esencial',      emoji:'📦', color:'#475569' },
+    integral: { nombre:'Integral',      emoji:'🛠️', color:'#1A6FFF' },
+    llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
+    flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
+  };
+  // Pill de estado según tab
+  var pillCls = '', pillTxt = '';
+  if (tipo === 'disponibles') {
+    var hs = Math.max(0, Math.round((new Date(m.expira) - new Date()) / 3600000));
+    pillCls = 'pd-disp'; pillTxt = '⏱ ' + hs + 'hs';
+  } else if (tipo === 'enviados') {
+    pillCls = 'pd-env'; pillTxt = 'En espera';
+  } else if (tipo === 'aceptados') {
+    if (m.estado === 'completada') { pillCls = 'pd-comp'; pillTxt = 'Completada'; }
+    else if (m.estado === 'en_curso') { pillCls = 'pd-curso'; pillTxt = 'En curso'; }
+    else { pillCls = 'pd-acept'; pillTxt = '✓ Aceptado'; }
+  } else if (tipo === 'expirados') {
+    pillCls = 'pd-exp'; pillTxt = m.estado === 'cotizacion_aceptada' ? 'No elegido' : 'Expirado';
+  }
+  // Pack que pidió el cliente
+  var nivelPedido = m.nivel || (esFlete ? 'flete' : 'esencial');
+  var cfg = packsCfg[nivelPedido] || packsCfg.esencial;
+  var packBadge = '<span class="pd-pack-mini" style="background:'+cfg.color+'15;color:'+cfg.color+'">'+cfg.emoji+' '+cfg.nombre+'</span>';
+  // Precio: en disponibles muestro estimado; en enviados/aceptados/expirados muestro mi cotización
+  var precioTxt = '';
+  if (tipo === 'disponibles') {
+    var pe = parseInt(m.precio_estimado||0);
+    if (pe > 0) precioTxt = '~$'+pe.toLocaleString('es-AR');
+  } else if (m.miCotizacion) {
+    var pmc = parseInt(m.miCotizacion.precio||0);
+    if (pmc > 0) precioTxt = '$'+pmc.toLocaleString('es-AR');
+  }
+  // Ruta compacta
+  var ruta = (m.desde||'') + ' → ' + (m.hasta||'');
+  // Meta inline: ambientes + km
+  var metaInline = (m.ambientes||'—') + (m.km ? ' · '+m.km+'km' : '');
+
+  return '<div class="pd-row-line" id="pd-row-'+m.id+'" data-id="'+m.id+'" data-tipo="'+tipo+'" onclick="seleccionarPedido(\''+m.id+'\',\''+tipo+'\')" tabindex="0">'
+    + '<span class="pd-st-pill '+pillCls+'">'+pillTxt+'</span>'
+    + '<span class="pd-ruta-line" title="'+ruta.replace(/"/g,'&quot;')+'">'+ruta+'</span>'
+    + packBadge
+    + (precioTxt ? '<span class="pd-precio-line">'+precioTxt+'</span>' : '<span class="pd-precio-line" style="color:var(--text3)">—</span>')
+    + '<span class="pd-arrow">›</span>'
+    + '</div>';
+}
+
+// ── Seleccionar un pedido → mostrar detalle en panel lateral ──
+function seleccionarPedido(mudanzaId, tipo) {
+  var m;
+  if (tipo === 'disponibles') {
+    m = mudanzasDisponibles.find(function(x){ return x.id === mudanzaId; });
+  } else {
+    m = misCotizaciones.find(function(x){ return x.id === mudanzaId; });
+  }
+  if (!m) return;
+  // Marcar fila activa
+  document.querySelectorAll('.pd-row-line').forEach(function(el){ el.classList.remove('active'); });
+  var row = document.getElementById('pd-row-'+mudanzaId);
+  if (row) row.classList.add('active');
+  // Renderizar contenido (reusa los renders existentes)
+  var detailHtml = '<div class="pd-detail-content">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #E2E8F0">'
+    +   '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Detalle del pedido</div>'
+    +   '<button class="pd-detail-close" onclick="cerrarDetallePedido()" aria-label="Cerrar">✕</button>'
+    + '</div>'
+    + (tipo === 'disponibles' ? renderCardDisponible(m) : renderCardCotizacion(m))
+    + '</div>';
+  var panel = document.getElementById('pdSidePanel');
+  if (panel) {
+    panel.innerHTML = detailHtml;
+    panel.classList.add('open');
+  }
+  document.body.classList.add('pd-panel-open');
+  try { sessionStorage.setItem('pdSelected', JSON.stringify({id:mudanzaId, tipo:tipo})); } catch(e) {}
+}
+function cerrarDetallePedido() {
+  document.querySelectorAll('.pd-row-line').forEach(function(el){ el.classList.remove('active'); });
+  var panel = document.getElementById('pdSidePanel');
+  if (panel) {
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+  }
+  document.body.classList.remove('pd-panel-open');
+  try { sessionStorage.removeItem('pdSelected'); } catch(e) {}
+}
+function restaurarPedidoSeleccionado() {
+  try {
+    var raw = sessionStorage.getItem('pdSelected');
+    if (!raw) return;
+    var sel = JSON.parse(raw);
+    if (sel && sel.id && document.getElementById('pd-row-'+sel.id)) {
+      seleccionarPedido(sel.id, sel.tipo);
+    }
+  } catch(e) {}
 }
 
 function setTabPedidos(tab) {
   _tabActiva = tab;
+  cerrarDetallePedido();
   renderPedidos();
 }
 
