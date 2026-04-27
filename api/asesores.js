@@ -245,8 +245,13 @@ async function enviarEmailClientePacks(pedido, asesor) {
     var resend = new Resend(process.env.RESEND_API_KEY);
     var link = 'https://mudateya.ar/cliente-packs?id=' + pedido.id;
     var clienteNombre = pedido.cliente && pedido.cliente.nombre ? pedido.cliente.nombre : 'Hola';
+    var cantPacks = (pedido.packs || []).length;
+    // Singular/plural según cantidad
+    var palabraOpc = cantPacks === 1 ? 'opción' : 'opciones';
+    var verboTitulo = cantPacks === 1 ? 'preparó una opción' : ('preparó ' + cantPacks + ' opciones');
+    var ctaTexto = cantPacks === 1 ? 'Ver mi opción' : ('Ver mis ' + cantPacks + ' opciones');
 
-    // Resumen visual de los 3 packs
+    // Resumen visual de los packs (1-3)
     var packsHtml = '';
     for (var i = 0; i < pedido.packs.length; i++) {
       var p = pedido.packs[i];
@@ -264,22 +269,32 @@ async function enviarEmailClientePacks(pedido, asesor) {
         '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#22C36A">YA</span>' +
       '</div>' +
       '<h2 style="color:#003580;font-size:22px;margin-bottom:8px">Hola ' + esc(clienteNombre) + ' 👋</h2>' +
-      '<p style="color:#475569;font-size:15px;line-height:1.6;margin-bottom:18px"><strong>' + esc(asesor.nombre) + '</strong>' + (asesor.inmobiliaria ? ' de <strong>' + esc(asesor.inmobiliaria) + '</strong>' : '') + ' te preparó 3 opciones de mudanza para <strong>' + esc(pedido.mudanza.destino || 'tu nuevo hogar') + '</strong>.</p>' +
-      '<p style="color:#475569;font-size:14px;line-height:1.6;margin-bottom:18px">Todas con mudanceras verificadas por MudateYa. Elegí la que más te convenga:</p>' +
+      '<p style="color:#475569;font-size:15px;line-height:1.6;margin-bottom:18px"><strong>' + esc(asesor.nombre) + '</strong>' + (asesor.inmobiliaria ? ' de <strong>' + esc(asesor.inmobiliaria) + '</strong>' : '') + ' te ' + verboTitulo + ' de mudanza para <strong>' + esc(pedido.mudanza.destino || 'tu nuevo hogar') + '</strong>.</p>' +
+      '<p style="color:#475569;font-size:14px;line-height:1.6;margin-bottom:18px">' + (cantPacks === 1 ? 'Empresa verificada por MudateYa.' : 'Todas con mudanceras verificadas por MudateYa. Elegí la que más te convenga:') + '</p>' +
       packsHtml +
       '<div style="text-align:center;margin:28px 0">' +
-        '<a href="' + link + '" style="display:inline-block;padding:14px 32px;background:#22C36A;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">Ver mis 3 opciones</a>' +
+        '<a href="' + link + '" style="display:inline-block;padding:14px 32px;background:#22C36A;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">' + ctaTexto + '</a>' +
       '</div>' +
       '<p style="color:#94A3B8;font-size:12px;text-align:center;margin-top:16px">Servicio gratis cortesía de tu asesor inmobiliario.</p>' +
       '<hr style="border:none;border-top:1px solid #E2E8F0;margin:28px 0">' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
       '</div>';
-    await resend.emails.send({
+
+    var subject = cantPacks === 1
+      ? 'Tu opción de mudanza — cortesía de ' + asesor.nombre
+      : 'Tus ' + cantPacks + ' opciones de mudanza — cortesía de ' + asesor.nombre;
+
+    var result = await resend.emails.send({
       from: 'MudateYa <noreply@mudateya.ar>',
       to: pedido.cliente.email,
-      subject: 'Tus 3 opciones de mudanza — cortesía de ' + asesor.nombre,
+      subject: subject,
       html: html
     });
+    if (result && result.error) {
+      console.error('Resend error (email cliente):', JSON.stringify(result.error));
+      return false;
+    }
+    console.log('Email cliente enviado:', pedido.cliente.email, '· packs:', cantPacks);
     return true;
   } catch(e) {
     console.error('Email cliente packs:', e.message);
@@ -726,6 +741,19 @@ module.exports = async function handler(req, res) {
       }
 
       // Rehidratar cada pack desde Redis (nunca confiar en el precio que viene del cliente)
+      // Mapeo de ambientes (del pedido) a la clave del precio del mudancero
+      var ambNumPedido = parseInt(String(mudanza.ambientes || '').replace(/\D/g, '')) || 2;
+      var ambKey = 'amb2';
+      if (ambNumPedido === 1)      ambKey = 'amb1';
+      else if (ambNumPedido === 2) ambKey = 'amb2';
+      else if (ambNumPedido === 3) ambKey = 'amb3';
+      else if (ambNumPedido >= 4)  ambKey = 'amb4';
+      // Helper local para parsear precios en formato AR ("300.000")
+      var _pp = function(v){
+        if (v === null || v === undefined || v === '') return 0;
+        return parseInt(String(v).replace(/\./g,'').replace(/[^0-9]/g,''),10) || 0;
+      };
+
       var packsValidos = [];
       for (var k = 0; k < packs.length; k++) {
         var pk = packs[k];
@@ -734,9 +762,15 @@ module.exports = async function handler(req, res) {
         }
         var mp = await getJSON('mudancero:perfil:' + pk.mudanceroEmail);
         if (!mp) return res.status(400).json({ error: 'Mudancera no encontrada: ' + pk.mudanceroEmail });
-        var precioReal = mp.preciosPack && Number(mp.preciosPack[pk.nivel]);
+
+        // Modelo nuevo (lo que carga el mudancero hoy): preciosEsencial/Integral/Llave[ambKey]
+        var precioReal = 0;
+        if (pk.nivel === 'esencial') precioReal = _pp(mp.preciosEsencial && mp.preciosEsencial[ambKey]);
+        else if (pk.nivel === 'integral') precioReal = _pp(mp.preciosIntegral && mp.preciosIntegral[ambKey]);
+        else if (pk.nivel === 'llave')    precioReal = _pp(mp.preciosLlave    && mp.preciosLlave[ambKey]);
+
         if (!precioReal || precioReal <= 0) {
-          return res.status(400).json({ error: 'La mudancera ' + mp.nombre + ' no tiene precio cargado para ' + NIVELES_LABEL[pk.nivel] });
+          return res.status(400).json({ error: 'La mudancera ' + mp.nombre + ' no tiene precio cargado para ' + NIVELES_LABEL[pk.nivel] + ' (' + ambNumPedido + ' amb)' });
         }
         packsValidos.push({
           nivel:            pk.nivel,
@@ -810,10 +844,13 @@ module.exports = async function handler(req, res) {
 
       // Texto WhatsApp pre-armado para que el asesor copie
       var link = 'https://mudateya.ar/cliente-packs?id=' + ecPedidoId;
+      var ecCantPacks = (ecPedido.packs || []).length;
+      var ecTextoOpciones = ecCantPacks === 1 ? 'una opción' : (ecCantPacks + ' opciones');
+      var ecTextoElegi = ecCantPacks === 1 ? 'Mirá los detalles acá:' : 'Elegí la que más te convenga acá:';
       var waText =
         'Hola ' + ecPedido.cliente.nombre + '! 👋\n\n' +
-        'Te preparé 3 opciones de mudanza con empresas verificadas de MudateYa para tu mudanza a ' + ecPedido.mudanza.destino + '.\n\n' +
-        'Elegí la que más te convenga acá:\n' + link + '\n\n' +
+        'Te preparé ' + ecTextoOpciones + ' de mudanza con empresas verificadas de MudateYa para tu mudanza a ' + ecPedido.mudanza.destino + '.\n\n' +
+        ecTextoElegi + '\n' + link + '\n\n' +
         'Cualquier duda me avisás.\n' +
         ecSess.asesor.nombre + (ecSess.asesor.inmobiliaria ? ' · ' + ecSess.asesor.inmobiliaria : '');
       var waLink = 'https://wa.me/' + normFono(ecPedido.cliente.telefono) + '?text=' + encodeURIComponent(waText);
@@ -821,6 +858,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         email: okEmail,
+        emailError: !okEmail ? 'No se pudo enviar el email al cliente. Compartí el link por WhatsApp.' : null,
         waLink: waLink,
         waText: waText,
         clienteUrl: link
