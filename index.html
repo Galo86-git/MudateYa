@@ -1577,14 +1577,42 @@
 
   <!-- MODAL LOGIN -->
   <div class="modal-ov" id="loginModal">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width:420px">
       <button class="modal-close" onclick="cerrarLogin()">✕</button>
       <div style="text-align:center">
         <div style="font-size:2.5rem;margin-bottom:10px">🔐</div>
-        <div style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem">Iniciá sesión</div>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem">Para publicar y recibir cotizaciones. Es gratis.</p>
-        <div id="googleBtn" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
-        <p style="font-size:10px;color:var(--text2);font-family:var(--mono)">🔒 Solo usamos tu email · No publicamos nada en tu cuenta</p>
+        <div style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem">Antes de continuar</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:1.2rem">Necesitamos tu email y WhatsApp para que las empresas de mudanza se contacten con vos.</p>
+
+        <!-- WhatsApp obligatorio -->
+        <div style="text-align:left;margin-bottom:1rem">
+          <label style="display:block;font-size:12px;font-weight:600;color:#0F1923;margin-bottom:5px">📱 Tu WhatsApp <span style="color:#DC2626">*</span></label>
+          <input type="tel" id="loginWaInput" placeholder="+54 9 11 1234-5678" autocomplete="tel"
+            style="width:100%;padding:11px 14px;border:1px solid #CBD5E1;border-radius:9px;font-size:14px;font-family:Inter,sans-serif;color:#0F1923;background:#fff;outline:none;box-sizing:border-box"
+            oninput="validarLoginWa()"/>
+          <div id="loginWaErr" style="display:none;color:#DC2626;font-size:11px;margin-top:4px">Ingresá un WhatsApp válido (mínimo 8 dígitos).</div>
+          <div style="font-size:10.5px;color:#64748B;margin-top:5px;line-height:1.4">🔒 Solo lo usamos para que la empresa de mudanza coordine con vos. No publicamos nada en tu cuenta.</div>
+        </div>
+
+        <!-- Botón Google -->
+        <div style="border-top:1px solid #E2E8F0;padding-top:14px">
+          <div style="font-size:11.5px;color:#475569;margin-bottom:8px;font-weight:600">Continuá con tu email</div>
+          <div id="googleBtn" style="display:flex;justify-content:center;margin-bottom:6px"></div>
+          <div style="font-size:10px;color:#94A3B8;font-family:var(--mono)">↑ Si tenés Gmail o Google Workspace</div>
+        </div>
+
+        <!-- Magic link: alternativa sin Gmail -->
+        <div style="margin-top:14px;padding:12px 14px;background:#F5F7FA;border:1px solid #E2E8F0;border-radius:10px;text-align:left">
+          <div style="font-size:12px;font-weight:600;color:#0F1923;margin-bottom:4px">¿Tu email no es de Google?</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:8px">Te mandamos un link de acceso a tu casilla.</div>
+          <div style="display:flex;gap:5px">
+            <input type="email" id="cliMagicEmail" placeholder="tu-email@email.com" autocomplete="email"
+              style="flex:1;padding:8px 10px;border:1px solid #CBD5E1;border-radius:7px;font-size:12.5px;font-family:Inter,sans-serif;color:#0F1923;background:#fff;outline:none;min-width:0"/>
+            <button type="button" onclick="solicitarMagicLinkCliente()" id="cliMagicBtn"
+              style="padding:8px 14px;background:#1A6FFF;color:#fff;font-weight:700;font-size:12px;border:none;border-radius:7px;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">📧 Enviar link</button>
+          </div>
+          <div id="cliMagicMsg" style="margin-top:6px;font-size:11px;display:none;line-height:1.4"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -2581,12 +2609,47 @@
   // ══════════════════════════════════════════
   // LOGIN
   // ══════════════════════════════════════════
+  // Helper: validar WA del modal de login
+  function validarLoginWa() {
+    var input = document.getElementById('loginWaInput');
+    var err = document.getElementById('loginWaErr');
+    if (!input) return false;
+    var digits = (input.value || '').replace(/\D/g,'');
+    var ok = digits.length >= 8;
+    if (ok) {
+      input.style.borderColor = '#CBD5E1';
+      if (err) err.style.display = 'none';
+    } else if (input.value.trim().length > 0) {
+      input.style.borderColor = '#EF4444';
+      if (err) err.style.display = 'block';
+    }
+    return ok;
+  }
+  function getLoginWa() {
+    var input = document.getElementById('loginWaInput');
+    return input ? input.value.trim() : '';
+  }
+
   function abrirLogin(e, destino) {
     if (e) e.preventDefault();
     if (destino) window._pendingRedirect = destino;
     document.getElementById('loginModal').classList.add('open');
     document.body.style.overflow='hidden';
+    // Pre-cargar WA si ya lo había guardado el cliente alguna vez
+    var waPrev = '';
+    try {
+      // 1. WA cargado en sessionStorage (durante este flujo)
+      waPrev = sessionStorage.getItem('cliWA') || '';
+      // 2. Si no, buscar por email guardado en localStorage
+      if (!waPrev) {
+        var ses = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser') || 'null');
+        if (ses && ses.email) waPrev = localStorage.getItem('clienteWA_'+ses.email) || '';
+      }
+    } catch(e) {}
+    var waInput = document.getElementById('loginWaInput');
+    if (waInput && waPrev) waInput.value = waPrev;
     if (!_googleInited) initGLogin();
+    setTimeout(function(){ if (waInput) waInput.focus(); }, 200);
   }
   function cerrarLogin() {
     document.getElementById('loginModal').classList.remove('open');
@@ -2598,6 +2661,12 @@
       google.accounts.id.initialize({
         client_id:cfg.googleClientId,
         callback:function(response) {
+          // Validar WA antes de aceptar el login
+          if (window._pendingRedirect !== '/mi-cuenta' && !validarLoginWa()) {
+            var waInput = document.getElementById('loginWaInput');
+            if (waInput) waInput.focus();
+            return;
+          }
           var p = JSON.parse(atob(response.credential.split('.')[1]));
           _currentUser = {name:p.name, email:p.email, picture:p.picture};
           sessionStorage.setItem('googleUser', JSON.stringify(_currentUser));
@@ -2609,6 +2678,13 @@
           } else {
             sessionStorage.setItem('rolCliente', '1');
             sessionStorage.removeItem('rolMudancero');
+            // Guardar WhatsApp del cliente
+            var wa = getLoginWa();
+            if (wa) {
+              localStorage.setItem('clienteWA_'+_currentUser.email, wa);
+              sessionStorage.setItem('cliWA', wa);
+              window._clienteWA = wa;
+            }
           }
           cerrarLogin(); updateNav();
           if (window._pendingRedirect) {
@@ -2623,6 +2699,159 @@
       google.accounts.id.renderButton(document.getElementById('googleBtn'), {theme:'filled_blue',size:'large',text:'signin_with',width:280});
       _googleInited=true;
     });
+  }
+
+  // ── MAGIC LINK CLIENTE: solicitar link de acceso ──────────────────
+  async function solicitarMagicLinkCliente(){
+    // Si está en el flujo /mi-cuenta no usa este (es otro endpoint)
+    if (window._pendingRedirect === '/mi-cuenta') {
+      var msg0 = document.getElementById('cliMagicMsg');
+      msg0.style.display = 'block';
+      msg0.style.color = '#DC2626';
+      msg0.textContent = 'Para mudanceros, usá el portal de "Soy mudancero".';
+      return;
+    }
+    // Validar WA primero (obligatorio para clientes)
+    if (!validarLoginWa()) {
+      var waInput = document.getElementById('loginWaInput');
+      if (waInput) waInput.focus();
+      return;
+    }
+    var emailInput = document.getElementById('cliMagicEmail');
+    var btn = document.getElementById('cliMagicBtn');
+    var msg = document.getElementById('cliMagicMsg');
+    var email = (emailInput.value || '').trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg.style.display = 'block';
+      msg.style.color = '#DC2626';
+      msg.textContent = 'Ingresá un email válido.';
+      emailInput.focus();
+      return;
+    }
+    var wa = getLoginWa();
+
+    // Guardar estado completo en sessionStorage para recuperar al volver del email
+    try {
+      var estadoPub = {
+        email: email,
+        wa: wa,
+        modo: _pendingPub || _modoPublicacion || 'dirigido',
+        busqueda: window._busqueda || null,
+        sel: (window._sel && _sel.size) ? Array.from(_sel) : [],
+        ts: Date.now()
+      };
+      sessionStorage.setItem('cliPendingState', JSON.stringify(estadoPub));
+      sessionStorage.setItem('cliWA', wa);
+    } catch(e) {}
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    msg.style.display = 'none';
+    try {
+      var nombre = email.split('@')[0]; // nombre temporal del email
+      var r = await fetch('/api/cotizaciones?action=request-magic-link-cliente', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email: email, nombre: nombre })
+      });
+      var d = await r.json();
+      if (!r.ok) {
+        msg.style.display = 'block';
+        msg.style.color = '#DC2626';
+        msg.textContent = (d && d.error) || 'Error al enviar el link.';
+        btn.disabled = false;
+        btn.textContent = '📧 Enviar link';
+        return;
+      }
+      msg.style.display = 'block';
+      msg.style.color = '#16A34A';
+      msg.innerHTML = '✓ Te mandamos un link a <b>' + email + '</b>.<br><span style="color:#64748B">Revisá tu casilla (también el spam). El link dura 15 minutos.</span>';
+      emailInput.disabled = true;
+      btn.textContent = 'Link enviado ✓';
+    } catch(e) {
+      msg.style.display = 'block';
+      msg.style.color = '#DC2626';
+      msg.textContent = 'Error de conexión. Intentá de nuevo.';
+      btn.disabled = false;
+      btn.textContent = '📧 Enviar link';
+    }
+  }
+
+  // ── MAGIC LINK CLIENTE: validar token al cargar la página ──────────
+  async function verificarMagicLinkSiHay() {
+    var urlToken = null;
+    try {
+      var p = new URLSearchParams(window.location.search);
+      urlToken = p.get('token');
+    } catch(e) { return; }
+    if (!urlToken || urlToken.length !== 64 || !/^[a-f0-9]+$/.test(urlToken)) return;
+
+    try {
+      var r = await fetch('/api/cotizaciones?action=verify-magic-link', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ token: urlToken })
+      });
+      var d = await r.json();
+      // Limpiar token de la URL siempre
+      try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e) {}
+      if (!r.ok || !d.ok) {
+        alert((d && d.error) || 'El link expiró. Pedí uno nuevo.');
+        return;
+      }
+      // Login exitoso (cliente o mudancero)
+      if (d.tipo === 'mudancero') {
+        // Mudancero: redirigir a /mi-cuenta
+        var u = { name: d.nombre || d.email.split('@')[0], email: d.email, picture: d.foto || '' };
+        sessionStorage.setItem('googleUser', JSON.stringify(u));
+        sessionStorage.setItem('clienteUser', JSON.stringify(u));
+        sessionStorage.setItem('rolMudancero', '1');
+        sessionStorage.removeItem('rolCliente');
+        window.location.href = '/mi-cuenta';
+        return;
+      }
+      // Cliente: recuperar estado guardado y continuar publicación
+      var u2 = { name: d.nombre || d.email.split('@')[0], email: d.email, picture: '' };
+      _currentUser = u2;
+      sessionStorage.setItem('googleUser', JSON.stringify(u2));
+      sessionStorage.setItem('clienteUser', JSON.stringify(u2));
+      sessionStorage.setItem('rolCliente', '1');
+      sessionStorage.removeItem('rolMudancero');
+
+      // Recuperar estado pendiente
+      var estado = null;
+      try { estado = JSON.parse(sessionStorage.getItem('cliPendingState') || 'null'); } catch(e) {}
+      if (estado && estado.email === d.email) {
+        // Restaurar WhatsApp
+        if (estado.wa) {
+          localStorage.setItem('clienteWA_'+d.email, estado.wa);
+          window._clienteWA = estado.wa;
+        }
+        sessionStorage.removeItem('cliPendingState');
+      }
+      updateNav();
+      // Si había una publicación pendiente y la búsqueda está cargada, retomarla
+      if (estado && estado.modo && window._busqueda) {
+        _modoPublicacion = estado.modo;
+        if (estado.modo === 'abierto') {
+          publicarAbierto();
+        } else {
+          pedirCotizacion();
+        }
+      } else {
+        // Aviso amigable de que el login fue exitoso
+        var nav = document.getElementById('navName');
+        if (nav) nav.textContent = u2.name;
+      }
+    } catch(e) {
+      console.error('verify-magic-link error', e);
+    }
+  }
+  // Disparar al cargar
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', verificarMagicLinkSiHay);
+  } else {
+    verificarMagicLinkSiHay();
   }
   function logout() {
     sessionStorage.removeItem('googleUser'); sessionStorage.removeItem('clienteUser');
