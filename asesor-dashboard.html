@@ -303,10 +303,7 @@
   }
 
   /* Selector de mudanceras existente */
-  .nivel-block{background:#fff;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden;position:relative}
-  .nivel-block.recomendado{border:2px solid var(--green);box-shadow:0 4px 16px rgba(34,195,106,.15);margin-bottom:18px}
-  .nivel-block.recomendado .nivel-head{background:linear-gradient(90deg,#16A34A,#22C36A)}
-  .reco-badge{position:absolute;top:-10px;left:14px;background:linear-gradient(90deg,#F59E0B,#FBBF24);color:#78350F;font-family:'Inter',sans-serif;font-weight:800;font-size:10.5px;padding:4px 11px;border-radius:6px;letter-spacing:.5px;box-shadow:0 2px 6px rgba(245,158,11,.35);z-index:2;text-transform:uppercase;display:flex;align-items:center;gap:4px}
+  .nivel-block{background:#fff;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden}
   .nivel-head{padding:12px 14px;background:linear-gradient(90deg,var(--navy),#0057BF);color:#fff;display:flex;align-items:center;justify-content:space-between}
   .nivel-head .lvl-name{font-weight:700;font-size:14px}
   .nivel-head .lvl-desc{font-size:11px;opacity:.85;font-family:var(--mono)}
@@ -1288,18 +1285,13 @@ function renderPacksPicker() {
     return;
   }
   var h = '';
-  // Llave en Mano va primero como recomendado, después Integral, después Esencial
-  ['llave','integral','esencial'].forEach(function(nivel){
+  ['esencial','integral','llave'].forEach(function(nivel){
     var opts = MUDANCERAS_ZONA.filter(function(m){
       return (Number((m.preciosPack||{})[nivel]) || 0) > 0;
     });
-    var esRecomendado = nivel === 'llave';
-    var blockClass = 'nivel-block' + (esRecomendado ? ' recomendado' : '');
-    var nivelLabel = (nivel === 'llave' ? 'Llave en Mano' : (nivel.charAt(0).toUpperCase() + nivel.slice(1)));
-    h += '<div class="' + blockClass + '">' +
-      (esRecomendado ? '<div class="reco-badge">★ Recomendado</div>' : '') +
+    h += '<div class="nivel-block">' +
       '<div class="nivel-head">' +
-        '<div><div class="lvl-name">' + nivelLabel + '</div><div class="lvl-desc">' + esc(NIVELES_DESC[nivel]) + '</div></div>' +
+        '<div><div class="lvl-name">' + (nivel === 'llave' ? 'Llave en Mano' : (nivel.charAt(0).toUpperCase() + nivel.slice(1))) + '</div><div class="lvl-desc">' + esc(NIVELES_DESC[nivel]) + '</div></div>' +
       '</div>' +
       '<div class="nivel-opts">';
     if (!opts.length) {
