@@ -123,6 +123,75 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
 .field input::placeholder{color:var(--text3)}
 .chips-grid{display:flex;flex-wrap:wrap;gap:6px}
+
+/* ══ CARDS DE SERVICIO Y PRECIOS (Esencial / Integral / Llave / Flete) ══ */
+.svc-card{
+  border:2px solid var(--border);border-radius:12px;
+  margin-bottom:10px;overflow:hidden;
+  transition:all .2s;background:#fff;
+}
+.svc-card.active{border-color:#16A34A;box-shadow:0 4px 14px rgba(22,163,74,.1)}
+.svc-card.active.is-llave{border-color:#F59E0B;box-shadow:0 4px 14px rgba(245,158,11,.18)}
+.svc-card-head{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;cursor:pointer;
+}
+.svc-card-icon{
+  width:36px;height:36px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.svc-card-info{flex:1;min-width:0}
+.svc-card-title{font-weight:700;color:var(--text);font-size:13.5px;line-height:1.3}
+.svc-card-desc{font-size:11.5px;color:var(--text2);margin-top:2px;line-height:1.4}
+.svc-card-check{
+  width:20px;height:20px;border-radius:50%;border:2px solid var(--border);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.svc-card.active .svc-card-check{
+  background:#16A34A;border-color:#16A34A;
+}
+.svc-card.active.is-llave .svc-card-check{background:#F59E0B;border-color:#F59E0B}
+.svc-card.active .svc-card-check::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+.svc-card-precios{
+  display:none;
+  padding:0 14px 14px;
+  flex-direction:column;gap:6px;
+  border-top:1px solid var(--border);
+}
+.svc-card.active .svc-card-precios{display:flex}
+.svc-card.precios-error{border-color:#DC2626;animation:svc-shake .3s}
+@keyframes svc-shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  75%{transform:translateX(4px)}
+}
+.precio-row-mc{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--surface2);border-radius:9px;border:1px solid var(--border);margin-top:6px}
+.precio-label-mc{flex:1;font-size:12.5px;color:var(--text2)}
+.precio-input-wrap-mc{position:relative;display:flex;align-items:center}
+.precio-prefix-mc{position:absolute;left:10px;font-size:12.5px;color:var(--text3);font-family:var(--mono)}
+.precio-input-mc{width:130px;padding:7px 10px 7px 22px;border:1px solid var(--border2);border-radius:7px;font-size:12.5px;font-family:var(--mono);color:var(--text);background:#fff;outline:none;transition:border-color .2s}
+.precio-input-mc:focus{border-color:#16A34A}
+
+/* Adicional: Seguro de mudanza */
+.svc-extra{
+  margin-top:8px;padding:11px 13px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:9px;
+  cursor:pointer;
+}
+.svc-extra-label{
+  display:flex;align-items:flex-start;gap:9px;cursor:pointer;
+}
+.svc-extra-check{
+  width:18px;height:18px;border-radius:5px;border:2px solid var(--border2);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;margin-top:1px;
+}
+.svc-extra.active .svc-extra-check{background:var(--blue);border-color:var(--blue)}
+.svc-extra.active .svc-extra-check::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.svc-extra-title{font-size:12.5px;font-weight:600;color:var(--text)}
+.svc-extra-desc{font-size:11.5px;color:var(--text3);margin-top:2px;line-height:1.4}
 .chip{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:12px;color:var(--text2);transition:all .2s;user-select:none}
 .chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
 @media(max-width:768px){
@@ -455,19 +524,98 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
           </div>
         </div>
         <div class="card" style="margin-bottom:1rem">
-          <div class="card-header"><span class="card-title">🛠️ Servicios que ofrecés</span></div>
+          <div class="card-header"><span class="card-title">🛠️ Servicios y precios</span></div>
           <div style="padding:1.2rem">
-            <div class="chips-grid" id="pf-servicios">
-              <div class="chip" onclick="this.classList.toggle('sel')">📦 Mudanzas completas</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🔑 Premium (llave en mano)</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🏢 Mudanzas de oficina</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🚚 Fletes y envíos</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">📦 Embalaje incluido</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🔧 Desmontaje y montaje</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🏗️ Sube / escalera</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🛡️ Seguro de mudanza</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🧹 Limpieza post-mudanza</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">📦 Guardamuebles</div>
+            <div style="font-size:12.5px;color:var(--text2);margin-bottom:14px;line-height:1.5">Activá los servicios que ofrecés y cargá los precios base. Si activás un servicio, los precios son obligatorios.</div>
+
+            <!-- Card 1: Esencial -->
+            <div class="svc-card" id="pf-svcEsencial">
+              <div class="svc-card-head" onclick="pfToggleSvc('esencial')">
+                <div class="svc-card-icon" style="background:#EEF4FF;color:#1A6FFF">📦</div>
+                <div class="svc-card-info">
+                  <div class="svc-card-title">Mudanza Esencial</div>
+                  <div class="svc-card-desc">Carga, transporte y descarga. El servicio básico de mudanza.</div>
+                </div>
+                <div class="svc-card-check"></div>
+              </div>
+              <div class="svc-card-precios">
+                <div class="precio-row-mc"><span class="precio-label-mc">Monoambiente / 1 amb</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-esc-p1" placeholder="55.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">2 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-esc-p2" placeholder="90.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">3 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-esc-p3" placeholder="135.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">4+ ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-esc-p4" placeholder="180.000"/></div></div>
+              </div>
+            </div>
+
+            <!-- Card 2: Integral -->
+            <div class="svc-card" id="pf-svcIntegral">
+              <div class="svc-card-head" onclick="pfToggleSvc('integral')">
+                <div class="svc-card-icon" style="background:#ECFDF3;color:#16A34A">🛠️</div>
+                <div class="svc-card-info">
+                  <div class="svc-card-title">Mudanza Integral</div>
+                  <div class="svc-card-desc">Incluye embalaje y desembalaje. El cliente no toca cajas.</div>
+                </div>
+                <div class="svc-card-check"></div>
+              </div>
+              <div class="svc-card-precios">
+                <div class="precio-row-mc"><span class="precio-label-mc">Monoambiente / 1 amb</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-int-p1" placeholder="82.500"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">2 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-int-p2" placeholder="135.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">3 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-int-p3" placeholder="200.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">4+ ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-int-p4" placeholder="270.000"/></div></div>
+              </div>
+            </div>
+
+            <!-- Card 3: Llave en mano -->
+            <div class="svc-card" id="pf-svcLlave">
+              <div class="svc-card-head" onclick="pfToggleSvc('llave')">
+                <div class="svc-card-icon" style="background:#FFFBEB;color:#B45309">🔑</div>
+                <div class="svc-card-info">
+                  <div class="svc-card-title">Llave en mano <span style="display:inline-block;font-size:9px;font-weight:700;background:#F59E0B;color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:.5px;font-family:var(--mono)">PREMIUM</span></div>
+                  <div class="svc-card-desc">Servicio "Sin estrés": embalaje, desembalaje, armado de muebles, electrodomésticos, cortinas, cuadros — el cliente entra a una casa impecable.</div>
+                </div>
+                <div class="svc-card-check"></div>
+              </div>
+              <div class="svc-card-precios">
+                <div class="precio-row-mc"><span class="precio-label-mc">Monoambiente / 1 amb</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-llv-p1" placeholder="125.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">2 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-llv-p2" placeholder="200.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">3 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-llv-p3" placeholder="305.000"/></div></div>
+                <div class="precio-row-mc"><span class="precio-label-mc">4+ ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-llv-p4" placeholder="405.000"/></div></div>
+              </div>
+            </div>
+
+            <!-- Card 4: Flete -->
+            <div class="svc-card" id="pf-svcFlete">
+              <div class="svc-card-head" onclick="pfToggleSvc('flete')">
+                <div class="svc-card-icon" style="background:#F1F5F9;color:#475569">🚚</div>
+                <div class="svc-card-info">
+                  <div class="svc-card-title">Flete / Envío chico</div>
+                  <div class="svc-card-desc">Envío de objetos puntuales (heladera, cama, escritorio, etc). No es una mudanza completa.</div>
+                </div>
+                <div class="svc-card-check"></div>
+              </div>
+              <div class="svc-card-precios">
+                <div class="precio-row-mc"><span class="precio-label-mc">Precio base flete</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-flt-p" placeholder="18.000"/></div></div>
+              </div>
+            </div>
+
+            <!-- Adicional: Seguro de mudanza -->
+            <div class="svc-extra" id="pf-svcSeguro">
+              <label class="svc-extra-label" onclick="pfToggleSeguro(event)">
+                <div class="svc-extra-check"></div>
+                <div>
+                  <div class="svc-extra-title">🛡️ Ofrezco seguro de mudanza</div>
+                  <div class="svc-extra-desc">El cliente queda cubierto ante daños o pérdidas durante el traslado.</div>
+                </div>
+              </label>
+            </div>
+
+            <!-- Precio por km (opcional) -->
+            <div style="margin-top:14px;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#EEF4FF;border-radius:10px;border:1px solid #C7D7F5">
+              <span style="flex:1;font-size:13px;color:var(--blue);font-weight:600">🛣 Precio por km <span style="font-weight:400;color:var(--text3);font-size:11px;font-family:var(--mono)">(opcional · para distancias largas)</span></span>
+              <div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-pkm" placeholder="800" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div>
+            </div>
+
+            <div class="leads-banner" style="background:linear-gradient(135deg,#FEF3C7 0%,#FFFBEB 100%);border:1px solid #FDE68A;color:#92400E;margin-top:14px">
+              ⚠️ <b>Comisión MudateYa: 15% en mudanzas / 20% en fletes</b>
             </div>
           </div>
         </div>
@@ -502,24 +650,17 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
             </div>
           </div>
         </div>
-        <div class="card" style="margin-bottom:1rem">
-          <div class="card-header"><span class="card-title">💰 Precios base ($ARS)</span></div>
-          <div class="leads-banner" style="background:linear-gradient(135deg,#FEF3C7 0%,#FFFBEB 100%);border:1px solid #FDE68A;color:#92400E">
-            ⚠️ <b>Comisión MudateYa: 15% en mudanzas / 20% en fletes</b>
-          </div>
-          <div style="padding:1.2rem;display:grid;gap:8px">
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">Monoambiente / 1 ambiente</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-p1" placeholder="55.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">2 ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-p2" placeholder="90.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">3 ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-p3" placeholder="135.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">4+ ambientes</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-p4" placeholder="180.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="flex:1;font-size:13px;color:var(--text2)">Flete / envío chico</span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-pflete" placeholder="18.000" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#EEF4FF;border-radius:10px;border:1px solid #C7D7F5;margin-top:6px"><span style="flex:1;font-size:13px;color:var(--blue);font-weight:600">🛣 Precio por km <span style="font-weight:400;color:var(--text3);font-size:11px;font-family:var(--mono)">(opcional · para distancias largas)</span></span><div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span><input type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-pkm" placeholder="800" style="width:130px;padding:8px 10px 8px 22px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:var(--mono);color:var(--text);background:#fff;outline:none"/></div></div>
-          </div>
-        </div>
 
         <!-- ═══ NUEVO: Precios para Leads Plan Referidos Inmobiliarios (25% comisión) ═══ -->
         <div class="card" style="margin-bottom:1rem">
           <div class="card-header"><span class="card-title">🏢 Precios Plan Referidos Inmobiliarios</span></div>
+          <div style="background:#EEF4FF;border:1px solid #C7D7F5;border-radius:10px;padding:12px 14px;margin:14px 1.2rem 0;display:flex;align-items:flex-start;gap:10px">
+            <span style="font-size:18px;flex-shrink:0;line-height:1">🏢</span>
+            <div style="font-size:12.5px;color:#1E40AF;line-height:1.5">
+              <b>Estos precios solo los ven los leads que llegan desde inmobiliarias aliadas.</b><br>
+              No afectan tu visibilidad en la búsqueda pública del sitio (esos precios los cargás arriba en "Servicios y precios").
+            </div>
+          </div>
           <div class="leads-banner">
             ⚠️ <b>Comisión MudateYa: 25%</b> — Plan Referidos son leads pre-calificados que llegan desde nuestros asesores inmobiliarios aliados. Cargá los precios que querés cobrar para cada tamaño y tipo de pack. <b>Te queda el 75%</b> del precio que pongas.
           </div>
@@ -1212,6 +1353,81 @@ function formatearPrecioInput(input) {
   if (raw === '') { input.value = ''; return; }
   input.value = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
+
+// ── SERVICIOS Y PRECIOS (4 cards: Esencial / Integral / Llave / Flete) ─────
+var _pfSvc = { esencial:false, integral:false, llave:false, flete:false };
+var _pfSeguro = false;
+
+function pfToggleSvc(key) {
+  _pfSvc[key] = !_pfSvc[key];
+  var ids = { esencial:'pf-svcEsencial', integral:'pf-svcIntegral', llave:'pf-svcLlave', flete:'pf-svcFlete' };
+  var card = document.getElementById(ids[key]);
+  if (!card) return;
+  if (_pfSvc[key]) {
+    card.classList.add('active');
+    if (key === 'llave') card.classList.add('is-llave');
+  } else {
+    card.classList.remove('active');
+    if (key === 'llave') card.classList.remove('is-llave');
+    // Limpiar precios al desactivar
+    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
+    if (key === 'flete') {
+      var f = document.getElementById('pf-flt-p'); if (f) f.value = '';
+    } else {
+      ['p1','p2','p3','p4'].forEach(function(n){
+        var el = document.getElementById('pf-'+prefix+'-'+n); if (el) el.value = '';
+      });
+    }
+    card.classList.remove('precios-error');
+  }
+}
+
+function pfToggleSeguro(e) {
+  if (e) e.preventDefault();
+  _pfSeguro = !_pfSeguro;
+  var box = document.getElementById('pf-svcSeguro');
+  if (!box) return;
+  if (_pfSeguro) box.classList.add('active'); else box.classList.remove('active');
+}
+
+// Validar que las cards activadas tengan al menos un precio cargado
+function pfValidarServiciosPrecios() {
+  var errores = [];
+  Object.keys(_pfSvc).forEach(function(key){
+    if (!_pfSvc[key]) return;
+    var ids = { esencial:'pf-svcEsencial', integral:'pf-svcIntegral', llave:'pf-svcLlave', flete:'pf-svcFlete' };
+    var card = document.getElementById(ids[key]);
+    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
+    var nombre = { esencial:'Esencial', integral:'Integral', llave:'Llave en mano', flete:'Flete' }[key];
+    var hayPrecio = false;
+    if (key === 'flete') {
+      var f = document.getElementById('pf-flt-p');
+      hayPrecio = !!(f && f.value.replace(/\./g,'').trim());
+    } else {
+      ['p1','p2','p3','p4'].forEach(function(n){
+        var el = document.getElementById('pf-'+prefix+'-'+n);
+        if (el && el.value.replace(/\./g,'').trim()) hayPrecio = true;
+      });
+    }
+    if (card) card.classList.remove('precios-error');
+    if (!hayPrecio) {
+      errores.push(nombre);
+      if (card) card.classList.add('precios-error');
+    }
+  });
+  return errores;
+}
+
+// Helper: leer precios de una card como objeto {amb1,amb2,amb3,amb4}
+function pfLeerPreciosCard(prefix) {
+  var rawP = function(id){ var el=document.getElementById(id); return el ? el.value.replace(/\./g,'') : ''; };
+  return {
+    amb1: rawP('pf-'+prefix+'-p1'),
+    amb2: rawP('pf-'+prefix+'-p2'),
+    amb3: rawP('pf-'+prefix+'-p3'),
+    amb4: rawP('pf-'+prefix+'-p4')
+  };
+}
 function getPrecioRaw(inputEl) {
   return parseInt((inputEl.value || '0').replace(/\./g, '')) || 0;
 }
@@ -1481,17 +1697,66 @@ function loadPerfil(){
     var n = parseInt(String(v||'').replace(/\D/g,''));
     return (n && n > 0) ? n.toLocaleString('es-AR') : '';
   };
-  setVal('pf-p1', fmtPrecio(m[15])); setVal('pf-p2', fmtPrecio(m[16]));
-  setVal('pf-p3', fmtPrecio(m[17])); setVal('pf-p4', fmtPrecio(m[18]));
-  setVal('pf-pflete', fmtPrecio(m[19])); setVal('pf-notas', m[20]||'');
+  // Precio por km y notas (siguen siendo campos sueltos)
+  setVal('pf-pkm', fmtPrecio(m[21])); // pkm puede no existir en datos viejos
+  setVal('pf-notas', m[20]||'');
+
+  // ── Cargar las 4 cards de servicios y precios ──
+  // Intento leer datos nuevos (preciosEsencial / preciosIntegral / preciosLlave / precioFleteNuevo).
+  // Si no hay, hago fallback a los precios viejos (m[15]..m[19]) y los pongo en Esencial + Flete.
+  var datosExtra = {};
+  try {
+    var raw = localStorage.getItem('mudExtra_' + (currentUser && currentUser.email ? currentUser.email : ''));
+    if (raw) datosExtra = JSON.parse(raw) || {};
+  } catch(e) {}
+  // Esencial
+  if (datosExtra.preciosEsencial) {
+    setVal('pf-esc-p1', fmtPrecio(datosExtra.preciosEsencial.amb1));
+    setVal('pf-esc-p2', fmtPrecio(datosExtra.preciosEsencial.amb2));
+    setVal('pf-esc-p3', fmtPrecio(datosExtra.preciosEsencial.amb3));
+    setVal('pf-esc-p4', fmtPrecio(datosExtra.preciosEsencial.amb4));
+    if (datosExtra.serviciosActivos && datosExtra.serviciosActivos.indexOf('esencial') !== -1) pfToggleSvc('esencial');
+  } else if (m[15] || m[16] || m[17] || m[18]) {
+    // Fallback: datos viejos en Esencial
+    setVal('pf-esc-p1', fmtPrecio(m[15]));
+    setVal('pf-esc-p2', fmtPrecio(m[16]));
+    setVal('pf-esc-p3', fmtPrecio(m[17]));
+    setVal('pf-esc-p4', fmtPrecio(m[18]));
+    pfToggleSvc('esencial');
+  }
+  // Integral
+  if (datosExtra.preciosIntegral) {
+    setVal('pf-int-p1', fmtPrecio(datosExtra.preciosIntegral.amb1));
+    setVal('pf-int-p2', fmtPrecio(datosExtra.preciosIntegral.amb2));
+    setVal('pf-int-p3', fmtPrecio(datosExtra.preciosIntegral.amb3));
+    setVal('pf-int-p4', fmtPrecio(datosExtra.preciosIntegral.amb4));
+    if (datosExtra.serviciosActivos && datosExtra.serviciosActivos.indexOf('integral') !== -1) pfToggleSvc('integral');
+  }
+  // Llave en mano
+  if (datosExtra.preciosLlave) {
+    setVal('pf-llv-p1', fmtPrecio(datosExtra.preciosLlave.amb1));
+    setVal('pf-llv-p2', fmtPrecio(datosExtra.preciosLlave.amb2));
+    setVal('pf-llv-p3', fmtPrecio(datosExtra.preciosLlave.amb3));
+    setVal('pf-llv-p4', fmtPrecio(datosExtra.preciosLlave.amb4));
+    if (datosExtra.serviciosActivos && datosExtra.serviciosActivos.indexOf('llave') !== -1) pfToggleSvc('llave');
+  }
+  // Flete
+  if (datosExtra.precioFleteNuevo) {
+    setVal('pf-flt-p', fmtPrecio(datosExtra.precioFleteNuevo));
+    if (datosExtra.serviciosActivos && datosExtra.serviciosActivos.indexOf('flete') !== -1) pfToggleSvc('flete');
+  } else if (m[19]) {
+    setVal('pf-flt-p', fmtPrecio(m[19]));
+    pfToggleSvc('flete');
+  }
+  // Seguro de mudanza
+  if (datosExtra.seguroMudanza === true) pfToggleSeguro();
   var bk = JSON.parse(localStorage.getItem('banking_'+currentUser.email)||'{}');
   if(bk.metodoCobro) setSelect('pf-metodoCobro', bk.metodoCobro);
   if(bk.cbu) setVal('pf-cbu', bk.cbu);
   if(bk.emailMP) setVal('pf-emailMP', bk.emailMP);
   if(bk.titular) setVal('pf-titular', bk.titular);
   toggleMetodoCobroPanel();
-  var sv = m[11]||'';
-  document.querySelectorAll('#pf-servicios .chip').forEach(function(c){ if(sv.includes(c.textContent.trim().replace(/^[^\s]+\s/,''))) c.classList.add('sel'); });
+  // (chips viejos de servicios eliminados - ahora se manejan con las 4 svc-cards de arriba)
   var sd = m[12]||'';
   document.querySelectorAll('#pf-dias .chip').forEach(function(c){ if(sd.includes(c.textContent.trim())) c.classList.add('sel'); });
   var sh = m[13]||'';
@@ -1679,13 +1944,40 @@ function setSelect(id,val){ var e=document.getElementById(id); if(!e) return; fo
 
 async function guardarPerfil(){
   var btn=document.getElementById('btnGuardar'), msg=document.getElementById('perfilMsg');
+
+  // Validar que haya al menos un servicio activo
+  var servActivos = Object.keys(_pfSvc).filter(function(k){ return _pfSvc[k]; });
+  if (servActivos.length === 0) {
+    if (msg) { msg.textContent='Activá al menos un servicio (Esencial, Integral, Llave en mano o Flete).'; msg.style.color='#DC2626'; }
+    var firstSvc = document.getElementById('pf-svcEsencial');
+    if (firstSvc) firstSvc.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  // Validar que las cards activas tengan precios
+  var erroresPrecios = pfValidarServiciosPrecios();
+  if (erroresPrecios.length > 0) {
+    if (msg) { msg.textContent='Cargá al menos un precio en: ' + erroresPrecios.join(', '); msg.style.color='#DC2626'; }
+    var firstErrSvc = document.querySelector('.svc-card.precios-error');
+    if (firstErrSvc) firstErrSvc.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  if (msg) { msg.textContent=''; msg.style.color=''; }
+
   btn.disabled=true;
   btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;vertical-align:middle;display:inline-block"></span>Guardando…';
-  var servicios=Array.from(document.querySelectorAll('#pf-servicios .sel')).map(function(c){return c.textContent.trim();}).join(', ');
+
+  // Servicios string (compat con backend viejo)
+  var serviciosStr = (function(){
+    var s = [];
+    if (_pfSvc.integral) s.push('Embalaje incluido');
+    if (_pfSvc.flete)    s.push('Flete');
+    if (_pfSeguro)       s.push('Seguro de mudanza');
+    return s.join(', ');
+  })();
   var dias=Array.from(document.querySelectorAll('#pf-dias .sel')).map(function(c){return c.textContent.trim();}).join(', ');
   var horarios=Array.from(document.querySelectorAll('#pf-horarios .sel')).map(function(c){return c.textContent.trim();}).join(', ');
 
-  // Construir preciosLeads desde la tabla 5×3
+  // Construir preciosLeads desde la tabla 5×3 (Plan Referidos Inmobiliarios)
   var preciosLeads = { amb1:{}, amb2:{}, amb3:{}, amb4:{}, amb5plus:{} };
   document.querySelectorAll('.leads-input').forEach(function(inp){
     var amb = inp.getAttribute('data-amb');
@@ -1702,7 +1994,58 @@ async function guardarPerfil(){
     var el = document.getElementById(id);
     return el ? (el.value || '').replace(/\./g, '').replace(/[^0-9]/g, '') : '';
   };
-  var datos={nombre:document.getElementById('pf-nombre').value.trim(),empresa:document.getElementById('pf-empresa').value.trim(),telefono:document.getElementById('pf-tel').value.trim(),email:currentUser.email,zonaBase:document.getElementById('pf-zona').value,zonasExtra:document.getElementById('pf-zonas-extra').value.trim(),vehiculo:document.getElementById('pf-vehiculo').value,cantVehiculos:document.getElementById('pf-cant-vehiculos').value,equipo:document.getElementById('pf-equipo').value,servicios,dias,horarios,anticipacion:document.getElementById('pf-anticipacion').value,precio1amb:rawPrecio('pf-p1'),precio2amb:rawPrecio('pf-p2'),precio3amb:rawPrecio('pf-p3'),precio4amb:rawPrecio('pf-p4'),precioFlete:rawPrecio('pf-pflete'),precioPorKm:rawPrecio('pf-pkm'),extra:document.getElementById('pf-notas').value.trim(),preciosLeads:preciosLeads};
+
+  // Precios por nivel (nuevo modelo)
+  var preciosEsencial = _pfSvc.esencial ? pfLeerPreciosCard('esc') : null;
+  var preciosIntegral = _pfSvc.integral ? pfLeerPreciosCard('int') : null;
+  var preciosLlave    = _pfSvc.llave    ? pfLeerPreciosCard('llv') : null;
+  var precioFleteNuevo = _pfSvc.flete   ? rawPrecio('pf-flt-p') : '';
+
+  // Compat: si el backend espera precio1amb..precio4amb plano, usamos los de Esencial
+  var datos={
+    nombre:document.getElementById('pf-nombre').value.trim(),
+    empresa:document.getElementById('pf-empresa').value.trim(),
+    telefono:document.getElementById('pf-tel').value.trim(),
+    email:currentUser.email,
+    zonaBase:document.getElementById('pf-zona').value,
+    zonasExtra:document.getElementById('pf-zonas-extra').value.trim(),
+    vehiculo:document.getElementById('pf-vehiculo').value,
+    cantVehiculos:document.getElementById('pf-cant-vehiculos').value,
+    equipo:document.getElementById('pf-equipo').value,
+    serviciosActivos: servActivos,
+    seguroMudanza: _pfSeguro,
+    servicios: serviciosStr,
+    dias,horarios,
+    anticipacion:document.getElementById('pf-anticipacion').value,
+    // Compat plano (Esencial como base)
+    precio1amb: _pfSvc.esencial ? rawPrecio('pf-esc-p1') : '',
+    precio2amb: _pfSvc.esencial ? rawPrecio('pf-esc-p2') : '',
+    precio3amb: _pfSvc.esencial ? rawPrecio('pf-esc-p3') : '',
+    precio4amb: _pfSvc.esencial ? rawPrecio('pf-esc-p4') : '',
+    precioFlete: precioFleteNuevo,
+    precioPorKm:rawPrecio('pf-pkm'),
+    sinEstres: _pfSvc.llave,
+    // Nuevo modelo
+    preciosEsencial: preciosEsencial,
+    preciosIntegral: preciosIntegral,
+    preciosLlave: preciosLlave,
+    precioFleteNuevo: precioFleteNuevo,
+    extra:document.getElementById('pf-notas').value.trim(),
+    preciosLeads:preciosLeads
+  };
+
+  // Persistencia local de los datos del nuevo modelo (para que la próxima vez se carguen)
+  try {
+    localStorage.setItem('mudExtra_'+currentUser.email, JSON.stringify({
+      serviciosActivos: servActivos,
+      seguroMudanza: _pfSeguro,
+      preciosEsencial: preciosEsencial,
+      preciosIntegral: preciosIntegral,
+      preciosLlave: preciosLlave,
+      precioFleteNuevo: precioFleteNuevo
+    }));
+  } catch(e) {}
+
   localStorage.setItem('banking_'+currentUser.email, JSON.stringify({metodoCobro:document.getElementById('pf-metodoCobro').value,cbu:document.getElementById('pf-cbu').value.trim(),emailMP:document.getElementById('pf-emailMP').value.trim(),titular:document.getElementById('pf-titular').value.trim()}));
   try{
     var r=await fetch('/api/actualizar-mudancero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});
