@@ -98,8 +98,8 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
 .btn-mini{font-size:11px;padding:5px 10px;border-radius:6px;font-family:Inter,sans-serif;font-weight:600;border:1px solid;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
 .btn-mini-pdf{background:#fff;color:#1A6FFF;border-color:rgba(26,111,255,.3)}
 .btn-mini-pdf:hover{background:#EEF4FF}
-.btn-mini-elegir{background:var(--emerald);color:#fff;border-color:var(--emerald)}
-.btn-mini-elegir:hover{background:#16A34A}
+.btn-mini-elegir{background:var(--emerald);color:#fff;border-color:var(--emerald);font-weight:700;padding:6px 14px;font-size:12px;box-shadow:0 1px 3px rgba(34,195,106,.25)}
+.btn-mini-elegir:hover{background:#16A34A;box-shadow:0 2px 6px rgba(34,195,106,.4);transform:translateY(-1px)}
 .cot-nota-row{font-size:11px;color:var(--text2);font-style:italic;padding:0 12px 9px}
 @media (max-width:640px){
   .mz-row{grid-template-columns:1fr auto auto;gap:8px;padding:11px 12px}
@@ -718,9 +718,16 @@ function renderMudanzaCard(m, idx){
       var props = Array.isArray(c.propuestas) && c.propuestas.length > 0
         ? c.propuestas
         : [{ nivel: (c.nivelAceptado || m.nivel || 'esencial'), precio: c.precio, tiempoEstimado: c.tiempoEstimado, nota: c.nota }];
-      props.forEach(function(p){
+      props.forEach(function(p, idx){
         var isPropAceptada = isCotAceptada && nivelAceptado === p.nivel;
-        filas.push({ c: c, p: p, isCotAceptada: isCotAceptada, isPropAceptada: isPropAceptada });
+        filas.push({
+          c: c, p: p,
+          isCotAceptada: isCotAceptada,
+          isPropAceptada: isPropAceptada,
+          propIdx: idx + 1,
+          totalProps: props.length,
+          esPrimeraDelMud: idx === 0
+        });
       });
     });
     var hayAceptada = m.estado === 'cotizacion_aceptada';
@@ -738,18 +745,32 @@ function renderMudanzaCard(m, idx){
           var cfg = packsCfg[p.nivel] || packsCfg.esencial;
           var trClass = f.isPropAceptada ? 'aceptada' : (f.isCotAceptada ? 'aceptada' : '');
           var precioClass = f.isPropAceptada ? 'precio-cell aceptado' : 'precio-cell';
+          // Indicador de propuesta múltiple (1/2, 2/2, etc.) — solo si el mudancero envió varias
+          var propBadge = '';
+          if (f.totalProps > 1) {
+            propBadge = '<span style="display:inline-block;background:#F1F5F9;color:#475569;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;font-family:var(--mono);margin-left:6px;letter-spacing:.3px">'+f.propIdx+'/'+f.totalProps+'</span>';
+          }
+          // Mudancero: solo en primera fila para agrupar visualmente
+          var mudCell = f.esPrimeraDelMud
+            ? '<div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(c.mudanceroNombre || '—')
+              + (f.totalProps > 1 ? '<span style="display:inline-block;background:#1A6FFF;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;font-family:var(--mono);margin-left:8px;letter-spacing:.3px">'+f.totalProps+' OPCIONES</span>' : '')
+              + '</div>'
+            : '<div style="font-size:11.5px;color:var(--text3);padding-left:8px;border-left:2px solid #E2E8F0">↳ misma cotización</div>';
           // Acciones: PDF siempre, Elegir solo si no hay aceptada
-          var acciones = '';
           var pdfUrl = '/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'&propuestaNivel='+p.nivel;
-          acciones += '<a class="btn-mini btn-mini-pdf" href="'+pdfUrl+'" target="_blank" title="Ver presupuesto en PDF">📄 PDF</a>';
+          var acciones = '<a class="btn-mini btn-mini-pdf" href="'+pdfUrl+'" target="_blank" title="Ver presupuesto en PDF">📄 PDF</a>';
           if (!hayAceptada) {
-            acciones += '<button class="btn-mini btn-mini-elegir" onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">Elegir →</button>';
+            acciones += '<button class="btn-mini btn-mini-elegir" onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">✓ Elegir</button>';
           } else if (f.isPropAceptada) {
-            acciones += '<span style="font-size:11px;color:var(--emerald);font-weight:700;font-family:var(--mono)">✓ Elegida</span>';
+            acciones = '<span style="font-size:11px;color:var(--emerald);font-weight:700;font-family:var(--mono);padding:5px 10px;background:#DCFCE7;border-radius:6px">✓ Elegida</span>';
+          } else if (f.isCotAceptada) {
+            acciones = '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">No elegida</span>';
+          } else {
+            acciones = '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">—</span>';
           }
           return '<tr class="'+trClass+'">'
-            + '<td><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(c.mudanceroNombre || '—')+'</div></td>'
-            + '<td><span class="pack-badge" style="background:'+cfg.color+'15;color:'+cfg.color+'">'+cfg.emoji+' '+cfg.nombre+'</span></td>'
+            + '<td>'+mudCell+'</td>'
+            + '<td><span class="pack-badge" style="background:'+cfg.color+'15;color:'+cfg.color+'">'+cfg.emoji+' '+cfg.nombre+'</span>'+propBadge+'</td>'
             + '<td><span style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(p.tiempoEstimado?'⏱ '+esc(p.tiempoEstimado):'—')+'</span></td>'
             + '<td style="text-align:right"><span class="'+precioClass+'">$'+(p.precio||0).toLocaleString('es-AR')+'</span></td>'
             + '<td><div class="acciones-cell">'+acciones+'</div></td>'
