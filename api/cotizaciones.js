@@ -1646,6 +1646,15 @@ module.exports = async function handler(req, res) {
             extra:               p.extra                || '',
             sitioWeb:            p.sitioWeb             || '',
             añosExp:             p.añosExp              || '',
+            // ── Modelo nuevo: niveles de servicio explícitos + precios por nivel ──
+            serviciosActivos:    Array.isArray(p.serviciosActivos) ? p.serviciosActivos : null,
+            seguroMudanza:       p.seguroMudanza === true,
+            preciosEsencial:     p.preciosEsencial      || null,
+            preciosIntegral:     p.preciosIntegral      || null,
+            preciosLlave:        p.preciosLlave         || null,
+            precioFleteNuevo:    p.precioFleteNuevo     || '',
+            // Compat: sinEstres del modelo viejo (algunos perfiles aún lo tienen)
+            sinEstres:           p.sinEstres === true,
           });
         } catch(e) {}
       }
