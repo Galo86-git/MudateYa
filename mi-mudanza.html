@@ -650,30 +650,73 @@ function renderMudanzaCard(m, idx){
       + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cotizaciones recibidas</div>'
       + cotizaciones.map(function(c){
           var isAceptada = m.cotizacionAceptada && m.cotizacionAceptada.id === c.id;
-          var mData = JSON.stringify(m).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-          var cData = JSON.stringify(c).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-          return '<div style="background:var(--surface2);border:1px solid '+(isAceptada?'var(--emerald)':'#E2E8F0')+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-            // Fila superior: nombre + precio
-            + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(isAceptada||m.estado==='cotizacion_aceptada'?'0':'8px')+'">'
+          var hayOtraAceptada = m.estado === 'cotizacion_aceptada' && !isAceptada;
+          // Normalizar propuestas: si la cotización tiene propuestas[] usarlas; si no, armar 1 con precio plano (compat)
+          var propuestas = Array.isArray(c.propuestas) && c.propuestas.length > 0
+            ? c.propuestas
+            : [{ nivel: (c.nivelAceptado || m.nivel || 'esencial'), precio: c.precio, tiempoEstimado: c.tiempoEstimado, nota: c.nota }];
+          var packsCfg = {
+            esencial: { nombre:'Esencial',      emoji:'📦', color:'#475569', desc:'Carga, transporte y descarga' },
+            integral: { nombre:'Integral',      emoji:'🛠️', color:'#1A6FFF', desc:'+ Embalaje y desembalaje' },
+            llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A', desc:'Todo incluido' },
+            flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B', desc:'Solo transporte' }
+          };
+          // Render header: nombre + tiempo
+          var headerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(propuestas.length>1?'10':'8')+'px">'
             +   '<div style="flex:1">'
             +     '<div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(c.mudanceroNombre)+'</div>'
-            +     (c.tiempoEstimado?'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">⏱ '+c.tiempoEstimado+'</div>':'')
+            +     (c.tiempoEstimado?'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">⏱ '+esc(c.tiempoEstimado)+'</div>':'')
             +   '</div>'
-            +   '<div style="text-align:right;flex-shrink:0">'
-            +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--blue);letter-spacing:.5px">$'+c.precio.toLocaleString('es-AR')+'</div>'
-            +     (isAceptada ? '<div style="font-size:10px;color:var(--blue);font-family:var(--mono)">✓ Aceptada</div>' : '')
-            +   '</div>'
-            + '</div>'
-            // Botones — solo si no está aceptada ni hay otra aceptada
-            + ((!isAceptada && m.estado !== 'cotizacion_aceptada') ? (
-                '<div style="display:flex;gap:6px;margin-top:8px;align-items:center">'
-                + '<a class="btn btn-ghost" style="font-size:12px;padding:8px 14px;text-decoration:none;border-color:rgba(26,111,255,.25);color:var(--blue)" '
-                +   'href="/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'" target="_blank">'
-                +   '📄 Ver presupuesto</a>'
-                + '<button class="btn btn-green" style="font-size:12px;padding:8px 18px;margin-left:auto" '
-                +   'onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\')">Elegir →</button>'
+            +   (isAceptada ? '<div style="text-align:right"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--emerald);letter-spacing:.5px">$'+(c.precio||0).toLocaleString('es-AR')+'</div><div style="font-size:10px;color:var(--emerald);font-family:var(--mono)">✓ '+(packsCfg[c.nivelAceptado||'esencial'].emoji+' '+packsCfg[c.nivelAceptado||'esencial'].nombre)+' aceptado</div></div>' : '')
+            + '</div>';
+          // Si está aceptada, no mostrar selector de propuestas, solo el header
+          if (isAceptada) {
+            return '<div style="background:var(--surface2);border:1px solid var(--emerald);border-radius:10px;padding:10px 12px;margin-bottom:6px">' + headerHTML + '</div>';
+          }
+          // Render propuestas
+          var propuestasHTML = '';
+          if (propuestas.length === 1) {
+            var p = propuestas[0];
+            var cfg = packsCfg[p.nivel] || packsCfg.esencial;
+            propuestasHTML = '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:'+cfg.color+'10;border:1px solid '+cfg.color+'30;border-radius:8px;margin-bottom:8px">'
+              + '<span style="font-size:14px">'+cfg.emoji+'</span>'
+              + '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:'+cfg.color+'">'+cfg.nombre+'</div>'
+              + (p.nota?'<div style="font-size:10.5px;color:var(--text3);line-height:1.3;margin-top:2px">'+esc(p.nota)+'</div>':'')
+              + '</div>'
+              + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.2rem;color:var(--blue);letter-spacing:.5px">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'
+              + '</div>'
+              + (hayOtraAceptada ? '' :
+                  '<div style="display:flex;gap:6px;align-items:center">'
+                  + '<a class="btn btn-ghost" style="font-size:12px;padding:8px 14px;text-decoration:none;border-color:rgba(26,111,255,.25);color:var(--blue)" '
+                  +   'href="/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'" target="_blank">📄 Ver presupuesto</a>'
+                  + '<button class="btn btn-green" style="font-size:12px;padding:8px 18px;margin-left:auto" '
+                  +   'onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">Elegir →</button>'
+                  + '</div>');
+          } else {
+            // Multi-propuesta: mini cards con botón Elegir cada una
+            propuestasHTML = '<div style="display:flex;flex-direction:column;gap:6px">';
+            propuestas.forEach(function(p){
+              var cfg = packsCfg[p.nivel] || packsCfg.esencial;
+              propuestasHTML += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:'+cfg.color+'08;border:1.5px solid '+cfg.color+'30;border-radius:9px">'
+                + '<div style="flex:1;min-width:0">'
+                +   '<div style="display:flex;align-items:center;gap:5px"><span>'+cfg.emoji+'</span><span style="font-size:12px;font-weight:700;color:'+cfg.color+'">'+cfg.nombre+'</span></div>'
+                +   '<div style="font-size:10.5px;color:var(--text3);margin-top:1px">'+cfg.desc+'</div>'
+                +   (p.nota?'<div style="font-size:10.5px;color:var(--text2);margin-top:3px;line-height:1.3;font-style:italic">"'+esc(p.nota)+'"</div>':'')
                 + '</div>'
-              ) : '')
+                + '<div style="text-align:right;flex-shrink:0">'
+                +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.15rem;color:'+cfg.color+';letter-spacing:.5px;line-height:1">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'
+                +   (!hayOtraAceptada ? '<button class="btn btn-green" style="font-size:11px;padding:6px 12px;margin-top:4px" onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">Elegir →</button>' : '')
+                + '</div>'
+                + '</div>';
+            });
+            propuestasHTML += '</div>'
+              + (hayOtraAceptada ? '' :
+                  '<div style="margin-top:8px"><a class="btn btn-ghost" style="font-size:11.5px;padding:7px 12px;text-decoration:none;border-color:rgba(26,111,255,.25);color:var(--blue)" '
+                  +   'href="/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'" target="_blank">📄 Ver presupuesto</a></div>');
+          }
+          return '<div style="background:var(--surface2);border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+            + headerHTML
+            + propuestasHTML
             + '</div>';
         }).join('')
       + '</div>';
@@ -894,15 +937,33 @@ document.getElementById('pptoModal').addEventListener('click', function(e){
 });
 
 // ── ACEPTAR COTIZACIÓN ─────────────────────────────────────────────────────
-async function aceptarCotizacion(mudanzaId, cotizacionId){
+async function aceptarCotizacion(mudanzaId, cotizacionId, propuestaNivel){
   var btn = event && event.currentTarget;
   // Buscar datos para el mensaje de confirmación
   var mPre = mudanzasData.find(function(x){ return x.id===mudanzaId; });
   var cPre = mPre && (mPre.cotizaciones || []).find(function(x){ return x.id===cotizacionId; });
   var nombreMud = (cPre && (cPre.mudanceroNombre || cPre.empresa)) || 'este mudancero';
-  var precioMud = cPre && cPre.precio ? '$' + Number(cPre.precio).toLocaleString('es-AR') : '';
+  // Determinar precio y nombre del pack elegido
+  var precioMud = '';
+  var packNombre = '';
+  var packsCfg = {
+    esencial: { nombre:'Esencial',      emoji:'📦' },
+    integral: { nombre:'Integral',      emoji:'🛠️' },
+    llave:    { nombre:'Llave en mano', emoji:'🔑' },
+    flete:    { nombre:'Flete',         emoji:'🚚' }
+  };
+  if (cPre && Array.isArray(cPre.propuestas) && propuestaNivel) {
+    var p = cPre.propuestas.find(function(x){ return x.nivel === propuestaNivel; });
+    if (p) {
+      precioMud = '$' + Number(p.precio).toLocaleString('es-AR');
+      var cfg = packsCfg[p.nivel] || packsCfg.esencial;
+      packNombre = cfg.emoji + ' ' + cfg.nombre;
+    }
+  }
+  if (!precioMud && cPre && cPre.precio) precioMud = '$' + Number(cPre.precio).toLocaleString('es-AR');
   var msg = '¿Confirmás elegir a ' + nombreMud + '?'
-    + (precioMud ? '\n\nMonto total: ' + precioMud : '')
+    + (packNombre ? '\n\nPack: ' + packNombre : '')
+    + (precioMud ? '\nMonto total: ' + precioMud : '')
     + '\n\nDespués de aceptar:'
     + '\n• Las otras cotizaciones quedan canceladas'
     + '\n• Vas a pagar el anticipo (50%) por Mercado Pago'
@@ -910,10 +971,12 @@ async function aceptarCotizacion(mudanzaId, cotizacionId){
   if (!confirm(msg)) return;
   if (btn) { btn.disabled = true; btn.textContent = 'Procesando…'; }
   try{
+    var body = { mudanzaId: mudanzaId, cotizacionId: cotizacionId };
+    if (propuestaNivel) body.propuestaNivel = propuestaNivel;
     var r = await fetch('/api/cotizaciones?action=aceptar', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mudanzaId, cotizacionId})
+      body: JSON.stringify(body)
     });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
