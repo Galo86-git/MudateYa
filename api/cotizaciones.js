@@ -1009,7 +1009,11 @@ module.exports = async function handler(req, res) {
         const ids = await getJSON(`cliente:${email}`) || [];
         const mudanzas = [];
         for (const id of ids) {
-          try { const m = await getJSON(`mudanza:${id}`); if (m) mudanzas.push(m); } catch(e) {}
+          try {
+            const m = await getJSON(`mudanza:${id}`);
+            // Excluir mudanzas marcadas como eliminadas (defensa en profundidad)
+            if (m && m.estado !== 'eliminada') mudanzas.push(m);
+          } catch(e) {}
         }
         return res.status(200).json({ mudanzas });
       } catch(e) { return res.status(200).json({ mudanzas: [] }); }
@@ -1310,13 +1314,20 @@ module.exports = async function handler(req, res) {
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
-      if (m.estado !== 'buscando') return res.status(400).json({ error: 'Solo se pueden eliminar mudanzas buscando cotizaciones' });
-      // Marcar como eliminada
+      // Bloquear si ya pagó algo (para no perder rastro de pagos)
+      if (m.anticipoPagado || m.saldoPagado) {
+        return res.status(400).json({ error: 'No se puede eliminar una mudanza con pagos realizados. Contactanos para gestionar.' });
+      }
+      // Marcar como eliminada (cualquier estado anterior)
       m.estado = 'eliminada';
+      m.fechaEliminacion = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
-      // Sacar de la lista activa
+      // Sacar de la lista activa global
       const activas = await getJSON('mudanzas:activas') || [];
       await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId), 604800);
+      // Sacar del índice del cliente para que no la traiga `mis-mudanzas`
+      const idxCliente = await getJSON(`cliente:${clienteEmail}`) || [];
+      await setJSON(`cliente:${clienteEmail}`, idxCliente.filter(id => id !== mudanzaId), 2592000);
       // ── Hook aliados: cancelar atribución si existía ──
       try { await hookCancelarAtribucion(mudanzaId); } catch(e) { console.warn('Hook aliado cancelar:', e.message); }
       return res.status(200).json({ ok: true });
