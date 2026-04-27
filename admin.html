@@ -610,24 +610,11 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="page-title">Mudanceros</div>
         <div class="search-bar">
           <input class="search-input" id="searchMudanceros" placeholder="Buscar por nombre, zona o email…" oninput="filterMudanceros()"/>
-          <select class="search-input" id="filterEstado" style="flex:0 0 140px" onchange="filterMudanceros()">
-            <option value="">Todos los estados</option>
+          <select class="search-input" id="filterEstado" style="flex:0 0 160px" onchange="filterMudanceros()">
+            <option value="">Todos</option>
             <option value="Pendiente">Pendientes</option>
             <option value="Aprobado">Aprobados</option>
             <option value="Rechazado">Rechazados</option>
-          </select>
-          <select class="search-input" id="filterActualizacion" style="flex:0 0 200px" onchange="filterMudanceros()" title="Filtrar por última actualización del perfil">
-            <option value="">📅 Cualquier actualización</option>
-            <option value="hoy">Hoy</option>
-            <option value="semana">Última semana</option>
-            <option value="mes">Último mes</option>
-            <option value="nunca">Nunca actualizaron</option>
-          </select>
-          <select class="search-input" id="ordenMudanceros" style="flex:0 0 180px" onchange="filterMudanceros()" title="Ordenar lista">
-            <option value="actu-desc">↓ Actualizado recientemente</option>
-            <option value="actu-asc">↑ Actualizado hace mucho</option>
-            <option value="nombre">A-Z (nombre)</option>
-            <option value="estado">Por estado</option>
           </select>
           <button class="btn-sm" onclick="exportarExcel()" style="background:#22C36A;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⬇ Exportar Excel</button>
         </div>
@@ -1301,8 +1288,7 @@ async function loadMudanceros(){
         m.metodoCobro, m.cbu, m.emailMP, m.fechaRegistro,
         m.cuilVerificado ? 'Verificado' : 'No verificado',
         m.dniLegible ? 'Legible' : 'No legible',
-        m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente',
-        m.ultimaActualizacion || ''  // m[22] - ISO string de última edición del perfil
+        m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente'
       ];
     });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
@@ -1369,15 +1355,7 @@ function renderDashboard(){
   var transferenciasPendientes = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; }).length;
 
   document.getElementById('m-mudanceros').textContent = aprobados;
-  // Contar cuántos actualizaron en la última semana
-  var weekAgo = Date.now() - 7 * 86400000;
-  var actualizados7d = mudancerosData.filter(function(m){
-    if (getEstado(m) !== 'Aprobado' || !m[22]) return false;
-    return new Date(m[22]).getTime() >= weekAgo;
-  }).length;
-  var subText = pendientes > 0 ? pendientes + ' pendientes · ' : '';
-  subText += actualizados7d + ' editaron perfil 7d';
-  document.getElementById('m-pendientes-sub').textContent = subText;
+  document.getElementById('m-pendientes-sub').textContent = pendientes > 0 ? pendientes + ' pendientes de aprobar' : 'todos aprobados';
   document.getElementById('m-mudanzas').textContent = totalPagos;
   document.getElementById('m-gmv').textContent = gmv > 0 ? '$' + Math.round(gmv).toLocaleString('es-AR') : '—';
   document.getElementById('m-revenue').textContent = revenue > 0 ? '$' + Math.round(revenue).toLocaleString('es-AR') : '—';
@@ -1441,64 +1419,13 @@ function renderDashboard(){
 // ── MUDANCEROS PAGE ────────────────────────────────────────────────────────
 function renderMudancerosFull(){ filterMudanceros(); }
 
-// Helper: tiempo relativo en español ("hace 2 días", "hace 3h", etc.)
-function tiempoRelativo(isoStr) {
-  if (!isoStr) return { texto: 'Nunca', color: '#94A3B8', icono: '⚠️' };
-  var fecha = new Date(isoStr);
-  if (isNaN(fecha.getTime())) return { texto: '—', color: '#94A3B8', icono: '' };
-  var diffMs = Date.now() - fecha.getTime();
-  var diffMin = Math.round(diffMs / 60000);
-  var diffHr  = Math.round(diffMs / 3600000);
-  var diffDia = Math.round(diffMs / 86400000);
-  var color, icono = '';
-  if (diffDia <= 7) { color = '#16A34A'; icono = '🟢'; }
-  else if (diffDia <= 30) { color = '#F59E0B'; icono = '🟡'; }
-  else { color = '#DC2626'; icono = '🔴'; }
-  var texto;
-  if (diffMin < 1)        texto = 'Recién';
-  else if (diffMin < 60)  texto = 'Hace ' + diffMin + ' min';
-  else if (diffHr < 24)   texto = 'Hace ' + diffHr + 'h';
-  else if (diffDia < 30)  texto = 'Hace ' + diffDia + ' día' + (diffDia===1?'':'s');
-  else if (diffDia < 365) texto = 'Hace ' + Math.round(diffDia/30) + ' mes' + (Math.round(diffDia/30)===1?'':'es');
-  else                    texto = 'Hace ' + Math.round(diffDia/365) + ' año' + (Math.round(diffDia/365)===1?'':'s');
-  return { texto: texto, color: color, icono: icono, dias: diffDia };
-}
-
 function filterMudanceros(){
   var q = (document.getElementById('searchMudanceros').value || '').toLowerCase();
   var estado = document.getElementById('filterEstado').value;
-  var actu = (document.getElementById('filterActualizacion') || {}).value || '';
-  var orden = (document.getElementById('ordenMudanceros') || {}).value || 'actu-desc';
-
   var filtered = mudancerosData.filter(function(m){
     var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
     var matchE = !estado || getEstado(m) === estado;
-    // Filtro de actualización (m[22] = ultimaActualizacion ISO string)
-    var matchA = true;
-    if (actu) {
-      var ultima = m[22];
-      if (actu === 'nunca') {
-        matchA = !ultima;
-      } else if (ultima) {
-        var diffDia = (Date.now() - new Date(ultima).getTime()) / 86400000;
-        if (actu === 'hoy')        matchA = diffDia < 1;
-        else if (actu === 'semana')matchA = diffDia <= 7;
-        else if (actu === 'mes')   matchA = diffDia <= 30;
-      } else {
-        matchA = false;
-      }
-    }
-    return matchQ && matchE && matchA;
-  });
-
-  // Ordenar
-  filtered.sort(function(a, b){
-    if (orden === 'nombre') return (a[1]||'').localeCompare(b[1]||'');
-    if (orden === 'estado') return getEstado(a).localeCompare(getEstado(b));
-    // Por fecha de actualización (default)
-    var ta = a[22] ? new Date(a[22]).getTime() : 0;
-    var tb = b[22] ? new Date(b[22]).getTime() : 0;
-    return orden === 'actu-asc' ? (ta - tb) : (tb - ta);
+    return matchQ && matchE;
   });
 
   if (filtered.length === 0) {
@@ -1516,7 +1443,6 @@ function filterMudanceros(){
           var est = getEstado(m);
           var badgeColor = est === 'Aprobado' ? '#22C36A' : est === 'Rechazado' ? '#EF4444' : '#F59E0B';
           var badgeBg = est === 'Aprobado' ? 'rgba(34,195,106,.1)' : est === 'Rechazado' ? 'rgba(239,68,68,.08)' : 'rgba(245,158,11,.08)';
-          var actu = tiempoRelativo(m[22]);
           return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
             +   '<div>'
@@ -1525,16 +1451,11 @@ function filterMudanceros(){
             +   '</div>'
             +   '<span style="background:'+badgeBg+';color:'+badgeColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px">'+est+'</span>'
             + '</div>'
-            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">'
             +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Zona</div><div style="font-size:12px;color:#475569">'+(m[5]||'—')+'</div></div>'
             +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Vehículo</div><div style="font-size:12px;color:#475569">'+(m[8]||'—')+'</div></div>'
             +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Teléfono</div><div style="font-size:12px;color:#475569">'+(m[3]||'—')+'</div></div>'
             +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Empresa</div><div style="font-size:12px;color:#475569">'+(m[2]||'Independiente')+'</div></div>'
-            + '</div>'
-            + '<div style="background:#F8FAFC;border-radius:8px;padding:8px 10px;margin-bottom:10px;display:flex;align-items:center;gap:8px">'
-            +   '<span style="font-size:14px">'+actu.icono+'</span>'
-            +   '<div style="flex:1"><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Última actualización</div>'
-            +   '<div style="font-size:12px;color:'+actu.color+';font-weight:600">'+actu.texto+'</div></div>'
             + '</div>'
             + '<button class="btn-sm primary" style="width:100%;padding:10px;border-radius:8px;font-size:13px" onclick="openModal('+idx+')">Ver perfil completo →</button>'
             + '</div>';
@@ -1543,14 +1464,11 @@ function filterMudanceros(){
   } else {
     // Render como tabla en desktop
     document.getElementById('mudancerosList').innerHTML =
-      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Teléfono</th><th>Actualizado</th><th>Estado</th><th></th></tr></thead><tbody>'
+      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody>'
       + filtered.map(function(m){
           var idx = mudancerosData.indexOf(m);
           var est = getEstado(m);
-          var actu = tiempoRelativo(m[22]);
-          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td class="td-mono">'+(m[3]||'—')+'</td>'
-            +'<td><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:'+actu.color+';font-weight:600" title="'+(m[22]||'Nunca actualizó')+'">'+actu.icono+' '+actu.texto+'</span></td>'
-            +'<td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
+          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td class="td-mono">'+(m[3]||'—')+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
         }).join('')
       + '</tbody></table>';
   }
@@ -1923,11 +1841,6 @@ async function openModal(idx){
     ['Titular', perfil ? (perfil.titularCuenta || '—') : '—'],
     ['Sitio web', perfil ? (perfil.sitioWeb || '—') : '—'],
     ['Fecha registro', m[18] || '—'],
-    ['Última edición de perfil', (function(){
-      var t = tiempoRelativo(m[22]);
-      var fechaCompleta = m[22] ? new Date(m[22]).toLocaleString('es-AR') : '';
-      return t.icono + ' ' + t.texto + (fechaCompleta ? ' <span style="color:#94A3B8;font-size:11px">('+fechaCompleta+')</span>' : '');
-    })()],
     ['Estado', getEstado(m)],
   ];
 
