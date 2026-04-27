@@ -303,7 +303,10 @@
   }
 
   /* Selector de mudanceras existente */
-  .nivel-block{background:#fff;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden}
+  .nivel-block{background:#fff;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden;position:relative}
+  .nivel-block.recomendado{border:2px solid var(--green);box-shadow:0 4px 16px rgba(34,195,106,.15);margin-bottom:18px}
+  .nivel-block.recomendado .nivel-head{background:linear-gradient(90deg,#16A34A,#22C36A)}
+  .reco-badge{position:absolute;top:-10px;left:14px;background:linear-gradient(90deg,#F59E0B,#FBBF24);color:#78350F;font-family:'Inter',sans-serif;font-weight:800;font-size:10.5px;padding:4px 11px;border-radius:6px;letter-spacing:.5px;box-shadow:0 2px 6px rgba(245,158,11,.35);z-index:2;text-transform:uppercase;display:flex;align-items:center;gap:4px}
   .nivel-head{padding:12px 14px;background:linear-gradient(90deg,var(--navy),#0057BF);color:#fff;display:flex;align-items:center;justify-content:space-between}
   .nivel-head .lvl-name{font-weight:700;font-size:14px}
   .nivel-head .lvl-desc{font-size:11px;opacity:.85;font-family:var(--mono)}
@@ -1235,9 +1238,24 @@ async function fswNext() {
     FSW_STEP = 3; fswRenderStep(); return;
   }
   if (FSW_STEP === 3) {
-    if (!FSW_DATA.packs.esencial) return showErr(3, 'Elegí una mudancera para el pack Esencial.');
-    if (!FSW_DATA.packs.integral) return showErr(3, 'Elegí una mudancera para el pack Integral.');
-    if (!FSW_DATA.packs.llave)    return showErr(3, 'Elegí una mudancera para el pack Llave en Mano.');
+    // Validación adaptativa: si una mudancera no fue elegida porque no hay oferentes
+    // para ese nivel en la zona, dejamos pasar igual (el pack queda en blanco).
+    // Solo exigimos elegir cuando SÍ hay opciones disponibles.
+    var hayOferentes = function(nivel){
+      return MUDANCERAS_ZONA.some(function(m){
+        var p = Number((m.preciosPack||{})[nivel]);
+        return p && p > 0 && !isNaN(p);
+      });
+    };
+    if (!FSW_DATA.packs.esencial && hayOferentes('esencial'))
+      return showErr(3, 'Elegí una mudancera para el pack Esencial.');
+    if (!FSW_DATA.packs.integral && hayOferentes('integral'))
+      return showErr(3, 'Elegí una mudancera para el pack Integral.');
+    if (!FSW_DATA.packs.llave    && hayOferentes('llave'))
+      return showErr(3, 'Elegí una mudancera para el pack Llave en Mano.');
+    // Al menos un pack tiene que estar elegido
+    if (!FSW_DATA.packs.esencial && !FSW_DATA.packs.integral && !FSW_DATA.packs.llave)
+      return showErr(3, 'Elegí al menos una mudancera para uno de los packs.');
     FSW_STEP = 4; fswRenderStep(); return;
   }
   if (FSW_STEP === 4) {
@@ -1285,17 +1303,25 @@ function renderPacksPicker() {
     return;
   }
   var h = '';
-  ['esencial','integral','llave'].forEach(function(nivel){
+  // Llave en Mano va primero como recomendado, después Integral, después Esencial
+  ['llave','integral','esencial'].forEach(function(nivel){
+    // Filtro estricto: solo mudanceras que cargaron precio > 0 para este nivel.
+    // Si no cargó este pack, NO la mostramos (no inventamos precio).
     var opts = MUDANCERAS_ZONA.filter(function(m){
-      return (Number((m.preciosPack||{})[nivel]) || 0) > 0;
+      var precio = Number((m.preciosPack||{})[nivel]);
+      return precio && precio > 0 && !isNaN(precio);
     });
-    h += '<div class="nivel-block">' +
+    var esRecomendado = nivel === 'llave';
+    var blockClass = 'nivel-block' + (esRecomendado ? ' recomendado' : '');
+    var nivelLabel = (nivel === 'llave' ? 'Llave en Mano' : (nivel.charAt(0).toUpperCase() + nivel.slice(1)));
+    h += '<div class="' + blockClass + '">' +
+      (esRecomendado ? '<div class="reco-badge">★ Recomendado</div>' : '') +
       '<div class="nivel-head">' +
-        '<div><div class="lvl-name">' + (nivel === 'llave' ? 'Llave en Mano' : (nivel.charAt(0).toUpperCase() + nivel.slice(1))) + '</div><div class="lvl-desc">' + esc(NIVELES_DESC[nivel]) + '</div></div>' +
+        '<div><div class="lvl-name">' + nivelLabel + '</div><div class="lvl-desc">' + esc(NIVELES_DESC[nivel]) + '</div></div>' +
       '</div>' +
       '<div class="nivel-opts">';
     if (!opts.length) {
-      h += '<div class="nivel-empty">No hay mudanceras con precio cargado para este nivel en tu zona.</div>';
+      h += '<div class="nivel-empty">Ninguna mudancera de tu zona ofrece este pack.<br><span style="font-size:11px;font-family:var(--mono);color:var(--text3)">Podés armar el presupuesto sin este nivel — quedará en blanco.</span></div>';
     } else {
       opts.forEach(function(m){
         var precio = Number(m.preciosPack[nivel]) || 0;
@@ -1363,10 +1389,12 @@ async function crearYEnviarPedido() {
       token: TOKEN,
       cliente: FSW_DATA.cliente,
       mudanza: FSW_DATA.mudanza,
-      packs: ['esencial','integral','llave'].map(function(n){
-        var p = FSW_DATA.packs[n];
-        return { nivel: n, mudanceroEmail: p.mudanceroEmail };
-      })
+      packs: ['esencial','integral','llave']
+        .filter(function(n){ return FSW_DATA.packs[n]; }) // solo los packs elegidos
+        .map(function(n){
+          var p = FSW_DATA.packs[n];
+          return { nivel: n, mudanceroEmail: p.mudanceroEmail };
+        })
     };
     var r1 = await fetch('/api/asesores?action=crear-pedido', {
       method:'POST', headers:{'Content-Type':'application/json'},
