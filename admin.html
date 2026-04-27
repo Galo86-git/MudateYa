@@ -288,6 +288,68 @@ tr:hover td{background:rgba(34,195,106,.03)}
 .edit-precio-input{width:130px;padding:7px 10px 7px 22px;border:1px solid #CBD5E1;border-radius:7px;font-size:13px;font-family:var(--mono);color:#0F1923;background:#fff;outline:none;transition:border-color .2s}
 .edit-precio-input:focus{border-color:#1A6FFF}
 
+/* ══ CARDS DE SERVICIO ADMIN (Esencial / Integral / Llave / Flete) ══ */
+.ed-svc-card{
+  border:2px solid #E2E8F0;border-radius:12px;
+  margin-bottom:10px;overflow:hidden;
+  transition:all .2s;background:#fff;
+}
+.ed-svc-card.active{border-color:#16A34A;box-shadow:0 4px 14px rgba(22,163,74,.1)}
+.ed-svc-card.active.is-llave{border-color:#F59E0B;box-shadow:0 4px 14px rgba(245,158,11,.18)}
+.ed-svc-head{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 13px;cursor:pointer;
+}
+.ed-svc-icon{
+  width:34px;height:34px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0;
+}
+.ed-svc-info{flex:1;min-width:0}
+.ed-svc-title{font-weight:700;color:#0F1923;font-size:13px;line-height:1.3}
+.ed-svc-desc{font-size:11px;color:#475569;margin-top:2px;line-height:1.4}
+.ed-svc-check{
+  width:20px;height:20px;border-radius:50%;border:2px solid #E2E8F0;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.ed-svc-card.active .ed-svc-check{
+  background:#16A34A;border-color:#16A34A;
+}
+.ed-svc-card.active.is-llave .ed-svc-check{background:#F59E0B;border-color:#F59E0B}
+.ed-svc-card.active .ed-svc-check::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+.ed-svc-precios{
+  display:none;
+  padding:0 13px 13px;
+  flex-direction:column;gap:5px;
+  border-top:1px solid #F1F5F9;
+}
+.ed-svc-card.active .ed-svc-precios{display:flex}
+.ed-svc-card.precios-error{border-color:#DC2626;animation:edSvcShake .3s}
+@keyframes edSvcShake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  75%{transform:translateX(4px)}
+}
+/* Adicional: Seguro de mudanza */
+.ed-svc-extra{
+  margin-top:6px;padding:10px 12px;
+  background:#F5F7FA;border:1px solid #E2E8F0;border-radius:9px;
+  cursor:pointer;
+}
+.ed-svc-extra-label{
+  display:flex;align-items:flex-start;gap:9px;cursor:pointer;
+}
+.ed-svc-extra-check{
+  width:18px;height:18px;border-radius:5px;border:2px solid #CBD5E1;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;margin-top:1px;
+}
+.ed-svc-extra.active .ed-svc-extra-check{background:#1A6FFF;border-color:#1A6FFF}
+.ed-svc-extra.active .ed-svc-extra-check::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.ed-svc-extra-title{font-size:12.5px;font-weight:600;color:#0F1923}
+.ed-svc-extra-desc{font-size:11.5px;color:#64748B;margin-top:2px;line-height:1.4}
+
 /* ── COTIZACIONES ── */
 .cot-table{width:100%;border-collapse:collapse;font-size:13px}
 .cot-table th{background:var(--bg);padding:9px 12px;text-align:left;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
@@ -2528,129 +2590,85 @@ function _editSetChips(containerId, valor) {
   });
 }
 
-// Estado de los % de cascada para el modal de admin
-var _edPctState = { integral: 0, llave: 0 };
+// ── SERVICIOS Y PRECIOS ADMIN (4 cards Esencial/Integral/Llave/Flete) ─────
+var _edSvc    = { esencial:false, integral:false, llave:false, flete:false };
+var _edSeguro = false;
 
+function edToggleSvc(key) {
+  _edSvc[key] = !_edSvc[key];
+  var ids = { esencial:'ed-svcEsencial', integral:'ed-svcIntegral', llave:'ed-svcLlave', flete:'ed-svcFlete' };
+  var card = document.getElementById(ids[key]);
+  if (!card) return;
+  if (_edSvc[key]) {
+    card.classList.add('active');
+    if (key === 'llave') card.classList.add('is-llave');
+  } else {
+    card.classList.remove('active');
+    if (key === 'llave') card.classList.remove('is-llave');
+    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
+    if (key === 'flete') {
+      var f = document.getElementById('ed-flt-p'); if (f) f.value = '';
+    } else {
+      ['p1','p2','p3','p4'].forEach(function(n){
+        var el = document.getElementById('ed-'+prefix+'-'+n); if (el) el.value = '';
+      });
+    }
+    card.classList.remove('precios-error');
+  }
+}
+
+function edToggleSeguro(e) {
+  if (e) e.preventDefault();
+  _edSeguro = !_edSeguro;
+  var box = document.getElementById('ed-svcSeguro');
+  if (!box) return;
+  if (_edSeguro) box.classList.add('active'); else box.classList.remove('active');
+}
+
+function edValidarServiciosPrecios() {
+  var errores = [];
+  Object.keys(_edSvc).forEach(function(key){
+    if (!_edSvc[key]) return;
+    var ids = { esencial:'ed-svcEsencial', integral:'ed-svcIntegral', llave:'ed-svcLlave', flete:'ed-svcFlete' };
+    var card = document.getElementById(ids[key]);
+    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
+    var nombre = { esencial:'Esencial', integral:'Integral', llave:'Llave en mano', flete:'Flete' }[key];
+    var hayPrecio = false;
+    if (key === 'flete') {
+      var f = document.getElementById('ed-flt-p');
+      hayPrecio = !!(f && f.value.replace(/\./g,'').trim());
+    } else {
+      ['p1','p2','p3','p4'].forEach(function(n){
+        var el = document.getElementById('ed-'+prefix+'-'+n);
+        if (el && el.value.replace(/\./g,'').trim()) hayPrecio = true;
+      });
+    }
+    if (card) card.classList.remove('precios-error');
+    if (!hayPrecio) {
+      errores.push(nombre);
+      if (card) card.classList.add('precios-error');
+    }
+  });
+  return errores;
+}
+
+function edLeerPreciosCard(prefix) {
+  var rawP = function(id){ var el=document.getElementById(id); return el ? el.value.replace(/\./g,'') : ''; };
+  return {
+    amb1: rawP('ed-'+prefix+'-p1'),
+    amb2: rawP('ed-'+prefix+'-p2'),
+    amb3: rawP('ed-'+prefix+'-p3'),
+    amb4: rawP('ed-'+prefix+'-p4')
+  };
+}
+
+// Estado de los % de cascada para el modal de admin
 function _fmtPrecioEdit(el) {
   var raw = el.value.replace(/\D/g,'');
   if (raw) el.value = parseInt(raw,10).toLocaleString('es-AR');
-  // Si es input de la tabla preciosLeads, recalcular cascada
-  if (el.classList && el.classList.contains('edit-leads-input')) {
-    edRecalcularCascada(el);
-  }
 }
 
 function _parsePrecio(v) { return (v||'').replace(/\./g,'').replace(/\s/g,''); }
-
-// ── % de cascada admin ──────────────────────────────────────────
-function edRecalcularCascada(el) {
-  var amb = el.getAttribute('data-amb');
-  var nivel = el.getAttribute('data-nivel');
-  if (!amb || !nivel) return;
-  var v = parseInt(_parsePrecio(el.value)) || 0;
-  if (nivel === 'esencial') {
-    if (_edPctState.integral > 0) {
-      var intInp = document.getElementById('ed-pl-' + amb + '-integral');
-      var newInt = v > 0 ? Math.round(v * (1 + _edPctState.integral / 100)) : 0;
-      if (intInp) intInp.value = newInt > 0 ? newInt.toLocaleString('es-AR') : '';
-      if (_edPctState.llave > 0) {
-        var llaInp = document.getElementById('ed-pl-' + amb + '-llave');
-        var newLla = newInt > 0 ? Math.round(newInt * (1 + _edPctState.llave / 100)) : 0;
-        if (llaInp) llaInp.value = newLla > 0 ? newLla.toLocaleString('es-AR') : '';
-      }
-    }
-  } else if (nivel === 'integral') {
-    if (_edPctState.llave > 0) {
-      var llaInp2 = document.getElementById('ed-pl-' + amb + '-llave');
-      var newLla2 = v > 0 ? Math.round(v * (1 + _edPctState.llave / 100)) : 0;
-      if (llaInp2) llaInp2.value = newLla2 > 0 ? newLla2.toLocaleString('es-AR') : '';
-    }
-  }
-}
-
-function edTogglePctPopup(tipo, ev) {
-  if (ev) ev.stopPropagation();
-  var popup = document.getElementById('ed-pct-' + tipo + '-popup');
-  if (!popup) return;
-  // Cerrar otros
-  document.querySelectorAll('.ed-pct-popup').forEach(function(p){ if (p !== popup) p.style.display = 'none'; });
-  var open = popup.style.display !== 'none' && popup.style.display !== '';
-  popup.style.display = open ? 'none' : 'block';
-  if (!open) {
-    var inp = document.getElementById('ed-pct-' + tipo + '-input');
-    if (inp) {
-      inp.value = _edPctState[tipo] > 0 ? _edPctState[tipo] : '';
-      inp.focus();
-    }
-  }
-}
-
-function edApplyPct(tipo, ev) {
-  if (ev) ev.stopPropagation();
-  var inp = document.getElementById('ed-pct-' + tipo + '-input');
-  var pct = parseFloat((inp && inp.value) || '0');
-  if (!pct || pct <= 0) {
-    if (inp) { inp.style.borderColor = '#EF4444'; inp.focus(); setTimeout(function(){ inp.style.borderColor = ''; }, 1500); }
-    return;
-  }
-  _edPctState[tipo] = pct;
-  var ambs = ['amb1','amb2','amb3','amb4','amb5plus'];
-  ambs.forEach(function(a){
-    var src, dst;
-    if (tipo === 'integral') {
-      src = document.getElementById('ed-pl-'+a+'-esencial');
-      dst = document.getElementById('ed-pl-'+a+'-integral');
-    } else {
-      src = document.getElementById('ed-pl-'+a+'-integral');
-      dst = document.getElementById('ed-pl-'+a+'-llave');
-    }
-    if (!src || !dst) return;
-    var v = parseInt(_parsePrecio(src.value)) || 0;
-    if (v > 0) dst.value = Math.round(v * (1 + pct / 100)).toLocaleString('es-AR');
-  });
-  // Cascadear si se cambió Integral y existe pct Llave
-  if (tipo === 'integral' && _edPctState.llave > 0) {
-    ambs.forEach(function(a){
-      var src = document.getElementById('ed-pl-'+a+'-integral');
-      var dst = document.getElementById('ed-pl-'+a+'-llave');
-      if (!src || !dst) return;
-      var v = parseInt(_parsePrecio(src.value)) || 0;
-      if (v > 0) dst.value = Math.round(v * (1 + _edPctState.llave / 100)).toLocaleString('es-AR');
-    });
-  }
-  edActualizarPctPill(tipo);
-  document.getElementById('ed-pct-' + tipo + '-popup').style.display = 'none';
-}
-
-function edClearPct(tipo, ev) {
-  if (ev) ev.stopPropagation();
-  _edPctState[tipo] = 0;
-  edActualizarPctPill(tipo);
-  document.getElementById('ed-pct-' + tipo + '-popup').style.display = 'none';
-}
-
-function edActualizarPctPill(tipo) {
-  var pill = document.getElementById('ed-pct-' + tipo + '-pill');
-  if (!pill) return;
-  if (_edPctState[tipo] > 0) {
-    pill.style.background = '#22C36A';
-    pill.style.color = '#fff';
-    pill.style.borderColor = '#22C36A';
-    pill.innerHTML = '+ ' + _edPctState[tipo] + '% <span style="margin-left:2px;opacity:.7;font-weight:400">×</span>';
-  } else {
-    pill.style.background = '#EEF4FF';
-    pill.style.color = '#1A6FFF';
-    pill.style.borderColor = '#C7D7F5';
-    pill.innerHTML = '+ %';
-  }
-}
-
-// Click fuera → cerrar popups admin
-document.addEventListener('click', function(ev){
-  if (!ev.target.closest('.ed-pct-popup') && !ev.target.closest('.ed-pct-pill')) {
-    document.querySelectorAll('.ed-pct-popup').forEach(function(p){ p.style.display = 'none'; });
-  }
-});
 
 function activarEdicion(){
   var m = mudancerosData[currentMudanceroIdx];
@@ -2700,12 +2718,80 @@ function activarEdicion(){
   form += '<div class="edit-field"><label>Equipo (personas)</label><select id="ed-equipo"><option>Solo yo</option><option>2 personas</option><option>3 personas</option><option>4 o más personas</option></select></div>';
   form += '</div>';
 
-  form += '<div class="edit-section-title">Servicios que ofrecés</div>';
-  form += '<div class="edit-chips" id="ed-servicios">';
-  ['📦 Mudanzas completas','🏢 Mudanzas de oficina','🚚 Fletes y envíos','📦 Embalaje incluido','🔧 Desmontaje y montaje','🏗️ Sube / escalera','🛡️ Seguro de mudanza','🧹 Limpieza post-mudanza','📦 Guardamuebles','✨ Sin estrés (premium)'].forEach(function(s){
-    form += '<div class="edit-chip" onclick="_editChipToggle(this)">'+s+'</div>';
+  form += '<div class="edit-section-title">Servicios y precios</div>';
+  form += '<div style="font-size:11.5px;color:#475569;margin-bottom:12px;line-height:1.5">Activá los servicios que ofrece y cargá los precios base. Si activás un servicio, los precios son obligatorios.</div>';
+
+  // Card 1: Esencial
+  form += '<div class="ed-svc-card" id="ed-svcEsencial">'
+        + '<div class="ed-svc-head" onclick="edToggleSvc(\'esencial\')">'
+        +   '<div class="ed-svc-icon" style="background:#EEF4FF;color:#1A6FFF">📦</div>'
+        +   '<div class="ed-svc-info">'
+        +     '<div class="ed-svc-title">Mudanza Esencial</div>'
+        +     '<div class="ed-svc-desc">Carga, transporte y descarga. El servicio básico de mudanza.</div>'
+        +   '</div>'
+        +   '<div class="ed-svc-check"></div>'
+        + '</div>'
+        + '<div class="ed-svc-precios">';
+  [['ed-esc-p1','1 amb'],['ed-esc-p2','2 amb'],['ed-esc-p3','3 amb'],['ed-esc-p4','4+ amb']].forEach(function(r){
+    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
   });
-  form += '</div>';
+  form += '</div></div>';
+
+  // Card 2: Integral
+  form += '<div class="ed-svc-card" id="ed-svcIntegral">'
+        + '<div class="ed-svc-head" onclick="edToggleSvc(\'integral\')">'
+        +   '<div class="ed-svc-icon" style="background:#ECFDF3;color:#16A34A">🛠️</div>'
+        +   '<div class="ed-svc-info">'
+        +     '<div class="ed-svc-title">Mudanza Integral</div>'
+        +     '<div class="ed-svc-desc">Incluye embalaje y desembalaje. El cliente no toca cajas.</div>'
+        +   '</div>'
+        +   '<div class="ed-svc-check"></div>'
+        + '</div>'
+        + '<div class="ed-svc-precios">';
+  [['ed-int-p1','1 amb'],['ed-int-p2','2 amb'],['ed-int-p3','3 amb'],['ed-int-p4','4+ amb']].forEach(function(r){
+    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
+  });
+  form += '</div></div>';
+
+  // Card 3: Llave en mano
+  form += '<div class="ed-svc-card" id="ed-svcLlave">'
+        + '<div class="ed-svc-head" onclick="edToggleSvc(\'llave\')">'
+        +   '<div class="ed-svc-icon" style="background:#FFFBEB;color:#B45309">🔑</div>'
+        +   '<div class="ed-svc-info">'
+        +     '<div class="ed-svc-title">Llave en mano <span style="display:inline-block;font-size:9px;font-weight:700;background:#F59E0B;color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:.5px;font-family:DM Mono,monospace">PREMIUM</span></div>'
+        +     '<div class="ed-svc-desc">Servicio "Sin estrés": embalaje, armado, electrodomésticos — el cliente entra a una casa impecable.</div>'
+        +   '</div>'
+        +   '<div class="ed-svc-check"></div>'
+        + '</div>'
+        + '<div class="ed-svc-precios">';
+  [['ed-llv-p1','1 amb'],['ed-llv-p2','2 amb'],['ed-llv-p3','3 amb'],['ed-llv-p4','4+ amb']].forEach(function(r){
+    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
+  });
+  form += '</div></div>';
+
+  // Card 4: Flete
+  form += '<div class="ed-svc-card" id="ed-svcFlete">'
+        + '<div class="ed-svc-head" onclick="edToggleSvc(\'flete\')">'
+        +   '<div class="ed-svc-icon" style="background:#F1F5F9;color:#475569">🚚</div>'
+        +   '<div class="ed-svc-info">'
+        +     '<div class="ed-svc-title">Flete / Envío chico</div>'
+        +     '<div class="ed-svc-desc">Envío de objetos puntuales (heladera, cama, etc). No es mudanza completa.</div>'
+        +   '</div>'
+        +   '<div class="ed-svc-check"></div>'
+        + '</div>'
+        + '<div class="ed-svc-precios">'
+        +   '<div class="edit-precio-row"><span class="edit-precio-lbl">Precio base flete</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="ed-flt-p" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>'
+        + '</div></div>';
+
+  // Adicional: Seguro de mudanza
+  form += '<div class="ed-svc-extra" id="ed-svcSeguro">'
+        + '<label class="ed-svc-extra-label" onclick="edToggleSeguro(event)">'
+        +   '<div class="ed-svc-extra-check"></div>'
+        +   '<div>'
+        +     '<div class="ed-svc-extra-title">🛡️ Ofrece seguro de mudanza</div>'
+        +     '<div class="ed-svc-extra-desc">El cliente queda cubierto ante daños o pérdidas durante el traslado.</div>'
+        +   '</div>'
+        + '</label></div>';
 
   form += '<div class="edit-section-title">Disponibilidad</div>';
   form += '<div class="edit-field"><label>Días disponibles</label><div class="edit-hgrid" id="ed-dias">';
@@ -2720,61 +2806,6 @@ function activarEdicion(){
   form += '</div></div>';
   form += '<div class="edit-field"><label>Anticipación mínima</label><select id="ed-anticipacion"><option>Mismo día</option><option>24 horas</option><option>48 horas</option><option>1 semana</option></select></div>';
 
-  form += '<div class="edit-section-title">Precios base (ARS)</div>';
-  [['ed-p1','Monoambiente / 1 ambiente'],['ed-p2','2 ambientes'],['ed-p3','3 ambientes'],['ed-p4','4+ ambientes'],['ed-pflete','Flete / envío chico']].forEach(function(r){
-    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
-  });
-
-  form += '<div class="edit-section-title">Precios Plan Referidos Inmobiliarios — 25% comisión (ARS)</div>';
-  form += '<div style="padding:8px 12px;background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:6px;margin-bottom:10px;font-size:11px;color:#92400E;line-height:1.5">Precios que ve el asesor inmobiliario al armar packs para su cliente. 5 tamaños × 3 packs. Dejá en 0 los tamaños que no querés cubrir.</div>';
-  form += '<div style="overflow-x:auto;margin-bottom:14px"><table class="edit-leads-table" style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">';
-  form += '<thead><tr>'
-    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:left">Tamaño</th>'
-    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center">🥉 Esencial</th>'
-    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center;position:relative">'
-    +   '🥈 Integral'
-    +   '<span class="ed-pct-pill" id="ed-pct-integral-pill" onclick="edTogglePctPopup(\'integral\',event)" style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;background:#EEF4FF;border:1px solid #C7D7F5;border-radius:99px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:#1A6FFF;cursor:pointer;text-transform:none;letter-spacing:0;vertical-align:middle">+ %</span>'
-    +   '<div class="ed-pct-popup" id="ed-pct-integral-popup" style="display:none;position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:50;min-width:200px">'
-    +     '<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px;font-family:DM Mono,monospace">Integral = Esencial + %</div>'
-    +     '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">+</span>'
-    +     '<input type="number" id="ed-pct-integral-input" placeholder="30" min="0" max="500" style="width:60px;padding:5px 8px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;font-family:DM Mono,monospace;text-align:right;outline:none"/>'
-    +     '<span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">%</span></div>'
-    +     '<div style="display:flex;gap:4px;margin-top:8px">'
-    +       '<button onclick="edClearPct(\'integral\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#fff;color:#475569;border:1px solid #CBD5E1">Quitar</button>'
-    +       '<button onclick="edApplyPct(\'integral\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#1A6FFF;color:#fff;border:none">Aplicar</button>'
-    +     '</div>'
-    +   '</div>'
-    + '</th>'
-    + '<th style="background:#F1F5F9;font-size:10.5px;font-family:DM Mono,monospace;font-weight:700;color:#475569;padding:8px 6px;text-transform:uppercase;letter-spacing:.4px;text-align:center;position:relative">'
-    +   '🥇 Llave en Mano'
-    +   '<span class="ed-pct-pill" id="ed-pct-llave-pill" onclick="edTogglePctPopup(\'llave\',event)" style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;background:#EEF4FF;border:1px solid #C7D7F5;border-radius:99px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:#1A6FFF;cursor:pointer;text-transform:none;letter-spacing:0;vertical-align:middle">+ %</span>'
-    +   '<div class="ed-pct-popup" id="ed-pct-llave-popup" style="display:none;position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:50;min-width:200px">'
-    +     '<div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:6px;font-family:DM Mono,monospace">Llave = Integral + %</div>'
-    +     '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">+</span>'
-    +     '<input type="number" id="ed-pct-llave-input" placeholder="40" min="0" max="500" style="width:60px;padding:5px 8px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;font-family:DM Mono,monospace;text-align:right;outline:none"/>'
-    +     '<span style="font-family:DM Mono,monospace;font-size:13px;color:#475569">%</span></div>'
-    +     '<div style="display:flex;gap:4px;margin-top:8px">'
-    +       '<button onclick="edClearPct(\'llave\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#fff;color:#475569;border:1px solid #CBD5E1">Quitar</button>'
-    +       '<button onclick="edApplyPct(\'llave\',event)" style="flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:#1A6FFF;color:#fff;border:none">Aplicar</button>'
-    +     '</div>'
-    +   '</div>'
-    + '</th>'
-    + '</tr></thead><tbody>';
-  [['amb1','1 amb'],['amb2','2 amb'],['amb3','3 amb'],['amb4','4 amb'],['amb5plus','5+ amb']].forEach(function(row){
-    var amb = row[0], lbl = row[1];
-    form += '<tr><td style="padding:6px;font-size:13px;color:#475569;font-weight:500;border-bottom:1px solid #F1F5F9;white-space:nowrap">'+lbl+'</td>';
-    ['esencial','integral','llave'].forEach(function(niv){
-      form += '<td style="padding:5px;border-bottom:1px solid #F1F5F9;text-align:center"><div style="position:relative;display:inline-flex;align-items:center"><span style="position:absolute;left:8px;font-size:12px;color:#94A3B8;font-family:DM Mono,monospace">$</span><input class="edit-leads-input" id="ed-pl-'+amb+'-'+niv+'" data-amb="'+amb+'" data-nivel="'+niv+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)" style="width:100%;max-width:120px;padding:6px 8px 6px 18px;border:1px solid #CBD5E1;border-radius:6px;font-size:12.5px;font-family:DM Mono,monospace;color:#0F1923;background:#fff;outline:none;text-align:right"/></div></td>';
-    });
-    form += '</tr>';
-  });
-  form += '</tbody></table></div>';
-  // Cards informativas de niveles (debajo de la tabla)
-  form += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">';
-  form += '<div style="background:linear-gradient(135deg,#FFF8F1 0%,#fff 60%);border:1px solid #E2E8F0;border-left:3px solid #CD7F32;border-radius:8px;padding:10px 12px"><div style="font-family:DM Mono,monospace;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#475569;margin-bottom:4px">🥉 Esencial</div><div style="font-size:11px;line-height:1.5;color:#475569">Solo mudanza. Camión + 2 operarios, carga/traslado/descarga, hasta 4 hs. Cliente provee embalaje.</div></div>';
-  form += '<div style="background:linear-gradient(135deg,#F8FAFC 0%,#fff 60%);border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:10px 12px"><div style="font-family:DM Mono,monospace;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#475569;margin-bottom:4px">🥈 Integral</div><div style="font-size:11px;line-height:1.5;color:#475569">Mudanza completa. Esencial + cajas, equipo de embaladores 3-4 pax y desembalaje en destino.</div></div>';
-  form += '<div style="background:linear-gradient(135deg,#FEFBE8 0%,#fff 60%);border:1px solid #E2E8F0;border-left:3px solid #D97706;border-radius:8px;padding:10px 12px"><div style="font-family:DM Mono,monospace;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#475569;margin-bottom:4px">🥇 Llave en Mano</div><div style="font-size:11px;line-height:1.5;color:#475569">El premium. Integral + desarme/armado, instalación TV/electro, limpieza, retiro de cartón.</div></div>';
-  form += '</div>';
 
   form += '<div class="edit-section-title">Datos para cobrar</div>';
   form += '<div class="edit-cols2">';
@@ -2835,33 +2866,56 @@ function activarEdicion(){
     if (p.equipo)        { var eq=document.getElementById('ed-equipo');       if(eq) eq.value=p.equipo; }
     if (p.anticipacion)  { var an=document.getElementById('ed-anticipacion'); if(an) an.value=p.anticipacion; }
     if (p.metodoCobro)   { var mc=document.getElementById('ed-metodoCobro'); if(mc) mc.value=p.metodoCobro; }
-    var precioMap = {'ed-p1':p.precio1amb,'ed-p2':p.precio2amb,'ed-p3':p.precio3amb,'ed-p4':p.precio4amb,'ed-pflete':p.precioFlete};
-    Object.keys(precioMap).forEach(function(id){
-      var el=document.getElementById(id);
-      if(el && precioMap[id]) el.value=parseInt(String(precioMap[id]).replace(/\D/g,''),10).toLocaleString('es-AR');
-    });
-    // Precios Plan Referidos (5×3)
-    var pl = p.preciosLeads || {};
-    var ambs = ['amb1','amb2','amb3','amb4','amb5plus'];
-    var nivs = ['esencial','integral','llave'];
-    ambs.forEach(function(a){
-      nivs.forEach(function(n){
-        var el = document.getElementById('ed-pl-'+a+'-'+n);
-        if (!el) return;
-        var v = (pl[a] && pl[a][n]) ? pl[a][n] : 0;
-        // Fallback: si no hay preciosLeads pero hay preciosPack viejo, lo usamos para amb2
-        if (!v && a === 'amb2' && p.preciosPack && p.preciosPack[n]) {
-          v = p.preciosPack[n];
-        }
-        if (v && Number(v) > 0) el.value = parseInt(String(v).replace(/\D/g,''),10).toLocaleString('es-AR');
-      });
-    });
-    // Cargar % de cascada
-    _edPctState.integral = parseFloat(pl.pctIntegral || 0) || 0;
-    _edPctState.llave    = parseFloat(pl.pctLlave    || 0) || 0;
-    edActualizarPctPill('integral');
-    edActualizarPctPill('llave');
-    if (p.servicios) _editSetChips('ed-servicios', p.servicios);
+
+    // ── Cargar las 4 svc-cards: lee modelo nuevo, fallback a modelo viejo ──
+    var fmtP = function(v){
+      var n = parseInt(String(v||'').replace(/\D/g,''),10);
+      return (n && n > 0) ? n.toLocaleString('es-AR') : '';
+    };
+    var setV = function(id, v){ var el=document.getElementById(id); if(el && v) el.value=v; };
+
+    // Esencial
+    if (p.preciosEsencial && (p.preciosEsencial.amb1 || p.preciosEsencial.amb2 || p.preciosEsencial.amb3 || p.preciosEsencial.amb4)) {
+      setV('ed-esc-p1', fmtP(p.preciosEsencial.amb1));
+      setV('ed-esc-p2', fmtP(p.preciosEsencial.amb2));
+      setV('ed-esc-p3', fmtP(p.preciosEsencial.amb3));
+      setV('ed-esc-p4', fmtP(p.preciosEsencial.amb4));
+      if (Array.isArray(p.serviciosActivos) ? p.serviciosActivos.indexOf('esencial') !== -1 : true) edToggleSvc('esencial');
+    } else if (p.precio1amb || p.precio2amb || p.precio3amb || p.precio4amb) {
+      // Fallback: precios viejos planos van a Esencial
+      setV('ed-esc-p1', fmtP(p.precio1amb));
+      setV('ed-esc-p2', fmtP(p.precio2amb));
+      setV('ed-esc-p3', fmtP(p.precio3amb));
+      setV('ed-esc-p4', fmtP(p.precio4amb));
+      edToggleSvc('esencial');
+    }
+    // Integral
+    if (p.preciosIntegral && (p.preciosIntegral.amb1 || p.preciosIntegral.amb2 || p.preciosIntegral.amb3 || p.preciosIntegral.amb4)) {
+      setV('ed-int-p1', fmtP(p.preciosIntegral.amb1));
+      setV('ed-int-p2', fmtP(p.preciosIntegral.amb2));
+      setV('ed-int-p3', fmtP(p.preciosIntegral.amb3));
+      setV('ed-int-p4', fmtP(p.preciosIntegral.amb4));
+      if (Array.isArray(p.serviciosActivos) ? p.serviciosActivos.indexOf('integral') !== -1 : true) edToggleSvc('integral');
+    }
+    // Llave
+    if (p.preciosLlave && (p.preciosLlave.amb1 || p.preciosLlave.amb2 || p.preciosLlave.amb3 || p.preciosLlave.amb4)) {
+      setV('ed-llv-p1', fmtP(p.preciosLlave.amb1));
+      setV('ed-llv-p2', fmtP(p.preciosLlave.amb2));
+      setV('ed-llv-p3', fmtP(p.preciosLlave.amb3));
+      setV('ed-llv-p4', fmtP(p.preciosLlave.amb4));
+      if (Array.isArray(p.serviciosActivos) ? p.serviciosActivos.indexOf('llave') !== -1 : true) edToggleSvc('llave');
+    }
+    // Flete
+    if (p.precioFleteNuevo) {
+      setV('ed-flt-p', fmtP(p.precioFleteNuevo));
+      if (Array.isArray(p.serviciosActivos) ? p.serviciosActivos.indexOf('flete') !== -1 : true) edToggleSvc('flete');
+    } else if (p.precioFlete) {
+      setV('ed-flt-p', fmtP(p.precioFlete));
+      edToggleSvc('flete');
+    }
+    // Seguro
+    if (p.seguroMudanza === true) edToggleSeguro();
+
     if (p.dias)      _editSetChips('ed-dias',      p.dias);
     if (p.horarios)  _editSetChips('ed-horarios',  p.horarios);
     if (p.distancia) _editSetChips('ed-distancia', p.distancia);
@@ -2886,41 +2940,65 @@ async function guardarEdicion(){
     vehiculo:      (document.getElementById('ed-vehiculo')     ||{}).value||'',
     cantVehiculos: (document.getElementById('ed-cantVehiculos')||{}).value||'',
     equipo:        (document.getElementById('ed-equipo')       ||{}).value||'',
-    servicios:     _editGetChips('ed-servicios'),
     dias:          _editGetChips('ed-dias'),
     horarios:      _editGetChips('ed-horarios'),
     anticipacion:  (document.getElementById('ed-anticipacion') ||{}).value||'',
-    precio1amb:    _parsePrecio((document.getElementById('ed-p1')    ||{}).value),
-    precio2amb:    _parsePrecio((document.getElementById('ed-p2')    ||{}).value),
-    precio3amb:    _parsePrecio((document.getElementById('ed-p3')    ||{}).value),
-    precio4amb:    _parsePrecio((document.getElementById('ed-p4')    ||{}).value),
-    precioFlete:   _parsePrecio((document.getElementById('ed-pflete')||{}).value),
     metodoCobro:   (document.getElementById('ed-metodoCobro')  ||{}).value||'',
     cbu:           (document.getElementById('ed-cbu')          ||{}).value||'',
     emailMP:       (document.getElementById('ed-emailMP')      ||{}).value||'',
     titularCuenta: (document.getElementById('ed-titular')      ||{}).value||'',
     extra:         (document.getElementById('ed-extra')        ||{}).value||'',
   };
-  Object.keys(cambios).forEach(function(k){ if (!cambios[k]) delete cambios[k]; });
 
-  // Precios Plan Referidos (matriz 5×3) — siempre se envía como objeto completo
-  var preciosLeads = { amb1:{}, amb2:{}, amb3:{}, amb4:{}, amb5plus:{} };
-  var algunoCargado = false;
-  ['amb1','amb2','amb3','amb4','amb5plus'].forEach(function(a){
-    ['esencial','integral','llave'].forEach(function(n){
-      var inp = document.getElementById('ed-pl-'+a+'-'+n);
-      var v = inp ? (Number(_parsePrecio(inp.value)) || 0) : 0;
-      preciosLeads[a][n] = v;
-      if (v > 0) algunoCargado = true;
-    });
-  });
-  // Incluir % de cascada
-  preciosLeads.pctIntegral = _edPctState.integral || 0;
-  preciosLeads.pctLlave    = _edPctState.llave    || 0;
-  // Enviar si hay precios cargados o si hay % activos (para poder guardar solo los %)
-  if (algunoCargado || preciosLeads.pctIntegral > 0 || preciosLeads.pctLlave > 0) {
-    cambios.preciosLeads = preciosLeads;
+  // ── Servicios y precios desde las 4 svc-cards ──
+  var servActivos = Object.keys(_edSvc).filter(function(k){ return _edSvc[k]; });
+  // Validar: tiene que haber al menos un servicio
+  if (servActivos.length === 0) {
+    if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
+    alert('Activá al menos un servicio (Esencial, Integral, Llave en mano o Flete).');
+    var firstSvc = document.getElementById('ed-svcEsencial');
+    if (firstSvc) firstSvc.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
   }
+  // Validar: cada servicio activo tiene que tener precio
+  var erroresPrecios = edValidarServiciosPrecios();
+  if (erroresPrecios.length > 0) {
+    if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
+    alert('Cargá al menos un precio en: ' + erroresPrecios.join(', '));
+    var firstErrSvc = document.querySelector('.ed-svc-card.precios-error');
+    if (firstErrSvc) firstErrSvc.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
+  cambios.serviciosActivos = servActivos;
+  cambios.seguroMudanza    = _edSeguro;
+  // String compat para consumidores viejos
+  var servStr = [];
+  if (_edSvc.integral) servStr.push('Embalaje incluido');
+  if (_edSvc.flete)    servStr.push('Flete');
+  if (_edSeguro)       servStr.push('Seguro de mudanza');
+  cambios.servicios = servStr.join(', ');
+  cambios.sinEstres = _edSvc.llave;
+
+  // Nuevo modelo: precios por nivel
+  cambios.preciosEsencial  = _edSvc.esencial ? edLeerPreciosCard('esc') : null;
+  cambios.preciosIntegral  = _edSvc.integral ? edLeerPreciosCard('int') : null;
+  cambios.preciosLlave     = _edSvc.llave    ? edLeerPreciosCard('llv') : null;
+  cambios.precioFleteNuevo = _edSvc.flete    ? _parsePrecio((document.getElementById('ed-flt-p')||{}).value) : '';
+
+  // Compat plano: si Esencial está activo, usamos sus precios como precio1amb..precio4amb
+  if (_edSvc.esencial) {
+    cambios.precio1amb = _parsePrecio((document.getElementById('ed-esc-p1')||{}).value);
+    cambios.precio2amb = _parsePrecio((document.getElementById('ed-esc-p2')||{}).value);
+    cambios.precio3amb = _parsePrecio((document.getElementById('ed-esc-p3')||{}).value);
+    cambios.precio4amb = _parsePrecio((document.getElementById('ed-esc-p4')||{}).value);
+  }
+  // Compat flete plano
+  cambios.precioFlete = cambios.precioFleteNuevo;
+
+  Object.keys(cambios).forEach(function(k){
+    if (cambios[k] === '' || cambios[k] === undefined) delete cambios[k];
+  });
 
   try {
     var r = await fetch('/api/cotizaciones?action=admin-editar-mudancero', {
@@ -3778,8 +3856,19 @@ async function asrCargarZonaDetalle() {
         // Solo mudanceras aprobadas
         if (p.estado && p.estado !== 'aprobado') continue;
         var pp = p.preciosPack || {};
-        // Calcular si tiene algún precio cargado, ya sea preciosLeads o preciosPack viejo
+        // Calcular si tiene algún precio cargado: nuevo modelo o legacy
         var tieneAlgo = (Number(pp.esencial)||0) > 0 || (Number(pp.integral)||0) > 0 || (Number(pp.llave)||0) > 0;
+        // Modelo nuevo: preciosEsencial / preciosIntegral / preciosLlave
+        if (!tieneAlgo) {
+          ['preciosEsencial','preciosIntegral','preciosLlave'].forEach(function(k){
+            var pn = p[k];
+            if (pn && (Number(String(pn.amb1||'').replace(/\D/g,''))||0) > 0) tieneAlgo = true;
+            if (pn && (Number(String(pn.amb2||'').replace(/\D/g,''))||0) > 0) tieneAlgo = true;
+            if (pn && (Number(String(pn.amb3||'').replace(/\D/g,''))||0) > 0) tieneAlgo = true;
+            if (pn && (Number(String(pn.amb4||'').replace(/\D/g,''))||0) > 0) tieneAlgo = true;
+          });
+        }
+        // Legacy: preciosLeads
         if (!tieneAlgo && p.preciosLeads) {
           var pl = p.preciosLeads;
           ['amb1','amb2','amb3','amb4','amb5plus'].forEach(function(a){
