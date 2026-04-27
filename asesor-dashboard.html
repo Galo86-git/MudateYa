@@ -326,6 +326,22 @@
 
   .nivel-empty{padding:14px;text-align:center;font-size:11.5px;color:var(--text3);font-style:italic;line-height:1.5}
 
+  /* Estado de inclusión del nivel en el presupuesto */
+  .nivel-block.active{border-color:var(--green)}
+  .nivel-block.active .nivel-head{background:#F0FDF4;border-bottom-color:#BBF7D0}
+  .nivel-block.recomendado.active .nivel-head{background:linear-gradient(90deg,#DCFCE7,#BBF7D0)}
+  .lvl-remove{background:#fff;border:1px solid #FCA5A5;color:#DC2626;font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:5px;cursor:pointer;font-family:Inter,sans-serif;flex-shrink:0;transition:all .12s;letter-spacing:.2px}
+  .lvl-remove:hover{background:#FEE2E2;border-color:#F87171}
+  .lvl-status-out{font-size:10px;color:var(--text3);font-family:var(--mono);font-weight:600;letter-spacing:.4px;text-transform:uppercase;padding:4px 9px;background:#F1F5F9;border-radius:5px;flex-shrink:0}
+  .mud-check{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-left:4px}
+
+  /* Resumen arriba del selector */
+  .picker-resumen{display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(90deg,#EEF4FF,#F5F7FA);border:1px solid #C7D7FA;border-radius:10px;margin-bottom:12px}
+  .picker-resumen .pr-icon{font-size:20px;flex-shrink:0}
+  .picker-resumen .pr-text{flex:1;min-width:0}
+  .picker-resumen .pr-title{font-size:12.5px;font-weight:700;color:var(--navy);line-height:1.3}
+  .picker-resumen .pr-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;line-height:1.4}
+
   /* Resumen step 4 */
   .resumen-pack{background:#fff;border-radius:var(--r2);padding:14px;margin-bottom:10px;border-left:4px solid var(--green)}
   .resumen-pack .rp-lvl{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
@@ -1314,16 +1330,23 @@ function renderPacksPicker() {
       return precio && precio > 0 && !isNaN(precio);
     });
     var esRecomendado = nivel === 'llave';
-    var blockClass = 'nivel-block' + (esRecomendado ? ' recomendado' : '');
+    var packElegido = FSW_DATA.packs[nivel];
+    var tieneSeleccion = !!packElegido;
+    var blockClass = 'nivel-block' + (esRecomendado ? ' recomendado' : '') + (tieneSeleccion ? ' active' : '');
     var nivelLabel = (nivel === 'llave' ? 'Llave en Mano' : (nivel.charAt(0).toUpperCase() + nivel.slice(1)));
     var nameWithBadge = nivelLabel + (esRecomendado ? ' <span class="reco-badge-inline">★ Recomendado</span>' : '');
+    // Estado del nivel: incluido (con mudancera) o no incluido
+    var estadoNivel = tieneSeleccion
+      ? '<button class="lvl-remove" onclick="event.stopPropagation();removerPack(\'' + nivel + '\')" title="Quitar este pack del presupuesto">✕ Quitar</button>'
+      : '<span class="lvl-status-out">No incluido</span>';
     h += '<div class="' + blockClass + '">' +
       '<div class="nivel-head">' +
-        '<div><div class="lvl-name">' + nameWithBadge + '</div><div class="lvl-desc">' + esc(NIVELES_DESC[nivel]) + '</div></div>' +
+        '<div style="flex:1;min-width:0"><div class="lvl-name">' + nameWithBadge + '</div><div class="lvl-desc">' + esc(NIVELES_DESC[nivel]) + '</div></div>' +
+        estadoNivel +
       '</div>' +
       '<div class="nivel-opts">';
     if (!opts.length) {
-      h += '<div class="nivel-empty">Ninguna mudancera de tu zona ofrece este pack.<br><span style="font-size:11px;font-family:var(--mono);color:var(--text3)">Podés armar el presupuesto sin este nivel — quedará en blanco.</span></div>';
+      h += '<div class="nivel-empty">Ninguna mudancera de tu zona ofrece este pack.<br><span style="font-size:11px;font-family:var(--mono);color:var(--text3)">Podés armar el presupuesto sin este nivel.</span></div>';
     } else {
       opts.forEach(function(m){
         var precio = Number(m.preciosPack[nivel]) || 0;
@@ -1333,20 +1356,47 @@ function renderPacksPicker() {
         var fotoHtml = m.foto ? '<img src="' + esc(m.foto) + '" alt=""/>' : esc(iniciales);
         var emailSafe = esc(m.email).replace(/'/g, "\\'");
         var nombreSafe = esc(m.empresa || m.nombre).replace(/'/g, "\\'");
-        h += '<div class="mud-opt ' + (sel ? 'selected' : '') + '" onclick="pickMudancera(\'' + nivel + '\',\'' + emailSafe + '\',' + precio + ',\'' + nombreSafe + '\')">' +
+        h += '<div class="mud-opt ' + (sel ? 'selected' : '') + '" onclick="pickMudancera(\'' + nivel + '\',\'' + emailSafe + '\',' + precio + ',\'' + nombreSafe + '\')" title="' + (sel ? 'Click para quitar' : 'Click para incluir este pack') + '">' +
           '<div class="mud-avatar">' + fotoHtml + '</div>' +
           '<div class="mud-info"><div class="mud-nombre">' + esc(m.empresa || m.nombre) + '</div><div class="mud-estrellas">' + estrellasTxt + '</div></div>' +
           '<div class="mud-precio">$' + fmt(precio) + '</div>' +
+          (sel ? '<div class="mud-check">✓</div>' : '') +
         '</div>';
       });
     }
     h += '</div></div>';
   });
-  wrap.innerHTML = h;
+
+  // Resumen arriba: cuántos packs van a ir
+  var elegidos = 0;
+  ['esencial','integral','llave'].forEach(function(n){ if (FSW_DATA.packs[n]) elegidos++; });
+  var resumenH = '<div class="picker-resumen">'
+    + '<span class="pr-icon">📦</span>'
+    + '<div class="pr-text">'
+    +   '<div class="pr-title">Vas a enviarle ' + elegidos + ' presupuesto' + (elegidos === 1 ? '' : 's') + ' al cliente</div>'
+    +   '<div class="pr-sub">' + (elegidos === 0
+          ? 'Elegí al menos 1 mudancera para armar el presupuesto'
+          : 'Hacé click en una mudancera para quitarla, o elegí más para sumar packs') + '</div>'
+    + '</div>'
+    + '</div>';
+  wrap.innerHTML = resumenH + h;
 }
 
 function pickMudancera(nivel, email, precio, nombre) {
-  FSW_DATA.packs[nivel] = { nivel: nivel, mudanceroEmail: email, precio: precio, mudanceroNombre: nombre };
+  // Toggle: si ya está seleccionada esa mudancera para ese nivel, la deselecciono
+  // (saca el pack del presupuesto). Si no, la selecciona.
+  var actual = FSW_DATA.packs[nivel];
+  if (actual && actual.mudanceroEmail === email) {
+    FSW_DATA.packs[nivel] = null;
+  } else {
+    FSW_DATA.packs[nivel] = { nivel: nivel, mudanceroEmail: email, precio: precio, mudanceroNombre: nombre };
+  }
+  renderPacksPicker();
+}
+
+// Quitar un pack desde el header (botón ✕)
+function removerPack(nivel) {
+  FSW_DATA.packs[nivel] = null;
   renderPacksPicker();
 }
 
