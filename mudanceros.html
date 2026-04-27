@@ -309,19 +309,6 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           </select>
           <span class="field-error">Seleccioná tu zona base</span>
         </div>
-        <div class="field">
-          <label class="field-label">Zonas adicionales que cubrís</label>
-          <input type="text" id="zonasExtra" placeholder="Ej: Tigre, San Fernando, Escobar"/>
-          <span class="field-hint">Separadas por comas</span>
-        </div>
-        <div class="field">
-          <label class="field-label">¿Hacés mudanzas de larga distancia?</label>
-          <div class="chips-grid" id="chips-distancia">
-            <div class="chip" onclick="toggleChip(this,'distancia')"><span class="chip-icon">🏙️</span>Solo CABA/GBA</div>
-            <div class="chip" onclick="toggleChip(this,'distancia')"><span class="chip-icon">🗺️</span>Interior del país</div>
-            <div class="chip" onclick="toggleChip(this,'distancia')"><span class="chip-icon">🌎</span>Internacional</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -851,9 +838,6 @@ function toggleMetodoCobro() {
   document.getElementById('wrap-mp').style.display  = metodo === 'mp'  ? '' : 'none';
 }
 function toggleChip(el, group) {
-  if (group === 'distancia') {
-    document.querySelectorAll('#chips-distancia .chip').forEach(function(c) { c.classList.remove('sel'); });
-  }
   el.classList.toggle('sel');
 }
 function getChips(containerId) {
@@ -950,8 +934,6 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
     empresa:       document.getElementById('empresa').value.trim(),
     sitioWeb:      document.getElementById('sitioWeb').value.trim(),
     zonaBase:      zonaBase,
-    zonasExtra:    document.getElementById('zonasExtra').value.trim(),
-    distancia:     getChips('chips-distancia').join(', '),
     vehiculo:      vehiculo,
     cantVehiculos: document.getElementById('cantVehiculos').value,
     equipo:        document.getElementById('equipo').value,
