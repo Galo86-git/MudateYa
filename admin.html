@@ -610,11 +610,24 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="page-title">Mudanceros</div>
         <div class="search-bar">
           <input class="search-input" id="searchMudanceros" placeholder="Buscar por nombre, zona o email…" oninput="filterMudanceros()"/>
-          <select class="search-input" id="filterEstado" style="flex:0 0 160px" onchange="filterMudanceros()">
-            <option value="">Todos</option>
+          <select class="search-input" id="filterEstado" style="flex:0 0 140px" onchange="filterMudanceros()">
+            <option value="">Estado: Todos</option>
             <option value="Pendiente">Pendientes</option>
             <option value="Aprobado">Aprobados</option>
             <option value="Rechazado">Rechazados</option>
+          </select>
+          <select class="search-input" id="filterActualizacion" style="flex:0 0 180px" onchange="filterMudanceros()">
+            <option value="">Actualización: Todos</option>
+            <option value="hoy">Hoy</option>
+            <option value="semana">Última semana</option>
+            <option value="mes">Último mes</option>
+            <option value="viejos">+30 días</option>
+            <option value="nunca">Nunca actualizó</option>
+          </select>
+          <select class="search-input" id="filterOrden" style="flex:0 0 180px" onchange="filterMudanceros()">
+            <option value="reciente">Recién actualizado</option>
+            <option value="az">A-Z</option>
+            <option value="estado">Estado</option>
           </select>
           <button class="btn-sm" onclick="exportarExcel()" style="background:#22C36A;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⬇ Exportar Excel</button>
         </div>
@@ -1288,7 +1301,8 @@ async function loadMudanceros(){
         m.metodoCobro, m.cbu, m.emailMP, m.fechaRegistro,
         m.cuilVerificado ? 'Verificado' : 'No verificado',
         m.dniLegible ? 'Legible' : 'No legible',
-        m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente'
+        m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente',
+        m.ultimaActualizacion || ''  // [22] última edición de perfil
       ];
     });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
@@ -1355,7 +1369,16 @@ function renderDashboard(){
   var transferenciasPendientes = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; }).length;
 
   document.getElementById('m-mudanceros').textContent = aprobados;
-  document.getElementById('m-pendientes-sub').textContent = pendientes > 0 ? pendientes + ' pendientes de aprobar' : 'todos aprobados';
+  // Métrica más útil: cuántos editaron su perfil en los últimos 7 días
+  var editaron7d = mudancerosData.filter(function(m){
+    var t = tiempoRelativo(m[22]);
+    return t.dias <= 7 && t.dias < 9999;
+  }).length;
+  var subTexto = '';
+  if (pendientes > 0) subTexto = pendientes + ' pendientes';
+  if (editaron7d > 0) subTexto += (subTexto ? ' · ' : '') + '🟢 ' + editaron7d + ' editaron 7d';
+  if (!subTexto) subTexto = 'todos aprobados';
+  document.getElementById('m-pendientes-sub').textContent = subTexto;
   document.getElementById('m-mudanzas').textContent = totalPagos;
   document.getElementById('m-gmv').textContent = gmv > 0 ? '$' + Math.round(gmv).toLocaleString('es-AR') : '—';
   document.getElementById('m-revenue').textContent = revenue > 0 ? '$' + Math.round(revenue).toLocaleString('es-AR') : '—';
@@ -1422,10 +1445,36 @@ function renderMudancerosFull(){ filterMudanceros(); }
 function filterMudanceros(){
   var q = (document.getElementById('searchMudanceros').value || '').toLowerCase();
   var estado = document.getElementById('filterEstado').value;
+  var fAct = (document.getElementById('filterActualizacion') || {}).value || '';
+  var fOrden = (document.getElementById('filterOrden') || {}).value || 'reciente';
+
   var filtered = mudancerosData.filter(function(m){
     var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
     var matchE = !estado || getEstado(m) === estado;
-    return matchQ && matchE;
+    // Filtro por última actualización
+    var matchA = true;
+    if (fAct) {
+      var t = tiempoRelativo(m[22]);
+      if (fAct === 'hoy')      matchA = t.dias === 0;
+      else if (fAct === 'semana') matchA = t.dias <= 7 && t.dias < 9999;
+      else if (fAct === 'mes')    matchA = t.dias <= 30 && t.dias < 9999;
+      else if (fAct === 'viejos') matchA = t.dias > 30 && t.dias < 9999;
+      else if (fAct === 'nunca')  matchA = !m[22];
+    }
+    return matchQ && matchE && matchA;
+  });
+
+  // Ordenar
+  filtered.sort(function(a, b){
+    if (fOrden === 'az') return (a[1]||'').localeCompare(b[1]||'');
+    if (fOrden === 'estado') {
+      var ord = { 'Pendiente': 0, 'Aprobado': 1, 'Rechazado': 2 };
+      return (ord[getEstado(a)] || 99) - (ord[getEstado(b)] || 99);
+    }
+    // Por defecto: recién actualizado primero
+    var da = a[22] ? new Date(a[22]).getTime() : 0;
+    var db = b[22] ? new Date(b[22]).getTime() : 0;
+    return db - da;
   });
 
   if (filtered.length === 0) {
@@ -1444,12 +1493,16 @@ function filterMudanceros(){
           var badgeColor = est === 'Aprobado' ? '#22C36A' : est === 'Rechazado' ? '#EF4444' : '#F59E0B';
           var badgeBg = est === 'Aprobado' ? 'rgba(34,195,106,.1)' : est === 'Rechazado' ? 'rgba(239,68,68,.08)' : 'rgba(245,158,11,.08)';
           return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px">'
-            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-            +   '<div>'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">'
+            +   '<div style="min-width:0;flex:1">'
             +     '<div style="font-size:14px;font-weight:600;color:#0F1923">'+(m[1]||'—')+'</div>'
             +     '<div style="font-size:11px;color:#64748B;font-family:var(--mono)">'+(m[4]||'')+'</div>'
             +   '</div>'
-            +   '<span style="background:'+badgeBg+';color:'+badgeColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px">'+est+'</span>'
+            +   '<span style="background:'+badgeBg+';color:'+badgeColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px;flex-shrink:0">'+est+'</span>'
+            + '</div>'
+            + '<div style="margin-bottom:10px;padding:6px 10px;background:#F5F7FA;border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
+            +   '<span style="font-size:10px;color:#64748B;font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px">Última edición</span>'
+            +   pillTiempoRel(m[22])
             + '</div>'
             + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">'
             +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Zona</div><div style="font-size:12px;color:#475569">'+(m[5]||'—')+'</div></div>'
@@ -1464,11 +1517,11 @@ function filterMudanceros(){
   } else {
     // Render como tabla en desktop
     document.getElementById('mudancerosList').innerHTML =
-      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody>'
+      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Actualizado</th><th>Estado</th><th></th></tr></thead><tbody>'
       + filtered.map(function(m){
           var idx = mudancerosData.indexOf(m);
           var est = getEstado(m);
-          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td class="td-mono">'+(m[3]||'—')+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
+          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td>'+pillTiempoRel(m[22])+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
         }).join('')
       + '</tbody></table>';
   }
@@ -1811,6 +1864,43 @@ var CAMPOS = ['Fecha','Nombre','Empresa','Teléfono','Email','Zona base','Zonas 
 
 function getEstado(m){ return m[21] || 'Pendiente'; }
 
+// Tiempo relativo desde una fecha ISO con semáforo visual
+// 🟢 ≤7 días · 🟡 ≤30 días · 🔴 >30 días · ⚠️ Nunca
+function tiempoRelativo(iso){
+  if (!iso) return { txt: '⚠️ Nunca', dias: 9999, color: '#94A3B8', bg: '#F1F5F9' };
+  try {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return { txt: '⚠️ Nunca', dias: 9999, color: '#94A3B8', bg: '#F1F5F9' };
+    var ahora = new Date();
+    var diffMs = ahora - d;
+    var diffH = Math.floor(diffMs / 3600000);
+    var diffD = Math.floor(diffMs / 86400000);
+    var txt, color, bg;
+    if (diffH < 1) { txt = '🟢 Hace minutos'; color = '#15803D'; bg = '#DCFCE7'; }
+    else if (diffH < 24) { txt = '🟢 Hace ' + diffH + 'h'; color = '#15803D'; bg = '#DCFCE7'; }
+    else if (diffD <= 7) { txt = '🟢 Hace ' + diffD + 'd'; color = '#15803D'; bg = '#DCFCE7'; }
+    else if (diffD <= 30) { txt = '🟡 Hace ' + diffD + 'd'; color = '#92400E'; bg = '#FEF3C7'; }
+    else { txt = '🔴 Hace +' + Math.floor(diffD / 30) + 'm'; color = '#991B1B'; bg = '#FEE2E2'; }
+    return { txt: txt, dias: diffD, color: color, bg: bg };
+  } catch(e) {
+    return { txt: '⚠️ Nunca', dias: 9999, color: '#94A3B8', bg: '#F1F5F9' };
+  }
+}
+// Pill HTML del tiempo relativo (para tabla y cards)
+function pillTiempoRel(iso){
+  var t = tiempoRelativo(iso);
+  return '<span style="display:inline-block;background:' + t.bg + ';color:' + t.color + ';font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;font-family:Inter,sans-serif;letter-spacing:.2px;white-space:nowrap">' + t.txt + '</span>';
+}
+// Fecha completa formateada
+function fechaCompleta(iso){
+  if (!iso) return 'Sin registro';
+  try {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return 'Sin registro';
+    return d.toLocaleString('es-AR', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch(e) { return 'Sin registro'; }
+}
+
 async function openModal(idx){
   currentMudanceroIdx = idx;
   var m = mudancerosData[idx];
@@ -1841,6 +1931,7 @@ async function openModal(idx){
     ['Titular', perfil ? (perfil.titularCuenta || '—') : '—'],
     ['Sitio web', perfil ? (perfil.sitioWeb || '—') : '—'],
     ['Fecha registro', m[18] || '—'],
+    ['Última edición de perfil', m[22] ? fechaCompleta(m[22]) + ' · ' + tiempoRelativo(m[22]).txt : '⚠️ Nunca editó'],
     ['Estado', getEstado(m)],
   ];
 
