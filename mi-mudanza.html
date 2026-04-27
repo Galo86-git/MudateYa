@@ -57,8 +57,62 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem;color:#0F1923}
 
-.mudanza-card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:1.4rem;margin-bottom:1rem;transition:border-color .2s}
-.mudanza-card:hover{border-color:rgba(26,111,255,.25)}
+.mudanza-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;margin-bottom:.6rem;transition:border-color .2s,box-shadow .2s;overflow:hidden}
+.mudanza-card:hover{border-color:rgba(26,111,255,.3);box-shadow:0 2px 8px rgba(15,25,35,.04)}
+.mudanza-card.expanded{border-color:rgba(26,111,255,.4);box-shadow:0 4px 16px rgba(15,25,35,.06)}
+/* Fila compacta CRM siempre visible */
+.mz-row{display:grid;grid-template-columns:1fr auto auto auto;gap:14px;align-items:center;padding:12px 16px;cursor:pointer;user-select:none}
+.mz-row:hover{background:#FAFBFC}
+.mz-row-main{min-width:0}
+.mz-ruta-c{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mz-meta-c{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mz-mini-stepper{display:flex;gap:4px;align-items:center}
+.mz-mini-dot{width:8px;height:8px;border-radius:50%;background:#CBD5E1;transition:all .2s}
+.mz-mini-dot.done{background:var(--emerald)}
+.mz-mini-dot.active{background:var(--blue);box-shadow:0 0 0 3px rgba(26,111,255,.2);width:10px;height:10px}
+.mz-mini-line{width:14px;height:2px;background:#CBD5E1;border-radius:1px}
+.mz-mini-line.done{background:var(--emerald)}
+.mz-cot-count{display:inline-flex;align-items:center;gap:5px;background:#EEF4FF;color:#1A6FFF;font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;font-family:var(--mono);white-space:nowrap}
+.mz-cot-count.empty{background:#FEF3C7;color:#92400E}
+.mz-cot-count.done{background:#DCFCE7;color:#166534}
+.mz-precio-rango{font-size:11px;color:var(--text2);font-family:var(--mono);font-weight:600;white-space:nowrap}
+.mz-chevron{color:var(--text3);font-size:12px;transition:transform .25s ease;flex-shrink:0;width:18px;text-align:center}
+.mudanza-card.expanded .mz-chevron{transform:rotate(180deg);color:var(--blue)}
+/* Drawer con animación */
+.mudanza-drawer{display:none;border-top:1px solid #E2E8F0;padding:1.2rem 1.4rem 1.4rem;background:#FAFBFC}
+.mudanza-card.expanded .mudanza-drawer{display:block;animation:mzExpand .25s ease-out}
+@keyframes mzExpand{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+/* Tabla CRM de cotizaciones */
+.cot-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden}
+.cot-table thead{background:#F5F7FA}
+.cot-table th{text-align:left;padding:9px 12px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono);border-bottom:1px solid #E2E8F0}
+.cot-table td{padding:11px 12px;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+.cot-table tr:last-child td{border-bottom:none}
+.cot-table tr:hover{background:#F8FAFC}
+.cot-table tr.aceptada{background:#F0FDF4}
+.cot-table tr.aceptada:hover{background:#DCFCE7}
+.cot-table .pack-badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:6px;white-space:nowrap}
+.cot-table .precio-cell{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--blue);letter-spacing:.5px;white-space:nowrap}
+.cot-table .precio-cell.aceptado{color:var(--emerald)}
+.cot-table .acciones-cell{display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:nowrap}
+.btn-mini{font-size:11px;padding:5px 10px;border-radius:6px;font-family:Inter,sans-serif;font-weight:600;border:1px solid;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.btn-mini-pdf{background:#fff;color:#1A6FFF;border-color:rgba(26,111,255,.3)}
+.btn-mini-pdf:hover{background:#EEF4FF}
+.btn-mini-elegir{background:var(--emerald);color:#fff;border-color:var(--emerald)}
+.btn-mini-elegir:hover{background:#16A34A}
+.cot-nota-row{font-size:11px;color:var(--text2);font-style:italic;padding:0 12px 9px}
+@media (max-width:640px){
+  .mz-row{grid-template-columns:1fr auto auto;gap:8px;padding:11px 12px}
+  .mz-mini-stepper{display:none}
+  .mz-precio-rango{display:none}
+  .cot-table{font-size:12px}
+  .cot-table thead{display:none}
+  .cot-table tr{display:grid;grid-template-columns:1fr auto;gap:4px;padding:10px 12px;border-bottom:1px solid #F1F5F9}
+  .cot-table td{display:contents;padding:0;border:none}
+  .cot-table .acciones-cell{grid-column:1/-1;justify-content:flex-start;margin-top:6px}
+  .cot-nota-row{padding:0 12px 8px}
+  .mudanza-drawer{padding:1rem .8rem 1rem}
+}
 .mudanza-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem}
 .mudanza-ruta{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
 .mudanza-fecha{font-size:11px;color:var(--text3);font-family:var(--mono)}
@@ -596,6 +650,8 @@ function renderMudanzasTabs() {
     : list.map(function(m,idx){ return renderMudanzaCard(m,idx); }).join('');
 
   document.getElementById('mudanzasList').innerHTML = tabsHtml + contentHtml;
+  // Restaurar el estado expandido (sessionStorage)
+  setTimeout(restaurarMudanzasExpandidas, 0);
 }
 
 function renderMudanzaCard(m, idx){
@@ -645,94 +701,127 @@ function renderMudanzaCard(m, idx){
 
   // ── COTIZACIONES con botón "Ver presupuesto" ──────────────────────────
   var cotzHtml = '';
+  // ── COTIZACIONES tipo tabla CRM ──────────────────
+  var cotzHtml = '';
   if(tieneCotz){
-    cotzHtml = '<div style="margin:1rem 0">'
-      + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cotizaciones recibidas</div>'
-      + cotizaciones.map(function(c){
-          var isAceptada = m.cotizacionAceptada && m.cotizacionAceptada.id === c.id;
-          var hayOtraAceptada = m.estado === 'cotizacion_aceptada' && !isAceptada;
-          // Normalizar propuestas: si la cotización tiene propuestas[] usarlas; si no, armar 1 con precio plano (compat)
-          var propuestas = Array.isArray(c.propuestas) && c.propuestas.length > 0
-            ? c.propuestas
-            : [{ nivel: (c.nivelAceptado || m.nivel || 'esencial'), precio: c.precio, tiempoEstimado: c.tiempoEstimado, nota: c.nota }];
-          var packsCfg = {
-            esencial: { nombre:'Esencial',      emoji:'📦', color:'#475569', desc:'Carga, transporte y descarga' },
-            integral: { nombre:'Integral',      emoji:'🛠️', color:'#1A6FFF', desc:'+ Embalaje y desembalaje' },
-            llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A', desc:'Todo incluido' },
-            flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B', desc:'Solo transporte' }
-          };
-          // Render header: nombre + tiempo
-          var headerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(propuestas.length>1?'10':'8')+'px">'
-            +   '<div style="flex:1">'
-            +     '<div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(c.mudanceroNombre)+'</div>'
-            +     (c.tiempoEstimado?'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">⏱ '+esc(c.tiempoEstimado)+'</div>':'')
-            +   '</div>'
-            +   (isAceptada ? '<div style="text-align:right"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--emerald);letter-spacing:.5px">$'+(c.precio||0).toLocaleString('es-AR')+'</div><div style="font-size:10px;color:var(--emerald);font-family:var(--mono)">✓ '+(packsCfg[c.nivelAceptado||'esencial'].emoji+' '+packsCfg[c.nivelAceptado||'esencial'].nombre)+' aceptado</div></div>' : '')
-            + '</div>';
-          // Si está aceptada, no mostrar selector de propuestas, solo el header
-          if (isAceptada) {
-            return '<div style="background:var(--surface2);border:1px solid var(--emerald);border-radius:10px;padding:10px 12px;margin-bottom:6px">' + headerHTML + '</div>';
+    var packsCfg = {
+      esencial: { nombre:'Esencial',      emoji:'📦', color:'#475569' },
+      integral: { nombre:'Integral',      emoji:'🛠️', color:'#1A6FFF' },
+      llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
+      flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
+    };
+    // Aplanar cotizaciones × propuestas a filas de tabla
+    var filas = [];
+    cotizaciones.forEach(function(c){
+      var isCotAceptada = m.cotizacionAceptada && m.cotizacionAceptada.id === c.id;
+      var nivelAceptado = m.cotizacionAceptada && m.cotizacionAceptada.nivelAceptado;
+      var props = Array.isArray(c.propuestas) && c.propuestas.length > 0
+        ? c.propuestas
+        : [{ nivel: (c.nivelAceptado || m.nivel || 'esencial'), precio: c.precio, tiempoEstimado: c.tiempoEstimado, nota: c.nota }];
+      props.forEach(function(p){
+        var isPropAceptada = isCotAceptada && nivelAceptado === p.nivel;
+        filas.push({ c: c, p: p, isCotAceptada: isCotAceptada, isPropAceptada: isPropAceptada });
+      });
+    });
+    var hayAceptada = m.estado === 'cotizacion_aceptada';
+    cotzHtml = '<div style="margin-bottom:1rem">'
+      + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:700">Cotizaciones recibidas · '+cotizaciones.length+'</div>'
+      + '<table class="cot-table"><thead><tr>'
+      +   '<th>Mudancero</th>'
+      +   '<th>Pack</th>'
+      +   '<th>Tiempo</th>'
+      +   '<th style="text-align:right">Precio</th>'
+      +   '<th></th>'
+      + '</tr></thead><tbody>'
+      + filas.map(function(f){
+          var c = f.c, p = f.p;
+          var cfg = packsCfg[p.nivel] || packsCfg.esencial;
+          var trClass = f.isPropAceptada ? 'aceptada' : (f.isCotAceptada ? 'aceptada' : '');
+          var precioClass = f.isPropAceptada ? 'precio-cell aceptado' : 'precio-cell';
+          // Acciones: PDF siempre, Elegir solo si no hay aceptada
+          var acciones = '';
+          var pdfUrl = '/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'&propuestaNivel='+p.nivel;
+          acciones += '<a class="btn-mini btn-mini-pdf" href="'+pdfUrl+'" target="_blank" title="Ver presupuesto en PDF">📄 PDF</a>';
+          if (!hayAceptada) {
+            acciones += '<button class="btn-mini btn-mini-elegir" onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">Elegir →</button>';
+          } else if (f.isPropAceptada) {
+            acciones += '<span style="font-size:11px;color:var(--emerald);font-weight:700;font-family:var(--mono)">✓ Elegida</span>';
           }
-          // Render propuestas
-          var propuestasHTML = '';
-          if (propuestas.length === 1) {
-            var p = propuestas[0];
-            var cfg = packsCfg[p.nivel] || packsCfg.esencial;
-            propuestasHTML = '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:'+cfg.color+'10;border:1px solid '+cfg.color+'30;border-radius:8px;margin-bottom:8px">'
-              + '<span style="font-size:14px">'+cfg.emoji+'</span>'
-              + '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:'+cfg.color+'">'+cfg.nombre+'</div>'
-              + (p.nota?'<div style="font-size:10.5px;color:var(--text3);line-height:1.3;margin-top:2px">'+esc(p.nota)+'</div>':'')
-              + '</div>'
-              + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.2rem;color:var(--blue);letter-spacing:.5px">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'
-              + '</div>'
-              + (hayOtraAceptada ? '' :
-                  '<div style="display:flex;gap:6px;align-items:center">'
-                  + '<a class="btn btn-ghost" style="font-size:12px;padding:8px 14px;text-decoration:none;border-color:rgba(26,111,255,.25);color:var(--blue)" '
-                  +   'href="/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'" target="_blank">📄 Ver presupuesto</a>'
-                  + '<button class="btn btn-green" style="font-size:12px;padding:8px 18px;margin-left:auto" '
-                  +   'onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">Elegir →</button>'
-                  + '</div>');
-          } else {
-            // Multi-propuesta: mini cards con botón Elegir cada una
-            propuestasHTML = '<div style="display:flex;flex-direction:column;gap:6px">';
-            propuestas.forEach(function(p){
-              var cfg = packsCfg[p.nivel] || packsCfg.esencial;
-              propuestasHTML += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:'+cfg.color+'08;border:1.5px solid '+cfg.color+'30;border-radius:9px">'
-                + '<div style="flex:1;min-width:0">'
-                +   '<div style="display:flex;align-items:center;gap:5px"><span>'+cfg.emoji+'</span><span style="font-size:12px;font-weight:700;color:'+cfg.color+'">'+cfg.nombre+'</span></div>'
-                +   '<div style="font-size:10.5px;color:var(--text3);margin-top:1px">'+cfg.desc+'</div>'
-                +   (p.nota?'<div style="font-size:10.5px;color:var(--text2);margin-top:3px;line-height:1.3;font-style:italic">"'+esc(p.nota)+'"</div>':'')
-                + '</div>'
-                + '<div style="text-align:right;flex-shrink:0">'
-                +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.15rem;color:'+cfg.color+';letter-spacing:.5px;line-height:1">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'
-                +   (!hayOtraAceptada ? '<button class="btn btn-green" style="font-size:11px;padding:6px 12px;margin-top:4px" onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">Elegir →</button>' : '')
-                + '</div>'
-                + '</div>';
-            });
-            propuestasHTML += '</div>'
-              + (hayOtraAceptada ? '' :
-                  '<div style="margin-top:8px"><a class="btn btn-ghost" style="font-size:11.5px;padding:7px 12px;text-decoration:none;border-color:rgba(26,111,255,.25);color:var(--blue)" '
-                  +   'href="/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'" target="_blank">📄 Ver presupuesto</a></div>');
-          }
-          return '<div style="background:var(--surface2);border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-            + headerHTML
-            + propuestasHTML
-            + '</div>';
+          return '<tr class="'+trClass+'">'
+            + '<td><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(c.mudanceroNombre || '—')+'</div></td>'
+            + '<td><span class="pack-badge" style="background:'+cfg.color+'15;color:'+cfg.color+'">'+cfg.emoji+' '+cfg.nombre+'</span></td>'
+            + '<td><span style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(p.tiempoEstimado?'⏱ '+esc(p.tiempoEstimado):'—')+'</span></td>'
+            + '<td style="text-align:right"><span class="'+precioClass+'">$'+(p.precio||0).toLocaleString('es-AR')+'</span></td>'
+            + '<td><div class="acciones-cell">'+acciones+'</div></td>'
+            + '</tr>'
+            + (p.nota ? '<tr class="nota-tr"><td colspan="5" class="cot-nota-row">"'+esc(p.nota)+'"</td></tr>' : '');
         }).join('')
+      + '</tbody></table>'
       + '</div>';
   }
 
-  var expira = new Date(m.expira);
-  var ahorita = new Date();
-  var horasRestantes = Math.max(0, Math.round((expira - ahorita) / 3600000));
+  // ── Calcular rango de precios para mostrar en row compacto ─────
+  var precioRangoTxt = '';
+  if (tieneCotz) {
+    var todosPrecios = [];
+    cotizaciones.forEach(function(c){
+      if (Array.isArray(c.propuestas) && c.propuestas.length > 0) {
+        c.propuestas.forEach(function(p){
+          var v = parseInt(String(p.precio||0).replace(/\./g,'').replace(/[^0-9]/g,''))||0;
+          if (v > 0) todosPrecios.push(v);
+        });
+      } else {
+        var v = parseInt(String(c.precio||0).replace(/\./g,'').replace(/[^0-9]/g,''))||0;
+        if (v > 0) todosPrecios.push(v);
+      }
+    });
+    todosPrecios.sort(function(a,b){return a-b;});
+    if (todosPrecios.length === 1) {
+      precioRangoTxt = '$'+todosPrecios[0].toLocaleString('es-AR');
+    } else if (todosPrecios.length > 1) {
+      precioRangoTxt = '$'+todosPrecios[0].toLocaleString('es-AR')+' – $'+todosPrecios[todosPrecios.length-1].toLocaleString('es-AR');
+    }
+  }
+  // Mini stepper visual: 5 dots con líneas conectoras
+  var miniStepperHTML = '<div class="mz-mini-stepper" title="'+pasos[pasoActual]+'">';
+  for (var i = 0; i < 5; i++) {
+    var cls = i < pasoActual ? 'done' : (i === pasoActual ? 'active' : '');
+    miniStepperHTML += '<div class="mz-mini-dot '+cls+'"></div>';
+    if (i < 4) {
+      miniStepperHTML += '<div class="mz-mini-line '+(i < pasoActual ? 'done' : '')+'"></div>';
+    }
+  }
+  miniStepperHTML += '</div>';
+  // Badge de cotizaciones en row compacto
+  var rowBadgeCls = !tieneCotz ? 'empty' : (m.estado === 'cotizacion_aceptada' ? 'done' : '');
+  var rowBadgeTxt = !tieneCotz ? '⏱ Esperando'
+    : (m.estado === 'cotizacion_aceptada' ? '✓ Confirmada' : cotizaciones.length + ' cotizaci' + (cotizaciones.length === 1 ? 'ón' : 'ones'));
+  // Fecha corta para row
+  var fechaRowTxt = m.fecha ? esc(m.fecha) : 'A confirmar';
+
   var mud = m.cotizacionAceptada || {};
 
-  return '<div class="mudanza-card">'
-    + '<div class="mudanza-header">'
-    +   '<div><div class="mudanza-ruta">'+esc(m.desde)+' → '+esc(m.hasta)+'</div>'
-    +   '<div class="mudanza-fecha">📅 '+esc(m.fecha||'A confirmar')+' · '+esc(m.ambientes||'—')+'</div></div>'
-    +   '<span class="badge '+badgeClass+'">'+badgeText+'</span>'
+  return '<div class="mudanza-card" id="mz-card-'+m.id+'" data-id="'+m.id+'">'
+    // ═════ ROW COMPACTO (siempre visible) ═════
+    + '<div class="mz-row" onclick="toggleMudanza(\''+m.id+'\')">'
+    +   '<div class="mz-row-main">'
+    +     '<div class="mz-ruta-c">'+esc(m.desde)+' <span style="color:var(--text3)">→</span> '+esc(m.hasta)+'</div>'
+    +     '<div class="mz-meta-c">'
+    +       '<span>📅 '+fechaRowTxt+'</span>'
+    +       '<span>·</span>'
+    +       '<span>'+esc(m.ambientes||'—')+'</span>'
+    +       (m.km ? '<span>·</span><span>'+m.km+' km</span>' : '')
+    +     '</div>'
+    +   '</div>'
+    +   miniStepperHTML
+    +   '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+    +     '<span class="mz-cot-count '+rowBadgeCls+'">'+rowBadgeTxt+'</span>'
+    +     (precioRangoTxt ? '<span class="mz-precio-rango">'+precioRangoTxt+'</span>' : '')
+    +   '</div>'
+    +   '<div class="mz-chevron">▼</div>'
     + '</div>'
+    // ═════ DRAWER (oculto por default) ═════
+    + '<div class="mudanza-drawer">'
     + '<div class="stepper">'+stepperHtml+'</div>'
     + (function(){
         // Aviso de mudanceros que pasaron — solo modo dirigido y mudanza aún en búsqueda
@@ -853,7 +942,33 @@ function renderMudanzaCard(m, idx){
         +'</div>'
         : '')
     + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">ID: '+m.id+'</div>'
-    + '</div>';
+    + '</div>' // cierre drawer
+    + '</div>'; // cierre card
+}
+
+// Toggle del drawer de la mudanza (acordeón)
+function toggleMudanza(mudanzaId) {
+  var card = document.getElementById('mz-card-' + mudanzaId);
+  if (!card) return;
+  card.classList.toggle('expanded');
+  // Recordar el estado en sessionStorage para que se mantenga al reload
+  try {
+    var abiertos = JSON.parse(sessionStorage.getItem('mzAbiertos') || '[]');
+    var idx = abiertos.indexOf(mudanzaId);
+    if (card.classList.contains('expanded') && idx === -1) abiertos.push(mudanzaId);
+    else if (!card.classList.contains('expanded') && idx !== -1) abiertos.splice(idx, 1);
+    sessionStorage.setItem('mzAbiertos', JSON.stringify(abiertos));
+  } catch(e) {}
+}
+// Restaurar estado expandido al renderizar
+function restaurarMudanzasExpandidas() {
+  try {
+    var abiertos = JSON.parse(sessionStorage.getItem('mzAbiertos') || '[]');
+    abiertos.forEach(function(id){
+      var card = document.getElementById('mz-card-' + id);
+      if (card) card.classList.add('expanded');
+    });
+  } catch(e) {}
 }
 
 async function eliminarMudanza(mudanzaId, btn) {
