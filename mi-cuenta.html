@@ -333,6 +333,29 @@ body{font-family:Inter,sans-serif;background:#fff;color:var(--text);min-height:1
       <div class="login-logo">Mudate<span>Ya</span></div>
       <div class="login-sub">Portal del mudancero</div>
       <div id="googleBtn" style="margin:1.5rem 0"></div>
+
+      <!-- Magic link: alternativa para quien no usa Gmail/Workspace -->
+      <div id="magicLinkBox" style="margin:1.2rem 0 1rem;padding:14px 16px;background:#F5F7FA;border:1px solid #E2E8F0;border-radius:10px;font-size:13px;color:#475569;line-height:1.5">
+        <div style="font-weight:600;color:#0F1923;margin-bottom:6px">¿No tenés Gmail o Google Workspace?</div>
+        <div style="font-size:12px;color:#64748B;margin-bottom:10px">Te mandamos un link de acceso a tu email.</div>
+        <div id="magicLinkForm" style="display:flex;gap:6px;flex-direction:column">
+          <input type="email" id="magicLinkEmail" placeholder="tu-email@empresa.com" autocomplete="email"
+            style="padding:9px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;color:#0F1923;background:#fff;outline:none;width:100%"/>
+          <button type="button" onclick="solicitarMagicLink()" id="magicLinkBtn"
+            style="padding:10px 14px;background:#1A6FFF;color:#fff;font-weight:700;font-size:13px;border:none;border-radius:8px;cursor:pointer;font-family:Inter,sans-serif;transition:all .2s">
+            📧 Enviarme link de acceso
+          </button>
+        </div>
+        <div id="magicLinkMsg" style="margin-top:8px;font-size:12px;display:none"></div>
+      </div>
+
+      <!-- Loader mientras se valida el token de magic link de la URL -->
+      <div id="magicLinkValidating" style="display:none;padding:20px 16px;background:#EEF4FF;border:1px solid #C7D7F5;border-radius:10px;margin:1rem 0;text-align:center">
+        <div style="font-size:24px;margin-bottom:6px">🔑</div>
+        <div style="font-size:13px;font-weight:600;color:#1E40AF">Validando tu link de acceso...</div>
+        <div style="font-size:11px;color:#475569;margin-top:4px">Un momento, por favor</div>
+      </div>
+
       <div class="login-note">
         ¿Todavía no te registraste?<br>
         <a href="/mudanceros">Sumate como mudancero →</a>
@@ -698,6 +721,83 @@ window.onload = async function(){
     GOOGLE_CLIENT_ID = cfg.googleClientId;
   }catch(e){}
 
+  // ── MAGIC LINK: si la URL trae ?token=, validarlo automáticamente ──
+  var urlToken = (function(){
+    try {
+      var p = new URLSearchParams(window.location.search);
+      return p.get('token');
+    } catch(e) { return null; }
+  })();
+  if (urlToken && urlToken.length === 64 && /^[a-f0-9]+$/.test(urlToken)) {
+    // Mostrar loader y ocultar form de Google
+    setTimeout(function(){
+      var truck = document.getElementById('loginTruck');
+      var content = document.getElementById('loginContent');
+      var validating = document.getElementById('magicLinkValidating');
+      var googleBtn = document.getElementById('googleBtn');
+      var magicBox = document.getElementById('magicLinkBox');
+      if (truck) truck.style.display = 'none';
+      if (content) content.style.display = 'block';
+      if (validating) validating.style.display = 'block';
+      if (googleBtn) googleBtn.style.display = 'none';
+      if (magicBox) magicBox.style.display = 'none';
+    }, 200);
+    try {
+      var r = await fetch('/api/cotizaciones?action=verify-magic-link', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ token: urlToken })
+      });
+      var d = await r.json();
+      if (!r.ok || !d.ok) {
+        // Token inválido o expirado - mostrar mensaje y permitir pedir otro
+        var validating = document.getElementById('magicLinkValidating');
+        var googleBtn = document.getElementById('googleBtn');
+        var magicBox = document.getElementById('magicLinkBox');
+        if (validating) validating.style.display = 'none';
+        if (googleBtn) googleBtn.style.display = '';
+        if (magicBox) magicBox.style.display = '';
+        var msg = document.getElementById('magicLinkMsg');
+        if (msg) {
+          msg.style.display = 'block';
+          msg.style.color = '#DC2626';
+          msg.textContent = (d && d.error) || 'Link inválido o expirado. Pedí uno nuevo.';
+        }
+        // Limpiar token de la URL
+        try { window.history.replaceState({}, document.title, '/mi-cuenta'); } catch(e) {}
+        return;
+      }
+      // Login exitoso: guardar sesión igual que con Google
+      currentUser = { name: d.nombre || d.email.split('@')[0], email: d.email, picture: d.foto || '' };
+      var _ms = {...currentUser, _expires: Date.now()+604800000, sessionToken: d.sessionToken};
+      var _msStr = JSON.stringify(_ms);
+      sessionStorage.setItem('mudanceroUser', _msStr);
+      sessionStorage.setItem('googleUser', _msStr);
+      sessionStorage.setItem('clienteUser', _msStr);
+      sessionStorage.setItem('rolMudancero', '1');
+      sessionStorage.removeItem('rolCliente');
+      // Limpiar token de la URL antes de seguir
+      try { window.history.replaceState({}, document.title, '/mi-cuenta'); } catch(e) {}
+      await initApp();
+      return;
+    } catch(err) {
+      var validating = document.getElementById('magicLinkValidating');
+      var googleBtn = document.getElementById('googleBtn');
+      var magicBox = document.getElementById('magicLinkBox');
+      if (validating) validating.style.display = 'none';
+      if (googleBtn) googleBtn.style.display = '';
+      if (magicBox) magicBox.style.display = '';
+      var msg2 = document.getElementById('magicLinkMsg');
+      if (msg2) {
+        msg2.style.display = 'block';
+        msg2.style.color = '#DC2626';
+        msg2.textContent = 'No se pudo validar el link. Intentá de nuevo.';
+      }
+      try { window.history.replaceState({}, document.title, '/mi-cuenta'); } catch(e) {}
+      return;
+    }
+  }
+
   // FIX: acepta sesión de cualquier storage (mudanceroUser, googleUser o clienteUser)
   var saved = sessionStorage.getItem('mudanceroUser')
     || sessionStorage.getItem('googleUser')
@@ -749,6 +849,53 @@ function handleCredential(response){
   sessionStorage.setItem('rolMudancero', '1');
   sessionStorage.removeItem('rolCliente');
   initApp();
+}
+
+// ── MAGIC LINK: solicitar link de acceso ──────────────────────
+async function solicitarMagicLink(){
+  var input = document.getElementById('magicLinkEmail');
+  var btn   = document.getElementById('magicLinkBtn');
+  var msg   = document.getElementById('magicLinkMsg');
+  var email = (input.value || '').trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msg.style.display = 'block';
+    msg.style.color = '#DC2626';
+    msg.textContent = 'Ingresá un email válido.';
+    input.focus();
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  msg.style.display = 'none';
+  try {
+    var r = await fetch('/api/cotizaciones?action=request-magic-link', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: email })
+    });
+    var d = await r.json();
+    if (!r.ok) {
+      msg.style.display = 'block';
+      msg.style.color = '#DC2626';
+      msg.textContent = (d && d.error) || 'Error al enviar el link. Intentá de nuevo.';
+      btn.disabled = false;
+      btn.textContent = '📧 Enviarme link de acceso';
+      return;
+    }
+    // Mensaje genérico (no revelamos si el email existe o no)
+    msg.style.display = 'block';
+    msg.style.color = '#16A34A';
+    msg.innerHTML = '✓ Si tu email está registrado, recibirás un link en breve. Revisá tu bandeja de entrada (y spam, por las dudas).<br><span style="color:#64748B;font-size:11px">El link expira en 15 minutos.</span>';
+    input.disabled = true;
+    btn.textContent = 'Link enviado ✓';
+    // No re-habilitar el botón para evitar spam — usuario tiene que recargar
+  } catch(e) {
+    msg.style.display = 'block';
+    msg.style.color = '#DC2626';
+    msg.textContent = 'Error de conexión. Intentá de nuevo.';
+    btn.disabled = false;
+    btn.textContent = '📧 Enviarme link de acceso';
+  }
 }
 
 async function initApp(){
