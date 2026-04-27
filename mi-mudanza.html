@@ -100,31 +100,26 @@ body.mz-panel-open .mz-list-col{flex:1.3}
 
 /* Tabla CRM de cotizaciones (en panel lateral) */
 .cot-table{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden}
-.cot-table thead{background:#F5F7FA}
-.cot-table th{text-align:left;padding:8px 10px;font-size:9.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono);border-bottom:1px solid #E2E8F0}
-.cot-table td{padding:10px;border-bottom:1px solid #F1F5F9;vertical-align:middle}
-.cot-table tr:last-child td{border-bottom:none}
+.cot-table thead{display:none}
+.cot-table tr{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:9px 10px;border-bottom:1px solid #F1F5F9;align-items:center}
+.cot-table tr:last-child{border-bottom:none}
 .cot-table tr:hover{background:#F8FAFC}
 .cot-table tr.aceptada{background:#F0FDF4}
 .cot-table tr.aceptada:hover{background:#DCFCE7}
+.cot-table tr.nota-tr{padding:0 10px 8px;border-bottom:1px solid #F1F5F9;display:block}
+.cot-table tr.nota-tr:last-child{border-bottom:none}
+.cot-table td{padding:0;border:none;display:contents}
+.cot-table tr.nota-tr td{display:block}
 .cot-table .pack-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
-.cot-table .precio-cell{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--blue);letter-spacing:.5px;white-space:nowrap}
+.cot-table .precio-cell{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--blue);letter-spacing:.5px;white-space:nowrap;text-align:right}
 .cot-table .precio-cell.aceptado{color:var(--emerald)}
-.cot-table .acciones-cell{display:flex;gap:4px;align-items:center;justify-content:flex-end;flex-wrap:nowrap}
-.btn-mini{font-size:10.5px;padding:4px 8px;border-radius:5px;font-family:Inter,sans-serif;font-weight:600;border:1px solid;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.cot-table .acciones-cell{display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:nowrap;grid-column:1/-1;margin-top:4px;padding-top:6px;border-top:1px dashed #F1F5F9}
+.btn-mini{font-size:11px;padding:5px 10px;border-radius:5px;font-family:Inter,sans-serif;font-weight:600;border:1px solid;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
 .btn-mini-pdf{background:#fff;color:#1A6FFF;border-color:rgba(26,111,255,.3)}
 .btn-mini-pdf:hover{background:#EEF4FF}
-.btn-mini-elegir{background:var(--emerald);color:#fff;border-color:var(--emerald);font-weight:700;padding:5px 11px;font-size:11px;box-shadow:0 1px 3px rgba(34,195,106,.25)}
+.btn-mini-elegir{background:var(--emerald);color:#fff;border-color:var(--emerald);font-weight:700;padding:6px 14px;font-size:12px;box-shadow:0 1px 3px rgba(34,195,106,.25);flex:1;justify-content:center}
 .btn-mini-elegir:hover{background:#16A34A;box-shadow:0 2px 6px rgba(34,195,106,.4);transform:translateY(-1px)}
-.cot-nota-row{font-size:10.5px;color:var(--text2);font-style:italic;padding:0 10px 7px}
-
-@media (max-width:640px){
-  .cot-table thead{display:none}
-  .cot-table tr{display:grid;grid-template-columns:1fr auto;gap:4px;padding:10px;border-bottom:1px solid #F1F5F9}
-  .cot-table td{display:contents;padding:0;border:none}
-  .cot-table .acciones-cell{grid-column:1/-1;justify-content:flex-start;margin-top:6px}
-  .cot-nota-row{padding:0 10px 8px}
-}
+.cot-nota-row{font-size:10.5px;color:var(--text2);font-style:italic}
 
 .mudanza-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
 .meta-tag{font-size:11px;color:var(--text2);background:var(--surface2);padding:4px 10px;border-radius:6px;font-family:var(--mono)}
@@ -884,7 +879,7 @@ function renderMudanzaDetail(m) {
     return '<div class="step-item '+cls+'"><div class="step-dot">'+dotContent+'</div><div class="step-label">'+p+'</div>'+fechaTxt+'</div>';
   }).join('');
 
-  // ── Cotizaciones tabla ──
+  // ── Cotizaciones como mini-cards apilados (panel angosto) ──
   var cotzHtml = '';
   if(tieneCotz){
     var packsCfg = {
@@ -893,52 +888,63 @@ function renderMudanzaDetail(m) {
       llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
       flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
     };
-    var filas = [];
-    cotizaciones.forEach(function(c){
+    var hayAceptada = m.estado === 'cotizacion_aceptada';
+    var cotsHtml = cotizaciones.map(function(c){
       var isCotAceptada = m.cotizacionAceptada && m.cotizacionAceptada.id === c.id;
       var nivelAceptado = m.cotizacionAceptada && m.cotizacionAceptada.nivelAceptado;
       var props = Array.isArray(c.propuestas) && c.propuestas.length > 0
         ? c.propuestas
         : [{ nivel: (c.nivelAceptado || m.nivel || 'esencial'), precio: c.precio, tiempoEstimado: c.tiempoEstimado, nota: c.nota }];
-      props.forEach(function(p, idx){
-        filas.push({ c:c, p:p, isCotAceptada:isCotAceptada, isPropAceptada:isCotAceptada && nivelAceptado === p.nivel, propIdx:idx+1, totalProps:props.length, esPrimeraDelMud:idx===0 });
-      });
-    });
-    var hayAceptada = m.estado === 'cotizacion_aceptada';
+
+      // Header con nombre del mudancero + badge si tiene varias opciones
+      var headerHtml = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding:0 2px">'
+        + '<div style="font-size:13px;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.mudanceroNombre || '—')+'</div>'
+        + (props.length > 1 ? '<span style="background:#1A6FFF;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;font-family:var(--mono);letter-spacing:.3px;flex-shrink:0">'+props.length+' OPCIONES</span>' : '')
+        + (c.tiempoEstimado ? '<span style="font-size:10.5px;color:var(--text3);font-family:var(--mono);flex-shrink:0">⏱ '+esc(c.tiempoEstimado)+'</span>' : '')
+        + '</div>';
+
+      // Cada propuesta como una sub-card
+      var propsHtml = props.map(function(p, idx){
+        var cfg = packsCfg[p.nivel] || packsCfg.esencial;
+        var isPropAceptada = isCotAceptada && nivelAceptado === p.nivel;
+        var bgCard = isPropAceptada ? '#F0FDF4' : '#fff';
+        var borderCard = isPropAceptada ? 'var(--emerald)' : '#E2E8F0';
+        var precioColor = isPropAceptada ? 'var(--emerald)' : 'var(--blue)';
+
+        // Acciones por propuesta
+        var pdfUrl = '/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'&propuestaNivel='+p.nivel;
+        var actBtns;
+        if (!hayAceptada) {
+          actBtns = '<a class="btn-mini btn-mini-pdf" href="'+pdfUrl+'" target="_blank">📄 PDF</a>'
+            + '<button class="btn-mini btn-mini-elegir" onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">✓ Elegir</button>';
+        } else if (isPropAceptada) {
+          actBtns = '<a class="btn-mini btn-mini-pdf" href="'+pdfUrl+'" target="_blank">📄 PDF</a>'
+            + '<span style="font-size:11px;color:var(--emerald);font-weight:700;font-family:var(--mono);padding:5px 10px;background:#DCFCE7;border-radius:6px">✓ Elegida</span>';
+        } else {
+          actBtns = '<a class="btn-mini btn-mini-pdf" href="'+pdfUrl+'" target="_blank">📄 PDF</a>'
+            + '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">—</span>';
+        }
+
+        return '<div style="background:'+bgCard+';border:1px solid '+borderCard+';border-radius:8px;padding:10px 12px;margin-bottom:6px">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:'+(p.nota?'6':'8')+'px">'
+          +   '<span class="pack-badge" style="background:'+cfg.color+'15;color:'+cfg.color+'">'+cfg.emoji+' '+cfg.nombre+(props.length>1?' <span style="opacity:.6;font-weight:500">('+(idx+1)+'/'+props.length+')</span>':'')+'</span>'
+          +   '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.15rem;color:'+precioColor+';letter-spacing:.5px;white-space:nowrap">$'+(p.precio||0).toLocaleString('es-AR')+'</span>'
+          + '</div>'
+          + (p.nota ? '<div style="font-size:11px;color:var(--text2);font-style:italic;margin-bottom:8px;line-height:1.4">"'+esc(p.nota)+'"</div>' : '')
+          + '<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">'+actBtns+'</div>'
+          + '</div>';
+      }).join('');
+
+      return '<div style="background:#FAFBFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:8px">'
+        + headerHtml
+        + propsHtml
+        + '</div>';
+    }).join('');
+
     cotzHtml = '<div style="margin-bottom:1rem">'
       + '<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:700">Cotizaciones recibidas · '+cotizaciones.length+'</div>'
-      + '<table class="cot-table"><thead><tr><th>Mudancero</th><th>Pack</th><th>Tiempo</th><th style="text-align:right">Precio</th><th></th></tr></thead><tbody>'
-      + filas.map(function(f){
-          var c = f.c, p = f.p;
-          var cfg = packsCfg[p.nivel] || packsCfg.esencial;
-          var trClass = f.isPropAceptada ? 'aceptada' : (f.isCotAceptada ? 'aceptada' : '');
-          var precioClass = f.isPropAceptada ? 'precio-cell aceptado' : 'precio-cell';
-          var propBadge = f.totalProps > 1 ? '<span style="display:inline-block;background:#F1F5F9;color:#475569;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;font-family:var(--mono);margin-left:6px;letter-spacing:.3px">'+f.propIdx+'/'+f.totalProps+'</span>' : '';
-          var mudCell = f.esPrimeraDelMud
-            ? '<div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(c.mudanceroNombre || '—')
-              + (f.totalProps > 1 ? '<span style="display:inline-block;background:#1A6FFF;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;font-family:var(--mono);margin-left:8px;letter-spacing:.3px">'+f.totalProps+' OPCIONES</span>' : '') + '</div>'
-            : '<div style="font-size:11.5px;color:var(--text3);padding-left:8px;border-left:2px solid #E2E8F0">↳ misma cotización</div>';
-          var pdfUrl = '/api/cotizaciones?action=pdf&mudanzaId='+m.id+'&cotizacionId='+c.id+'&propuestaNivel='+p.nivel;
-          var acciones = '<a class="btn-mini btn-mini-pdf" href="'+pdfUrl+'" target="_blank" title="Ver presupuesto en PDF">📄 PDF</a>';
-          if (!hayAceptada) {
-            acciones += '<button class="btn-mini btn-mini-elegir" onclick="aceptarCotizacion(\''+m.id+'\',\''+c.id+'\',\''+p.nivel+'\')">✓ Elegir</button>';
-          } else if (f.isPropAceptada) {
-            acciones = '<span style="font-size:11px;color:var(--emerald);font-weight:700;font-family:var(--mono);padding:5px 10px;background:#DCFCE7;border-radius:6px">✓ Elegida</span>';
-          } else if (f.isCotAceptada) {
-            acciones = '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">No elegida</span>';
-          } else {
-            acciones = '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">—</span>';
-          }
-          return '<tr class="'+trClass+'">'
-            + '<td>'+mudCell+'</td>'
-            + '<td><span class="pack-badge" style="background:'+cfg.color+'15;color:'+cfg.color+'">'+cfg.emoji+' '+cfg.nombre+'</span>'+propBadge+'</td>'
-            + '<td><span style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(p.tiempoEstimado?'⏱ '+esc(p.tiempoEstimado):'—')+'</span></td>'
-            + '<td style="text-align:right"><span class="'+precioClass+'">$'+(p.precio||0).toLocaleString('es-AR')+'</span></td>'
-            + '<td><div class="acciones-cell">'+acciones+'</div></td>'
-            + '</tr>'
-            + (p.nota ? '<tr class="nota-tr"><td colspan="5" class="cot-nota-row">"'+esc(p.nota)+'"</td></tr>' : '');
-        }).join('')
-      + '</tbody></table></div>';
+      + cotsHtml
+      + '</div>';
   }
 
   var rutaCompactaTitle = esc(m.desde) + ' → ' + esc(m.hasta);
