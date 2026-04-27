@@ -568,7 +568,9 @@ module.exports = async function handler(req, res) {
     }
 
     // ── MUDANCEROS-ZONA (los pre-asignados por admin para esta zona) ──
-    // Devuelve cada mudancera con sus 3 precios (esencial/integral/llave)
+    // Devuelve cada mudancera con sus 3 precios (esencial/integral/llave).
+    // Por defecto usa amb2 (2 ambientes) — el dashboard llama a `mudanceros-todos`
+    // con el tamaño elegido para el cálculo real.
     if (action === 'mudanceros-zona' && req.method === 'GET') {
       var mzToken = String(req.query.token || '');
       var mzSess = await getAsesorDesdeToken(mzToken);
@@ -577,12 +579,33 @@ module.exports = async function handler(req, res) {
       var mzZona = normZona(req.query.zona || mzSess.asesor.zona);
       var mzEmails = await getJSON('asesor:mudanceros-zona:' + mzZona) || [];
 
+      // Helper igual al de mudanceros-todos
+      var parsePrecioZ = function(v){
+        if (v === null || v === undefined || v === '') return 0;
+        return parseInt(String(v).replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0;
+      };
+
       var mudanceras = [];
       for (var j = 0; j < mzEmails.length; j++) {
         var m = await getJSON('mudancero:perfil:' + mzEmails[j]);
         if (!m) continue;
         if (m.estado && m.estado !== 'aprobado') continue;
-        var preciosPack = m.preciosPack || {};
+
+        // Modelo nuevo: precios por nivel × ambientes (uso amb2 por default acá)
+        var pe = parsePrecioZ(m.preciosEsencial && m.preciosEsencial.amb2);
+        var pi = parsePrecioZ(m.preciosIntegral && m.preciosIntegral.amb2);
+        var pl = parsePrecioZ(m.preciosLlave    && m.preciosLlave.amb2);
+
+        // Fallback a preciosLeads (amb2)
+        if (pe === 0 && m.preciosLeads && m.preciosLeads.amb2) pe = parsePrecioZ(m.preciosLeads.amb2.esencial);
+        if (pi === 0 && m.preciosLeads && m.preciosLeads.amb2) pi = parsePrecioZ(m.preciosLeads.amb2.integral);
+        if (pl === 0 && m.preciosLeads && m.preciosLeads.amb2) pl = parsePrecioZ(m.preciosLeads.amb2.llave);
+
+        // Fallback a preciosPack viejo
+        if (pe === 0 && m.preciosPack) pe = parsePrecioZ(m.preciosPack.esencial);
+        if (pi === 0 && m.preciosPack) pi = parsePrecioZ(m.preciosPack.integral);
+        if (pl === 0 && m.preciosPack) pl = parsePrecioZ(m.preciosPack.llave);
+
         mudanceras.push({
           email:        m.email,
           nombre:       m.nombre,
@@ -591,11 +614,7 @@ module.exports = async function handler(req, res) {
           estrellas:    m.promedioEstrellas || 0,
           cantResenas:  (m.resenas || []).length,
           zonaBase:     m.zonaBase || '',
-          preciosPack: {
-            esencial: Number(preciosPack.esencial) || 0,
-            integral: Number(preciosPack.integral) || 0,
-            llave:    Number(preciosPack.llave)    || 0
-          }
+          preciosPack:  { esencial: pe, integral: pi, llave: pl }
         });
       }
 
@@ -616,15 +635,23 @@ module.exports = async function handler(req, res) {
       var mtSess = await getAsesorDesdeToken(mtToken);
       if (!mtSess) return res.status(401).json({ error: 'Sesión expirada' });
 
-      // Mapear ambientes (número que pasa el frontend) a la clave de preciosLeads
-      // 1 → amb1 · 2 → amb2 · 3 → amb3 · 4 → amb4 · 5+ → amb5plus
+      // Mapear ambientes (número que pasa el frontend) a la clave del precio
+      // 1 → amb1 · 2 → amb2 · 3 → amb3 · 4+ → amb4 (el modelo nuevo no tiene amb5plus)
       var ambN = parseInt(String(req.query.ambientes || '').replace(/\D/g, '')) || 0;
       var ambKey = 'amb2'; // fallback razonable: 2 ambientes
       if (ambN === 1)      ambKey = 'amb1';
       else if (ambN === 2) ambKey = 'amb2';
       else if (ambN === 3) ambKey = 'amb3';
-      else if (ambN === 4) ambKey = 'amb4';
-      else if (ambN >= 5)  ambKey = 'amb5plus';
+      else if (ambN >= 4)  ambKey = 'amb4';
+      // Para preciosLeads viejo (que sí tiene amb5plus)
+      var ambKeyLeads = ambN >= 5 ? 'amb5plus' : ambKey;
+
+      // Helper: parsea un precio que puede venir como "300.000" (string AR) o número
+      var parsePrecio = function(v){
+        if (v === null || v === undefined || v === '') return 0;
+        var s = String(v).replace(/\./g, '').replace(/[^0-9]/g, '');
+        return parseInt(s, 10) || 0;
+      };
 
       // Usamos el índice global de mudanceros del sistema
       var mtTodosEmails = await getJSON('mudanceros:todos') || [];
@@ -634,20 +661,31 @@ module.exports = async function handler(req, res) {
         if (!mt) continue;
         if (mt.estado && mt.estado !== 'aprobado') continue;
 
-        // Precios para Leads Plan Referidos: leer del tamaño elegido
-        var mtPrecLeads = (mt.preciosLeads && mt.preciosLeads[ambKey]) || null;
-        var mtEsc = mtPrecLeads ? (Number(mtPrecLeads.esencial) || 0) : 0;
-        var mtInt = mtPrecLeads ? (Number(mtPrecLeads.integral) || 0) : 0;
-        var mtLla = mtPrecLeads ? (Number(mtPrecLeads.llave)    || 0) : 0;
+        // ── Modelo nuevo (lo que carga el mudancero hoy en su perfil): ──
+        // mt.preciosEsencial = { amb1, amb2, amb3, amb4 } (strings/números)
+        // mt.preciosIntegral = { amb1, amb2, amb3, amb4 }
+        // mt.preciosLlave    = { amb1, amb2, amb3, amb4 }
+        var mtEsc = parsePrecio(mt.preciosEsencial && mt.preciosEsencial[ambKey]);
+        var mtInt = parsePrecio(mt.preciosIntegral && mt.preciosIntegral[ambKey]);
+        var mtLla = parsePrecio(mt.preciosLlave    && mt.preciosLlave[ambKey]);
 
-        // Fallback a preciosPack viejo (para mudanceros que aún no migraron)
-        if (mtEsc === 0 && mtInt === 0 && mtLla === 0 && mt.preciosPack) {
-          mtEsc = Number(mt.preciosPack.esencial) || 0;
-          mtInt = Number(mt.preciosPack.integral) || 0;
-          mtLla = Number(mt.preciosPack.llave)    || 0;
+        // Fallback a preciosLeads (modelo intermedio para Plan Referidos, si lo cargaron)
+        if (mtEsc === 0 && mt.preciosLeads && mt.preciosLeads[ambKeyLeads]) {
+          mtEsc = parsePrecio(mt.preciosLeads[ambKeyLeads].esencial);
+        }
+        if (mtInt === 0 && mt.preciosLeads && mt.preciosLeads[ambKeyLeads]) {
+          mtInt = parsePrecio(mt.preciosLeads[ambKeyLeads].integral);
+        }
+        if (mtLla === 0 && mt.preciosLeads && mt.preciosLeads[ambKeyLeads]) {
+          mtLla = parsePrecio(mt.preciosLeads[ambKeyLeads].llave);
         }
 
-        // Filtramos las que no tienen ningún precio pack cargado para este tamaño
+        // Fallback a preciosPack viejo (para mudanceros legacy)
+        if (mtEsc === 0 && mt.preciosPack) mtEsc = parsePrecio(mt.preciosPack.esencial);
+        if (mtInt === 0 && mt.preciosPack) mtInt = parsePrecio(mt.preciosPack.integral);
+        if (mtLla === 0 && mt.preciosPack) mtLla = parsePrecio(mt.preciosPack.llave);
+
+        // Filtramos las que no tienen ningún precio cargado para este tamaño
         if (mtEsc === 0 && mtInt === 0 && mtLla === 0) continue;
 
         mtMudanceras.push({
