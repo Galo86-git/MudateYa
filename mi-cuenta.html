@@ -1170,17 +1170,41 @@ function renderCardDisponible(m) {
       + '</div>';
   }
   // ── Calcular el precio del MUDANCERO (base por amb + km × pkm) ──
+  // Lee del nivel correcto según el pack que pidió el cliente (m.nivel).
   var perfilRedis = mudanceroPerfilRedis || {};
   var precios = perfilRedis.precios || {};
   var precioPorKm = parseInt((precios.porKm || perfilRedis.precioPorKm || 0));
   var ambN = parseInt(String(m.ambientes||'').replace(/\D/g,'')) || 0;
+  // Determinar nivel del pedido (con fallback inteligente para pedidos viejos)
+  var nivelPedido = m.nivel; // 'esencial' | 'integral' | 'llave' | 'flete' | undefined
+  if (!nivelPedido) nivelPedido = esFlete ? 'flete' : 'esencial'; // compat con pedidos antiguos sin nivel
+  // Nombre y emoji del pack para mostrar al mudancero
+  var packInfo = {
+    esencial: { nombre:'Esencial',       emoji:'📦', color:'#475569' },
+    integral: { nombre:'Integral',       emoji:'🛠️', color:'#1A6FFF' },
+    llave:    { nombre:'Llave en mano',  emoji:'🔑', color:'#22C36A' },
+    flete:    { nombre:'Flete',          emoji:'🚚', color:'#F59E0B' }
+  }[nivelPedido] || { nombre:'Esencial', emoji:'📦', color:'#475569' };
+  // Leer precio del nivel correcto
   var precioBaseMud = 0;
-  if (esFlete) {
-    precioBaseMud = parseInt(precios.flete||0) || 0;
-  } else if (ambN === 1) precioBaseMud = parseInt(precios.amb1||0) || 0;
-  else if (ambN === 2) precioBaseMud = parseInt(precios.amb2||0) || 0;
-  else if (ambN === 3) precioBaseMud = parseInt(precios.amb3||0) || 0;
-  else if (ambN >= 4)  precioBaseMud = parseInt(precios.amb4||0) || 0;
+  var sinPrecioPack = false;
+  if (nivelPedido === 'flete') {
+    precioBaseMud = parseInt(perfilRedis.precioFleteNuevo || precios.flete || 0) || 0;
+  } else {
+    var clave = ['amb1','amb2','amb3','amb4'][Math.min(Math.max(ambN,1),4)-1] || 'amb1';
+    var preciosNivel = perfilRedis['precios' + nivelPedido.charAt(0).toUpperCase() + nivelPedido.slice(1)];
+    if (preciosNivel) {
+      precioBaseMud = parseInt(preciosNivel[clave] || 0) || 0;
+    }
+    // Fallback al modelo viejo solo si NO tiene precios cargados para ESE nivel
+    if (precioBaseMud === 0) {
+      sinPrecioPack = (nivelPedido !== 'esencial' && !preciosNivel);
+      if (ambN === 1) precioBaseMud = parseInt(precios.amb1||0) || 0;
+      else if (ambN === 2) precioBaseMud = parseInt(precios.amb2||0) || 0;
+      else if (ambN === 3) precioBaseMud = parseInt(precios.amb3||0) || 0;
+      else if (ambN >= 4)  precioBaseMud = parseInt(precios.amb4||0) || 0;
+    }
+  }
   var km = parseInt(m.km||0);
   var costoKm = (km > 0 && precioPorKm > 0) ? (km * precioPorKm) : 0;
   var precioMostrar = precioBaseMud + costoKm;
@@ -1190,12 +1214,18 @@ function renderCardDisponible(m) {
     precioMostrar = parseInt(m.precio_estimado||0);
     labelPrecio = 'Precio estimado';
   }
+  // Badge del pack
+  var badgePack = '<span style="display:inline-flex;align-items:center;gap:4px;background:'+packInfo.color+'15;color:'+packInfo.color+';font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:6px">'+packInfo.emoji+' '+packInfo.nombre+'</span>';
+  // Warning si no tiene precio cargado para ese pack
+  var warningPack = sinPrecioPack
+    ? '<div style="margin-top:6px;padding:6px 10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:10.5px;color:#C2410C;font-family:var(--mono)">⚠ No tenés precios cargados para <b>'+packInfo.nombre+'</b> · Cargalos en <b>Mi cuenta</b> para precios precisos</div>'
+    : '';
   // ── Bloque desglose: base + km → total ──
   var bloqueDesglose = '';
   if (precioBaseMud > 0 && costoKm > 0) {
     bloqueDesglose = '<div style="margin-top:8px;padding:10px 12px;background:#EEF4FF;border:1px solid #C7D7F5;border-radius:10px;font-family:var(--mono)">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text2);margin-bottom:4px">'
-      +'<span>Precio base ('+(esFlete?'flete':(ambN+' amb'))+')</span><span style="font-weight:600;color:var(--text)">$'+precioBaseMud.toLocaleString('es-AR')+'</span>'
+      +'<span>Precio base '+packInfo.emoji+' '+packInfo.nombre+(esFlete?'':' ('+ambN+' amb)')+'</span><span style="font-weight:600;color:var(--text)">$'+precioBaseMud.toLocaleString('es-AR')+'</span>'
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text2);margin-bottom:6px">'
       +'<span>'+km+' km × $'+precioPorKm.toLocaleString('es-AR')+'</span><span style="font-weight:600;color:var(--text)">$'+costoKm.toLocaleString('es-AR')+'</span>'
@@ -1203,6 +1233,15 @@ function renderCardDisponible(m) {
       +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;border-top:1px dashed #C7D7F5;padding-top:6px">'
       +'<span style="font-weight:700;color:var(--blue)">Total</span><span style="font-weight:700;color:var(--blue);font-size:15px">$'+precioMostrar.toLocaleString('es-AR')+'</span>'
       +'</div>'
+      + warningPack
+      +'</div>';
+  } else if (precioBaseMud > 0) {
+    // Sin km pero con precio base — mostrar bloque simple con el badge del pack
+    bloqueDesglose = '<div style="margin-top:8px;padding:10px 12px;background:#EEF4FF;border:1px solid #C7D7F5;border-radius:10px;font-family:var(--mono)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">'
+      +'<span style="color:var(--text2)">Precio base '+packInfo.emoji+' '+packInfo.nombre+(esFlete?'':' ('+ambN+' amb)')+'</span><span style="font-weight:700;color:var(--blue);font-size:15px">$'+precioBaseMud.toLocaleString('es-AR')+'</span>'
+      +'</div>'
+      + warningPack
       +'</div>';
   } else if (precioBaseMud > 0 && km > 0 && precioPorKm === 0) {
     bloqueDesglose = '<div style="margin-top:8px;padding:8px 12px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:11px;color:#C2410C;font-family:var(--mono)">'
@@ -1216,6 +1255,7 @@ function renderCardDisponible(m) {
     +'</div><span class="badge nuevo">Disponible</span></div>'
     + fotosHtml
     +'<div class="pedido-meta">'
+    +'<span class="pedido-tag" style="background:'+packInfo.color+'15;color:'+packInfo.color+';font-weight:700">'+packInfo.emoji+' '+packInfo.nombre+'</span>'
     +(m.servicios?'<span class="pedido-tag">'+(esFlete?'📦':'🏠')+' '+m.servicios+'</span>':'')
     +(m.extras?'<span class="pedido-tag" style="color:#F59E0B">⚠ '+m.extras+'</span>':'')
     +'</div>'
@@ -1504,27 +1544,37 @@ function abrirCotizacion(mudanza){
   var precioPorKm = parseInt((perfilRedis.precios && perfilRedis.precios.porKm) || perfilRedis.precioPorKm || 0);
   var precios = perfilRedis.precios || {};
 
-  // Determinar precio base por ambientes / flete
+  // Determinar precio base por ambientes / flete según el nivel del pedido
   var ambStr = String(mudanza.ambientes || '');
   var ambN = parseInt(ambStr.replace(/\D/g,'')) || 0;
   var esFlete = (mudanza.tipo === 'flete') || ambStr.toLowerCase().indexOf('flete') !== -1;
+  // Nivel del pack que pidió el cliente (con fallback inteligente)
+  var nivelPed = mudanza.nivel || (esFlete ? 'flete' : 'esencial');
+  var packInfoCot = {
+    esencial: { nombre:'Esencial',      emoji:'📦', color:'#475569' },
+    integral: { nombre:'Integral',      emoji:'🛠️', color:'#1A6FFF' },
+    llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
+    flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
+  }[nivelPed] || { nombre:'Esencial', emoji:'📦', color:'#475569' };
   var precioBase = 0;
   var lblBase = '';
-  if (esFlete) {
-    precioBase = parseInt(precios.flete||0) || 0;
+  if (nivelPed === 'flete') {
+    precioBase = parseInt(perfilRedis.precioFleteNuevo || precios.flete || 0) || 0;
     lblBase = 'flete';
-  } else if (ambN === 1) {
-    precioBase = parseInt(precios.amb1||0) || 0;
-    lblBase = '1 amb';
-  } else if (ambN === 2) {
-    precioBase = parseInt(precios.amb2||0) || 0;
-    lblBase = '2 amb';
-  } else if (ambN === 3) {
-    precioBase = parseInt(precios.amb3||0) || 0;
-    lblBase = '3 amb';
-  } else if (ambN >= 4) {
-    precioBase = parseInt(precios.amb4||0) || 0;
-    lblBase = ambN + ' amb';
+  } else {
+    var claveAmb = ['amb1','amb2','amb3','amb4'][Math.min(Math.max(ambN,1),4)-1] || 'amb1';
+    var preciosNivel = perfilRedis['precios' + nivelPed.charAt(0).toUpperCase() + nivelPed.slice(1)];
+    if (preciosNivel) {
+      precioBase = parseInt(preciosNivel[claveAmb]||0) || 0;
+    }
+    // Fallback al modelo viejo si el nivel no tiene precios cargados
+    if (precioBase === 0) {
+      if (ambN === 1) precioBase = parseInt(precios.amb1||0) || 0;
+      else if (ambN === 2) precioBase = parseInt(precios.amb2||0) || 0;
+      else if (ambN === 3) precioBase = parseInt(precios.amb3||0) || 0;
+      else if (ambN >= 4)  precioBase = parseInt(precios.amb4||0) || 0;
+    }
+    lblBase = packInfoCot.emoji + ' ' + packInfoCot.nombre + ' · ' + (ambN || 1) + ' amb';
   }
   var costoKm = (km > 0 && precioPorKm > 0) ? (km * precioPorKm) : 0;
 
