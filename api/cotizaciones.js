@@ -781,7 +781,7 @@ module.exports = async function handler(req, res) {
         ? nivel
         : ((tipo || 'mudanza') === 'flete' ? 'flete' : null);
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
