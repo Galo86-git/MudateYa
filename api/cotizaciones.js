@@ -738,7 +738,7 @@ module.exports = async function handler(req, res) {
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
-      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km } = req.body;
+      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
@@ -775,7 +775,13 @@ module.exports = async function handler(req, res) {
       // Si no llega, queda null — la cotización funciona igual sin el desglose por km.
       const kmDistancia = (typeof km === 'number' && km > 0) ? Math.round(km) : (parseInt(km) > 0 ? parseInt(km) : null);
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      // Normalizar nivel: 'esencial' | 'integral' | 'llave' | 'flete' | null
+      const NIVELES_VALIDOS = ['esencial','integral','llave','flete'];
+      const nivelNorm = (typeof nivel === 'string' && NIVELES_VALIDOS.indexOf(nivel) !== -1)
+        ? nivel
+        : ((tipo || 'mudanza') === 'flete' ? 'flete' : null);
+
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
