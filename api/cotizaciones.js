@@ -819,8 +819,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'cotizar' && req.method === 'POST') {
-      const { mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio, nota, tiempoEstimado } = req.body;
-      if (!mudanzaId || !mudanceroEmail || !precio) return res.status(400).json({ error: 'Faltan datos' });
+      const { mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio, nota, tiempoEstimado, propuestas } = req.body;
+      if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
       const mudanza = await getJSON(`mudanza:${mudanzaId}`);
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (mudanza.estado !== 'buscando') return res.status(400).json({ error: 'No acepta más cotizaciones' });
@@ -834,10 +834,58 @@ module.exports = async function handler(req, res) {
         }
       }
 
-      // Limite deshabilitado para testing
+      // ── Construir array de propuestas ─────────────────────────────────
+      // Nueva estructura: una cotización contiene 1-3 propuestas (Esencial/Integral/Llave) + opcional Flete
+      // Cada propuesta tiene: { nivel, precio, tiempoEstimado, nota }
+      // Compat: si llega solo `precio` plano (modo viejo), se convierte a una sola propuesta con el nivel del pedido
+      const NIVELES_VALIDOS = ['esencial','integral','llave','flete'];
+      let propuestasNorm = [];
+      if (Array.isArray(propuestas) && propuestas.length > 0) {
+        // Modo nuevo: propuestas[]
+        propuestasNorm = propuestas
+          .filter(p => p && NIVELES_VALIDOS.indexOf(p.nivel) !== -1)
+          .map(p => ({
+            nivel: p.nivel,
+            precio: parseInt(String(p.precio||0).replace(/\./g,'').replace(/[^0-9]/g,'')) || 0,
+            tiempoEstimado: p.tiempoEstimado || '',
+            nota: p.nota || ''
+          }))
+          .filter(p => p.precio > 0);
+      } else if (precio) {
+        // Modo viejo: precio plano
+        const precioLimpio = parseInt(String(precio).replace(/\./g,'').replace(/[^0-9]/g,'')) || 0;
+        if (precioLimpio > 0) {
+          const nivelDefault = mudanza.nivel || 'esencial';
+          propuestasNorm = [{
+            nivel: nivelDefault,
+            precio: precioLimpio,
+            tiempoEstimado: tiempoEstimado || '',
+            nota: nota || ''
+          }];
+        }
+      }
+      if (propuestasNorm.length === 0) return res.status(400).json({ error: 'Falta al menos una propuesta con precio' });
 
-      const precioLimpio = parseInt(String(precio).replace(/\./g,'').replace(/[^0-9]/g,'')) || 0;
-      const cotizacion = { id: 'COT-' + Date.now(), mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio: precioLimpio, nota: nota||'', tiempoEstimado: tiempoEstimado||'', fecha: new Date().toISOString(), estado: 'pendiente' };
+      // Para compat con código existente (PDF, listados viejos, etc.):
+      // El "precio principal" de la cotización es el del nivel pedido por el cliente, o la primera propuesta.
+      const nivelPedido = mudanza.nivel || 'esencial';
+      const propMatch = propuestasNorm.find(p => p.nivel === nivelPedido) || propuestasNorm[0];
+
+      const cotizacion = {
+        id: 'COT-' + Date.now(),
+        mudanzaId,
+        mudanceroEmail,
+        mudanceroNombre,
+        mudanceroTel,
+        // Nuevo modelo: array de propuestas
+        propuestas: propuestasNorm,
+        // Compat con código viejo (no romper): exponer la propuesta principal en el nivel raíz
+        precio: propMatch.precio,
+        nota: propMatch.nota,
+        tiempoEstimado: propMatch.tiempoEstimado,
+        fecha: new Date().toISOString(),
+        estado: 'pendiente'
+      };
       mudanza.cotizaciones.push(cotizacion);
 
       // Cierre automatico deshabilitado para testing
@@ -881,15 +929,37 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'aceptar' && req.method === 'POST') {
-      const { mudanzaId, cotizacionId } = req.body;
+      const { mudanzaId, cotizacionId, propuestaNivel } = req.body;
       const mudanza = await getJSON(`mudanza:${mudanzaId}`);
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
       const cot = mudanza.cotizaciones.find(c => c.id === cotizacionId);
       if (!cot) return res.status(404).json({ error: 'Cotización no encontrada' });
+
+      // ── Determinar la propuesta aceptada ─────────────────────────────
+      // Si la cotización tiene propuestas[] múltiples y el cliente eligió una específica,
+      // se "fija" esa propuesta como la aceptada (pisa precio/nota/tiempoEstimado en el root).
+      let propuestaAceptada = null;
+      if (Array.isArray(cot.propuestas) && cot.propuestas.length > 0) {
+        if (propuestaNivel) {
+          propuestaAceptada = cot.propuestas.find(p => p.nivel === propuestaNivel);
+        }
+        if (!propuestaAceptada) {
+          // Fallback: nivel pedido por el cliente, o primera propuesta
+          const nivelDef = mudanza.nivel || 'esencial';
+          propuestaAceptada = cot.propuestas.find(p => p.nivel === nivelDef) || cot.propuestas[0];
+        }
+        // Pisar campos de la cotización con los de la propuesta aceptada
+        cot.precio          = propuestaAceptada.precio;
+        cot.nota            = propuestaAceptada.nota;
+        cot.tiempoEstimado  = propuestaAceptada.tiempoEstimado;
+        cot.nivelAceptado   = propuestaAceptada.nivel;
+      }
+
       mudanza.estado = 'cotizacion_aceptada';
       mudanza.cotizacionAceptada = cot;
       mudanza.mudanceroAceptado = cot.mudanceroEmail;
       mudanza.montoTotal = cot.precio;
+      mudanza.nivelAceptado = cot.nivelAceptado || mudanza.nivel || 'esencial';
       // Agregar datos del cliente para que el mudancero pueda contactarlo
       mudanza.cotizacionAceptada.clienteNombre = mudanza.clienteNombre;
       mudanza.cotizacionAceptada.clienteEmail  = mudanza.clienteEmail;
