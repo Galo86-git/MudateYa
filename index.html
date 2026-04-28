@@ -1172,8 +1172,8 @@
     <a href="#como-funciona" onclick="closeMenu()">Cómo funciona</a>
     <a href="#para-quien" onclick="closeMenu()">Para quién</a>
     <a href="#partners" onclick="closeMenu()">Alianzas</a>
-    <a href="#" onclick="goMisMudanzas(event)" style="color:#22C36A;font-weight:700;font-size:15px">🚛 Mis mudanzas</a>
-    <a href="#" onclick="goSoyMudancero(event)" style="color:#22C36A;font-weight:700;font-size:15px">🔑 Soy mudancero</a>
+    <a href="#" id="mobLinkMisMudanzas" style="color:#22C36A;font-weight:700;font-size:15px">🚛 Mis mudanzas</a>
+    <a href="#" id="mobLinkSoyMudancero" style="color:#22C36A;font-weight:700;font-size:15px">🔑 Soy mudancero</a>
   </div>
 
   <!-- HERO -->
@@ -2817,6 +2817,27 @@
   // Init
   document.addEventListener('DOMContentLoaded', function() {
     updateNav();
+    // ── BINDEO ROBUSTO menú mobile (evita problemas de scope global) ──
+    var lmm = document.getElementById('mobLinkMisMudanzas');
+    if (lmm) lmm.addEventListener('click', function(e){
+      e.preventDefault();
+      console.log('[mob-menu] Mis mudanzas tap. rolMud:', sessionStorage.getItem('rolMudancero'), 'rolCli:', sessionStorage.getItem('rolCliente'));
+      closeMenu();
+      var rolMud = sessionStorage.getItem('rolMudancero') === '1';
+      var rolCli = sessionStorage.getItem('rolCliente') === '1';
+      if (rolMud) { window.location.href = '/mi-cuenta'; return; }
+      if (rolCli) { window.location.href = '/mi-mudanza'; return; }
+      setTimeout(function(){ abrirLogin(null, '/mi-mudanza'); }, 100);
+    });
+    var lsm = document.getElementById('mobLinkSoyMudancero');
+    if (lsm) lsm.addEventListener('click', function(e){
+      e.preventDefault();
+      console.log('[mob-menu] Soy mudancero tap. rolMud:', sessionStorage.getItem('rolMudancero'));
+      closeMenu();
+      var rolMud = sessionStorage.getItem('rolMudancero') === '1';
+      if (rolMud) { window.location.href = '/mi-cuenta'; return; }
+      setTimeout(function(){ abrirLogin(null, '/mi-cuenta'); }, 100);
+    });
     // Restaurar últimas direcciones
     var ids = ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'];
     ids.forEach(function(id) {
