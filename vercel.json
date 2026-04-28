@@ -16,7 +16,8 @@
     { "source": "/asesor-login", "destination": "/asesor-login.html" },
     { "source": "/asesor-dashboard", "destination": "/asesor-dashboard.html" },
     { "source": "/cliente-packs", "destination": "/cliente-packs.html" },
-    { "source": "/aliados", "destination": "/aliados.html" }
+    { "source": "/aliados", "destination": "/aliados.html" },
+    { "source": "/r/:slug", "destination": "/r.html?slug=:slug" }
   ],
   "headers": [
     {
