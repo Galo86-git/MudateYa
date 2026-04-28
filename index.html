@@ -947,6 +947,25 @@
       if (title) title.textContent = 'Cotiz\u00e1 tu mudanza con los mejores de Argentina';
       if (sub)   sub.textContent   = 'Compar\u00e1s precios reales de mudanceros verificados y eleg\u00eds sin compromiso. Public\u00e1 gratis.';
     }
+    // ── Flete NO tiene packs (Esencial/Integral/Llave) → ocultar selector ──
+    var esFlete = (t === 'flete');
+    // Mobile: barra de pills arriba
+    var nbm = document.getElementById('nivelBarMobile');
+    if (nbm) {
+      // Solo ocultamos los pills de nivel, dejando los filtros (botón filtros) visibles
+      var pills = nbm.querySelectorAll('.nivel-pill');
+      pills.forEach(function(p){ p.style.display = esFlete ? 'none' : ''; });
+    }
+    // Desktop: sección "Tipo de mudanza" dentro del drawer de filtros
+    var nivelesSec = document.querySelector('.filtro-section-sticky');
+    if (nivelesSec) nivelesSec.style.display = esFlete ? 'none' : '';
+    // Si está en flete, forzar nivel = 'flete' para que la lógica downstream lo respete
+    if (esFlete) {
+      _nivel = 'flete';
+    } else if (_nivel === 'flete') {
+      // Volver a default mudanza
+      _nivel = 'llave';
+    }
   }
 
   function setAddrError(inputId, msg) {
