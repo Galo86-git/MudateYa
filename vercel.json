@@ -1,23 +1,35 @@
 {
   "version": 2,
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/admin", "dest": "/admin.html" },
-    { "src": "/mudanceros", "dest": "/mudanceros.html" },
-    { "src": "/mudancero", "dest": "/mudancero-perfil.html" },
-    { "src": "/mudanceros-catalogo", "dest": "/mudanceros-catalogo.html" },
-    { "src": "/mi-cuenta", "dest": "/mi-cuenta.html" },
-    { "src": "/mi-mudanza", "dest": "/mi-mudanza.html" },
-    { "src": "/pago-exitoso", "dest": "/pago-exitoso.html" },
-    { "src": "/terminos", "dest": "/terminos.html" },
-    { "src": "/aceptar-terminos", "dest": "/aceptar-terminos.html" },
-    { "src": "/privacidad", "dest": "/privacidad.html" },
-    { "src": "/contacto", "dest": "/contacto.html" },
-    { "src": "/asesores", "dest": "/asesores.html" },
-    { "src": "/asesor-login", "dest": "/asesor-login.html" },
-    { "src": "/asesor-dashboard", "dest": "/asesor-dashboard.html" },
-    { "src": "/cliente-packs", "dest": "/cliente-packs.html" },
-    { "src": "/aliados", "dest": "/aliados.html" },
-    { "src": "/(.*)", "dest": "/$1" }
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/mudanceros", "destination": "/mudanceros.html" },
+    { "source": "/mudancero", "destination": "/mudancero-perfil.html" },
+    { "source": "/mudanceros-catalogo", "destination": "/mudanceros-catalogo.html" },
+    { "source": "/mi-cuenta", "destination": "/mi-cuenta.html" },
+    { "source": "/mi-mudanza", "destination": "/mi-mudanza.html" },
+    { "source": "/pago-exitoso", "destination": "/pago-exitoso.html" },
+    { "source": "/terminos", "destination": "/terminos.html" },
+    { "source": "/aceptar-terminos", "destination": "/aceptar-terminos.html" },
+    { "source": "/privacidad", "destination": "/privacidad.html" },
+    { "source": "/contacto", "destination": "/contacto.html" },
+    { "source": "/asesores", "destination": "/asesores.html" },
+    { "source": "/asesor-login", "destination": "/asesor-login.html" },
+    { "source": "/asesor-dashboard", "destination": "/asesor-dashboard.html" },
+    { "source": "/cliente-packs", "destination": "/cliente-packs.html" },
+    { "source": "/aliados", "destination": "/aliados.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+      ]
+    }
   ]
 }
