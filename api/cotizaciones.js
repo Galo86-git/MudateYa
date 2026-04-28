@@ -226,12 +226,30 @@ async function generarPDFBase64(datos) {
   // Barra izquierda verde
   fillRect(ML, Y, 5, 68, C_GREEN, 0);
 
-  doc.font('Helvetica-Bold').fontSize(36).fillColor(C_NAVY);
-  doc.text(precioFmt, ML + 20, Y + 10, { lineBreak: false });
+  // Precio: tamaño adaptativo según largo (evita pisar la frase del costado)
+  // $999.999 entra fácil; $2.000.000 ya empieza a apretar; $20.000.000 mucho más.
+  var precioFontSize = precioFmt.length >= 12 ? 26 : (precioFmt.length >= 10 ? 30 : 36);
+  doc.font('Helvetica-Bold').fontSize(precioFontSize).fillColor(C_NAVY);
+  doc.text(precioFmt, ML + 20, Y + (precioFontSize === 36 ? 10 : (precioFontSize === 30 ? 14 : 18)), { lineBreak: false });
+  // Calcular ancho real del precio renderizado para posicionar la frase después
+  var precioWidth = doc.widthOfString(precioFmt);
+  var fraseStartX = ML + 20 + precioWidth + 18; // 18px de gap
+
   doc.font('Helvetica-Bold').fontSize(7).fillColor(C_TEXT3);
   doc.text('PRECIO TOTAL', ML + 20, Y + 52);
-  doc.font('Helvetica').fontSize(8).fillColor(C_TEXT2);
-  doc.text('Pago 100% por Mercado Pago.  Seguro y protegido.', ML + 180, Y + 28, { width: CW - 190 });
+
+  // Frase a la derecha: usa el espacio que quede después del precio
+  var fraseAvailWidth = (ML + CW - 14) - fraseStartX;
+  if (fraseAvailWidth >= 100) {
+    // Si entra con tamaño normal, dos líneas
+    doc.font('Helvetica').fontSize(8).fillColor(C_TEXT2);
+    doc.text('Pago 100% por Mercado Pago.\nSeguro y protegido.', fraseStartX, Y + 22, { width: fraseAvailWidth, align: 'left' });
+  } else if (fraseAvailWidth >= 60) {
+    // Espacio justo: tipografía más chica
+    doc.font('Helvetica').fontSize(7).fillColor(C_TEXT2);
+    doc.text('Pago seguro\nMercado Pago', fraseStartX, Y + 24, { width: fraseAvailWidth, align: 'left' });
+  }
+  // Si no entra nada, la frase se omite (mejor que se solape)
 
   Y += 82;
 
