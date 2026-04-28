@@ -980,10 +980,26 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
     emailMP:       document.getElementById('emailMP').value.trim(),
     titularCuenta: document.getElementById('titularCuenta').value.trim(),
     refAliado:     (function(){
-      // Lee cookie mya_ref (seteada por /r/XXXX) y localStorage de fallback
+      // Lee cookie mya_ref (seteada por /r/XXXX), localStorage y URL ?ref=XXXX como respaldos
       try {
+        // 1) URL query string (mayor prioridad — recién llegado del link /r/XXXX)
+        var qs = new URLSearchParams(window.location.search);
+        var qRef = qs.get('ref');
+        if (qRef) {
+          var qNorm = String(qRef).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,16);
+          if (qNorm) {
+            // Persistir para próximas visitas si llegó por URL
+            try {
+              document.cookie = 'mya_ref=' + encodeURIComponent(qNorm) + '; path=/; max-age=' + (60*60*24*90) + '; SameSite=Lax';
+              localStorage.setItem('mya_ref', qNorm);
+            } catch(e) {}
+            return qNorm;
+          }
+        }
+        // 2) Cookie
         var m = document.cookie.match(/(?:^|;\s*)mya_ref=([^;]+)/);
         if (m && m[1]) return decodeURIComponent(m[1]).toUpperCase();
+        // 3) localStorage
         var ls = localStorage.getItem('mya_ref');
         if (ls) return String(ls).toUpperCase();
       } catch(e) {}
