@@ -2240,79 +2240,97 @@ function exportarExcel() {
     return;
   }
 
-  // Helper: limpia celdas y trunca base64/URLs largas
-  function cleanCell(v) {
+  // Helper: escapa celdas para CSV (escape de comillas + envuelve si tiene coma/salto/comilla)
+  function csvCell(v) {
     if (v === null || v === undefined) return '';
     var s = String(v);
-    if (s.length > 200 && (s.startsWith('data:') || s.startsWith('http') || s.startsWith('blob'))) return '[foto]';
+    if (s.length > 200 && (s.startsWith('data:') || s.startsWith('http') || s.startsWith('blob'))) s = '[foto]';
+    if (/[",\n;]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
 
-  // Headers alineados 1:1 con los 22 índices del array
-  var headers = [
-    'ID',                 // 0
-    'Nombre',             // 1
-    'Empresa',            // 2
-    'Teléfono',           // 3
-    'Email',              // 4
-    'Zona base',          // 5
-    'Zonas extra',        // 6
-    'Col 7',              // 7  (vacío en los datos actuales)
-    'Vehículo',           // 8
-    'Cant. vehículos',    // 9
-    'Equipo',             // 10
-    'Servicios',          // 11
-    'Días',               // 12
-    'Horarios',           // 13
-    'Anticipación',       // 14
-    'Precio 1 amb',       // 15
-    'Precio 2 amb',       // 16
-    'Precio 3 amb',       // 17
-    'Precio 4+ amb',      // 18
-    'Precio flete',       // 19
-    'Notas extra',        // 20
-    'Estado'              // 21
-  ];
-
-  // Cada fila ya viene como array de 22 posiciones — solo limpio celdas
-  var rows = mudancerosData.map(function(row) {
-    // Defensa: si alguna vez viene como objeto, lo normalizo
-    if (!Array.isArray(row)) {
-      return [
-        row.id || row.ID || '',
-        row.nombre || '', row.empresa || '', row.telefono || '', row.email || '',
-        row.zonaBase || row.zona || '', row.zonasExtra || '', row.col7 || '',
-        row.vehiculo || '', row.cantVehiculos || '',
-        row.equipo || '', row.servicios || '', row.dias || '', row.horarios || '', row.anticipacion || '',
-        row.precio1amb || '', row.precio2amb || '', row.precio3amb || '', row.precio4amb || '', row.precioFlete || '',
-        row.extra || row.notas || '', row.estado || ''
-      ].map(cleanCell);
+  // Aplicar los mismos filtros que el usuario está viendo en la tabla
+  var q = (document.getElementById('searchMudanceros').value || '').toLowerCase();
+  var estado = document.getElementById('filterEstado').value;
+  var fAct = (document.getElementById('filterActualizacion') || {}).value || '';
+  var fOrden = (document.getElementById('filterOrden') || {}).value || 'reciente';
+  var filtered = mudancerosData.filter(function(m){
+    var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
+    var matchE = !estado || getEstado(m) === estado;
+    var matchA = true;
+    if (fAct) {
+      var t = tiempoRelativo(m[22]);
+      if (fAct === 'hoy')      matchA = t.dias === 0;
+      else if (fAct === 'semana') matchA = t.dias <= 7 && t.dias < 9999;
+      else if (fAct === 'mes')    matchA = t.dias <= 30 && t.dias < 9999;
+      else if (fAct === 'viejos') matchA = t.dias > 30 && t.dias < 9999;
+      else if (fAct === 'nunca')  matchA = !m[22];
     }
-    // Relleno hasta 22 posiciones si la fila viene corta
-    var out = [];
-    for (var i = 0; i < 22; i++) out.push(cleanCell(row[i]));
-    return out;
+    return matchQ && matchE && matchA;
+  });
+  filtered.sort(function(a, b){
+    if (fOrden === 'az') return (a[1]||'').localeCompare(b[1]||'');
+    if (fOrden === 'estado') {
+      var ord = { 'Pendiente': 0, 'Aprobado': 1, 'Rechazado': 2 };
+      return (ord[getEstado(a)] || 99) - (ord[getEstado(b)] || 99);
+    }
+    var da = a[22] ? new Date(a[22]).getTime() : 0;
+    var db = b[22] ? new Date(b[22]).getTime() : 0;
+    return db - da;
   });
 
-  var wsData = [headers].concat(rows);
+  if (!filtered.length) {
+    alert('No hay mudanceros que coincidan con los filtros aplicados.');
+    return;
+  }
 
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  // Columnas visibles en la tabla + email + teléfono
+  var headers = ['Nombre', 'Empresa', 'Zona', 'Vehículo', 'Actualizado', 'Estado', 'Email', 'Teléfono'];
 
-  ws['!cols'] = [
-    {wch:22}, {wch:24}, {wch:22}, {wch:16}, {wch:28},   // 0-4
-    {wch:20}, {wch:28}, {wch:12}, {wch:24}, {wch:10},   // 5-9
-    {wch:18}, {wch:24}, {wch:24}, {wch:18}, {wch:14},   // 10-14
-    {wch:14}, {wch:14}, {wch:14}, {wch:14}, {wch:14},   // 15-19 precios
-    {wch:28}, {wch:14}                                  // 20-21
-  ];
+  // Helper: tiempo relativo en texto plano (sin emojis ni HTML) para Excel
+  function actualizadoTxt(iso){
+    if (!iso) return 'Nunca';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return 'Nunca';
+      var diffD = Math.floor((new Date() - d) / 86400000);
+      var diffH = Math.floor((new Date() - d) / 3600000);
+      if (diffH < 1) return 'Hace minutos';
+      if (diffH < 24) return 'Hace ' + diffH + 'h';
+      if (diffD <= 30) return 'Hace ' + diffD + 'd';
+      return 'Hace +' + Math.floor(diffD / 30) + ' meses';
+    } catch(e) { return 'Nunca'; }
+  }
 
-  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+  // Filas: respetan el orden de los headers
+  var rows = filtered.map(function(m){
+    return [
+      m[1] || '',                  // Nombre
+      m[2] || '',                  // Empresa
+      m[5] || '',                  // Zona
+      m[8] || '',                  // Vehículo
+      actualizadoTxt(m[22]),       // Actualizado
+      getEstado(m),                // Estado
+      m[4] || '',                  // Email
+      m[3] || ''                   // Teléfono
+    ];
+  });
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Mudanceros');
+  // Armar CSV (UTF-8 con BOM para que Excel reconozca acentos correctamente)
+  var csv = '\uFEFF' + headers.map(csvCell).join(',') + '\n'
+    + rows.map(function(r){ return r.map(csvCell).join(','); }).join('\n');
 
-  var fecha = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, 'mudanceros-mudateya-' + fecha + '.xlsx');
+  // Descargar como archivo
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  var hoy = new Date().toISOString().slice(0,10);
+  a.download = 'mudateya-mudanceros-' + hoy + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 
