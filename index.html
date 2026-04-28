@@ -2633,10 +2633,10 @@
             sessionStorage.setItem('rolCliente', '1');
             sessionStorage.removeItem('rolMudancero');
           }
+          // ── CRÍTICO: capturar el destino ANTES de cerrarLogin (que lo resetea a null) ──
+          var dest = window._pendingRedirect;
           cerrarLogin(); updateNav();
-          if (window._pendingRedirect) {
-            var dest = window._pendingRedirect;
-            window._pendingRedirect = null;
+          if (dest) {
             window.location.href = dest;
             return;
           }
