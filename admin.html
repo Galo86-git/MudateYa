@@ -2240,16 +2240,6 @@ function exportarExcel() {
     return;
   }
 
-  // Helper: limpia celdas para TSV (reemplaza tabs y newlines por espacio)
-  function tsvCell(v) {
-    if (v === null || v === undefined) return '';
-    var s = String(v);
-    if (s.length > 200 && (s.startsWith('data:') || s.startsWith('http') || s.startsWith('blob'))) s = '[foto]';
-    // En TSV no hay escape de comillas, pero hay que sacar tabs y saltos de línea
-    s = s.replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
-    return s;
-  }
-
   // Aplicar los mismos filtros que el usuario está viendo en la tabla
   var q = (document.getElementById('searchMudanceros').value || '').toLowerCase();
   var estado = document.getElementById('filterEstado').value;
@@ -2317,18 +2307,38 @@ function exportarExcel() {
     ];
   });
 
-  // Armar TSV — tab separado (Excel/Sheets lo abren en columnas automáticamente).
-  // BOM UTF-8 para que Excel reconozca acentos.
-  var tsv = '\uFEFF' + headers.map(tsvCell).join('\t') + '\n'
-    + rows.map(function(r){ return r.map(tsvCell).join('\t'); }).join('\n');
+  // Helper: escapa HTML para celda
+  function escHtml(v) {
+    if (v === null || v === undefined) return '';
+    var s = String(v);
+    if (s.length > 200 && (s.startsWith('data:') || s.startsWith('http') || s.startsWith('blob'))) s = '[foto]';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
-  // Descargar como archivo
-  var blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
+  // Armar tabla HTML con format Excel-compatible (Excel reconoce text/html como xls).
+  // BOM UTF-8 + meta charset para acentos.
+  var html = '\uFEFF' +
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Mudanceros</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>' +
+    '<body><table border="1">' +
+    '<thead><tr style="background:#003580;color:#fff;font-weight:bold">' +
+      headers.map(function(h){ return '<th>' + escHtml(h) + '</th>'; }).join('') +
+    '</tr></thead><tbody>' +
+    rows.map(function(r){
+      return '<tr>' + r.map(function(c){
+        // Forzar tipo string para teléfonos y números largos (evita que Excel lo convierta a notación científica)
+        return '<td style="mso-number-format:\\@">' + escHtml(c) + '</td>';
+      }).join('') + '</tr>';
+    }).join('') +
+    '</tbody></table></body></html>';
+
+  // Descargar como .xls — Excel lo abre nativo con columnas perfectas
+  var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
   var hoy = new Date().toISOString().slice(0,10);
-  a.download = 'mudateya-mudanceros-' + hoy + '.tsv';
+  a.download = 'mudateya-mudanceros-' + hoy + '.xls';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
