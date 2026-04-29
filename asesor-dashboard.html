@@ -513,7 +513,6 @@
             <option value="2">2 ambientes</option>
             <option value="3">3 ambientes</option>
             <option value="4">4+ ambientes</option>
-            <option value="Flete">Solo flete</option>
           </select>
         </div>
       </div>
@@ -1240,7 +1239,7 @@ async function fswNext() {
       fecha:     document.getElementById('m-fecha').value,
       ambientes: document.getElementById('m-ambientes').value,
       notas:     document.getElementById('m-notas').value.trim(),
-      tipo:      document.getElementById('m-ambientes').value === 'Flete' ? 'flete' : 'mudanza'
+      tipo:      'mudanza'
     };
     if (!m.origen) return showErr(2, 'Ingresá el origen.');
     if (!/\d/.test(m.origen)) return showErr(2, 'El origen tiene que incluir la altura (número de la calle).');
