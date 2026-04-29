@@ -658,7 +658,7 @@ module.exports = async function handler(req, res) {
         return parseInt(s, 10) || 0;
       };
 
-      // ── Filtro por zona del pedido (sugerencia: mostrar solo las que cubren) ──
+      // ── Filtro por zona del pedido (permisivo: solo descarta si es claramente otra región) ──
       // Acepta origen y destino del pedido. Si vienen vacíos → no filtra.
       var origen  = String(req.query.origen  || '').toLowerCase();
       var destino = String(req.query.destino || '').toLowerCase();
@@ -670,33 +670,49 @@ module.exports = async function handler(req, res) {
           .replace(/[^a-z0-9\s]/g,' ')
           .replace(/\s+/g,' ').trim();
       }
-      var _stopWords = ['de','del','la','las','los','el','en','y','av','ave','avenida','calle','provincia','ciudad','argentina','ar','buenos','aires'];
-      function _palabras(s) {
-        return _normZ(s).split(/\s+/).filter(function(p){ return p.length > 2 && _stopWords.indexOf(p) === -1; });
-      }
-      var palabrasBuscadas = _palabras(textoZona);
-      // Keywords AMBA → si la búsqueda apunta a CABA/GBA y el mudancero cubre AMBA, lo aceptamos
-      var kwAmba = ['caba','palermo','belgrano','caballito','flores','almagro','boedo','balvanera',
-        'recoleta','retiro','telmo','barracas','mataderos','liniers','devoto','urquiza',
-        'colegiales','nunez','saavedra','villa','crespo','olivos','vicente','lopez','san isidro',
-        'tigre','pilar','escobar','quilmes','lanus','avellaneda','moron','ituzaingo','merlo',
-        'ramos','mejia','floresta','parque','centenario','almagro','once','congreso','microcentro',
-        'zona norte','zona sur','zona oeste','gba'];
-      var esAmba = palabrasBuscadas.some(function(p){ return kwAmba.indexOf(p) !== -1; });
-      function cubreZona(perfil) {
-        if (palabrasBuscadas.length === 0) return true; // sin filtro
-        var zonaP = _normZ((perfil.zonaBase || '') + ' ' + (perfil.zonasExtra || ''));
-        // Match si el perfil menciona alguna palabra buscada
-        for (var pi = 0; pi < palabrasBuscadas.length; pi++) {
-          if (zonaP.indexOf(palabrasBuscadas[pi]) !== -1) return true;
-        }
-        // Match expandido: si la búsqueda es AMBA y el perfil cubre AMBA
-        if (esAmba) {
-          for (var ki = 0; ki < kwAmba.length; ki++) {
-            if (zonaP.indexOf(kwAmba[ki]) !== -1) return true;
+      // Lista de regiones del país. Si la búsqueda coincide con una región distinta
+      // a la del mudancero, lo descartamos. Si no podemos determinarla, dejamos pasar.
+      // NOTA: cuidado con palabras ambiguas. Ej: "capital" puede ser CABA o Mendoza Capital.
+      // Por eso solo incluimos términos específicos en cada región.
+      var REGIONES = {
+        amba:    ['caba','autonoma','palermo','belgrano','caballito','flores','almagro','boedo','balvanera','recoleta','retiro','barracas','mataderos','liniers','devoto','urquiza','colegiales','nunez','saavedra','olivos','vicente','lopez','isidro','tigre','pilar','escobar','quilmes','lanus','avellaneda','moron','ituzaingo','merlo','ramos','mejia','floresta','crespo','microcentro','zarate','campana','hurlingham','lomas','zamora','varela','solano','beccar','martinez','acassuso','munro','florida','gba','vte','vlopez','lvp','telmo'],
+        rosario: ['rosario','funes','venado','tuerto'],
+        cordoba: ['cordoba','cba'],
+        mendoza: ['mendoza','godoy','lujan','cuyo','chacras','coria'],
+        tucuman: ['tucuman','smt'],
+        salta:   ['salta','jujuy','noa']
+      };
+      function detectarRegion(palabras) {
+        var matches = {};
+        for (var rg in REGIONES) {
+          var keys = REGIONES[rg];
+          for (var pi = 0; pi < palabras.length; pi++) {
+            if (keys.indexOf(palabras[pi]) !== -1) {
+              matches[rg] = (matches[rg] || 0) + 1;
+            }
           }
         }
-        return false;
+        // Devolver la región con más matches, o null si no hay
+        var top = null, maxN = 0;
+        for (var k in matches) {
+          if (matches[k] > maxN) { maxN = matches[k]; top = k; }
+        }
+        return top;
+      }
+      var palabrasPedido = _normZ(textoZona).split(/\s+/).filter(function(p){ return p.length > 2; });
+      var regionPedido = detectarRegion(palabrasPedido);
+
+      function cubreZona(perfil) {
+        // Sin zona en el pedido → no filtramos
+        if (!textoZona || palabrasPedido.length === 0) return true;
+        var palabrasPerfil = _normZ((perfil.zonaBase || '') + ' ' + (perfil.zonasExtra || '')).split(/\s+/).filter(function(p){ return p.length > 2; });
+        var regionPerfil = detectarRegion(palabrasPerfil);
+        // Si no podemos determinar región del perfil (ej. perfil sin zona cargada), dejamos pasar
+        if (!regionPerfil) return true;
+        // Si no podemos determinar región del pedido, dejamos pasar
+        if (!regionPedido) return true;
+        // Solo descartamos si las regiones son distintas y ambas conocidas
+        return regionPerfil === regionPedido;
       }
 
       // Usamos el índice global de mudanceros del sistema
