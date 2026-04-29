@@ -650,8 +650,6 @@ module.exports = async function handler(req, res) {
       else if (ambN === 2) ambKey = 'amb2';
       else if (ambN === 3) ambKey = 'amb3';
       else if (ambN >= 4)  ambKey = 'amb4';
-      // Para preciosLeads viejo (que sí tiene amb5plus)
-      var ambKeyLeads = ambN >= 5 ? 'amb5plus' : ambKey;
 
       // Helper: parsea un precio que puede venir como "300.000" (string AR) o número
       var parsePrecio = function(v){
@@ -660,6 +658,47 @@ module.exports = async function handler(req, res) {
         return parseInt(s, 10) || 0;
       };
 
+      // ── Filtro por zona del pedido (sugerencia: mostrar solo las que cubren) ──
+      // Acepta origen y destino del pedido. Si vienen vacíos → no filtra.
+      var origen  = String(req.query.origen  || '').toLowerCase();
+      var destino = String(req.query.destino || '').toLowerCase();
+      var textoZona = (origen + ' ' + destino).trim();
+      // Normalizar: quitar acentos, signos, separar palabras
+      function _normZ(s) {
+        return (s||'').toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+          .replace(/[^a-z0-9\s]/g,' ')
+          .replace(/\s+/g,' ').trim();
+      }
+      var _stopWords = ['de','del','la','las','los','el','en','y','av','ave','avenida','calle','provincia','ciudad','argentina','ar','buenos','aires'];
+      function _palabras(s) {
+        return _normZ(s).split(/\s+/).filter(function(p){ return p.length > 2 && _stopWords.indexOf(p) === -1; });
+      }
+      var palabrasBuscadas = _palabras(textoZona);
+      // Keywords AMBA → si la búsqueda apunta a CABA/GBA y el mudancero cubre AMBA, lo aceptamos
+      var kwAmba = ['caba','palermo','belgrano','caballito','flores','almagro','boedo','balvanera',
+        'recoleta','retiro','telmo','barracas','mataderos','liniers','devoto','urquiza',
+        'colegiales','nunez','saavedra','villa','crespo','olivos','vicente','lopez','san isidro',
+        'tigre','pilar','escobar','quilmes','lanus','avellaneda','moron','ituzaingo','merlo',
+        'ramos','mejia','floresta','parque','centenario','almagro','once','congreso','microcentro',
+        'zona norte','zona sur','zona oeste','gba'];
+      var esAmba = palabrasBuscadas.some(function(p){ return kwAmba.indexOf(p) !== -1; });
+      function cubreZona(perfil) {
+        if (palabrasBuscadas.length === 0) return true; // sin filtro
+        var zonaP = _normZ((perfil.zonaBase || '') + ' ' + (perfil.zonasExtra || ''));
+        // Match si el perfil menciona alguna palabra buscada
+        for (var pi = 0; pi < palabrasBuscadas.length; pi++) {
+          if (zonaP.indexOf(palabrasBuscadas[pi]) !== -1) return true;
+        }
+        // Match expandido: si la búsqueda es AMBA y el perfil cubre AMBA
+        if (esAmba) {
+          for (var ki = 0; ki < kwAmba.length; ki++) {
+            if (zonaP.indexOf(kwAmba[ki]) !== -1) return true;
+          }
+        }
+        return false;
+      }
+
       // Usamos el índice global de mudanceros del sistema
       var mtTodosEmails = await getJSON('mudanceros:todos') || [];
       var mtMudanceras = [];
@@ -667,6 +706,8 @@ module.exports = async function handler(req, res) {
         var mt = await getJSON('mudancero:perfil:' + mtTodosEmails[mi]);
         if (!mt) continue;
         if (mt.estado && mt.estado !== 'aprobado') continue;
+        // Filtro por zona del pedido
+        if (!cubreZona(mt)) continue;
 
         // ── Modelo nuevo (único que carga el mudancero hoy en su perfil): ──
         // mt.preciosEsencial = { amb1, amb2, amb3, amb4 } (strings/números)
@@ -697,6 +738,7 @@ module.exports = async function handler(req, res) {
         ok: true,
         ambientes: ambN || null,
         ambientesUsado: ambKey,
+        zonaFiltro: textoZona || null,
         mudanceras: mtMudanceras,
         niveles: NIVELES,
         nivelesLabel: NIVELES_LABEL
