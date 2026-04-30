@@ -4,6 +4,21 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Mi cuenta — MudateYa</title>
+
+<!-- ───── PWA ───── -->
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#003580"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png"/>
+<!-- iOS: pide su propio set de meta tags (no soporta manifest) -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="MudateYa"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png"/>
+<link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png"/>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -445,6 +460,95 @@ body.pd-panel-open .pd-list-col{flex:1.3}
 </style>
 </head>
 <body>
+<!-- ───── Banner instalación PWA (solo se muestra cuando es instalable) ───── -->
+<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:16px;left:16px;right:16px;z-index:9000;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 8px 24px rgba(15,25,35,.12);padding:14px 16px;display:none;align-items:center;gap:12px;font-family:Inter,sans-serif;max-width:480px;margin:0 auto">
+  <div style="width:44px;height:44px;border-radius:10px;background:#003580;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+    <span style="color:#fff;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px">MY</span>
+  </div>
+  <div style="flex:1;min-width:0">
+    <div style="font-weight:700;font-size:13px;color:#0F1923;line-height:1.3">Instalá MudateYa en tu celu</div>
+    <div style="font-size:11.5px;color:#64748B;line-height:1.3;margin-top:2px">Acceso rápido sin abrir el navegador</div>
+  </div>
+  <button id="pwaInstallBtn" style="background:#22C36A;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;flex-shrink:0;font-family:Inter,sans-serif">Instalar</button>
+  <button id="pwaDismissBtn" aria-label="Cerrar" style="background:transparent;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:0 4px;flex-shrink:0;line-height:1">&times;</button>
+</div>
+
+<script>
+// ───── PWA: registro de service worker + lógica del banner instalar ─────
+(function(){
+  // Registrar SW solo si el browser lo soporta y estamos en HTTPS (o localhost)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('/sw.js').then(function(reg){
+        // SW registrado OK
+      }).catch(function(err){
+        console.warn('[PWA] SW falló:', err.message);
+      });
+    });
+  }
+
+  // Capturar el evento de instalación que dispara Chrome/Android
+  var deferredPrompt = null;
+  var banner = document.getElementById('pwaInstallBanner');
+  var btnInstalar = document.getElementById('pwaInstallBtn');
+  var btnDismiss = document.getElementById('pwaDismissBtn');
+
+  // Si ya descartó el banner antes, no lo mostramos
+  var dismissedAt = 0;
+  try { dismissedAt = parseInt(localStorage.getItem('pwaBannerDismissed') || '0'); } catch(e){}
+  var hace7dias = Date.now() - 7 * 24 * 3600 * 1000;
+  var fueDescartadoReciente = dismissedAt > hace7dias;
+
+  // Si ya está instalada (display-mode: standalone) tampoco mostramos
+  var yaInstalada = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+  if (window.navigator.standalone === true) yaInstalada = true; // iOS
+
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (banner && !fueDescartadoReciente && !yaInstalada) {
+      banner.style.display = 'flex';
+    }
+  });
+
+  if (btnInstalar) {
+    btnInstalar.addEventListener('click', function(){
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(choice){
+        if (choice.outcome === 'accepted') {
+          if (banner) banner.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
+    });
+  }
+
+  if (btnDismiss) {
+    btnDismiss.addEventListener('click', function(){
+      if (banner) banner.style.display = 'none';
+      try { localStorage.setItem('pwaBannerDismissed', String(Date.now())); } catch(e){}
+    });
+  }
+
+  // iOS no dispara beforeinstallprompt — mostramos hint solo en Safari mobile
+  // que no esté ya instalada (después de 3 segundos para no saturar)
+  setTimeout(function(){
+    if (yaInstalada || fueDescartadoReciente || !banner) return;
+    var ua = navigator.userAgent || '';
+    var esIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    var esSafari = /^((?!chrome|android).)*safari/i.test(ua);
+    if (esIOS && esSafari && !deferredPrompt) {
+      // En iOS Safari mostramos un mensaje custom (no se puede auto-instalar)
+      banner.querySelector('div > div:nth-child(1)').textContent = 'Instalá MudateYa';
+      banner.querySelector('div > div:nth-child(2)').textContent = 'Tocá Compartir → "Añadir a pantalla de inicio"';
+      if (btnInstalar) btnInstalar.style.display = 'none';
+      banner.style.display = 'flex';
+    }
+  }, 3000);
+})();
+</script>
+
 
 <!-- LOGIN -->
 <div id="loginScreen">
