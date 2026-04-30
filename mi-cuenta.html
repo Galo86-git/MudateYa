@@ -1795,13 +1795,22 @@ document.addEventListener('click', function(e){
   if (!document.body.classList.contains('pd-panel-open')) return;
   var panel = document.getElementById('pdSidePanel');
   if (panel && panel.contains(e.target)) return;
-  // Si el click fue en un modal flotante (cotización, foto grande, etc.) o
-  // dentro de cualquier overlay/dialog/popup, NO cerrar el panel.
-  // Esto arregla el bug del botón Cotizar en mobile que se cerraba todo.
+  // Excluir clicks que vienen de:
+  // - Filas de pedidos (rows) — al tocar otro pedido NO cerrar, abrir el nuevo
+  // - Tabs (Disponibles/En espera/etc) — al cambiar tab NO cerrar
+  // - Modales flotantes — el modal de cotización está fuera del panel
+  // - Botón Debug — para que pueda debuguear sin auto-cerrar
+  // - Botones del bottom nav — para que cambien de sección normalmente
   if (e.target.closest && (
+    e.target.closest('.pd-row-line') ||
+    e.target.closest('.tab-pedido') ||
+    e.target.closest('[onclick*="setTabPedidos"]') ||
     e.target.closest('#cotModal') ||
     e.target.closest('.modal') ||
+    e.target.closest('.modal-aj') ||
     e.target.closest('[role="dialog"]') ||
+    e.target.closest('#debugBtn') ||
+    e.target.closest('.mc-mobile-nav') ||
     e.target.closest('[data-no-close-pd]')
   )) return;
   cerrarDetallePedido();
