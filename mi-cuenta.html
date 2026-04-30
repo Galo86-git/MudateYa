@@ -420,6 +420,9 @@ body.pd-panel-open .pd-list-col{flex:1.3}
   }
   @keyframes pdBackdropIn{from{opacity:0}to{opacity:1}}
   body.pd-panel-open{overflow:hidden}
+  /* En mobile, dentro del bottom sheet, esconder los botones del card porque
+     ya están abajo en el CTA fixed. Evitamos duplicados y ahorramos scroll. */
+  .pd-side-panel.open .pedido-actions-card{display:none!important}
   .pd-detail-content{padding:8px 16px 90px}
   .pd-detail-close{
     width:38px;height:38px;font-size:18px;border-radius:10px
@@ -1698,14 +1701,39 @@ function seleccionarPedido(mudanzaId, tipo) {
       + '</div>'
       + '</div>';
   // Renderizar contenido (reusa los renders existentes)
-  var detailHtml = '<div class="pd-detail-content">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #E2E8F0">'
-    +   '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Detalle del pedido</div>'
-    +   '<button class="pd-detail-close" onclick="cerrarDetallePedido()" aria-label="Cerrar">✕</button>'
-    + '</div>'
+  // En mobile: header sticky con "← Volver" + botón Cotizar fixed abajo (CTA siempre visible)
+  var esMobile = window.innerWidth <= 640;
+  var headerHtml;
+  if (esMobile) {
+    headerHtml = '<div class="pd-mobile-header" style="position:sticky;top:0;background:#fff;z-index:6;display:flex;align-items:center;gap:10px;padding:14px 14px 12px;border-bottom:1px solid #E2E8F0;margin:-14px -14px 14px">'
+      + '<button onclick="cerrarDetallePedido()" aria-label="Volver" style="background:transparent;border:none;color:var(--blue);font-size:14px;font-weight:700;cursor:pointer;padding:6px 4px;display:flex;align-items:center;gap:4px;font-family:Inter,sans-serif">'
+      +   '<span style="font-size:18px;line-height:1">←</span> Volver'
+      + '</button>'
+      + '<div style="flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--text);font-family:Inter,sans-serif">Detalle del pedido</div>'
+      + '<div style="width:60px"></div>' // spacer para centrar el título
+      + '</div>';
+  } else {
+    headerHtml = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #E2E8F0">'
+      +   '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Detalle del pedido</div>'
+      +   '<button class="pd-detail-close" onclick="cerrarDetallePedido()" aria-label="Cerrar">✕</button>'
+      + '</div>';
+  }
+
+  var detailHtml = '<div class="pd-detail-content"'
+    + (esMobile ? ' style="padding-bottom:90px"' : '') + '>'
+    + headerHtml
     + bannerOrigen
     + (tipo === 'disponibles' ? renderCardDisponible(m) : renderCardCotizacion(m))
     + '</div>';
+
+  // En mobile, agregar CTA fixed abajo (botón Cotizar siempre visible)
+  // Solo para 'disponibles' (los otros tabs no tienen acción primaria)
+  if (esMobile && tipo === 'disponibles') {
+    detailHtml += '<div class="pd-mobile-cta" style="position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E2E8F0;padding:12px 14px;display:flex;gap:8px;box-shadow:0 -4px 12px rgba(15,25,35,.06);margin:0 -14px -14px;z-index:5">'
+      + '<button onclick="rechazarPedido(\''+m.id+'\',this)" style="flex:0 0 auto;background:#fff;color:#DC2626;border:1px solid #FECACA;padding:12px 18px;border-radius:10px;font-weight:700;font-size:13px;font-family:Inter,sans-serif">✕ Pasar</button>'
+      + '<button onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))" style="flex:1;background:#22C36A;color:#003580;border:none;padding:12px 18px;border-radius:10px;font-weight:700;font-size:14px;font-family:Inter,sans-serif">💰 Cotizar →</button>'
+      + '</div>';
+  }
   var panel = document.getElementById('pdSidePanel');
   if (panel) {
     panel.innerHTML = detailHtml;
@@ -1764,6 +1792,15 @@ document.addEventListener('click', function(e){
   if (!document.body.classList.contains('pd-panel-open')) return;
   var panel = document.getElementById('pdSidePanel');
   if (panel && panel.contains(e.target)) return;
+  // Si el click fue en un modal flotante (cotización, foto grande, etc.) o
+  // dentro de cualquier overlay/dialog/popup, NO cerrar el panel.
+  // Esto arregla el bug del botón Cotizar en mobile que se cerraba todo.
+  if (e.target.closest && (
+    e.target.closest('#cotModal') ||
+    e.target.closest('.modal') ||
+    e.target.closest('[role="dialog"]') ||
+    e.target.closest('[data-no-close-pd]')
+  )) return;
   cerrarDetallePedido();
 });
 document.addEventListener('keydown', function(e){
@@ -1893,7 +1930,7 @@ function renderCardDisponible(m) {
     +'<div>'
     +(bloqueDesglose ? '' : '<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+labelPrecio+'</div><div class="pedido-precio">$'+precioMostrar.toLocaleString('es-AR')+'</div>')
     +'<div style="font-size:10px;color:'+(hs<4?'var(--red)':'var(--amber)')+';font-family:var(--mono);margin-top:3px">⏱ Expira en '+hs+'hs</div>'
-    +'</div><div class="pedido-actions" style="display:flex;gap:6px">'
+    +'</div><div class="pedido-actions pedido-actions-card" style="display:flex;gap:6px">'
     +'<button class="btn btn-red" style="font-size:12px;padding:8px 12px" onclick="rechazarPedido(\''+m.id+'\',this)">✕ Pasar</button>'
     +'<button class="btn btn-green" onclick="abrirCotizacion(mudanzasDisponibles.find(function(x){return x.id===\''+m.id+'\'}))">💰 Cotizar</button>'
     +'</div></div>'
