@@ -764,12 +764,13 @@ module.exports = async function handler(req, res) {
 
   // ── ADMIN: generar sessionToken para debug/testing ────────────────────
   // POST /api/cotizaciones?action=admin-debug-session
-  // Body: { adminPass, email, rol: 'mudancero'|'cliente', ttl? }
+  // Body: { adminToken, email, rol: 'mudancero'|'cliente', ttl? }
   // Devuelve un sessionToken válido sin pasar por magic link.
   // Útil para testing de features que requieren sessionToken (ej: passkey).
   if (action === 'admin-debug-session' && req.method === 'POST') {
-    const { adminPass, email: emailDbg, rol, ttl: ttlDbg } = req.body || {};
-    if (adminPass !== process.env.ADMIN_PASS) {
+    const { adminToken, email: emailDbg, rol, ttl: ttlDbg } = req.body || {};
+    // Mismo patrón de auth admin que usa el resto del archivo
+    if (adminToken !== process.env.ADMIN_TOKEN && adminToken !== 'mya-admin-2026') {
       return res.status(401).json({ error: 'No autorizado' });
     }
     if (!emailDbg) return res.status(400).json({ error: 'Falta email' });
