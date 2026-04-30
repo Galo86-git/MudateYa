@@ -3005,57 +3005,64 @@ function runDebugTests(){
 
   var primer = (typeof mudanzasDisponibles !== 'undefined' && mudanzasDisponibles) ? mudanzasDisponibles[0] : null;
   log('3. primer ID', primer && primer.id);
+  log('3b. primer keys', primer ? Object.keys(primer).slice(0,15).join(',') : 'no hay');
 
   if (!primer) {
-    showDebug(out.join('\n') + '\n\n❌ No hay pedidos disponibles. Cambiá a tab Disponibles primero.');
+    showDebug(out.join('\n') + '\n\n❌ No hay pedidos. Cambiá a tab Disponibles primero.');
     return;
   }
 
-  // Llamar seleccionarPedido
+  // Capturar errores globales mientras corre seleccionarPedido
+  var errorCapturado = null;
+  var origErrorHandler = window.onerror;
+  window.onerror = function(msg, src, line, col, err){
+    errorCapturado = msg + ' @ línea ' + line + ' col ' + col;
+    if (err && err.stack) errorCapturado += '\nStack: ' + err.stack.slice(0, 300);
+    return false;
+  };
+
+  // Llamar seleccionarPedido con try/catch
   try {
     seleccionarPedido(primer.id, 'disponibles');
-    log('4. seleccionarPedido', 'ejecutó OK');
+    log('4. seleccionarPedido', 'ejecutó sin throw');
   } catch (e) {
-    log('4. seleccionarPedido ERROR', e.message);
+    log('4. seleccionarPedido THREW', e.message);
+    log('4b. stack', (e.stack || '').slice(0, 300));
   }
 
-  // Esperar 400ms y chequear estado
   setTimeout(function(){
+    window.onerror = origErrorHandler;
+    if (errorCapturado) log('4c. ERROR CAPTURADO', errorCapturado);
+
+    // Probar renderCardDisponible directamente para ver si tira error
+    try {
+      var html = renderCardDisponible(primer);
+      log('5. renderCardDisponible', 'OK, length=' + html.length);
+    } catch (e2) {
+      log('5. renderCardDisponible THREW', e2.message);
+      log('5b. stack', (e2.stack || '').slice(0, 300));
+    }
+
+    // Estado del panel después
     var p = document.getElementById('pdSidePanel');
     if (!p) {
-      out.push('5. ERROR: pdSidePanel no existe');
+      out.push('6. ERROR: pdSidePanel no existe');
       showDebug(out.join('\n'));
       return;
     }
     var st = getComputedStyle(p);
-    log('5. panel className', p.className);
-    log('6. panel height', st.height);
-    log('7. panel zIndex', st.zIndex);
-    log('8. panel visibility', st.visibility);
-    log('9. panel display', st.display);
-    log('10. panel opacity', st.opacity);
-    log('11. innerHTML.length', p.innerHTML.length);
-    log('12. body class', document.body.className);
+    log('6. panel className', p.className);
+    log('7. panel height', st.height);
+    log('8. innerHTML.length', p.innerHTML.length);
+    log('9. innerHTML preview', p.innerHTML.slice(0, 150));
+    log('10. body class', document.body.className);
 
-    var bbox = p.getBoundingClientRect();
-    log('13. panel bbox', 'x:'+Math.round(bbox.left)+' y:'+Math.round(bbox.top)+' w:'+Math.round(bbox.width)+' h:'+Math.round(bbox.height));
-
-    // Qué hay en el centro del panel
-    var midX = bbox.left + bbox.width/2;
-    var midY = bbox.top + bbox.height/2;
-    if (bbox.width > 0 && bbox.height > 0) {
-      var elTop = document.elementFromPoint(midX, midY);
-      log('14. elemento en centro', elTop ? (elTop.tagName + '#' + (elTop.id||'') + '.' + (elTop.className||'').toString().slice(0,60)) : 'ninguno');
-    } else {
-      log('14. panel sin tamaño', 'no se puede medir');
-    }
-
-    // Qué hay arriba en x=200, y=400 (zona donde debería estar el header del bottom sheet)
-    var elArriba = document.elementFromPoint(200, 400);
-    log('15. elemento en (200,400)', elArriba ? (elArriba.tagName + '#' + (elArriba.id||'') + '.' + (elArriba.className||'').toString().slice(0,60)) : 'ninguno');
+    // Variables globales clave
+    log('11. mudanceroPerfilRedis', (typeof mudanceroPerfilRedis !== 'undefined' && mudanceroPerfilRedis) ? 'existe (email='+(mudanceroPerfilRedis.email||'?')+')' : 'undefined o null');
+    log('12. _tabActiva', (typeof _tabActiva !== 'undefined') ? _tabActiva : 'undefined');
 
     showDebug(out.join('\n'));
-  }, 400);
+  }, 500);
 }
 
 function showDebug(text){
