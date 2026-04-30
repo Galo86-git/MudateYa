@@ -1079,6 +1079,8 @@ module.exports = async function handler(req, res) {
       }
       if (tipoPago === 'anticipo') {
         m.anticipoPagado = true;
+        // Fecha en que se confirmó el pago del anticipo (para calcular liquidación al mudancero: 15 días hábiles)
+        if (!m.fechaPagoAnticipo) m.fechaPagoAnticipo = new Date().toISOString();
         // Guardar el monto exacto del anticipo pagado (50% del precio en ese momento)
         // Esto es crítico si luego hay ajuste de precio: el saldo se calcula como precio - anticipoMonto
         if (!m.anticipoMonto) {
@@ -1092,6 +1094,8 @@ module.exports = async function handler(req, res) {
       }
       if (tipoPago === 'saldo') {
         m.saldoPagado = true;
+        // Fecha en que se confirmó el pago del saldo (para calcular liquidación)
+        if (!m.fechaPagoSaldo) m.fechaPagoSaldo = new Date().toISOString();
         // Al pagar el saldo, la mudanza queda completada
         m.estado = 'completada';
         if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
@@ -1991,6 +1995,8 @@ module.exports = async function handler(req, res) {
       m.estado = 'completada';
       m.saldoPagado = true;
       if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
+      // Si se forzó la completada sin pasar por el flujo normal de pago, registrar fecha
+      if (!m.fechaPagoSaldo) m.fechaPagoSaldo = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       return res.status(200).json({ ok: true, msg: 'Estado actualizado a completada', id: mudanzaId });
     }
