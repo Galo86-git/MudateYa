@@ -1639,12 +1639,37 @@ window.onload = async function(){
   }, 600);
 };
 
-function handleCredential(response){
+async function handleCredential(response){
   var payload = JSON.parse(atob(response.credential.split('.')[1]));
   currentUser = {name:payload.name, email:payload.email, picture:payload.picture};
-  var userStr = JSON.stringify(currentUser);
+
+  // FIX: validar el Google ID token contra el backend Y crear sessionToken
+  // así el resto de los endpoints (passkey, push, etc.) reconocen la sesión.
+  // Si falla, igual entramos (compatibilidad con flujo viejo) pero sin sessionToken.
+  var sessionToken = null;
+  try {
+    var r = await fetch('/api/cotizaciones?action=crear-sesion', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        email: payload.email,
+        googleIdToken: response.credential,
+        rol: 'mudancero'
+      })
+    });
+    var d = await r.json();
+    if (r.ok && d.sessionToken) {
+      sessionToken = d.sessionToken;
+      currentUser.sessionToken = sessionToken;
+    } else {
+      console.warn('[google-login] no se pudo crear sesión:', d && d.error);
+    }
+  } catch(e) {
+    console.warn('[google-login] error creando sesión:', e.message);
+  }
+
   // FIX: guardar en todos los storages para que landing y mi-mudanza también lo reconozcan
-  var _ms = {...currentUser, _expires: Date.now()+604800000};
+  var _ms = Object.assign({}, currentUser, { _expires: Date.now()+604800000, sessionToken: sessionToken });
   var _msStr = JSON.stringify(_ms);
   sessionStorage.setItem('mudanceroUser', _msStr);
   sessionStorage.setItem('googleUser', _msStr);
@@ -3359,6 +3384,82 @@ async function recordarAjuste(mudanzaId, btn) {
 
 <!-- ───── Botón Debug flotante (solo para admin) ───── -->
 <button id="debugBtn" onclick="runDebugTests()" style="display:none;position:fixed;top:80px;right:14px;z-index:9998;background:#F59E0B;color:#fff;border:none;padding:10px 14px;border-radius:50px;font-weight:700;font-size:12px;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(245,158,11,.4);cursor:pointer">🐛 Debug</button>
+
+<!-- ───── Botón Setup Passkey (solo para admin) ───── -->
+<button id="setupPasskeyBtn" onclick="runPasskeySetup()" style="display:none;position:fixed;top:130px;right:14px;z-index:9998;background:#1A6FFF;color:#fff;border:none;padding:10px 14px;border-radius:50px;font-weight:700;font-size:12px;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(26,111,255,.4);cursor:pointer">🔐 Setup Passkey</button>
+
+<script>
+// Mostrar botón Setup Passkey solo para admin
+(function(){
+  function checkSetup(){
+    var ses = (window.currentUser && window.currentUser.email) || '';
+    if (ses.toLowerCase() === 'jgalozaldivar@gmail.com') {
+      document.getElementById('setupPasskeyBtn').style.display = 'block';
+    }
+  }
+  setTimeout(checkSetup, 2000);
+  setTimeout(checkSetup, 5000);
+})();
+
+async function runPasskeySetup(){
+  if (!currentUser || !currentUser.email) {
+    alert('Logueate primero');
+    return;
+  }
+
+  var btn = document.getElementById('setupPasskeyBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando token...';
+
+  try {
+    // Paso 1: generar sessionToken vía endpoint admin
+    var token = prompt('Admin token (default: mya-admin-2026):', 'mya-admin-2026');
+    if (!token) {
+      btn.disabled = false;
+      btn.textContent = '🔐 Setup Passkey';
+      return;
+    }
+
+    var r = await fetch('/api/cotizaciones?action=admin-debug-session', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        adminToken: token,
+        email: currentUser.email,
+        rol: 'mudancero'
+      })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'No se pudo generar token');
+
+    currentUser.sessionToken = d.sessionToken;
+    var ms = JSON.parse(sessionStorage.getItem('mudanceroUser') || '{}');
+    ms.sessionToken = d.sessionToken;
+    ms._expires = Date.now() + (d.ttl * 1000);
+    sessionStorage.setItem('mudanceroUser', JSON.stringify(ms));
+    sessionStorage.setItem('googleUser', JSON.stringify(ms));
+    sessionStorage.setItem('clienteUser', JSON.stringify(ms));
+
+    btn.textContent = '⏳ Pidiendo huella...';
+
+    // Paso 2: registrar passkey
+    var ok = await passkeyRegister();
+
+    if (ok) {
+      btn.textContent = '✅ Activado';
+      btn.style.background = '#22C36A';
+      alert('🎉 Passkey registrada con éxito!\n\nProbá:\n1. Cerrar la PWA del multitarea\n2. Abrirla de nuevo\n3. Debería aparecer "Bienvenido de nuevo, Juan Galo 👋" con botón huella');
+    } else {
+      throw new Error('Registro cancelado o falló');
+    }
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = '🔐 Setup Passkey';
+    alert('Error: ' + err.message);
+    console.error('[setup-passkey]', err);
+  }
+}
+</script>
 
 <script>
 // Mostrar botón debug solo para admin
