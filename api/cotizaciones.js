@@ -762,6 +762,42 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  // ── ADMIN: generar sessionToken para debug/testing ────────────────────
+  // POST /api/cotizaciones?action=admin-debug-session
+  // Body: { adminPass, email, rol: 'mudancero'|'cliente', ttl? }
+  // Devuelve un sessionToken válido sin pasar por magic link.
+  // Útil para testing de features que requieren sessionToken (ej: passkey).
+  if (action === 'admin-debug-session' && req.method === 'POST') {
+    const { adminPass, email: emailDbg, rol, ttl: ttlDbg } = req.body || {};
+    if (adminPass !== process.env.ADMIN_PASS) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+    if (!emailDbg) return res.status(400).json({ error: 'Falta email' });
+    const rolDbg = rol || 'mudancero';
+    if (rolDbg !== 'mudancero' && rolDbg !== 'cliente') {
+      return res.status(400).json({ error: 'Rol inválido (mudancero|cliente)' });
+    }
+    const emailDbgNorm = String(emailDbg).trim().toLowerCase();
+    // Verificar que el perfil exista
+    const perfilDbg = await getJSON(`${rolDbg}:perfil:${emailDbgNorm}`);
+    if (!perfilDbg) {
+      return res.status(404).json({ error: `Perfil ${rolDbg} no encontrado para ${emailDbgNorm}` });
+    }
+    // Generar token y guardar
+    const tokenDbg = require('crypto').randomBytes(32).toString('hex');
+    const ttlDbgFinal = ttlDbg || (90 * 24 * 60 * 60); // default 90 días
+    await setJSON(`session:${rolDbg}:${emailDbgNorm}`, tokenDbg, ttlDbgFinal);
+    return res.status(200).json({
+      ok: true,
+      sessionToken: tokenDbg,
+      email: emailDbgNorm,
+      nombre: perfilDbg.nombre || '',
+      foto: perfilDbg.foto || '',
+      rol: rolDbg,
+      ttl: ttlDbgFinal
+    });
+  }
+
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
