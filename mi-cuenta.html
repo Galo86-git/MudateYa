@@ -340,6 +340,67 @@ body.pd-panel-open .pd-list-col{flex:1.3}
 .pd-st-pill.pd-listo{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;font-weight:700}
 .pd-ruta-line{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .pd-fecha-line{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;color:var(--text3);font-family:var(--mono);background:#F1F5F9;padding:1px 7px;border-radius:6px;vertical-align:middle}
+
+/* ═══════════ GANANCIAS — Rediseño CRM ═══════════ */
+.g-chips-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.g-chip{flex:1 1 180px;min-width:160px;border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;transition:transform .15s}
+.g-chip-disp{background:linear-gradient(135deg,#22C36A 0%,#16A34A 100%);color:#fff;box-shadow:0 2px 8px rgba(34,195,106,.18)}
+.g-chip-proc{background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412}
+.g-chip-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;font-weight:700;opacity:.85}
+.g-chip-monto{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;line-height:1.05}
+.g-chip-sub{font-size:11px;font-family:var(--mono);opacity:.85}
+.g-chip-proc .g-chip-monto{color:#0F1923}
+
+.g-kpis-inline{display:flex;gap:0;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 4px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.g-kpi{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;border-right:1px solid var(--border);text-align:center}
+.g-kpi:last-child{border-right:none}
+.g-kpi-lbl{font-size:9.5px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.3px;font-weight:700;margin-bottom:2px;white-space:nowrap}
+.g-kpi-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--blue);white-space:nowrap}
+.g-kpi-red{color:#DC2626}
+.g-kpi-amber{color:#F59E0B}
+
+.g-tabs-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:8px;background:#fff}
+.g-tab-btn{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px 10px;border:none;background:transparent;font-family:'Outfit',sans-serif;cursor:pointer;border-bottom:2px solid transparent;color:#64748B;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.g-tab-btn:active{transform:scale(.97)}
+.g-tab-btn.active{color:var(--gtab-color, var(--blue));border-bottom-color:var(--gtab-color, var(--blue))}
+.g-tab-lbl{font-size:12px;font-weight:600;line-height:1.1}
+.g-tab-count{font-size:10px;font-family:var(--mono);font-weight:700;background:#F1F5F9;color:#94A3B8;padding:1px 7px;border-radius:10px;min-width:20px;text-align:center;line-height:1.4}
+.g-tab-count.has{background:#E2E8F0;color:#475569}
+.g-tab-btn.active .g-tab-count{background:var(--gtab-color, var(--blue));color:#fff}
+
+/* Filas CRM de cobros: 1 línea, compactas */
+.g-row{display:grid;grid-template-columns:auto auto auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:9px;margin-bottom:5px;cursor:pointer;transition:all .15s;font-size:13px}
+.g-row:hover{border-color:rgba(26,111,255,.3);background:#FAFBFC}
+.g-row:active{transform:scale(.99)}
+.g-row-pill{font-size:10px;font-family:var(--mono);font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px;white-space:nowrap;flex-shrink:0}
+.g-row-pill-disp{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC}
+.g-row-pill-proc{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+.g-row-tipo{font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 6px;border-radius:5px;letter-spacing:.3px;white-space:nowrap}
+.g-row-tipo-ant{background:#EEF4FF;color:#1A6FFF}
+.g-row-tipo-sld{background:#F0FDF4;color:#15803D}
+.g-row-eti{font-size:11.5px;color:var(--text2);font-weight:600;white-space:nowrap}
+.g-row-ruta{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.g-row-fecha{display:inline-block;margin-left:8px;font-size:10.5px;font-weight:600;color:var(--text3);font-family:var(--mono);background:#F1F5F9;padding:1px 6px;border-radius:5px;vertical-align:middle}
+.g-row-monto{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--blue);white-space:nowrap;flex-shrink:0}
+.g-row-arrow{color:var(--text3);font-size:18px;font-weight:300;flex-shrink:0;margin-left:-2px}
+
+.g-cbu-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;margin-top:10px;font-size:12px;color:#166534}
+.g-cbu-icon{font-size:16px}
+.g-cbu-text{flex:1}
+.g-disclaimer{font-size:10.5px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.5;padding:0 8px}
+
+/* Mobile: ajustes finos */
+@media (max-width:640px){
+  .g-row{grid-template-columns:auto auto auto minmax(0,1fr) auto;gap:8px;padding:9px 10px;font-size:12px}
+  .g-row-eti{display:none} /* ya tenemos el badge "50%" así que la etiqueta es redundante */
+  .g-row-arrow{display:none}
+  .g-row-monto{font-size:13px}
+  .g-row-fecha{font-size:9.5px;padding:1px 5px}
+  .g-chip-monto{font-size:21px}
+  .g-kpi-val{font-size:13px}
+  .g-kpi-lbl{font-size:9px}
+  .g-tab-lbl{font-size:11px}
+}
 .pd-meta-line{font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap;flex-shrink:0}
 .pd-precio-line{font-size:11.5px;font-family:var(--mono);font-weight:700;color:var(--blue);white-space:nowrap;flex-shrink:0;min-width:90px;text-align:right}
 .pd-arrow{color:var(--text3);font-size:18px;font-weight:700;flex-shrink:0;width:14px;text-align:center;line-height:1}
@@ -1401,63 +1462,43 @@ body.pd-panel-open .pd-list-col{flex:1.3}
       <div class="page" id="page-ganancias">
         <div class="page-title">Mis ganancias</div>
 
-        <!-- Estado de cobros: 3 tarjetas con saldo, en proceso y próximos -->
-        <div id="gananciasEstados" style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
-          <!-- Card DISPONIBLE -->
-          <div id="gEstadoDisp" class="g-estado g-estado-disp" style="background:linear-gradient(135deg,#22C36A 0%,#16A34A 100%);color:#fff;border-radius:14px;padding:18px 18px 16px;box-shadow:0 4px 14px rgba(34,195,106,.18)">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px">
-              <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;opacity:.85">✅ Disponible para retirar</div>
-              <div id="gDispCount" style="font-size:11px;font-family:var(--mono);opacity:.85">0 cobros</div>
-            </div>
-            <div id="gDispMonto" style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:1px;line-height:1;margin-bottom:6px">$0</div>
-            <div style="font-size:11.5px;opacity:.9;line-height:1.4" id="gDispSubtitulo">Sin cobros disponibles aún</div>
+        <!-- ── Resumen compacto: 2 chips horizontales (disponible + en proceso) ── -->
+        <div class="g-chips-row">
+          <div class="g-chip g-chip-disp">
+            <div class="g-chip-label">✅ Disponible</div>
+            <div class="g-chip-monto" id="gDispMonto">$0</div>
+            <div class="g-chip-sub" id="gDispSub">0 cobros</div>
           </div>
-
-          <!-- Card EN PROCESO -->
-          <div id="gEstadoProc" class="g-estado g-estado-proc" style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:16px 18px;display:none">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px">
-              <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;color:#C2410C;font-weight:700">⏳ En proceso (15 días hábiles)</div>
-              <div id="gProcCount" style="font-size:11px;font-family:var(--mono);color:#C2410C">0 cobros</div>
-            </div>
-            <div id="gProcMonto" style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1px;line-height:1;color:#0F1923;margin-bottom:10px">$0</div>
-            <div id="gProcLista" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div class="g-chip g-chip-proc">
+            <div class="g-chip-label">⏳ En proceso</div>
+            <div class="g-chip-monto" id="gProcMonto">$0</div>
+            <div class="g-chip-sub" id="gProcSub">0 cobros</div>
           </div>
         </div>
 
-        <!-- Resumen del mes -->
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-header">
-            <span class="card-title">Resumen total</span>
-          </div>
-          <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
-            <div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Total ganado (neto)</div>
-              <div id="g-total" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--blue);letter-spacing:.5px;margin-top:4px">$0</div>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Comisión MudateYa</div>
-              <div id="g-comision" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#DC2626;letter-spacing:.5px;margin-top:4px">$0</div>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Trabajos completados</div>
-              <div id="g-trabajos" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:.5px;margin-top:4px">0</div>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Promedio por trabajo</div>
-              <div id="g-promedio" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#F59E0B;letter-spacing:.5px;margin-top:4px">$0</div>
-            </div>
-          </div>
+        <!-- ── KPIs inline (1 línea) ── -->
+        <div class="g-kpis-inline" id="gKpisInline">
+          <div class="g-kpi"><span class="g-kpi-lbl">Total</span><span class="g-kpi-val" id="g-total">$0</span></div>
+          <div class="g-kpi"><span class="g-kpi-lbl">Fee</span><span class="g-kpi-val g-kpi-red" id="g-comision">$0</span></div>
+          <div class="g-kpi"><span class="g-kpi-lbl">Trabajos</span><span class="g-kpi-val" id="g-trabajos">0</span></div>
+          <div class="g-kpi"><span class="g-kpi-lbl">Prom.</span><span class="g-kpi-val g-kpi-amber" id="g-promedio">$0</span></div>
         </div>
 
-        <!-- Historial detallado -->
-        <div class="card">
-          <div class="card-header"><span class="card-title">Historial de trabajos</span></div>
-          <div id="gananciasList"><div class="empty"><div class="empty-icon">💰</div>Cuando aceptes tu primera cotización, los trabajos aparecen acá.</div></div>
+        <!-- ── Tabs filtros: Todos / Disponibles / En proceso ── -->
+        <div class="g-tabs-row" id="gTabsRow"></div>
+
+        <!-- ── Lista CRM de cobros ── -->
+        <div id="gananciasList"><div class="empty"><div class="empty-icon">💰</div>Cuando un cliente pague la seña de tu mudanza aceptada, los cobros aparecen acá.</div></div>
+
+        <!-- ── Resumen total mensual (colapsable, sutil) ── -->
+        <div class="g-cbu-row" id="gCbuRow" style="display:none">
+          <span class="g-cbu-icon">🏦</span>
+          <span class="g-cbu-text">El admin coordina la transferencia a: <b id="gCbuVal">—</b></span>
         </div>
 
-        <!-- Disclaimer -->
-        <div style="font-size:10.5px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.5;padding:0 8px">
-          ℹ️ Las fechas son estimadas — los feriados pueden mover el día de cobro 1-2 días. El admin coordina la transferencia a tu CBU/alias una vez disponible.
+        <!-- ── Disclaimer ── -->
+        <div class="g-disclaimer">
+          ℹ️ Fechas estimadas — feriados pueden mover el día ±1-2. Liquidación 15 días hábiles desde cada pago.
         </div>
       </div>
 
@@ -3401,8 +3442,15 @@ function diasHabilesEntre(desde, hasta){
 }
 
 // ════════════════════════════════════════════════════
-// loadGanancias — clasifica cobros en 3 estados
+// loadGanancias — clasifica cobros y los renderiza en estilo CRM
 // ════════════════════════════════════════════════════
+var _ganTabActiva = 'todos'; // 'todos' | 'disponibles' | 'enproceso'
+
+function setGanTab(t){
+  _ganTabActiva = t;
+  loadGanancias(); // re-render con el filtro nuevo (sin re-fetch)
+}
+
 function loadGanancias(){
   var ACTIVOS = ['cotizacion_aceptada','en_curso','completada'];
   // Aceptadas como "trabajo confirmado" requieren que el cliente al menos haya pagado
@@ -3416,7 +3464,7 @@ function loadGanancias(){
   });
 
   var hoy = new Date();
-  var DIAS_LIQ = 15; // 15 días hábiles para liberar el cobro
+  var DIAS_LIQ = 15;
   var cobros = [];
 
   aceptadas.forEach(function(m){
@@ -3427,18 +3475,9 @@ function loadGanancias(){
     var netoSaldo = netoTotal - netoAnticipo;
     var ruta = (m.desde||'').split(',')[0] + ' → ' + (m.hasta||'').split(',')[0];
 
-    // ── Cobro de anticipo ─────────────────────────────────────
-    var cobroAnt = {
-      mudanzaId: m.id,
-      ruta: ruta,
-      tipo: 'anticipo',
-      etiqueta: '50% anticipo',
-      monto: netoAnticipo,
-      mudanza: m
-    };
     if (m.anticipoPagado) {
-      // Backfill: si pagado pero no tiene fecha, asumo que se pagó el día de la mudanza planeada
       var fechaPagoAnt = m.fechaPagoAnticipo ? new Date(m.fechaPagoAnticipo) : (m.fecha ? new Date(m.fecha) : null);
+      var cobroAnt = { mudanzaId: m.id, ruta: ruta, tipo: 'anticipo', etiqueta: 'Anticipo', monto: netoAnticipo, mudanza: m };
       if (fechaPagoAnt && !isNaN(fechaPagoAnt.getTime())) {
         var fechaDispAnt = addBusinessDays(fechaPagoAnt, DIAS_LIQ);
         cobroAnt.fechaPago = fechaPagoAnt;
@@ -3450,20 +3489,10 @@ function loadGanancias(){
       }
       cobros.push(cobroAnt);
     }
-    // Si el anticipo NO está pagado, NO se cuenta como cobro:
-    // el cliente todavía puede eliminar la mudanza, así que la plata no es real.
 
-    // ── Cobro de saldo ────────────────────────────────────────
-    var cobroSld = {
-      mudanzaId: m.id,
-      ruta: ruta,
-      tipo: 'saldo',
-      etiqueta: '50% saldo',
-      monto: netoSaldo,
-      mudanza: m
-    };
     if (m.saldoPagado) {
       var fechaPagoSld = m.fechaPagoSaldo ? new Date(m.fechaPagoSaldo) : (m.fechaCompletada ? new Date(m.fechaCompletada) : (m.fecha ? new Date(m.fecha) : null));
+      var cobroSld = { mudanzaId: m.id, ruta: ruta, tipo: 'saldo', etiqueta: 'Saldo', monto: netoSaldo, mudanza: m };
       if (fechaPagoSld && !isNaN(fechaPagoSld.getTime())) {
         var fechaDispSld = addBusinessDays(fechaPagoSld, DIAS_LIQ);
         cobroSld.fechaPago = fechaPagoSld;
@@ -3475,61 +3504,34 @@ function loadGanancias(){
       }
       cobros.push(cobroSld);
     }
-    // Idem: si el saldo NO está pagado, no se cuenta. El mudancero solo ve plata real.
   });
 
   // ── Totales por estado ──────────────────────────────────────
   var disp = cobros.filter(function(c){ return c.estado === 'disponible'; });
   var proc = cobros.filter(function(c){ return c.estado === 'en_proceso'; });
-
   var sum = function(arr){ return arr.reduce(function(s,c){ return s + c.monto; }, 0); };
   var totalDisp = sum(disp);
   var totalProc = sum(proc);
 
-  // ── Render Card DISPONIBLE ──────────────────────────────────
+  // ── Chips superiores compactas ──
   var dispMontoEl = document.getElementById('gDispMonto');
-  var dispCountEl = document.getElementById('gDispCount');
-  var dispSubEl = document.getElementById('gDispSubtitulo');
+  var dispSubEl   = document.getElementById('gDispSub');
+  var procMontoEl = document.getElementById('gProcMonto');
+  var procSubEl   = document.getElementById('gProcSub');
   if (dispMontoEl) dispMontoEl.textContent = '$' + totalDisp.toLocaleString('es-AR');
-  if (dispCountEl) dispCountEl.textContent = disp.length === 1 ? '1 cobro' : disp.length + ' cobros';
-  if (dispSubEl) {
-    var perfil = mudanceroPerfilRedis || {};
-    var cbu = perfil.cbu || perfil.alias || '';
-    if (totalDisp > 0 && cbu) {
-      dispSubEl.innerHTML = 'El admin coordina la transferencia a:<br><b>' + esc(cbu) + '</b>';
-    } else if (totalDisp > 0) {
-      dispSubEl.textContent = 'El admin coordina la transferencia a tu CBU/alias.';
-    } else {
-      dispSubEl.textContent = 'Sin cobros disponibles aún';
-    }
-  }
-
-  // ── Render Card EN PROCESO ──────────────────────────────────
-  var procEl = document.getElementById('gEstadoProc');
-  if (procEl) {
+  if (dispSubEl)   dispSubEl.textContent   = disp.length === 1 ? '1 cobro' : disp.length + ' cobros';
+  if (procMontoEl) procMontoEl.textContent = '$' + totalProc.toLocaleString('es-AR');
+  if (procSubEl) {
     if (proc.length === 0) {
-      procEl.style.display = 'none';
+      procSubEl.textContent = 'Sin cobros pendientes';
     } else {
-      procEl.style.display = 'block';
-      document.getElementById('gProcMonto').textContent = '$' + totalProc.toLocaleString('es-AR');
-      document.getElementById('gProcCount').textContent = proc.length === 1 ? '1 cobro' : proc.length + ' cobros';
-      document.getElementById('gProcLista').innerHTML = proc.map(function(c){
-        return '<div style="background:#fff;border:1px solid #FED7AA;border-radius:8px;padding:10px 12px;font-size:11.5px">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:3px">'
-          +   '<span style="font-weight:700;color:#0F1923">' + esc(c.ruta) + '</span>'
-          +   '<span style="font-family:var(--mono);color:#0F1923;font-weight:700">$' + c.monto.toLocaleString('es-AR') + '</span>'
-          + '</div>'
-          + '<div style="color:#9A3412;font-size:10.5px">'
-          +   c.etiqueta + ' · cobrado ' + fmtFechaCorta(c.fechaPago)
-          +   ' · disponible <b>' + fmtFechaCorta(c.fechaDisp) + '</b>'
-          +   ' (faltan ' + c.diasFaltan + ' días háb.)'
-          + '</div>'
-          + '</div>';
-      }).join('');
+      // mostrar el próximo a liberarse
+      var prox = proc.slice().sort(function(a,b){ return a.fechaDisp - b.fechaDisp; })[0];
+      procSubEl.textContent = (proc.length === 1 ? '1 cobro' : proc.length + ' cobros') + ' · próx. ' + fmtFechaCorta(prox.fechaDisp);
     }
   }
 
-  // ── Resumen total ───────────────────────────────────────────
+  // ── KPIs inline ──
   var totalNeto = aceptadas.reduce(function(s,m){
     var p = precioFinalMudanza(m), f = Math.round(calcFee(p, m.ambientes, m));
     return s + (p - f);
@@ -3538,45 +3540,87 @@ function loadGanancias(){
     return s + Math.round(calcFee(precioFinalMudanza(m), m.ambientes, m));
   }, 0);
   var prom = aceptadas.length > 0 ? Math.round(totalNeto / aceptadas.length) : 0;
-  document.getElementById('g-total').textContent='$' + totalNeto.toLocaleString('es-AR');
-  document.getElementById('g-comision').textContent='$' + totalComision.toLocaleString('es-AR');
-  document.getElementById('g-trabajos').textContent=aceptadas.length;
-  document.getElementById('g-promedio').textContent='$' + prom.toLocaleString('es-AR');
+  var setText = function(id, val){ var e = document.getElementById(id); if (e) e.textContent = val; };
+  setText('g-total',    '$' + totalNeto.toLocaleString('es-AR'));
+  setText('g-comision', '$' + totalComision.toLocaleString('es-AR'));
+  setText('g-trabajos', String(aceptadas.length));
+  setText('g-promedio', '$' + prom.toLocaleString('es-AR'));
 
-  // ── Historial detallado ─────────────────────────────────────
-  if(aceptadas.length === 0){
-    document.getElementById('gananciasList').innerHTML = '<div class="empty"><div class="empty-icon">💰</div>Cuando un cliente pague la seña de tu mudanza aceptada, los trabajos aparecen acá.</div>';
-    return;
+  // ── Tabs filtros ──
+  var tabsRow = document.getElementById('gTabsRow');
+  if (tabsRow) {
+    var tabs = [
+      { id:'todos',       label:'Todos',       count: cobros.length, color:'var(--blue)' },
+      { id:'disponibles', label:'Disponibles', count: disp.length,   color:'var(--green)' },
+      { id:'enproceso',   label:'En proceso',  count: proc.length,   color:'#F59E0B' }
+    ];
+    tabsRow.innerHTML = tabs.map(function(t){
+      var active = _ganTabActiva === t.id;
+      return '<button onclick="setGanTab(\''+t.id+'\')" class="g-tab-btn'+(active?' active':'')+'" style="--gtab-color:'+t.color+'">'
+        + '<span class="g-tab-lbl">'+t.label+'</span>'
+        + '<span class="g-tab-count'+(t.count>0?' has':'')+'">'+t.count+'</span>'
+        + '</button>';
+    }).join('');
   }
 
-  var ordenadas = aceptadas.slice().sort(function(a,b){
-    return new Date(b.fecha||0) - new Date(a.fecha||0);
-  });
+  // ── Lista CRM de cobros ──
+  var listEl = document.getElementById('gananciasList');
+  if (!listEl) return;
 
-  var html = ordenadas.map(function(m){
-    var precio = precioFinalMudanza(m), fee = Math.round(calcFee(precio, m.ambientes, m));
-    var huboAjuste = m.ajustePrecio && m.ajustePrecio.estado === 'aceptado';
-    var ajusteHint = huboAjuste ? '<span style="font-size:9px;color:#15803D;margin-left:4px;font-weight:600">· AJUSTADO</span>' : '';
-    var nivelLabel = ({esencial:'📦',integral:'🛠️',llave:'🔑',flete:'🚚'})[m.nivelPack] || '';
-    var estadoLabel = m.estado === 'completada' ? '<span style="background:#DCFCE7;color:#166534;padding:2px 7px;border-radius:6px;font-size:9.5px;font-weight:700;letter-spacing:.3px">COMPLETADA</span>'
-                    : m.estado === 'en_curso' ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:6px;font-size:9.5px;font-weight:700;letter-spacing:.3px">EN CURSO</span>'
-                    : '<span style="background:#DBEAFE;color:#1E40AF;padding:2px 7px;border-radius:6px;font-size:9.5px;font-weight:700;letter-spacing:.3px">ACEPTADA</span>';
-    return '<div style="border-bottom:1px solid var(--border);padding:14px 16px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">'
-      +   '<div style="flex:1;min-width:0">'
-      +     '<div style="font-weight:700;font-size:13px;color:var(--text);line-height:1.3">' + nivelLabel + ' ' + esc(m.desde.split(',')[0]) + ' → ' + esc(m.hasta.split(',')[0]) + ajusteHint + '</div>'
-      +     '<div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)">' + (m.fecha ? fmtFechaCorta(new Date(m.fecha)) : '') + ' · ' + (m.ambientes || '') + ' amb · ' + (m.km || 0) + ' km</div>'
-      +   '</div>'
-      +   estadoLabel
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;font-family:var(--mono);margin-top:6px;padding-top:8px;border-top:1px dashed var(--border)">'
-      +   '<div><div style="color:var(--text3);font-size:9.5px">Total</div><div style="color:var(--text);font-weight:600">$' + precio.toLocaleString('es-AR') + '</div></div>'
-      +   '<div><div style="color:var(--text3);font-size:9.5px">Fee MYA</div><div style="color:#DC2626;font-weight:600">-$' + fee.toLocaleString('es-AR') + '</div></div>'
-      +   '<div><div style="color:var(--text3);font-size:9.5px">Vos cobrás</div><div style="color:var(--blue);font-weight:700">$' + (precio - fee).toLocaleString('es-AR') + '</div></div>'
-      + '</div>'
+  var cobrosFiltrados = cobros;
+  if (_ganTabActiva === 'disponibles') cobrosFiltrados = disp;
+  else if (_ganTabActiva === 'enproceso') cobrosFiltrados = proc;
+
+  if (cobrosFiltrados.length === 0) {
+    listEl.innerHTML = '<div class="empty" style="padding:30px 16px"><div class="empty-icon">💰</div>'
+      + (cobros.length === 0
+          ? 'Cuando un cliente pague la seña de tu mudanza aceptada, los cobros aparecen acá.'
+          : 'No hay cobros en esta categoría.')
       + '</div>';
-  }).join('');
-  document.getElementById('gananciasList').innerHTML = html;
+  } else {
+    // Ordenar: disponibles primero (más viejos arriba), después en proceso (más cercanos a liberarse arriba)
+    var ordenados = cobrosFiltrados.slice().sort(function(a,b){
+      if (a.estado !== b.estado) return a.estado === 'disponible' ? -1 : 1;
+      var fa = a.fechaDisp || a.fechaPago || 0;
+      var fb = b.fechaDisp || b.fechaPago || 0;
+      return new Date(fa) - new Date(fb);
+    });
+
+    listEl.innerHTML = ordenados.map(function(c){
+      var pillTxt, pillCls, fechaTxt;
+      if (c.estado === 'disponible') {
+        pillCls = 'g-row-pill-disp';
+        pillTxt = '✓ Disp.';
+        fechaTxt = c.fechaPago ? '📅 ' + fmtFechaCorta(c.fechaPago) : '';
+      } else {
+        pillCls = 'g-row-pill-proc';
+        pillTxt = '⏳ ' + c.diasFaltan + 'd';
+        fechaTxt = c.fechaDisp ? '🎯 ' + fmtFechaCorta(c.fechaDisp) : '';
+      }
+      var tipoIcon = c.tipo === 'anticipo' ? '<span class="g-row-tipo g-row-tipo-ant">50%</span>' : '<span class="g-row-tipo g-row-tipo-sld">50%</span>';
+      return '<div class="g-row" data-id="'+c.mudanzaId+'" onclick="setTabPedidos(\'aceptados\');setTimeout(function(){var r=document.getElementById(\'pd-row-'+c.mudanzaId+'\');if(r){r.scrollIntoView({behavior:\'smooth\',block:\'center\'});r.click();}},100);">'
+        + '<span class="g-row-pill '+pillCls+'">'+pillTxt+'</span>'
+        + tipoIcon
+        + '<span class="g-row-eti">'+c.etiqueta+'</span>'
+        + '<span class="g-row-ruta" title="'+esc(c.ruta).replace(/"/g,'&quot;')+'">'+esc(c.ruta)+(fechaTxt?'<span class="g-row-fecha">'+fechaTxt+'</span>':'')+'</span>'
+        + '<span class="g-row-monto">$'+c.monto.toLocaleString('es-AR')+'</span>'
+        + '<span class="g-row-arrow">›</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  // ── CBU row (info simple si hay disponibles) ──
+  var cbuRow = document.getElementById('gCbuRow');
+  if (cbuRow) {
+    var perfil = mudanceroPerfilRedis || {};
+    var cbu = perfil.cbu || perfil.alias || '';
+    if (totalDisp > 0 && cbu) {
+      cbuRow.style.display = 'flex';
+      var cbuVal = document.getElementById('gCbuVal'); if (cbuVal) cbuVal.textContent = cbu;
+    } else {
+      cbuRow.style.display = 'none';
+    }
+  }
 }
 
 // ════════════════════════════════════════════════════
