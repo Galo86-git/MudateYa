@@ -8,6 +8,15 @@
 // ═══════════════════════════════════════════════════════════════════
 const { Resend } = require('resend');
 
+// Helper de push notifications (definido en api/push.js)
+// Si push.js no carga, las notificaciones por email siguen funcionando normal.
+let enviarPush = async function() { return { ok: false, error: 'push no cargado' }; };
+try {
+  enviarPush = require('./push').enviarPush || enviarPush;
+} catch (e) {
+  console.warn('[push] no se pudo cargar push.js:', e.message);
+}
+
 // ── Helpers Redis (Upstash) ─────────────────────────────────────────
 async function redisCall(method, ...args) {
   var url = process.env.UPSTASH_REDIS_REST_URL;
@@ -1144,6 +1153,82 @@ module.exports = async function handler(req, res) {
       }
       await setJSON('pedido-asesor:' + impPedidoId, impPedido, PEDIDO_TTL);
       return res.status(200).json({ ok: true, estado: impPedido.estado });
+    }
+
+    // ── INTERNAL: marcar pedido-asesor como cancelado (cliente eliminó la mudanza) ──
+    // Llamado desde cotizaciones.js cuando el cliente borra una mudanza del Plan Referidos.
+    // Cambia el estado del pedido a 'cancelado' y notifica al asesor (push + email).
+    if (action === 'internal-marcar-cancelado' && req.method === 'POST') {
+      var icSecret = req.headers['x-internal-secret'];
+      if (icSecret !== process.env.INTERNAL_API_SECRET) {
+        return res.status(401).json({ error: 'No autorizado' });
+      }
+      var icBody = req.body || {};
+      var icPedidoId = String(icBody.pedidoAsesorId || '').trim();
+      if (!icPedidoId) return res.status(400).json({ error: 'Falta pedidoAsesorId' });
+
+      var icPedido = await getJSON('pedido-asesor:' + icPedidoId);
+      if (!icPedido) return res.status(200).json({ ok: true, noop: true });
+
+      // No reescribir si ya está cancelado
+      if (icPedido.estado === 'cancelado') {
+        return res.status(200).json({ ok: true, noop: true });
+      }
+      // No marcar como cancelado si ya está pagado o completado (raro pero posible si se elimina mudanza ya pagada)
+      if (icPedido.estado === 'pagado' || icPedido.estado === 'completado') {
+        return res.status(200).json({ ok: true, noop: true, motivo: 'estado ' + icPedido.estado + ' no se cancela' });
+      }
+
+      icPedido.estado = 'cancelado';
+      icPedido.canceladoEn = new Date().toISOString();
+      await setJSON('pedido-asesor:' + icPedidoId, icPedido, PEDIDO_TTL);
+
+      // ── Notificar al asesor: push + email ───────────────────────────
+      try {
+        var clienteNombre = (icPedido.cliente && icPedido.cliente.nombre) || 'el cliente';
+        var destino = (icPedido.mudanza && icPedido.mudanza.destino) || '';
+        var rutaTxt = destino ? destino.split(',')[0] : 'mudanza';
+
+        // Push (silencioso si no tiene suscripción activa)
+        enviarPush(icPedido.asesorEmail, {
+          titulo: '❌ Cliente canceló mudanza',
+          cuerpo: clienteNombre + ' canceló: ' + rutaTxt,
+          link: '/asesor-dashboard'
+        }).catch(function(e){ console.warn('Push asesor cancelación error:', e && e.message); });
+
+        // Email
+        if (process.env.RESEND_API_KEY && icPedido.asesorEmail) {
+          var icResend = new Resend(process.env.RESEND_API_KEY);
+          var icAsesor = await getJSON('asesor:' + icPedido.asesorEmail);
+          var icAsesorNombre = (icAsesor && icAsesor.nombre) ? icAsesor.nombre.split(' ')[0] : 'Asesor';
+          icResend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>',
+            to: icPedido.asesorEmail,
+            subject: '❌ ' + clienteNombre + ' canceló su mudanza',
+            html:
+              '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#F5F7FA;padding:20px">' +
+                '<div style="background:#003580;padding:18px 24px;border-radius:8px 8px 0 0">' +
+                  '<span style="font-family:Georgia,serif;font-size:18px;font-weight:900;color:#fff">Mudate</span>' +
+                  '<span style="font-family:Georgia,serif;font-size:18px;font-weight:900;color:#22C36A">Ya</span>' +
+                '</div>' +
+                '<div style="background:#fff;padding:24px;border-radius:0 0 8px 8px">' +
+                  '<h2 style="color:#0F1923;font-size:18px;margin:0 0 12px">Hola ' + esc(icAsesorNombre) + ',</h2>' +
+                  '<p style="color:#374151;font-size:14px;line-height:1.6"><b>' + esc(clienteNombre) + '</b> canceló la mudanza que le habías presupuestado.</p>' +
+                  (rutaTxt ? '<div style="background:#FEE2E2;border-left:4px solid #DC2626;padding:12px 14px;border-radius:6px;margin:16px 0;font-size:14px;color:#7F1D1D">' +
+                    '<b>' + esc(rutaTxt) + '</b>' +
+                  '</div>' : '') +
+                  '<p style="color:#374151;font-size:13px;line-height:1.6">El pedido pasó al estado <b>Cancelado</b> en tu panel. Si querés, podés contactarlo para entender el motivo y ofrecerle otra alternativa.</p>' +
+                  '<div style="text-align:center;margin:24px 0">' +
+                    '<a href="https://mudateya.ar/asesor-dashboard" style="display:inline-block;padding:12px 28px;background:#003580;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">Ir al panel →</a>' +
+                  '</div>' +
+                  '<p style="color:#64748B;font-size:12px;margin-top:18px">Si tenés dudas, respondé este mail.</p>' +
+                '</div>' +
+              '</div>'
+          }).catch(function(e){ console.warn('Email asesor cancelación error:', e.message); });
+        }
+      } catch(e) { console.warn('Notificación asesor cancelación:', e.message); }
+
+      return res.status(200).json({ ok: true, estado: 'cancelado' });
     }
 
 
