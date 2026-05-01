@@ -92,6 +92,7 @@
   .ped-estado.elegido{background:#DBEAFE;color:#1E40AF}
   .ped-estado.pagado{background:#DCFCE7;color:#15803D}
   .ped-estado.expirado{background:#FEE2E2;color:#991B1B}
+  .ped-estado.cancelado{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
   .ped-dest{font-size:13px;color:var(--text2);margin-bottom:8px}
   .ped-packs{display:flex;gap:6px;flex-wrap:wrap}
   .ped-pack-chip{font-size:11px;background:var(--bg);padding:4px 9px;border-radius:10px;color:var(--text2);font-family:var(--mono)}
@@ -147,6 +148,7 @@
   .ped-estado-sm.elegido{background:#DBEAFE;color:#1E40AF}
   .ped-estado-sm.pagado{background:#DCFCE7;color:#15803D}
   .ped-estado-sm.expirado{background:#FEE2E2;color:#991B1B}
+  .ped-estado-sm.cancelado{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
 
   /* ══ DRAWER (detalle de pedido) ══ */
   .pd-overlay{position:fixed;inset:0;background:rgba(15,25,35,.55);backdrop-filter:blur(2px);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -436,6 +438,7 @@
     <button class="filter-pill" onclick="setFilter('elegido')" data-filter="elegido">Elegidos <span class="count" id="f-elegido">0</span></button>
     <button class="filter-pill" onclick="setFilter('pagado')" data-filter="pagado">Pagados <span class="count" id="f-pagado">0</span></button>
     <button class="filter-pill" onclick="setFilter('expirado')" data-filter="expirado">Expirados <span class="count" id="f-expirado">0</span></button>
+    <button class="filter-pill" onclick="setFilter('cancelado')" data-filter="cancelado">Cancelados <span class="count" id="f-cancelado">0</span></button>
   </div>
 
   <div class="section-title">
@@ -704,7 +707,7 @@ function renderStats(s) {
   // Calculamos desde PEDIDOS (más confiable que stats del backend)
   var total = PEDIDOS.length;
   var pendientes = 0, pagados = 0, expirados = 0;
-  var byEstado = { borrador:0, enviado:0, elegido:0, pagado:0, expirado:0 };
+  var byEstado = { borrador:0, enviado:0, elegido:0, pagado:0, expirado:0, cancelado:0 };
   PEDIDOS.forEach(function(p){
     var e = p.estado || 'borrador';
     if (byEstado[e] !== undefined) byEstado[e]++;
@@ -718,12 +721,14 @@ function renderStats(s) {
   document.getElementById('s-expirados').textContent = expirados;
 
   // Contadores en filtros
-  document.getElementById('f-todos').textContent    = total;
-  document.getElementById('f-borrador').textContent = byEstado.borrador;
-  document.getElementById('f-enviado').textContent  = byEstado.enviado;
-  document.getElementById('f-elegido').textContent  = byEstado.elegido;
-  document.getElementById('f-pagado').textContent   = byEstado.pagado;
-  document.getElementById('f-expirado').textContent = byEstado.expirado;
+  document.getElementById('f-todos').textContent     = total;
+  document.getElementById('f-borrador').textContent  = byEstado.borrador;
+  document.getElementById('f-enviado').textContent   = byEstado.enviado;
+  document.getElementById('f-elegido').textContent   = byEstado.elegido;
+  document.getElementById('f-pagado').textContent    = byEstado.pagado;
+  document.getElementById('f-expirado').textContent  = byEstado.expirado;
+  var fCanc = document.getElementById('f-cancelado');
+  if (fCanc) fCanc.textContent = byEstado.cancelado;
 }
 
 // Filtro seteado desde stats o pill bar
@@ -936,14 +941,16 @@ function renderTabla(filtrados) {
 
     var clienteUrl = '/cliente-packs?id=' + encodeURIComponent(p.id);
     var actions = '<a class="ped-btn" href="' + clienteUrl + '" target="_blank" onclick="event.stopPropagation()" title="Ver lo que ve el cliente">👁</a>' +
-      '<button class="ped-btn" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')" title="' + (estado === 'borrador' ? 'Enviar' : 'Reenviar') + '">📤</button>' +
+      (estado !== 'cancelado' ? '<button class="ped-btn" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')" title="' + (estado === 'borrador' ? 'Enviar' : 'Reenviar') + '">📤</button>' : '') +
       (estado === 'borrador' ? '<button class="ped-btn" style="color:#EF4444;border-color:#FECACA" onclick="event.stopPropagation();eliminarPedido(\'' + pIdSafe + '\')" title="Eliminar">🗑</button>' : '');
+
+    var estadoLabel = estado === 'cancelado' ? '❌ Cancelado' : estado;
 
     return '<tr onclick="openPedidoDrawer(\'' + pIdSafe + '\')">' +
       '<td class="cel-cliente">' + esc(cliente) + '<span class="tiny">' + esc(p.id) + '</span></td>' +
       '<td class="cel-fecha">' + fechaCorta(p.creadoEn) + '</td>' +
       '<td class="cel-destino" title="' + esc(dest) + '">' + esc(dest) + '</td>' +
-      '<td><span class="ped-estado-sm ' + estado + '">' + esc(estado) + '</span></td>' +
+      '<td><span class="ped-estado-sm ' + estado + '">' + esc(estadoLabel) + '</span></td>' +
       packCol +
       montoCol +
       '<td class="cel-actions">' + actions + '</td>' +
@@ -986,17 +993,19 @@ function renderCards(filtrados) {
       '</div>';
     }
 
+    var estadoLabelCard = estado === 'cancelado' ? '❌ Cancelado' : estado;
+
     h += '<div class="ped-card" onclick="openPedidoDrawer(\'' + pIdSafe + '\')">' +
       '<div class="ped-top">' +
         '<div><div class="ped-cliente">' + esc(cliente) + '</div><div class="ped-meta">' + fecha + ' · ' + esc(p.id) + '</div></div>' +
-        '<span class="ped-estado ' + estado + '">' + estado + '</span>' +
+        '<span class="ped-estado ' + estado + '">' + esc(estadoLabelCard) + '</span>' +
       '</div>' +
       '<div class="ped-dest">→ ' + esc(dest) + '</div>' +
       packsHtml +
       '<div class="ped-acciones">' +
         '<a class="ped-btn" href="' + clienteUrl + '" target="_blank" onclick="event.stopPropagation()">👁 Ver lo que ve el cliente</a>' +
         (estado === 'borrador' ? '<button class="ped-btn primary" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')">📤 Enviar al cliente</button>' : '') +
-        (estado !== 'borrador' ? '<button class="ped-btn" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')">📤 Reenviar</button>' : '') +
+        (estado !== 'borrador' && estado !== 'cancelado' ? '<button class="ped-btn" onclick="event.stopPropagation();reenviarPedido(\'' + pIdSafe + '\')">📤 Reenviar</button>' : '') +
         (estado === 'borrador' ? '<button class="ped-btn" onclick="event.stopPropagation();eliminarPedido(\'' + pIdSafe + '\')" style="color:#EF4444;border-color:#FECACA">🗑 Eliminar</button>' : '') +
       '</div>' +
     '</div>';
