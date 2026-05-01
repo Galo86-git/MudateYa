@@ -1296,7 +1296,19 @@ function renderMudanzaDetail(m) {
           + '<div style="font-size:12px;color:#7F1D1D;line-height:1.55">' + sub + '</div>'
           + '</div>';
       })()
-    + (pasoActual === 0 ? '<div style="font-size:11px;color:var(--amber);font-family:var(--mono);margin-bottom:8px;padding:6px 10px;background:#FFFBEB;border-radius:6px;border-left:3px solid var(--amber);display:inline-block">⏱ Expira en '+horasRestantes+'hs · esperando cotizaciones</div>' : '')
+    + (function(){
+        // Banner amarillo "Expira en X hs · esperando cotizaciones" — solo si:
+        // - Está en paso 0 (buscando)
+        // - Y NO es modo dirigido con todos los invitados que ya pasaron (en ese caso no hay a quién esperar)
+        if (pasoActual !== 0) return '';
+        var rechazados = m.rechazadosPor || [];
+        var invitados = m.mudancerosInvitados || [];
+        var todosPasaron = m.modoCotizacion === 'dirigido'
+          && invitados.length > 0
+          && rechazados.length >= invitados.length;
+        if (todosPasaron) return ''; // ya hay banner rojo informando esto
+        return '<div style="font-size:11px;color:var(--amber);font-family:var(--mono);margin-bottom:8px;padding:6px 10px;background:#FFFBEB;border-radius:6px;border-left:3px solid var(--amber);display:inline-block">⏱ Expira en '+horasRestantes+'hs · esperando cotizaciones</div>';
+      })()
     + cotzHtml
     + (m.cotizacionAceptada ? '<div class="mudanza-mudancero">'
         + '<div class="mud-avatar">'+m.cotizacionAceptada.mudanceroNombre.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)+'</div>'
