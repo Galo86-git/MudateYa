@@ -1444,6 +1444,17 @@ function cerrarDetalle() {
 document.addEventListener('click', function(e){
   if (window.innerWidth > 768) return;
   if (!document.body.classList.contains('mz-panel-open')) return;
+  // Ignorar clicks en elementos que disparan acciones (no son "click fuera real")
+  if (e.target.closest && (
+    e.target.closest('.mz-row-line') ||
+    e.target.closest('.mz-side-panel') ||
+    e.target.closest('.tabs-mudanzas-btn') ||
+    e.target.closest('[onclick*="setTabMudanzas"]') ||
+    e.target.closest('[onclick*="seleccionarMudanza"]') ||
+    e.target.closest('.modal') ||
+    e.target.closest('[role="dialog"]') ||
+    e.target.closest('.mm-mobile-nav')
+  )) return;
   // Si el click fue en el panel o adentro, no cerrar
   var panel = document.getElementById('mzSidePanel');
   if (panel && panel.contains(e.target)) return;
