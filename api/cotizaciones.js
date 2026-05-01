@@ -2256,9 +2256,14 @@ async function enviarEmailAceptacion(mudanza, cot) {
   if (!process.env.RESEND_API_KEY) return;
 
   const siteUrl = process.env.SITE_URL || 'https://mudateya.ar';
-  const precioFmt = '$' + parseInt(cot.precio).toLocaleString('es-AR');
+  const precioTotal = parseInt(cot.precio) || 0;
+  const montoAnticipo = Math.round(precioTotal * 0.5); // ← 50% del precio
+  const precioFmt = '$' + precioTotal.toLocaleString('es-AR');
+  const anticipoFmt = '$' + montoAnticipo.toLocaleString('es-AR');
 
-  // ── 1. Generar link de pago MP ───────────────────
+  // ── 1. Generar link de pago MP por solo el ANTICIPO (50%) ───────────────
+  // El otro 50% se paga después, cuando el mudancero marca "completada" y
+  // se envía notificarClienteSaldoPendiente con su propio link.
   let linkPago = `${siteUrl}/mi-mudanza`; // fallback
   try {
     const { MercadoPagoConfig, Preference } = require('mercadopago');
@@ -2266,23 +2271,24 @@ async function enviarEmailAceptacion(mudanza, cot) {
     const preference = new Preference(client);
     const result = await preference.create({ body: {
       items: [{
-        id:          `${mudanza.id}-${cot.id}`,
-        title:       `MudateYa — Mudanza con ${cot.mudanceroNombre}`,
+        id:          `${mudanza.id}-${cot.id}-anticipo`,
+        title:       `MudateYa — 50% anticipo · ${cot.mudanceroNombre}`,
         description: `${mudanza.desde} → ${mudanza.hasta} · ${mudanza.ambientes}`,
         quantity:    1,
-        unit_price:  Number(cot.precio),
+        unit_price:  montoAnticipo,
         currency_id: 'ARS',
       }],
       back_urls: {
-        success: `${siteUrl}/pago-exitoso?mudanzaId=${mudanza.id}&cotizacionId=${cot.id}&monto=${cot.precio}&mudancero=${encodeURIComponent(cot.mudanceroNombre)}`,
+        success: `${siteUrl}/pago-exitoso?mudanzaId=${mudanza.id}&cotizacionId=${cot.id}&monto=${montoAnticipo}&mudancero=${encodeURIComponent(cot.mudanceroNombre)}&tipoPago=anticipo`,
         failure: `${siteUrl}/mi-mudanza?pago=error`,
         pending: `${siteUrl}/mi-mudanza?pago=pendiente`,
       },
       auto_return:          'approved',
       statement_descriptor: 'MUDATEYA',
-      external_reference:   `${mudanza.id}-${cot.id}`,
+      external_reference:   `${mudanza.id}-${cot.id}-anticipo`,
       notification_url:     `${siteUrl}/api/webhook-mp`,
-      metadata:             { mudanzaId: mudanza.id, cotizacionId: cot.id },
+      // tipoPago crítico: el webhook lo lee para marcar `m.anticipoPagado=true` (no el saldo)
+      metadata:             { mudanzaId: mudanza.id, cotizacionId: cot.id, tipoPago: 'anticipo' },
     }});
     linkPago = result.init_point || result.initPoint || linkPago;
   } catch(e) {
@@ -2346,9 +2352,10 @@ async function enviarEmailAceptacion(mudanza, cot) {
           </div>
           <!-- Precio + pago -->
           <div style="background:#EEF4FF;border:2px solid #1A6FFF;border-radius:12px;padding:22px;margin:0 0 20px;text-align:center">
-            <div style="font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:monospace">Total a pagar</div>
-            <div style="font-size:2.2rem;font-weight:700;color:#003580;margin-bottom:18px">${precioFmt}</div>
-            <a href="${linkPago}" style="display:inline-block;background:#009EE3;color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px">💳 Pagar con Mercado Pago</a>
+            <div style="font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:monospace">Anticipo a pagar ahora (50%)</div>
+            <div style="font-size:2.2rem;font-weight:700;color:#003580;margin-bottom:4px">${anticipoFmt}</div>
+            <div style="font-size:12px;color:#64748B;margin-bottom:18px">de un total de <strong>${precioFmt}</strong> · saldo al completar la mudanza</div>
+            <a href="${linkPago}" style="display:inline-block;background:#009EE3;color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px">💳 Pagar anticipo ${anticipoFmt}</a>
             <p style="color:#64748B;font-size:11px;margin-top:12px;margin-bottom:0">🔒 Pago 100% seguro · MudateYa protege tu dinero hasta confirmar el servicio</p>
           </div>
           <p style="color:#64748B;font-size:13px;margin-bottom:8px">También podés acceder desde <a href="${siteUrl}/mi-mudanza" style="color:#1A6FFF;font-weight:600">tu panel de mudanzas</a>.</p>
