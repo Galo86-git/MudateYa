@@ -2103,18 +2103,18 @@ async function notificarMudanceros(mudanza) {
     <div style="padding:28px">
       <p style="font-size:15px;color:#0F1923;margin:0 0 20px">Hola${nombreMudancero ? ' ' + nombreMudancero : ''}, hay un nuevo pedido disponible en tu zona.</p>
       <table style="width:100%;border-collapse:collapse">
-        <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde}</td></tr>
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
-        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes}</td></tr>
-        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${nivelLabel}</td></tr>` : ''}
-        <tr${nivelLabel ? '' : ' style="background:#F5F7FA"'}><td style="color:#64748B;padding:7px${nivelLabel ? ' 0' : ' 6px'};font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923${nivelLabel ? '' : ';padding:7px 0'}">${mudanza.fecha}</td></tr>
-        <tr${nivelLabel ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:7px${nivelLabel ? ' 6px' : ' 0'};font-size:13px">Precio estimado</td><td style="color:#17A356;font-weight:700;font-size:14px${nivelLabel ? ';padding:7px 0' : ''}">$${parseInt(mudanza.precio_estimado||0).toLocaleString('es-AR')}</td></tr>
-        <tr${nivelLabel ? '' : ' style="background:#F5F7FA"'}><td style="color:#64748B;padding:7px${nivelLabel ? ' 0' : ' 6px'};font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px${nivelLabel ? '' : ';padding:7px 0'}">${expira}</td></tr>
+        <tr><td style="color:#64748B;padding:8px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.desde}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.hasta}</td></tr>
+        <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.ambientes}</td></tr>
+        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${nivelLabel}</td></tr>` : ''}
+        ${mudanza.km ? `<tr><td style="color:#64748B;padding:8px 0;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${mudanza.fecha}</td></tr>
+        <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
       </table>
+      <p style="font-size:12px;color:#64748B;margin:14px 0 0;line-height:1.5;background:#FFF7ED;border-left:3px solid #F59E0B;padding:9px 12px;border-radius:6px">💡 El precio lo cotizás vos según tu tarifa. Entrá a tu cuenta para enviar tu propuesta.</p>
       <div style="margin-top:20px">
         <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Cotizar ahora →</a>
       </div>
-      <p style="font-size:12px;color:#94A3B8;margin-top:16px">Entrá a tu cuenta para ver los detalles completos y enviar tu cotización.</p>
     </div>
     <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
   </div>`;
