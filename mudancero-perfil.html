@@ -377,18 +377,34 @@ function getDatosExtra(idx) {
 // ══════════════════════════════════════════
 function renderPerfil(m, extra) {
   var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
-  // Precio según ambientes de la búsqueda
+  // Precio según ambientes y NIVEL de la búsqueda — debe matchear el index/landing.
+  // Mismo helper que precioMudanceroNivel() del index: usa preciosEsencial/Integral/Llave
+  // si el mudancero ya cargó el modelo nuevo; cae a m.precios solo como compat legacy.
   var busqueda = {};
   try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual') || '{}'); } catch(e){}
-  var precio;
-  var precios = m.precios || {};
+  var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
+  var precio = 0;
   if (busqueda.tipo === 'flete') {
-    precio = parseInt(precios.flete) || 0;
+    // Flete: precio único, mismo modelo que el index
+    precio = pAmt(m.precioFleteNuevo) || pAmt(m.precios && m.precios.flete);
   } else {
-    var amb = Math.max(1, parseInt(busqueda.ambientes) || 1);
-    var campoAmb = amb === 1 ? 'amb1' : amb === 2 ? 'amb2' : amb === 3 ? 'amb3' : 'amb4';
-    precio = parseInt(precios[campoAmb]) || parseInt(precios.amb1) || 0;
-    if (!precio && precios.amb1) precio = Math.round(parseInt(precios.amb1) * (1 + (amb-1) * 0.15));
+    var nivel = busqueda.nivel || 'esencial';
+    var amb = Math.max(1, parseInt(busqueda.ambientes) || 2);
+    var clave = ['amb1','amb2','amb3','amb4'][Math.min(amb,4)-1] || 'amb1';
+    // Modelo nuevo: lee del nivel correspondiente
+    var mapa = { esencial:'preciosEsencial', integral:'preciosIntegral', llave:'preciosLlave' };
+    if (m[mapa[nivel]]) {
+      precio = pAmt(m[mapa[nivel]][clave]) || pAmt(m[mapa[nivel]].amb1);
+    }
+    // Compat legacy: solo si el perfil NO tiene NINGÚN dato del modelo nuevo
+    if (!precio) {
+      var tieneModeloNuevo = m.preciosEsencial || m.preciosIntegral || m.preciosLlave;
+      if (!tieneModeloNuevo) {
+        var multi = (nivel === 'integral') ? 1.5 : (nivel === 'llave' ? 2.25 : 1);
+        var base = pAmt(m.precios && m.precios[clave]) || pAmt(m.precios && m.precios.amb1);
+        precio = Math.round(base * multi);
+      }
+    }
   }
   var ratingLabel = m.calificacion >= 4.8 ? 'Excepcional' : m.calificacion >= 4.5 ? 'Muy bueno' : m.calificacion >= 4 ? 'Bueno' : 'Bien';
   var starsHtml = '';
@@ -616,7 +632,16 @@ function renderPerfil(m, extra) {
       // Sidebar (sticky en desktop)
       +'<div>'
         +'<div class="sidebar-card">'
-          +'<div class="precio-desde">Precio desde</div>'
+          +(function(){
+            // Label que indica el nivel y ambientes seleccionados — sirve para que el cliente
+            // entienda que ese precio es para esos parámetros (y matchea exactamente el del index)
+            var nivelLbl = busqueda.tipo === 'flete' ? 'Flete'
+              : (busqueda.nivel === 'integral' ? '🛠️ Integral'
+              : busqueda.nivel === 'llave'    ? '🔑 Llave en mano'
+              : '📦 Esencial');
+            var ambLbl = busqueda.tipo === 'flete' ? '' : ' · ' + (parseInt(busqueda.ambientes) || 2) + ' amb.';
+            return '<div class="precio-desde">'+nivelLbl+ambLbl+'</div>';
+          })()
           +'<div class="precio-num">'+fmtPrecio(precio)+'</div>'
           +'<button class="btn-cot" onclick="solicitarCotizacion()">Solicitar cotización →</button>'
           +'<div class="sidebar-info-block">'+sidebarInfoRows+'</div>'
