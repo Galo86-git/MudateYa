@@ -3451,6 +3451,37 @@ function setGanTab(t){
   loadGanancias(); // re-render con el filtro nuevo (sin re-fetch)
 }
 
+// Click en una fila de Ganancias → ir al pedido correspondiente en el tab Pedidos > Aceptados
+function irAGanancia(mudanzaId){
+  if (!mudanzaId) return;
+  // 1. Cambiar a página Pedidos (si no estamos ya ahí)
+  if (typeof showPage === 'function') {
+    // Marcar el sidebar "Pedidos" como activo (visual)
+    document.querySelectorAll('.sidebar-item').forEach(function(el){ el.classList.remove('active'); });
+    var pedidosLink = document.querySelector('.sidebar-item[onclick*="\'pedidos\'"]');
+    if (pedidosLink) pedidosLink.classList.add('active');
+    showPage('pedidos');
+  }
+  // Bottom-nav mobile
+  if (typeof setMcNav === 'function') setMcNav('pedidos');
+  // 2. Activar tab "Aceptados" dentro de Pedidos
+  setTimeout(function(){
+    if (typeof setTabPedidos === 'function') {
+      setTabPedidos('aceptados');
+    }
+    // 3. Scrollear al pedido y abrir su detalle
+    setTimeout(function(){
+      var row = document.getElementById('pd-row-'+mudanzaId);
+      if (row) {
+        try { row.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e) {}
+        row.click();
+      } else {
+        console.warn('[irAGanancia] No se encontró pd-row-'+mudanzaId);
+      }
+    }, 150);
+  }, 50);
+}
+
 function loadGanancias(){
   var ACTIVOS = ['cotizacion_aceptada','en_curso','completada'];
   // Aceptadas como "trabajo confirmado" requieren que el cliente al menos haya pagado
@@ -3598,7 +3629,7 @@ function loadGanancias(){
         fechaTxt = c.fechaDisp ? '🎯 ' + fmtFechaCorta(c.fechaDisp) : '';
       }
       var tipoIcon = c.tipo === 'anticipo' ? '<span class="g-row-tipo g-row-tipo-ant">50%</span>' : '<span class="g-row-tipo g-row-tipo-sld">50%</span>';
-      return '<div class="g-row" data-id="'+c.mudanzaId+'" onclick="setTabPedidos(\'aceptados\');setTimeout(function(){var r=document.getElementById(\'pd-row-'+c.mudanzaId+'\');if(r){r.scrollIntoView({behavior:\'smooth\',block:\'center\'});r.click();}},100);">'
+      return '<div class="g-row" data-id="'+c.mudanzaId+'" onclick="irAGanancia(\''+c.mudanzaId+'\')">'
         + '<span class="g-row-pill '+pillCls+'">'+pillTxt+'</span>'
         + tipoIcon
         + '<span class="g-row-eti">'+c.etiqueta+'</span>'
