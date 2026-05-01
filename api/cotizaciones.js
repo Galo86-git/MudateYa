@@ -493,6 +493,17 @@ async function hookAsesorPagado(pedidoAsesorId, tipoPago) {
   } catch(e) { console.warn('hookAsesorPagado:', e.message); }
 }
 
+// Marca un pedido-asesor como cancelado (cliente eliminó la mudanza).
+// El handler interno notifica al asesor (push + email).
+async function hookAsesorCancelado(pedidoAsesorId) {
+  if (!pedidoAsesorId) return;
+  try {
+    await asesoresCall('internal-marcar-cancelado', {
+      pedidoAsesorId: pedidoAsesorId
+    });
+  } catch(e) { console.warn('hookAsesorCancelado:', e.message); }
+}
+
 module.exports = async function handler(req, res) {
   // ── CORS: solo aceptar requests desde mudateya.ar ──────────────
   const allowedOrigins = [
@@ -1361,6 +1372,12 @@ module.exports = async function handler(req, res) {
       await setJSON(`cliente:${clienteEmail}`, idxCliente.filter(id => id !== mudanzaId), 2592000);
       // ── Hook aliados: cancelar atribución si existía ──
       try { await hookCancelarAtribucion(mudanzaId); } catch(e) { console.warn('Hook aliado cancelar:', e.message); }
+
+      // ── Hook asesores: si la mudanza vino del Plan Referidos, marcar el pedido-asesor como cancelado ──
+      // El handler interno notifica al asesor por push + email.
+      if (m.pedidoAsesorId) {
+        try { await hookAsesorCancelado(m.pedidoAsesorId); } catch(e) { console.warn('Hook asesor cancelar:', e.message); }
+      }
 
       // ── NOTIFICAR A LOS MUDANCEROS QUE COTIZARON ──────────────────────
       // Push + email para que sepan que el cliente canceló y no esperen respuesta.
