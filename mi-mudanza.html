@@ -144,17 +144,19 @@ body.mz-panel-open .mz-list-col{flex:1.3}
     border:none!important;
     border-top:1px solid #E2E8F0!important;
     box-shadow:0 -8px 24px rgba(15,25,35,.12)!important;
-    z-index:400; /* arriba del bottom-nav (z-index 300) */
+    z-index:9999!important; /* arriba de TODO (bottom-nav está en z-index 300) */
     transition:height .28s cubic-bezier(.4,0,.2,1);
-    overflow:hidden
+    overflow:hidden;
+    background:#fff!important;
   }
   .mz-side-panel.open{
     width:100%!important;
     max-width:100%!important;
-    height:92vh;
-    overflow-y:auto;
+    height:92vh!important;
+    overflow-y:auto!important;
     overscroll-behavior:contain;
-    -webkit-overflow-scrolling:touch
+    -webkit-overflow-scrolling:touch;
+    z-index:9999!important;
   }
   /* Drag handle visual arriba del bottom sheet */
   .mz-side-panel.open::before{
@@ -164,7 +166,7 @@ body.mz-panel-open .mz-list-col{flex:1.3}
   }
   body.mz-panel-open::after{
     content:'';position:fixed;inset:0;background:rgba(15,25,35,.5);
-    backdrop-filter:blur(3px);z-index:399; /* debajo del panel (400), encima del bottom-nav (300) */
+    backdrop-filter:blur(3px);z-index:9998!important;
     animation:mzBackdropIn .25s ease-out
   }
   @keyframes mzBackdropIn{from{opacity:0}to{opacity:1}}
@@ -204,9 +206,9 @@ body.mz-panel-open .mz-list-col{flex:1.3}
   .tab-mudanza.active .tab-count{background:rgba(255,255,255,.25)}
 }
 @media (max-width:900px) and (min-width:641px){
-  .mz-side-panel{position:fixed;top:0;right:0;bottom:0;width:0;max-height:100vh;border-radius:0;border-left:1px solid #E2E8F0;z-index:200;box-shadow:-8px 0 24px rgba(15,25,35,.08)}
+  .mz-side-panel{position:fixed;top:0;right:0;bottom:0;width:0;max-height:100vh;border-radius:0;border-left:1px solid #E2E8F0;z-index:9999!important;box-shadow:-8px 0 24px rgba(15,25,35,.08);background:#fff}
   .mz-side-panel.open{width:90%;max-width:480px}
-  body.mz-panel-open::after{content:'';position:fixed;inset:0;background:rgba(15,25,35,.4);backdrop-filter:blur(2px);z-index:199}
+  body.mz-panel-open::after{content:'';position:fixed;inset:0;background:rgba(15,25,35,.4);backdrop-filter:blur(2px);z-index:9998!important}
   body.mz-panel-open .mz-list-col{flex:1}
 }
 
@@ -1365,18 +1367,28 @@ function renderMudanzaDetail(m) {
 
 // Seleccionar una mudanza → mostrar en panel lateral
 function seleccionarMudanza(mudanzaId) {
+  console.log('[mz] seleccionarMudanza:', mudanzaId);
   var m = mudanzasData.find(function(x){ return x.id === mudanzaId; });
-  if (!m) return;
+  if (!m) {
+    console.warn('[mz] Mudanza no encontrada en mudanzasData');
+    return;
+  }
   // Marcar fila activa
   document.querySelectorAll('.mz-row-line').forEach(function(el){ el.classList.remove('active'); });
   var row = document.getElementById('mz-row-'+mudanzaId);
   if (row) row.classList.add('active');
   // Renderizar en panel lateral
   var panel = document.getElementById('mzSidePanel');
-  if (!panel) return;
+  if (!panel) {
+    console.error('[mz] No existe #mzSidePanel en el DOM');
+    return;
+  }
   panel.innerHTML = renderMudanzaDetail(m);
   panel.classList.add('open');
   document.body.classList.add('mz-panel-open');
+  // Forzar scroll al inicio del panel (evitar que aparezca a mitad)
+  setTimeout(function(){ panel.scrollTop = 0; }, 50);
+  console.log('[mz] Panel abierto. Classes:', panel.className, 'Body:', document.body.className);
   try { sessionStorage.setItem('mzSelected', mudanzaId); } catch(e) {}
   // ── Mobile: bindear swipe-down para cerrar el bottom sheet ──
   if (window.innerWidth <= 640) bindBottomSheetGestures(panel);
