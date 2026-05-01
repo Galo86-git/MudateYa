@@ -2093,6 +2093,9 @@ async function notificarMudanceros(mudanza) {
   const expira = new Date(mudanza.expira).toLocaleString('es-AR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
   const esFlete = mudanza.tipo === 'flete';
   const tipoLabel = esFlete ? '📦 Nuevo flete' : '🚛 Nueva mudanza';
+  // Pack/nivel que pidió el cliente — el mudancero necesita saberlo para cotizar correctamente
+  const nivelMap = { esencial: '📦 Esencial', integral: '🛠️ Integral', llave: '🔑 Llave en mano', flete: '🚚 Flete' };
+  const nivelLabel = esFlete ? '' : (nivelMap[mudanza.nivel] || '');
 
   const emailHtml = (nombreMudancero) => `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
     <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
@@ -2103,9 +2106,10 @@ async function notificarMudanceros(mudanza) {
         <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde}</td></tr>
         <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
         <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes}</td></tr>
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.fecha}</td></tr>
-        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Precio estimado</td><td style="color:#17A356;font-weight:700;font-size:14px">$${parseInt(mudanza.precio_estimado||0).toLocaleString('es-AR')}</td></tr>
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:7px 0">${expira}</td></tr>
+        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${nivelLabel}</td></tr>` : ''}
+        <tr${nivelLabel ? '' : ' style="background:#F5F7FA"'}><td style="color:#64748B;padding:7px${nivelLabel ? ' 0' : ' 6px'};font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923${nivelLabel ? '' : ';padding:7px 0'}">${mudanza.fecha}</td></tr>
+        <tr${nivelLabel ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:7px${nivelLabel ? ' 6px' : ' 0'};font-size:13px">Precio estimado</td><td style="color:#17A356;font-weight:700;font-size:14px${nivelLabel ? ';padding:7px 0' : ''}">$${parseInt(mudanza.precio_estimado||0).toLocaleString('es-AR')}</td></tr>
+        <tr${nivelLabel ? '' : ' style="background:#F5F7FA"'}><td style="color:#64748B;padding:7px${nivelLabel ? ' 0' : ' 6px'};font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px${nivelLabel ? '' : ';padding:7px 0'}">${expira}</td></tr>
       </table>
       <div style="margin-top:20px">
         <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Cotizar ahora →</a>
