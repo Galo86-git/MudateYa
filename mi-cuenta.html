@@ -3330,9 +3330,9 @@ function precioFinalMudanza(m) {
 }
 
 function loadHistorial(){
+  // Solo mudanzas completadas (saldo cobrado, trabajo finalizado)
   var aceptadas = misCotizaciones.filter(function(m){
-    var ACTIVOS = ['cotizacion_aceptada','en_curso','completada'];
-    return ACTIVOS.indexOf(m.estado)!==-1 && m.cotizacionAceptada && m.cotizacionAceptada.id===m.miCotizacion?.id;
+    return m.estado === 'completada' && m.cotizacionAceptada && m.cotizacionAceptada.id===m.miCotizacion?.id;
   });
   if(aceptadas.length===0){
     var hoyD = new Date();
@@ -3342,7 +3342,7 @@ function loadHistorial(){
       + '<div style="font-size:28px;font-weight:800;text-align:center;color:#0F1923;line-height:1;padding:8px 0 0">' + hoyD.getDate() + '</div>'
       + '<div style="font-size:9px;color:#64748B;text-align:center;font-family:var(--mono);margin-top:2px">' + hoyD.getFullYear() + '</div>'
       + '</div>';
-    document.getElementById('historialList').innerHTML='<div class="empty">' + calIcono + '<div>Aún no tenés trabajos aceptados.</div></div>';
+    document.getElementById('historialList').innerHTML='<div class="empty">' + calIcono + '<div>Cuando completes tu primer trabajo, aparece acá.</div></div>';
     return;
   }
   document.getElementById('historialList').innerHTML = aceptadas.map(function(m){
