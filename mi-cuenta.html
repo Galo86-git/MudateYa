@@ -3007,18 +3007,18 @@ function diasHabilesEntre(desde, hasta){
 // ════════════════════════════════════════════════════
 function loadGanancias(){
   var ACTIVOS = ['cotizacion_aceptada','en_curso','completada'];
+  // Aceptadas como "trabajo confirmado" requieren que el cliente al menos haya pagado
+  // el anticipo. Mientras no pague, todavía puede cancelar la mudanza, así que NO se cuenta
+  // como ganancia ni aparece en el resumen / historial / cobros.
   var aceptadas = misCotizaciones.filter(function(m){
-    return ACTIVOS.indexOf(m.estado)!==-1 && m.cotizacionAceptada && m.cotizacionAceptada.id===(m.miCotizacion && m.miCotizacion.id);
+    var esActiva = ACTIVOS.indexOf(m.estado) !== -1;
+    var soyYo = m.cotizacionAceptada && m.cotizacionAceptada.id===(m.miCotizacion && m.miCotizacion.id);
+    var clientePago = m.anticipoPagado || m.saldoPagado;
+    return esActiva && soyYo && clientePago;
   });
 
   var hoy = new Date();
   var DIAS_LIQ = 15; // 15 días hábiles para liberar el cobro
-
-  // Cada mudanza genera 2 cobros independientes (anticipo y saldo) que se clasifican por separado
-  // Estados:
-  //   'disponible' = cliente ya pagó + pasaron los 15 hábiles
-  //   'en_proceso' = cliente ya pagó pero faltan días para liberar
-  //   'futuro'     = cliente todavía no pagó (estimado)
   var cobros = [];
 
   aceptadas.forEach(function(m){
@@ -3147,7 +3147,7 @@ function loadGanancias(){
 
   // ── Historial detallado ─────────────────────────────────────
   if(aceptadas.length === 0){
-    document.getElementById('gananciasList').innerHTML = '<div class="empty"><div class="empty-icon">💰</div>Cuando el cliente acepte tu cotización, los trabajos aparecen acá.</div>';
+    document.getElementById('gananciasList').innerHTML = '<div class="empty"><div class="empty-icon">💰</div>Cuando un cliente pague la seña de tu mudanza aceptada, los trabajos aparecen acá.</div>';
     return;
   }
 
