@@ -3762,23 +3762,48 @@ async function recordarAjuste(mudanzaId, btn) {
         <div style="font-size:11px;color:var(--text3);margin-top:4px">Mínimo 8 caracteres. El cliente lo va a ver.</div>
       </div>
 
-      <div id="ajMsg" style="font-size:12px;margin-bottom:10px;min-height:16px"></div>
-
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost" style="flex:1" onclick="cerrarAjuste()">Cancelar</button>
-        <button id="ajBtn" class="btn btn-green" style="flex:2" onclick="confirmarAjuste()" disabled>Enviar al cliente</button>
-      </div>
+      <div id="ajMsg" style="font-size:12px;margin-top:8px;min-height:16px"></div>
+    </div>
+    <div class="modal-aj-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="cerrarAjuste()">Cancelar</button>
+      <button id="ajBtn" class="btn btn-green" style="flex:2" onclick="confirmarAjuste()" disabled>Enviar al cliente</button>
     </div>
   </div>
 </div>
 <style>
 .modal-aj{display:none;position:fixed;inset:0;background:rgba(15,25,35,.6);z-index:9999;align-items:flex-end;justify-content:center;padding:0}
 .modal-aj.open{display:flex}
-.modal-aj-card{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 30px rgba(0,0,0,.25);animation:modalAjSlide .25s ease-out}
+.modal-aj-card{
+  background:#fff;
+  border-radius:16px 16px 0 0;
+  width:100%;
+  max-width:520px;
+  max-height:92vh;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 -8px 30px rgba(0,0,0,.25);
+  animation:modalAjSlide .25s ease-out;
+  overflow:hidden; /* el scroll lo maneja modal-aj-body */
+}
 @keyframes modalAjSlide{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-aj-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:2}
+.modal-aj-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 14px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
 .modal-aj-close{width:32px;height:32px;border:none;background:var(--surface2);border-radius:50%;cursor:pointer;font-size:15px;color:var(--text3);display:flex;align-items:center;justify-content:center}
-.modal-aj-body{padding:18px 20px 20px}
+.modal-aj-body{
+  padding:18px 20px 12px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  flex:1 1 auto;
+  min-height:0;
+}
+.modal-aj-footer{
+  display:flex;
+  gap:8px;
+  padding:12px 20px max(14px, env(safe-area-inset-bottom));
+  background:#fff;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+  /* asegurar visibilidad sobre el teclado virtual en mobile */
+}
 .aj-field{margin-bottom:14px}
 .aj-label{display:block;font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .aj-orig{font-family:var(--mono);font-size:17px;color:var(--text);font-weight:600;padding:10px 12px;background:var(--surface2);border-radius:8px;text-decoration:line-through;text-decoration-color:rgba(100,116,139,.5)}
