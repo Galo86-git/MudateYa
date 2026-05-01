@@ -906,8 +906,8 @@ async function loadMudanzas(){
   // Auto-seleccionar tab con contenido
   var ahora = new Date();
   var tieneActivas = mudanzasData.some(function(m){ return m.estado==='buscando' && new Date(m.expira)>=ahora && (!m.cotizaciones||m.cotizaciones.length===0); });
-  var tieneCotz    = mudanzasData.some(function(m){ return m.cotizaciones&&m.cotizaciones.length>0&&m.estado!=='cotizacion_aceptada'; });
-  var tieneAcept   = mudanzasData.some(function(m){ return m.estado==='cotizacion_aceptada'; });
+  var tieneCotz    = mudanzasData.some(function(m){ return m.cotizaciones&&m.cotizaciones.length>0&&m.estado!=='cotizacion_aceptada'&&m.estado!=='en_curso'&&m.estado!=='completada'; });
+  var tieneAcept   = mudanzasData.some(function(m){ return m.estado==='cotizacion_aceptada'||m.estado==='en_curso'||m.estado==='completada'; });
   if(!tieneActivas && tieneCotz) _tabMudanzas='cotizados';
   else if(!tieneActivas && !tieneCotz && tieneAcept) _tabMudanzas='aceptadas';
   renderMudanzasTabs();
@@ -921,8 +921,9 @@ function setTabMudanzas(tab) {
 function renderMudanzasTabs() {
   var ahora = new Date();
   var buscando  = mudanzasData.filter(function(m){ return m.estado==='buscando' && new Date(m.expira)>=ahora && (!m.cotizaciones||m.cotizaciones.length===0); });
-  var conCotz   = mudanzasData.filter(function(m){ return m.cotizaciones&&m.cotizaciones.length>0&&m.estado!=='cotizacion_aceptada'; });
-  var aceptadas = mudanzasData.filter(function(m){ return m.estado==='cotizacion_aceptada'; });
+  var conCotz   = mudanzasData.filter(function(m){ return m.cotizaciones&&m.cotizaciones.length>0&&m.estado!=='cotizacion_aceptada'&&m.estado!=='en_curso'&&m.estado!=='completada'; });
+  // "Confirmadas" incluye desde cotizacion_aceptada hasta completada (toda la vida útil de la mudanza una vez elegida)
+  var aceptadas = mudanzasData.filter(function(m){ return m.estado==='cotizacion_aceptada' || m.estado==='en_curso' || m.estado==='completada'; });
   var expiradas = mudanzasData.filter(function(m){ return new Date(m.expira)<ahora && m.estado==='buscando' && (!m.cotizaciones||m.cotizaciones.length===0); });
 
   var tabs = [
@@ -1017,7 +1018,8 @@ function renderMudanzaCard(m, idx){
       llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
       flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
     };
-    var hayAceptada = m.estado === 'cotizacion_aceptada';
+    // Lock total: si ya hay cotización aceptada o la mudanza arrancó/terminó, NO se puede cambiar.
+    var hayAceptada = m.estado === 'cotizacion_aceptada' || m.estado === 'en_curso' || m.estado === 'completada';
     var nivelAceptado = m.cotizacionAceptada && m.cotizacionAceptada.nivelAceptado;
 
     cotzHtml = '<div style="margin-bottom:1rem">'
@@ -1179,7 +1181,8 @@ function renderMudanzaDetail(m) {
       llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
       flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
     };
-    var hayAceptada = m.estado === 'cotizacion_aceptada';
+    // Lock total: si ya hay cotización aceptada o la mudanza arrancó/terminó, NO se puede cambiar.
+    var hayAceptada = m.estado === 'cotizacion_aceptada' || m.estado === 'en_curso' || m.estado === 'completada';
     var cotsHtml = cotizaciones.map(function(c){
       var isCotAceptada = m.cotizacionAceptada && m.cotizacionAceptada.id === c.id;
       var nivelAceptado = m.cotizacionAceptada && m.cotizacionAceptada.nivelAceptado;
