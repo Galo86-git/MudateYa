@@ -1071,6 +1071,8 @@ module.exports = async function handler(req, res) {
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
       // Verificar que el pago de MP existe y es válido (si viene mpPaymentId)
+      // Y capturar el monto REAL transferido para guardarlo como fuente de verdad.
+      let montoRealMP = null;
       if (mpPaymentId && process.env.MP_ACCESS_TOKEN) {
         try {
           const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${mpPaymentId}`, {
@@ -1080,6 +1082,8 @@ module.exports = async function handler(req, res) {
           if (mpData.status !== 'approved') {
             return res.status(400).json({ error: 'Pago de MP no aprobado' });
           }
+          // Capturar el monto real que el cliente pagó (no calcular a partir del precio)
+          montoRealMP = Math.round(Number(mpData.transaction_amount) || 0);
           // Guardar el ID de pago de MP para auditoría
           if (tipoPago === 'anticipo') m.mpAnticipoPagoId = mpPaymentId;
           if (tipoPago === 'saldo')    m.mpSaldoPagoId = mpPaymentId;
@@ -1092,9 +1096,11 @@ module.exports = async function handler(req, res) {
         m.anticipoPagado = true;
         // Fecha en que se confirmó el pago del anticipo (para calcular liquidación al mudancero: 15 días hábiles)
         if (!m.fechaPagoAnticipo) m.fechaPagoAnticipo = new Date().toISOString();
-        // Guardar el monto exacto del anticipo pagado (50% del precio en ese momento)
-        // Esto es crítico si luego hay ajuste de precio: el saldo se calcula como precio - anticipoMonto
-        if (!m.anticipoMonto) {
+        // Guardar el monto REAL del anticipo cobrado por MP (fuente de verdad).
+        // Si MP no respondió, fallback al 50% del precio (compat).
+        if (montoRealMP) {
+          m.anticipoMonto = montoRealMP;
+        } else if (!m.anticipoMonto) {
           const cot = m.cotizacionAceptada || {};
           m.anticipoMonto = Math.round((parseInt(cot.precio || 0)) * 0.5);
         }
@@ -1107,6 +1113,10 @@ module.exports = async function handler(req, res) {
         m.saldoPagado = true;
         // Fecha en que se confirmó el pago del saldo (para calcular liquidación)
         if (!m.fechaPagoSaldo) m.fechaPagoSaldo = new Date().toISOString();
+        // Guardar el monto REAL del saldo cobrado por MP
+        if (montoRealMP) {
+          m.saldoMonto = montoRealMP;
+        }
         // Al pagar el saldo, la mudanza queda completada
         m.estado = 'completada';
         if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
@@ -2472,7 +2482,7 @@ async function logPedidoSheets(mudanza) {
   const esFlete = mudanza.tipo === 'flete' || mudanza.ambientes === 'Flete';
   // Plan Referidos (leads de asesores inmobiliarios): 25% flat
   // Mudanzas normales: 15% · Fletes normales: 20%
-  const esPlanReferidos = mudanza.origenAsesor === true;
+  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado);
   const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   const precio = parseInt(cot.precio || 0);
   const fee = Math.round(precio * feePct);
@@ -2525,12 +2535,19 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   const esAnticipo = tipoPago === 'anticipo';
   const precioTotal = cot.precio || 0;
   const esFlete = (mudanza.tipo || '').toLowerCase() === 'flete';
-  // Plan Referidos: 25% · Mudanza normal: 15% · Flete normal: 20%
-  const esPlanReferidos = mudanza.origenAsesor === true;
+  // Plan Referidos: 25% si vino por asesor (origenAsesor) o por link de aliado (refAliado).
+  // Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
+  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado);
   const comisionPct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
-  const monto = Math.round(precioTotal * 0.5);
+  // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
+  // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
+  const monto = esAnticipo
+    ? (parseInt(mudanza.anticipoMonto) || Math.round(precioTotal * 0.5))
+    : (parseInt(mudanza.saldoMonto)   || Math.round(precioTotal * 0.5));
   const montoFmt = '$' + monto.toLocaleString('es-AR');
-  const netoMudancero = Math.round(precioTotal * (1 - comisionPct));
+  // Neto al mudancero: descuento la comisión sobre el monto REAL cobrado, no sobre el precio total.
+  // Así el cálculo es coherente: si pagó $100, le quedan $85 (15% de fee), no un número arbitrario.
+  const netoMudancero = Math.round(monto * (1 - comisionPct));
   const netoFmt = '$' + netoMudancero.toLocaleString('es-AR');
   const nombre = (cot.mudanceroNombre || 'Mudancero').split(' ')[0];
 
