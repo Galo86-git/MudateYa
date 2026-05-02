@@ -404,6 +404,68 @@ body.pd-panel-open .pd-list-col{flex:1.3}
 .pd-meta-line{font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap;flex-shrink:0}
 .pd-precio-line{font-size:11.5px;font-family:var(--mono);font-weight:700;color:var(--blue);white-space:nowrap;flex-shrink:0;min-width:90px;text-align:right}
 .pd-precio-orig{font-size:10.5px;color:var(--text3);text-decoration:line-through;text-decoration-color:rgba(100,116,139,.6);font-family:var(--mono);font-weight:600;margin-right:4px}
+
+/* ───── HISTORIAL DE TRABAJOS — tabla CRM ───── */
+.hist-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.hist-meta{font-size:13px;color:var(--text2);font-family:var(--mono)}
+.hist-export-btn{display:inline-flex;align-items:center;gap:6px;background:#15803D;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;transition:background .15s;white-space:nowrap}
+.hist-export-btn:hover{background:#166534}
+.hist-export-btn:active{transform:scale(.97)}
+.hist-table-wrap{overflow-x:auto;border:1px solid #E2E8F0;border-radius:12px;background:#fff;-webkit-overflow-scrolling:touch}
+.hist-table{width:100%;border-collapse:collapse;font-family:Inter,sans-serif;font-size:12.5px;min-width:680px}
+.hist-th{background:#F5F7FA;color:#64748B;text-transform:uppercase;letter-spacing:.4px;font-size:10.5px;font-weight:700;padding:10px 12px;text-align:left;border-bottom:1px solid #E2E8F0;white-space:nowrap}
+.hist-th.hist-num,.hist-th.hist-pct{text-align:right}
+.hist-td{padding:10px 12px;border-bottom:1px solid #F1F5F9;color:var(--text);vertical-align:middle}
+.hist-table tbody tr:last-child .hist-td{border-bottom:none}
+.hist-table tbody tr:hover{background:#FAFBFC}
+.hist-td.hist-date{font-family:var(--mono);color:var(--text2);font-size:11.5px;white-space:nowrap}
+.hist-td.hist-ruta{font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-td.hist-pack{color:var(--text2);white-space:nowrap}
+.hist-td.hist-amb{color:var(--text2);white-space:nowrap;font-size:11.5px}
+.hist-td.hist-num{text-align:right;font-family:var(--mono);font-weight:600;white-space:nowrap}
+.hist-td.hist-pct{text-align:right;font-family:var(--mono);color:var(--text2);font-size:11.5px;white-space:nowrap}
+.hist-td.hist-neto{color:#15803D;font-weight:700}
+.hist-table tr.hist-totals .hist-td{background:#F5F7FA;border-top:2px solid #E2E8F0;font-size:13px;padding:12px}
+.hist-table tr.hist-totals .hist-td.hist-neto{color:#15803D;font-size:14px}
+@media (max-width:640px){
+  .hist-table{font-size:11.5px;min-width:600px}
+  .hist-th{padding:8px 9px;font-size:10px}
+  .hist-td{padding:8px 9px}
+  .hist-td.hist-ruta{max-width:160px}
+  .hist-export-btn{padding:7px 12px;font-size:12px}
+}
+
+/* ───── MODAL DETALLE GANANCIA (in-page, no redirige) ───── */
+.gmodal-backdrop{position:fixed;inset:0;background:rgba(15,25,35,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:18px;animation:gmodalIn .18s ease-out;backdrop-filter:blur(2px)}
+@keyframes gmodalIn{from{opacity:0}to{opacity:1}}
+.gmodal-card{background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(15,25,35,.3);overflow:hidden;animation:gmodalCardIn .22s cubic-bezier(.4,0,.2,1)}
+@keyframes gmodalCardIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.gmodal-header{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 20px 14px;border-bottom:1px solid #E2E8F0;gap:10px;flex-shrink:0}
+.gmodal-title{font-size:16px;font-weight:700;color:var(--text);font-family:Inter,sans-serif}
+.gmodal-sub{font-size:12.5px;color:var(--text2);margin-top:3px;font-family:var(--mono)}
+.gmodal-close{background:#F1F5F9;border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.gmodal-close:hover{background:#E2E8F0;color:var(--text)}
+.gmodal-body{padding:6px 20px 12px;overflow-y:auto;flex:1}
+.gmodal-section{padding:12px 0;border-bottom:1px dashed #E2E8F0}
+.gmodal-section:last-child{border-bottom:none}
+.gmodal-section.gmodal-money{background:#F5F7FA;margin:8px -20px 0;padding:14px 20px;border-radius:0;border-bottom:none}
+.gmodal-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;gap:10px}
+.gmodal-row span{color:var(--text2)}
+.gmodal-row b{color:var(--text);font-weight:600;text-align:right;font-family:var(--mono)}
+.gmodal-row-neto{margin-top:8px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:14.5px}
+.gmodal-row-neto span{font-weight:700;color:var(--text)}
+.gmodal-row-neto b{font-size:18px;color:#15803D;font-weight:800}
+.gmodal-footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid #E2E8F0;background:#FAFBFC;flex-shrink:0}
+.gmodal-btn-sec,.gmodal-btn-prim{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.gmodal-btn-sec{background:#fff;color:var(--text2);border:1px solid #E2E8F0}
+.gmodal-btn-sec:hover{background:#F5F7FA;color:var(--text)}
+.gmodal-btn-prim{background:#22C36A;color:#fff}
+.gmodal-btn-prim:hover{background:#15803D}
+@media (max-width:640px){
+  .gmodal-backdrop{padding:0;align-items:flex-end}
+  .gmodal-card{max-height:88vh;border-radius:18px 18px 0 0;animation:gmodalCardInM .25s cubic-bezier(.4,0,.2,1)}
+  @keyframes gmodalCardInM{from{transform:translateY(100%)}to{transform:translateY(0)}}
+}
 .pd-precio-final{font-size:11.5px;font-family:var(--mono);font-weight:700;color:#15803D}
 .pd-arrow{color:var(--text3);font-size:18px;font-weight:700;flex-shrink:0;width:14px;text-align:center;line-height:1}
 .pd-row-line.active .pd-arrow{color:var(--blue)}
@@ -3417,49 +3479,145 @@ function loadHistorial(){
     document.getElementById('historialList').innerHTML='<div class="empty">' + calIcono + '<div>Cuando completes tu primer trabajo, aparece acá.</div></div>';
     return;
   }
-  // Config de packs local (necesario porque packsCfg de renderPedidos está en otro scope)
-  var packsCfgHist = {
-    esencial: { nombre:'Esencial',      emoji:'📦', color:'#475569' },
-    integral: { nombre:'Integral',      emoji:'🛠️', color:'#1A6FFF' },
-    llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
-    flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
+  // Ordenar por fecha de completada DESC (más reciente primero)
+  aceptadas.sort(function(a,b){
+    var fa = new Date(a.fechaCompletada || a.fechaPagoSaldo || a.fecha || 0);
+    var fb = new Date(b.fechaCompletada || b.fechaPagoSaldo || b.fecha || 0);
+    return fb - fa;
+  });
+  // Cache para export
+  window._histAceptadas = aceptadas;
+  // Resumen totales
+  var totalBruto = 0, totalFee = 0, totalNeto = 0;
+  var packsLabel = { esencial:'Esencial', integral:'Integral', llave:'Llave en mano', flete:'Flete' };
+  var rows = aceptadas.map(function(m){
+    var precio = precioFinalMudanza(m);
+    var fee    = Math.round(calcFee(precio, m.ambientes, m));
+    var neto   = precio - fee;
+    var pct    = calcFeeLabel(m.ambientes, m); // "15%", "20%", "25%"
+    totalBruto += precio; totalFee += fee; totalNeto += neto;
+    var fechaTxt = '—';
+    var fechaParaSort = m.fechaCompletada || m.fechaPagoSaldo || m.fecha;
+    if (fechaParaSort) {
+      try {
+        var d = new Date(fechaParaSort);
+        if (!isNaN(d.getTime())) {
+          var dd = String(d.getDate()).padStart(2,'0');
+          var mm = String(d.getMonth()+1).padStart(2,'0');
+          var yy = String(d.getFullYear()).slice(-2);
+          fechaTxt = dd+'/'+mm+'/'+yy;
+        } else if (m.fecha) {
+          fechaTxt = m.fecha;
+        }
+      } catch(e) { fechaTxt = m.fecha || '—'; }
+    }
+    var esFleteH = m.tipo === 'flete';
+    var nivelH = m.nivel || (m.cotizacionAceptada && m.cotizacionAceptada.nivelPack) || (esFleteH ? 'flete' : 'esencial');
+    var packTxt = packsLabel[nivelH] || 'Esencial';
+    var ambTxt = m.ambientes || '—';
+    var rutaCorta = (m.desde||'').split(',')[0] + ' → ' + (m.hasta||'').split(',')[0];
+    return '<tr>'
+      + '<td class="hist-td hist-date">'+esc(fechaTxt)+'</td>'
+      + '<td class="hist-td hist-ruta" title="'+esc(m.desde+' → '+m.hasta)+'">'+esc(rutaCorta)+'</td>'
+      + '<td class="hist-td hist-pack">'+esc(packTxt)+'</td>'
+      + '<td class="hist-td hist-amb">'+esc(ambTxt)+'</td>'
+      + '<td class="hist-td hist-num">$'+precio.toLocaleString('es-AR')+'</td>'
+      + '<td class="hist-td hist-pct">'+esc(pct)+'</td>'
+      + '<td class="hist-td hist-num hist-neto">$'+neto.toLocaleString('es-AR')+'</td>'
+      + '</tr>';
+  }).join('');
+  // Totales footer
+  var totalsRow = '<tr class="hist-totals">'
+    + '<td class="hist-td" colspan="4" style="text-align:right;font-weight:700">Totales · '+aceptadas.length+' trabajo'+(aceptadas.length===1?'':'s')+'</td>'
+    + '<td class="hist-td hist-num">$'+totalBruto.toLocaleString('es-AR')+'</td>'
+    + '<td class="hist-td hist-pct">—</td>'
+    + '<td class="hist-td hist-num hist-neto">$'+totalNeto.toLocaleString('es-AR')+'</td>'
+    + '</tr>';
+  var html = '<div class="hist-toolbar">'
+    + '<div class="hist-meta">'+aceptadas.length+' trabajos completados</div>'
+    + '<button class="hist-export-btn" onclick="exportHistorialExcel()" title="Descargar como CSV (abre en Excel)">⬇ Exportar Excel</button>'
+    + '</div>'
+    + '<div class="hist-table-wrap">'
+    + '<table class="hist-table">'
+    +   '<thead><tr>'
+    +     '<th class="hist-th hist-date">Fecha</th>'
+    +     '<th class="hist-th hist-ruta">Ruta</th>'
+    +     '<th class="hist-th hist-pack">Pack</th>'
+    +     '<th class="hist-th hist-amb">Tamaño</th>'
+    +     '<th class="hist-th hist-num">Total mudanza</th>'
+    +     '<th class="hist-th hist-pct">Fee MYA</th>'
+    +     '<th class="hist-th hist-num">Vos cobrás</th>'
+    +   '</tr></thead>'
+    +   '<tbody>' + rows + totalsRow + '</tbody>'
+    + '</table>'
+    + '</div>';
+  document.getElementById('historialList').innerHTML = html;
+}
+
+// Exporta el historial como CSV (UTF-8 con BOM para que Excel respete acentos y $)
+function exportHistorialExcel(){
+  var arr = window._histAceptadas || [];
+  if (!arr.length) { alert('No hay trabajos para exportar.'); return; }
+  var packsLabel = { esencial:'Esencial', integral:'Integral', llave:'Llave en mano', flete:'Flete' };
+  // Helper CSV-safe
+  var cell = function(v){
+    var s = String(v == null ? '' : v);
+    // Si tiene coma, comillas o salto de línea, encerrar en comillas y escapar las comillas internas
+    if (/[",\n;]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
   };
-  document.getElementById('historialList').innerHTML = '<div class="pedidos-list">'
-    + aceptadas.map(function(m){
+  var headers = ['Fecha','ID Mudanza','Cliente','Origen','Destino','Pack','Tamaño','KM','Total mudanza','Fee MYA %','Fee MYA $','Vos cobrás','Anticipo $','Saldo $','Plan Referidos'];
+  var lines = [headers.join(';')];
+  arr.forEach(function(m){
     var precio = precioFinalMudanza(m);
     var fee = Math.round(calcFee(precio, m.ambientes, m));
     var neto = precio - fee;
-    var huboAjuste = m.ajustePrecio && m.ajustePrecio.estado === 'aceptado';
-    // Fecha pill (formato corto: "15 may")
-    var fechaTxt = '';
-    if (m.fecha && /^\d{4}-\d{2}-\d{2}/.test(m.fecha)) {
-      var d = new Date(m.fecha);
-      var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-      fechaTxt = d.getDate() + ' ' + meses[d.getMonth()];
-    } else if (m.fecha) {
-      fechaTxt = m.fecha;
+    var pct = calcFeeLabel(m.ambientes, m);
+    var fecha = '';
+    var fechaSrc = m.fechaCompletada || m.fechaPagoSaldo || m.fecha;
+    if (fechaSrc) {
+      try {
+        var d = new Date(fechaSrc);
+        if (!isNaN(d.getTime())) {
+          fecha = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+        } else { fecha = m.fecha || ''; }
+      } catch(e) { fecha = m.fecha || ''; }
     }
-    // Pack chip — mismo helper que los otros tabs (estilo coherente)
-    var esFleteHist = m.tipo === 'flete';
-    var nivelHist = m.nivel || (m.cotizacionAceptada && m.cotizacionAceptada.nivelPack) || (esFleteHist ? 'flete' : 'esencial');
-    var cfgHist = packsCfgHist[nivelHist] || packsCfgHist.esencial;
-    var packBadgeHist = '<span class="pd-pack-mini" style="background:'+cfgHist.color+'15;color:'+cfgHist.color+'">'+cfgHist.emoji+' '+cfgHist.nombre+'</span>';
-    // Ruta + fecha embebida en pd-ruta-line igual que renderRowPedido
-    var rutaHist = esc(m.desde)+' → '+esc(m.hasta);
-    var rutaConFecha = '<span class="pd-ruta-line" title="'+rutaHist.replace(/"/g,'&quot;')+'">'
-      + rutaHist
-      + (fechaTxt ? '<span class="pd-fecha-line">📅 '+esc(fechaTxt)+'</span>' : '')
-      + (huboAjuste ? '<span class="pd-fecha-line" style="color:#15803D;font-weight:700">✓ Ajustado</span>' : '')
-      + '</span>';
-    return '<div class="pd-row-line" onclick="seleccionarPedido(\''+m.id+'\',\'aceptados\')" tabindex="0">'
-      +'<span class="pd-st-pill pd-comp">✓ Completada</span>'
-      + rutaConFecha
-      + packBadgeHist
-      +'<span class="pd-precio-line">$'+neto.toLocaleString('es-AR')+'</span>'
-      +'<span class="pd-arrow">›</span>'
-      +'</div>';
-  }).join('')
-  + '</div>';
+    var esFleteX = m.tipo === 'flete';
+    var nivelX = m.nivel || (m.cotizacionAceptada && m.cotizacionAceptada.nivelPack) || (esFleteX ? 'flete' : 'esencial');
+    var packTxt = packsLabel[nivelX] || 'Esencial';
+    var planRef = _esPlanReferidos(m) ? 'Sí' : 'No';
+    lines.push([
+      cell(fecha),
+      cell(m.id || ''),
+      cell(m.clienteNombre || ''),
+      cell(m.desde || ''),
+      cell(m.hasta || ''),
+      cell(packTxt),
+      cell(m.ambientes || ''),
+      cell(m.km || ''),
+      cell(precio),
+      cell(pct),
+      cell(fee),
+      cell(neto),
+      cell(parseInt(m.anticipoMonto)||''),
+      cell(parseInt(m.saldoMonto)||''),
+      cell(planRef)
+    ].join(';'));
+  });
+  // BOM (\uFEFF) para que Excel detecte UTF-8
+  var csv = '\uFEFF' + lines.join('\n');
+  var blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var hoy = new Date();
+  var fechaArchivo = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+  a.href = url;
+  a.download = 'historial-mudateya-'+fechaArchivo+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
 }
 
 // ════════════════════════════════════════════════════
@@ -3513,32 +3671,86 @@ function setGanTab(t){
 // Click en una fila de Ganancias → ir al pedido correspondiente en el tab Pedidos > Aceptados
 function irAGanancia(mudanzaId){
   if (!mudanzaId) return;
-  // 1. Cambiar a página Pedidos (si no estamos ya ahí)
-  if (typeof showPage === 'function') {
-    // Marcar el sidebar "Pedidos" como activo (visual)
-    document.querySelectorAll('.sidebar-item').forEach(function(el){ el.classList.remove('active'); });
-    var pedidosLink = document.querySelector('.sidebar-item[onclick*="\'pedidos\'"]');
-    if (pedidosLink) pedidosLink.classList.add('active');
-    showPage('pedidos');
-  }
-  // Bottom-nav mobile
-  if (typeof setMcNav === 'function') setMcNav('pedidos');
-  // 2. Activar tab "Aceptados" dentro de Pedidos
-  setTimeout(function(){
-    if (typeof setTabPedidos === 'function') {
-      setTabPedidos('aceptados');
-    }
-    // 3. Scrollear al pedido y abrir su detalle
-    setTimeout(function(){
-      var row = document.getElementById('pd-row-'+mudanzaId);
-      if (row) {
-        try { row.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e) {}
-        row.click();
-      } else {
-        console.warn('[irAGanancia] No se encontró pd-row-'+mudanzaId);
+  // Abrir modal de detalle de la ganancia DENTRO de la página Ganancias.
+  // Antes redirigía a Pedidos > Aceptados pero eso fuerza a navegar y volver.
+  // Ahora el detalle se muestra inline para no perder contexto.
+  var m = misCotizaciones.find(function(x){ return x.id === mudanzaId; });
+  if (!m) return;
+  var precio = precioFinalMudanza(m);
+  var fee = Math.round(calcFee(precio, m.ambientes, m));
+  var neto = precio - fee;
+  var pct = calcFeeLabel(m.ambientes, m);
+  var anticipo = parseInt(m.anticipoMonto) || 0;
+  var saldo    = parseInt(m.saldoMonto) || 0;
+  var totalCobrado = anticipo + saldo;
+  var ruta = (m.desde||'').split(',')[0] + ' → ' + (m.hasta||'').split(',')[0];
+  var packsLabel = { esencial:'📦 Esencial', integral:'🛠️ Integral', llave:'🔑 Llave en mano', flete:'🚚 Flete' };
+  var nivelM = m.nivel || (m.cotizacionAceptada && m.cotizacionAceptada.nivelPack) || (m.tipo==='flete' ? 'flete' : 'esencial');
+  var packTxt = packsLabel[nivelM] || '📦 Esencial';
+  var clienteNombre = m.clienteNombre || '—';
+  var clienteWA = m.clienteWA || '';
+  var estadoLabel = m.estado === 'completada' ? '✓ Completada' : (m.estado === 'en_curso' ? '🚛 En curso' : '✓ Aceptada');
+  var planRef = _esPlanReferidos(m);
+  var fechaCompleta = m.fechaCompletada || m.fechaPagoSaldo || m.fechaPagoAnticipo;
+  var fechaTxt = '—';
+  if (fechaCompleta) {
+    try {
+      var d = new Date(fechaCompleta);
+      if (!isNaN(d.getTime())) {
+        var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        fechaTxt = d.getDate()+' '+meses[d.getMonth()]+' '+d.getFullYear();
       }
-    }, 150);
-  }, 50);
+    } catch(e){}
+  }
+  var html = '<div class="gmodal-backdrop" onclick="cerrarModalGanancia(event)">'
+    + '<div class="gmodal-card" onclick="event.stopPropagation()">'
+    +   '<div class="gmodal-header">'
+    +     '<div>'
+    +       '<div class="gmodal-title">Detalle del cobro</div>'
+    +       '<div class="gmodal-sub">' + esc(ruta) + '</div>'
+    +     '</div>'
+    +     '<button class="gmodal-close" onclick="cerrarModalGanancia()" aria-label="Cerrar">&times;</button>'
+    +   '</div>'
+    +   '<div class="gmodal-body">'
+    +     '<div class="gmodal-section">'
+    +       '<div class="gmodal-row"><span>Estado</span><b>'+estadoLabel+'</b></div>'
+    +       '<div class="gmodal-row"><span>Pack</span><b>'+packTxt+'</b></div>'
+    +       '<div class="gmodal-row"><span>Tamaño</span><b>'+esc(m.ambientes||'—')+'</b></div>'
+    +       (m.km ? '<div class="gmodal-row"><span>Distancia</span><b>'+parseInt(m.km)+' km</b></div>' : '')
+    +       '<div class="gmodal-row"><span>Fecha</span><b>'+esc(fechaTxt)+'</b></div>'
+    +       '<div class="gmodal-row"><span>Cliente</span><b>'+esc(clienteNombre)+'</b></div>'
+    +       (clienteWA ? '<div class="gmodal-row"><span>Tel</span><b>'+esc(clienteWA)+'</b></div>' : '')
+    +     '</div>'
+    +     '<div class="gmodal-section gmodal-money">'
+    +       '<div class="gmodal-row"><span>Total mudanza</span><b>$'+precio.toLocaleString('es-AR')+'</b></div>'
+    +       (anticipo ? '<div class="gmodal-row"><span>Anticipo cobrado</span><b>$'+anticipo.toLocaleString('es-AR')+'</b></div>' : '')
+    +       (saldo ? '<div class="gmodal-row"><span>Saldo cobrado</span><b>$'+saldo.toLocaleString('es-AR')+'</b></div>' : '')
+    +       (totalCobrado && totalCobrado !== precio ? '<div class="gmodal-row"><span>Total cobrado a hoy</span><b>$'+totalCobrado.toLocaleString('es-AR')+'</b></div>' : '')
+    +       '<div class="gmodal-row"><span>Fee MudateYa ('+pct+(planRef?' · Plan Referidos':'')+')</span><b style="color:#DC2626">- $'+fee.toLocaleString('es-AR')+'</b></div>'
+    +       '<div class="gmodal-row gmodal-row-neto"><span>Vos cobrás</span><b>$'+neto.toLocaleString('es-AR')+'</b></div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="gmodal-footer">'
+    +     '<button class="gmodal-btn-sec" onclick="cerrarModalGanancia()">Cerrar</button>'
+    +     (clienteWA ? '<a class="gmodal-btn-prim" href="https://wa.me/'+esc(clienteWA.replace(/[^0-9]/g,''))+'" target="_blank">💬 WhatsApp cliente</a>' : '')
+    +   '</div>'
+    + '</div>'
+    + '</div>';
+  // Insertar en body
+  var prev = document.getElementById('gmodal-host');
+  if (prev) prev.remove();
+  var host = document.createElement('div');
+  host.id = 'gmodal-host';
+  host.innerHTML = html;
+  document.body.appendChild(host);
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalGanancia(e){
+  if (e && e.target && !e.target.classList.contains('gmodal-backdrop')) return;
+  var host = document.getElementById('gmodal-host');
+  if (host) host.remove();
+  document.body.style.overflow = '';
 }
 
 function loadGanancias(){
