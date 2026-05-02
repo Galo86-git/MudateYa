@@ -2223,6 +2223,9 @@
       _nivel = nivel;
     }
     sincronizarTogglesNivel();
+    // Re-sincronizar también el visual de los toggles de verificaciones (Con seguro)
+    // por si el render del panel los reseteó.
+    if (typeof sincronizarTogglesVerifs === 'function') sincronizarTogglesVerifs();
     renderResultados();
     // Scrollear al header de resultados para que el usuario vea el bloque completo
     // encuadrado (buscador por nombre + contador + primer resultado).
@@ -2264,6 +2267,9 @@
   function setNivel(nivel) {
     _nivel = nivel;
     sincronizarTogglesNivel();
+    // Re-sincronizar también el visual de los toggles de verificaciones (Con seguro)
+    // por si el render del panel los reseteó.
+    if (typeof sincronizarTogglesVerifs === 'function') sincronizarTogglesVerifs();
     renderResultados();
   }
 
@@ -2486,8 +2492,31 @@
     renderResultados();
   }
   function toggleFVer(v,el) {
-    if(_filtros.verifs.has(v)) _filtros.verifs.delete(v); else _filtros.verifs.add(v);
+    // CRÍTICO: respetar el estado real del checkbox (no hacer toggle ciego).
+    // El toggle ciego rompía cuando había 2 checkboxes con el mismo valor (drawer mobile + panel desktop)
+    // y se desincronizaban: hacer click en uno apagado disparaba un add/delete inesperado.
+    var debeEstar = el ? !!el.checked : !_filtros.verifs.has(v);
+    if (debeEstar) _filtros.verifs.add(v);
+    else _filtros.verifs.delete(v);
+    // Sincronizar TODOS los checkboxes de seguro entre sí (drawer + desktop)
+    sincronizarTogglesVerifs();
     renderResultados();
+  }
+  // Sincronizar visual de los toggles "Con seguro" en TODOS los paneles (desktop + drawer)
+  // según el estado real de _filtros.verifs
+  function sincronizarTogglesVerifs() {
+    var conSeguro = _filtros.verifs.has('seg');
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+      var oc = cb.getAttribute('onchange') || '';
+      if (oc.indexOf("toggleFVer('seg'") === -1) return;
+      cb.checked = conSeguro;
+      // Sincronizar el label visual
+      var label = cb.closest('.tg-row, .drawer-opt, label');
+      if (label) {
+        if (conSeguro) label.classList.add('is-on');
+        else label.classList.remove('is-on');
+      }
+    });
   }
   function toggleFServicio(v, el) {
     if (!_filtros.servicios) _filtros.servicios = new Set();
