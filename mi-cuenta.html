@@ -3417,6 +3417,13 @@ function loadHistorial(){
     document.getElementById('historialList').innerHTML='<div class="empty">' + calIcono + '<div>Cuando completes tu primer trabajo, aparece acá.</div></div>';
     return;
   }
+  // Config de packs local (necesario porque packsCfg de renderPedidos está en otro scope)
+  var packsCfgHist = {
+    esencial: { nombre:'Esencial',      emoji:'📦', color:'#475569' },
+    integral: { nombre:'Integral',      emoji:'🛠️', color:'#1A6FFF' },
+    llave:    { nombre:'Llave en mano', emoji:'🔑', color:'#22C36A' },
+    flete:    { nombre:'Flete',         emoji:'🚚', color:'#F59E0B' }
+  };
   document.getElementById('historialList').innerHTML = '<div class="pedidos-list">'
     + aceptadas.map(function(m){
     var precio = precioFinalMudanza(m);
@@ -3432,12 +3439,12 @@ function loadHistorial(){
     } else if (m.fecha) {
       fechaTxt = m.fecha;
     }
-    // Pack chip — usar cfg de packsCfg para que coincida con los otros tabs (mismo estilo)
+    // Pack chip — mismo helper que los otros tabs (estilo coherente)
     var esFleteHist = m.tipo === 'flete';
     var nivelHist = m.nivel || (m.cotizacionAceptada && m.cotizacionAceptada.nivelPack) || (esFleteHist ? 'flete' : 'esencial');
-    var cfgHist = packsCfg[nivelHist] || packsCfg.esencial;
+    var cfgHist = packsCfgHist[nivelHist] || packsCfgHist.esencial;
     var packBadgeHist = '<span class="pd-pack-mini" style="background:'+cfgHist.color+'15;color:'+cfgHist.color+'">'+cfgHist.emoji+' '+cfgHist.nombre+'</span>';
-    // Ruta + fecha embebida igual que renderRowPedido
+    // Ruta + fecha embebida en pd-ruta-line igual que renderRowPedido
     var rutaHist = esc(m.desde)+' → '+esc(m.hasta);
     var rutaConFecha = '<span class="pd-ruta-line" title="'+rutaHist.replace(/"/g,'&quot;')+'">'
       + rutaHist
