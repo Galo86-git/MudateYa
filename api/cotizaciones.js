@@ -2148,7 +2148,7 @@ async function notificarMudanceros(mudanza) {
   const nivelMap = { esencial: '📦 Esencial', integral: '🛠️ Integral', llave: '🔑 Llave en mano', flete: '🚚 Flete' };
   const nivelLabel = esFlete ? '' : (nivelMap[mudanza.nivel] || '');
 
-  const emailHtml = (nombreMudancero) => `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+  const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
     <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
     <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${tipoLabel} · ${mudanza.id}</div>
     <div style="padding:28px">
@@ -2168,16 +2168,50 @@ async function notificarMudanceros(mudanza) {
       </div>
     </div>
     <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
-  </div>`;
+  </div></body></html>`;
 
-  // 1. Notificar al admin siempre
+  // ── Template SEPARADO para el ADMIN ─────────────────────
+  // Se diferencia visualmente con header amarillo, muestra datos del
+  // cliente (nombre/email/WA) y el botón apunta al panel admin (no a cotizar).
+  const emailHtmlAdmin = () => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+    <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">📋 Panel admin</span></div>
+    <div style="background:#FFF7ED;border-bottom:1px solid #FED7AA;padding:12px 28px;font-size:13px;color:#B45309;font-weight:600">⚙️ Notificación admin · ${tipoLabel} · ${mudanza.id}</div>
+    <div style="padding:28px">
+      <p style="font-size:15px;color:#0F1923;margin:0 0 16px">Hola Admin, se publicó un nuevo pedido en la plataforma.</p>
+
+      <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">DATOS DEL PEDIDO</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+        <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.desde}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
+        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${mudanza.ambientes}</td></tr>
+        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${nivelLabel}</td></tr>` : ''}
+        ${mudanza.km ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.fecha}</td></tr>
+        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Modo</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.modoCotizacion === 'dirigido' ? '🎯 Dirigido' : '📢 Abierto'}</td></tr>
+      </table>
+
+      <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">DATOS DEL CLIENTE</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+        <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Nombre</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.clienteNombre || '—'}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Email</td><td style="font-size:13px;color:#0F1923;padding:7px 0"><a href="mailto:${mudanza.clienteEmail || ''}" style="color:#003580;text-decoration:none">${mudanza.clienteEmail || '—'}</a></td></tr>
+        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">WhatsApp</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.clienteWA ? `<a href="https://wa.me/${String(mudanza.clienteWA).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:600">${mudanza.clienteWA}</a>` : '—'}</td></tr>
+      </table>
+
+      <div style="margin-top:20px">
+        <a href="https://mudateya.ar/admin" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en panel admin →</a>
+      </div>
+    </div>
+    <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+  </div></body></html>`;
+
+  // 1. Notificar al admin siempre (con su propio template)
   if (adminEmail) {
     try {
       await resend.emails.send({
         from: 'MudateYa <noreply@mudateya.ar>',
         to: adminEmail,
-        subject: `${tipoLabel} — ${mudanza.desde} → ${mudanza.hasta} · ${mudanza.id}`,
-        html: emailHtml('Admin'),
+        subject: `[ADMIN] ${tipoLabel} — ${mudanza.desde} → ${mudanza.hasta} · ${mudanza.id}`,
+        html: emailHtmlAdmin(),
       });
     } catch(e) { console.error('Email admin error:', e.message); }
   }
