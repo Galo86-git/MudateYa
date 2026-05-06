@@ -2306,12 +2306,89 @@ async function notificarCliente(mudanza, cotizacion) {
   });
 }
 
+// ════════════════════════════════════════════════════
+// HELPER — Precio del PERFIL del mudancero según ambientes/tipo
+// El monto del mail al mudancero seleccionado debe coincidir
+// con el precio publicado en su perfil al momento de la elección.
+// Soporta los dos modelos coexistentes en Redis:
+//   • perfil.preciosLeads.{amb1..amb4,amb5plus}.{esencial,integral,llave}  (modelo nuevo)
+//   • perfil.precios.{amb1..amb4} → número O {esencial,integral,llave}     (modelo viejo)
+//   • perfil.precios.flete → número plano (siempre)
+// Devuelve un Number con el precio. Si no encuentra precio configurado,
+// devuelve null para que el caller pueda hacer fallback.
+// ════════════════════════════════════════════════════
+async function obtenerPrecioPerfil(mudanceroEmail, mudanza) {
+  if (!mudanceroEmail) return null;
+  try {
+    var perfil = await getJSON('mudancero:perfil:' + mudanceroEmail);
+    if (!perfil) return null;
+
+    var esFlete = mudanza.tipo === 'flete' || mudanza.ambientes === 'Flete';
+
+    // Caso flete: precio plano en perfil.precios.flete
+    if (esFlete) {
+      var pf = perfil.precios && perfil.precios.flete;
+      var fleteNum = parseInt(pf) || 0;
+      return fleteNum > 0 ? fleteNum : null;
+    }
+
+    // Caso mudanza: parsear "X ambientes" → "1".."4" o "5plus"
+    // Formato esperado del wizard: "1 ambientes", "2 ambientes", ...
+    var match = String(mudanza.ambientes || '').match(/^(\d+)/);
+    var n = match ? parseInt(match[1]) : 0;
+    if (n < 1) return null;
+
+    // Mapeo a key de la matriz de precios
+    var ambKey;
+    if (n === 1) ambKey = 'amb1';
+    else if (n === 2) ambKey = 'amb2';
+    else if (n === 3) ambKey = 'amb3';
+    else if (n === 4) ambKey = 'amb4';
+    else ambKey = 'amb5plus'; // 5+ ambientes
+
+    // Nivel del cliente: 'esencial' | 'integral' | 'llave'
+    var nivel = mudanza.nivel || 'esencial';
+    if (nivel !== 'esencial' && nivel !== 'integral' && nivel !== 'llave') {
+      nivel = 'esencial';
+    }
+
+    // 1) Modelo nuevo: perfil.preciosLeads (matriz 5×3)
+    if (perfil.preciosLeads && perfil.preciosLeads[ambKey]) {
+      var pln = parseInt(perfil.preciosLeads[ambKey][nivel]) || 0;
+      if (pln > 0) return pln;
+    }
+
+    // 2) Modelo viejo: perfil.precios (solo amb1..amb4, no amb5plus)
+    var ambKeyViejo = (ambKey === 'amb5plus') ? 'amb4' : ambKey; // 5+ cae a amb4 en modelo viejo
+    if (perfil.precios && perfil.precios[ambKeyViejo] != null) {
+      var raw = perfil.precios[ambKeyViejo];
+      // Puede ser número plano o {esencial,integral,llave}
+      if (typeof raw === 'object' && raw !== null) {
+        var v = parseInt(raw[nivel]) || 0;
+        if (v > 0) return v;
+      } else {
+        var nv = parseInt(raw) || 0;
+        if (nv > 0) return nv;
+      }
+    }
+
+    return null;
+  } catch (e) {
+    console.error('obtenerPrecioPerfil error:', e && e.message);
+    return null;
+  }
+}
+
 async function enviarEmailAceptacion(mudanza, cot) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   if (!process.env.RESEND_API_KEY) return;
 
   const siteUrl = process.env.SITE_URL || 'https://mudateya.ar';
-  const precioTotal = parseInt(cot.precio) || 0;
+  // FIX: el monto del mail debe ser el precio del PERFIL del mudancero al
+  // momento que el cliente lo eligió, no el cot.precio (que puede no existir
+  // en flujo dirigido o estar desactualizado). Fallback defensivo a cot.precio.
+  const precioPerfil = await obtenerPrecioPerfil(cot.mudanceroEmail, mudanza);
+  const precioTotal = precioPerfil || parseInt(cot.precio) || 0;
   const montoAnticipo = Math.round(precioTotal * 0.5); // ← 50% del precio
   const precioFmt = '$' + precioTotal.toLocaleString('es-AR');
   const anticipoFmt = '$' + montoAnticipo.toLocaleString('es-AR');
@@ -2431,7 +2508,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
       from: 'MudateYa <noreply@mudateya.ar>',
       to: cot.mudanceroEmail,
       subject: `🎉 ¡Aceptaron tu cotización! — ${mudanza.desde} → ${mudanza.hasta}`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
         <div style="background:#003580;padding:20px 28px">
           <span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span>
           <span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">🎉 Te eligieron</span>
@@ -2457,7 +2534,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
           </a>
         </div>
         <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
-      </div>`,
+      </div></body></html>`,
       attachments,
     });
   }
