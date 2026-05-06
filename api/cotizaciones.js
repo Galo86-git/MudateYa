@@ -1828,6 +1828,53 @@ module.exports = async function handler(req, res) {
       perfil.versionTerminos     = '1.0';
       await setJSON(`mudancero:perfil:${datos.email}`, perfil);
       await redisCall('DEL', `terminos:token:${token}`);
+
+      // ── Notificar al admin que se firmaron los TyC ──────────────────
+      // Si falla el envío, no rompe el flujo: la firma del mudancero
+      // ya quedó guardada en Redis arriba.
+      try {
+        const adminEmail = process.env.ADMIN_EMAIL || 'jgalozaldivar@gmail.com';
+        if (adminEmail && process.env.RESEND_API_KEY) {
+          const resendTyC = new Resend(process.env.RESEND_API_KEY);
+          const fechaFmt = new Date(perfil.fechaAceptoTerminos).toLocaleString('es-AR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires'
+          });
+          await resendTyC.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>',
+            to: adminEmail,
+            subject: `[ADMIN] ✅ TyC firmados — ${perfil.nombre || datos.email}`,
+            html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+              <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">📋 Panel admin</span></div>
+              <div style="background:#F0FDF4;border-bottom:1px solid #BBF7D0;padding:12px 28px;font-size:13px;color:#15803D;font-weight:600">✅ Mudancero activo · TyC firmados</div>
+              <div style="padding:28px">
+                <p style="font-size:15px;color:#0F1923;margin:0 0 16px">Hola Admin, un mudancero acaba de aceptar los Términos y Condiciones. Su cuenta ya está activa y aparece en el catálogo.</p>
+
+                <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:14px 0 8px">DATOS DEL MUDANCERO</div>
+                <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+                  <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Nombre</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${perfil.nombre || '—'}</td></tr>
+                  ${perfil.empresa ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Empresa</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${perfil.empresa}</td></tr>` : ''}
+                  <tr${perfil.empresa ? '' : ' style="background:#F5F7FA"'}><td style="color:#64748B;padding:7px ${perfil.empresa ? '0' : '8px'};font-size:13px">Email</td><td style="font-size:13px;color:#0F1923;padding:7px 0"><a href="mailto:${datos.email}" style="color:#003580;text-decoration:none">${datos.email}</a></td></tr>
+                  ${perfil.telefono ? `<tr${perfil.empresa ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:7px ${perfil.empresa ? '8px' : '0'};font-size:13px">WhatsApp</td><td style="font-size:13px;color:#0F1923;padding:7px 0"><a href="https://wa.me/${String(perfil.telefono).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:600">${perfil.telefono}</a></td></tr>` : ''}
+                  ${perfil.zonaBase ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Zona base</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${perfil.zonaBase}</td></tr>` : ''}
+                </table>
+
+                <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:14px 0 8px">FIRMA</div>
+                <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+                  <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Fecha y hora</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${fechaFmt}</td></tr>
+                  <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Versión TyC</td><td style="font-size:13px;color:#0F1923;padding:7px 0">v${perfil.versionTerminos}</td></tr>
+                </table>
+
+                <div style="margin-top:8px">
+                  <a href="https://mudateya.ar/admin" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en panel admin →</a>
+                </div>
+              </div>
+              <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ${datos.email}</div>
+            </div></body></html>`,
+          });
+        }
+      } catch(e) { console.error('Email admin TyC firmados error:', e && e.message); }
+
       return res.status(200).json({ ok: true, nombre: perfil.nombre });
     }
 
