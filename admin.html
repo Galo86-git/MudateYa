@@ -616,6 +616,11 @@ tr:hover td{background:rgba(34,195,106,.03)}
             <option value="Aprobado">Aprobados</option>
             <option value="Rechazado">Rechazados</option>
           </select>
+          <select class="search-input" id="filterTyC" style="flex:0 0 160px" onchange="filterMudanceros()">
+            <option value="">TyC: Todos</option>
+            <option value="firmado">✓ Firmaron TyC</option>
+            <option value="pendiente">⏳ TyC pendiente</option>
+          </select>
           <select class="search-input" id="filterActualizacion" style="flex:0 0 180px" onchange="filterMudanceros()">
             <option value="">Actualización: Todos</option>
             <option value="hoy">Hoy</option>
@@ -1390,7 +1395,9 @@ async function loadMudanceros(){
         m.cuilVerificado ? 'Verificado' : 'No verificado',
         m.dniLegible ? 'Legible' : 'No legible',
         m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente',
-        m.ultimaActualizacion || ''  // [22] última edición de perfil
+        m.ultimaActualizacion || '',  // [22] última edición de perfil
+        m.terminosAceptados === true,  // [23] firmó TyC (boolean)
+        m.fechaAceptoTerminos || ''    // [24] fecha de firma TyC (ISO)
       ];
     });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
@@ -1462,10 +1469,16 @@ function renderDashboard(){
     var t = tiempoRelativo(m[22]);
     return t.dias <= 7 && t.dias < 9999;
   }).length;
+  // TyC firmados sobre aprobados
+  var aprobadosCohort = mudancerosData.filter(function(m){ return getEstado(m) === 'Aprobado'; });
+  var tycFirmados = aprobadosCohort.filter(function(m){ return m[23] === true; }).length;
+  var tycPendientes = aprobados - tycFirmados;
+
   var subTexto = '';
   if (pendientes > 0) subTexto = pendientes + ' pendientes';
+  if (tycPendientes > 0) subTexto += (subTexto ? ' · ' : '') + '⏳ ' + tycPendientes + ' sin TyC';
   if (editaron7d > 0) subTexto += (subTexto ? ' · ' : '') + '🟢 ' + editaron7d + ' editaron 7d';
-  if (!subTexto) subTexto = 'todos aprobados';
+  if (!subTexto) subTexto = aprobados > 0 ? '✓ todos firmaron TyC' : 'todos aprobados';
   document.getElementById('m-pendientes-sub').textContent = subTexto;
   document.getElementById('m-mudanzas').textContent = totalPagos;
   document.getElementById('m-gmv').textContent = gmv > 0 ? '$' + Math.round(gmv).toLocaleString('es-AR') : '—';
@@ -1535,6 +1548,7 @@ function filterMudanceros(){
   var estado = document.getElementById('filterEstado').value;
   var fAct = (document.getElementById('filterActualizacion') || {}).value || '';
   var fOrden = (document.getElementById('filterOrden') || {}).value || 'reciente';
+  var fTyC = (document.getElementById('filterTyC') || {}).value || '';
 
   var filtered = mudancerosData.filter(function(m){
     var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
@@ -1549,7 +1563,14 @@ function filterMudanceros(){
       else if (fAct === 'viejos') matchA = t.dias > 30 && t.dias < 9999;
       else if (fAct === 'nunca')  matchA = !m[22];
     }
-    return matchQ && matchE && matchA;
+    // Filtro TyC: solo aplica a aprobados (es la cohorte que puede firmar)
+    var matchT = true;
+    if (fTyC) {
+      var esAprobado = getEstado(m) === 'Aprobado';
+      if (fTyC === 'firmado')   matchT = esAprobado && m[23] === true;
+      else if (fTyC === 'pendiente') matchT = esAprobado && m[23] !== true;
+    }
+    return matchQ && matchE && matchA && matchT;
   });
 
   // Ordenar
@@ -1605,11 +1626,22 @@ function filterMudanceros(){
   } else {
     // Render como tabla en desktop
     document.getElementById('mudancerosList').innerHTML =
-      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Actualizado</th><th>Estado</th><th></th></tr></thead><tbody>'
+      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Actualizado</th><th>Estado</th><th>TyC</th><th></th></tr></thead><tbody>'
       + filtered.map(function(m){
           var idx = mudancerosData.indexOf(m);
           var est = getEstado(m);
-          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td>'+pillTiempoRel(m[22])+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
+          // TyC: solo aplica para aprobados. Pendiente/rechazado se muestra como "—"
+          var tycCell;
+          if (est !== 'Aprobado') {
+            tycCell = '<span style="color:#94A3B8;font-size:11px">—</span>';
+          } else if (m[23] === true) {
+            // Firmado: tooltip con fecha si está disponible
+            var fechaTyC = m[24] ? new Date(m[24]).toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit', year:'numeric'}) : '';
+            tycCell = '<span style="color:#15803D;font-weight:600;font-size:12px" title="Firmado el '+fechaTyC+'">✓ '+(fechaTyC||'Firmado')+'</span>';
+          } else {
+            tycCell = '<span style="color:#B45309;font-weight:600;font-size:12px;background:#FFF7ED;border:1px solid #FED7AA;padding:2px 8px;border-radius:10px">⏳ Pendiente</span>';
+          }
+          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td>'+pillTiempoRel(m[22])+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td>'+tycCell+'</td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
         }).join('')
       + '</tbody></table>';
   }
