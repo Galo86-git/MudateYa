@@ -2010,6 +2010,8 @@ module.exports = async function handler(req, res) {
             precioFleteNuevo:    p.precioFleteNuevo     || '',
             // Compat: sinEstres del modelo viejo (algunos perfiles aún lo tienen)
             sinEstres:           p.sinEstres === true,
+            // Tipo de cobro: 'porHora' | 'fijo' | undefined (fallback heurístico en frontend)
+            tipoCobro:           p.tipoCobro            || '',
           });
         } catch(e) {}
       }
