@@ -3322,11 +3322,11 @@ async function guardarEdicion(){
 
   // ── Servicios y precios desde las 4 svc-cards ──
   var servActivos = Object.keys(_edSvc).filter(function(k){ return _edSvc[k]; });
-  // Si el mudancero cobra por hora (caso Córdoba), saltamos las validaciones de
-  // servicios y precios — no usa la matriz de precios fijos por ambiente.
-  var esPorHora = cambios.tipoCobro === 'porHora';
+  // Si el mudancero tiene tipoCobro override (porHora o fijo manual), saltamos las
+  // validaciones de servicios y precios — el admin ya marcó explícitamente cómo cobra.
+  var saltarValidacion = cambios.tipoCobro === 'porHora' || cambios.tipoCobro === 'fijo';
   // Validar: tiene que haber al menos un servicio
-  if (!esPorHora && servActivos.length === 0) {
+  if (!saltarValidacion && servActivos.length === 0) {
     if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
     alert('Activá al menos un servicio (Esencial, Integral, Llave en mano o Flete).');
     var firstSvc = document.getElementById('ed-svcEsencial');
@@ -3334,7 +3334,7 @@ async function guardarEdicion(){
     return;
   }
   // Validar: cada servicio activo tiene que tener precio
-  var erroresPrecios = esPorHora ? [] : edValidarServiciosPrecios();
+  var erroresPrecios = saltarValidacion ? [] : edValidarServiciosPrecios();
   if (erroresPrecios.length > 0) {
     if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
     alert('Cargá al menos un precio en: ' + erroresPrecios.join(', '));
