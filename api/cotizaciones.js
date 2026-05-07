@@ -522,11 +522,24 @@ function generarSlug(texto) {
     .replace(/-+$/, '');                               // sin guion final
 }
 
-// Asegura que el perfil tenga un slug único guardado en Redis.
-// Si no tiene, lo genera desde empresa/nombre. Si hay duplicado, append -2, -3, etc.
+// Asegura que el perfil tenga un slug único guardado en Redis Y que la key
+// inversa slug:{slug} → email también exista. Es idempotente: aunque el perfil
+// ya tenga slug, repara la key inversa si falta (caso típico tras un deploy).
 async function asegurarSlug(perfil) {
-  if (perfil && perfil.slug) return perfil.slug;
   if (!perfil || !perfil.email) return null;
+
+  // Caso 1: el perfil ya tiene slug → reparar key inversa si falta y devolver
+  if (perfil.slug) {
+    try {
+      const keyExiste = await redisCall('GET', `slug:${perfil.slug}`);
+      if (keyExiste !== perfil.email) {
+        await redisCall('SET', `slug:${perfil.slug}`, perfil.email);
+      }
+    } catch(e) { console.warn('asegurarSlug repair:', e && e.message); }
+    return perfil.slug;
+  }
+
+  // Caso 2: el perfil NO tiene slug → generar uno desde empresa/nombre
   const base = generarSlug(perfil.empresa || perfil.nombre || perfil.email.split('@')[0] || 'mudancero');
   if (!base) return null;
   let candidato = base;
@@ -1664,9 +1677,9 @@ module.exports = async function handler(req, res) {
         try {
           const p = await getJSON(`mudancero:perfil:${email}`);
           if (p) {
-            // Migración progresiva: generar slug si no tiene (solo para aprobados).
-            // Esto asegura que todos los mudanceros activos tengan link público.
-            if (!p.slug && p.estado === 'aprobado') {
+            // Migración progresiva: asegurar slug + key inversa para todos los aprobados.
+            // asegurarSlug es idempotente: si el slug ya existe, solo repara la key inversa.
+            if (p.estado === 'aprobado') {
               try { await asegurarSlug(p); } catch(e) { console.warn('asegurarSlug:', e.message); }
             }
             mudanceros.push(p);
