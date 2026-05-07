@@ -888,14 +888,43 @@ var _mudancero = null;
   try { m = JSON.parse(sessionStorage.getItem('perfilMudancero')); } catch(e){}
 
   var urlEmail = null;
+  var urlSlug  = null;
   try {
     var params = new URLSearchParams(window.location.search);
     urlEmail = params.get('id') ? decodeURIComponent(params.get('id')) : null;
+    urlSlug  = params.get('slug') ? decodeURIComponent(params.get('slug')).toLowerCase() : null;
   } catch(e) {}
 
+  // Si viene por slug, el email se resuelve después del fetch
   var email = (m && m.email) || urlEmail;
 
+  // Caso A: vino por slug (URL pública mudateya.ar/m/{slug})
+  if (urlSlug && !urlEmail) {
+    fetch('/api/cotizaciones?action=mudancero-publico&slug=' + encodeURIComponent(urlSlug))
+      .then(function(r){
+        if (!r.ok) {
+          if (r.status === 404) { renderError(); return null; }
+          throw new Error('HTTP ' + r.status);
+        }
+        return r.json();
+      })
+      .then(function(datos){
+        if (!datos) return;
+        // Cachear para que la próxima abra al toque
+        try { sessionStorage.setItem('perfilMudancero', JSON.stringify(datos)); } catch(e){}
+        renderConDatos(datos);
+      })
+      .catch(function(){ renderError(); });
+    return;
+  }
+
+  // Caso B: legacy con ?id=email
   if (!email) {
+    renderError();
+    return;
+  }
+
+  function renderError() {
     document.getElementById('mainContainer').innerHTML =
       '<div style="text-align:center;padding:4rem;color:var(--text3)">'
       +'<div style="font-size:3rem;margin-bottom:1rem">😕</div>'
@@ -903,17 +932,16 @@ var _mudancero = null;
       +'<p style="font-size:13px;margin-bottom:1.5rem">No pudimos cargar los datos de este mudancero.</p>'
       +'<a href="/" style="color:var(--blue);font-size:13px">← Volver al inicio</a>'
       +'</div>';
-    return;
   }
 
   function renderConDatos(datos) {
     _mudancero = datos;
-    var em = datos.email || '';
+    // Para colorización determinística, usar slug si no hay email
+    var em = datos.email || datos.slug || '';
     var idx = 0;
     for (var i = 0; i < em.length; i++) idx += em.charCodeAt(i);
     idx = idx % 50;
     var extra = getDatosExtra(idx);
-    // Fotos reales tienen prioridad sobre las de stock
     if (datos.fotosVehiculo && datos.fotosVehiculo.length) {
       extra.fotos = datos.fotosVehiculo;
     } else if (datos.fotoCamion) {
@@ -926,7 +954,7 @@ var _mudancero = null;
     _setFotosLightbox(extra.fotos);
   }
 
-  // Siempre buscar datos frescos de Redis
+  // Caso B (legacy): siempre buscar datos frescos vía catalogo
   fetch('/api/cotizaciones?action=catalogo')
     .then(function(r){ return r.json(); })
     .then(function(d) {
