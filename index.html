@@ -2117,6 +2117,17 @@
         return;
       }
       _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
+      // ── Pre-selección desde landing pública (mudateya.ar/m/{slug}) ──
+      // Si el cliente vino desde la landing del mudancero, lo dejamos pre-seleccionado
+      // para que la cotización vaya en modo dirigido a ese mudancero.
+      try {
+        var qpMud = (new URLSearchParams(window.location.search)).get('mudancero');
+        if (qpMud && _todos && _todos.length) {
+          var slugBuscado = qpMud.toLowerCase();
+          var match = _todos.find(function(m){ return (m.slug||'').toLowerCase() === slugBuscado; });
+          if (match && match.email) _sel.add(match.email);
+        }
+      } catch(e) {}
     } catch(e) { _todos = []; }
     renderResultados();
   }
