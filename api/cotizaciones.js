@@ -1643,6 +1643,15 @@ module.exports = async function handler(req, res) {
       camposPermitidos.forEach(function(k) {
         if (cambios[k] !== undefined && cambios[k] !== '') perfil[k] = cambios[k];
       });
+      // Tipo de cobro: 'porHora' o 'fijo'. Editable solo desde admin.
+      // Permite el string vacío como "limpiar" (para volver al fallback heurístico).
+      if (cambios.tipoCobro !== undefined) {
+        if (cambios.tipoCobro === 'porHora' || cambios.tipoCobro === 'fijo') {
+          perfil.tipoCobro = cambios.tipoCobro;
+        } else if (cambios.tipoCobro === '' || cambios.tipoCobro === null) {
+          delete perfil.tipoCobro;
+        }
+      }
       // Precios Pack (Plan Referidos) — objeto {esencial, integral, llave}
       if (cambios.preciosPack && typeof cambios.preciosPack === 'object') {
         var pp = cambios.preciosPack;
