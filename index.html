@@ -2175,16 +2175,22 @@
   // Devuelve el precio base del mudancero para el nivel y los ambientes pedidos.
   // En el nuevo modelo lee directamente de m.preciosEsencial / preciosIntegral / preciosLlave.
   // SI EL PACK NO ESTÁ CARGADO → devuelve 0 (no inventa precios con multiplicador).
-  // ¿El mudancero cobra por hora? (caso Córdoba — el resto del país cobra fijo).
-  // Detección por keywords en zonaBase + zonasExtra. Si en el futuro otras provincias
-  // cobran por hora (ej. Tucumán), agregalas acá.
-  function esCordobes(m) {
+  // ¿El mudancero cobra por hora? Lee de m.tipoCobro (campo del perfil, editable desde admin).
+  // Valores posibles: 'porHora' | 'fijo'. Si no está seteado, fallback a heurística por zona
+  // para preservar el comportamiento actual de los cordobeses ya en producción.
+  // Una vez que el admin edita explícitamente cada mudancero, el fallback no se activa.
+  function esTarifaPorHora(m) {
     if (!m) return false;
+    // 1) Modelo nuevo: campo explícito del perfil
+    if (m.tipoCobro === 'porHora') return true;
+    if (m.tipoCobro === 'fijo')    return false;
+    // 2) Fallback legacy: heurística geográfica (Córdoba)
     var zonas = ((m.zonaBase || '') + ' ' + (m.zonasExtra || '')).toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g,''); // sin acentos
-    // Keywords específicas de Córdoba (evita ambigüedad con "Capital" que comparte con CABA/Mendoza)
     return /\b(cordoba|cba|nueva\s*cordoba|villa\s*carlos\s*paz|alta\s*gracia|rio\s*cuarto|villa\s*allende|vcp|saldan|jesus\s*maria)\b/.test(zonas);
   }
+  // Alias retrocompatible: cualquier código antiguo que llame esCordobes() sigue funcionando
+  function esCordobes(m) { return esTarifaPorHora(m); }
 
   function precioMudanceroNivel(m, nivel, ambientes) {
     var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
