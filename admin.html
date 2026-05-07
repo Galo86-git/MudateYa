@@ -1397,7 +1397,8 @@ async function loadMudanceros(){
         m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente',
         m.ultimaActualizacion || '',  // [22] última edición de perfil
         m.terminosAceptados === true,  // [23] firmó TyC (boolean)
-        m.fechaAceptoTerminos || ''    // [24] fecha de firma TyC (ISO)
+        m.fechaAceptoTerminos || '',   // [24] fecha de firma TyC (ISO)
+        m.slug || ''                   // [25] slug para landing pública
       ];
     });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
@@ -3050,6 +3051,17 @@ function activarEdicion(){
   form += '</div>';
   form += '<div class="edit-field"><label>CUIL / CUIT</label><input id="ed-cuil" type="text" placeholder="20-12345678-9" value="'+esc(m[7]||'')+'"/></div>';
   form += '<div class="edit-field"><label>Sitio web o Instagram (opcional)</label><input id="ed-sitioweb" type="text" placeholder="https://... o @usuario" value=""/></div>';
+
+  // Link público de landing del mudancero (solo para aprobados con slug)
+  if (m[25]) {
+    var slugUrl = 'https://mudateya.ar/m/' + m[25];
+    form += '<div class="edit-field"><label>🔗 Link público para compartir <span style="color:#94A3B8;font-weight:400;font-size:11px">— el mudancero lo comparte por WhatsApp/IG</span></label>';
+    form += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+    form += '<input type="text" readonly value="'+esc(slugUrl)+'" style="flex:1;min-width:200px;background:#F5F7FA;font-family:var(--mono);font-size:12px"/>';
+    form += '<button type="button" class="btn-sm" onclick="(function(b){navigator.clipboard.writeText(\''+esc(slugUrl)+'\').then(function(){b.textContent=\'✓ Copiado\';setTimeout(function(){b.textContent=\'Copiar\';},1800);});})(this)" style="white-space:nowrap">Copiar</button>';
+    form += '<a href="'+esc(slugUrl)+'" target="_blank" rel="noopener" class="btn-sm" style="text-decoration:none;background:#003580;color:#fff;white-space:nowrap;padding:6px 12px;border-radius:6px;font-size:12px">Abrir →</a>';
+    form += '</div></div>';
+  }
 
   form += '<div class="edit-section-title">Zona de cobertura</div>';
   form += '<div class="edit-field"><label>Ciudad / zona base</label><select id="ed-zonaBase">'+ZONAS_HTML+'</select></div>';
