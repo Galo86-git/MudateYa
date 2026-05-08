@@ -2421,9 +2421,14 @@
               ? '<div class="mud-precio-desde">Por hora</div>'
                 + '<div class="mud-precio-num">$ '+precio.toLocaleString('es-AR')+' <span style="font-size:13px;font-weight:600;color:var(--text2)">/hr</span></div>'
                 + '<div class="mud-precio-sub" style="color:#B45309;font-weight:600">⏱ Tarifa por hora trabajada</div>'
-              : '<div class="mud-precio-desde">Desde</div>'
-                + '<div class="mud-precio-num">$ '+precio.toLocaleString('es-AR')+'</div>'
-                + '<div class="mud-precio-sub">precio estimado</div>'
+              : (precio > 0
+                  ? '<div class="mud-precio-desde">Desde</div>'
+                    + '<div class="mud-precio-num">$ '+precio.toLocaleString('es-AR')+'</div>'
+                    + '<div class="mud-precio-sub">precio estimado</div>'
+                  : '<div class="mud-precio-desde">Precio</div>'
+                    + '<div class="mud-precio-num" style="font-size:18px;color:var(--text2);font-weight:600">A consultar</div>'
+                    + '<div class="mud-precio-sub">cotiza al pedir</div>'
+                )
             )
         + '</div>'
         + '<div class="mud-card-actions" onclick="event.stopPropagation()">'
