@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu mudanza con MudateYa × Mudafy</title>
+<meta name="description" content="Coordiná tu mudanza al nuevo hogar que conseguiste con Mudafy. Servicio Llave en mano: ellos embalan, mueven y desembalan todo.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23003580'/%3E%3Ctext x='50' y='68' font-family='Georgia,serif' font-size='52' font-weight='900' fill='%2322C36A' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet"/>
+<style>
+  /* ════════════════════════════════════════════════════
+     COLORES Y TOKENS
+     - Mudateya: navy #003580 + green #22C36A
+     - Mudafy: coral #FF6B6B (su color de marca, usado con sobriedad)
+     ════════════════════════════════════════════════════ */
+  :root {
+    --navy: #003580;
+    --navy-dark: #002760;
+    --green: #22C36A;
+    --green-dark: #17A356;
+    --green-soft: #F0FDF4;
+    --green-bd: #BBF7D0;
+    --mudafy: #FF6B6B;
+    --mudafy-dark: #E85555;
+    --mudafy-soft: #FFF0F0;
+    --text: #0F1923;
+    --text2: #475569;
+    --text3: #94A3B8;
+    --border: #E2E8F0;
+    --border2: #CBD5E1;
+    --bg: #F7F9FC;
+    --white: #FFFFFF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+
+  /* ── Header co-branded ──────────────────────────── */
+  .top-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .top-bar-inner {
+    max-width: 720px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brands {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .logo-mudateya {
+    font-family: Georgia, serif; font-size: 20px; font-weight: 900;
+    color: var(--navy); letter-spacing: -0.5px;
+  }
+  .logo-mudateya .grn { color: var(--green-dark); }
+  .x-divider {
+    color: var(--text3); font-size: 16px; font-weight: 300;
+  }
+  .logo-mudafy {
+    font-size: 18px; font-weight: 700; color: var(--mudafy);
+    letter-spacing: -0.4px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .logo-mudafy::before {
+    content: ''; width: 18px; height: 18px;
+    background: var(--mudafy);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M3 12L12 3l9 9v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z'/%3E%3C/svg%3E") center/contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M3 12L12 3l9 9v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z'/%3E%3C/svg%3E") center/contain no-repeat;
+    border-radius: 4px;
+  }
+  .top-tag {
+    font-size: 11px; color: var(--text3); font-family: 'Inter', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Container ──────────────────────────────────── */
+  .container {
+    max-width: 720px; margin: 0 auto; padding: 28px 20px 80px;
+  }
+
+  /* ── Hero ───────────────────────────────────────── */
+  .hero {
+    background: var(--white);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 36px 32px 28px;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .hero-eyebrow {
+    font-size: 11px; color: var(--mudafy);
+    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 12px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .hero-eyebrow .dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--mudafy);
+    display: inline-block;
+  }
+  .hero-title {
+    font-family: Georgia, serif;
+    font-size: 28px; font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+  .hero-subtitle {
+    font-size: 15px; color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 0;
+  }
+  .hero-subtitle .highlight {
+    color: var(--green-dark); font-weight: 600;
+  }
+
+  /* ── Card de propiedad de Mudafy (si viene preselected) ── */
+  .property-card {
+    background: var(--mudafy-soft);
+    border: 1px solid rgba(255, 107, 107, 0.25);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .property-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--mudafy); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .property-icon svg { width: 20px; height: 20px; }
+  .property-info { flex: 1; min-width: 0; }
+  .property-label {
+    font-size: 10px; color: var(--mudafy-dark); font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .property-address {
+    font-size: 14px; color: var(--text); font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* ── Card "Cómo funciona" en 3 pasos ───────────── */
+  .steps-card {
+    background: var(--white);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 28px 32px;
+    margin-bottom: 16px;
+  }
+  .steps-title {
+    font-size: 11px; color: var(--text3);
+    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .step {
+    display: flex; gap: 14px; margin-bottom: 16px;
+    align-items: flex-start;
+  }
+  .step:last-child { margin-bottom: 0; }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--navy); color: var(--white);
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+  .step-body { flex: 1; }
+  .step-title-text {
+    font-size: 15px; font-weight: 600; color: var(--text);
+    margin-bottom: 3px;
+  }
+  .step-desc {
+    font-size: 13px; color: var(--text2); line-height: 1.55;
+  }
+
+  /* ── CTA principal ──────────────────────────────── */
+  .cta-card {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 16px;
+    color: var(--white);
+    text-align: center;
+  }
+  .cta-title {
+    font-family: Georgia, serif;
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .cta-subtitle {
+    font-size: 13px; opacity: 0.85;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .btn-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--green); color: var(--navy);
+    font-size: 16px; font-weight: 800;
+    padding: 16px 36px;
+    border: none; border-radius: 12px;
+    text-decoration: none; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(34, 195, 106, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 195, 106, 0.5);
+  }
+  .btn-cta svg { width: 18px; height: 18px; }
+
+  /* ── Banner Llave en mano ──────────────────────── */
+  .feature-banner {
+    background: var(--green-soft);
+    border: 1px solid var(--green-bd);
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .feature-icon {
+    flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--green-dark); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .feature-icon svg { width: 18px; height: 18px; }
+  .feature-text {
+    font-size: 13px; color: var(--green-dark); line-height: 1.5;
+  }
+  .feature-text strong { font-weight: 700; }
+
+  /* ── Trust row ───────────────────────────────── */
+  .trust-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .trust-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .trust-num {
+    font-family: Georgia, serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .trust-lbl {
+    font-size: 11px; color: var(--text2); font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+
+  /* ── Footer ─────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    padding: 24px 16px 12px;
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .footer a {
+    color: var(--text2); text-decoration: none;
+  }
+  .footer a:hover { text-decoration: underline; }
+  .footer-divider {
+    margin: 0 8px; color: var(--border2);
+  }
+
+  /* ── Mobile ─────────────────────────────────────── */
+  @media (max-width: 480px) {
+    .container { padding: 20px 14px 60px; }
+    .hero { padding: 28px 22px 22px; }
+    .hero-title { font-size: 24px; }
+    .steps-card { padding: 22px; }
+    .cta-card { padding: 24px 22px; }
+    .cta-title { font-size: 19px; }
+    .btn-cta { width: 100%; justify-content: center; padding: 14px 20px; font-size: 15px; }
+    .top-bar { padding: 12px 16px; }
+    .top-tag { display: none; }
+    .trust-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .trust-item { padding: 12px 8px; }
+    .trust-num { font-size: 19px; }
+    .trust-lbl { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div class="brands">
+      <span class="logo-mudateya">Mudate<span class="grn">Ya</span></span>
+      <span class="x-divider">×</span>
+      <span class="logo-mudafy">mudafy</span>
+    </div>
+    <span class="top-tag">Servicio premium</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      <span id="heroEyebrow">Felicitaciones por tu nueva propiedad</span>
+    </div>
+    <h1 class="hero-title" id="heroTitle">Coordiná tu mudanza al nuevo hogar.</h1>
+    <p class="hero-subtitle">
+      Conectamos a clientes de Mudafy con mudanceros verificados que ofrecen
+      <span class="highlight">servicio Llave en mano</span> — ellos embalan, mueven y desembalan todo por vos.
+    </p>
+
+    <!-- Card de propiedad pre-cargada (si viene de Mudafy con la dirección) -->
+    <div class="property-card" id="propertyCard" style="display:none">
+      <div class="property-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 12h3v9h6v-7h2v7h6v-9h3z"/>
+        </svg>
+      </div>
+      <div class="property-info">
+        <div class="property-label">Tu nuevo hogar de Mudafy</div>
+        <div class="property-address" id="propertyAddress">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANNER LLAVE EN MANO -->
+  <div class="feature-banner">
+    <div class="feature-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="feature-text">
+      Para clientes de Mudafy seleccionamos solo mudanceros con servicio
+      <strong>Llave en mano</strong>: vos no movés una caja.
+    </div>
+  </div>
+
+  <!-- CÓMO FUNCIONA -->
+  <div class="steps-card">
+    <div class="steps-title">Cómo funciona</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title-text">Contanos los datos de tu mudanza</div>
+        <div class="step-desc">Origen, destino, ambientes y fecha estimada. Te toma 1 minuto.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title-text">Recibí cotizaciones de mudanceros verificados</div>
+        <div class="step-desc">Comparás precios, fotos, calificaciones y elegís a quien mejor te convenga.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title-text">Pagás seguro y te mudás sin estrés</div>
+        <div class="step-desc">Pagás por Mercado Pago o transferencia. Ellos hacen todo el trabajo.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA PRINCIPAL -->
+  <div class="cta-card">
+    <h2 class="cta-title">Empezá tu mudanza ahora</h2>
+    <p class="cta-subtitle">Te toma 1 minuto pedir cotizaciones. Sin obligación de aceptarlas.</p>
+    <a class="btn-cta" id="btnCta" href="/">
+      Comenzar mi mudanza
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>
+    Operado por <a href="https://mudateya.ar">MudateYa</a> · Marketplace de mudanzas verificadas
+    <span class="footer-divider">·</span>
+    <a href="https://mudafy.com.ar" target="_blank" rel="noopener">mudafy.com.ar</a>
+  </p>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MUDAFY LANDING — Lee parámetros del partner desde la URL:
+//   ?asesor=12345    → ID del asesor de Mudafy que comparte el link
+//   ?propiedad=ABC   → ID de la propiedad que cerró el cliente
+//   ?direccion=...   → Dirección del nuevo hogar (opcional, pre-llena destino)
+//   ?nombre=Juan     → Nombre del cliente (opcional, personaliza saludo)
+//
+// El botón "Comenzar mi mudanza" redirige al index pasando estos params,
+// para que el flujo de cotización quede asociado al partner Mudafy.
+// ═══════════════════════════════════════════════════════
+(function init() {
+  var params = new URLSearchParams(window.location.search);
+  var asesor    = params.get('asesor')    || '';
+  var propiedad = params.get('propiedad') || '';
+  var direccion = params.get('direccion') || '';
+  var nombre    = params.get('nombre')    || '';
+
+  // Personalizar saludo si vino el nombre
+  if (nombre) {
+    document.getElementById('heroEyebrow').textContent =
+      'Felicitaciones, ' + nombre + ' 🎉';
+  }
+
+  // Si vino la dirección de la propiedad, mostramos la card
+  if (direccion) {
+    document.getElementById('propertyAddress').textContent = direccion;
+    document.getElementById('propertyCard').style.display = 'flex';
+  }
+
+  // Construir URL de redirección al index conservando los params del partner.
+  // En FASE 2 el index detectará ?fromMudafy=1 y filtrará el catálogo a
+  // Llave en mano + persistirá el partner en la mudanza para trackeo.
+  var qs = new URLSearchParams();
+  qs.set('fromMudafy', '1');
+  if (asesor)    qs.set('asesor', asesor);
+  if (propiedad) qs.set('propiedad', propiedad);
+  if (direccion) qs.set('direccion', direccion);
+  if (nombre)    qs.set('nombre', nombre);
+
+  document.getElementById('btnCta').href = '/?' + qs.toString();
+})();
+</script>
+
+</body>
+</html>
