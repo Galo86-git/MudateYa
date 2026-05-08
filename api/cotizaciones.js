@@ -504,57 +504,6 @@ async function hookAsesorCancelado(pedidoAsesorId) {
   } catch(e) { console.warn('hookAsesorCancelado:', e.message); }
 }
 
-// ════════════════════════════════════════════════════
-// LANDING PÚBLICA DEL MUDANCERO — helpers para slug
-// Genera URLs tipo mudateya.ar/m/{slug} para que el mudancero comparta
-// su perfil sin exponer su email en la URL.
-// ════════════════════════════════════════════════════
-function generarSlug(texto) {
-  if (!texto) return '';
-  return String(texto)
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .substring(0, 40)
-    .replace(/-+$/, '');
-}
-
-// Asegura que el perfil tenga un slug único guardado en Redis Y que la key
-// inversa slug:{slug} → email también exista. Es idempotente.
-async function asegurarSlug(perfil) {
-  if (!perfil || !perfil.email) return null;
-
-  // Caso 1: el perfil ya tiene slug → reparar key inversa si falta
-  if (perfil.slug) {
-    try {
-      const keyExiste = await redisCall('GET', `slug:${perfil.slug}`);
-      if (keyExiste !== perfil.email) {
-        await redisCall('SET', `slug:${perfil.slug}`, perfil.email);
-      }
-    } catch(e) { console.warn('asegurarSlug repair:', e && e.message); }
-    return perfil.slug;
-  }
-
-  // Caso 2: el perfil NO tiene slug → generar uno desde empresa/nombre
-  const base = generarSlug(perfil.empresa || perfil.nombre || perfil.email.split('@')[0] || 'mudancero');
-  if (!base) return null;
-  let candidato = base;
-  let n = 2;
-  for (let i = 0; i < 20; i++) {
-    const yaUsado = await redisCall('GET', `slug:${candidato}`);
-    if (!yaUsado || yaUsado === perfil.email) break;
-    candidato = base + '-' + n;
-    n++;
-  }
-  await redisCall('SET', `slug:${candidato}`, perfil.email);
-  perfil.slug = candidato;
-  await setJSON(`mudancero:perfil:${perfil.email}`, perfil);
-  return candidato;
-}
-
 module.exports = async function handler(req, res) {
   // ── CORS: solo aceptar requests desde mudateya.ar ──────────────
   const allowedOrigins = [
@@ -1675,14 +1624,7 @@ module.exports = async function handler(req, res) {
       for (const email of todos) {
         try {
           const p = await getJSON(`mudancero:perfil:${email}`);
-          if (p) {
-            // Migración progresiva: asegurar slug + key inversa para todos los aprobados.
-            // asegurarSlug es idempotente: si el slug ya existe, solo repara la key inversa.
-            if (p.estado === 'aprobado') {
-              try { await asegurarSlug(p); } catch(e) { console.warn('asegurarSlug:', e.message); }
-            }
-            mudanceros.push(p);
-          }
+          if (p) mudanceros.push(p);
         } catch(e) {}
       }
       return res.status(200).json({ mudanceros });
@@ -1755,8 +1697,6 @@ module.exports = async function handler(req, res) {
         // Setear verificaciones si se pasan explícitamente
         if (verificadoIdentidad !== undefined) perfil.verificadoIdentidad = verificadoIdentidad;
         if (verificadoVehiculo  !== undefined) perfil.verificadoVehiculo  = verificadoVehiculo;
-        // Generar slug para landing pública (mudateya.ar/m/{slug})
-        try { await asegurarSlug(perfil); } catch(e) { console.warn('asegurarSlug:', e.message); }
       }
       await setJSON(`mudancero:perfil:${email}`, perfil);
 
@@ -2072,68 +2012,12 @@ module.exports = async function handler(req, res) {
             sinEstres:           p.sinEstres === true,
             // Tipo de cobro: 'porHora' | 'fijo' | undefined (fallback heurístico en frontend)
             tipoCobro:           p.tipoCobro            || '',
-            // Slug para landing pública (mudateya.ar/m/{slug})
-            slug:                p.slug                 || '',
           });
         } catch(e) {}
       }
       // Ordenar por calificación desc
       catalogo.sort((a,b) => (b.calificacion - a.calificacion) || (b.trabajosCompletados - a.trabajosCompletados));
       return res.status(200).json({ mudanceros: catalogo, sinCobertura: catalogo.length === 0 && palabrasBuscadas.length > 0 });
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // LANDING PÚBLICA DEL MUDANCERO — GET ?action=mudancero-publico&slug={slug}
-    // Devuelve perfil público (sin CBU, fotos DNI, ni email expuesto) para
-    // landings tipo mudateya.ar/m/{slug}.
-    // ═══════════════════════════════════════════════════════════════
-    if (action === 'mudancero-publico' && req.method === 'GET') {
-      const { slug } = req.query;
-      if (!slug) return res.status(400).json({ error: 'Falta slug' });
-      const slugLimpio = generarSlug(slug);
-      const email = await redisCall('GET', `slug:${slugLimpio}`);
-      if (!email) return res.status(404).json({ error: 'Mudancero no encontrado' });
-      const p = await getJSON(`mudancero:perfil:${email}`);
-      if (!p || p.estado !== 'aprobado') {
-        return res.status(404).json({ error: 'Mudancero no disponible' });
-      }
-      return res.status(200).json({
-        slug:                p.slug || slugLimpio,
-        nombre:              p.nombre,
-        empresa:             p.empresa             || '',
-        zonaBase:            p.zonaBase             || '',
-        zonasExtra:          p.zonasExtra           || '',
-        vehiculo:            p.vehiculo             || '',
-        cantVehiculos:       p.cantVehiculos        || '',
-        equipo:              p.equipo               || '',
-        servicios:           p.servicios            || '',
-        serviciosActivos:    Array.isArray(p.serviciosActivos) ? p.serviciosActivos : null,
-        calificacion:        p.calificacion         || 0,
-        nroResenas:          p.nroResenas           || 0,
-        trabajosCompletados: p.trabajosCompletados  || 0,
-        verificadoIdentidad: p.verificadoIdentidad  || false,
-        verificadoVehiculo:  p.verificadoVehiculo   || false,
-        verificadoSeguro:    p.verificadoSeguro     || false,
-        seguroMudanza:       p.seguroMudanza === true,
-        foto:                p.foto                 || '',
-        fotoCamion:          p.fotoCamion           || '',
-        fotosVehiculo:       p.fotosVehiculo        || (p.fotoCamion ? [p.fotoCamion] : []),
-        horarios:            p.horarios             || '',
-        dias:                p.dias                 || '',
-        anticipacion:        p.anticipacion         || '',
-        extra:               p.extra                || '',
-        sitioWeb:            p.sitioWeb             || '',
-        añosExp:             p.añosExp              || '',
-        tipoCobro:           p.tipoCobro            || '',
-        precios:             p.precios              || {},
-        preciosEsencial:     p.preciosEsencial      || null,
-        preciosIntegral:     p.preciosIntegral      || null,
-        preciosLlave:        p.preciosLlave         || null,
-        precioFleteNuevo:    p.precioFleteNuevo     || '',
-        sinEstres:           p.sinEstres === true,
-        // Importante: array vacío para evitar TypeError en m.resenas.slice() en frontend
-        resenas:             Array.isArray(p.resenas) ? p.resenas : [],
-      });
     }
 
     if (action === 'rechazar' && req.method === 'POST') {
