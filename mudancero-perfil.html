@@ -919,15 +919,26 @@ var _mudancero = null;
   try { m = JSON.parse(sessionStorage.getItem('perfilMudancero')); } catch(e){}
 
   // ── Leer params de la URL ──
+  // El slug puede venir de DOS formas:
+  //   A) /m/velocity  → leer del path (cuando Vercel rewrite NO funciona)
+  //   B) /mudancero-perfil.html?slug=velocity → leer del query (cuando rewrite SÍ funciona)
+  // Probamos ambas para máxima robustez.
   var urlEmail = null;
   var urlSlug  = null;
   try {
     var params = new URLSearchParams(window.location.search);
     urlEmail = params.get('id') ? decodeURIComponent(params.get('id')) : null;
     urlSlug  = params.get('slug') ? decodeURIComponent(params.get('slug')).toLowerCase() : null;
+    // Fallback: si no vino por query, probar leerlo del path /m/{slug}
+    if (!urlSlug && !urlEmail) {
+      var pathMatch = window.location.pathname.match(/^\/m\/([^\/?#]+)/i);
+      if (pathMatch && pathMatch[1]) {
+        urlSlug = decodeURIComponent(pathMatch[1]).toLowerCase();
+      }
+    }
   } catch(e) {}
 
-  console.log('[mudancero-perfil] init → urlSlug=', urlSlug, 'urlEmail=', urlEmail);
+  console.log('[mudancero-perfil] init → urlSlug=', urlSlug, 'urlEmail=', urlEmail, 'path=', window.location.pathname);
 
   // ── Caso A: vino por slug (URL pública mudateya.ar/m/{slug}) ──
   if (urlSlug && !urlEmail) {
