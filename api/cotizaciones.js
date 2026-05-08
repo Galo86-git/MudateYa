@@ -17,11 +17,22 @@ async function redisCall(method, ...args) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error('Redis no configurado');
-  const response = await fetch(`${url}/${[method, ...args].map(encodeURIComponent).join('/')}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  // Usamos POST con body JSON: ['SET', key, value] — más robusto que GET con args en path.
+  // En GET, valores largos o con caracteres especiales rompen el routing aunque vaya encodeado.
+  // POST manda los args como array JSON en el body, sin pasar por la URL.
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([method, ...args]),
   });
   const data = await response.json();
-  if (data.error) throw new Error(data.error);
+  if (!response.ok || data.error) {
+    console.error('[redisCall] FAIL', method, args[0], 'status:', response.status, 'error:', data.error || data);
+    throw new Error(data.error || `Upstash ${response.status}`);
+  }
   return data.result;
 }
 async function getJSON(key) {
