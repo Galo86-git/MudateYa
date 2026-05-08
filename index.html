@@ -2117,6 +2117,15 @@
         return;
       }
       _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
+      // ── Filtro duro Mudafy: solo mudanceros con servicio Llave en mano ──
+      // Aplicamos en el _todos (no en _filtrados) para que afecte transversalmente
+      // a todos los renders posteriores. El cliente nunca ve mudanceros sin Llave.
+      if (_partner && _partner.nombre === 'mudafy') {
+        _todos = _todos.filter(function(m){
+          var sa = m.serviciosActivos;
+          return Array.isArray(sa) && sa.indexOf('llave') !== -1;
+        });
+      }
     } catch(e) { _todos = []; }
     renderResultados();
   }
@@ -2321,11 +2330,25 @@
       return;
     }
     var html = '';
-    // Opción rápida (compacta: 1 línea de texto + botón)
-    html += '<div class="card-rapida" onclick="publicarAbierto()">'
-      + '<div class="cr-title">⚡ Recibí 5 cotizaciones sin mover un dedo</div>'
-      + '<button class="btn-cr" onclick="event.stopPropagation();publicarAbierto()">Solicitar</button>'
+    // Banner Mudafy — partner B2B: aclaramos contexto y filtro Llave en mano
+    if (_partner && _partner.nombre === 'mudafy') {
+      var saludoNombre = _partner.nombreCliente ? (', ' + _partner.nombreCliente) : '';
+      html += '<div style="background:linear-gradient(135deg,#FFF0F0 0%,#FFE5E5 100%);border:1px solid rgba(255,107,107,0.25);border-radius:14px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">'
+        + '<div style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:#FF6B6B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px">🏠</div>'
+        + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:13px;color:#0F1923;font-weight:700;line-height:1.35">Tu mudanza al nuevo hogar de Mudafy' + saludoNombre + '</div>'
+          + '<div style="font-size:12px;color:#475569;margin-top:2px">Te mostramos solo mudanceros con servicio <strong style="color:#16A34A">Llave en mano</strong></div>'
+        + '</div>'
       + '</div>';
+    }
+    // Opción rápida (compacta: 1 línea de texto + botón) — la ocultamos para
+    // partners B2B (Mudafy) porque el flujo abierto rompe el trackeo dirigido.
+    if (!(_partner && _partner.nombre === 'mudafy')) {
+      html += '<div class="card-rapida" onclick="publicarAbierto()">'
+        + '<div class="cr-title">⚡ Recibí 5 cotizaciones sin mover un dedo</div>'
+        + '<button class="btn-cr" onclick="event.stopPropagation();publicarAbierto()">Solicitar</button>'
+        + '</div>';
+    }
 
     // Top 3 "Más contratados" — se calcula sobre la lista filtrada pero
     // ordenada por trabajos (independiente del _filtros.orden visible del user,
@@ -2702,7 +2725,11 @@
           nivel: _busqueda.tipo === 'flete' ? 'flete' : (_nivel || 'esencial'),
           mudancerosInvitados:modo==='dirigido' ? Array.from(_sel) : [],
           refAliado: refAliado,
-          km: _busqueda.km || null
+          km: _busqueda.km || null,
+          // ── Trackeo de partner B2B (Mudafy / futuro Remax / etc.) ──
+          partner:        (_partner && _partner.nombre)    || '',
+          partnerAsesor:  (_partner && _partner.asesor)    || '',
+          partnerPropiedad: (_partner && _partner.propiedad) || ''
         })
       });
     } catch(e) { console.warn(e.message); }
@@ -2927,9 +2954,117 @@
   function toggleMenu() { document.getElementById('navBurger').classList.toggle('open'); document.getElementById('mobileMenu').classList.toggle('open'); }
   function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open'); }
 
+  // ════════════════════════════════════════════════════════════
+  // PARTNER MUDAFY — Integración con la proptech Mudafy
+  // Cuando el cliente viene desde mudateya.ar/mudafy (que redirige acá con
+  // ?fromMudafy=1&asesor=X&propiedad=Y&direccion=Z&nombre=N), activamos:
+  //   1. Filtro duro: solo mudanceros con servicio "Llave en mano"
+  //   2. Banner discreto arriba del catálogo
+  //   3. Trackeo: partner='mudafy' + asesor + propiedad guardado en la mudanza
+  //   4. Pre-llenar destino con la dirección de la propiedad cerrada
+  // El estado se persiste en sessionStorage para sobrevivir cambios de pantalla.
+  // ════════════════════════════════════════════════════════════
+  var _partner = null;
+  var _partnerFormData = null; // datos del wizard pre-cargados desde mudafy.html
+  try {
+    var qpPartner = new URLSearchParams(window.location.search);
+    if (qpPartner.get('fromMudafy') === '1') {
+      _partner = {
+        nombre: 'mudafy',
+        asesor:    qpPartner.get('asesor')    || '',
+        propiedad: qpPartner.get('propiedad') || '',
+        direccion: qpPartner.get('direccion') || '',
+        nombreCliente: qpPartner.get('nombre') || ''
+      };
+      sessionStorage.setItem('partnerActivo', JSON.stringify(_partner));
+      // Datos del form que el cliente ya llenó en mudafy.html.
+      // Si vienen, los aplicamos y disparamos la búsqueda automática.
+      _partnerFormData = {
+        desde:     qpPartner.get('desde')     || '',
+        hasta:     qpPartner.get('hasta')     || '',
+        ambientes: qpPartner.get('ambientes') || '',
+        fecha:     qpPartner.get('fecha')     || '',
+        nivel:     qpPartner.get('nivel')     || '',
+        tipo:      qpPartner.get('tipo')      || 'mudanza'
+      };
+    } else {
+      // Recuperar de sessionStorage (cliente ya estaba navegando con partner activo)
+      var stored = sessionStorage.getItem('partnerActivo');
+      if (stored) { try { _partner = JSON.parse(stored); } catch(e){} }
+    }
+  } catch(e) {}
+
+  // Pre-llenar inputs y disparar búsqueda automática cuando viene de mudafy.html.
+  // Lo hacemos después del DOMContentLoaded para asegurar que los inputs existan.
+  function _aplicarPartnerAlDOM() {
+    if (!_partner) return;
+
+    // Caso 1: solo vino el partner sin form data → solo pre-llenar destino
+    if (!_partnerFormData || (!_partnerFormData.desde && !_partnerFormData.hasta)) {
+      if (_partner.direccion) {
+        ['input-hasta', 'input-flete-hasta'].forEach(function(id){
+          var el = document.getElementById(id);
+          if (el && !el.value) el.value = _partner.direccion;
+        });
+      }
+      return;
+    }
+
+    // Caso 2: vinieron todos los datos del wizard pre-llenados desde mudafy.html
+    // Pre-cargamos inputs, fijamos nivel y disparamos búsqueda automática.
+    var fd = _partnerFormData;
+
+    // Setear nivel (Llave en mano para Mudafy)
+    if (fd.nivel) {
+      try { if (typeof setNivel === 'function') setNivel(fd.nivel); } catch(e){}
+    }
+
+    // Setear inputs de direcciones
+    var inDesde = document.getElementById('input-desde');
+    var inHasta = document.getElementById('input-hasta');
+    if (inDesde && fd.desde) {
+      inDesde.value = fd.desde;
+      try { if (typeof _validAddr !== 'undefined') _validAddr['input-desde'] = true; } catch(e){}
+    }
+    if (inHasta && fd.hasta) {
+      inHasta.value = fd.hasta;
+      try { if (typeof _validAddr !== 'undefined') _validAddr['input-hasta'] = true; } catch(e){}
+    }
+
+    // Setear ambientes (depende del UI del index, varios IDs posibles)
+    if (fd.ambientes) {
+      var ambNum = parseInt(fd.ambientes, 10);
+      if (ambNum > 0) {
+        // Intentar varios selectores comunes
+        var ambEls = document.querySelectorAll('[data-amb]');
+        ambEls.forEach(function(el){
+          if (parseInt(el.getAttribute('data-amb'), 10) === ambNum) {
+            try { el.click(); } catch(e){}
+          }
+        });
+        // Por si hay un input numérico directo
+        var ambInput = document.getElementById('input-amb') || document.getElementById('ambientes');
+        if (ambInput) ambInput.value = ambNum;
+      }
+    }
+
+    // Setear fecha
+    if (fd.fecha) {
+      var fechaEls = ['input-fecha', 'fecha', 'fechaMud'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
+      fechaEls.forEach(function(el){ el.value = fd.fecha; });
+    }
+
+    // Disparar búsqueda automáticamente después de un breve delay
+    // (esperar que Google Maps cargue + el DOM se asiente).
+    setTimeout(function(){
+      try { if (typeof buscar === 'function') buscar(); } catch(e){ console.warn('auto-buscar:', e); }
+    }, 600);
+  }
+
   // Init
   document.addEventListener('DOMContentLoaded', function() {
     updateNav();
+    _aplicarPartnerAlDOM();
     // ── BINDEO ROBUSTO menú mobile (evita problemas de scope global) ──
     var lmm = document.getElementById('mobLinkMisMudanzas');
     if (lmm) {
