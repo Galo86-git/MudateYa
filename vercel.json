@@ -13,11 +13,13 @@
     { "source": "/privacidad", "destination": "/privacidad.html" },
     { "source": "/contacto", "destination": "/contacto.html" },
     { "source": "/asesores", "destination": "/asesores.html" },
+    { "source": "/mudafy", "destination": "/mudafy.html" },
     { "source": "/asesor-login", "destination": "/asesor-login.html" },
     { "source": "/asesor-dashboard", "destination": "/asesor-dashboard.html" },
     { "source": "/cliente-packs", "destination": "/cliente-packs.html" },
     { "source": "/aliados", "destination": "/aliados.html" },
-    { "source": "/r/:slug", "destination": "/r.html?slug=:slug" }
+    { "source": "/r/:slug", "destination": "/r.html?slug=:slug" },
+    { "source": "/m/:slug", "destination": "/mudancero-perfil.html?slug=:slug" }
   ],
   "headers": [
     {
