@@ -845,8 +845,7 @@ function renderCatalogo() {
   html += '</div>';
   content.innerHTML = html;
 
-  // CTA footer dinámico
-  document.getElementById('totalMudanceros').textContent = _mudanceros.length;
+  // CTA footer dinámico (la función adentro maneja info + btn texto)
   document.getElementById('ctaFooter').style.display = 'block';
   actualizarCtaFooter();
 }
@@ -868,14 +867,32 @@ function toggleSel(email) {
 function actualizarCtaFooter() {
   var info = document.getElementById('ctaFooterInfo');
   var btn = document.getElementById('btnPedir');
+  var clearBtn = document.getElementById('btnLimpiar');
   if (!info || !btn) return;
+
+  var arrowSvg = ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+
   if (_sel.size > 0) {
-    info.innerHTML = 'Pediremos cotización a los <strong>' + _sel.size + '</strong> mudancero' + (_sel.size === 1 ? '' : 's') + ' seleccionado' + (_sel.size === 1 ? '' : 's') + '.';
-    btn.innerHTML = 'Pedir cotización a ' + _sel.size + ' seleccionado' + (_sel.size === 1 ? '' : 's') + ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+    // Modo: pedir a seleccionados
+    var n = _sel.size;
+    info.innerHTML = '✓ <strong>' + n + ' mudancero' + (n === 1 ? '' : 's') + '</strong> seleccionado' + (n === 1 ? '' : 's') + ' · O bien podés <a href="#" onclick="limpiarSeleccion();return false" style="color:var(--md-coral);font-weight:700">pedir a todos</a>';
+    btn.innerHTML = 'Pedir cotización a ' + n + ' seleccionado' + (n === 1 ? '' : 's') + arrowSvg;
+    btn.style.background = 'var(--md-success)';
+    btn.style.boxShadow = '0 4px 14px rgba(16,185,129,0.3)';
+    if (clearBtn) clearBtn.style.display = 'inline-flex';
   } else {
-    info.innerHTML = 'Pediremos cotización a los <strong>' + _mudanceros.length + '</strong> mudanceros disponibles. Recibirás sus respuestas en las próximas horas.';
-    btn.innerHTML = 'Pedir cotización a todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+    // Modo: pedir a todos
+    info.innerHTML = 'Pediremos cotización a los <strong>' + _mudanceros.length + '</strong> mudanceros disponibles · Tocá los que prefieras para acotar.';
+    btn.innerHTML = 'Pedir cotización a todos' + arrowSvg;
+    btn.style.background = '';
+    btn.style.boxShadow = '';
+    if (clearBtn) clearBtn.style.display = 'none';
   }
+}
+
+function limpiarSeleccion() {
+  _sel.clear();
+  renderCatalogo();
 }
 
 // ════════════════════════════════════════════════════════════
