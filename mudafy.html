@@ -500,6 +500,21 @@
   </p>
 </div>
 
+<!-- Pre-declaramos window.initMaps ANTES de cargar Google Maps.
+     Si Google llama el callback antes de que nuestro script principal corra,
+     se queda en _gmapsReady=true y luego nuestro código lo dispara. -->
+<script>
+  window._gmapsReady = false;
+  window._gmapsCallbacks = [];
+  window.initMaps = function() {
+    window._gmapsReady = true;
+    // Disparar callbacks que se hayan registrado antes de que Google cargue
+    while (window._gmapsCallbacks.length) {
+      try { window._gmapsCallbacks.shift()(); } catch(e) { console.error('gmaps cb:', e); }
+    }
+  };
+</script>
+
 <!-- Google Maps Places API · idem patrón del index.html -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMaps" async defer></script>
 
@@ -621,8 +636,10 @@ function makeAC(inputId, ddId) {
   });
 }
 
-// Callback global de Google Maps
-window.initMaps = function() {
+// Handler que se ejecuta cuando Google Maps Places está listo.
+// Se registra en una queue (window._gmapsCallbacks) por si Google ya cargó
+// antes de que este script corra (race condition que causaba "initMaps is not a function").
+function _onGmapsReady() {
   ['input-desde', 'input-hasta'].forEach(function(id) {
     var input = document.getElementById(id);
     if (input) {
@@ -635,7 +652,13 @@ window.initMaps = function() {
   });
   makeAC('input-desde', 'ac-desde');
   makeAC('input-hasta', 'ac-hasta');
-};
+}
+
+if (window._gmapsReady) {
+  _onGmapsReady();
+} else {
+  window._gmapsCallbacks.push(_onGmapsReady);
+}
 
 // Buscar: redirigir al index con todos los datos
 function buscar() {
