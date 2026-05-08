@@ -1649,10 +1649,71 @@ module.exports = async function handler(req, res) {
       if (!email || !cambios) return res.status(400).json({ error: 'Faltan datos' });
       const perfil = await getJSON(`mudancero:perfil:${email}`);
       if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado' });
-      const camposPermitidos = ['nombre','telefono','email','zonaBase','zonasExtra','vehiculo','servicios'];
+
+      // ── Campos string simples (no se sobrescriben con string vacío) ───────
+      // Comportamiento original: si admin manda '' lo ignoramos (no borra el dato existente).
+      const camposPermitidos = [
+        'nombre','telefono','email','empresa','zonaBase','zonasExtra','vehiculo','servicios',
+        'extra','foto','fotoCamion','horarios','dias','anticipacion','sitioWeb','añosExp',
+        'precioFleteNuevo'
+      ];
       camposPermitidos.forEach(function(k) {
         if (cambios[k] !== undefined && cambios[k] !== '') perfil[k] = cambios[k];
       });
+
+      // ── Boolean flags ────────────────────────────────────────────────────
+      // Estos NO pueden filtrarse por '' porque false es un valor válido de admin
+      // (admin puede DESactivar el flag). Solo persistimos si admin envía true/false explícito.
+      if (typeof cambios.seguroMudanza === 'boolean')    perfil.seguroMudanza    = cambios.seguroMudanza;
+      if (typeof cambios.verificadoSeguro === 'boolean') perfil.verificadoSeguro = cambios.verificadoSeguro;
+      if (typeof cambios.sinEstres === 'boolean')        perfil.sinEstres        = cambios.sinEstres;
+
+      // ── Servicios activos (array de niveles) ────────────────────────────
+      // Es un array tipo ['esencial','integral','llave','flete']. Si admin envía
+      // un array vacío [] significa "este mudancero no ofrece nada", también es válido.
+      if (Array.isArray(cambios.serviciosActivos)) {
+        var SERVICIOS_VALIDOS = ['esencial','integral','llave','flete'];
+        perfil.serviciosActivos = cambios.serviciosActivos.filter(function(s) {
+          return typeof s === 'string' && SERVICIOS_VALIDOS.indexOf(s) !== -1;
+        });
+      }
+
+      // ── Precios por nivel × ambiente (modelo nuevo) ────────────────────
+      // Estructura: { amb1: '50000', amb2: '70000', amb3: '90000', amb4: '110000' }
+      // Admin puede enviar null para indicar "este nivel no ofrece" (limpiar).
+      function _persistirPrecioNivel(claveNivel, claveCambio) {
+        if (cambios[claveCambio] === null) {
+          // Limpiar el nivel
+          delete perfil[claveNivel];
+        } else if (cambios[claveCambio] && typeof cambios[claveCambio] === 'object') {
+          var p = cambios[claveCambio];
+          perfil[claveNivel] = {
+            amb1: String(p.amb1 || ''),
+            amb2: String(p.amb2 || ''),
+            amb3: String(p.amb3 || ''),
+            amb4: String(p.amb4 || '')
+          };
+        }
+      }
+      _persistirPrecioNivel('preciosEsencial', 'preciosEsencial');
+      _persistirPrecioNivel('preciosIntegral', 'preciosIntegral');
+      _persistirPrecioNivel('preciosLlave',    'preciosLlave');
+
+      // ── Compat modelo viejo: precio1amb..precio4amb + precioFlete ──────
+      // Algunos perfiles antiguos siguen usando perfil.precios.{amb1..amb4, flete}.
+      // Si admin manda los valores nuevos, los reflejamos también ahí para no romper
+      // dashboards/lecturas legacy que aún consulten ese subobjeto.
+      var precioFields = ['precio1amb','precio2amb','precio3amb','precio4amb','precioFlete'];
+      var hayPreciosLegacy = precioFields.some(function(k){ return cambios[k] !== undefined; });
+      if (hayPreciosLegacy) {
+        perfil.precios = perfil.precios || {};
+        if (cambios.precio1amb !== undefined) perfil.precios.amb1  = String(cambios.precio1amb || '');
+        if (cambios.precio2amb !== undefined) perfil.precios.amb2  = String(cambios.precio2amb || '');
+        if (cambios.precio3amb !== undefined) perfil.precios.amb3  = String(cambios.precio3amb || '');
+        if (cambios.precio4amb !== undefined) perfil.precios.amb4  = String(cambios.precio4amb || '');
+        if (cambios.precioFlete !== undefined) perfil.precios.flete = String(cambios.precioFlete || '');
+      }
+
       // Tipo de cobro: 'porHora' o 'fijo'. Editable solo desde admin.
       // Permite el string vacío como "limpiar" (para volver al fallback heurístico).
       if (cambios.tipoCobro !== undefined) {
