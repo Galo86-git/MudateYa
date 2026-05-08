@@ -2301,7 +2301,7 @@
     if (_filtros.vehiculos.size) lista = lista.filter(function(m){ return _filtros.vehiculos.has(m.vehiculo); });
     if (_filtros.zonas.size)     lista = lista.filter(function(m){ return Array.from(_filtros.zonas).some(function(z){ return (m.zonaBase||'').includes(z); }); });
     if (_filtros.verifs.has('seg')) lista = lista.filter(function(m){
-      return m.verificadoSeguro || (m.servicios && m.servicios.toLowerCase().includes('seguro'));
+      return m.seguroMudanza || m.verificadoSeguro || (m.servicios && m.servicios.toLowerCase().includes('seguro'));
     });
     if (_filtros.servicios && _filtros.servicios.size) {
       lista = lista.filter(function(m) {
