@@ -229,7 +229,7 @@ function cardHTML(m) {
   var badges = '';
   if (m.verificadoIdentidad) badges += '<span class="badge badge-v">✓ ID verificada</span>';
   if (m.verificadoVehiculo)  badges += '<span class="badge badge-v">✓ Vehículo</span>';
-  if (m.verificadoSeguro)    badges += '<span class="badge badge-v">✓ Seguro</span>';
+  if (m.seguroMudanza || m.verificadoSeguro)    badges += '<span class="badge badge-v">✓ Seguro</span>';
   badges += '<span class="badge badge-zona">' + m.zonaBase + '</span>';
   if (m.vehiculo) badges += '<span class="badge badge-vehiculo">🚛 ' + m.vehiculo.split(' ')[0] + '</span>';
 
