@@ -4,15 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Coordiná tu mudanza · Mudafy</title>
-<meta name="description" content="¡Felicitaciones por tu nueva propiedad! Coordiná tu mudanza con servicio Llave en mano: ellos embalan, mueven y desembalan todo.">
+<meta name="description" content="¡Felicitaciones por tu nueva propiedad! Coordiná tu mudanza con servicio Llave en mano y seguro de mudanza incluido.">
 <link rel="icon" type="image/svg+xml" href="https://mudafy.com.ar/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
-  /* ════════════════════════════════════════════════════════════
-     Sistema visual Mudafy - replicado de mudafy.com.ar
-     ════════════════════════════════════════════════════════════ */
+  /* Sistema visual Mudafy */
   :root {
     --md-coral:        #FF6B6B;
     --md-coral-dark:   #E85555;
@@ -27,6 +25,7 @@
     --md-border-2:     #D1D5DB;
     --md-success:      #10B981;
     --md-success-soft: #D1FAE5;
+    --md-success-dark: #065F46;
     --md-warning:      #F59E0B;
     --mya-navy:        #003580;
   }
@@ -39,164 +38,221 @@
     line-height: 1.55; min-height: 100vh; font-weight: 500;
   }
 
-  /* ── Top bar ─────────────────────────────────── */
-  .top-bar { background: var(--md-bg-card); border-bottom: 1px solid var(--md-border); padding: 16px 24px; }
-  .top-bar-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  /* Top bar */
+  .top-bar { background: var(--md-bg-card); border-bottom: 1px solid var(--md-border); padding: 14px 24px; position: sticky; top: 0; z-index: 60; }
+  .top-bar-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   .logo-mudafy { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
-  .logo-mudafy-icon { width: 32px; height: 32px; color: var(--md-coral); display: flex; align-items: center; justify-content: center; }
+  .logo-mudafy-icon { width: 28px; height: 28px; color: var(--md-coral); }
   .logo-mudafy-icon svg { width: 100%; height: 100%; }
-  .logo-mudafy-text { font-size: 22px; font-weight: 800; color: var(--md-coral); letter-spacing: -0.5px; }
+  .logo-mudafy-text { font-size: 20px; font-weight: 800; color: var(--md-coral); letter-spacing: -0.5px; }
   .powered-by { font-size: 11px; color: var(--md-text-3); display: flex; align-items: center; gap: 5px; }
   .powered-by .mya-mini { font-weight: 800; color: var(--mya-navy); letter-spacing: -0.3px; }
   .powered-by .mya-mini .grn { color: #17A356; }
 
-  /* ── Container ───────────────────────────────── */
-  .container { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+  /* Container */
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px 40px; }
 
-  /* ── Hero section ──────────────────────────── */
-  .hero { max-width: 600px; margin: 0 auto 24px; }
+  /* Hero */
+  .hero { text-align: center; margin-bottom: 24px; }
   .hero-pill {
     display: inline-flex; align-items: center; gap: 8px;
     background: var(--md-coral-light); color: var(--md-coral-dark);
-    font-size: 12px; font-weight: 700; padding: 8px 16px;
-    border-radius: 999px; margin-bottom: 16px; letter-spacing: 0.2px;
+    font-size: 12px; font-weight: 700; padding: 7px 14px;
+    border-radius: 999px; margin-bottom: 12px; letter-spacing: 0.2px;
   }
   .hero-pill::before { content: '🎉'; font-size: 14px; }
-  .hero-title { font-size: 32px; font-weight: 800; color: var(--md-text); line-height: 1.15; letter-spacing: -0.8px; margin-bottom: 12px; }
+  .hero-title { font-size: 28px; font-weight: 800; color: var(--md-text); line-height: 1.15; letter-spacing: -0.6px; margin-bottom: 6px; }
   .hero-title .accent { color: var(--md-coral); }
-  .hero-subtitle { font-size: 15px; color: var(--md-text-2); line-height: 1.6; font-weight: 500; }
+  .hero-subtitle { font-size: 14px; color: var(--md-text-2); font-weight: 500; max-width: 540px; margin: 0 auto; }
 
-  /* ── Form card ───────────────────────────────── */
-  .form-card {
-    max-width: 600px; margin: 0 auto;
-    background: var(--md-bg-card); border-radius: 20px;
-    border: 1px solid var(--md-border); padding: 28px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  /* ── 2 COLUMNAS ARRIBA ──────────────────────── */
+  .top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
   }
-  .field { margin-bottom: 18px; position: relative; }
-  .field-label { font-size: 13px; color: var(--md-text); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .field-icon { width: 16px; height: 16px; color: var(--md-coral); display: inline-block; }
+  .panel {
+    background: var(--md-bg-card);
+    border-radius: 16px;
+    border: 1px solid var(--md-border);
+    padding: 20px 22px;
+  }
+  .panel-title {
+    font-size: 12px; color: var(--md-text-3);
+    font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title .num {
+    width: 22px; height: 22px;
+    background: var(--md-coral); color: white;
+    border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800;
+  }
+
+  /* Fields */
+  .field { margin-bottom: 12px; position: relative; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label { font-size: 12px; color: var(--md-text); font-weight: 700; margin-bottom: 5px; display: block; }
   .field-input {
-    width: 100%; padding: 14px 16px;
-    border: 1.5px solid var(--md-border-2); border-radius: 12px;
-    background: var(--md-bg-card); font-size: 15px; color: var(--md-text);
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--md-border-2); border-radius: 10px;
+    background: var(--md-bg-card); font-size: 14px; color: var(--md-text);
     font-family: inherit; font-weight: 500;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .field-input:focus { outline: none; border-color: var(--md-coral); box-shadow: 0 0 0 3px var(--md-coral-light); }
   .field-input::placeholder { color: var(--md-text-3); font-weight: 400; }
-  .field-prefilled .field-input { border-color: var(--md-coral); background: var(--md-coral-soft); color: var(--md-text); font-weight: 700; padding-right: 100px; }
-  .field-prefilled-badge {
-    position: absolute; right: 12px; top: 38px;
-    background: var(--md-coral); color: var(--md-bg-card);
-    font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
-    padding: 4px 10px; border-radius: 6px; pointer-events: none; text-transform: uppercase;
+  textarea.field-input { resize: vertical; min-height: 70px; font-family: inherit; }
+
+  /* Campo HACIA pre-cargado */
+  .field-prefilled .field-input {
+    border-color: var(--md-coral); background: var(--md-coral-soft);
+    color: var(--md-text); font-weight: 700;
   }
-  .field-counter { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border: 1.5px solid var(--md-border-2); border-radius: 12px; background: var(--md-bg-card); transition: border-color 0.15s; }
-  .field-counter:hover { border-color: var(--md-coral); }
-  .counter-btn { width: 36px; height: 36px; border: none; background: var(--md-coral-soft); color: var(--md-coral); font-size: 20px; font-weight: 800; border-radius: 10px; cursor: pointer; transition: all 0.15s; font-family: inherit; display: flex; align-items: center; justify-content: center; }
+
+  /* Sub-row Piso/Depto/Asc */
+  .field-altura {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .field-altura input { padding: 8px 10px; font-size: 13px; }
+  .ascensor-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1.5px solid var(--md-border-2); border-radius: 10px;
+    padding: 0 10px;
+    cursor: pointer;
+    background: var(--md-bg-card);
+    transition: all 0.15s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .ascensor-toggle.active {
+    background: var(--md-success-soft);
+    border-color: var(--md-success);
+    color: var(--md-success-dark);
+  }
+  .ascensor-toggle input { display: none; }
+  .ascensor-toggle .asc-icon { font-size: 14px; }
+  .ascensor-toggle .asc-text { font-size: 12px; font-weight: 700; }
+
+  /* Counter ambientes */
+  .field-counter { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; border: 1.5px solid var(--md-border-2); border-radius: 10px; background: var(--md-bg-card); }
+  .counter-btn { width: 30px; height: 30px; border: none; background: var(--md-coral-soft); color: var(--md-coral); font-size: 18px; font-weight: 800; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-family: inherit; display: flex; align-items: center; justify-content: center; }
   .counter-btn:hover { background: var(--md-coral); color: var(--md-bg-card); }
   .counter-btn:disabled { opacity: 0.3; cursor: not-allowed; background: var(--md-coral-soft) !important; color: var(--md-coral) !important; }
-  .counter-val { font-size: 18px; font-weight: 800; color: var(--md-text); min-width: 32px; text-align: center; }
-  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  input[type="date"].field-input { cursor: pointer; color-scheme: light; }
+  .counter-val { font-size: 16px; font-weight: 800; color: var(--md-text); min-width: 28px; text-align: center; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
   /* Autocomplete */
-  .ac-dd { position: absolute; top: 100%; left: 0; right: 0; background: var(--md-bg-card); border: 1px solid var(--md-border-2); border-radius: 12px; margin-top: 6px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); list-style: none; padding: 6px; z-index: 100; display: none; max-height: 260px; overflow-y: auto; }
+  .ac-dd { position: absolute; top: 100%; left: 0; right: 0; background: var(--md-bg-card); border: 1px solid var(--md-border-2); border-radius: 10px; margin-top: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.12); list-style: none; padding: 5px; z-index: 100; display: none; max-height: 240px; overflow-y: auto; }
   .ac-dd.open { display: block; }
-  .ac-item { padding: 11px 14px; font-size: 14px; color: var(--md-text); cursor: pointer; border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
-  .ac-item::before { content: '📍'; font-size: 14px; opacity: 0.6; }
+  .ac-item { padding: 9px 12px; font-size: 13px; color: var(--md-text); cursor: pointer; border-radius: 7px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .ac-item::before { content: '📍'; font-size: 13px; opacity: 0.6; }
   .ac-item:hover, .ac-item.kb { background: var(--md-coral-soft); color: var(--md-coral-dark); }
 
-  /* ── CTA primario ─────────────────────────── */
-  .btn-primary { width: 100%; margin-top: 8px; padding: 17px 24px; background: var(--md-coral); color: var(--md-bg-card); border: none; border-radius: 14px; font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; letter-spacing: -0.2px; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 14px rgba(255,107,107,0.3); }
+  /* CTA principal */
+  .cta-row { text-align: center; margin: 8px 0 28px; }
+  .btn-primary {
+    padding: 16px 36px; background: var(--md-coral); color: var(--md-bg-card);
+    border: none; border-radius: 14px; font-size: 16px; font-weight: 800;
+    cursor: pointer; font-family: inherit; letter-spacing: -0.2px;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 4px 14px rgba(255,107,107,0.3);
+  }
   .btn-primary:hover { background: var(--md-coral-dark); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,107,107,0.4); }
   .btn-primary:active { transform: translateY(0); }
   .btn-primary:disabled { background: var(--md-text-3); cursor: not-allowed; transform: none; box-shadow: none; }
-  .btn-primary svg { width: 20px; height: 20px; }
+  .btn-primary svg { width: 18px; height: 18px; }
 
-  /* Trust badge */
-  .trust-card { margin-top: 20px; padding: 14px 18px; background: var(--md-success-soft); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px; }
-  .trust-icon { flex-shrink: 0; width: 28px; height: 28px; background: var(--md-success); color: var(--md-bg-card); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  .trust-icon svg { width: 16px; height: 16px; }
-  .trust-content { flex: 1; font-size: 13px; color: #065F46; font-weight: 600; line-height: 1.5; }
-  .trust-content strong { color: #064E3B; font-weight: 800; }
-
-  /* ════════════════════════════════════════════
-     CATÁLOGO - aparece después de buscar
-     ════════════════════════════════════════════ */
-  .catalogo-section { display: none; margin-top: 40px; }
+  /* ── CATÁLOGO CRM ────────────────────────────── */
+  .catalogo-section { display: none; }
   .catalogo-section.show { display: block; }
-  .catalogo-header { max-width: 600px; margin: 0 auto 20px; padding: 0 4px; }
-  .catalogo-title { font-size: 24px; font-weight: 800; color: var(--md-text); letter-spacing: -0.4px; margin-bottom: 6px; }
-  .catalogo-title .accent { color: var(--md-coral); }
-  .catalogo-meta { font-size: 14px; color: var(--md-text-2); }
-  .catalogo-meta strong { color: var(--md-text); font-weight: 700; }
+  .catalogo-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .catalogo-title { font-size: 20px; font-weight: 800; color: var(--md-text); letter-spacing: -0.4px; }
+  .catalogo-title .count { color: var(--md-coral); }
+  .catalogo-meta { font-size: 13px; color: var(--md-text-2); }
+  .catalogo-meta strong { color: var(--md-text); }
 
-  /* Grid de cards */
-  .mud-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-width: 960px; margin: 0 auto; }
+  /* Tabla CRM */
+  .mud-table {
+    background: var(--md-bg-card);
+    border: 1px solid var(--md-border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .mud-row {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) 1.2fr 1.2fr minmax(140px, 1fr);
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--md-border);
+    transition: background 0.12s;
+    cursor: default;
+  }
+  .mud-row:last-child { border-bottom: none; }
+  .mud-row:hover { background: var(--md-coral-soft); }
 
-  /* Card mudancero */
-  .mud-card { background: var(--md-bg-card); border: 2px solid var(--md-border); border-radius: 16px; overflow: hidden; cursor: pointer; transition: all 0.15s; position: relative; display: flex; flex-direction: column; }
-  .mud-card:hover { border-color: var(--md-coral); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
-  .mud-card.sel { border-color: var(--md-coral); background: var(--md-coral-soft); }
-  .mud-card.sel .mud-sel-check { background: var(--md-coral); border-color: var(--md-coral); }
-  .mud-card.sel .mud-sel-check svg { opacity: 1; }
-  .mud-card-foto { position: relative; height: 140px; background: var(--md-bg); overflow: hidden; }
-  .mud-card-foto img { width: 100%; height: 100%; object-fit: cover; }
-  .mud-foto-ph { width: 100%; height: 100%; background: linear-gradient(135deg, var(--md-coral-soft) 0%, var(--md-coral-light) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-  .mud-foto-truck { font-size: 36px; }
-  .mud-foto-initials { font-size: 22px; font-weight: 800; color: var(--md-coral); }
-  .mud-sel-check { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,0.9); border: 2px solid var(--md-bg-card); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: all 0.15s; z-index: 2; }
-  .mud-sel-check svg { opacity: 0; transition: opacity 0.15s; }
-  .mud-sel-check:hover { background: var(--md-coral); }
-  .mud-sel-check:hover svg { opacity: 1; }
-  .mud-card-body { padding: 14px 16px 12px; flex: 1; }
-  .mud-card-empresa { font-size: 16px; font-weight: 800; color: var(--md-text); line-height: 1.25; margin-bottom: 6px; }
-  .mud-rating { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--md-text-2); margin-bottom: 8px; }
-  .mud-rating .star { color: var(--md-warning); }
-  .mud-rating b { color: var(--md-text); font-weight: 800; }
-  .mud-zona { font-size: 12px; color: var(--md-text-3); margin-bottom: 4px; }
-  .mud-trabajos { font-size: 12px; color: var(--md-text-3); }
-  .mud-card-precio { padding: 12px 16px; border-top: 1px solid var(--md-border); background: var(--md-bg); }
-  .mud-precio-desde { font-size: 11px; color: var(--md-text-3); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
-  .mud-precio-num { font-size: 18px; font-weight: 800; color: var(--md-coral); letter-spacing: -0.3px; }
-  .mud-card.sel .mud-card-precio { background: var(--md-coral-light); }
+  /* Header de la tabla */
+  .mud-row.head {
+    background: var(--md-bg);
+    padding: 10px 20px;
+    font-size: 11px; color: var(--md-text-3);
+    font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+    cursor: default;
+  }
+  .mud-row.head:hover { background: var(--md-bg); }
 
-  /* Badge Llave en mano */
-  .mud-badge-llave { display: inline-block; background: var(--md-success); color: var(--md-bg-card); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.3px; margin-bottom: 8px; text-transform: uppercase; }
+  /* Columna 1: Empresa + zona */
+  .mud-empresa { font-size: 15px; font-weight: 800; color: var(--md-text); margin-bottom: 3px; }
+  .mud-meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .mud-zona { font-size: 12px; color: var(--md-text-2); }
 
-  /* Estados de catálogo */
-  .cat-loading, .cat-empty { max-width: 600px; margin: 20px auto; padding: 40px 20px; text-align: center; background: var(--md-bg-card); border: 1px solid var(--md-border); border-radius: 16px; }
-  .cat-loading-spin { width: 40px; height: 40px; border: 3px solid var(--md-coral-light); border-top-color: var(--md-coral); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  /* Badges en línea */
+  .mud-badge { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 5px; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
+  .badge-llave { background: var(--md-coral-light); color: var(--md-coral-dark); }
+  .badge-seguro { background: var(--md-success-soft); color: var(--md-success-dark); }
+
+  /* Columna 2: Reseñas */
+  .mud-rating { display: flex; align-items: center; gap: 5px; }
+  .mud-rating .star { color: var(--md-warning); font-size: 14px; }
+  .mud-rating b { color: var(--md-text); font-weight: 800; font-size: 14px; }
+  .mud-rating .resenas-count { font-size: 12px; color: var(--md-text-3); }
+  .mud-trabajos { font-size: 12px; color: var(--md-text-2); margin-top: 3px; }
+
+  /* Columna 3: Servicios destacados (chips) */
+  .mud-services { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* Columna 4: Precio */
+  .mud-precio { text-align: right; }
+  .mud-precio-label { font-size: 10px; color: var(--md-text-3); font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+  .mud-precio-num { font-size: 17px; font-weight: 800; color: var(--md-coral); letter-spacing: -0.2px; margin-top: 2px; }
+
+  /* Estado vacío */
+  .cat-loading, .cat-empty {
+    background: var(--md-bg-card); border: 1px solid var(--md-border);
+    border-radius: 14px; padding: 48px 24px; text-align: center;
+  }
+  .cat-loading-spin { width: 36px; height: 36px; border: 3px solid var(--md-coral-light); border-top-color: var(--md-coral); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .cat-empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .cat-empty-title { font-size: 17px; font-weight: 800; color: var(--md-text); margin-bottom: 6px; }
-  .cat-empty-msg { font-size: 14px; color: var(--md-text-2); }
+  .cat-empty-icon { font-size: 44px; margin-bottom: 10px; }
+  .cat-empty-title { font-size: 16px; font-weight: 800; color: var(--md-text); margin-bottom: 6px; }
+  .cat-empty-msg { font-size: 13px; color: var(--md-text-2); max-width: 420px; margin: 0 auto; }
 
-  /* ── Bottom bar (sticky) - aparece con selección ── */
-  .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--md-bg-card); border-top: 1px solid var(--md-border); padding: 14px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); z-index: 50; transform: translateY(100%); transition: transform 0.25s; }
-  .bottom-bar.show { transform: translateY(0); }
-  .bottom-bar-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .bottom-bar-info { font-size: 14px; color: var(--md-text); font-weight: 700; }
-  .bottom-bar-info span { color: var(--md-coral); font-weight: 800; }
-  .bottom-bar-btn { padding: 12px 24px; background: var(--md-coral); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(255,107,107,0.3); transition: all 0.15s; }
-  .bottom-bar-btn:hover { background: var(--md-coral-dark); transform: translateY(-1px); }
-  .bottom-bar-btn svg { width: 18px; height: 18px; }
+  /* Footer CTA después del catálogo */
+  .cta-footer { margin-top: 20px; text-align: center; }
+  .cta-footer-info { font-size: 13px; color: var(--md-text-2); margin-bottom: 12px; }
+  .cta-footer-info strong { color: var(--md-coral); font-weight: 800; }
 
-  /* ── Modal de login Google ──────────────────── */
+  /* Modal Éxito */
   .modal-overlay { position: fixed; inset: 0; background: rgba(15,20,25,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
   .modal-overlay.open { display: flex; }
-  .modal-card { background: var(--md-bg-card); border-radius: 20px; padding: 32px 28px; max-width: 400px; width: 100%; text-align: center; }
-  .modal-icon { width: 56px; height: 56px; background: var(--md-coral-soft); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 28px; }
-  .modal-title { font-size: 20px; font-weight: 800; color: var(--md-text); margin-bottom: 6px; letter-spacing: -0.4px; }
-  .modal-subtitle { font-size: 14px; color: var(--md-text-2); margin-bottom: 24px; line-height: 1.5; }
-  #googleBtn { display: flex; justify-content: center; margin: 0 auto; }
-  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 22px; color: var(--md-text-3); cursor: pointer; padding: 4px 10px; line-height: 1; }
-  .modal-close:hover { color: var(--md-text); }
-  .modal-card { position: relative; }
-
-  /* ── Modal de éxito ──────────────────────────── */
   .success-modal { background: var(--md-bg-card); border-radius: 20px; padding: 36px 28px; max-width: 440px; width: 100%; text-align: center; position: relative; }
   .success-icon-big { width: 72px; height: 72px; background: var(--md-success); border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 18px; }
   .success-icon-big svg { width: 40px; height: 40px; color: white; }
@@ -205,39 +261,32 @@
   .success-btn { display: inline-block; padding: 14px 28px; background: var(--md-coral); color: white; text-decoration: none; border-radius: 12px; font-size: 15px; font-weight: 800; }
   .success-btn:hover { background: var(--md-coral-dark); }
 
-  /* ── Footer ───────────────────────────────── */
-  .footer { text-align: center; padding: 28px 16px 100px; font-size: 12px; color: var(--md-text-3); font-weight: 500; }
+  /* Footer */
+  .footer { text-align: center; padding: 28px 16px 12px; font-size: 12px; color: var(--md-text-3); font-weight: 500; }
   .footer a { color: var(--md-text-2); text-decoration: none; font-weight: 600; }
   .footer a:hover { color: var(--md-coral); }
   .footer-divider { margin: 0 8px; color: var(--md-border); }
 
-  /* ── Mobile ──────────────────────────────── */
-  @media (max-width: 480px) {
-    .container { padding: 20px 16px 40px; }
-    .form-card { padding: 22px 18px; border-radius: 16px; }
-    .hero-title { font-size: 26px; }
-    .top-bar { padding: 14px 18px; }
-    .powered-by { display: none; }
-    .field-row { gap: 10px; }
-    .mud-grid { grid-template-columns: 1fr; }
-    .bottom-bar-inner { flex-direction: column; gap: 10px; align-items: stretch; }
-    .bottom-bar-btn { justify-content: center; }
-    .footer { padding-bottom: 140px; }
-  }
-
   .field-input.loading { background: var(--md-bg); color: var(--md-text-3); }
 
-  /* Ocultar form al ver catálogo (UX limpia) */
-  .form-collapsed .form-card { display: none; }
-  .form-collapsed .hero-title { font-size: 18px; opacity: 0.7; }
-  .form-collapsed .hero-subtitle { display: none; }
-  .form-collapsed .hero-pill { display: none; }
-  .summary-bar { display: none; max-width: 600px; margin: 0 auto 20px; padding: 14px 18px; background: var(--md-bg-card); border: 1px solid var(--md-border); border-radius: 14px; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .form-collapsed .summary-bar { display: flex; }
-  .summary-text { font-size: 13px; color: var(--md-text-2); flex: 1; min-width: 0; }
-  .summary-text strong { color: var(--md-text); font-weight: 700; }
-  .summary-edit { background: none; border: 1.5px solid var(--md-border-2); color: var(--md-text); padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
-  .summary-edit:hover { background: var(--md-coral-soft); border-color: var(--md-coral); color: var(--md-coral-dark); }
+  /* ── Mobile ──────────────────────────────── */
+  @media (max-width: 760px) {
+    .top-grid { grid-template-columns: 1fr; }
+    .container { padding: 18px 14px 30px; }
+    .panel { padding: 16px 18px; }
+    .hero-title { font-size: 22px; }
+    .top-bar { padding: 12px 16px; }
+    .powered-by { display: none; }
+    /* Cards en lugar de filas en mobile */
+    .mud-row.head { display: none; }
+    .mud-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 14px 16px;
+    }
+    .mud-precio { text-align: left; }
+    .mud-precio-num { font-size: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -254,114 +303,130 @@
   </div>
 </div>
 
-<div class="container" id="appContainer">
+<div class="container">
 
   <div class="hero">
     <span class="hero-pill" id="heroPill">Felicitaciones por tu nueva propiedad</span>
-    <h1 class="hero-title" id="heroTitle">Ahora coordiná <span class="accent">tu mudanza</span>.</h1>
-    <p class="hero-subtitle">Completá los datos y te conectamos con mudanceros que hacen <strong style="color:var(--md-success)">todo por vos</strong>: embalan, mueven y desembalan.</p>
+    <h1 class="hero-title">Coordiná <span class="accent">tu mudanza</span></h1>
+    <p class="hero-subtitle">Mudanceros con servicio Llave en mano y seguro de mudanza incluido. Hacen todo: embalan, mueven y desembalan.</p>
   </div>
 
-  <!-- Resumen tipo "viaje" cuando ya buscaron -->
-  <div class="summary-bar" id="summaryBar">
-    <div class="summary-text" id="summaryText"></div>
-    <button class="summary-edit" onclick="editarBusqueda()">✏️ Editar</button>
-  </div>
+  <!-- ═════ 2 COLUMNAS ARRIBA ═════ -->
+  <div class="top-grid">
 
-  <!-- FORM -->
-  <div class="form-card" id="formCard">
-    <div class="field">
-      <label class="field-label" for="input-desde">
-        <span class="field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></span>
-        Desde · ¿De dónde te mudás?
-      </label>
-      <input id="input-desde" class="field-input loading" type="text" placeholder="Cargando autocompletado..." autocomplete="off" disabled/>
-      <ul class="ac-dd" id="ac-desde"></ul>
-    </div>
+    <!-- COLUMNA 1: Datos del cliente -->
+    <div class="panel">
+      <div class="panel-title"><span class="num">1</span> Tus datos</div>
 
-    <div class="field" id="fieldHasta">
-      <label class="field-label" for="input-hasta">
-        <span class="field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 3l9 9v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z"/></svg></span>
-        Hacia · Tu nuevo hogar
-      </label>
-      <input id="input-hasta" class="field-input loading" type="text" placeholder="Cargando autocompletado..." autocomplete="off" disabled/>
-      <span class="field-prefilled-badge" id="badgeMudafy" style="display:none">De Mudafy</span>
-      <ul class="ac-dd" id="ac-hasta"></ul>
-    </div>
-
-    <div class="field-row">
       <div class="field">
-        <label class="field-label">
-          <span class="field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="9" rx="1"/><path d="M5 11V7a4 4 0 014-4h6a4 4 0 014 4v4"/></svg></span>
-          Ambientes
-        </label>
-        <div class="field-counter">
-          <button type="button" class="counter-btn" id="ambMinus" onclick="cambiarAmb(-1)">−</button>
-          <span class="counter-val" id="ambVal">2</span>
-          <button type="button" class="counter-btn" id="ambPlus" onclick="cambiarAmb(1)">+</button>
+        <label class="field-label" for="cli-nombre">Nombre completo *</label>
+        <input id="cli-nombre" class="field-input" type="text" placeholder="Juan Pérez" autocomplete="name"/>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label" for="cli-tel">Teléfono *</label>
+          <input id="cli-tel" class="field-input" type="tel" placeholder="11 5555 5555" autocomplete="tel" inputmode="numeric"/>
+        </div>
+        <div class="field">
+          <label class="field-label" for="cli-email">Email *</label>
+          <input id="cli-email" class="field-input" type="email" placeholder="juan@ejemplo.com" autocomplete="email"/>
         </div>
       </div>
+
       <div class="field">
-        <label class="field-label">
-          <span class="field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-          Fecha
-        </label>
-        <input id="input-fecha" class="field-input" type="date"/>
+        <label class="field-label" for="cli-notas">Notas (opcional)</label>
+        <textarea id="cli-notas" class="field-input" placeholder="Cosas especiales: piano, caja fuerte, mascota, etc."></textarea>
       </div>
     </div>
 
+    <!-- COLUMNA 2: Datos de la mudanza -->
+    <div class="panel">
+      <div class="panel-title"><span class="num">2</span> Tu mudanza</div>
+
+      <div class="field">
+        <label class="field-label" for="input-desde">Desde · ¿De dónde te mudás? *</label>
+        <input id="input-desde" class="field-input loading" type="text" placeholder="Cargando..." autocomplete="off" disabled/>
+        <ul class="ac-dd" id="ac-desde"></ul>
+        <div class="field-altura">
+          <input class="field-input" id="piso-desde" type="text" placeholder="Piso (PB)" autocomplete="off"/>
+          <input class="field-input" id="depto-desde" type="text" placeholder="Depto (A)" autocomplete="off"/>
+          <label class="ascensor-toggle" id="asc-desde-toggle" onclick="toggleAscensor('desde')">
+            <input type="checkbox" id="asc-desde"/>
+            <span class="asc-icon">🛗</span>
+            <span class="asc-text">Ascensor</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field" id="fieldHasta">
+        <label class="field-label" for="input-hasta">Hacia · Tu nuevo hogar *</label>
+        <input id="input-hasta" class="field-input loading" type="text" placeholder="Cargando..." autocomplete="off" disabled/>
+        <ul class="ac-dd" id="ac-hasta"></ul>
+        <div class="field-altura">
+          <input class="field-input" id="piso-hasta" type="text" placeholder="Piso (PB)" autocomplete="off"/>
+          <input class="field-input" id="depto-hasta" type="text" placeholder="Depto (A)" autocomplete="off"/>
+          <label class="ascensor-toggle" id="asc-hasta-toggle" onclick="toggleAscensor('hasta')">
+            <input type="checkbox" id="asc-hasta"/>
+            <span class="asc-icon">🛗</span>
+            <span class="asc-text">Ascensor</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Ambientes</label>
+          <div class="field-counter">
+            <button type="button" class="counter-btn" id="ambMinus" onclick="cambiarAmb(-1)">−</button>
+            <span class="counter-val" id="ambVal">2</span>
+            <button type="button" class="counter-btn" id="ambPlus" onclick="cambiarAmb(1)">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="input-fecha">Fecha</label>
+          <input id="input-fecha" class="field-input" type="date"/>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CTA ver mudanceros -->
+  <div class="cta-row">
     <button type="button" class="btn-primary" id="btnBuscar" onclick="buscar()">
       Ver mudanceros disponibles
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
     </button>
-
-    <div class="trust-card">
-      <div class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-      <div class="trust-content">Solo te mostramos mudanceros con servicio <strong>Llave en mano</strong> · ellos embalan, mueven y desembalan todo</div>
-    </div>
   </div>
 
-  <!-- ── CATÁLOGO ── -->
+  <!-- ═════ CATÁLOGO CRM ═════ -->
   <div class="catalogo-section" id="catalogoSection">
     <div class="catalogo-header">
-      <h2 class="catalogo-title">Mudanceros disponibles · <span class="accent" id="catCount">0</span></h2>
-      <p class="catalogo-meta" id="catMeta">Tocá los que te interesen y pediles cotización</p>
+      <h2 class="catalogo-title">Mudanceros disponibles · <span class="count" id="catCount">0</span></h2>
+      <p class="catalogo-meta">Verificados <strong>Llave en mano</strong> con <strong>seguro de mudanza</strong></p>
     </div>
-    <div class="mud-grid" id="mudGrid"></div>
+    <div id="catContent"></div>
+
+    <div class="cta-footer" id="ctaFooter" style="display:none">
+      <p class="cta-footer-info">Pediremos cotización a los <strong id="totalMudanceros">0</strong> mudanceros disponibles. Recibirás sus respuestas en las próximas horas.</p>
+      <button type="button" class="btn-primary" id="btnPedir" onclick="pedirATodos()">
+        Pedir cotización a todos
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
   </div>
 
 </div>
 
-<!-- Bottom bar - aparece con selección -->
-<div class="bottom-bar" id="bottomBar">
-  <div class="bottom-bar-inner">
-    <div class="bottom-bar-info"><span id="selCount">0</span> mudancero<span id="selPlural">s</span> seleccionado<span id="selPlural2">s</span></div>
-    <button class="bottom-bar-btn" onclick="pedirCotizacion()">
-      Pedir cotización
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-    </button>
-  </div>
-</div>
-
-<!-- Modal Login -->
-<div class="modal-overlay" id="loginModal" onclick="if(event.target===this)cerrarLogin()">
-  <div class="modal-card">
-    <button class="modal-close" onclick="cerrarLogin()">×</button>
-    <div class="modal-icon">🚛</div>
-    <h2 class="modal-title">Último paso</h2>
-    <p class="modal-subtitle">Iniciá sesión con Google para enviar tu solicitud de cotización a los mudanceros seleccionados.</p>
-    <div id="googleBtn"></div>
-  </div>
-</div>
-
-<!-- Modal Éxito -->
+<!-- Modal éxito -->
 <div class="modal-overlay" id="successModal">
   <div class="success-modal">
     <div class="success-icon-big">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
     </div>
     <h2 class="success-title">¡Solicitud enviada!</h2>
-    <p class="success-msg">Te enviamos un mail con el resumen. Los mudanceros van a contactarte por WhatsApp con su cotización en las próximas horas.</p>
+    <p class="success-msg">Te enviamos un mail con el resumen. Los mudanceros te contactarán por WhatsApp con su cotización en las próximas horas.</p>
     <a href="/mi-mudanza" class="success-btn">Ver mi mudanza →</a>
   </div>
 </div>
@@ -389,14 +454,10 @@
 <!-- Google Maps Places API -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMaps" async defer></script>
 
-<!-- Google Sign-In -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-
 <script>
 // ═══════════════════════════════════════════════════════════════════════
-// MUDAFY · Página completa - form + catálogo + selección + publicar
-// Todo en una sola página, sin redirects intermedios.
-// Al publicar, redirige a /mi-mudanza (dashboard del cliente).
+// MUDAFY · Layout 2 columnas + lista CRM + sin login
+// Pide cotización a TODOS los mudanceros con Llave en mano + Seguro
 // ═══════════════════════════════════════════════════════════════════════
 
 // Params del CRM Mudafy
@@ -408,24 +469,20 @@ var _partner = {
   nombre:    _qp.get('nombre')    || ''
 };
 
-// Estado global
 var _amb = 2;
-var _busqueda = null;        // { desde, hasta, ambientes, fecha }
-var _mudanceros = [];        // catálogo filtrado a Llave en mano
-var _sel = new Set();        // emails seleccionados
-var _currentUser = null;     // { email, name } cuando hace login
-var _googleClientId = null;  // se carga del backend
+var _busqueda = null;
+var _mudanceros = [];
 
-// ── Pre-llenar campos desde params del partner ──
+// Pre-llenar campos desde params del partner
 (function aplicarPartner() {
   if (_partner.nombre) {
     document.getElementById('heroPill').textContent = 'Felicitaciones, ' + _partner.nombre + ' 🎉';
+    document.getElementById('cli-nombre').value = _partner.nombre;
   }
   if (_partner.direccion) {
     var hasta = document.getElementById('input-hasta');
     hasta.value = _partner.direccion;
     document.getElementById('fieldHasta').classList.add('field-prefilled');
-    document.getElementById('badgeMudafy').style.display = 'block';
   }
 })();
 
@@ -441,7 +498,6 @@ var _googleClientId = null;  // se carga del backend
   input.value = fmt(enUnaSemana);
 })();
 
-// Counter ambientes
 function cambiarAmb(delta) {
   _amb = Math.max(1, Math.min(8, _amb + delta));
   document.getElementById('ambVal').textContent = _amb;
@@ -449,8 +505,19 @@ function cambiarAmb(delta) {
   document.getElementById('ambPlus').disabled  = (_amb >= 8);
 }
 
+// Toggle ascensor (estilo botón visual sí/no)
+function toggleAscensor(cual) {
+  var input = document.getElementById('asc-' + cual);
+  var toggle = document.getElementById('asc-' + cual + '-toggle');
+  // Esperar al click natural del input para invertir, sino hacerlo aquí
+  setTimeout(function(){
+    if (input.checked) toggle.classList.add('active');
+    else toggle.classList.remove('active');
+  }, 0);
+}
+
 // ════════════════════════════════════════════════════════════
-// Google Maps Autocomplete (mismo patrón que index.html)
+// Google Maps Autocomplete
 // ════════════════════════════════════════════════════════════
 function makeAC(inputId, ddId) {
   var input = document.getElementById(inputId);
@@ -508,24 +575,46 @@ if (window._gmapsReady) _onGmapsReady();
 else window._gmapsCallbacks.push(_onGmapsReady);
 
 // ════════════════════════════════════════════════════════════
-// BÚSQUEDA - dispara fetch del catálogo
+// VALIDACIÓN + BÚSQUEDA
 // ════════════════════════════════════════════════════════════
 function buscar() {
+  // Validar datos del cliente
+  var nombre = (document.getElementById('cli-nombre').value || '').trim();
+  var tel    = (document.getElementById('cli-tel').value || '').trim();
+  var email  = (document.getElementById('cli-email').value || '').trim();
+  var notas  = (document.getElementById('cli-notas').value || '').trim();
+
+  if (!nombre) { alert('Por favor ingresá tu nombre.'); document.getElementById('cli-nombre').focus(); return; }
+  if (!tel)    { alert('Por favor ingresá tu teléfono.'); document.getElementById('cli-tel').focus(); return; }
+  if (tel.replace(/\D/g,'').length < 8) { alert('El teléfono parece muy corto. Revisalo.'); document.getElementById('cli-tel').focus(); return; }
+  if (!email)  { alert('Por favor ingresá tu email.'); document.getElementById('cli-email').focus(); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); document.getElementById('cli-email').focus(); return; }
+
+  // Validar mudanza
   var desde = (document.getElementById('input-desde').value || '').trim();
   var hasta = (document.getElementById('input-hasta').value || '').trim();
   var fecha = document.getElementById('input-fecha').value;
+  var pisoDesde  = (document.getElementById('piso-desde').value || '').trim();
+  var deptoDesde = (document.getElementById('depto-desde').value || '').trim();
+  var ascDesde   = document.getElementById('asc-desde').checked;
+  var pisoHasta  = (document.getElementById('piso-hasta').value || '').trim();
+  var deptoHasta = (document.getElementById('depto-hasta').value || '').trim();
+  var ascHasta   = document.getElementById('asc-hasta').checked;
 
   if (!desde) { alert('Por favor ingresá la dirección desde donde te mudás.'); document.getElementById('input-desde').focus(); return; }
   if (!hasta) { alert('Por favor ingresá la dirección hacia donde te mudás.'); document.getElementById('input-hasta').focus(); return; }
   if (!fecha) { alert('Por favor seleccioná una fecha estimada.'); return; }
 
-  _busqueda = { desde: desde, hasta: hasta, ambientes: _amb, fecha: fecha, tipo: 'mudanza', nivel: 'llave' };
-
-  // Colapsar form, mostrar resumen
-  document.getElementById('appContainer').classList.add('form-collapsed');
-  var fmtFecha = new Date(fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
-  document.getElementById('summaryText').innerHTML =
-    '<strong>' + desde.split(',')[0] + '</strong> → <strong>' + hasta.split(',')[0] + '</strong> · ' + _amb + ' amb · ' + fmtFecha;
+  _busqueda = {
+    cliente: { nombre: nombre, tel: tel, email: email, notas: notas },
+    desde: desde, hasta: hasta,
+    pisoOrigen:  pisoDesde + (deptoDesde ? ' · Dpto ' + deptoDesde : ''),
+    pisoDestino: pisoHasta + (deptoHasta ? ' · Dpto ' + deptoHasta : ''),
+    ascOrigen:  ascDesde ? 'sí' : 'no',
+    ascDestino: ascHasta ? 'sí' : 'no',
+    ambientes: _amb, fecha: fecha,
+    tipo: 'mudanza', nivel: 'llave'
+  };
 
   // Mostrar sección catálogo y cargar
   var cat = document.getElementById('catalogoSection');
@@ -535,20 +624,13 @@ function buscar() {
   cargarCatalogo();
 }
 
-function editarBusqueda() {
-  document.getElementById('appContainer').classList.remove('form-collapsed');
-  document.getElementById('catalogoSection').classList.remove('show');
-  document.getElementById('bottomBar').classList.remove('show');
-  _sel.clear();
-  document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
-}
-
 // ════════════════════════════════════════════════════════════
-// CATÁLOGO - fetch + filtro + render
+// CATÁLOGO - fetch + filtro Llave + Seguro + render lista CRM
 // ════════════════════════════════════════════════════════════
 async function cargarCatalogo() {
-  var grid = document.getElementById('mudGrid');
-  grid.innerHTML = '<div class="cat-loading"><div class="cat-loading-spin"></div><div style="font-weight:700;color:var(--md-text)">Buscando mudanceros con servicio Llave en mano…</div></div>';
+  var content = document.getElementById('catContent');
+  content.innerHTML = '<div class="cat-loading"><div class="cat-loading-spin"></div><div style="font-weight:700;color:var(--md-text)">Buscando mudanceros con Llave en mano y seguro…</div></div>';
+  document.getElementById('ctaFooter').style.display = 'none';
 
   try {
     var url = '/api/cotizaciones?action=catalogo&desde=' + encodeURIComponent(_busqueda.desde) + '&hasta=' + encodeURIComponent(_busqueda.hasta);
@@ -556,33 +638,35 @@ async function cargarCatalogo() {
     var d = await r.json();
     var todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
 
-    // Filtro duro: solo mudanceros con servicio Llave en mano
+    // Filtro DURO: Llave en mano + Seguro
     _mudanceros = todos.filter(function(m) {
       var sa = m.serviciosActivos;
-      return Array.isArray(sa) && sa.indexOf('llave') !== -1;
+      var tieneLlave = Array.isArray(sa) && sa.indexOf('llave') !== -1;
+      // Seguro: campo verificadoSeguro o servicios incluye "seguro"
+      var tieneSeguro = !!m.verificadoSeguro
+        || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1)
+        || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
+      return tieneLlave && tieneSeguro;
     });
 
     renderCatalogo();
   } catch (e) {
     console.error('Error catálogo:', e);
-    grid.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">⚠️</div><div class="cat-empty-title">No pudimos cargar el catálogo</div><div class="cat-empty-msg">Probá de nuevo en unos segundos.</div></div>';
+    content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">⚠️</div><div class="cat-empty-title">No pudimos cargar el catálogo</div><div class="cat-empty-msg">Probá de nuevo en unos segundos.</div></div>';
   }
 }
 
-// Cálculo de precio referencial - mismo patrón que index.precioMudanceroNivel
+// Cálculo de precio referencial - lógica Llave en mano del index
 function precioReferencial(m, ambientes) {
   var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
   var amb = Math.max(1, ambientes || 2);
   var clave = ['amb1','amb2','amb3','amb4'][Math.min(amb,4)-1] || 'amb1';
-  // Modelo nuevo: precios por nivel - usamos Llave en mano (siempre)
   if (m && m.preciosLlave) {
     var p = pAmt(m.preciosLlave[clave]) || pAmt(m.preciosLlave.amb1);
     if (p > 0) return p;
   }
-  // Compat con datos viejos
   var tieneModeloNuevo = (m && m.preciosEsencial) || (m && m.preciosIntegral) || (m && m.preciosLlave);
   if (tieneModeloNuevo) return 0;
-  // Solo legacy: multiplicador 2.25 sobre precios viejos para Llave en mano
   var base = pAmt(m && m.precios && m.precios[clave]) || pAmt(m && m.precios && m.precios.amb1);
   return Math.round(base * 2.25);
 }
@@ -592,140 +676,75 @@ function fmtPrecio(n) {
   return '$ ' + Math.round(n).toLocaleString('es-AR');
 }
 
-function renderCatalogo() {
-  var grid = document.getElementById('mudGrid');
-  document.getElementById('catCount').textContent = _mudanceros.length;
-
-  if (!_mudanceros.length) {
-    grid.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">🔎</div><div class="cat-empty-title">No encontramos mudanceros disponibles en esa zona</div><div class="cat-empty-msg">Probá con otra dirección o contactanos directamente: hola@mudateya.ar</div></div>';
-    document.getElementById('catMeta').textContent = '';
-    return;
-  }
-
-  document.getElementById('catMeta').innerHTML = 'Tocá los que te interesen y pediles cotización · <strong>' + _mudanceros.length + '</strong> verificado' + (_mudanceros.length === 1 ? '' : 's');
-
-  var html = '';
-  _mudanceros.forEach(function(m) {
-    var initials = (m.empresa || m.nombre || '?').slice(0, 2).toUpperCase();
-    var fotoHtml = (m.foto || m.fotoUrl)
-      ? '<img src="' + (m.foto || m.fotoUrl) + '" alt="' + (m.empresa || m.nombre) + '"/>'
-      : '<div class="mud-foto-ph"><div class="mud-foto-truck">🚛</div><div class="mud-foto-initials">' + initials + '</div></div>';
-
-    var precio = precioReferencial(m, _amb);
-    var precioHtml = precio
-      ? '<div class="mud-precio-desde">Desde</div><div class="mud-precio-num">' + fmtPrecio(precio) + '</div>'
-      : '<div class="mud-precio-desde">Precio</div><div class="mud-precio-num" style="font-size:14px;color:var(--md-text-2)">A consultar</div>';
-
-    var sel = _sel.has(m.email);
-    var emailEnc = m.email.replace(/[^a-z0-9]/gi, '_');
-
-    html += '<div class="mud-card' + (sel ? ' sel' : '') + '" id="card-' + emailEnc + '" onclick="toggleSel(\'' + m.email + '\')">'
-      + '<div class="mud-card-foto">'
-      +   '<div class="mud-sel-check">'
-      +     '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
-      +   '</div>'
-      +   fotoHtml
-      + '</div>'
-      + '<div class="mud-card-body">'
-      +   '<span class="mud-badge-llave">🔑 Llave en mano</span>'
-      +   '<div class="mud-card-empresa">' + escHtml(m.empresa || m.nombre || '—') + '</div>'
-      +   '<div class="mud-rating"><span class="star">★</span><b>' + ((m.calificacion || 0).toFixed(1)) + '</b><span>· ' + (m.nroResenas || 0) + ' reseñas</span></div>'
-      +   '<div class="mud-zona">📍 ' + escHtml(m.zonaBase || '') + '</div>'
-      +   '<div class="mud-trabajos">' + (m.trabajosCompletados || 0) + ' trabajos completados</div>'
-      + '</div>'
-      + '<div class="mud-card-precio">' + precioHtml + '</div>'
-      + '</div>';
-  });
-  grid.innerHTML = html;
-}
-
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ════════════════════════════════════════════════════════════
-// SELECCIÓN
-// ════════════════════════════════════════════════════════════
-function toggleSel(email) {
-  if (_sel.has(email)) _sel.delete(email);
-  else {
-    if (_sel.size >= 5) {
-      alert('Podés solicitar cotización a un máximo de 5 mudanceros a la vez.');
-      return;
-    }
-    _sel.add(email);
-  }
-  renderCatalogo();
-  actualizarBottomBar();
-}
+function renderCatalogo() {
+  var content = document.getElementById('catContent');
+  document.getElementById('catCount').textContent = _mudanceros.length;
 
-function actualizarBottomBar() {
-  var n = _sel.size;
-  document.getElementById('selCount').textContent = n;
-  document.getElementById('selPlural').textContent = (n === 1) ? '' : 's';
-  document.getElementById('selPlural2').textContent = (n === 1) ? '' : 's';
-  var bar = document.getElementById('bottomBar');
-  if (n > 0) bar.classList.add('show');
-  else bar.classList.remove('show');
-}
-
-// ════════════════════════════════════════════════════════════
-// PUBLICAR - login + POST /api/cotizaciones?action=publicar
-// ════════════════════════════════════════════════════════════
-function pedirCotizacion() {
-  if (!_sel.size) return;
-  if (!_currentUser) { abrirLogin(); return; }
-  ejecutarPublicacion();
-}
-
-async function abrirLogin() {
-  // Cargar Google Client ID si no lo tenemos
-  if (!_googleClientId) {
-    try {
-      var r = await fetch('/api/admin-config');
-      var cfg = await r.json();
-      _googleClientId = cfg.googleClientId;
-    } catch(e) { console.error('No se pudo cargar googleClientId', e); }
-  }
-  if (!_googleClientId) {
-    alert('No se pudo iniciar el login. Recargá la página e intentá de nuevo.');
+  if (!_mudanceros.length) {
+    content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">🔎</div><div class="cat-empty-title">No encontramos mudanceros con todos los requisitos</div><div class="cat-empty-msg">Necesitamos mudanceros que ofrezcan <strong>Llave en mano</strong> + <strong>Seguro de mudanza</strong> en esa zona. Probá con otra dirección o contactanos: hola@mudateya.ar</div></div>';
+    document.getElementById('ctaFooter').style.display = 'none';
     return;
   }
-  if (typeof google === 'undefined' || !google.accounts) {
-    alert('Iniciando login... esperá un momento e intentá de nuevo.');
-    return;
-  }
-  google.accounts.id.initialize({
-    client_id: _googleClientId,
-    callback: function(resp) {
-      try {
-        var payload = JSON.parse(atob(resp.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-        _currentUser = { email: payload.email, name: payload.name };
-        cerrarLogin();
-        ejecutarPublicacion();
-      } catch (e) { console.error('JWT decode:', e); alert('Error al iniciar sesión. Probá de nuevo.'); }
-    }
+
+  // Header de la tabla + filas
+  var html = '<div class="mud-table">'
+    + '<div class="mud-row head">'
+    +   '<div>Empresa</div>'
+    +   '<div>Calificación</div>'
+    +   '<div>Servicios</div>'
+    +   '<div style="text-align:right">Precio referencial</div>'
+    + '</div>';
+
+  _mudanceros.forEach(function(m) {
+    var precio = precioReferencial(m, _amb);
+    var precioHtml = precio
+      ? '<div class="mud-precio-label">Desde</div><div class="mud-precio-num">' + fmtPrecio(precio) + '</div>'
+      : '<div class="mud-precio-label">Precio</div><div class="mud-precio-num" style="font-size:13px;color:var(--md-text-2)">A consultar</div>';
+
+    html += '<div class="mud-row">'
+      // Col 1: Empresa + zona
+      + '<div>'
+      +   '<div class="mud-empresa">' + escHtml(m.empresa || m.nombre || '—') + '</div>'
+      +   '<div class="mud-zona">📍 ' + escHtml(m.zonaBase || '—') + '</div>'
+      + '</div>'
+      // Col 2: Reseñas + trabajos
+      + '<div>'
+      +   '<div class="mud-rating"><span class="star">★</span><b>' + ((m.calificacion || 0).toFixed(1)) + '</b><span class="resenas-count">· ' + (m.nroResenas || 0) + ' reseñas</span></div>'
+      +   '<div class="mud-trabajos">' + (m.trabajosCompletados || 0) + ' trabajos completados</div>'
+      + '</div>'
+      // Col 3: Servicios
+      + '<div class="mud-services">'
+      +   '<span class="mud-badge badge-llave">🔑 Llave en mano</span>'
+      +   '<span class="mud-badge badge-seguro">🛡️ Con seguro</span>'
+      + '</div>'
+      // Col 4: Precio
+      + '<div class="mud-precio">' + precioHtml + '</div>'
+      + '</div>';
   });
-  document.getElementById('googleBtn').innerHTML = '';
-  google.accounts.id.renderButton(document.getElementById('googleBtn'), {
-    theme: 'outline', size: 'large', text: 'continue_with', width: 280, shape: 'pill'
-  });
-  document.getElementById('loginModal').classList.add('open');
+
+  html += '</div>';
+  content.innerHTML = html;
+
+  // CTA footer "Pedir a todos"
+  document.getElementById('totalMudanceros').textContent = _mudanceros.length;
+  document.getElementById('ctaFooter').style.display = 'block';
 }
 
-function cerrarLogin() {
-  document.getElementById('loginModal').classList.remove('open');
-}
+// ════════════════════════════════════════════════════════════
+// PEDIR COTIZACIÓN A TODOS - directo, sin login
+// ════════════════════════════════════════════════════════════
+async function pedirATodos() {
+  if (!_mudanceros.length) return;
 
-async function ejecutarPublicacion() {
-  // Calcular precio estimado (mediana de los seleccionados con precio > 0)
+  // Calcular precio estimado: mediana de los precios
   var precios = [];
-  _sel.forEach(function(email) {
-    var m = _mudanceros.find(function(x){ return x.email === email; });
-    if (m) {
-      var p = precioReferencial(m, _busqueda.ambientes);
-      if (p > 0) precios.push(p);
-    }
+  _mudanceros.forEach(function(m) {
+    var p = precioReferencial(m, _busqueda.ambientes);
+    if (p > 0) precios.push(p);
   });
   precios.sort(function(a,b){ return a-b; });
   var precioEstimado = precios.length
@@ -734,50 +753,65 @@ async function ejecutarPublicacion() {
         : precios[Math.floor(precios.length/2)])
     : (50000 + (_busqueda.ambientes - 1) * 30000);
 
-  // Bottom bar - estado loading
-  var bottomBtn = document.querySelector('.bottom-bar-btn');
-  var origText = bottomBtn.innerHTML;
-  bottomBtn.disabled = true;
-  bottomBtn.innerHTML = 'Enviando solicitud…';
+  var emails = _mudanceros.map(function(m){ return m.email; });
+  var btn = document.getElementById('btnPedir');
+  var origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Enviando solicitud…';
 
   try {
+    var payload = {
+      clienteEmail: _busqueda.cliente.email,
+      clienteNombre: _busqueda.cliente.nombre,
+      clienteWA: _busqueda.cliente.tel,
+      desde: _busqueda.desde,
+      hasta: _busqueda.hasta,
+      ambientes: _busqueda.ambientes + ' ambientes',
+      fecha: _busqueda.fecha,
+      servicios: _busqueda.cliente.notas || '',
+      zonaBase: _busqueda.desde,
+      precio_estimado: precioEstimado,
+      tipo: 'mudanza',
+      nivel: 'llave',
+      modoCotizacion: 'dirigido',
+      mudancerosInvitados: emails,
+      pisoOrigen:  _busqueda.pisoOrigen,
+      pisoDestino: _busqueda.pisoDestino,
+      ascOrigen:   _busqueda.ascOrigen,
+      ascDestino:  _busqueda.ascDestino,
+      // ── Trackeo Mudafy ──
+      partner: 'mudafy',
+      partnerAsesor: _partner.asesor,
+      partnerPropiedad: _partner.propiedad
+    };
+
     var r = await fetch('/api/cotizaciones?action=publicar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clienteEmail: _currentUser.email,
-        clienteNombre: _currentUser.name,
-        clienteWA: '',
-        desde: _busqueda.desde,
-        hasta: _busqueda.hasta,
-        ambientes: _busqueda.ambientes + ' ambientes',
-        fecha: _busqueda.fecha,
-        servicios: '',
-        zonaBase: _busqueda.desde,
-        precio_estimado: precioEstimado,
-        tipo: 'mudanza',
-        nivel: 'llave',
-        modoCotizacion: 'dirigido',
-        mudancerosInvitados: Array.from(_sel),
-        // ── Trackeo Mudafy ──
-        partner: 'mudafy',
-        partnerAsesor: _partner.asesor,
-        partnerPropiedad: _partner.propiedad
-      })
+      body: JSON.stringify(payload)
     });
     var resp = await r.json();
     if (resp && resp.error) throw new Error(resp.error);
 
     // Éxito → mostrar modal
     document.getElementById('successModal').classList.add('open');
-    document.getElementById('bottomBar').classList.remove('show');
   } catch (e) {
     console.error('Publicar error:', e);
     alert('Error al enviar la solicitud: ' + (e.message || 'Probá de nuevo.'));
-    bottomBtn.disabled = false;
-    bottomBtn.innerHTML = origText;
+    btn.disabled = false;
+    btn.innerHTML = origText;
   }
 }
+
+// Bind toggles ascensor (sincronizar el checked nativo con la clase visual)
+['desde','hasta'].forEach(function(c) {
+  var input = document.getElementById('asc-' + c);
+  var toggle = document.getElementById('asc-' + c + '-toggle');
+  input.addEventListener('change', function(){
+    if (input.checked) toggle.classList.add('active');
+    else toggle.classList.remove('active');
+  });
+});
 </script>
 
 </body>
