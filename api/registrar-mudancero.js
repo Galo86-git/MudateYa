@@ -125,6 +125,16 @@ module.exports = async function handler(req, res) {
     var precio3amb      = body.precio3amb;
     var precio4amb      = body.precio4amb;
     var precioFlete     = body.precioFlete;
+    // ── Modelo nuevo: packs por nivel + servicios activos + seguro ────
+    // El form (mudanceros.html) ya manda estos campos con el modelo nuevo.
+    // Los recibimos y persistimos junto con el formato legacy (precios.{amb1..amb4})
+    // para no romper consumidores viejos.
+    var preciosEsencial  = body.preciosEsencial   || null;   // objeto {amb1..amb4} o null si no activó el nivel
+    var preciosIntegral  = body.preciosIntegral   || null;
+    var preciosLlave     = body.preciosLlave      || null;
+    var precioFleteNuevo = body.precioFleteNuevo  || '';
+    var serviciosActivos = Array.isArray(body.serviciosActivos) ? body.serviciosActivos : [];
+    var seguroMudanza    = body.seguroMudanza    === true;
     var extra           = body.extra;
     var foto            = body.foto;
     var fotoCamion      = body.fotoCamion;
@@ -202,6 +212,37 @@ module.exports = async function handler(req, res) {
         amb4:  precio4amb  || '',
         flete: precioFlete || '',
       },
+
+      // ── Modelo nuevo: packs por nivel ────────────────────────────────
+      // Cada pack es un objeto {amb1, amb2, amb3, amb4} con strings de precios.
+      // Solo se guardan si el form mandó datos (mudancero activó ese nivel).
+      // Si _svc.esencial = false, preciosEsencial llega null y no se guarda nada.
+      // Las funciones de catálogo y mudafy leen estos campos directamente.
+      preciosEsencial:  (preciosEsencial && typeof preciosEsencial === 'object') ? {
+        amb1: String(preciosEsencial.amb1 || ''),
+        amb2: String(preciosEsencial.amb2 || ''),
+        amb3: String(preciosEsencial.amb3 || ''),
+        amb4: String(preciosEsencial.amb4 || ''),
+      } : null,
+      preciosIntegral:  (preciosIntegral && typeof preciosIntegral === 'object') ? {
+        amb1: String(preciosIntegral.amb1 || ''),
+        amb2: String(preciosIntegral.amb2 || ''),
+        amb3: String(preciosIntegral.amb3 || ''),
+        amb4: String(preciosIntegral.amb4 || ''),
+      } : null,
+      preciosLlave:     (preciosLlave && typeof preciosLlave === 'object') ? {
+        amb1: String(preciosLlave.amb1 || ''),
+        amb2: String(preciosLlave.amb2 || ''),
+        amb3: String(preciosLlave.amb3 || ''),
+        amb4: String(preciosLlave.amb4 || ''),
+      } : null,
+      precioFleteNuevo: String(precioFleteNuevo || ''),
+      // Lista de niveles que ofrece el mudancero. Filtrada contra valores válidos.
+      serviciosActivos: serviciosActivos.filter(function(s) {
+        return ['esencial','integral','llave','flete'].indexOf(s) !== -1;
+      }),
+      // Flag de seguro de mudanza (modelo nuevo). El admin lo puede toggle desde su panel.
+      seguroMudanza:    seguroMudanza,
 
       extra:      extra      || '',
       sinEstres:  sinEstres,
