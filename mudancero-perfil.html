@@ -841,11 +841,20 @@ function confirmarSolicitud() {
 
 // ── Solicitar (entry point) ───────────────
 function solicitarCotizacion() {
+  // Si vino por slug (landing pública), redirigir al index con el slug.
+  // El index detecta ?mudancero={slug}, limpia sessionStorage y arranca el wizard
+  // mostrando solo a ese mudancero pre-seleccionado en el catálogo.
+  var slug = (_mudancero && _mudancero.slug) || (new URLSearchParams(location.search)).get('slug');
+  if (slug) {
+    window.location.href = '/?mudancero=' + encodeURIComponent(slug);
+    return;
+  }
+
+  // ── Flujo legacy: vino con ?id=email desde el catálogo del index ──
   var email = new URLSearchParams(location.search).get('id');
   var user = null;
   try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e){}
 
-  // Si no está logueado → abrir login modal (no redirigir)
   if (!user) {
     abrirLoginModal();
     return;
