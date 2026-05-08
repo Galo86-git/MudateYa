@@ -1680,6 +1680,9 @@
   var _busqueda = {};
   var _todos = [];
   var _sel = new Set();
+  // Slug del mudancero que vino del link público (mudateya.ar/m/{slug}).
+  // Si está seteado, el catálogo muestra solo ese mudancero + escape "ver otros".
+  var _mudanceroForzado = null;
   var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set(), servicios:new Set() };
   var _nivel = 'llave'; // 'esencial' | 'integral' | 'llave'
   var _googleInited = false;
@@ -2118,14 +2121,19 @@
       }
       _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
       // ── Pre-selección desde landing pública (mudateya.ar/m/{slug}) ──
-      // Si el cliente vino desde la landing del mudancero, lo dejamos pre-seleccionado
-      // para que la cotización vaya en modo dirigido a ese mudancero.
+      // Si el cliente vino desde la landing del mudancero, lo pre-seleccionamos
+      // y guardamos su slug en _mudanceroForzado para que el catálogo lo muestre
+      // SOLO a él. Al final del listado aparece un escape "Ver otros mudanceros"
+      // que limpia el filtro y permite ver todos.
       try {
         var qpMud = (new URLSearchParams(window.location.search)).get('mudancero');
         if (qpMud && _todos && _todos.length) {
           var slugBuscado = qpMud.toLowerCase();
           var match = _todos.find(function(m){ return (m.slug||'').toLowerCase() === slugBuscado; });
-          if (match && match.email) _sel.add(match.email);
+          if (match && match.email) {
+            _sel.add(match.email);
+            _mudanceroForzado = slugBuscado; // ← activa filtrado a este mudancero
+          }
         }
       } catch(e) {}
     } catch(e) { _todos = []; }
@@ -2292,6 +2300,12 @@
 
   function renderResultados() {
     var lista = _todos.slice();
+    // ── Filtro forzado: si el cliente vino desde mudateya.ar/m/{slug},
+    // mostramos SOLO a ese mudancero. Al final del listado le ofrecemos
+    // escape para ver el catálogo completo.
+    if (_mudanceroForzado) {
+      lista = lista.filter(function(m){ return (m.slug||'').toLowerCase() === _mudanceroForzado; });
+    }
     // Filtro por NIVEL seleccionado (Esencial / Integral / Llave en mano)
     lista = lista.filter(function(m){ return aplicaAlNivel(m, _nivel); });
     // Filtro por nombre/empresa
@@ -2421,7 +2435,26 @@
         + '</div>';
     }).join('');
     html += '</div>';
+    // ── Escape "ver otros mudanceros" cuando el cat está filtrado a uno solo ──
+    if (_mudanceroForzado) {
+      html += '<div style="margin-top:24px;padding:18px 16px;background:#F5F7FA;border:1px solid #E2E8F0;border-radius:14px;text-align:center">'
+        + '<div style="font-size:13px;color:#475569;margin-bottom:10px">¿No es lo que buscás?</div>'
+        + '<button onclick="verTodosLosMudanceros()" style="background:#fff;color:#003580;border:1.5px solid #003580;border-radius:9px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s">Ver otros mudanceros disponibles →</button>'
+        + '</div>';
+    }
     document.getElementById('listaRes').innerHTML = html;
+  }
+
+  // ── Limpia el filtro de mudancero forzado y muestra el catálogo completo ──
+  function verTodosLosMudanceros() {
+    _mudanceroForzado = null;
+    // Limpiar el query param para que un refresh no re-active el filtro
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.delete('mudancero');
+      window.history.replaceState({}, document.title, url.pathname + url.search);
+    } catch(e) {}
+    renderResultados();
   }
 
   // ══════════════════════════════════════════
@@ -2897,6 +2930,18 @@
   } else {
     verificarMagicLinkSiHay();
   }
+
+  // ── Si viene desde landing pública del mudancero (mudateya.ar/m/{slug} → /?mudancero=...)
+  // limpiar sessionStorage de búsqueda anterior para que el wizard arranque desde cero.
+  try {
+    var _qpMudInicio = (new URLSearchParams(window.location.search)).get('mudancero');
+    if (_qpMudInicio) {
+      sessionStorage.removeItem('busquedaActual');
+      sessionStorage.removeItem('perfilMudancero');
+      sessionStorage.removeItem('seleccionados');
+      sessionStorage.removeItem('ultimoSeleccionado');
+    }
+  } catch(e) {}
   function logout() {
     sessionStorage.removeItem('googleUser'); sessionStorage.removeItem('clienteUser');
     _currentUser=null; updateNav(); window.location.href='/';
