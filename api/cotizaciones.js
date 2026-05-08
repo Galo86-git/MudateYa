@@ -1655,7 +1655,11 @@ module.exports = async function handler(req, res) {
       const camposPermitidos = [
         'nombre','telefono','email','empresa','zonaBase','zonasExtra','vehiculo','servicios',
         'extra','foto','fotoCamion','horarios','dias','anticipacion','sitioWeb','añosExp',
-        'precioFleteNuevo'
+        'precioFleteNuevo',
+        // Campos administrativos / de contacto que el admin edita desde el modal
+        'cuil','cantVehiculos','equipo','distancia',
+        // Datos de cobro
+        'metodoCobro','cbu','emailMP','titularCuenta'
       ];
       camposPermitidos.forEach(function(k) {
         if (cambios[k] !== undefined && cambios[k] !== '') perfil[k] = cambios[k];
