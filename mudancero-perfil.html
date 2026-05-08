@@ -632,17 +632,7 @@ function renderPerfil(m, extra) {
       // Sidebar (sticky en desktop)
       +'<div>'
         +'<div class="sidebar-card">'
-          +(function(){
-            // Label que indica el nivel y ambientes seleccionados — sirve para que el cliente
-            // entienda que ese precio es para esos parámetros (y matchea exactamente el del index)
-            var nivelLbl = busqueda.tipo === 'flete' ? 'Flete'
-              : (busqueda.nivel === 'integral' ? '🛠️ Integral'
-              : busqueda.nivel === 'llave'    ? '🔑 Llave en mano'
-              : '📦 Esencial');
-            var ambLbl = busqueda.tipo === 'flete' ? '' : ' · ' + (parseInt(busqueda.ambientes) || 2) + ' amb.';
-            return '<div class="precio-desde">'+nivelLbl+ambLbl+'</div>';
-          })()
-          +'<div class="precio-num">'+fmtPrecio(precio)+'</div>'
+          +'<div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px">Pedile una cotización a este mudancero. Te va a contactar con su propuesta.</div>'
           +'<button class="btn-cot" onclick="solicitarCotizacion()">Solicitar cotización →</button>'
           +'<div class="sidebar-info-block">'+sidebarInfoRows+'</div>'
           +'<div class="sidebar-trust-row">'+sidebarTrust+'</div>'
