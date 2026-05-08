@@ -2025,6 +2025,9 @@ module.exports = async function handler(req, res) {
           // ── Filtro: no mostrar mudanceros sin precios cargados ──────────
           // Criterio: tiene que tener al menos UN precio > 0 en cualquier
           // pack/ambiente o en flete. Si todo está en 0/vacío, no aparece.
+          // EXCEPCIÓN: mudanceros con seguro de mudanza activo aparecen igual
+          // (con "A consultar" en frontend). Esto es para que admin pueda activar
+          // el seguro sin estar obligado a cargar precios todavía.
           function _toNum(v) {
             if (v === null || v === undefined || v === '') return 0;
             return parseInt(String(v).replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0;
@@ -2044,7 +2047,12 @@ module.exports = async function handler(req, res) {
              || _toNum(p.precios && p.precios.amb3) > 0
              || _toNum(p.precios && p.precios.amb4) > 0
              || _toNum(p.precios && p.precios.flete) > 0;
-          if (!tienePrecioAlguno) continue;
+          // Mudanceros con seguro de mudanza activo entran al catálogo aunque
+          // no tengan precios. El frontend muestra "A consultar" en su lugar.
+          var tieneSeguroActivo = !!p.seguroMudanza
+             || !!p.verificadoSeguro
+             || (p.servicios && String(p.servicios).toLowerCase().indexOf('seguro') !== -1);
+          if (!tienePrecioAlguno && !tieneSeguroActivo) continue;
 
           // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
           catalogo.push({
