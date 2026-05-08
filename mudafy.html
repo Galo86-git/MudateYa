@@ -194,10 +194,29 @@
     padding: 16px 20px;
     border-bottom: 1px solid var(--md-border);
     transition: background 0.12s;
-    cursor: default;
+    cursor: pointer;
   }
   .mud-row:last-child { border-bottom: none; }
   .mud-row:hover { background: var(--md-coral-soft); }
+  .mud-row.selected { background: var(--md-coral-soft); border-left: 3px solid var(--md-coral); padding-left: 17px; }
+  .mud-row.selected:hover { background: var(--md-coral-light); }
+
+  /* Checkbox visual a la izquierda de la primera columna */
+  .mud-check {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border: 2px solid var(--md-border-2);
+    border-radius: 6px;
+    background: var(--md-bg-card);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .mud-check.active {
+    background: var(--md-coral);
+    border-color: var(--md-coral);
+  }
+  .mud-check svg { width: 14px; height: 14px; }
+  .mud-row:hover .mud-check { border-color: var(--md-coral); }
 
   /* Header de la tabla */
   .mud-row.head {
@@ -208,6 +227,7 @@
     cursor: default;
   }
   .mud-row.head:hover { background: var(--md-bg); }
+  .mud-row.head.selected { background: var(--md-bg); border-left: none; padding-left: 20px; }
 
   /* Columna 1: Empresa + zona */
   .mud-empresa { font-size: 15px; font-weight: 800; color: var(--md-text); margin-bottom: 3px; }
@@ -409,7 +429,7 @@
     <div id="catContent"></div>
 
     <div class="cta-footer" id="ctaFooter" style="display:none">
-      <p class="cta-footer-info">Pediremos cotización a los <strong id="totalMudanceros">0</strong> mudanceros disponibles. Recibirás sus respuestas en las próximas horas.</p>
+      <p class="cta-footer-info" id="ctaFooterInfo">Pediremos cotización a los <strong id="totalMudanceros">0</strong> mudanceros disponibles. Recibirás sus respuestas en las próximas horas.</p>
       <button type="button" class="btn-primary" id="btnPedir" onclick="pedirATodos()">
         Pedir cotización a todos
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
@@ -472,6 +492,7 @@ var _partner = {
 var _amb = 2;
 var _busqueda = null;
 var _mudanceros = [];
+var _sel = new Set(); // emails seleccionados (empty = pedir a todos)
 
 // Pre-llenar campos desde params del partner
 (function aplicarPartner() {
@@ -679,6 +700,11 @@ async function cargarCatalogo() {
       return tieneLlave && tieneSeguro;
     });
 
+    // Debug panel — se activa con ?debug=1 en la URL
+    if (_qp.get('debug') === '1') {
+      mostrarDebug(todos);
+    }
+
     renderCatalogo();
   } catch (e) {
     console.error('Error catálogo:', e);
@@ -710,6 +736,42 @@ function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Debug - muestra qué devolvió el backend y por qué se filtró cada uno
+function mostrarDebug(todos) {
+  var existing = document.getElementById('debugPanel');
+  if (existing) existing.remove();
+
+  var html = '<div id="debugPanel" style="background:#1F2937;color:#E5E7EB;padding:16px;border-radius:12px;margin:16px 0;font-family:monospace;font-size:12px;line-height:1.6">'
+    + '<div style="font-weight:800;color:#FCA5A5;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">🐛 Debug · Backend devolvió ' + todos.length + ' mudanceros aprobados en zona</div>';
+
+  todos.forEach(function(m, idx) {
+    var sa = m.serviciosActivos;
+    var tieneLlave = Array.isArray(sa) && sa.indexOf('llave') !== -1;
+    var tieneSeguro = !!m.seguroMudanza
+      || !!m.verificadoSeguro
+      || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1)
+      || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
+    var pasa = tieneLlave && tieneSeguro;
+
+    html += '<div style="border-top:1px solid #374151;padding-top:8px;margin-top:8px">'
+      + '<div style="color:' + (pasa ? '#10B981' : '#F87171') + ';font-weight:700">'
+      +   (pasa ? '✓ PASA' : '✗ NO PASA')
+      +   ' · ' + escHtml(m.empresa || m.nombre || '?')
+      + '</div>'
+      + '<div style="color:#9CA3AF;margin-left:16px">'
+      +   'serviciosActivos: ' + (Array.isArray(sa) ? '[' + sa.join(', ') + ']' : 'null') + '<br>'
+      +   '<span style="color:' + (tieneLlave ? '#10B981' : '#F87171') + '">→ tieneLlave: ' + tieneLlave + '</span><br>'
+      +   'seguroMudanza: ' + m.seguroMudanza + ' · verificadoSeguro: ' + m.verificadoSeguro + '<br>'
+      +   'servicios (texto): "' + (m.servicios || '').slice(0, 60) + (m.servicios && m.servicios.length > 60 ? '...' : '') + '"<br>'
+      +   '<span style="color:' + (tieneSeguro ? '#10B981' : '#F87171') + '">→ tieneSeguro: ' + tieneSeguro + '</span>'
+      + '</div>'
+      + '</div>';
+  });
+
+  html += '</div>';
+  document.getElementById('catContent').insertAdjacentHTML('beforebegin', html);
+}
+
 function renderCatalogo() {
   var content = document.getElementById('catContent');
   document.getElementById('catCount').textContent = _mudanceros.length;
@@ -735,11 +797,19 @@ function renderCatalogo() {
       ? '<div class="mud-precio-label">Desde</div><div class="mud-precio-num">' + fmtPrecio(precio) + '</div>'
       : '<div class="mud-precio-label">Precio</div><div class="mud-precio-num" style="font-size:13px;color:var(--md-text-2)">A consultar</div>';
 
-    html += '<div class="mud-row">'
-      // Col 1: Empresa + zona
-      + '<div>'
-      +   '<div class="mud-empresa">' + escHtml(m.empresa || m.nombre || '—') + '</div>'
-      +   '<div class="mud-zona">📍 ' + escHtml(m.zonaBase || '—') + '</div>'
+    var sel = _sel.has(m.email);
+    var emailEsc = m.email.replace(/'/g, "\\'");
+
+    html += '<div class="mud-row' + (sel ? ' selected' : '') + '" onclick="toggleSel(\'' + emailEsc + '\')">'
+      // Col 1: Empresa + zona + check visual
+      + '<div style="display:flex;align-items:center;gap:12px">'
+      +   '<div class="mud-check' + (sel ? ' active' : '') + '">'
+      +     (sel ? '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' : '')
+      +   '</div>'
+      +   '<div>'
+      +     '<div class="mud-empresa">' + escHtml(m.empresa || m.nombre || '—') + '</div>'
+      +     '<div class="mud-zona">📍 ' + escHtml(m.zonaBase || '—') + '</div>'
+      +   '</div>'
       + '</div>'
       // Col 2: Reseñas + trabajos
       + '<div>'
@@ -759,20 +829,57 @@ function renderCatalogo() {
   html += '</div>';
   content.innerHTML = html;
 
-  // CTA footer "Pedir a todos"
+  // CTA footer dinámico
   document.getElementById('totalMudanceros').textContent = _mudanceros.length;
   document.getElementById('ctaFooter').style.display = 'block';
+  actualizarCtaFooter();
+}
+
+// Toggle selección individual
+function toggleSel(email) {
+  if (_sel.has(email)) _sel.delete(email);
+  else {
+    if (_sel.size >= 5) {
+      alert('Podés seleccionar hasta 5 mudanceros. Si querés pedir a más, deseleccioná todos y se enviará a todos.');
+      return;
+    }
+    _sel.add(email);
+  }
+  renderCatalogo();
+}
+
+// Actualiza texto del CTA según haya selección o no
+function actualizarCtaFooter() {
+  var info = document.getElementById('ctaFooterInfo');
+  var btn = document.getElementById('btnPedir');
+  if (!info || !btn) return;
+  if (_sel.size > 0) {
+    info.innerHTML = 'Pediremos cotización a los <strong>' + _sel.size + '</strong> mudancero' + (_sel.size === 1 ? '' : 's') + ' seleccionado' + (_sel.size === 1 ? '' : 's') + '.';
+    btn.innerHTML = 'Pedir cotización a ' + _sel.size + ' seleccionado' + (_sel.size === 1 ? '' : 's') + ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+  } else {
+    info.innerHTML = 'Pediremos cotización a los <strong>' + _mudanceros.length + '</strong> mudanceros disponibles. Recibirás sus respuestas en las próximas horas.';
+    btn.innerHTML = 'Pedir cotización a todos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+  }
 }
 
 // ════════════════════════════════════════════════════════════
-// PEDIR COTIZACIÓN A TODOS - directo, sin login
+// PEDIR COTIZACIÓN - a todos o a los seleccionados
+// Si _sel está vacío → pide a todos los _mudanceros disponibles
+// Si _sel tiene emails → pide solo a los seleccionados
 // ════════════════════════════════════════════════════════════
 async function pedirATodos() {
   if (!_mudanceros.length) return;
 
-  // Calcular precio estimado: mediana de los precios
+  // Determinar a quiénes enviar
+  var destinatarios = _sel.size > 0
+    ? _mudanceros.filter(function(m){ return _sel.has(m.email); })
+    : _mudanceros;
+
+  if (!destinatarios.length) return;
+
+  // Calcular precio estimado: mediana de los destinatarios
   var precios = [];
-  _mudanceros.forEach(function(m) {
+  destinatarios.forEach(function(m) {
     var p = precioReferencial(m, _busqueda.ambientes);
     if (p > 0) precios.push(p);
   });
@@ -783,7 +890,7 @@ async function pedirATodos() {
         : precios[Math.floor(precios.length/2)])
     : (50000 + (_busqueda.ambientes - 1) * 30000);
 
-  var emails = _mudanceros.map(function(m){ return m.email; });
+  var emails = destinatarios.map(function(m){ return m.email; });
   var btn = document.getElementById('btnPedir');
   var origText = btn.innerHTML;
   btn.disabled = true;
