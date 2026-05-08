@@ -1745,7 +1745,9 @@ module.exports = async function handler(req, res) {
           pctLlave:    Number(pl.pctLlave)||0
         };
       }
-      perfil.ultimaEdicionAdmin = new Date().toISOString();
+      var _now = new Date().toISOString();
+      perfil.ultimaEdicionAdmin = _now;
+      perfil.ultimaActualizacion = _now;  // mismo timestamp para que la tabla del admin lo vea
       await setJSON(`mudancero:perfil:${email}`, perfil);
       return res.status(200).json({ ok: true });
     }
