@@ -2142,11 +2142,11 @@
     if (Array.isArray(m.serviciosActivos)) {
       return m.serviciosActivos.indexOf(nivel) !== -1;
     }
-    // Compat con datos viejos
-    if (nivel === 'llave')    return m.sinEstres === true;
-    if (nivel === 'integral') return ((m.servicios||'').toLowerCase().indexOf('embalaje incluido') !== -1);
-    if (nivel === 'esencial') return true; // por default todos ofrecen esencial en el modelo viejo
-    return false;
+    // Legacy puro (sin serviciosActivos): el mudancero todavía no migró al modelo nuevo.
+    // Cero invento: lo dejamos aparecer SOLO en Esencial. Para Integral/Llave que es donde
+    // los multiplicadores históricos inventaban precios, no aparece hasta que el admin
+    // edite su perfil y active explícitamente los niveles correspondientes.
+    return nivel === 'esencial';
   }
   // Helper: ¿el pack {amb1..amb4} tiene al menos un precio > 0 cargado?
   // Un objeto con strings vacíos NO cuenta como pack cargado.
@@ -2234,11 +2234,14 @@
     // Si el mudancero ya migró al modelo nuevo en CUALQUIER pack, no inventamos
     // precios para los packs que no cargó. Devolvemos 0 → la card muestra "A consultar".
     if (_tieneModeloNuevoCargado(m)) return 0;
-    // Solo legacy puro: el perfil no tiene NINGÚN pack del modelo nuevo cargado.
-    // Para ESTOS perfiles (sin migrar), aplicamos multiplicador histórico sobre precios viejos.
-    var multi = (nivel === 'integral') ? 1.5 : (nivel === 'llave' ? 2.25 : 1);
-    var base = pAmt(m && m.precios && m.precios[clave]) || pAmt(m && m.precios && m.precios.amb1);
-    return Math.round(base * multi);
+    // Legacy puro: el perfil sólo tiene el subobjeto m.precios (modelo viejo).
+    // Para Esencial usamos directamente el precio cargado por el mudancero.
+    // Para Integral/Llave NO inventamos (cero invento) → 0 → "A consultar".
+    if (nivel === 'esencial') {
+      var base = pAmt(m && m.precios && m.precios[clave]);
+      return base > 0 ? base : 0;
+    }
+    return 0;
   }
   // Compat: la función vieja se mantiene por si algún código la usa
   function multiplicadorNivel(nivel) {
