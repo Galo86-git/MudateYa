@@ -903,18 +903,28 @@ var _mudancero = null;
     fetch('/api/cotizaciones?action=mudancero-publico&slug=' + encodeURIComponent(urlSlug))
       .then(function(r){
         if (!r.ok) {
-          if (r.status === 404) { renderError(); return null; }
+          if (r.status === 404) { console.warn('[m] 404 slug:', urlSlug); renderError(); return null; }
           throw new Error('HTTP ' + r.status);
         }
         return r.json();
       })
       .then(function(datos){
         if (!datos) return;
-        // Cachear para que la próxima abra al toque
+        // El endpoint público NO devuelve email (privacidad). Si algún código del
+        // render asume que existe, ponemos el slug como sustituto seguro.
+        if (!datos.email) datos.email = datos.slug || urlSlug;
         try { sessionStorage.setItem('perfilMudancero', JSON.stringify(datos)); } catch(e){}
-        renderConDatos(datos);
+        try {
+          renderConDatos(datos);
+        } catch(err) {
+          console.error('[m] error en renderConDatos:', err);
+          renderError();
+        }
       })
-      .catch(function(){ renderError(); });
+      .catch(function(err){
+        console.error('[m] fetch falló:', err);
+        renderError();
+      });
     return;
   }
 
