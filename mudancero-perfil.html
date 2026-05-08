@@ -633,22 +633,16 @@ function renderPerfil(m, extra) {
       +'<div>'
         +'<div class="sidebar-card">'
           +(function(){
-            // Si vino del catálogo del index (con ?id=email), había una búsqueda activa
-            // y mostramos el precio estimado. Si vino del link público (?slug=), NO había
-            // búsqueda → solo CTA neutro pidiendo cotización.
-            var vinoPorSlug = !!(new URLSearchParams(location.search)).get('slug');
-            if (vinoPorSlug) {
-              return '<div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px">Pedile una cotización a este mudancero. Te va a contactar con su propuesta.</div>';
-            }
-            // Vista A (legacy): label de nivel + precio estimado
+            // Label que indica el nivel y ambientes seleccionados — sirve para que el cliente
+            // entienda que ese precio es para esos parámetros (y matchea exactamente el del index)
             var nivelLbl = busqueda.tipo === 'flete' ? 'Flete'
               : (busqueda.nivel === 'integral' ? '🛠️ Integral'
               : busqueda.nivel === 'llave'    ? '🔑 Llave en mano'
               : '📦 Esencial');
             var ambLbl = busqueda.tipo === 'flete' ? '' : ' · ' + (parseInt(busqueda.ambientes) || 2) + ' amb.';
-            return '<div class="precio-desde">'+nivelLbl+ambLbl+'</div>'
-              + '<div class="precio-num">'+fmtPrecio(precio)+'</div>';
+            return '<div class="precio-desde">'+nivelLbl+ambLbl+'</div>';
           })()
+          +'<div class="precio-num">'+fmtPrecio(precio)+'</div>'
           +'<button class="btn-cot" onclick="solicitarCotizacion()">Solicitar cotización →</button>'
           +'<div class="sidebar-info-block">'+sidebarInfoRows+'</div>'
           +'<div class="sidebar-trust-row">'+sidebarTrust+'</div>'
@@ -847,20 +841,11 @@ function confirmarSolicitud() {
 
 // ── Solicitar (entry point) ───────────────
 function solicitarCotizacion() {
-  // Si vino por slug (landing pública), redirigir al index con el slug.
-  // El index detecta ?mudancero={slug}, limpia sessionStorage y arranca el wizard
-  // mostrando solo a ese mudancero pre-seleccionado en el catálogo.
-  var slug = (_mudancero && _mudancero.slug) || (new URLSearchParams(location.search)).get('slug');
-  if (slug) {
-    window.location.href = '/?mudancero=' + encodeURIComponent(slug);
-    return;
-  }
-
-  // ── Flujo legacy: vino con ?id=email desde el catálogo del index ──
   var email = new URLSearchParams(location.search).get('id');
   var user = null;
   try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e){}
 
+  // Si no está logueado → abrir login modal (no redirigir)
   if (!user) {
     abrirLoginModal();
     return;
@@ -899,8 +884,18 @@ var _mudancero = null;
 // INIT
 // ══════════════════════════════════════════
 (function init() {
-  // ── Helpers locales declarados PRIMERO para garantizar disponibilidad ──
-  function renderError() {
+  var m = null;
+  try { m = JSON.parse(sessionStorage.getItem('perfilMudancero')); } catch(e){}
+
+  var urlEmail = null;
+  try {
+    var params = new URLSearchParams(window.location.search);
+    urlEmail = params.get('id') ? decodeURIComponent(params.get('id')) : null;
+  } catch(e) {}
+
+  var email = (m && m.email) || urlEmail;
+
+  if (!email) {
     document.getElementById('mainContainer').innerHTML =
       '<div style="text-align:center;padding:4rem;color:var(--text3)">'
       +'<div style="font-size:3rem;margin-bottom:1rem">😕</div>'
@@ -908,15 +903,17 @@ var _mudancero = null;
       +'<p style="font-size:13px;margin-bottom:1.5rem">No pudimos cargar los datos de este mudancero.</p>'
       +'<a href="/" style="color:var(--blue);font-size:13px">← Volver al inicio</a>'
       +'</div>';
+    return;
   }
 
   function renderConDatos(datos) {
     _mudancero = datos;
-    var em = datos.email || datos.slug || '';
+    var em = datos.email || '';
     var idx = 0;
     for (var i = 0; i < em.length; i++) idx += em.charCodeAt(i);
     idx = idx % 50;
     var extra = getDatosExtra(idx);
+    // Fotos reales tienen prioridad sobre las de stock
     if (datos.fotosVehiculo && datos.fotosVehiculo.length) {
       extra.fotos = datos.fotosVehiculo;
     } else if (datos.fotoCamion) {
@@ -929,72 +926,7 @@ var _mudancero = null;
     _setFotosLightbox(extra.fotos);
   }
 
-  // ── Cargar perfil desde session (si vino del catálogo) ──
-  var m = null;
-  try { m = JSON.parse(sessionStorage.getItem('perfilMudancero')); } catch(e){}
-
-  // ── Leer params de la URL ──
-  // El slug puede venir de DOS formas:
-  //   A) /m/velocity  → leer del path (cuando Vercel rewrite NO funciona)
-  //   B) /mudancero-perfil.html?slug=velocity → leer del query (cuando rewrite SÍ funciona)
-  // Probamos ambas para máxima robustez.
-  var urlEmail = null;
-  var urlSlug  = null;
-  try {
-    var params = new URLSearchParams(window.location.search);
-    urlEmail = params.get('id') ? decodeURIComponent(params.get('id')) : null;
-    urlSlug  = params.get('slug') ? decodeURIComponent(params.get('slug')).toLowerCase() : null;
-    // Fallback: si no vino por query, probar leerlo del path /m/{slug}
-    if (!urlSlug && !urlEmail) {
-      var pathMatch = window.location.pathname.match(/^\/m\/([^\/?#]+)/i);
-      if (pathMatch && pathMatch[1]) {
-        urlSlug = decodeURIComponent(pathMatch[1]).toLowerCase();
-      }
-    }
-  } catch(e) {}
-
-  console.log('[mudancero-perfil] init → urlSlug=', urlSlug, 'urlEmail=', urlEmail, 'path=', window.location.pathname);
-
-  // ── Caso A: vino por slug (URL pública mudateya.ar/m/{slug}) ──
-  if (urlSlug && !urlEmail) {
-    fetch('/api/cotizaciones?action=mudancero-publico&slug=' + encodeURIComponent(urlSlug))
-      .then(function(r){
-        console.log('[mudancero-perfil] HTTP', r.status, 'slug=', urlSlug);
-        if (!r.ok) {
-          if (r.status === 404) { renderError(); return null; }
-          throw new Error('HTTP ' + r.status);
-        }
-        return r.json();
-      })
-      .then(function(datos){
-        if (!datos) return;
-        // El endpoint público NO devuelve email (privacidad). Si algún código
-        // del render asume que existe, ponemos el slug como sustituto seguro.
-        if (!datos.email) datos.email = datos.slug || urlSlug;
-        // Garantizar resenas como array para evitar TypeError
-        if (!Array.isArray(datos.resenas)) datos.resenas = [];
-        try { sessionStorage.setItem('perfilMudancero', JSON.stringify(datos)); } catch(e){}
-        try {
-          renderConDatos(datos);
-        } catch(err) {
-          console.error('[mudancero-perfil] renderConDatos falló:', err && err.stack || err);
-          renderError();
-        }
-      })
-      .catch(function(err){
-        console.error('[mudancero-perfil] fetch falló:', err && err.message || err);
-        renderError();
-      });
-    return;
-  }
-
-  // ── Caso B: legacy con ?id=email ──
-  var email = (m && m.email) || urlEmail;
-  if (!email) {
-    renderError();
-    return;
-  }
-
+  // Siempre buscar datos frescos de Redis
   fetch('/api/cotizaciones?action=catalogo')
     .then(function(r){ return r.json(); })
     .then(function(d) {
