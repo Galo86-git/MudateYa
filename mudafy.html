@@ -271,8 +271,35 @@
   .cta-footer-info strong { color: var(--md-coral); font-weight: 800; }
 
   /* Modal Éxito */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(15,20,25,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,20,25,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; overflow-y: auto; }
   .modal-overlay.open { display: flex; }
+
+  /* Modal Confirmación - resumen antes de enviar */
+  .confirm-modal { background: var(--md-bg-card); border-radius: 20px; padding: 28px; max-width: 540px; width: 100%; position: relative; max-height: calc(100vh - 40px); overflow-y: auto; }
+  .confirm-modal-header { text-align: center; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--md-border); }
+  .confirm-modal-icon { width: 56px; height: 56px; background: var(--md-coral-soft); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 28px; }
+  .confirm-modal-title { font-size: 22px; font-weight: 800; color: var(--md-text); margin-bottom: 6px; letter-spacing: -0.4px; }
+  .confirm-modal-subtitle { font-size: 14px; color: var(--md-text-2); }
+  .confirm-section { margin-bottom: 18px; }
+  .confirm-section-title { font-size: 11px; color: var(--md-text-3); font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .confirm-row { display: flex; gap: 8px; padding: 6px 0; font-size: 13px; }
+  .confirm-row-label { color: var(--md-text-3); min-width: 90px; flex-shrink: 0; }
+  .confirm-row-val { color: var(--md-text); font-weight: 600; flex: 1; word-break: break-word; }
+  .confirm-list { background: var(--md-bg); border-radius: 10px; padding: 8px; }
+  .confirm-list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; }
+  .confirm-list-item:nth-child(even) { background: var(--md-bg-card); }
+  .confirm-list-name { font-size: 13px; font-weight: 700; color: var(--md-text); }
+  .confirm-list-meta { font-size: 11px; color: var(--md-text-3); margin-top: 1px; }
+  .confirm-list-precio { font-size: 13px; font-weight: 800; color: var(--md-coral); }
+  .confirm-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .btn-cancel { flex: 1; padding: 14px 20px; background: var(--md-bg); color: var(--md-text); border: 1.5px solid var(--md-border-2); border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .btn-cancel:hover { background: var(--md-border); }
+  .btn-confirm { flex: 2; padding: 14px 20px; background: var(--md-success); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.3); }
+  .btn-confirm:hover { background: #0E9F6E; transform: translateY(-1px); }
+  .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-confirm svg { width: 16px; height: 16px; }
+  .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 24px; color: var(--md-text-3); cursor: pointer; padding: 4px 10px; line-height: 1; font-family: inherit; }
+  .modal-close:hover { color: var(--md-text); }
   .success-modal { background: var(--md-bg-card); border-radius: 20px; padding: 36px 28px; max-width: 440px; width: 100%; text-align: center; position: relative; }
   .success-icon-big { width: 72px; height: 72px; background: var(--md-success); border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 18px; }
   .success-icon-big svg { width: 40px; height: 40px; color: white; }
@@ -437,6 +464,26 @@
     </div>
   </div>
 
+</div>
+
+<!-- Modal Confirmación -->
+<div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)cerrarConfirm()">
+  <div class="confirm-modal">
+    <button class="modal-close" type="button" onclick="cerrarConfirm()">×</button>
+    <div class="confirm-modal-header">
+      <div class="confirm-modal-icon">📨</div>
+      <h2 class="confirm-modal-title">Revisá tu solicitud</h2>
+      <p class="confirm-modal-subtitle">Verificá los datos antes de enviar</p>
+    </div>
+    <div id="confirmBody"></div>
+    <div class="confirm-actions">
+      <button type="button" class="btn-cancel" onclick="cerrarConfirm()">Cancelar</button>
+      <button type="button" class="btn-confirm" id="btnConfirmEnvio" onclick="confirmarEnvio()">
+        Sí, enviar solicitud
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal éxito -->
@@ -896,11 +943,10 @@ function limpiarSeleccion() {
 }
 
 // ════════════════════════════════════════════════════════════
-// PEDIR COTIZACIÓN - a todos o a los seleccionados
-// Si _sel está vacío → pide a todos los _mudanceros disponibles
-// Si _sel tiene emails → pide solo a los seleccionados
+// PEDIR COTIZACIÓN - abre modal de confirmación primero
+// El envío real se hace en confirmarEnvio() solo si el usuario confirma
 // ════════════════════════════════════════════════════════════
-async function pedirATodos() {
+function pedirATodos() {
   if (!_mudanceros.length) return;
 
   // Determinar a quiénes enviar
@@ -910,7 +956,78 @@ async function pedirATodos() {
 
   if (!destinatarios.length) return;
 
-  // Calcular precio estimado: mediana de los destinatarios
+  // Renderizar resumen en el modal
+  var fechaFmt = '';
+  try {
+    fechaFmt = new Date(_busqueda.fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch(e) { fechaFmt = _busqueda.fecha; }
+
+  var ascDesdeStr = _busqueda.ascOrigen === 'sí'  ? '· con ascensor' : '';
+  var ascHastaStr = _busqueda.ascDestino === 'sí' ? '· con ascensor' : '';
+
+  var html = ''
+    // Datos cliente
+    + '<div class="confirm-section">'
+    +   '<div class="confirm-section-title">👤 Tus datos</div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Nombre</span><span class="confirm-row-val">' + escHtml(_busqueda.cliente.nombre) + '</span></div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Teléfono</span><span class="confirm-row-val">' + escHtml(_busqueda.cliente.tel) + '</span></div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Email</span><span class="confirm-row-val">' + escHtml(_busqueda.cliente.email) + '</span></div>'
+    + (_busqueda.cliente.notas ? '<div class="confirm-row"><span class="confirm-row-label">Notas</span><span class="confirm-row-val">' + escHtml(_busqueda.cliente.notas) + '</span></div>' : '')
+    + '</div>'
+    // Datos mudanza
+    + '<div class="confirm-section">'
+    +   '<div class="confirm-section-title">🚛 Tu mudanza</div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Desde</span><span class="confirm-row-val">' + escHtml(_busqueda.desde) + (_busqueda.pisoOrigen ? ' <span style="color:var(--md-text-3);font-weight:500">· ' + escHtml(_busqueda.pisoOrigen) + ' ' + ascDesdeStr + '</span>' : '') + '</span></div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Hacia</span><span class="confirm-row-val">' + escHtml(_busqueda.hasta) + (_busqueda.pisoDestino ? ' <span style="color:var(--md-text-3);font-weight:500">· ' + escHtml(_busqueda.pisoDestino) + ' ' + ascHastaStr + '</span>' : '') + '</span></div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Ambientes</span><span class="confirm-row-val">' + _busqueda.ambientes + '</span></div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Fecha</span><span class="confirm-row-val">' + escHtml(fechaFmt) + '</span></div>'
+    + '</div>'
+    // Mudanceros destinatarios
+    + '<div class="confirm-section">'
+    +   '<div class="confirm-section-title">📨 Solicitarás cotización a ' + destinatarios.length + ' mudancero' + (destinatarios.length === 1 ? '' : 's') + '</div>'
+    +   '<div class="confirm-list">';
+
+  destinatarios.forEach(function(m) {
+    var precio = precioReferencial(m, _busqueda.ambientes);
+    var precioTxt = precio ? fmtPrecio(precio) : 'A consultar';
+    html += '<div class="confirm-list-item">'
+      + '<div>'
+      +   '<div class="confirm-list-name">' + escHtml(m.empresa || m.nombre || '—') + '</div>'
+      +   '<div class="confirm-list-meta">📍 ' + escHtml(m.zonaBase || '—') + ' · ★ ' + ((m.calificacion || 0).toFixed(1)) + '</div>'
+      + '</div>'
+      + '<div class="confirm-list-precio">' + precioTxt + '</div>'
+      + '</div>';
+  });
+
+  html += '</div></div>';
+
+  document.getElementById('confirmBody').innerHTML = html;
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+function cerrarConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+  // Restaurar el botón confirmar por si quedó disabled
+  var btn = document.getElementById('btnConfirmEnvio');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = 'Sí, enviar solicitud <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// CONFIRMAR ENVIO - hace el POST real al backend
+// ════════════════════════════════════════════════════════════
+async function confirmarEnvio() {
+  if (!_mudanceros.length) return;
+
+  var destinatarios = _sel.size > 0
+    ? _mudanceros.filter(function(m){ return _sel.has(m.email); })
+    : _mudanceros;
+
+  if (!destinatarios.length) return;
+
+  // Calcular precio estimado: mediana
   var precios = [];
   destinatarios.forEach(function(m) {
     var p = precioReferencial(m, _busqueda.ambientes);
@@ -924,10 +1041,9 @@ async function pedirATodos() {
     : (50000 + (_busqueda.ambientes - 1) * 30000);
 
   var emails = destinatarios.map(function(m){ return m.email; });
-  var btn = document.getElementById('btnPedir');
-  var origText = btn.innerHTML;
+  var btn = document.getElementById('btnConfirmEnvio');
   btn.disabled = true;
-  btn.innerHTML = 'Enviando solicitud…';
+  btn.innerHTML = 'Enviando…';
 
   try {
     var payload = {
@@ -949,7 +1065,7 @@ async function pedirATodos() {
       pisoDestino: _busqueda.pisoDestino,
       ascOrigen:   _busqueda.ascOrigen,
       ascDestino:  _busqueda.ascDestino,
-      // ── Trackeo Mudafy ──
+      // Trackeo Mudafy
       partner: 'mudafy',
       partnerAsesor: _partner.asesor,
       partnerPropiedad: _partner.propiedad
@@ -963,14 +1079,15 @@ async function pedirATodos() {
     var resp = await r.json();
     if (resp && resp.error) throw new Error(resp.error);
 
-    // Éxito → borrar form guardado y mostrar modal
+    // Éxito → borrar form guardado, cerrar confirm, mostrar éxito
     try { sessionStorage.removeItem(FORM_STORAGE_KEY); } catch(e){}
+    document.getElementById('confirmModal').classList.remove('open');
     document.getElementById('successModal').classList.add('open');
   } catch (e) {
     console.error('Publicar error:', e);
     alert('Error al enviar la solicitud: ' + (e.message || 'Probá de nuevo.'));
     btn.disabled = false;
-    btn.innerHTML = origText;
+    btn.innerHTML = 'Sí, enviar solicitud <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
   }
 }
 
