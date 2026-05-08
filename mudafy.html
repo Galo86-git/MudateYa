@@ -816,7 +816,8 @@ async function pedirATodos() {
     var resp = await r.json();
     if (resp && resp.error) throw new Error(resp.error);
 
-    // Éxito → mostrar modal
+    // Éxito → borrar form guardado y mostrar modal
+    try { sessionStorage.removeItem(FORM_STORAGE_KEY); } catch(e){}
     document.getElementById('successModal').classList.add('open');
   } catch (e) {
     console.error('Publicar error:', e);
@@ -826,15 +827,111 @@ async function pedirATodos() {
   }
 }
 
-// Bind toggles ascensor (sincronizar el checked nativo con la clase visual)
+// ════════════════════════════════════════════════════════════
+// PERSISTENCIA - guardar form en sessionStorage para sobrevivir refresh
+// Se usa sessionStorage (no localStorage) porque son datos personales
+// y queremos que se borren al cerrar la pestaña.
+// ════════════════════════════════════════════════════════════
+var FORM_STORAGE_KEY = 'mudafy_form_v1';
+
+function guardarForm() {
+  try {
+    var data = {
+      cliNombre: document.getElementById('cli-nombre').value || '',
+      cliTel:    document.getElementById('cli-tel').value || '',
+      cliEmail:  document.getElementById('cli-email').value || '',
+      cliNotas:  document.getElementById('cli-notas').value || '',
+      desde:     document.getElementById('input-desde').value || '',
+      hasta:     document.getElementById('input-hasta').value || '',
+      pisoDesde: document.getElementById('piso-desde').value || '',
+      deptoDesde:document.getElementById('depto-desde').value || '',
+      ascDesde:  document.getElementById('asc-desde').checked,
+      pisoHasta: document.getElementById('piso-hasta').value || '',
+      deptoHasta:document.getElementById('depto-hasta').value || '',
+      ascHasta:  document.getElementById('asc-hasta').checked,
+      ambientes: _amb,
+      fecha:     document.getElementById('input-fecha').value || ''
+    };
+    sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+  } catch(e) { /* silencioso, no rompemos UX si sessionStorage falla */ }
+}
+
+function restaurarForm() {
+  try {
+    var raw = sessionStorage.getItem(FORM_STORAGE_KEY);
+    if (!raw) return;
+    var d = JSON.parse(raw);
+    // Datos cliente
+    if (d.cliNombre) document.getElementById('cli-nombre').value = d.cliNombre;
+    if (d.cliTel)    document.getElementById('cli-tel').value    = d.cliTel;
+    if (d.cliEmail)  document.getElementById('cli-email').value  = d.cliEmail;
+    if (d.cliNotas)  document.getElementById('cli-notas').value  = d.cliNotas;
+    // Direcciones (no pisamos las pre-llenadas por Mudafy si ya las tenemos)
+    var inDesde = document.getElementById('input-desde');
+    var inHasta = document.getElementById('input-hasta');
+    if (d.desde && !inDesde.value) inDesde.value = d.desde;
+    if (d.hasta && !inHasta.value) inHasta.value = d.hasta;
+    if (d.pisoDesde)  document.getElementById('piso-desde').value  = d.pisoDesde;
+    if (d.deptoDesde) document.getElementById('depto-desde').value = d.deptoDesde;
+    if (d.ascDesde) {
+      document.getElementById('asc-desde').checked = true;
+      document.getElementById('asc-desde-toggle').classList.add('active');
+    }
+    if (d.pisoHasta)  document.getElementById('piso-hasta').value  = d.pisoHasta;
+    if (d.deptoHasta) document.getElementById('depto-hasta').value = d.deptoHasta;
+    if (d.ascHasta) {
+      document.getElementById('asc-hasta').checked = true;
+      document.getElementById('asc-hasta-toggle').classList.add('active');
+    }
+    // Ambientes
+    if (d.ambientes && d.ambientes >= 1 && d.ambientes <= 8) {
+      _amb = d.ambientes;
+      document.getElementById('ambVal').textContent = _amb;
+      document.getElementById('ambMinus').disabled = (_amb <= 1);
+      document.getElementById('ambPlus').disabled  = (_amb >= 8);
+    }
+    // Fecha — solo si la fecha guardada es futura (sino el min nos cortaría)
+    if (d.fecha) {
+      var hoy = new Date(); hoy.setHours(0,0,0,0);
+      var fechaGuardada = new Date(d.fecha + 'T00:00:00');
+      if (fechaGuardada > hoy) document.getElementById('input-fecha').value = d.fecha;
+    }
+  } catch(e) { /* silencioso */ }
+}
+
+// Bind: guardar en cada cambio
+function bindAutoGuardar() {
+  var ids = ['cli-nombre','cli-tel','cli-email','cli-notas','input-desde','input-hasta',
+             'piso-desde','depto-desde','asc-desde','piso-hasta','depto-hasta','asc-hasta',
+             'input-fecha'];
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', guardarForm);
+    el.addEventListener('blur',   guardarForm);
+  });
+  // Ambientes (counter botones) - guardar después del click
+  ['ambMinus','ambPlus'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function(){ setTimeout(guardarForm, 50); });
+  });
+}
+
+// Bind toggles ascensor (sincronizar checked nativo con la clase visual)
 ['desde','hasta'].forEach(function(c) {
   var input = document.getElementById('asc-' + c);
   var toggle = document.getElementById('asc-' + c + '-toggle');
-  input.addEventListener('change', function(){
-    if (input.checked) toggle.classList.add('active');
-    else toggle.classList.remove('active');
-  });
+  if (input && toggle) {
+    input.addEventListener('change', function(){
+      if (input.checked) toggle.classList.add('active');
+      else toggle.classList.remove('active');
+    });
+  }
 });
+
+// Restaurar form al cargar (después de aplicarPartner para no pisar la dirección de Mudafy)
+restaurarForm();
+bindAutoGuardar();
 </script>
 
 </body>
