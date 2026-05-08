@@ -627,25 +627,48 @@ function buscar() {
 // ════════════════════════════════════════════════════════════
 // CATÁLOGO - fetch + filtro Llave + Seguro + render lista CRM
 // ════════════════════════════════════════════════════════════
+
+// Detectar zona AMBA/Córdoba/Rosario - misma lógica que index.html
+// para que el endpoint catalogo devuelva los mismos mudanceros.
+function detectarZonaSimple(desde, hasta) {
+  var texto = (desde + ' ' + hasta).toLowerCase();
+  var kwAmba = ['caba','palermo','belgrano','caballito','flores','almagro','boedo','balvanera',
+    'recoleta','retiro','san telmo','la boca','barracas','mataderos','liniers','devoto',
+    'villa urquiza','coghlan','saavedra','nuñez','colegiales','chacarita','paternal',
+    'villa crespo','once','congreso','microcentro','puerto madero',
+    'san isidro','vicente lopez','olivos','martinez','boulogne','beccar','tigre',
+    'san fernando','quilmes','avellaneda','lanus','lomas de zamora','banfield',
+    'moron','ituzaingo','castelar','haedo','ramos mejia','san justo','merlo',
+    'la matanza','florencio varela','berazategui','san martin','tres de febrero',
+    'gba','amba','conurbano','gran buenos aires','buenos aires','acassuso'];
+  var kwCordoba = ['córdoba','cordoba','villa carlos paz','rio cuarto','río cuarto'];
+  var kwRosario = ['rosario','santa fe','rafaela'];
+  for (var i=0; i<kwAmba.length; i++)    { if (texto.includes(kwAmba[i]))    return 'GBA'; }
+  for (var i=0; i<kwCordoba.length; i++) { if (texto.includes(kwCordoba[i])) return 'Córdoba Capital'; }
+  for (var i=0; i<kwRosario.length; i++) { if (texto.includes(kwRosario[i])) return 'Rosario'; }
+  return null;
+}
+
 async function cargarCatalogo() {
   var content = document.getElementById('catContent');
   content.innerHTML = '<div class="cat-loading"><div class="cat-loading-spin"></div><div style="font-weight:700;color:var(--md-text)">Buscando mudanceros con Llave en mano y seguro…</div></div>';
   document.getElementById('ctaFooter').style.display = 'none';
 
   try {
-    var url = '/api/cotizaciones?action=catalogo&desde=' + encodeURIComponent(_busqueda.desde) + '&hasta=' + encodeURIComponent(_busqueda.hasta);
+    // Misma lógica que el index: detectar zona y pasar como ?zona=GBA
+    // En lugar de ?desde=...&hasta=... que devolvía menos resultados.
+    var zona = detectarZonaSimple(_busqueda.desde, _busqueda.hasta);
+    var url = '/api/cotizaciones?action=catalogo' + (zona ? '&zona=' + encodeURIComponent(zona) : '');
     var r = await fetch(url);
     var d = await r.json();
     var todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
 
-    // Filtro DURO: Llave en mano + Seguro
+    // Filtro DURO: Llave en mano + Seguro (misma lógica que el index)
     _mudanceros = todos.filter(function(m) {
       var sa = m.serviciosActivos;
       var tieneLlave = Array.isArray(sa) && sa.indexOf('llave') !== -1;
-      // Seguro: campo verificadoSeguro o servicios incluye "seguro"
       var tieneSeguro = !!m.verificadoSeguro
-        || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1)
-        || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
+        || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1);
       return tieneLlave && tieneSeguro;
     });
 
