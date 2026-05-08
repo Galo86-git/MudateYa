@@ -2121,23 +2121,37 @@
       }
       _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
       // ── Pre-selección desde landing pública (mudateya.ar/m/{slug}) ──
-      // Si el cliente vino desde la landing del mudancero, lo pre-seleccionamos
-      // y guardamos su slug en _mudanceroForzado para que el catálogo lo muestre
-      // SOLO a él. Al final del listado aparece un escape "Ver otros mudanceros"
-      // que limpia el filtro y permite ver todos.
+      // Si el cliente vino desde la landing del mudancero por click en
+      // "Solicitar cotización", al terminar el wizard saltamos el catálogo y
+      // disparamos la publicación dirigida directo. El cliente nunca ve el catálogo.
+      var disparoAutomatico = false;
       try {
         var qpMud = (new URLSearchParams(window.location.search)).get('mudancero');
         if (qpMud && _todos && _todos.length) {
           var slugBuscado = qpMud.toLowerCase();
           var match = _todos.find(function(m){ return (m.slug||'').toLowerCase() === slugBuscado; });
           if (match && match.email) {
+            _sel.clear();
             _sel.add(match.email);
-            _mudanceroForzado = slugBuscado; // ← activa filtrado a este mudancero
+            _mudanceroForzado = slugBuscado;
+            disparoAutomatico = true;
           }
         }
       } catch(e) {}
     } catch(e) { _todos = []; }
     renderResultados();
+    // Si vino del link público, disparar la cotización automáticamente DESPUÉS de
+    // que el catálogo cargó y _sel quedó con el mudancero correcto.
+    if (disparoAutomatico) {
+      // Limpiar el query param para que un refresh no reactive el flow
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.delete('mudancero');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+      } catch(e) {}
+      // Pequeño delay para que el render termine y el modal abra limpio
+      setTimeout(function(){ pedirCotizacion(); }, 200);
+    }
   }
 
   // ══════════════════════════════════════════
@@ -2300,12 +2314,6 @@
 
   function renderResultados() {
     var lista = _todos.slice();
-    // ── Filtro forzado: si el cliente vino desde mudateya.ar/m/{slug},
-    // mostramos SOLO a ese mudancero. Al final del listado le ofrecemos
-    // escape para ver el catálogo completo.
-    if (_mudanceroForzado) {
-      lista = lista.filter(function(m){ return (m.slug||'').toLowerCase() === _mudanceroForzado; });
-    }
     // Filtro por NIVEL seleccionado (Esencial / Integral / Llave en mano)
     lista = lista.filter(function(m){ return aplicaAlNivel(m, _nivel); });
     // Filtro por nombre/empresa
@@ -2435,26 +2443,7 @@
         + '</div>';
     }).join('');
     html += '</div>';
-    // ── Escape "ver otros mudanceros" cuando el cat está filtrado a uno solo ──
-    if (_mudanceroForzado) {
-      html += '<div style="margin-top:24px;padding:18px 16px;background:#F5F7FA;border:1px solid #E2E8F0;border-radius:14px;text-align:center">'
-        + '<div style="font-size:13px;color:#475569;margin-bottom:10px">¿No es lo que buscás?</div>'
-        + '<button onclick="verTodosLosMudanceros()" style="background:#fff;color:#003580;border:1.5px solid #003580;border-radius:9px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s">Ver otros mudanceros disponibles →</button>'
-        + '</div>';
-    }
     document.getElementById('listaRes').innerHTML = html;
-  }
-
-  // ── Limpia el filtro de mudancero forzado y muestra el catálogo completo ──
-  function verTodosLosMudanceros() {
-    _mudanceroForzado = null;
-    // Limpiar el query param para que un refresh no re-active el filtro
-    try {
-      var url = new URL(window.location.href);
-      url.searchParams.delete('mudancero');
-      window.history.replaceState({}, document.title, url.pathname + url.search);
-    } catch(e) {}
-    renderResultados();
   }
 
   // ══════════════════════════════════════════
