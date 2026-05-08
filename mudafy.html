@@ -685,17 +685,26 @@ async function cargarCatalogo() {
     var todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
 
     // Filtro DURO: Llave en mano + Seguro
-    // Aceptamos TODAS las variantes de "seguro" que devuelve el backend:
+    // Buscamos "seguro" en TODOS los campos donde puede aparecer:
     //   - seguroMudanza: true       → modelo nuevo (campo dedicado)
     //   - verificadoSeguro: true    → modelo viejo (verificación admin)
     //   - servicios contiene "seguro" → texto libre del perfil
     //   - serviciosActivos incluye "seguro" → array del modelo nuevo
+    //   - extra contiene "seguro" → notas/extras del perfil
+    //   - vehiculo contiene "seguro" → algunos lo pusieron acá
+    function _strSeguro(v) {
+      return v && String(v).toLowerCase().indexOf('seguro') !== -1;
+    }
     _mudanceros = todos.filter(function(m) {
       var sa = m.serviciosActivos;
       var tieneLlave = Array.isArray(sa) && sa.indexOf('llave') !== -1;
       var tieneSeguro = !!m.seguroMudanza
         || !!m.verificadoSeguro
-        || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1)
+        || _strSeguro(m.servicios)
+        || _strSeguro(m.extra)
+        || _strSeguro(m.vehiculo)
+        || _strSeguro(m.zonaBase)
+        || _strSeguro(m.zonasExtra)
         || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
       return tieneLlave && tieneSeguro;
     });
@@ -747,9 +756,14 @@ function mostrarDebug(todos) {
   todos.forEach(function(m, idx) {
     var sa = m.serviciosActivos;
     var tieneLlave = Array.isArray(sa) && sa.indexOf('llave') !== -1;
+    function _strSeguro(v) { return v && String(v).toLowerCase().indexOf('seguro') !== -1; }
     var tieneSeguro = !!m.seguroMudanza
       || !!m.verificadoSeguro
-      || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1)
+      || _strSeguro(m.servicios)
+      || _strSeguro(m.extra)
+      || _strSeguro(m.vehiculo)
+      || _strSeguro(m.zonaBase)
+      || _strSeguro(m.zonasExtra)
       || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
     var pasa = tieneLlave && tieneSeguro;
 
@@ -762,7 +776,9 @@ function mostrarDebug(todos) {
       +   'serviciosActivos: ' + (Array.isArray(sa) ? '[' + sa.join(', ') + ']' : 'null') + '<br>'
       +   '<span style="color:' + (tieneLlave ? '#10B981' : '#F87171') + '">→ tieneLlave: ' + tieneLlave + '</span><br>'
       +   'seguroMudanza: ' + m.seguroMudanza + ' · verificadoSeguro: ' + m.verificadoSeguro + '<br>'
-      +   'servicios (texto): "' + (m.servicios || '').slice(0, 60) + (m.servicios && m.servicios.length > 60 ? '...' : '') + '"<br>'
+      +   'servicios: "' + escHtml((m.servicios || '').slice(0, 80)) + '"<br>'
+      +   'extra: "' + escHtml((m.extra || '').slice(0, 80)) + '"<br>'
+      +   'vehiculo: "' + escHtml((m.vehiculo || '').slice(0, 80)) + '"<br>'
       +   '<span style="color:' + (tieneSeguro ? '#10B981' : '#F87171') + '">→ tieneSeguro: ' + tieneSeguro + '</span>'
       + '</div>'
       + '</div>';
