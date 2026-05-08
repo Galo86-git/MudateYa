@@ -609,7 +609,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <div class="page" id="page-mudanceros">
         <div class="page-title">Mudanceros</div>
         <div class="search-bar">
-          <input class="search-input" id="searchMudanceros" placeholder="Buscar por nombre, zona o email…" oninput="filterMudanceros()"/>
+          <input class="search-input" id="searchMudanceros" placeholder="Buscar por nombre, empresa, zona o email…" oninput="filterMudanceros()"/>
           <select class="search-input" id="filterEstado" style="flex:0 0 140px" onchange="filterMudanceros()">
             <option value="">Estado: Todos</option>
             <option value="Pendiente">Pendientes</option>
@@ -1551,7 +1551,7 @@ function filterMudanceros(){
   var fTyC = (document.getElementById('filterTyC') || {}).value || '';
 
   var filtered = mudancerosData.filter(function(m){
-    var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
+    var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[2]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
     var matchE = !estado || getEstado(m) === estado;
     // Filtro por última actualización
     var matchA = true;
@@ -2474,7 +2474,7 @@ function exportarExcel() {
   var fAct = (document.getElementById('filterActualizacion') || {}).value || '';
   var fOrden = (document.getElementById('filterOrden') || {}).value || 'reciente';
   var filtered = mudancerosData.filter(function(m){
-    var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
+    var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[2]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
     var matchE = !estado || getEstado(m) === estado;
     var matchA = true;
     if (fAct) {
