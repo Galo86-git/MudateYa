@@ -3,300 +3,367 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tu mudanza con MudateYa × Mudafy</title>
-<meta name="description" content="Coordiná tu mudanza al nuevo hogar que conseguiste con Mudafy. Servicio Llave en mano: ellos embalan, mueven y desembalan todo.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23003580'/%3E%3Ctext x='50' y='68' font-family='Georgia,serif' font-size='52' font-weight='900' fill='%2322C36A' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<title>Coordiná tu mudanza · Mudafy</title>
+<meta name="description" content="¡Felicitaciones por tu nueva propiedad! Coordiná tu mudanza con servicio Llave en mano: ellos embalan, mueven y desembalan todo.">
+<link rel="icon" type="image/svg+xml" href="https://mudafy.com.ar/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
-  /* ════════════════════════════════════════════════════
-     COLORES Y TOKENS
-     - Mudateya: navy #003580 + green #22C36A
-     - Mudafy: coral #FF6B6B (su color de marca, usado con sobriedad)
-     ════════════════════════════════════════════════════ */
+  /* ════════════════════════════════════════════════════════════
+     SISTEMA VISUAL MUDAFY (replicado de mudafy.com.ar)
+     - Coral primario: el color de la marca
+     - Tipografía: Nunito (similar a la que usan)
+     - Bordes redondeados generosos, espacios amplios
+     - Sin gradientes pesados, sombras muy sutiles
+     ════════════════════════════════════════════════════════════ */
   :root {
-    --navy: #003580;
-    --navy-dark: #002760;
-    --green: #22C36A;
-    --green-dark: #17A356;
-    --green-soft: #F0FDF4;
-    --green-bd: #BBF7D0;
-    --mudafy: #FF6B6B;
-    --mudafy-dark: #E85555;
-    --mudafy-soft: #FFF0F0;
-    --text: #0F1923;
-    --text2: #475569;
-    --text3: #94A3B8;
-    --border: #E2E8F0;
-    --border2: #CBD5E1;
-    --bg: #F7F9FC;
-    --white: #FFFFFF;
+    /* Mudafy palette */
+    --md-coral:        #FF6B6B;
+    --md-coral-dark:   #E85555;
+    --md-coral-light:  #FFE5E5;
+    --md-coral-soft:   #FFF5F5;
+    /* Neutrals (Mudafy usa muchos tonos cálidos) */
+    --md-text:         #0F1419;
+    --md-text-2:       #4B5563;
+    --md-text-3:       #9CA3AF;
+    --md-bg:           #FAFAFA;
+    --md-bg-card:      #FFFFFF;
+    --md-border:       #E5E7EB;
+    --md-border-2:     #D1D5DB;
+    /* Acento secundario (verde para "Llave en mano" - usado con sobriedad) */
+    --md-success:      #10B981;
+    --md-success-soft: #D1FAE5;
+    /* Powered by Mudateya (referencia chiquita) */
+    --mya-navy:        #003580;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--md-bg);
+    color: var(--md-text);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     line-height: 1.55;
     min-height: 100vh;
+    font-weight: 500;
   }
 
-  /* ── Header co-branded ──────────────────────────── */
+  /* ── Top bar - estilo Mudafy puro ──────────────── */
   .top-bar {
-    background: var(--white);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    position: sticky; top: 0; z-index: 10;
+    background: var(--md-bg-card);
+    border-bottom: 1px solid var(--md-border);
+    padding: 16px 24px;
   }
   .top-bar-inner {
-    max-width: 720px; margin: 0 auto;
+    max-width: 600px; margin: 0 auto;
     display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
   }
-  .brands {
-    display: flex; align-items: center; gap: 14px;
-  }
-  .logo-mudateya {
-    font-family: Georgia, serif; font-size: 20px; font-weight: 900;
-    color: var(--navy); letter-spacing: -0.5px;
-  }
-  .logo-mudateya .grn { color: var(--green-dark); }
-  .x-divider {
-    color: var(--text3); font-size: 16px; font-weight: 300;
-  }
+  /* Logo Mudafy oficial - con icono casita + nombre */
   .logo-mudafy {
-    font-size: 18px; font-weight: 700; color: var(--mudafy);
-    letter-spacing: -0.4px;
-    display: inline-flex; align-items: center; gap: 4px;
+    display: inline-flex; align-items: center; gap: 8px;
+    text-decoration: none;
   }
-  .logo-mudafy::before {
-    content: ''; width: 18px; height: 18px;
-    background: var(--mudafy);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M3 12L12 3l9 9v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z'/%3E%3C/svg%3E") center/contain no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M3 12L12 3l9 9v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z'/%3E%3C/svg%3E") center/contain no-repeat;
-    border-radius: 4px;
+  .logo-mudafy-icon {
+    width: 32px; height: 32px;
+    color: var(--md-coral);
+    display: flex; align-items: center; justify-content: center;
   }
-  .top-tag {
-    font-size: 11px; color: var(--text3); font-family: 'Inter', monospace;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── Container ──────────────────────────────────── */
-  .container {
-    max-width: 720px; margin: 0 auto; padding: 28px 20px 80px;
-  }
-
-  /* ── Hero ───────────────────────────────────────── */
-  .hero {
-    background: var(--white);
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    padding: 36px 32px 28px;
-    margin-bottom: 16px;
-    text-align: left;
-  }
-  .hero-eyebrow {
-    font-size: 11px; color: var(--mudafy);
-    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-    margin-bottom: 12px;
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .hero-eyebrow .dot {
-    width: 5px; height: 5px; border-radius: 50%; background: var(--mudafy);
-    display: inline-block;
-  }
-  .hero-title {
-    font-family: Georgia, serif;
-    font-size: 28px; font-weight: 700;
-    color: var(--text);
-    line-height: 1.2;
-    margin-bottom: 10px;
+  .logo-mudafy-icon svg { width: 100%; height: 100%; }
+  .logo-mudafy-text {
+    font-size: 22px; font-weight: 800;
+    color: var(--md-coral);
     letter-spacing: -0.5px;
   }
+  .powered-by {
+    font-size: 11px; color: var(--md-text-3);
+    letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .powered-by .mya-mini {
+    font-weight: 800; color: var(--mya-navy);
+    letter-spacing: -0.3px;
+  }
+  .powered-by .mya-mini .grn { color: #17A356; }
+
+  /* ── Container ──────────────────────────────────── */
+  .container { max-width: 600px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* ── Hero pill - "Felicitaciones" ─────────────── */
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--md-coral-light);
+    color: var(--md-coral-dark);
+    font-size: 12px; font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+    letter-spacing: 0.2px;
+  }
+  .hero-pill::before {
+    content: '🎉'; font-size: 14px;
+  }
+
+  /* ── Title ─────────────────────────────────────── */
+  .hero-title {
+    font-size: 32px; font-weight: 800;
+    color: var(--md-text);
+    line-height: 1.15;
+    letter-spacing: -0.8px;
+    margin-bottom: 12px;
+  }
+  .hero-title .accent { color: var(--md-coral); }
   .hero-subtitle {
-    font-size: 15px; color: var(--text2);
+    font-size: 15px; color: var(--md-text-2);
     line-height: 1.6;
-    margin-bottom: 0;
-  }
-  .hero-subtitle .highlight {
-    color: var(--green-dark); font-weight: 600;
+    margin-bottom: 28px;
+    font-weight: 500;
   }
 
-  /* ── Card de propiedad de Mudafy (si viene preselected) ── */
-  .property-card {
-    background: var(--mudafy-soft);
-    border: 1px solid rgba(255, 107, 107, 0.25);
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-top: 18px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .property-icon {
-    width: 38px; height: 38px; border-radius: 10px;
-    background: var(--mudafy); color: var(--white);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .property-icon svg { width: 20px; height: 20px; }
-  .property-info { flex: 1; min-width: 0; }
-  .property-label {
-    font-size: 10px; color: var(--mudafy-dark); font-weight: 700;
-    letter-spacing: 0.8px; text-transform: uppercase;
-    margin-bottom: 2px;
-  }
-  .property-address {
-    font-size: 14px; color: var(--text); font-weight: 600;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-
-  /* ── Card "Cómo funciona" en 3 pasos ───────────── */
-  .steps-card {
-    background: var(--white);
+  /* ── Form card ─────────────────────────────────── */
+  .form-card {
+    background: var(--md-bg-card);
     border-radius: 20px;
-    border: 1px solid var(--border);
-    padding: 28px 32px;
-    margin-bottom: 16px;
-  }
-  .steps-title {
-    font-size: 11px; color: var(--text3);
-    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-    margin-bottom: 18px;
-  }
-  .step {
-    display: flex; gap: 14px; margin-bottom: 16px;
-    align-items: flex-start;
-  }
-  .step:last-child { margin-bottom: 0; }
-  .step-num {
-    flex-shrink: 0;
-    width: 28px; height: 28px; border-radius: 50%;
-    background: var(--navy); color: var(--white);
-    font-size: 13px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    margin-top: 1px;
-  }
-  .step-body { flex: 1; }
-  .step-title-text {
-    font-size: 15px; font-weight: 600; color: var(--text);
-    margin-bottom: 3px;
-  }
-  .step-desc {
-    font-size: 13px; color: var(--text2); line-height: 1.55;
+    border: 1px solid var(--md-border);
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   }
 
-  /* ── CTA principal ──────────────────────────────── */
-  .cta-card {
-    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
-    border-radius: 20px;
-    padding: 28px 32px;
-    margin-bottom: 16px;
-    color: var(--white);
-    text-align: center;
-  }
-  .cta-title {
-    font-family: Georgia, serif;
-    font-size: 22px; font-weight: 700;
+  /* ── Fields ────────────────────────────────────── */
+  .field { margin-bottom: 18px; position: relative; }
+  .field-label {
+    font-size: 13px; color: var(--md-text);
+    font-weight: 700;
     margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
   }
-  .cta-subtitle {
-    font-size: 13px; opacity: 0.85;
-    margin-bottom: 20px;
+  .field-icon {
+    width: 16px; height: 16px;
+    color: var(--md-coral);
+    display: inline-block;
+  }
+  .field-input {
+    width: 100%; padding: 14px 16px;
+    border: 1.5px solid var(--md-border-2);
+    border-radius: 12px;
+    background: var(--md-bg-card);
+    font-size: 15px; color: var(--md-text);
+    font-family: inherit;
+    font-weight: 500;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--md-coral);
+    box-shadow: 0 0 0 3px var(--md-coral-light);
+  }
+  .field-input::placeholder { color: var(--md-text-3); font-weight: 400; }
+
+  /* Campo HACIA pre-cargado - destacado en coral suave */
+  .field-prefilled .field-input {
+    border-color: var(--md-coral);
+    background: var(--md-coral-soft);
+    color: var(--md-text);
+    font-weight: 700;
+    padding-right: 100px;
+  }
+  .field-prefilled .field-icon {
+    color: var(--md-coral);
+  }
+  .field-prefilled-badge {
+    position: absolute;
+    right: 12px; top: 38px;
+    background: var(--md-coral);
+    color: var(--md-bg-card);
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+
+  /* Counter ambientes */
+  .field-counter {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px;
+    border: 1.5px solid var(--md-border-2);
+    border-radius: 12px;
+    background: var(--md-bg-card);
+    transition: border-color 0.15s;
+  }
+  .field-counter:hover { border-color: var(--md-coral); }
+  .counter-btn {
+    width: 36px; height: 36px;
+    border: none;
+    background: var(--md-coral-soft);
+    color: var(--md-coral);
+    font-size: 20px; font-weight: 800;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .counter-btn:hover {
+    background: var(--md-coral);
+    color: var(--md-bg-card);
+  }
+  .counter-btn:disabled { opacity: 0.3; cursor: not-allowed; background: var(--md-coral-soft) !important; color: var(--md-coral) !important; }
+  .counter-val { font-size: 18px; font-weight: 800; color: var(--md-text); min-width: 32px; text-align: center; }
+
+  /* Date input - estilo Mudafy */
+  input[type="date"].field-input {
+    cursor: pointer;
+    color-scheme: light;
+  }
+
+  /* Grid 2 cols */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ── Autocomplete dropdown ──────────────────────── */
+  .ac-dd {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: var(--md-bg-card);
+    border: 1px solid var(--md-border-2);
+    border-radius: 12px;
+    margin-top: 6px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    list-style: none; padding: 6px;
+    z-index: 100;
+    display: none;
+    max-height: 260px; overflow-y: auto;
+  }
+  .ac-dd.open { display: block; }
+  .ac-item {
+    padding: 11px 14px;
+    font-size: 14px; color: var(--md-text);
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ac-item::before {
+    content: '📍'; font-size: 14px; opacity: 0.6;
+  }
+  .ac-item:hover, .ac-item.kb { background: var(--md-coral-soft); color: var(--md-coral-dark); }
+
+  /* ── CTA ────────────────────────────────────────── */
+  .btn-buscar {
+    width: 100%; margin-top: 8px;
+    padding: 17px 24px;
+    background: var(--md-coral);
+    color: var(--md-bg-card);
+    border: none;
+    border-radius: 14px;
+    font-size: 16px; font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: -0.2px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 4px 14px rgba(255,107,107,0.3);
+  }
+  .btn-buscar:hover {
+    background: var(--md-coral-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+  }
+  .btn-buscar:active { transform: translateY(0); }
+  .btn-buscar:disabled {
+    background: var(--md-text-3);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-buscar svg { width: 20px; height: 20px; }
+
+  /* ── Trust badge ─────────────────────────────── */
+  .trust-card {
+    margin-top: 20px;
+    padding: 14px 18px;
+    background: var(--md-success-soft);
+    border-radius: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .trust-icon {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    background: var(--md-success);
+    color: var(--md-bg-card);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .trust-icon svg { width: 16px; height: 16px; }
+  .trust-content {
+    flex: 1; font-size: 13px; color: #065F46;
+    font-weight: 600;
     line-height: 1.5;
   }
-  .btn-cta {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: var(--green); color: var(--navy);
-    font-size: 16px; font-weight: 800;
-    padding: 16px 36px;
-    border: none; border-radius: 12px;
-    text-decoration: none; cursor: pointer;
-    box-shadow: 0 4px 14px rgba(34, 195, 106, 0.4);
-    transition: transform 0.15s, box-shadow 0.15s;
-    font-family: 'Inter', sans-serif;
-  }
-  .btn-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(34, 195, 106, 0.5);
-  }
-  .btn-cta svg { width: 18px; height: 18px; }
+  .trust-content strong { color: #064E3B; font-weight: 800; }
 
-  /* ── Banner Llave en mano ──────────────────────── */
-  .feature-banner {
-    background: var(--green-soft);
-    border: 1px solid var(--green-bd);
-    border-radius: 14px;
-    padding: 14px 18px;
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 16px;
+  /* ── Steps mini ─────────────────────────────────── */
+  .steps-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--md-border);
   }
-  .feature-icon {
-    flex-shrink: 0;
-    width: 36px; height: 36px; border-radius: 10px;
-    background: var(--green-dark); color: var(--white);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .feature-icon svg { width: 18px; height: 18px; }
-  .feature-text {
-    font-size: 13px; color: var(--green-dark); line-height: 1.5;
-  }
-  .feature-text strong { font-weight: 700; }
-
-  /* ── Trust row ───────────────────────────────── */
-  .trust-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-  .trust-item {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 12px;
+  .step-mini {
     text-align: center;
+    padding: 12px 6px;
   }
-  .trust-num {
-    font-family: Georgia, serif;
-    font-size: 22px; font-weight: 700;
-    color: var(--navy);
-    line-height: 1;
-    margin-bottom: 4px;
+  .step-num-mini {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: var(--md-coral-soft);
+    color: var(--md-coral);
+    border-radius: 50%;
+    font-size: 13px; font-weight: 800;
+    margin-bottom: 6px;
   }
-  .trust-lbl {
-    font-size: 11px; color: var(--text2); font-weight: 500;
-    letter-spacing: 0.2px;
+  .step-text-mini {
+    font-size: 11px; color: var(--md-text-2);
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   /* ── Footer ─────────────────────────────────────── */
   .footer {
     text-align: center;
-    padding: 24px 16px 12px;
+    padding: 28px 16px 12px;
     font-size: 12px;
-    color: var(--text3);
+    color: var(--md-text-3);
+    font-weight: 500;
   }
   .footer a {
-    color: var(--text2); text-decoration: none;
+    color: var(--md-text-2);
+    text-decoration: none;
+    font-weight: 600;
   }
-  .footer a:hover { text-decoration: underline; }
-  .footer-divider {
-    margin: 0 8px; color: var(--border2);
-  }
+  .footer a:hover { color: var(--md-coral); }
+  .footer-divider { margin: 0 8px; color: var(--md-border); }
 
   /* ── Mobile ─────────────────────────────────────── */
   @media (max-width: 480px) {
-    .container { padding: 20px 14px 60px; }
-    .hero { padding: 28px 22px 22px; }
-    .hero-title { font-size: 24px; }
-    .steps-card { padding: 22px; }
-    .cta-card { padding: 24px 22px; }
-    .cta-title { font-size: 19px; }
-    .btn-cta { width: 100%; justify-content: center; padding: 14px 20px; font-size: 15px; }
-    .top-bar { padding: 12px 16px; }
-    .top-tag { display: none; }
-    .trust-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .trust-item { padding: 12px 8px; }
-    .trust-num { font-size: 19px; }
-    .trust-lbl { font-size: 10px; }
+    .container { padding: 20px 16px 40px; }
+    .form-card { padding: 22px 18px; border-radius: 16px; }
+    .hero-title { font-size: 26px; }
+    .top-bar { padding: 14px 18px; }
+    .powered-by { display: none; }
+    .field-row { gap: 10px; }
+    .steps-row { gap: 4px; }
+    .step-text-mini { font-size: 10px; }
+  }
+
+  /* Loading mientras Google Maps carga */
+  .field-input.loading {
+    background: var(--md-bg);
+    color: var(--md-text-3);
   }
 </style>
 </head>
@@ -304,147 +371,313 @@
 
 <div class="top-bar">
   <div class="top-bar-inner">
-    <div class="brands">
-      <span class="logo-mudateya">Mudate<span class="grn">Ya</span></span>
-      <span class="x-divider">×</span>
-      <span class="logo-mudafy">mudafy</span>
-    </div>
-    <span class="top-tag">Servicio premium</span>
+    <a href="https://mudafy.com.ar" class="logo-mudafy" target="_blank" rel="noopener">
+      <span class="logo-mudafy-icon">
+        <!-- Icono casita estilo Mudafy -->
+        <svg viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 3L3 14v15h9v-9h8v9h9V14L16 3z"/>
+        </svg>
+      </span>
+      <span class="logo-mudafy-text">mudafy</span>
+    </a>
+    <span class="powered-by">
+      Powered by
+      <span class="mya-mini">Mudate<span class="grn">Ya</span></span>
+    </span>
   </div>
 </div>
 
 <div class="container">
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-eyebrow">
-      <span class="dot"></span>
-      <span id="heroEyebrow">Felicitaciones por tu nueva propiedad</span>
-    </div>
-    <h1 class="hero-title" id="heroTitle">Coordiná tu mudanza al nuevo hogar.</h1>
-    <p class="hero-subtitle">
-      Conectamos a clientes de Mudafy con mudanceros verificados que ofrecen
-      <span class="highlight">servicio Llave en mano</span> — ellos embalan, mueven y desembalan todo por vos.
-    </p>
+  <span class="hero-pill" id="heroPill">Felicitaciones por tu nueva propiedad</span>
 
-    <!-- Card de propiedad pre-cargada (si viene de Mudafy con la dirección) -->
-    <div class="property-card" id="propertyCard" style="display:none">
-      <div class="property-icon">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2L2 12h3v9h6v-7h2v7h6v-9h3z"/>
-        </svg>
-      </div>
-      <div class="property-info">
-        <div class="property-label">Tu nuevo hogar de Mudafy</div>
-        <div class="property-address" id="propertyAddress">—</div>
-      </div>
-    </div>
-  </div>
+  <h1 class="hero-title">Ahora coordiná <span class="accent">tu mudanza</span>.</h1>
+  <p class="hero-subtitle">Completá los datos y te conectamos con mudanceros que hacen <strong style="color:var(--md-success)">todo por vos</strong>: embalan, mueven y desembalan.</p>
 
-  <!-- BANNER LLAVE EN MANO -->
-  <div class="feature-banner">
-    <div class="feature-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        <path d="M9 12l2 2 4-4"/>
-      </svg>
-    </div>
-    <div class="feature-text">
-      Para clientes de Mudafy seleccionamos solo mudanceros con servicio
-      <strong>Llave en mano</strong>: vos no movés una caja.
-    </div>
-  </div>
+  <div class="form-card">
 
-  <!-- CÓMO FUNCIONA -->
-  <div class="steps-card">
-    <div class="steps-title">Cómo funciona</div>
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-body">
-        <div class="step-title-text">Contanos los datos de tu mudanza</div>
-        <div class="step-desc">Origen, destino, ambientes y fecha estimada. Te toma 1 minuto.</div>
-      </div>
+    <div class="field">
+      <label class="field-label" for="input-desde">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
+            <circle cx="12" cy="9" r="2.5"/>
+          </svg>
+        </span>
+        Desde · ¿De dónde te mudás?
+      </label>
+      <input id="input-desde" class="field-input loading" type="text" placeholder="Cargando autocompletado..." autocomplete="off" disabled/>
+      <ul class="ac-dd" id="ac-desde"></ul>
     </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <div class="step-title-text">Recibí cotizaciones de mudanceros verificados</div>
-        <div class="step-desc">Comparás precios, fotos, calificaciones y elegís a quien mejor te convenga.</div>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <div class="step-title-text">Pagás seguro y te mudás sin estrés</div>
-        <div class="step-desc">Pagás por Mercado Pago o transferencia. Ellos hacen todo el trabajo.</div>
-      </div>
-    </div>
-  </div>
 
-  <!-- CTA PRINCIPAL -->
-  <div class="cta-card">
-    <h2 class="cta-title">Empezá tu mudanza ahora</h2>
-    <p class="cta-subtitle">Te toma 1 minuto pedir cotizaciones. Sin obligación de aceptarlas.</p>
-    <a class="btn-cta" id="btnCta" href="/">
-      Comenzar mi mudanza
+    <div class="field" id="fieldHasta">
+      <label class="field-label" for="input-hasta">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12L12 3l9 9v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z"/>
+          </svg>
+        </span>
+        Hacia · Tu nuevo hogar
+      </label>
+      <input id="input-hasta" class="field-input loading" type="text" placeholder="Cargando autocompletado..." autocomplete="off" disabled/>
+      <span class="field-prefilled-badge" id="badgeMudafy" style="display:none">De Mudafy</span>
+      <ul class="ac-dd" id="ac-hasta"></ul>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="9" rx="1"/>
+              <path d="M5 11V7a4 4 0 014-4h6a4 4 0 014 4v4"/>
+            </svg>
+          </span>
+          Ambientes
+        </label>
+        <div class="field-counter">
+          <button type="button" class="counter-btn" id="ambMinus" onclick="cambiarAmb(-1)">−</button>
+          <span class="counter-val" id="ambVal">2</span>
+          <button type="button" class="counter-btn" id="ambPlus" onclick="cambiarAmb(1)">+</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+          </span>
+          Fecha
+        </label>
+        <input id="input-fecha" class="field-input" type="date"/>
+      </div>
+    </div>
+
+    <button type="button" class="btn-buscar" id="btnBuscar" onclick="buscar()">
+      Ver mudanceros disponibles
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M5 12h14M13 5l7 7-7 7"/>
       </svg>
-    </a>
+    </button>
+
+    <div class="trust-card">
+      <div class="trust-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </div>
+      <div class="trust-content">
+        Solo te mostramos mudanceros con servicio <strong>Llave en mano</strong> · ellos embalan, mueven y desembalan todo
+      </div>
+    </div>
+
+    <div class="steps-row">
+      <div class="step-mini">
+        <div class="step-num-mini">1</div>
+        <div class="step-text-mini">Completás los datos</div>
+      </div>
+      <div class="step-mini">
+        <div class="step-num-mini">2</div>
+        <div class="step-text-mini">Recibís cotizaciones</div>
+      </div>
+      <div class="step-mini">
+        <div class="step-num-mini">3</div>
+        <div class="step-text-mini">Te mudás sin estrés</div>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
 <div class="footer">
   <p>
-    Operado por <a href="https://mudateya.ar">MudateYa</a> · Marketplace de mudanzas verificadas
+    Servicio operado por <a href="https://mudateya.ar" target="_blank" rel="noopener">MudateYa</a> · Marketplace de mudanzas verificadas
     <span class="footer-divider">·</span>
     <a href="https://mudafy.com.ar" target="_blank" rel="noopener">mudafy.com.ar</a>
   </p>
 </div>
 
+<!-- Google Maps Places API · idem patrón del index.html -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMaps" async defer></script>
+
 <script>
-// ═══════════════════════════════════════════════════════
-// MUDAFY LANDING — Lee parámetros del partner desde la URL:
-//   ?asesor=12345    → ID del asesor de Mudafy que comparte el link
-//   ?propiedad=ABC   → ID de la propiedad que cerró el cliente
-//   ?direccion=...   → Dirección del nuevo hogar (opcional, pre-llena destino)
-//   ?nombre=Juan     → Nombre del cliente (opcional, personaliza saludo)
-//
-// El botón "Comenzar mi mudanza" redirige al index pasando estos params,
-// para que el flujo de cotización quede asociado al partner Mudafy.
-// ═══════════════════════════════════════════════════════
-(function init() {
-  var params = new URLSearchParams(window.location.search);
-  var asesor    = params.get('asesor')    || '';
-  var propiedad = params.get('propiedad') || '';
-  var direccion = params.get('direccion') || '';
-  var nombre    = params.get('nombre')    || '';
+// ═══════════════════════════════════════════════════════════════════════
+// MUDAFY · Form simple co-branded
+// Lee params del CRM Mudafy: ?asesor=X&propiedad=Y&direccion=Z&nombre=N
+// Al hacer "Buscar", redirige a / con todos los params (incluyendo fromMudafy=1)
+// para que el index aplique el banner Mudafy + filtro Llave en mano + trackeo.
+// ═══════════════════════════════════════════════════════════════════════
 
-  // Personalizar saludo si vino el nombre
-  if (nombre) {
-    document.getElementById('heroEyebrow').textContent =
-      'Felicitaciones, ' + nombre + ' 🎉';
+var _qp = new URLSearchParams(window.location.search);
+var _partner = {
+  asesor:    _qp.get('asesor')    || '',
+  propiedad: _qp.get('propiedad') || '',
+  direccion: _qp.get('direccion') || '',
+  nombre:    _qp.get('nombre')    || ''
+};
+
+var _amb = 2;
+
+// Pre-llenar campos desde params del partner
+(function aplicarPartner() {
+  if (_partner.nombre) {
+    document.getElementById('heroPill').textContent =
+      'Felicitaciones, ' + _partner.nombre + ' 🎉';
+    // El emoji ya está por CSS pero quitamos el ::before para no duplicar
+    document.getElementById('heroPill').style.setProperty('--no-pseudo', '1');
+  }
+  if (_partner.direccion) {
+    var hasta = document.getElementById('input-hasta');
+    hasta.value = _partner.direccion;
+    document.getElementById('fieldHasta').classList.add('field-prefilled');
+    document.getElementById('badgeMudafy').style.display = 'block';
+  }
+})();
+
+// Fecha: mínimo mañana, default en 7 días
+(function setFechaDefault() {
+  var hoy = new Date();
+  var manana = new Date(hoy.getTime() + 24 * 60 * 60 * 1000);
+  var enUnaSemana = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
+  var pad = function(n){ return n < 10 ? '0' + n : '' + n; };
+  var fmt = function(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); };
+  var input = document.getElementById('input-fecha');
+  input.min = fmt(manana);
+  input.value = fmt(enUnaSemana);
+})();
+
+function cambiarAmb(delta) {
+  _amb = Math.max(1, Math.min(8, _amb + delta));
+  document.getElementById('ambVal').textContent = _amb;
+  document.getElementById('ambMinus').disabled = (_amb <= 1);
+  document.getElementById('ambPlus').disabled  = (_amb >= 8);
+}
+
+// Google Maps Autocomplete · mismo patrón que index.html
+function makeAC(inputId, ddId) {
+  var input = document.getElementById(inputId);
+  var dd = document.getElementById(ddId);
+  if (!input || !dd) return;
+  var deb;
+  input.addEventListener('input', function() {
+    clearTimeout(deb);
+    var q = this.value.trim();
+    if (q.length < 2) { dd.classList.remove('open'); return; }
+    deb = setTimeout(function() {
+      new google.maps.places.AutocompleteService().getPlacePredictions(
+        { input: q, componentRestrictions: { country: 'ar' }, types: ['address'] },
+        function(preds, status) {
+          dd.innerHTML = '';
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !preds) {
+            dd.classList.remove('open'); return;
+          }
+          preds.slice(0, 5).forEach(function(s) {
+            var li = document.createElement('li');
+            li.className = 'ac-item';
+            li.textContent = s.description;
+            li.addEventListener('mousedown', function(e){
+              e.preventDefault();
+              input.value = s.description;
+              dd.classList.remove('open');
+            });
+            li.addEventListener('touchend', function(e){
+              e.preventDefault();
+              input.value = s.description;
+              dd.classList.remove('open');
+            });
+            dd.appendChild(li);
+          });
+          dd.classList.add('open');
+        }
+      );
+    }, 280);
+  });
+  input.addEventListener('blur', function(){
+    setTimeout(function(){ dd.classList.remove('open'); }, 200);
+  });
+  input.addEventListener('keydown', function(e) {
+    var items = dd.querySelectorAll('.ac-item');
+    var active = dd.querySelector('.kb');
+    var idx = active ? Array.from(items).indexOf(active) : -1;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (active) active.classList.remove('kb');
+      var n = items[idx+1] || items[0];
+      if (n) { n.classList.add('kb'); n.scrollIntoView({block:'nearest'}); }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (active) active.classList.remove('kb');
+      var p = items[idx-1] || items[items.length-1];
+      if (p) { p.classList.add('kb'); p.scrollIntoView({block:'nearest'}); }
+    } else if (e.key === 'Enter' && active) {
+      e.preventDefault();
+      active.dispatchEvent(new MouseEvent('mousedown'));
+    } else if (e.key === 'Escape') {
+      dd.classList.remove('open');
+    }
+  });
+}
+
+// Callback global de Google Maps
+window.initMaps = function() {
+  ['input-desde', 'input-hasta'].forEach(function(id) {
+    var input = document.getElementById(id);
+    if (input) {
+      input.disabled = false;
+      input.classList.remove('loading');
+      input.placeholder = (id === 'input-desde')
+        ? 'Av. Corrientes 1234, CABA'
+        : 'Av. Libertador 4500, CABA';
+    }
+  });
+  makeAC('input-desde', 'ac-desde');
+  makeAC('input-hasta', 'ac-hasta');
+};
+
+// Buscar: redirigir al index con todos los datos
+function buscar() {
+  var desde = (document.getElementById('input-desde').value || '').trim();
+  var hasta = (document.getElementById('input-hasta').value || '').trim();
+  var fecha = document.getElementById('input-fecha').value;
+
+  if (!desde) {
+    alert('Por favor ingresá la dirección desde donde te mudás.');
+    document.getElementById('input-desde').focus();
+    return;
+  }
+  if (!hasta) {
+    alert('Por favor ingresá la dirección hacia donde te mudás.');
+    document.getElementById('input-hasta').focus();
+    return;
+  }
+  if (!fecha) {
+    alert('Por favor seleccioná una fecha estimada.');
+    return;
   }
 
-  // Si vino la dirección de la propiedad, mostramos la card
-  if (direccion) {
-    document.getElementById('propertyAddress').textContent = direccion;
-    document.getElementById('propertyCard').style.display = 'flex';
-  }
-
-  // Construir URL de redirección al index conservando los params del partner.
-  // En FASE 2 el index detectará ?fromMudafy=1 y filtrará el catálogo a
-  // Llave en mano + persistirá el partner en la mudanza para trackeo.
+  // El index Fase 2 lee estos params y aplica banner + filtro Llave en mano
   var qs = new URLSearchParams();
   qs.set('fromMudafy', '1');
-  if (asesor)    qs.set('asesor', asesor);
-  if (propiedad) qs.set('propiedad', propiedad);
-  if (direccion) qs.set('direccion', direccion);
-  if (nombre)    qs.set('nombre', nombre);
+  qs.set('desde', desde);
+  qs.set('hasta', hasta);
+  qs.set('fecha', fecha);
+  qs.set('ambientes', String(_amb));
+  qs.set('tipo', 'mudanza');
+  qs.set('nivel', 'llave');
+  if (_partner.asesor)    qs.set('asesor',    _partner.asesor);
+  if (_partner.propiedad) qs.set('propiedad', _partner.propiedad);
+  if (_partner.direccion) qs.set('direccion', _partner.direccion);
+  if (_partner.nombre)    qs.set('nombre',    _partner.nombre);
 
-  document.getElementById('btnCta').href = '/?' + qs.toString();
-})();
+  var btn = document.getElementById('btnBuscar');
+  btn.disabled = true;
+  btn.innerHTML = 'Buscando mudanceros...';
+
+  window.location.href = '/?' + qs.toString();
+}
 </script>
 
 </body>
