@@ -621,6 +621,12 @@ tr:hover td{background:rgba(34,195,106,.03)}
             <option value="firmado">✓ Firmaron TyC</option>
             <option value="pendiente">⏳ TyC pendiente</option>
           </select>
+          <select class="search-input" id="filterPrecios" style="flex:0 0 160px" onchange="filterMudanceros()">
+            <option value="">Precios: Todos</option>
+            <option value="packs">✅ Packs</option>
+            <option value="legacy">🟡 Solo Legacy</option>
+            <option value="sin">⚫ Sin precios</option>
+          </select>
           <select class="search-input" id="filterActualizacion" style="flex:0 0 180px" onchange="filterMudanceros()">
             <option value="">Actualización: Todos</option>
             <option value="hoy">Hoy</option>
@@ -1387,6 +1393,25 @@ async function loadMudanceros(){
     // Formato: [id, nombre, empresa, telefono, email, zona, zonasExtra, estado_cuil, vehiculo, cant, equipo,
     //           servicios, dias, horarios, extra, metodoCobro, cbu, emailMP, fechaRegistro, cuilVerificado, dniLegible, estado]
     mudancerosData = (d.mudanceros || []).map(function(m){
+      // Detectar tipo de precios: legacy / packs nuevos / sin precios
+      // Usado para badge en columna "Precios" de la tabla
+      function _toNum(v) {
+        if (v === null || v === undefined || v === '') return 0;
+        return parseInt(String(v).replace(/\./g,'').replace(/[^0-9]/g,''), 10) || 0;
+      }
+      function _packTienePrecio(pk) {
+        if (!pk || typeof pk !== 'object') return false;
+        return _toNum(pk.amb1) > 0 || _toNum(pk.amb2) > 0 || _toNum(pk.amb3) > 0 || _toNum(pk.amb4) > 0;
+      }
+      var hasPacks = _packTienePrecio(m.preciosEsencial)
+                  || _packTienePrecio(m.preciosIntegral)
+                  || _packTienePrecio(m.preciosLlave)
+                  || _toNum(m.precioFleteNuevo) > 0;
+      var hasLegacy = m.precios && (
+                  _toNum(m.precios.amb1) > 0 || _toNum(m.precios.amb2) > 0
+               || _toNum(m.precios.amb3) > 0 || _toNum(m.precios.amb4) > 0
+               || _toNum(m.precios.flete) > 0);
+      var precioTipo = hasPacks ? 'packs' : (hasLegacy ? 'legacy' : 'sin');
       return [
         m.id, m.nombre, m.empresa, m.telefono, m.email,
         m.zonaBase, m.zonasExtra, m.cuil, m.vehiculo, m.cantVehiculos,
@@ -1397,7 +1422,8 @@ async function loadMudanceros(){
         m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente',
         m.ultimaActualizacion || '',  // [22] última edición de perfil
         m.terminosAceptados === true,  // [23] firmó TyC (boolean)
-        m.fechaAceptoTerminos || ''    // [24] fecha de firma TyC (ISO)
+        m.fechaAceptoTerminos || '',   // [24] fecha de firma TyC (ISO)
+        precioTipo                     // [25] 'packs' | 'legacy' | 'sin'
       ];
     });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
@@ -1549,6 +1575,7 @@ function filterMudanceros(){
   var fAct = (document.getElementById('filterActualizacion') || {}).value || '';
   var fOrden = (document.getElementById('filterOrden') || {}).value || 'reciente';
   var fTyC = (document.getElementById('filterTyC') || {}).value || '';
+  var fPrecios = (document.getElementById('filterPrecios') || {}).value || '';
 
   var filtered = mudancerosData.filter(function(m){
     var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[2]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
@@ -1570,7 +1597,9 @@ function filterMudanceros(){
       if (fTyC === 'firmado')   matchT = esAprobado && m[23] === true;
       else if (fTyC === 'pendiente') matchT = esAprobado && m[23] !== true;
     }
-    return matchQ && matchE && matchA && matchT;
+    // Filtro Precios: m[25] es 'packs' | 'legacy' | 'sin'
+    var matchP = !fPrecios || m[25] === fPrecios;
+    return matchQ && matchE && matchA && matchT && matchP;
   });
 
   // Ordenar
@@ -1626,7 +1655,7 @@ function filterMudanceros(){
   } else {
     // Render como tabla en desktop
     document.getElementById('mudancerosList').innerHTML =
-      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Actualizado</th><th>Estado</th><th>TyC</th><th></th></tr></thead><tbody>'
+      '<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Zona</th><th>Vehículo</th><th>Actualizado</th><th>Estado</th><th>Fecha alta</th><th>Precios</th><th>TyC</th><th></th></tr></thead><tbody>'
       + filtered.map(function(m){
           var idx = mudancerosData.indexOf(m);
           var est = getEstado(m);
@@ -1641,7 +1670,23 @@ function filterMudanceros(){
           } else {
             tycCell = '<span style="color:#B45309;font-weight:600;font-size:12px;background:#FFF7ED;border:1px solid #FED7AA;padding:2px 8px;border-radius:10px">⏳ Pendiente</span>';
           }
-          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td>'+pillTiempoRel(m[22])+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td>'+tycCell+'</td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
+          // Fecha alta — solo dd/mm/aaaa, sin hora
+          var fechaAltaCell;
+          try {
+            fechaAltaCell = m[18]
+              ? '<span style="font-size:12px;color:#475569">' + new Date(m[18]).toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit', year:'numeric'}) + '</span>'
+              : '<span style="color:#94A3B8;font-size:11px">—</span>';
+          } catch(e) { fechaAltaCell = '<span style="color:#94A3B8;font-size:11px">—</span>'; }
+          // Precios — badge según tipo de datos persistidos
+          var precioCell;
+          if (m[25] === 'packs') {
+            precioCell = '<span style="color:#15803D;font-weight:600;font-size:11px;background:#DCFCE7;padding:3px 8px;border-radius:10px;white-space:nowrap" title="Tiene precios cargados en el modelo nuevo (Esencial/Integral/Llave)">✅ Packs</span>';
+          } else if (m[25] === 'legacy') {
+            precioCell = '<span style="color:#92400E;font-weight:600;font-size:11px;background:#FEF3C7;padding:3px 8px;border-radius:10px;white-space:nowrap" title="Tiene precios viejos (precios.amb1..amb4) — falta migrar a packs">🟡 Legacy</span>';
+          } else {
+            precioCell = '<span style="color:#475569;font-weight:600;font-size:11px;background:#F1F5F9;padding:3px 8px;border-radius:10px;white-space:nowrap" title="No tiene precios cargados">⚫ Sin precios</span>';
+          }
+          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td>'+pillTiempoRel(m[22])+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td>'+fechaAltaCell+'</td><td>'+precioCell+'</td><td>'+tycCell+'</td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
         }).join('')
       + '</tbody></table>';
   }
