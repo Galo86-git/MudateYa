@@ -663,12 +663,19 @@ async function cargarCatalogo() {
     var d = await r.json();
     var todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
 
-    // Filtro DURO: Llave en mano + Seguro (misma lógica que el index)
+    // Filtro DURO: Llave en mano + Seguro
+    // Aceptamos TODAS las variantes de "seguro" que devuelve el backend:
+    //   - seguroMudanza: true       → modelo nuevo (campo dedicado)
+    //   - verificadoSeguro: true    → modelo viejo (verificación admin)
+    //   - servicios contiene "seguro" → texto libre del perfil
+    //   - serviciosActivos incluye "seguro" → array del modelo nuevo
     _mudanceros = todos.filter(function(m) {
       var sa = m.serviciosActivos;
       var tieneLlave = Array.isArray(sa) && sa.indexOf('llave') !== -1;
-      var tieneSeguro = !!m.verificadoSeguro
-        || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1);
+      var tieneSeguro = !!m.seguroMudanza
+        || !!m.verificadoSeguro
+        || (m.servicios && String(m.servicios).toLowerCase().indexOf('seguro') !== -1)
+        || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
       return tieneLlave && tieneSeguro;
     });
 
