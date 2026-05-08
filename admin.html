@@ -3333,14 +3333,25 @@ async function guardarEdicion(){
     if (firstSvc) firstSvc.scrollIntoView({ behavior:'smooth', block:'center' });
     return;
   }
-  // Validar: cada servicio activo tiene que tener precio
+  // Validar: cada servicio activo tiene que tener precio.
+  // Si faltan precios damos opción al admin de guardar igual (caso típico: solo
+  // queremos cambiar el flag de seguro o aprobar un mudancero antes de cargar precios).
+  // Si el admin acepta seguir, el mudancero queda sin precios y aparece en el
+  // catálogo (mudafy/index) como "A consultar".
   var erroresPrecios = saltarValidacion ? [] : edValidarServiciosPrecios();
   if (erroresPrecios.length > 0) {
-    if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
-    alert('Cargá al menos un precio en: ' + erroresPrecios.join(', '));
-    var firstErrSvc = document.querySelector('.ed-svc-card.precios-error');
-    if (firstErrSvc) firstErrSvc.scrollIntoView({ behavior:'smooth', block:'center' });
-    return;
+    var seguir = confirm(
+      'Faltan precios en: ' + erroresPrecios.join(', ') + '\n\n' +
+      '¿Querés guardar igual? El mudancero aparecerá en el catálogo con "A consultar" en lugar del precio referencial.'
+    );
+    if (!seguir) {
+      if(btn){ btn.disabled=false; btn.textContent='Guardar cambios'; }
+      var firstErrSvc = document.querySelector('.ed-svc-card.precios-error');
+      if (firstErrSvc) firstErrSvc.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+    // Si sigue: continuar con el guardado normal. preciosEsencial/Integral/Llave
+    // ya quedan en null o {} según corresponda gracias a edLeerPreciosCard().
   }
 
   cambios.serviciosActivos = servActivos;
