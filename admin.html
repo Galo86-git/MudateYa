@@ -2974,6 +2974,19 @@ function edToggleSeguro(e) {
   if (_edSeguro) box.classList.add('active'); else box.classList.remove('active');
 }
 
+// Auto-activar el toggle del nivel cuando el admin escribe un precio.
+// Resuelve un bug UX: si admin carga precio sin activar el toggle, al guardar
+// el frontend mandaba null al backend (porque _edSvc.{key} == false) y los precios
+// se descartaban silenciosamente. Ahora si escribe algo, activamos el toggle automáticamente.
+function _edAutoActivar(key, inputEl) {
+  // Solo activar si: el input tiene un valor numérico válido Y el toggle está OFF
+  var raw = (inputEl && inputEl.value || '').replace(/\D/g,'');
+  var hayPrecio = raw && parseInt(raw, 10) > 0;
+  if (hayPrecio && !_edSvc[key]) {
+    edToggleSvc(key); // pasa de false a true y agrega clase visual .active
+  }
+}
+
 function edValidarServiciosPrecios() {
   var errores = [];
   Object.keys(_edSvc).forEach(function(key){
@@ -3092,7 +3105,7 @@ function activarEdicion(){
         + '</div>'
         + '<div class="ed-svc-precios">';
   [['ed-esc-p1','1 amb'],['ed-esc-p2','2 amb'],['ed-esc-p3','3 amb'],['ed-esc-p4','4+ amb']].forEach(function(r){
-    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
+    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this);_edAutoActivar(\'esencial\',this)"/></div></div>';
   });
   form += '</div></div>';
 
@@ -3108,7 +3121,7 @@ function activarEdicion(){
         + '</div>'
         + '<div class="ed-svc-precios">';
   [['ed-int-p1','1 amb'],['ed-int-p2','2 amb'],['ed-int-p3','3 amb'],['ed-int-p4','4+ amb']].forEach(function(r){
-    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
+    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this);_edAutoActivar(\'integral\',this)"/></div></div>';
   });
   form += '</div></div>';
 
@@ -3124,7 +3137,7 @@ function activarEdicion(){
         + '</div>'
         + '<div class="ed-svc-precios">';
   [['ed-llv-p1','1 amb'],['ed-llv-p2','2 amb'],['ed-llv-p3','3 amb'],['ed-llv-p4','4+ amb']].forEach(function(r){
-    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>';
+    form += '<div class="edit-precio-row"><span class="edit-precio-lbl">'+r[1]+'</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="'+r[0]+'" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this);_edAutoActivar(\'llave\',this)"/></div></div>';
   });
   form += '</div></div>';
 
@@ -3139,7 +3152,7 @@ function activarEdicion(){
         +   '<div class="ed-svc-check"></div>'
         + '</div>'
         + '<div class="ed-svc-precios">'
-        +   '<div class="edit-precio-row"><span class="edit-precio-lbl">Precio base flete</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="ed-flt-p" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this)"/></div></div>'
+        +   '<div class="edit-precio-row"><span class="edit-precio-lbl">Precio base flete</span><div class="edit-precio-wrap"><span class="edit-precio-prefix">$</span><input class="edit-precio-input" id="ed-flt-p" type="text" placeholder="0" inputmode="numeric" oninput="_fmtPrecioEdit(this);_edAutoActivar(\'flete\',this)"/></div></div>'
         + '</div></div>';
 
   // Adicional: Seguro de mudanza
@@ -3244,11 +3257,20 @@ function activarEdicion(){
       setV('ed-esc-p4', fmtP(p.preciosEsencial.amb4));
       if (Array.isArray(p.serviciosActivos) ? p.serviciosActivos.indexOf('esencial') !== -1 : true) edToggleSvc('esencial');
     } else if (p.precio1amb || p.precio2amb || p.precio3amb || p.precio4amb) {
-      // Fallback: precios viejos planos van a Esencial
+      // Fallback A: precios viejos planos (campos sueltos en root)
       setV('ed-esc-p1', fmtP(p.precio1amb));
       setV('ed-esc-p2', fmtP(p.precio2amb));
       setV('ed-esc-p3', fmtP(p.precio3amb));
       setV('ed-esc-p4', fmtP(p.precio4amb));
+      edToggleSvc('esencial');
+    } else if (p.precios && (p.precios.amb1 || p.precios.amb2 || p.precios.amb3 || p.precios.amb4)) {
+      // Fallback B (LEGACY real): subobjeto p.precios.{amb1..amb4} usado por
+      // perfiles cargados antes de la migración. Los traemos a Esencial para
+      // que el admin pueda editarlos y guardarlos en el modelo nuevo de un click.
+      setV('ed-esc-p1', fmtP(p.precios.amb1));
+      setV('ed-esc-p2', fmtP(p.precios.amb2));
+      setV('ed-esc-p3', fmtP(p.precios.amb3));
+      setV('ed-esc-p4', fmtP(p.precios.amb4));
       edToggleSvc('esencial');
     }
     // Integral
