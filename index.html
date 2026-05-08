@@ -1680,9 +1680,6 @@
   var _busqueda = {};
   var _todos = [];
   var _sel = new Set();
-  // Slug del mudancero que vino del link público (mudateya.ar/m/{slug}).
-  // Si está seteado, el catálogo muestra solo ese mudancero + escape "ver otros".
-  var _mudanceroForzado = null;
   var _filtros = { orden:'cal', vehiculos:new Set(), zonas:new Set(), verifs:new Set(), servicios:new Set() };
   var _nivel = 'llave'; // 'esencial' | 'integral' | 'llave'
   var _googleInited = false;
@@ -2120,38 +2117,8 @@
         return;
       }
       _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
-      // ── Pre-selección desde landing pública (mudateya.ar/m/{slug}) ──
-      // Si el cliente vino desde la landing del mudancero por click en
-      // "Solicitar cotización", al terminar el wizard saltamos el catálogo y
-      // disparamos la publicación dirigida directo. El cliente nunca ve el catálogo.
-      var disparoAutomatico = false;
-      try {
-        var qpMud = (new URLSearchParams(window.location.search)).get('mudancero');
-        if (qpMud && _todos && _todos.length) {
-          var slugBuscado = qpMud.toLowerCase();
-          var match = _todos.find(function(m){ return (m.slug||'').toLowerCase() === slugBuscado; });
-          if (match && match.email) {
-            _sel.clear();
-            _sel.add(match.email);
-            _mudanceroForzado = slugBuscado;
-            disparoAutomatico = true;
-          }
-        }
-      } catch(e) {}
     } catch(e) { _todos = []; }
     renderResultados();
-    // Si vino del link público, disparar la cotización automáticamente DESPUÉS de
-    // que el catálogo cargó y _sel quedó con el mudancero correcto.
-    if (disparoAutomatico) {
-      // Limpiar el query param para que un refresh no reactive el flow
-      try {
-        var url = new URL(window.location.href);
-        url.searchParams.delete('mudancero');
-        window.history.replaceState({}, document.title, url.pathname + url.search);
-      } catch(e) {}
-      // Pequeño delay para que el render termine y el modal abra limpio
-      setTimeout(function(){ pedirCotizacion(); }, 200);
-    }
   }
 
   // ══════════════════════════════════════════
@@ -2919,18 +2886,6 @@
   } else {
     verificarMagicLinkSiHay();
   }
-
-  // ── Si viene desde landing pública del mudancero (mudateya.ar/m/{slug} → /?mudancero=...)
-  // limpiar sessionStorage de búsqueda anterior para que el wizard arranque desde cero.
-  try {
-    var _qpMudInicio = (new URLSearchParams(window.location.search)).get('mudancero');
-    if (_qpMudInicio) {
-      sessionStorage.removeItem('busquedaActual');
-      sessionStorage.removeItem('perfilMudancero');
-      sessionStorage.removeItem('seleccionados');
-      sessionStorage.removeItem('ultimoSeleccionado');
-    }
-  } catch(e) {}
   function logout() {
     sessionStorage.removeItem('googleUser'); sessionStorage.removeItem('clienteUser');
     _currentUser=null; updateNav(); window.location.href='/';
