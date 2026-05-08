@@ -513,22 +513,21 @@ function generarSlug(texto) {
   if (!texto) return '';
   return String(texto)
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // sin acentos
-    .replace(/[^a-z0-9\s-]/g, '')                      // solo alfanum + espacio + guion
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
     .trim()
-    .replace(/\s+/g, '-')                              // espacios → guiones
-    .replace(/-+/g, '-')                               // guiones repetidos → uno solo
-    .substring(0, 40)                                  // max 40 chars
-    .replace(/-+$/, '');                               // sin guion final
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .substring(0, 40)
+    .replace(/-+$/, '');
 }
 
 // Asegura que el perfil tenga un slug único guardado en Redis Y que la key
-// inversa slug:{slug} → email también exista. Es idempotente: aunque el perfil
-// ya tenga slug, repara la key inversa si falta (caso típico tras un deploy).
+// inversa slug:{slug} → email también exista. Es idempotente.
 async function asegurarSlug(perfil) {
   if (!perfil || !perfil.email) return null;
 
-  // Caso 1: el perfil ya tiene slug → reparar key inversa si falta y devolver
+  // Caso 1: el perfil ya tiene slug → reparar key inversa si falta
   if (perfil.slug) {
     try {
       const keyExiste = await redisCall('GET', `slug:${perfil.slug}`);
@@ -2087,7 +2086,6 @@ module.exports = async function handler(req, res) {
     // LANDING PÚBLICA DEL MUDANCERO — GET ?action=mudancero-publico&slug={slug}
     // Devuelve perfil público (sin CBU, fotos DNI, ni email expuesto) para
     // landings tipo mudateya.ar/m/{slug}.
-    // Ventaja sobre el endpoint catalogo: 1 lookup directo en Redis (no scanea todos).
     // ═══════════════════════════════════════════════════════════════
     if (action === 'mudancero-publico' && req.method === 'GET') {
       const { slug } = req.query;
@@ -2099,7 +2097,6 @@ module.exports = async function handler(req, res) {
       if (!p || p.estado !== 'aprobado') {
         return res.status(404).json({ error: 'Mudancero no disponible' });
       }
-      // Devolver solo datos públicos. NOTA: NO se devuelve email para preservar privacidad.
       return res.status(200).json({
         slug:                p.slug || slugLimpio,
         nombre:              p.nombre,
@@ -2134,6 +2131,8 @@ module.exports = async function handler(req, res) {
         preciosLlave:        p.preciosLlave         || null,
         precioFleteNuevo:    p.precioFleteNuevo     || '',
         sinEstres:           p.sinEstres === true,
+        // Importante: array vacío para evitar TypeError en m.resenas.slice() en frontend
+        resenas:             Array.isArray(p.resenas) ? p.resenas : [],
       });
     }
 
