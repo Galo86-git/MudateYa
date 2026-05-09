@@ -236,6 +236,7 @@ transporte de mudanzas</textarea>
     <div class="card-title"><span class="step-num">3</span> Buscar</div>
     <div class="actions">
       <button class="btn" id="btnBuscar">🔍 Buscar en Google Maps</button>
+      <button class="btn btn-secondary" id="btnEmails" style="display:none">📧 Buscar emails en webs</button>
       <button class="btn btn-secondary" id="btnCsv" style="display:none">⬇ Descargar CSV</button>
       <button class="btn btn-secondary" id="btnJson" style="display:none">⬇ Descargar JSON</button>
     </div>
@@ -259,6 +260,7 @@ transporte de mudanzas</textarea>
               <th>⭐ Rating</th>
               <th>Reviews</th>
               <th>Teléfono</th>
+              <th>Email</th>
               <th>Dirección</th>
               <th>Web</th>
               <th>Maps</th>
@@ -296,6 +298,7 @@ document.getElementById('zonaCentro').addEventListener('change', function() {
 });
 
 document.getElementById('btnBuscar').addEventListener('click', buscar);
+document.getElementById('btnEmails').addEventListener('click', scrapearEmails);
 document.getElementById('btnCsv').addEventListener('click', descargarCsv);
 document.getElementById('btnJson').addEventListener('click', descargarJson);
 
@@ -416,6 +419,13 @@ function finishUI(ui) {
   ui.btn.disabled = false;
   document.getElementById('btnCsv').style.display = 'inline-flex';
   document.getElementById('btnJson').style.display = 'inline-flex';
+  // Mostrar btnEmails solo si al menos un resultado tiene sitio web
+  var conWeb = resultados.filter(function(r){ return r.encontrado && r.sitioWeb; }).length;
+  if (conWeb > 0) {
+    var be = document.getElementById('btnEmails');
+    be.textContent = '📧 Buscar emails en ' + conWeb + ' webs';
+    be.style.display = 'inline-flex';
+  }
 }
 
 // ───────────────── MODO LISTA (por nombre) ─────────────────
@@ -508,6 +518,56 @@ async function buscarPorZona(key) {
   finishUI(ui);
 }
 
+// ───────────────── SCRAPE EMAILS DE LAS WEBS ─────────────────
+async function scrapearEmails() {
+  clearErr();
+  var token = document.getElementById('apiKey').value.trim();
+  if (!token) { showErr('Pegá el token de admin primero'); return; }
+
+  var conWeb = resultados.filter(function(r){ return r.encontrado && r.sitioWeb && !r.emails; });
+  if (!conWeb.length) {
+    showErr('No hay webs nuevas para scrapear (puede que ya las hayas buscado).');
+    return;
+  }
+
+  var btn = document.getElementById('btnEmails');
+  btn.disabled = true;
+  var prog = document.getElementById('progress');
+  var progTxt = document.getElementById('progressTxt');
+  var progFill = document.getElementById('progressFill');
+  prog.classList.add('active');
+
+  for (var i = 0; i < conWeb.length; i++) {
+    var r = conWeb[i];
+    var dominio = '';
+    try { dominio = new URL(r.sitioWeb).hostname.replace(/^www\./, ''); } catch(e){}
+    progTxt.textContent = '[' + (i+1) + '/' + conWeb.length + '] Scrapeando ' + dominio + '...';
+    progFill.style.width = ((i / conWeb.length) * 100) + '%';
+    try {
+      var url = '/api/cotizaciones?action=scrape-email&token=' + encodeURIComponent(token)
+        + '&url=' + encodeURIComponent(r.sitioWeb);
+      var resp = await fetch(url);
+      var d = await resp.json();
+      r.emails = d.emails || [];
+      r.emailScrapeError = d.error || null;
+    } catch(err) {
+      r.emails = [];
+      r.emailScrapeError = err.message;
+    }
+    // Re-render parcial cada 5 para ver progreso
+    if (i % 5 === 0) renderResultados();
+    await new Promise(function(r){ setTimeout(r, 100); });
+  }
+
+  progFill.style.width = '100%';
+  setTimeout(function(){ prog.classList.remove('active'); }, 500);
+  renderResultados();
+  btn.disabled = false;
+  // Estadística final
+  var conEmail = resultados.filter(function(r){ return r.emails && r.emails.length; }).length;
+  btn.textContent = '📧 ' + conEmail + ' emails encontrados · re-buscar';
+}
+
 function buildRow(nombreInput, query, placeId, det) {
   return {
     nombreInput: nombreInput,
@@ -535,22 +595,36 @@ function stars(rating) {
 function renderResultados() {
   var tbody = document.getElementById('tablaBody');
   tbody.innerHTML = '';
-  var conRating = 0, sinResultado = 0, totalReviews = 0;
+  var conRating = 0, sinResultado = 0, totalReviews = 0, conEmail = 0;
   for (var i = 0; i < resultados.length; i++) {
     var r = resultados[i];
     var tr = document.createElement('tr');
     if (!r.encontrado) {
       sinResultado++;
       tr.innerHTML = '<td class="empresa">' + escHtml(r.nombreInput) + '</td>'
-        + '<td colspan="6" class="no-data">No encontrado' + (r.error ? ' — ' + escHtml(r.error) : '') + '</td>';
+        + '<td colspan="7" class="no-data">No encontrado' + (r.error ? ' — ' + escHtml(r.error) : '') + '</td>';
     } else {
       if (r.rating) conRating++;
       totalReviews += r.totalReviews || 0;
+      // Render de email: si ya scrapeamos, mostrar el primero (con tooltip si hay más)
+      var emailCell;
+      if (r.emails && r.emails.length) {
+        conEmail++;
+        var primerEmail = r.emails[0];
+        var extras = r.emails.length > 1 ? ' <span style="color:var(--text-3);font-size:11px">+' + (r.emails.length - 1) + '</span>' : '';
+        var titulo = r.emails.length > 1 ? r.emails.join('\n') : '';
+        emailCell = '<td><a href="mailto:' + escHtml(primerEmail) + '" title="' + escHtml(titulo) + '">' + escHtml(primerEmail) + '</a>' + extras + '</td>';
+      } else if (r.emails && r.emails.length === 0) {
+        emailCell = '<td class="no-data">' + (r.emailScrapeError ? '⚠ ' + escHtml(r.emailScrapeError) : 'sin emails') + '</td>';
+      } else {
+        emailCell = '<td class="no-data">—</td>';
+      }
       tr.innerHTML = ''
         + '<td class="empresa">' + escHtml(r.nombreGoogle || r.nombreInput) + '</td>'
         + '<td class="rating">' + (r.rating ? r.rating.toFixed(1) + ' ' + stars(r.rating) : '<span class="no-data">—</span>') + '</td>'
         + '<td class="reviews">' + (r.totalReviews || 0) + '</td>'
         + '<td>' + (r.telefono ? '<a href="tel:' + escHtml(r.telefonoIntl || r.telefono) + '">' + escHtml(r.telefono) + '</a>' : '<span class="no-data">—</span>') + '</td>'
+        + emailCell
         + '<td>' + escHtml(r.direccion || '—') + '</td>'
         + '<td>' + (r.sitioWeb ? '<a href="' + escHtml(r.sitioWeb) + '" target="_blank">' + nuevoDominio(r.sitioWeb) + '</a>' : '<span class="no-data">—</span>') + '</td>'
         + '<td>' + (r.urlGoogleMaps ? '<a href="' + escHtml(r.urlGoogleMaps) + '" target="_blank">ver</a>' : '<span class="no-data">—</span>') + '</td>';
@@ -561,6 +635,7 @@ function renderResultados() {
     '<strong>' + resultados.length + '</strong> empresas total · '
     + '<strong>' + conRating + '</strong> con rating · '
     + '<strong>' + totalReviews.toLocaleString('es-AR') + '</strong> reviews totales'
+    + (conEmail ? ' · <strong>' + conEmail + '</strong> con email' : '')
     + (sinResultado ? ' · <strong>' + sinResultado + '</strong> sin datos' : '');
   document.getElementById('jsonRaw').textContent = JSON.stringify(resultados, null, 2);
   document.getElementById('results').classList.add('active');
@@ -576,11 +651,20 @@ function nuevoDominio(url) {
 }
 
 function descargarCsv() {
-  var headers = ['nombreGoogle','rating','totalReviews','telefono','telefonoIntl','direccion','sitioWeb','urlGoogleMaps','estado','placeId','encontrado','error'];
+  var headers = ['nombreGoogle','rating','totalReviews','telefono','telefonoIntl','email','emailsAdicionales','direccion','sitioWeb','urlGoogleMaps','estado','placeId','encontrado','error'];
   var lines = [headers.join(',')];
   for (var i = 0; i < resultados.length; i++) {
     var r = resultados[i];
-    lines.push(headers.map(function(h) { return csvEsc(r[h]); }).join(','));
+    // Construir email principal y adicionales
+    var rExt = Object.assign({}, r);
+    if (r.emails && r.emails.length) {
+      rExt.email = r.emails[0];
+      rExt.emailsAdicionales = r.emails.slice(1).join('; ');
+    } else {
+      rExt.email = '';
+      rExt.emailsAdicionales = '';
+    }
+    lines.push(headers.map(function(h) { return csvEsc(rExt[h]); }).join(','));
   }
   descargar('mudanceros-zona-norte.csv', lines.join('\n'), 'text/csv;charset=utf-8');
 }
