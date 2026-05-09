@@ -737,13 +737,6 @@ async function cargarCatalogo() {
     //   - verificadoSeguro: true    → modelo viejo (verificación admin)
     //   - servicios contiene "seguro" → texto libre del perfil
     //   - serviciosActivos incluye "seguro" → array del modelo nuevo
-    // Helper: ¿el pack {amb1..amb4} tiene al menos un precio > 0 cargado?
-    // Un objeto con strings vacíos NO cuenta como pack cargado.
-    function _packTienePrecioCargado(pack) {
-      if (!pack || typeof pack !== 'object') return false;
-      var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
-      return pAmt(pack.amb1) > 0 || pAmt(pack.amb2) > 0 || pAmt(pack.amb3) > 0 || pAmt(pack.amb4) > 0;
-    }
     //   - extra contiene "seguro" → notas/extras del perfil
     //   - vehiculo contiene "seguro" → algunos lo pusieron acá
     function _strSeguro(v) {
@@ -778,6 +771,14 @@ async function cargarCatalogo() {
     console.error('Error catálogo:', e);
     content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">⚠️</div><div class="cat-empty-title">No pudimos cargar el catálogo</div><div class="cat-empty-msg">Probá de nuevo en unos segundos.</div></div>';
   }
+}
+
+// Helper: ¿el pack {amb1..amb4} tiene al menos un precio > 0 cargado?
+// Un objeto con strings vacíos NO cuenta como pack cargado.
+function _packTienePrecioCargado(pack) {
+  if (!pack || typeof pack !== 'object') return false;
+  var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
+  return pAmt(pack.amb1) > 0 || pAmt(pack.amb2) > 0 || pAmt(pack.amb3) > 0 || pAmt(pack.amb4) > 0;
 }
 
 // Cálculo de precio referencial para Llave en mano
