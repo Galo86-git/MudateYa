@@ -2323,6 +2323,126 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // ── Admin: Scrape de emails desde webs de mudanceros ──────────────────
+    // Toma una URL, hace fetch al HTML, extrae emails con regex.
+    // Cachea el resultado en Redis 30 días para no re-scrapear cada vez.
+    if (action === 'scrape-email' && req.method === 'GET') {
+      const { token, url, force } = req.query;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(401).json({ error: 'No autorizado' });
+      }
+      if (!url) return res.status(400).json({ error: 'Falta url' });
+
+      // Helper local: validar email
+      const isValidEmail = (e) => {
+        if (!e || e.length > 80 || e.length < 6) return false;
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(e)) return false;
+        return true;
+      };
+
+      // Validar URL
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(url);
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('Protocolo inválido');
+      } catch(e) {
+        return res.status(400).json({ error: 'URL inválida: ' + e.message });
+      }
+
+      // Cache en Redis: scrape:email:{hash} → 30 días
+      const cacheKey = `scrape:email:${Buffer.from(url).toString('base64').slice(0, 60)}`;
+      if (!force) {
+        try {
+          const cached = await getJSON(cacheKey);
+          if (cached) return res.status(200).json({ ...cached, fromCache: true });
+        } catch(e) {}
+      }
+
+      try {
+        // Fetch con timeout corto y user-agent normal
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 8000);
+        const resp = await fetch(url, {
+          signal: ctrl.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; MudateYa-research/1.0; +https://mudateya.ar)',
+            'Accept': 'text/html,application/xhtml+xml',
+          },
+          redirect: 'follow'
+        });
+        clearTimeout(timeout);
+
+        if (!resp.ok) {
+          const result = { url, emails: [], error: 'HTTP ' + resp.status };
+          await setJSON(cacheKey, result, 86400 * 30);
+          return res.status(200).json(result);
+        }
+
+        let html = await resp.text();
+        // Limitar a 500KB para evitar páginas gigantes
+        if (html.length > 500000) html = html.slice(0, 500000);
+
+        // Extraer emails. Patrones a contemplar:
+        // - email directo: foo@bar.com
+        // - mailto: en hrefs
+        // - emails ofuscados: foo [at] bar.com, foo (at) bar (dot) com
+        const emails = new Set();
+
+        // 1) mailto: links (los más confiables)
+        const mailtoRegex = /mailto:([^"'?\s>]+)/gi;
+        let m;
+        while ((m = mailtoRegex.exec(html)) !== null) {
+          const e = decodeURIComponent(m[1]).split(/[?,;]/)[0].trim().toLowerCase();
+          if (isValidEmail(e)) emails.add(e);
+        }
+
+        // 2) Emails directos en el texto
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        while ((m = emailRegex.exec(html)) !== null) {
+          const e = m[0].toLowerCase();
+          if (isValidEmail(e)) emails.add(e);
+        }
+
+        // 3) Emails ofuscados con (at) y (dot)
+        const obfuscatedRegex = /([a-zA-Z0-9._%+-]+)\s*[\[\(]\s*at\s*[\]\)]\s*([a-zA-Z0-9.-]+)\s*[\[\(]\s*dot\s*[\]\)]\s*([a-zA-Z]{2,})/gi;
+        while ((m = obfuscatedRegex.exec(html)) !== null) {
+          const e = (m[1] + '@' + m[2] + '.' + m[3]).toLowerCase();
+          if (isValidEmail(e)) emails.add(e);
+        }
+
+        // Filtrar emails de imágenes/assets/falsos positivos comunes
+        const blacklist = [
+          /\.(png|jpg|jpeg|gif|svg|webp|css|js|woff|ttf)$/i,
+          /^(noreply|no-reply|mailer-daemon|postmaster|abuse)@/i,
+          /@(wixpress\.com|wixsite\.com|godaddy\.com|sentry\.io|google-analytics\.com|facebook\.com|gstatic\.com|googleusercontent\.com|cdn\.|example\.com|domain\.com|email\.com|sentry-next\.wixpress\.com)$/i,
+          /^(u00|u003e|u0040)/i, // escape sequences
+        ];
+        const filtered = [...emails].filter(e => !blacklist.some(rx => rx.test(e)));
+
+        // Priorizar emails del mismo dominio que la web
+        const domain = parsedUrl.hostname.replace(/^www\./, '');
+        const priority = filtered.filter(e => e.endsWith('@' + domain) || e.endsWith('.' + domain));
+        const others = filtered.filter(e => !priority.includes(e));
+        const sorted = [...priority, ...others];
+
+        const result = {
+          url,
+          emails: sorted,
+          encontrados: sorted.length,
+          dominio: domain
+        };
+        await setJSON(cacheKey, result, 86400 * 30);
+        return res.status(200).json(result);
+
+      } catch(e) {
+        const errMsg = e.name === 'AbortError' ? 'Timeout (8s)' : e.message;
+        const result = { url, emails: [], error: errMsg };
+        // Cachear errores menos tiempo (1 día) por si la web está caída temporal
+        try { await setJSON(cacheKey, result, 86400); } catch(_) {}
+        return res.status(200).json(result);
+      }
+    }
+
     return res.status(400).json({ error: 'Acción no reconocida' });
 
   } catch(e) {
