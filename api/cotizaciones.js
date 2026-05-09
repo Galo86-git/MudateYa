@@ -2349,8 +2349,9 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'URL inválida: ' + e.message });
       }
 
-      // Cache en Redis: scrape:email:{hash} → 30 días
-      const cacheKey = `scrape:email:${Buffer.from(url).toString('base64').slice(0, 60)}`;
+      // Cache en Redis: scrape:email:v2:{hash} → 30 días
+      // v2 = versión multi-página + redes sociales + teléfonos. Invalida cachés v1.
+      const cacheKey = `scrape:email:v2:${Buffer.from(url).toString('base64').slice(0, 60)}`;
       if (!force) {
         try {
           const cached = await getJSON(cacheKey);
@@ -2358,78 +2359,165 @@ module.exports = async function handler(req, res) {
         } catch(e) {}
       }
 
-      try {
-        // Fetch con timeout corto y user-agent normal
-        const ctrl = new AbortController();
-        const timeout = setTimeout(() => ctrl.abort(), 8000);
-        const resp = await fetch(url, {
-          signal: ctrl.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; MudateYa-research/1.0; +https://mudateya.ar)',
-            'Accept': 'text/html,application/xhtml+xml',
-          },
-          redirect: 'follow'
-        });
-        clearTimeout(timeout);
-
-        if (!resp.ok) {
-          const result = { url, emails: [], error: 'HTTP ' + resp.status };
-          await setJSON(cacheKey, result, 86400 * 30);
-          return res.status(200).json(result);
-        }
-
-        let html = await resp.text();
-        // Limitar a 500KB para evitar páginas gigantes
-        if (html.length > 500000) html = html.slice(0, 500000);
-
-        // Extraer emails. Patrones a contemplar:
-        // - email directo: foo@bar.com
-        // - mailto: en hrefs
-        // - emails ofuscados: foo [at] bar.com, foo (at) bar (dot) com
-        const emails = new Set();
-
-        // 1) mailto: links (los más confiables)
-        const mailtoRegex = /mailto:([^"'?\s>]+)/gi;
+      // Helpers de extracción
+      const extraerDeHtml = (html, accumEmails, accumPhones, accumSocial) => {
         let m;
+        // Emails: mailto + texto + ofuscados
+        const mailtoRegex = /mailto:([^"'?\s>]+)/gi;
         while ((m = mailtoRegex.exec(html)) !== null) {
           const e = decodeURIComponent(m[1]).split(/[?,;]/)[0].trim().toLowerCase();
-          if (isValidEmail(e)) emails.add(e);
+          if (isValidEmail(e)) accumEmails.add(e);
         }
-
-        // 2) Emails directos en el texto
         const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
         while ((m = emailRegex.exec(html)) !== null) {
           const e = m[0].toLowerCase();
-          if (isValidEmail(e)) emails.add(e);
+          if (isValidEmail(e)) accumEmails.add(e);
         }
-
-        // 3) Emails ofuscados con (at) y (dot)
         const obfuscatedRegex = /([a-zA-Z0-9._%+-]+)\s*[\[\(]\s*at\s*[\]\)]\s*([a-zA-Z0-9.-]+)\s*[\[\(]\s*dot\s*[\]\)]\s*([a-zA-Z]{2,})/gi;
         while ((m = obfuscatedRegex.exec(html)) !== null) {
           const e = (m[1] + '@' + m[2] + '.' + m[3]).toLowerCase();
-          if (isValidEmail(e)) emails.add(e);
+          if (isValidEmail(e)) accumEmails.add(e);
+        }
+        // Teléfonos en formato AR
+        const telRegex = /(?:tel:|telephone:)?\+?\s*(?:54[\s\-]?9?[\s\-]?)?(?:0?11|0?15)?[\s\-\.\(\)]*\d{2,4}[\s\-\.\)]*\d{3,4}[\s\-\.]*\d{3,4}/g;
+        while ((m = telRegex.exec(html)) !== null) {
+          const tel = m[0].replace(/[^\d+]/g, '');
+          if (tel.length >= 8 && tel.length <= 15) accumPhones.add(tel);
+        }
+        // Redes sociales
+        const socialPatterns = [
+          { rx: /(?:https?:)?\/\/(?:www\.)?(?:wa\.me|api\.whatsapp\.com\/send|chat\.whatsapp\.com)\/[^\s"'<>]+/gi, type: 'whatsapp' },
+          { rx: /(?:https?:)?\/\/(?:www\.)?instagram\.com\/[a-zA-Z0-9._]+\/?/gi, type: 'instagram' },
+          { rx: /(?:https?:)?\/\/(?:www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?/gi, type: 'facebook' },
+          { rx: /(?:https?:)?\/\/(?:www\.)?linkedin\.com\/(?:in|company)\/[a-zA-Z0-9._-]+\/?/gi, type: 'linkedin' },
+        ];
+        for (const sp of socialPatterns) {
+          while ((m = sp.rx.exec(html)) !== null) {
+            let val = m[0];
+            if (val.startsWith('//')) val = 'https:' + val;
+            // Filtrar URLs genéricas (sin handle)
+            if (sp.type === 'instagram' && /instagram\.com\/?$/i.test(val)) continue;
+            if (sp.type === 'facebook' && /facebook\.com\/(sharer|share|tr|plugins|dialog|pages?|profile)/i.test(val)) continue;
+            if (sp.type === 'whatsapp' && val.length < 25) continue;
+            accumSocial.add(sp.type + '|' + val);
+          }
+        }
+      };
+
+      const fetchHtml = async (u) => {
+        try {
+          const ctrl = new AbortController();
+          const timeout = setTimeout(() => ctrl.abort(), 6000);
+          const resp = await fetch(u, {
+            signal: ctrl.signal,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; MudateYa-research/1.0; +https://mudateya.ar)',
+              'Accept': 'text/html,application/xhtml+xml',
+            },
+            redirect: 'follow'
+          });
+          clearTimeout(timeout);
+          if (!resp.ok) return null;
+          let html = await resp.text();
+          if (html.length > 500000) html = html.slice(0, 500000);
+          return html;
+        } catch(e) {
+          return null;
+        }
+      };
+
+      try {
+        const allEmails = new Set();
+        const allPhones = new Set();
+        const allSocial = new Set();
+        const visitadas = [];
+        const errores = [];
+
+        // 1) Visitar la home
+        const homeHtml = await fetchHtml(url);
+        if (!homeHtml) {
+          const result = { url, emails: [], phones: [], social: [], error: 'No se pudo acceder a la home' };
+          await setJSON(cacheKey, result, 86400);
+          return res.status(200).json(result);
+        }
+        visitadas.push(url);
+        extraerDeHtml(homeHtml, allEmails, allPhones, allSocial);
+
+        // 2) Buscar links a páginas de contacto/sobre nosotros en la home
+        // Patrones comunes en español e inglés
+        const candidatos = new Set();
+        const linkRegex = /<a[^>]+href\s*=\s*["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi;
+        let lm;
+        const palabrasContacto = /contacto|contact|nosotros|about|empresa|institucional|sobre/i;
+        while ((lm = linkRegex.exec(homeHtml)) !== null) {
+          const href = lm[1];
+          const texto = lm[2] || '';
+          // Coincide si el path o el texto del link contienen palabras clave
+          if (palabrasContacto.test(href) || palabrasContacto.test(texto)) {
+            try {
+              const absoluteUrl = new URL(href, url).href;
+              // Solo URLs del mismo dominio
+              const cand = new URL(absoluteUrl);
+              if (cand.hostname.replace(/^www\./, '') === parsedUrl.hostname.replace(/^www\./, '')) {
+                candidatos.add(absoluteUrl.split('#')[0]);
+              }
+            } catch(e) {}
+          }
+        }
+        // Si no encontró links explícitos, probar paths comunes
+        if (candidatos.size === 0) {
+          const paths = ['/contacto', '/contact', '/nosotros', '/about', '/about-us', '/empresa'];
+          for (const p of paths) {
+            try {
+              candidatos.add(new URL(p, url).href);
+            } catch(e) {}
+          }
+        }
+
+        // 3) Visitar hasta 3 candidatos (limitar para no demorar mucho)
+        const aVisitar = [...candidatos].slice(0, 3);
+        for (const cu of aVisitar) {
+          if (visitadas.includes(cu)) continue;
+          const html = await fetchHtml(cu);
+          if (html) {
+            visitadas.push(cu);
+            extraerDeHtml(html, allEmails, allPhones, allSocial);
+          } else {
+            errores.push('No se pudo acceder a ' + cu);
+          }
         }
 
         // Filtrar emails de imágenes/assets/falsos positivos comunes
         const blacklist = [
-          /\.(png|jpg|jpeg|gif|svg|webp|css|js|woff|ttf)$/i,
-          /^(noreply|no-reply|mailer-daemon|postmaster|abuse)@/i,
-          /@(wixpress\.com|wixsite\.com|godaddy\.com|sentry\.io|google-analytics\.com|facebook\.com|gstatic\.com|googleusercontent\.com|cdn\.|example\.com|domain\.com|email\.com|sentry-next\.wixpress\.com)$/i,
-          /^(u00|u003e|u0040)/i, // escape sequences
+          /\.(png|jpg|jpeg|gif|svg|webp|css|js|woff|ttf|ico|pdf)$/i,
+          /^(noreply|no-reply|mailer-daemon|postmaster|abuse|donotreply|do-not-reply)@/i,
+          /@(wixpress\.com|wixsite\.com|godaddy\.com|sentry\.io|google-analytics\.com|facebook\.com|gstatic\.com|googleusercontent\.com|cdn\.|example\.com|domain\.com|email\.com|sentry-next\.wixpress\.com|wpforms\.com|elementor\.com|test\.com)$/i,
+          /^(u00|u003e|u0040)/i,
+          /^[a-f0-9]{20,}@/i, // hashes (típico de Sentry)
         ];
-        const filtered = [...emails].filter(e => !blacklist.some(rx => rx.test(e)));
+        const filtered = [...allEmails].filter(e => !blacklist.some(rx => rx.test(e)));
 
         // Priorizar emails del mismo dominio que la web
         const domain = parsedUrl.hostname.replace(/^www\./, '');
         const priority = filtered.filter(e => e.endsWith('@' + domain) || e.endsWith('.' + domain));
         const others = filtered.filter(e => !priority.includes(e));
-        const sorted = [...priority, ...others];
+        const sortedEmails = [...priority, ...others];
+
+        // Procesar redes sociales: dedup por tipo+url
+        const socialList = [...allSocial].map(s => {
+          const [type, ...rest] = s.split('|');
+          return { type, url: rest.join('|') };
+        });
 
         const result = {
           url,
-          emails: sorted,
-          encontrados: sorted.length,
-          dominio: domain
+          emails: sortedEmails,
+          phones: [...allPhones].slice(0, 5),
+          social: socialList,
+          encontrados: sortedEmails.length,
+          dominio: domain,
+          paginasVisitadas: visitadas.length,
+          paginas: visitadas
         };
         await setJSON(cacheKey, result, 86400 * 30);
         return res.status(200).json(result);
