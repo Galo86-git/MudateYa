@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research mudanceros · MudateYa</title>
+<style>
+  :root {
+    --navy:        #003580;
+    --navy-dark:   #002455;
+    --green:       #22C36A;
+    --green-dark:  #1aa055;
+    --bg:          #FAFAFA;
+    --bg-card:     #FFFFFF;
+    --text:        #0F1419;
+    --text-2:      #4B5563;
+    --text-3:      #9CA3AF;
+    --border:      #E5E7EB;
+    --accent:      #FF6B6B;
+    --warning:     #F59E0B;
+    --warning-bg:  #FEF3C7;
+    --success-bg:  #D1FAE5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 24px 16px 64px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+  h1 span { color: var(--green); }
+  .subtitle { color: var(--text-2); font-size: 15px; margin-bottom: 28px; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--navy); color: white; font-size: 13px; font-weight: 700;
+  }
+
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+  input[type="text"], input[type="password"], textarea {
+    width: 100%; padding: 11px 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    font: inherit; background: white;
+    transition: border-color .15s;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--navy); }
+  textarea { resize: vertical; min-height: 200px; font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 13px; }
+
+  .help { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+  .help a { color: var(--navy); }
+
+  .btn {
+    background: var(--green); color: white; border: none;
+    padding: 12px 22px; border-radius: 10px; font-weight: 700; font-size: 15px;
+    cursor: pointer; transition: background .15s, transform .05s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { background: var(--green-dark); }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { background: var(--text-3); cursor: not-allowed; transform: none; }
+  .btn.btn-secondary { background: var(--navy); }
+  .btn.btn-secondary:hover { background: var(--navy-dark); }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .progress {
+    margin: 18px 0 0; padding: 14px 16px; background: var(--warning-bg);
+    border-radius: 10px; font-size: 14px; display: none;
+  }
+  .progress.active { display: block; }
+  .progress-bar {
+    height: 8px; background: rgba(0,0,0,.08); border-radius: 4px; overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-fill { height: 100%; background: var(--warning); width: 0%; transition: width .3s; }
+
+  .results { display: none; margin-top: 18px; }
+  .results.active { display: block; }
+  .results-summary {
+    padding: 14px 16px; background: var(--success-bg); border-radius: 10px;
+    font-size: 14px; margin-bottom: 14px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: #F9FAFB; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-2); }
+  td.rating { font-weight: 700; color: var(--warning); white-space: nowrap; }
+  td.reviews { color: var(--text-3); white-space: nowrap; }
+  td.empresa { font-weight: 600; }
+  td a { color: var(--navy); text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+  td.no-data { color: var(--text-3); font-style: italic; }
+  .stars { color: var(--warning); }
+
+  .err {
+    background: #FEE2E2; color: #991B1B;
+    padding: 10px 14px; border-radius: 8px; font-size: 13px;
+    margin-top: 10px;
+  }
+
+  details { margin-top: 14px; }
+  details summary { cursor: pointer; font-size: 13px; color: var(--text-2); user-select: none; }
+  details pre { margin-top: 10px; padding: 12px; background: #1F2937; color: #E5E7EB; border-radius: 8px; font-size: 12px; overflow-x: auto; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .tab {
+    background: transparent; border: none; padding: 10px 16px;
+    cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-2);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s, border-color .15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+  .mode-panel { display: none; }
+  .mode-panel.active { display: block; }
+
+  .zona-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .zona-grid { grid-template-columns: 1fr; } }
+  select {
+    width: 100%; padding: 11px 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    font: inherit; background: white; cursor: pointer;
+  }
+  select:focus { outline: none; border-color: var(--navy); }
+
+  @media (max-width: 600px) {
+    body { padding: 16px 12px 48px; }
+    h1 { font-size: 22px; }
+    .card { padding: 16px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Research <span>mudanceros</span></h1>
+  <p class="subtitle">Trae todas las empresas de la zona desde Google Maps con rating, reviews, teléfono y dirección. Dos modos: buscar por nombre (lista cerrada) o descubrir por zona (lista completa).</p>
+
+  <!-- Paso 1: Token admin -->
+  <div class="card">
+    <div class="card-title"><span class="step-num">1</span> Pegá el token de admin</div>
+    <label for="apiKey">Admin token de MudateYa</label>
+    <input type="password" id="apiKey" placeholder="mya-admin-2026" autocomplete="off">
+    <div class="help">
+      Este HTML llama al endpoint <code>/api/cotizaciones?action=places-research</code> que usa la <strong>Google Places API key</strong> guardada en Vercel.
+      Tu API key nunca se expone en el browser.
+    </div>
+  </div>
+
+  <!-- Paso 2: Modo de búsqueda -->
+  <div class="card">
+    <div class="card-title"><span class="step-num">2</span> Elegí cómo buscar</div>
+
+    <div class="tabs">
+      <button class="tab active" data-mode="lista">📋 Lista de nombres</button>
+      <button class="tab" data-mode="zona">📍 Descubrir por zona</button>
+    </div>
+
+    <!-- Modo lista (el original) -->
+    <div class="mode-panel active" id="modeLista">
+      <label for="empresas">Una empresa por línea — formato: <code>Nombre | query para Google Maps</code></label>
+      <textarea id="empresas">Transportes Argentinos | Transportes Argentinos mudanzas zona norte buenos aires
+Mudanzas Norte | Mudanzas Norte Vicente Lopez San Isidro
+Transporte San Isidro | Transporte San Isidro fletes mudanzas
+Fletes.net.ar | Fletes.net.ar zona norte buenos aires
+Mudanzas Los Castillos | Mudanzas Los Castillos buenos aires
+Mudarte | Mudarte mudanzas Vicente Lopez San Isidro Olivos
+Almaflet | Almaflet fletes mudanzas Carapachay
+Fletes San Isidro Olivos | Fletes San Isidro Olivos
+Mudanzas FletOlivos | Mudanzas FletOlivos Olivos
+Fletes Sol | Fletes Sol mudanzas zona norte buenos aires
+LS Transportes | LS Transportes mudanzas zona norte
+Transportes Kiara | Transportes Kiara San Isidro</textarea>
+      <div class="help">El campo después del <code>|</code> es lo que Google va a buscar. Cuanto más específico, mejor el match. Si no ponés <code>|</code>, se usa el nombre tal cual.</div>
+    </div>
+
+    <!-- Modo zona (descubrimiento) -->
+    <div class="mode-panel" id="modeZona">
+      <div class="zona-grid">
+        <div>
+          <label for="zonaCentro">Centro de búsqueda</label>
+          <select id="zonaCentro">
+            <option value="-34.4708,-58.5128">San Isidro centro</option>
+            <option value="-34.5267,-58.4831">Vicente López</option>
+            <option value="-34.5089,-58.4814">Olivos</option>
+            <option value="-34.4253,-58.5797">Tigre</option>
+            <option value="-34.4101,-58.6486">Nordelta</option>
+            <option value="-34.4587,-58.9133">Pilar</option>
+            <option value="-34.3492,-58.7913">Escobar</option>
+            <option value="-34.6037,-58.3816">CABA centro</option>
+            <option value="custom">📍 Coordenadas personalizadas...</option>
+          </select>
+          <input type="text" id="zonaCustom" placeholder="-34.5267,-58.4831" style="display:none;margin-top:8px">
+        </div>
+        <div>
+          <label for="zonaRadio">Radio</label>
+          <select id="zonaRadio">
+            <option value="3000">3 km — solo el barrio</option>
+            <option value="7000">7 km — varios barrios</option>
+            <option value="15000" selected>15 km — toda zona norte</option>
+            <option value="30000">30 km — máximo (incluye CABA)</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="zonaQueries" style="margin-top:14px">Tipos de negocio a buscar (uno por línea)</label>
+      <textarea id="zonaQueries">mudanzas
+fletes
+empresa de mudanzas
+transporte de mudanzas</textarea>
+      <div class="help">
+        Google devuelve hasta <strong>60 resultados</strong> por consulta (3 páginas de 20).
+        Si ponés varias líneas, hace una búsqueda por cada una y mergea los resultados sin duplicar.
+        Cuantas más queries, más empresas vas a encontrar — y más calls a la API consume.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Paso 3: Buscar -->
+  <div class="card">
+    <div class="card-title"><span class="step-num">3</span> Buscar</div>
+    <div class="actions">
+      <button class="btn" id="btnBuscar">🔍 Buscar en Google Maps</button>
+      <button class="btn btn-secondary" id="btnCsv" style="display:none">⬇ Descargar CSV</button>
+      <button class="btn btn-secondary" id="btnJson" style="display:none">⬇ Descargar JSON</button>
+    </div>
+    <div class="progress" id="progress">
+      <div id="progressTxt">Procesando...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div id="error"></div>
+  </div>
+
+  <!-- Resultados -->
+  <div class="results" id="results">
+    <div class="card">
+      <div class="card-title">Resultados</div>
+      <div class="results-summary" id="summary"></div>
+      <div style="overflow-x:auto">
+        <table id="tabla">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>⭐ Rating</th>
+              <th>Reviews</th>
+              <th>Teléfono</th>
+              <th>Dirección</th>
+              <th>Web</th>
+              <th>Maps</th>
+            </tr>
+          </thead>
+          <tbody id="tablaBody"></tbody>
+        </table>
+      </div>
+      <details>
+        <summary>Ver JSON completo</summary>
+        <pre id="jsonRaw"></pre>
+      </details>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var resultados = [];
+var modoActivo = 'lista';
+
+// Tabs
+document.querySelectorAll('.tab').forEach(function(t) {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
+    document.querySelectorAll('.mode-panel').forEach(function(x) { x.classList.remove('active'); });
+    t.classList.add('active');
+    modoActivo = t.dataset.mode;
+    document.getElementById('mode' + (modoActivo === 'lista' ? 'Lista' : 'Zona')).classList.add('active');
+  });
+});
+// Centro custom
+document.getElementById('zonaCentro').addEventListener('change', function() {
+  document.getElementById('zonaCustom').style.display = this.value === 'custom' ? 'block' : 'none';
+});
+
+document.getElementById('btnBuscar').addEventListener('click', buscar);
+document.getElementById('btnCsv').addEventListener('click', descargarCsv);
+document.getElementById('btnJson').addEventListener('click', descargarJson);
+
+function showErr(msg) {
+  document.getElementById('error').innerHTML = '<div class="err">' + msg + '</div>';
+}
+function clearErr() { document.getElementById('error').innerHTML = ''; }
+
+function parsearEmpresas(texto) {
+  return texto.split('\n')
+    .map(function(l) { return l.trim(); })
+    .filter(function(l) { return l && !l.startsWith('#'); })
+    .map(function(l) {
+      var parts = l.split('|').map(function(s) { return s.trim(); });
+      return { nombre: parts[0], query: parts[1] || parts[0] };
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Llamadas al proxy de MudateYa, que internamente habla con Google Places.
+// El "key" en estas funciones es el ADMIN_TOKEN, NO la API key de Google.
+// La API key de Google vive solo en Vercel env vars, nunca en el browser.
+// ─────────────────────────────────────────────────────────────────────
+function proxyUrl(params) {
+  var qs = Object.keys(params)
+    .filter(function(k) { return params[k] != null && params[k] !== ''; })
+    .map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); })
+    .join('&');
+  return '/api/cotizaciones?action=places-research&' + qs;
+}
+
+async function buscarPlaceId(query, token) {
+  var r = await fetch(proxyUrl({ token: token, type: 'textsearch', query: query }));
+  var d = await r.json();
+  if (d.error && !d.status) throw new Error(d.error);
+  if (d.status !== 'OK' && d.status !== 'ZERO_RESULTS') {
+    throw new Error('TextSearch ' + d.status + ': ' + (d.error_message || ''));
+  }
+  return d.results && d.results[0] ? d.results[0].place_id : null;
+}
+
+async function nearbySearch(latlng, radio, keyword, token, paginas) {
+  var maxPaginas = paginas || 3;
+  var ids = [];
+  var pageToken = null;
+  for (var p = 0; p < maxPaginas; p++) {
+    var params = pageToken
+      ? { token: token, type: 'nearby', pagetoken: pageToken }
+      : { token: token, type: 'nearby', location: latlng, radius: radio, keyword: keyword };
+    var r = await fetch(proxyUrl(params));
+    var d = await r.json();
+    if (d.error && !d.status) throw new Error(d.error);
+    if (d.status !== 'OK' && d.status !== 'ZERO_RESULTS') {
+      throw new Error('NearbySearch ' + d.status + ': ' + (d.error_message || ''));
+    }
+    if (d.results) {
+      for (var i = 0; i < d.results.length; i++) {
+        ids.push(d.results[i].place_id);
+      }
+    }
+    pageToken = d.next_page_token;
+    if (!pageToken) break;
+    // Google requiere ~2s antes de poder usar el next_page_token
+    await new Promise(function(r) { setTimeout(r, 2200); });
+  }
+  return ids;
+}
+
+async function getDetails(placeId, token) {
+  var r = await fetch(proxyUrl({ token: token, type: 'details', place_id: placeId }));
+  var d = await r.json();
+  if (d.error && !d.status) throw new Error(d.error);
+  if (d.status !== 'OK') throw new Error('Details ' + d.status + ': ' + (d.error_message || ''));
+  return d.result;
+}
+
+async function buscar() {
+  clearErr();
+  var token = document.getElementById('apiKey').value.trim();
+  if (!token) { showErr('Pegá el token de admin primero'); return; }
+
+  if (modoActivo === 'lista') return await buscarPorLista(token);
+  return await buscarPorZona(token);
+}
+
+function setUpUI() {
+  var btn = document.getElementById('btnBuscar');
+  btn.disabled = true;
+  document.getElementById('btnCsv').style.display = 'none';
+  document.getElementById('btnJson').style.display = 'none';
+  document.getElementById('results').classList.remove('active');
+  var prog = document.getElementById('progress');
+  prog.classList.add('active');
+  resultados = [];
+  return {
+    btn: btn,
+    prog: prog,
+    progTxt: document.getElementById('progressTxt'),
+    progFill: document.getElementById('progressFill'),
+  };
+}
+
+function setProgress(ui, txt, pct) {
+  ui.progTxt.textContent = txt;
+  ui.progFill.style.width = pct + '%';
+}
+
+function finishUI(ui) {
+  ui.progFill.style.width = '100%';
+  setTimeout(function() { ui.prog.classList.remove('active'); }, 500);
+  // Ordenar por rating desc, luego por reviews desc
+  resultados.sort(function(a, b) {
+    var ra = a.rating || 0, rb = b.rating || 0;
+    if (rb !== ra) return rb - ra;
+    return (b.totalReviews || 0) - (a.totalReviews || 0);
+  });
+  renderResultados();
+  ui.btn.disabled = false;
+  document.getElementById('btnCsv').style.display = 'inline-flex';
+  document.getElementById('btnJson').style.display = 'inline-flex';
+}
+
+// ───────────────── MODO LISTA (por nombre) ─────────────────
+async function buscarPorLista(key) {
+  var empresas = parsearEmpresas(document.getElementById('empresas').value);
+  if (!empresas.length) { showErr('No hay empresas en la lista'); return; }
+  var ui = setUpUI();
+  for (var i = 0; i < empresas.length; i++) {
+    var e = empresas[i];
+    setProgress(ui, '[' + (i+1) + '/' + empresas.length + '] ' + e.nombre + ' ...', (i / empresas.length) * 100);
+    try {
+      var placeId = await buscarPlaceId(e.query, key);
+      if (!placeId) {
+        resultados.push({ nombreInput: e.nombre, query: e.query, encontrado: false });
+        continue;
+      }
+      var det = await getDetails(placeId, key);
+      resultados.push(buildRow(e.nombre, e.query, placeId, det));
+    } catch (err) {
+      resultados.push({ nombreInput: e.nombre, query: e.query, encontrado: false, error: err.message });
+      if (err.message.indexOf('REQUEST_DENIED') !== -1 || err.message.indexOf('INVALID') !== -1) {
+        showErr('Error de la API: ' + err.message + '. Verificá que Places API esté habilitada y que la key sea válida.');
+        break;
+      }
+    }
+    await new Promise(function(r) { setTimeout(r, 200); });
+  }
+  finishUI(ui);
+}
+
+// ───────────────── MODO ZONA (descubrimiento) ─────────────────
+async function buscarPorZona(key) {
+  var centro = document.getElementById('zonaCentro').value;
+  if (centro === 'custom') {
+    centro = document.getElementById('zonaCustom').value.trim();
+    if (!/^-?\d+\.?\d*,-?\d+\.?\d*$/.test(centro)) {
+      showErr('Coordenadas inválidas. Formato: lat,lng (ej: -34.5267,-58.4831)');
+      return;
+    }
+  }
+  var radio = document.getElementById('zonaRadio').value;
+  var queries = document.getElementById('zonaQueries').value
+    .split('\n').map(function(s){return s.trim();}).filter(function(s){return s;});
+  if (!queries.length) { showErr('Necesitás al menos un tipo de negocio'); return; }
+
+  var ui = setUpUI();
+
+  // 1. Buscar IDs únicos en cada query
+  var idsUnicos = {};
+  for (var q = 0; q < queries.length; q++) {
+    var query = queries[q];
+    setProgress(ui, '🔍 Buscando "' + query + '" en la zona... (' + (q+1) + '/' + queries.length + ')', (q / queries.length) * 30);
+    try {
+      var ids = await nearbySearch(centro, radio, query, key);
+      ids.forEach(function(id) { idsUnicos[id] = true; });
+    } catch (err) {
+      showErr('Error en búsqueda: ' + err.message);
+      if (err.message.indexOf('REQUEST_DENIED') !== -1 || err.message.indexOf('INVALID') !== -1) {
+        ui.btn.disabled = false;
+        return;
+      }
+    }
+  }
+
+  var ids = Object.keys(idsUnicos);
+  setProgress(ui, '✓ Encontrados ' + ids.length + ' lugares únicos. Pidiendo detalles...', 35);
+
+  if (!ids.length) {
+    showErr('Google no encontró ningún negocio en esa zona con esas keywords. Probá ampliando el radio o cambiando las keywords.');
+    ui.btn.disabled = false;
+    ui.prog.classList.remove('active');
+    return;
+  }
+
+  // 2. Pedir detalles de cada uno
+  for (var i = 0; i < ids.length; i++) {
+    setProgress(ui, '[' + (i+1) + '/' + ids.length + '] Detalles...', 35 + ((i / ids.length) * 65));
+    try {
+      var det = await getDetails(ids[i], key);
+      resultados.push(buildRow(det.name || '?', '(zona)', ids[i], det));
+    } catch (err) {
+      resultados.push({ nombreInput: '?', query: '(zona)', placeId: ids[i], encontrado: false, error: err.message });
+      if (err.message.indexOf('REQUEST_DENIED') !== -1 || err.message.indexOf('INVALID') !== -1) {
+        break;
+      }
+    }
+    await new Promise(function(r) { setTimeout(r, 100); });
+  }
+
+  finishUI(ui);
+}
+
+function buildRow(nombreInput, query, placeId, det) {
+  return {
+    nombreInput: nombreInput,
+    query: query,
+    encontrado: true,
+    nombreGoogle: det.name,
+    rating: det.rating || null,
+    totalReviews: det.user_ratings_total || 0,
+    telefono: det.formatted_phone_number || '',
+    telefonoIntl: det.international_phone_number || '',
+    direccion: det.formatted_address || '',
+    sitioWeb: det.website || '',
+    urlGoogleMaps: det.url || '',
+    estado: det.business_status || '',
+    placeId: placeId
+  };
+}
+
+function stars(rating) {
+  if (!rating) return '';
+  var n = Math.round(rating);
+  return '<span class="stars">' + '★'.repeat(n) + '</span>';
+}
+
+function renderResultados() {
+  var tbody = document.getElementById('tablaBody');
+  tbody.innerHTML = '';
+  var conRating = 0, sinResultado = 0, totalReviews = 0;
+  for (var i = 0; i < resultados.length; i++) {
+    var r = resultados[i];
+    var tr = document.createElement('tr');
+    if (!r.encontrado) {
+      sinResultado++;
+      tr.innerHTML = '<td class="empresa">' + escHtml(r.nombreInput) + '</td>'
+        + '<td colspan="6" class="no-data">No encontrado' + (r.error ? ' — ' + escHtml(r.error) : '') + '</td>';
+    } else {
+      if (r.rating) conRating++;
+      totalReviews += r.totalReviews || 0;
+      tr.innerHTML = ''
+        + '<td class="empresa">' + escHtml(r.nombreGoogle || r.nombreInput) + '</td>'
+        + '<td class="rating">' + (r.rating ? r.rating.toFixed(1) + ' ' + stars(r.rating) : '<span class="no-data">—</span>') + '</td>'
+        + '<td class="reviews">' + (r.totalReviews || 0) + '</td>'
+        + '<td>' + (r.telefono ? '<a href="tel:' + escHtml(r.telefonoIntl || r.telefono) + '">' + escHtml(r.telefono) + '</a>' : '<span class="no-data">—</span>') + '</td>'
+        + '<td>' + escHtml(r.direccion || '—') + '</td>'
+        + '<td>' + (r.sitioWeb ? '<a href="' + escHtml(r.sitioWeb) + '" target="_blank">' + nuevoDominio(r.sitioWeb) + '</a>' : '<span class="no-data">—</span>') + '</td>'
+        + '<td>' + (r.urlGoogleMaps ? '<a href="' + escHtml(r.urlGoogleMaps) + '" target="_blank">ver</a>' : '<span class="no-data">—</span>') + '</td>';
+    }
+    tbody.appendChild(tr);
+  }
+  document.getElementById('summary').innerHTML =
+    '<strong>' + resultados.length + '</strong> empresas total · '
+    + '<strong>' + conRating + '</strong> con rating · '
+    + '<strong>' + totalReviews.toLocaleString('es-AR') + '</strong> reviews totales'
+    + (sinResultado ? ' · <strong>' + sinResultado + '</strong> sin datos' : '');
+  document.getElementById('jsonRaw').textContent = JSON.stringify(resultados, null, 2);
+  document.getElementById('results').classList.add('active');
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function nuevoDominio(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); }
+  catch(e) { return url; }
+}
+
+function descargarCsv() {
+  var headers = ['nombreGoogle','rating','totalReviews','telefono','telefonoIntl','direccion','sitioWeb','urlGoogleMaps','estado','placeId','encontrado','error'];
+  var lines = [headers.join(',')];
+  for (var i = 0; i < resultados.length; i++) {
+    var r = resultados[i];
+    lines.push(headers.map(function(h) { return csvEsc(r[h]); }).join(','));
+  }
+  descargar('mudanceros-zona-norte.csv', lines.join('\n'), 'text/csv;charset=utf-8');
+}
+function descargarJson() {
+  descargar('mudanceros-zona-norte.json', JSON.stringify(resultados, null, 2), 'application/json');
+}
+function csvEsc(v) {
+  if (v == null) return '';
+  var s = String(v).replace(/"/g, '""');
+  return /[",\n]/.test(s) ? '"' + s + '"' : s;
+}
+function descargar(nombre, contenido, mime) {
+  var blob = new Blob(['\uFEFF' + contenido], { type: mime });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+</script>
+</body>
+</html>
