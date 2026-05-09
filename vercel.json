@@ -14,6 +14,7 @@
     { "source": "/contacto", "destination": "/contacto.html" },
     { "source": "/asesores", "destination": "/asesores.html" },
     { "source": "/mudafy", "destination": "/mudafy.html" },
+    { "source": "/research-mudanceros", "destination": "/research-mudanceros.html" },
     { "source": "/asesor-login", "destination": "/asesor-login.html" },
     { "source": "/asesor-dashboard", "destination": "/asesor-dashboard.html" },
     { "source": "/cliente-packs", "destination": "/cliente-packs.html" },
