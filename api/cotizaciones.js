@@ -17,22 +17,11 @@ async function redisCall(method, ...args) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error('Redis no configurado');
-  // Usamos POST con body JSON: ['SET', key, value] — más robusto que GET con args en path.
-  // En GET, valores largos o con caracteres especiales rompen el routing aunque vaya encodeado.
-  // POST manda los args como array JSON en el body, sin pasar por la URL.
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify([method, ...args]),
+  const response = await fetch(`${url}/${[method, ...args].map(encodeURIComponent).join('/')}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
   const data = await response.json();
-  if (!response.ok || data.error) {
-    console.error('[redisCall] FAIL', method, args[0], 'status:', response.status, 'error:', data.error || data);
-    throw new Error(data.error || `Upstash ${response.status}`);
-  }
+  if (data.error) throw new Error(data.error);
   return data.result;
 }
 async function getJSON(key) {
@@ -2277,6 +2266,61 @@ module.exports = async function handler(req, res) {
       if (!m.fechaPagoSaldo) m.fechaPagoSaldo = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       return res.status(200).json({ ok: true, msg: 'Estado actualizado a completada', id: mudanzaId });
+    }
+
+    // ── Admin: Research de competencia con Google Places API ─────────────
+    // Proxy al Places API para que el browser pueda llamar sin problemas de CORS.
+    // La API key vive solo en Vercel env vars, nunca se expone al cliente.
+    // type='nearby' → nearbysearch (descubrir por zona, paginado)
+    // type='details' → place details
+    // type='textsearch' → textsearch (buscar por nombre)
+    if (action === 'places-research' && req.method === 'GET') {
+      const { token, type } = req.query;
+      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+        return res.status(401).json({ error: 'No autorizado' });
+      }
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'GOOGLE_PLACES_API_KEY no configurada en Vercel' });
+      }
+      try {
+        let url;
+        if (type === 'nearby') {
+          const { location, radius, keyword, pagetoken } = req.query;
+          url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
+            + '?language=es&key=' + encodeURIComponent(apiKey);
+          if (pagetoken) {
+            url += '&pagetoken=' + encodeURIComponent(pagetoken);
+          } else {
+            if (!location || !radius || !keyword) return res.status(400).json({ error: 'Faltan params: location, radius, keyword' });
+            url += '&location=' + encodeURIComponent(location)
+              + '&radius=' + encodeURIComponent(radius)
+              + '&keyword=' + encodeURIComponent(keyword);
+          }
+        } else if (type === 'textsearch') {
+          const { query } = req.query;
+          if (!query) return res.status(400).json({ error: 'Falta query' });
+          url = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
+            + '?query=' + encodeURIComponent(query)
+            + '&region=ar&language=es&key=' + encodeURIComponent(apiKey);
+        } else if (type === 'details') {
+          const { place_id } = req.query;
+          if (!place_id) return res.status(400).json({ error: 'Falta place_id' });
+          const fields = 'name,rating,user_ratings_total,formatted_address,formatted_phone_number,international_phone_number,website,url,business_status';
+          url = 'https://maps.googleapis.com/maps/api/place/details/json'
+            + '?place_id=' + encodeURIComponent(place_id)
+            + '&fields=' + encodeURIComponent(fields)
+            + '&language=es&key=' + encodeURIComponent(apiKey);
+        } else {
+          return res.status(400).json({ error: 'type debe ser nearby, textsearch o details' });
+        }
+        const r = await fetch(url);
+        const d = await r.json();
+        return res.status(200).json(d);
+      } catch (e) {
+        console.error('Error en places-research:', e.message);
+        return res.status(500).json({ error: e.message });
+      }
     }
 
     return res.status(400).json({ error: 'Acción no reconocida' });
