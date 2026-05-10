@@ -198,7 +198,7 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 <div class="hero">
   <span class="hero-badge">🚛 Para mudanceros y fleteros</span>
   <h1>SUMATE COMO<br><em>MUDANCERO</em><br>O FLETERO</h1>
-  <p>Completá el formulario y empezá a recibir clientes en menos de 24 horas. Sin costos fijos — solo pagás cuando concretás un trabajo.</p>
+  <p>Date de alta en menos de 1 minuto. Te mandamos el link para completar tu perfil y activarlo.</p>
   <div class="hero-stats">
     <div class="hstat"><div class="hstat-n">✓</div><div class="hstat-l">Clientes verificados</div></div>
     <div class="hstat"><div class="hstat-n">$0</div><div class="hstat-l">costo fijo mensual</div></div>
@@ -312,265 +312,11 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       </div>
     </div>
 
-    <!-- ── SECCIÓN 3: VEHÍCULO ── -->
-    <div class="form-section">
-      <div class="section-title">Vehículo y capacidad</div>
-      <div class="section-sub">¿Con qué trabajás?</div>
-      <div class="field-grid">
-        <div class="field" id="f-vehiculo">
-          <label class="field-label">Tipo de vehículo <span>*</span></label>
-          <select id="vehiculo">
-            <option value="">Seleccioná el tipo</option>
-            <option>Camioneta / furgón pequeño (hasta 1.5t)</option>
-            <option>Camión mediano (1.5t — 3.5t)</option>
-            <option>Camión grande (3.5t — 7t)</option>
-            <option>Camión con hidrogrúa</option>
-            <option>Múltiples vehículos</option>
-          </select>
-          <span class="field-error">Seleccioná el tipo de vehículo</span>
-        </div>
-        <div class="field">
-          <label class="field-label">Cantidad de vehículos disponibles</label>
-          <select id="cantVehiculos">
-            <option>1</option><option>2</option><option>3</option><option>4 o más</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="field-label">Cantidad de personas en el equipo</label>
-          <select id="equipo">
-            <option>Solo yo</option><option>2 personas</option><option>3 personas</option><option>4 o más personas</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── SECCIÓN 4: SERVICIOS Y PRECIOS ── -->
-    <div class="form-section">
-      <div class="section-title">Servicios y precios</div>
-      <div class="section-sub">Activá los servicios que ofrecés y cargá los precios base. Si activás un servicio, los precios son obligatorios.</div>
-
-      <!-- Card 1: Esencial -->
-      <div class="svc-card" id="svcEsencial">
-        <div class="svc-card-head" onclick="toggleSvc('esencial')">
-          <div class="svc-card-icon" style="background:#EEF4FF;color:#1A6FFF">📦</div>
-          <div class="svc-card-info">
-            <div class="svc-card-title">Mudanza Esencial</div>
-            <div class="svc-card-desc">Carga, transporte y descarga. El servicio básico de mudanza.</div>
-          </div>
-          <div class="svc-card-check" id="svcEsencialCheck"></div>
-        </div>
-        <div class="svc-card-precios" id="svcEsencialPrecios">
-          <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p1" placeholder="700.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p2" placeholder="800.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p3" placeholder="900.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="esc-p4" placeholder="1.100.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        </div>
-      </div>
-
-      <!-- Card 2: Integral -->
-      <div class="svc-card" id="svcIntegral">
-        <div class="svc-card-head" onclick="toggleSvc('integral')">
-          <div class="svc-card-icon" style="background:#ECFDF3;color:#16A34A">🛠️</div>
-          <div class="svc-card-info">
-            <div class="svc-card-title">Mudanza Integral</div>
-            <div class="svc-card-desc">Incluye embalaje y desembalaje. El cliente no toca cajas.</div>
-          </div>
-          <div class="svc-card-check" id="svcIntegralCheck"></div>
-        </div>
-        <div class="svc-card-precios" id="svcIntegralPrecios">
-          <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p1" placeholder="1.050.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p2" placeholder="1.200.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p3" placeholder="1.350.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="int-p4" placeholder="1.650.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        </div>
-      </div>
-
-      <!-- Card 3: Llave en mano -->
-      <div class="svc-card" id="svcLlave">
-        <div class="svc-card-head" onclick="toggleSvc('llave')">
-          <div class="svc-card-icon" style="background:#FFFBEB;color:#B45309">🔑</div>
-          <div class="svc-card-info">
-            <div class="svc-card-title">Llave en mano <span style="display:inline-block;font-size:9px;font-weight:700;background:#F59E0B;color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:.5px;font-family:var(--mono)">PREMIUM</span></div>
-            <div class="svc-card-desc">Servicio "Sin estrés": embalaje, desembalaje, armado de muebles, electrodomésticos, cortinas, cuadros — el cliente entra a una casa impecable.</div>
-          </div>
-          <div class="svc-card-check" id="svcLlaveCheck"></div>
-        </div>
-        <div class="svc-card-precios" id="svcLlavePrecios">
-          <div class="precio-row"><span class="precio-label">Monoambiente / 1 ambiente</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p1" placeholder="1.575.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">2 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p2" placeholder="1.800.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">3 ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p3" placeholder="2.025.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-          <div class="precio-row"><span class="precio-label">4+ ambientes</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="llv-p4" placeholder="2.475.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        </div>
-      </div>
-
-      <!-- Card 4: Flete -->
-      <div class="svc-card" id="svcFlete">
-        <div class="svc-card-head" onclick="toggleSvc('flete')">
-          <div class="svc-card-icon" style="background:#F1F5F9;color:#475569">🚚</div>
-          <div class="svc-card-info">
-            <div class="svc-card-title">Flete / Envío chico</div>
-            <div class="svc-card-desc">Envío de objetos puntuales (heladera, cama, escritorio, etc). No es una mudanza completa.</div>
-          </div>
-          <div class="svc-card-check" id="svcFleteCheck"></div>
-        </div>
-        <div class="svc-card-precios" id="svcFletePrecios">
-          <div class="precio-row"><span class="precio-label">Precio base flete</span><div class="precio-input-wrap"><span class="precio-prefix">$</span><input class="precio-input" type="text" id="flt-p" placeholder="180.000" oninput="fmtPrecioInput(this)" inputmode="numeric"/></div></div>
-        </div>
-      </div>
-
-      <!-- Adicional: Seguro de mudanza -->
-      <div class="svc-extra">
-        <label class="svc-extra-label" onclick="toggleSeguro(event)">
-          <div class="svc-extra-check" id="svcSeguroCheck"></div>
-          <div>
-            <div class="svc-extra-title">🛡️ Ofrezco seguro de mudanza</div>
-            <div class="svc-extra-desc">El cliente queda cubierto ante daños o pérdidas durante el traslado.</div>
-          </div>
-        </label>
-      </div>
-
-    </div>
-
-    <!-- ── SECCIÓN 5: DISPONIBILIDAD ── -->
-    <div class="form-section">
-      <div class="section-title">Disponibilidad</div>
-      <div class="section-sub">¿Cuándo podés trabajar?</div>
-      <div class="field-grid">
-        <div class="field">
-          <label class="field-label">Días disponibles</label>
-          <div class="horario-grid" id="chips-dias">
-            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Lunes</div>
-            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Martes</div>
-            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Miércoles</div>
-            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Jueves</div>
-            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Viernes</div>
-            <div class="horario-chip sel" onclick="toggleChip(this,'dias')">Sábado</div>
-            <div class="horario-chip" onclick="toggleChip(this,'dias')">Domingo</div>
-            <div class="horario-chip" onclick="toggleChip(this,'dias')">Feriados</div>
-          </div>
-        </div>
-        <div class="field">
-          <label class="field-label">Horarios</label>
-          <div class="chips-grid" id="chips-horarios">
-            <div class="chip sel" onclick="toggleChip(this,'horarios')">🌅 Mañana (8–12hs)</div>
-            <div class="chip sel" onclick="toggleChip(this,'horarios')">☀️ Tarde (12–18hs)</div>
-            <div class="chip" onclick="toggleChip(this,'horarios')">🌙 Noche (18–22hs)</div>
-            <div class="chip" onclick="toggleChip(this,'horarios')">⏰ 24 horas</div>
-          </div>
-        </div>
-        <div class="field">
-          <label class="field-label">Tiempo mínimo de anticipación</label>
-          <select id="anticipacion">
-            <option>Mismo día</option><option>24 horas</option><option selected>48 horas</option><option>1 semana</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── SECCIÓN 7: DNI FRENTE Y DORSO ── -->
-    <div class="form-section" id="seccion-dni">
-      <div class="section-title">Verificación de DNI</div>
-      <div class="section-sub">Requerido · Analizamos las fotos automáticamente · Solo tarda unos segundos</div>
-
-      <div class="foto-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-        <div>
-          <div class="field-label" style="margin-bottom:8px">DNI frente <span style="color:var(--emerald)">*</span></div>
-          <div class="upload-area" id="uploadDniFrente" onclick="document.getElementById('dniFrente').click()">
-            <img id="dniFrente-preview" class="upload-preview" alt="DNI frente"/>
-            <div class="upload-icon" id="dniFrente-icon">🪪</div>
-            <div class="upload-text" id="dniFrente-text">Sacá foto o subí imagen</div>
-            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
-          </div>
-          <input type="file" id="dniFrente" accept="image/*" style="display:none" onchange="onDNIUpload(this,'frente')"/>
-        </div>
-        <div>
-          <div class="field-label" style="margin-bottom:8px">DNI dorso <span style="color:var(--emerald)">*</span></div>
-          <div class="upload-area" id="uploadDniDorso" onclick="document.getElementById('dniDorso').click()">
-            <img id="dniDorso-preview" class="upload-preview" alt="DNI dorso"/>
-            <div class="upload-icon" id="dniDorso-icon">🪪</div>
-            <div class="upload-text" id="dniDorso-text">Sacá foto o subí imagen</div>
-            <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
-          </div>
-          <input type="file" id="dniDorso" accept="image/*" style="display:none" onchange="onDNIUpload(this,'dorso')"/>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── SECCIÓN 8: FOTOS DEL VEHÍCULO ── -->
-    <div class="form-section">
-      <div class="section-title">Fotos del vehículo</div>
-      <div class="section-sub">Requerido · Se muestran en tu perfil · Podés seleccionar varias a la vez</div>
-
-      <div class="upload-area" id="uploadAreaCamion" onclick="document.getElementById('fotoCamionInput').click()">
-        <img id="fotoCamionPreview" class="upload-preview" alt="preview camión" style="display:none"/>
-        <div class="upload-icon" id="uploadIconCamion">🚛</div>
-        <div class="upload-text" id="uploadTextCamion">Sacá fotos o subí imágenes</div>
-        <div class="upload-sub">Seleccioná una o varias · Cámara o galería · Máx. 5MB c/u</div>
-      </div>
-      <input type="file" id="fotoCamionInput" accept="image/*" multiple onchange="onFotosVehiculo(this)" style="display:none"/>
-      <div id="fotosVehiculoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
-    </div>
-
-    <!-- ── SECCIÓN 9: FOTO PERFIL ── -->
-    <div class="form-section">
-      <div class="section-title">Foto o logo de perfil</div>
-      <div class="section-sub">Se muestra en tu perfil para generar más confianza</div>
-      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fotoInput').click()">
-        <img id="fotoPreview" class="upload-preview" alt="preview"/>
-        <div class="upload-icon" id="uploadIcon">📷</div>
-        <div class="upload-text" id="uploadText">Sacá foto o elegí de la galería</div>
-        <div class="upload-sub">Cámara o galería · Máx. 5MB</div>
-      </div>
-      <input type="file" id="fotoInput" accept="image/*" onchange="onFotoPerfil(this)" style="display:none"/>
-    </div>
-
-    <!-- ── SECCIÓN 10: EXTRA ── -->
-    <div class="form-section">
-      <div class="section-title">Contá tu experiencia <span style="font-size:13px;color:var(--emerald);font-family:var(--mono);font-weight:400;letter-spacing:0">— recomendado</span></div>
-      <div class="section-sub">Los clientes eligen más a quienes cuentan quiénes son · Te diferencia de la competencia</div>
-      <div class="field">
-        <textarea id="extra" placeholder="Ej: Tengo 10 años haciendo mudanzas en CABA y GBA. Me especializo en pisos sin ascensor y objetos delicados como pianos. Trabajo con mi equipo de confianza, somos puntuales y cuidadosos..."></textarea>
-      </div>
-    </div>
-
-    <!-- ── SECCIÓN 11: DATOS BANCARIOS ── -->
-    <div class="form-section">
-      <div class="section-title">Datos para cobrar</div>
-      <div class="section-sub">Así te transferimos tus ganancias — 24hs después de cada trabajo confirmado</div>
-      <div class="field-grid cols2">
-        <div class="field">
-          <label class="field-label">Método preferido</label>
-          <select id="metodoCobro" onchange="toggleMetodoCobro()">
-            <option value="cbu">CBU / Alias bancario</option>
-            <option value="mp">Cuenta Mercado Pago</option>
-          </select>
-        </div>
-        <div class="field" id="wrap-cbu">
-          <label class="field-label">CBU o Alias</label>
-          <input type="text" id="cbu" placeholder="Ej: MUDANZAS.JUAN o 0000003100..."/>
-          <span class="field-hint">Podés ingresar el CBU (22 dígitos) o el alias</span>
-        </div>
-        <div class="field" id="wrap-mp" style="display:none">
-          <label class="field-label">Cuenta Mercado Pago</label>
-          <input type="text" id="emailMP" placeholder="Email, CVU o alias de MP"/>
-          <span class="field-hint">Podés usar tu email, CVU (22 dígitos) o alias de MP</span>
-        </div>
-        <div class="field">
-          <label class="field-label">Titular de la cuenta</label>
-          <input type="text" id="titularCuenta" placeholder="Nombre completo o razón social"/>
-        </div>
-      </div>
-      <div style="display:flex;align-items:flex-start;gap:8px;background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.2);border-radius:8px;padding:10px 12px;margin-top:10px">
-        <span style="font-size:14px;flex-shrink:0">🔒</span>
-        <span style="font-size:11px;color:#475569;font-family:var(--mono);line-height:1.6">Tus datos bancarios están cifrados y solo se usan para transferirte tus ganancias. Nunca se comparten con clientes.</span>
-      </div>
-    </div>
-
     <div class="form-footer">
       <span class="footer-note">🔒 Tus datos están seguros · Solo MudateYa los ve</span>
       <button type="submit" class="btn-submit" id="btnSubmit">
-        Enviar solicitud
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Crear cuenta y completar perfil →
+        <svg width="14" height="14" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </div>
   </form>
@@ -579,249 +325,29 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 <div class="success-overlay" id="successOverlay">
   <div class="success-card">
     <div class="success-icon">✓</div>
-    <h2 class="success-title">¡Solicitud enviada!</h2>
-    <p class="success-sub">Recibimos tu información. Te vamos a contactar por WhatsApp en las próximas <strong>24 horas</strong> para activar tu perfil.</p>
+    <h2 class="success-title">¡Cuenta creada!</h2>
+    <p class="success-sub">Te enviamos un mail con instrucciones. Para empezar a recibir pedidos, <strong>completá tu perfil</strong> en menos de 5 minutos.</p>
     <div class="success-steps">
-      <div class="success-step"><span class="success-step-num">1</span><span>Revisamos tu solicitud y verificamos tus datos</span></div>
-      <div class="success-step"><span class="success-step-num">2</span><span>Te contactamos por WhatsApp para confirmar</span></div>
-      <div class="success-step"><span class="success-step-num">3</span><span>Tu perfil queda activo y empezás a recibir pedidos</span></div>
+      <div class="success-step"><span class="success-step-num">1</span><span>Cargá los datos del vehículo y tu equipo</span></div>
+      <div class="success-step"><span class="success-step-num">2</span><span>Definí los servicios que ofrecés y los precios</span></div>
+      <div class="success-step"><span class="success-step-num">3</span><span>Subí tu DNI y la foto del vehículo · Verificamos en menos de 24hs</span></div>
     </div>
-    <a href="/" class="btn-home">Volver al inicio</a>
+    <a href="/mi-cuenta" class="btn-home" style="background:#22C36A">Completar mi perfil →</a>
   </div>
 </div>
 
 <script>
-// ── ESTADO GLOBAL ────────────────────────────────────────────────
-var dniData      = { frente: null, dorso: null, analisis: null, ok: false };
-var _sinEstres   = false; // mantenido por compat — se sincroniza desde _svc.llave
-// Estado de servicios y seguro (nuevo modelo)
-var _svc = { esencial:false, integral:false, llave:false, flete:false };
-var _seguro = false;
-// URLs de Blob — se llenan al seleccionar cada foto
-var _urlPerfil   = '';
-var _urlsVehiculo = []; // array de URLs de las fotos del vehículo
-var _urlDniFrente = '';
-var _urlDniDorso  = '';
-// Carpeta tmp única por sesión
-var _carpetaTmp  = 'mudanceros/tmp-' + Date.now();
 
-// ── HELPER: SUBIR ARCHIVO A BLOB ─────────────────────────────────
-async function subirABlob(file, carpeta, nombre) {
-  var res = await fetch('/api/upload-foto', {
-    method: 'POST',
-    headers: {
-      'Content-Type': file.type || 'image/jpeg',
-      'x-carpeta': carpeta,
-      'x-nombre':  nombre,
-    },
-    body: file,
-  });
-  var json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Error subiendo foto');
-  return json.url;
+// ── VALIDAR EMAIL ──
+function validarEmail() {
+  var val = document.getElementById('email').value.trim();
+  var field = document.getElementById('f-email');
+  if (val.length === 0) { field.classList.remove('has-error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { field.classList.add('has-error'); }
+  else { field.classList.remove('has-error'); }
 }
 
-// ── DNI UPLOAD ───────────────────────────────────────────────────
-function onDNIUpload(input, lado) {
-  if (!input.files || !input.files[0]) return;
-  var file = input.files[0];
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var b64    = e.target.result.split(',')[1];
-    var dataUrl = e.target.result;
-    // Preview
-    var preview = document.getElementById('dni' + cap(lado) + '-preview');
-    var icon    = document.getElementById('dni' + cap(lado) + '-icon');
-    var text    = document.getElementById('dni' + cap(lado) + '-text');
-    var area    = document.getElementById('uploadDni' + cap(lado));
-    preview.src = dataUrl;
-    preview.style.display = 'block';
-    icon.style.display = 'none';
-    text.textContent = 'Subiendo… ⏳';
-    area.classList.add('has-file');
-    // Guardar b64 para referencia local
-    dniData[lado] = { b64: b64, mediaType: file.type || 'image/jpeg', dataUrl: dataUrl };
-    // Subir a Blob
-    subirABlob(file, _carpetaTmp, 'dni-' + lado)
-      .then(function(url) {
-        if (lado === 'frente') { _urlDniFrente = url; }
-        else                   { _urlDniDorso  = url; }
-        text.textContent = lado === 'frente' ? 'Frente cargado ✓' : 'Dorso cargado ✓';
-      })
-      .catch(function() {
-        text.textContent = '⚠ Error — intentá de nuevo';
-        area.style.borderColor = '#ff6b6b';
-      });
-  };
-  reader.readAsDataURL(file);
-}
-
-function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-// ── FOTO PERFIL ──────────────────────────────────────────────────
-function onFotoPerfil(input) {
-  if (!input.files || !input.files[0]) return;
-  var file = input.files[0];
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var preview = document.getElementById('fotoPreview');
-    preview.src = e.target.result;
-    preview.style.display = 'block';
-    document.getElementById('uploadIcon').style.display = 'none';
-    document.getElementById('uploadText').textContent = 'Subiendo… ⏳';
-    document.getElementById('uploadArea').classList.add('has-file');
-    subirABlob(file, _carpetaTmp, 'perfil')
-      .then(function(url) {
-        _urlPerfil = url;
-        document.getElementById('uploadText').textContent = 'Foto cargada ✓';
-      })
-      .catch(function() {
-        document.getElementById('uploadText').textContent = '⚠ Error — intentá de nuevo';
-      });
-  };
-  reader.readAsDataURL(file);
-}
-
-// ── FOTOS VEHÍCULO (múltiples) ───────────────────────────────────
-function onFotosVehiculo(input) {
-  if (!input.files || !input.files.length) return;
-  var grid = document.getElementById('fotosVehiculoGrid');
-  Array.from(input.files).forEach(function(file) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var dataUrl = e.target.result;
-      // Preview thumbnail con spinner mientras sube
-      var wrap = document.createElement('div');
-      wrap.style.cssText = 'position:relative;width:80px;height:80px';
-      var thumb = document.createElement('img');
-      thumb.src = dataUrl;
-      thumb.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);opacity:.7';
-      var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(0,0,0,.15)';
-      overlay.innerHTML = '<span class="spinner"></span>';
-      wrap.appendChild(thumb);
-      wrap.appendChild(overlay);
-      grid.appendChild(wrap);
-      // Actualizar texto
-      document.getElementById('uploadIconCamion').style.display = 'none';
-      document.getElementById('uploadTextCamion').textContent = 'Subiendo fotos… ⏳';
-      document.getElementById('uploadAreaCamion').classList.add('has-file');
-      // Subir a Blob
-      var idx = _urlsVehiculo.length;
-      _urlsVehiculo.push(null); // placeholder
-      subirABlob(file, _carpetaTmp, 'vehiculo-' + idx)
-        .then(function(url) {
-          _urlsVehiculo[idx] = url;
-          thumb.style.opacity = '1';
-          overlay.remove();
-          // Botón eliminar
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.innerHTML = '✕';
-          btn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
-          btn.onclick = function() {
-            _urlsVehiculo.splice(idx, 1);
-            wrap.remove();
-            var count = _urlsVehiculo.filter(Boolean).length;
-            if (count === 0) {
-              document.getElementById('uploadIconCamion').style.display = '';
-              document.getElementById('uploadTextCamion').textContent = 'Sacá fotos o subí imágenes';
-              document.getElementById('uploadAreaCamion').classList.remove('has-file');
-            } else {
-              document.getElementById('uploadTextCamion').textContent = count + ' foto' + (count > 1 ? 's' : '') + ' cargada' + (count > 1 ? 's' : '') + ' ✓  (tocá para agregar más)';
-            }
-          };
-          wrap.appendChild(btn);
-          // Actualizar contador
-          var total = _urlsVehiculo.filter(Boolean).length;
-          document.getElementById('uploadTextCamion').textContent = total + ' foto' + (total > 1 ? 's' : '') + ' cargada' + (total > 1 ? 's' : '') + ' ✓  (tocá para agregar más)';
-        })
-        .catch(function() {
-          overlay.innerHTML = '<span style="color:#ff6b6b;font-size:18px">⚠</span>';
-        });
-    };
-    reader.readAsDataURL(file);
-  });
-  input.value = '';
-}
-
-// ── SERVICIOS (4 cards: Esencial / Integral / Llave en mano / Flete) ─────
-function toggleSvc(key) {
-  _svc[key] = !_svc[key];
-  var ids = { esencial:'svcEsencial', integral:'svcIntegral', llave:'svcLlave', flete:'svcFlete' };
-  var card = document.getElementById(ids[key]);
-  if (!card) return;
-  if (_svc[key]) {
-    card.classList.add('active');
-    if (key === 'llave') card.classList.add('is-llave');
-  } else {
-    card.classList.remove('active');
-    if (key === 'llave') card.classList.remove('is-llave');
-    // limpiar precios al desactivar para evitar guardar valores fantasma
-    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
-    if (key === 'flete') {
-      var f = document.getElementById('flt-p'); if (f) f.value = '';
-    } else {
-      ['p1','p2','p3','p4'].forEach(function(n){
-        var el = document.getElementById(prefix+'-'+n); if (el) el.value = '';
-      });
-    }
-    card.classList.remove('precios-error');
-  }
-  // Sincronizar _sinEstres con la card de Llave en mano (compat con código viejo)
-  _sinEstres = _svc.llave;
-}
-
-// Validar que las cards activadas tengan al menos un precio cargado
-function validarServiciosPrecios() {
-  var errores = [];
-  Object.keys(_svc).forEach(function(key){
-    if (!_svc[key]) return;
-    var ids = { esencial:'svcEsencial', integral:'svcIntegral', llave:'svcLlave', flete:'svcFlete' };
-    var card = document.getElementById(ids[key]);
-    var prefix = { esencial:'esc', integral:'int', llave:'llv', flete:'flt' }[key];
-    var nombre = { esencial:'Esencial', integral:'Integral', llave:'Llave en mano', flete:'Flete' }[key];
-    var hayPrecio = false;
-    if (key === 'flete') {
-      var f = document.getElementById('flt-p');
-      hayPrecio = !!(f && f.value.replace(/\./g,'').trim());
-    } else {
-      ['p1','p2','p3','p4'].forEach(function(n){
-        var el = document.getElementById(prefix+'-'+n);
-        if (el && el.value.replace(/\./g,'').trim()) hayPrecio = true;
-      });
-    }
-    if (card) card.classList.remove('precios-error');
-    if (!hayPrecio) {
-      errores.push(nombre);
-      if (card) card.classList.add('precios-error');
-    }
-  });
-  return errores;
-}
-
-function toggleSeguro(e) {
-  if (e) e.preventDefault();
-  _seguro = !_seguro;
-  var box = document.querySelector('.svc-extra');
-  if (!box) return;
-  if (_seguro) box.classList.add('active'); else box.classList.remove('active');
-}
-
-// Helper: leer precios de una card como objeto {amb1,amb2,amb3,amb4}
-function leerPreciosCard(prefix) {
-  return {
-    amb1: document.getElementById(prefix+'-p1') ? document.getElementById(prefix+'-p1').value.replace(/\./g,'') : '',
-    amb2: document.getElementById(prefix+'-p2') ? document.getElementById(prefix+'-p2').value.replace(/\./g,'') : '',
-    amb3: document.getElementById(prefix+'-p3') ? document.getElementById(prefix+'-p3').value.replace(/\./g,'') : '',
-    amb4: document.getElementById(prefix+'-p4') ? document.getElementById(prefix+'-p4').value.replace(/\./g,'') : ''
-  };
-}
-
-// Compat: función antigua queda como alias para no romper llamadas externas
-function toggleSinEstres() { toggleSvc('llave'); }
-
-// ── CUIL FORMATO ─────────────────────────────────────────────────
+// ── FORMATEAR CUIL ──
 function formatCUIL(input) {
   var v = input.value.replace(/\D/g, '').slice(0, 11);
   if (v.length > 10)      input.value = v.slice(0,2) + '-' + v.slice(2,10) + '-' + v.slice(10);
@@ -829,182 +355,79 @@ function formatCUIL(input) {
   else                    input.value = v;
 }
 
-function setBadgeCuil() {}  // ya no hay badge en el HTML, se deja vacío para no romper si algo lo llama
-
-// ── HELPERS ──────────────────────────────────────────────────────
-function toggleMetodoCobro() {
-  var metodo = document.getElementById('metodoCobro').value;
-  document.getElementById('wrap-cbu').style.display = metodo === 'cbu' ? '' : 'none';
-  document.getElementById('wrap-mp').style.display  = metodo === 'mp'  ? '' : 'none';
-}
-function toggleChip(el, group) {
-  el.classList.toggle('sel');
-}
-function getChips(containerId) {
-  return Array.from(document.querySelectorAll('#' + containerId + ' .sel')).map(function(c) { return c.textContent.trim(); });
-}
+// ── VALIDAR FIELD ──
 function validateField(id, condition) {
   var field = document.getElementById('f-' + id);
   if (!field) return true;
   if (!condition) { field.classList.add('has-error'); return false; }
   field.classList.remove('has-error'); return true;
 }
-function flashUpload(areaId) {
-  var el = document.getElementById(areaId);
-  el.style.border = '2px solid #ff6b6b';
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setTimeout(function() { el.style.border = ''; }, 3000);
-}
-function fmtPrecioInput(el) {
-  var raw = el.value.replace(/\D/g, '');
-  if (!raw) { el.value = ''; return; }
-  el.value = parseInt(raw).toLocaleString('es-AR');
-  el.setSelectionRange(el.value.length, el.value.length);
-}
 
-// ── SUBMIT ───────────────────────────────────────────────────────
-function validarEmail() {
-  var val = document.getElementById('email').value.trim();
-  var field = document.getElementById('f-email');
-  if (val.length === 0) { field.classList.remove('has-error'); return; }
-  // Regex de email estándar (acepta gmail, workspace, hotmail, dominio propio, etc.)
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { field.classList.add('has-error'); }
-  else { field.classList.remove('has-error'); }
-}
-
+// ── SUBMIT ──
 document.getElementById('regForm').addEventListener('submit', async function(e) {
   e.preventDefault();
 
   var nombre   = document.getElementById('nombre').value.trim();
+  var empresa  = document.getElementById('empresa').value.trim();
   var telefono = document.getElementById('telefono').value.trim();
-  var email    = document.getElementById('email').value.trim();
+  var email    = document.getElementById('email').value.trim().toLowerCase();
+  var cuil     = document.getElementById('cuil').value.trim();
+  var sitioWeb = document.getElementById('sitioWeb').value.trim();
   var zonaBase = document.getElementById('zonaBase').value;
-  var vehiculo = document.getElementById('vehiculo').value;
+
   var ok = true;
   ok = validateField('nombre',   nombre.length > 1)   && ok;
   ok = validateField('telefono', telefono.length > 6) && ok;
   ok = validateField('email',    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
+  ok = validateField('cuil',     cuil.replace(/[-\s]/g, '').length === 11) && ok;
+  ok = validateField('zona-base', !!zonaBase) && ok;
+
   if (!ok) {
     var firstErr = document.querySelector('.has-error input, .has-error select');
     if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
-  // Validar que haya al menos un servicio activo
-  var servActivos = Object.keys(_svc).filter(function(k){ return _svc[k]; });
-  if (servActivos.length === 0) {
-    alert('Tenés que activar al menos un servicio (Esencial, Integral, Llave en mano o Flete).');
-    var firstSvc = document.getElementById('svcEsencial');
-    if (firstSvc) firstSvc.scrollIntoView({ behavior:'smooth', block:'center' });
-    return;
-  }
-  // Validar precios cargados en cada servicio activado
-  var erroresPrecios = validarServiciosPrecios();
-  if (erroresPrecios.length > 0) {
-    alert('Cargá al menos un precio en: ' + erroresPrecios.join(', '));
-    var firstErrSvc = document.querySelector('.svc-card.precios-error');
-    if (firstErrSvc) firstErrSvc.scrollIntoView({ behavior:'smooth', block:'center' });
-    return;
-  }
-
-  // DNI frente requerido
-  if (!dniData.frente) { flashUpload('uploadDniFrente'); return; }
-  if (!_urlDniFrente) {
-    alert('La foto del DNI todavía se está subiendo. Esperá un momento e intentá de nuevo.');
-    return;
-  }
-
-  // Fotos del vehículo requeridas
-  if (_urlsVehiculo.filter(Boolean).length === 0) { flashUpload('uploadAreaCamion'); return; }
-  if (_urlsVehiculo.some(function(u) { return !u; })) {
-    alert('Algunas fotos del vehículo todavía se están subiendo. Esperá un momento e intentá de nuevo.');
-    return;
-  }
+  // Capturar refAliado (cookie o querystring) — mismo patron que el form viejo
+  var refAliado = (function(){
+    try {
+      var qs = new URLSearchParams(window.location.search);
+      var qRef = qs.get('ref');
+      if (qRef) {
+        var qNorm = String(qRef).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,16);
+        if (qNorm) {
+          try {
+            document.cookie = 'mya_ref=' + encodeURIComponent(qNorm) + '; path=/; max-age=' + (60*60*24*90) + '; SameSite=Lax';
+            localStorage.setItem('mya_ref', qNorm);
+          } catch(e) {}
+          return qNorm;
+        }
+      }
+      var m = document.cookie.match(/(?:^|;\s*)mya_ref=([^;]+)/);
+      if (m && m[1]) return decodeURIComponent(m[1]).toUpperCase();
+      var ls = localStorage.getItem('mya_ref');
+      if (ls) return String(ls).toUpperCase();
+    } catch(e) {}
+    return null;
+  })();
 
   var btn = document.getElementById('btnSubmit');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Enviando…';
+  btn.innerHTML = '<span class="spinner"></span> Creando cuenta...';
 
-  var urlsVehiculoOk = _urlsVehiculo.filter(Boolean);
-
+  // Body con flag tipoRegistro: 'corto' — el backend salta validaciones
+  // de vehículo/DNI y guarda el perfil con estadoOnboarding: 'pre-registrado'.
   var data = {
-    nombre:        nombre,
-    telefono:      telefono,
-    email:         email,
-    cuil:          document.getElementById('cuil').value.trim(),
-    empresa:       document.getElementById('empresa').value.trim(),
-    sitioWeb:      document.getElementById('sitioWeb').value.trim(),
-    zonaBase:      zonaBase,
-    vehiculo:      vehiculo,
-    cantVehiculos: document.getElementById('cantVehiculos').value,
-    equipo:        document.getElementById('equipo').value,
-    // Servicios activados (nuevo modelo): array con los niveles que ofrece
-    serviciosActivos: Object.keys(_svc).filter(function(k){ return _svc[k]; }),
-    seguroMudanza: _seguro,
-    // Compat: campo "servicios" como string para no romper consumidores viejos
-    servicios:     (function(){
-      var s = [];
-      if (_svc.integral) s.push('Embalaje incluido');
-      if (_svc.flete) s.push('Flete');
-      if (_seguro) s.push('Seguro de mudanza');
-      return s.join(', ');
-    })(),
-    dias:          getChips('chips-dias').join(', '),
-    horarios:      getChips('chips-horarios').join(', '),
-    anticipacion:  document.getElementById('anticipacion').value,
-    // Precios por nivel (nuevo modelo)
-    preciosEsencial: _svc.esencial ? leerPreciosCard('esc') : null,
-    preciosIntegral: _svc.integral ? leerPreciosCard('int') : null,
-    preciosLlave:    _svc.llave    ? leerPreciosCard('llv') : null,
-    precioFleteNuevo: _svc.flete   ? (document.getElementById('flt-p').value.replace(/\./g,'') || '') : '',
-    // Compat con el modelo viejo: usamos los precios de Esencial como fallback genérico
-    precio1amb:    _svc.esencial ? (document.getElementById('esc-p1').value.replace(/\./g,'') || '') : '',
-    precio2amb:    _svc.esencial ? (document.getElementById('esc-p2').value.replace(/\./g,'') || '') : '',
-    precio3amb:    _svc.esencial ? (document.getElementById('esc-p3').value.replace(/\./g,'') || '') : '',
-    precio4amb:    _svc.esencial ? (document.getElementById('esc-p4').value.replace(/\./g,'') || '') : '',
-    precioFlete:   _svc.flete    ? (document.getElementById('flt-p').value.replace(/\./g,'')  || '') : '',
-    extra:         document.getElementById('extra').value.trim(),
-    sinEstres:     _svc.llave, // sincronizado con la card de Llave en mano
-    // Fotos — solo URLs de Blob, sin base64
-    foto:          _urlPerfil,
-    fotoCamion:    urlsVehiculoOk[0]    || '',
-    fotoPatente:   '',
-    fotosVehiculo: urlsVehiculoOk,
-    fotosExtras:   urlsVehiculoOk.slice(1),
-    dniFrente:     _urlDniFrente,
-    dniDorso:      _urlDniDorso  || '',
-    dniAnalisis:   dniData.analisis || null,
-    fecha:         new Date().toLocaleString('es-AR'),
-    metodoCobro:   document.getElementById('metodoCobro').value,
-    cbu:           document.getElementById('cbu').value.trim(),
-    emailMP:       document.getElementById('emailMP').value.trim(),
-    titularCuenta: document.getElementById('titularCuenta').value.trim(),
-    refAliado:     (function(){
-      // Lee cookie mya_ref (seteada por /r/XXXX), localStorage y URL ?ref=XXXX como respaldos
-      try {
-        // 1) URL query string (mayor prioridad — recién llegado del link /r/XXXX)
-        var qs = new URLSearchParams(window.location.search);
-        var qRef = qs.get('ref');
-        if (qRef) {
-          var qNorm = String(qRef).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,16);
-          if (qNorm) {
-            // Persistir para próximas visitas si llegó por URL
-            try {
-              document.cookie = 'mya_ref=' + encodeURIComponent(qNorm) + '; path=/; max-age=' + (60*60*24*90) + '; SameSite=Lax';
-              localStorage.setItem('mya_ref', qNorm);
-            } catch(e) {}
-            return qNorm;
-          }
-        }
-        // 2) Cookie
-        var m = document.cookie.match(/(?:^|;\s*)mya_ref=([^;]+)/);
-        if (m && m[1]) return decodeURIComponent(m[1]).toUpperCase();
-        // 3) localStorage
-        var ls = localStorage.getItem('mya_ref');
-        if (ls) return String(ls).toUpperCase();
-      } catch(e) {}
-      return null;
-    })(),
+    tipoRegistro: 'corto',
+    nombre:    nombre,
+    empresa:   empresa,
+    telefono:  telefono,
+    email:     email,
+    cuil:      cuil,
+    sitioWeb:  sitioWeb,
+    zonaBase:  zonaBase,
+    fecha:     new Date().toLocaleString('es-AR'),
+    refAliado: refAliado
   };
 
   try {
@@ -1019,10 +442,10 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
     document.body.style.overflow = 'hidden';
   } catch(err) {
     btn.disabled = false;
-    btn.innerHTML = 'Enviar solicitud <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+    btn.innerHTML = 'Crear cuenta y completar perfil →';
     var errDiv = document.createElement('div');
     errDiv.style.cssText = 'color:#ff6b6b;font-size:12px;text-align:center;margin-top:12px;font-family:var(--mono);padding:0 2rem';
-    errDiv.textContent = '⚠ ' + err.message + ' — Intentá de nuevo o escribinos por WhatsApp.';
+    errDiv.textContent = '⚠ ' + err.message + ' — Intentá de nuevo o escribinos a hola@mudateya.ar';
     document.querySelector('.form-footer').after(errDiv);
     setTimeout(function() { errDiv.remove(); }, 5000);
   }
