@@ -1654,6 +1654,20 @@ function confirmarAccion(opts) {
       <!-- PERFIL -->
       <div class="page" id="page-perfil">
         <div class="page-title">Mi perfil</div>
+
+        <!-- Banner: perfil incompleto (alta corta) -->
+        <!-- Se llena/oculta desde renderBannerOnboarding() según estadoOnboarding y campos faltantes -->
+        <div id="bannerOnboarding" style="display:none;background:linear-gradient(135deg,#FEF3C7 0%,#FDE68A 100%);border:1px solid #F59E0B;border-radius:14px;padding:18px 20px;margin-bottom:1.2rem;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+          <div style="display:flex;align-items:flex-start;gap:14px">
+            <div style="font-size:28px;line-height:1">⏳</div>
+            <div style="flex:1">
+              <div style="font-weight:700;color:#78350F;font-size:15px;margin-bottom:4px">Tu perfil está incompleto</div>
+              <div style="font-size:13px;color:#92400E;line-height:1.5;margin-bottom:10px">Para empezar a recibir pedidos, completá los datos de tu vehículo, servicios y precios. Te toma <strong>5 minutos</strong>.</div>
+              <div id="checklistOnboarding" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#78350F;font-family:var(--mono);line-height:1.6"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="card" style="margin-bottom:1rem">
           <div class="card-header"><span class="card-title">👤 Datos personales</span></div>
           <div style="padding:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -4204,6 +4218,70 @@ async function cargarPreciosLeads(){
     // silencioso — si falla, los inputs quedan con lo que el mudancero llene
     console.warn('cargarPreciosLeads error:', e.message);
   }
+  // Después de cargar todo el perfil, renderizar el banner de onboarding (si aplica)
+  try { renderBannerOnboarding(); } catch(e) { console.warn('banner onboarding:', e.message); }
+}
+
+// ── BANNER DE ONBOARDING ──
+// Se muestra cuando el mudancero tiene estadoOnboarding='pre-registrado' o le faltan
+// datos críticos para empezar a recibir pedidos. El checklist se arma dinámicamente
+// según qué le falta al perfil.
+function renderBannerOnboarding() {
+  var banner = document.getElementById('bannerOnboarding');
+  var checklist = document.getElementById('checklistOnboarding');
+  if (!banner || !checklist) return;
+
+  var p = mudanceroPerfilRedis || {};
+  var faltantes = [];
+
+  // ¿Vehículo cargado?
+  if (!p.vehiculo) faltantes.push({ icon: '🚛', txt: 'Datos del vehículo' });
+
+  // ¿Algún servicio activo con precios cargados?
+  var sa = Array.isArray(p.serviciosActivos) ? p.serviciosActivos : [];
+  var packTienePrecio = function(pack) {
+    if (!pack || typeof pack !== 'object') return false;
+    var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
+    return pAmt(pack.amb1) > 0 || pAmt(pack.amb2) > 0 || pAmt(pack.amb3) > 0 || pAmt(pack.amb4) > 0;
+  };
+  var algunPrecioCargado =
+    (sa.indexOf('esencial') !== -1 && packTienePrecio(p.preciosEsencial)) ||
+    (sa.indexOf('integral') !== -1 && packTienePrecio(p.preciosIntegral)) ||
+    (sa.indexOf('llave') !== -1    && packTienePrecio(p.preciosLlave)) ||
+    (sa.indexOf('flete') !== -1    && parseInt(String(p.precioFleteNuevo||0).replace(/\./g,'')) > 0);
+  if (!algunPrecioCargado) faltantes.push({ icon: '💵', txt: 'Servicios y precios' });
+
+  // ¿Foto del vehículo?
+  var tieneFotoVehiculo =
+    (Array.isArray(p.fotosVehiculo) && p.fotosVehiculo.filter(Boolean).length > 0) ||
+    !!p.fotoCamion;
+  if (!tieneFotoVehiculo) faltantes.push({ icon: '📷', txt: 'Foto del vehículo' });
+
+  // ¿DNI cargado?
+  if (!p.dniFrente) faltantes.push({ icon: '🪪', txt: 'Foto del DNI (frente)' });
+
+  // ¿Datos para cobrar?
+  if (!p.cbu && !p.emailMP) faltantes.push({ icon: '🏦', txt: 'CBU o cuenta de Mercado Pago' });
+
+  // Decidir si mostrar el banner: solo si está pre-registrado o tiene 2+ faltantes críticos
+  var esPreRegistro = p.estadoOnboarding === 'pre-registrado';
+  if (!esPreRegistro && faltantes.length < 2) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  // Render del checklist
+  checklist.innerHTML = faltantes.map(function(f) {
+    return '<div>○ ' + f.icon + ' ' + f.txt + '</div>';
+  }).join('');
+
+  // Si está completo (sin faltantes) pero sigue marcado pre-registrado, mostramos un mensaje
+  // que avisa que ya puede guardar para activar
+  if (faltantes.length === 0) {
+    checklist.innerHTML = '<div style="color:#22C36A">✓ Tenés todo cargado · Guardá los cambios para que verifiquemos tu perfil</div>';
+  }
+
+  banner.style.display = 'block';
 }
 
 function toggleMetodoCobroPanel(){
