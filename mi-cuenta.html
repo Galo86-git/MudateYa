@@ -4297,6 +4297,7 @@ async function cargarPreciosLeads(){
   // Después de cargar todo el perfil, renderizar el banner de onboarding (si aplica)
   try { renderBannerOnboarding(); } catch(e) { console.warn('banner onboarding:', e.message); }
   try { pfCargarFotosExistentes(); } catch(e) { console.warn('pfCargarFotos:', e.message); }
+  try { pfInitBannerListeners(); } catch(e) { console.warn('pfInitBannerListeners:', e.message); }
 }
 
 // ── BANNER DE ONBOARDING ──
@@ -4311,34 +4312,45 @@ function renderBannerOnboarding() {
   var p = mudanceroPerfilRedis || {};
   var faltantes = [];
 
-  // ¿Vehículo cargado?
-  if (!p.vehiculo) faltantes.push({ icon: '🚛', txt: 'Datos del vehículo' });
-
-  // ¿Algún servicio activo con precios cargados?
-  var sa = Array.isArray(p.serviciosActivos) ? p.serviciosActivos : [];
-  var packTienePrecio = function(pack) {
-    if (!pack || typeof pack !== 'object') return false;
-    var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
-    return pAmt(pack.amb1) > 0 || pAmt(pack.amb2) > 0 || pAmt(pack.amb3) > 0 || pAmt(pack.amb4) > 0;
+  // Helpers para leer valores actuales del DOM (lo que el mudancero está editando ahora)
+  var domVal = function(id) {
+    var el = document.getElementById(id);
+    return el && typeof el.value !== 'undefined' ? String(el.value).trim() : '';
   };
-  var algunPrecioCargado =
-    (sa.indexOf('esencial') !== -1 && packTienePrecio(p.preciosEsencial)) ||
-    (sa.indexOf('integral') !== -1 && packTienePrecio(p.preciosIntegral)) ||
-    (sa.indexOf('llave') !== -1    && packTienePrecio(p.preciosLlave)) ||
-    (sa.indexOf('flete') !== -1    && parseInt(String(p.precioFleteNuevo||0).replace(/\./g,'')) > 0);
+  var domInt = function(id) {
+    var v = domVal(id).replace(/\./g, '').replace(/,/g, '');
+    return parseInt(v) || 0;
+  };
+
+  // ¿Vehículo cargado? (selector pf-vehiculo)
+  var vehiculoActual = domVal('pf-vehiculo') || p.vehiculo || '';
+  if (!vehiculoActual) faltantes.push({ icon: '🚛', txt: 'Datos del vehículo' });
+
+  // ¿Algún servicio activo con precios cargados? Leemos del state local _pfSvc + inputs
+  // _pfSvc viene de cargarPreciosLeads (cards de Esencial/Integral/Llave/Flete)
+  var svcActivo = (typeof _pfSvc !== 'undefined') ? _pfSvc : { esencial:false, integral:false, llave:false, flete:false };
+  var algunPrecioCargado = false;
+  if (svcActivo.esencial && (domInt('pf-esc-p1')>0 || domInt('pf-esc-p2')>0 || domInt('pf-esc-p3')>0 || domInt('pf-esc-p4')>0)) algunPrecioCargado = true;
+  if (svcActivo.integral && (domInt('pf-int-p1')>0 || domInt('pf-int-p2')>0 || domInt('pf-int-p3')>0 || domInt('pf-int-p4')>0)) algunPrecioCargado = true;
+  if (svcActivo.llave    && (domInt('pf-llv-p1')>0 || domInt('pf-llv-p2')>0 || domInt('pf-llv-p3')>0 || domInt('pf-llv-p4')>0)) algunPrecioCargado = true;
+  if (svcActivo.flete    && domInt('pf-flt-p') > 0) algunPrecioCargado = true;
   if (!algunPrecioCargado) faltantes.push({ icon: '💵', txt: 'Servicios y precios' });
 
-  // ¿Foto del vehículo?
-  var tieneFotoVehiculo =
-    (Array.isArray(p.fotosVehiculo) && p.fotosVehiculo.filter(Boolean).length > 0) ||
-    !!p.fotoCamion;
+  // ¿Foto del vehículo? (vars locales _pfUrlsVehiculo se actualizan al subir)
+  var fotosVehLocal = (typeof _pfUrlsVehiculo !== 'undefined') ? _pfUrlsVehiculo.filter(Boolean) : [];
+  var tieneFotoVehiculo = fotosVehLocal.length > 0
+    || (Array.isArray(p.fotosVehiculo) && p.fotosVehiculo.filter(Boolean).length > 0)
+    || !!p.fotoCamion;
   if (!tieneFotoVehiculo) faltantes.push({ icon: '📷', txt: 'Foto del vehículo' });
 
-  // ¿DNI cargado?
-  if (!p.dniFrente) faltantes.push({ icon: '🪪', txt: 'Foto del DNI (frente)' });
+  // ¿DNI frente cargado? (var local _pfUrlDniFrente)
+  var tieneDni = (typeof _pfUrlDniFrente !== 'undefined' && _pfUrlDniFrente) || !!p.dniFrente;
+  if (!tieneDni) faltantes.push({ icon: '🪪', txt: 'Foto del DNI (frente)' });
 
-  // ¿Datos para cobrar?
-  if (!p.cbu && !p.emailMP) faltantes.push({ icon: '🏦', txt: 'CBU o cuenta de Mercado Pago' });
+  // ¿Datos para cobrar? Leemos del DOM
+  var cbuActual = domVal('pf-cbu');
+  var mpActual  = domVal('pf-emailMP');
+  if (!cbuActual && !mpActual && !p.cbu && !p.emailMP) faltantes.push({ icon: '🏦', txt: 'CBU o cuenta de Mercado Pago' });
 
   // Decidir si mostrar el banner: solo si está pre-registrado o tiene 2+ faltantes críticos
   var esPreRegistro = p.estadoOnboarding === 'pre-registrado';
@@ -4355,10 +4367,55 @@ function renderBannerOnboarding() {
   // Si está completo (sin faltantes) pero sigue marcado pre-registrado, mostramos un mensaje
   // que avisa que ya puede guardar para activar
   if (faltantes.length === 0) {
-    checklist.innerHTML = '<div style="color:#22C36A">✓ Tenés todo cargado · Guardá los cambios para que verifiquemos tu perfil</div>';
+    checklist.innerHTML = '<div style="color:#22C36A;font-weight:600">✓ Tenés todo cargado · Guardá los cambios para que verifiquemos tu perfil</div>';
   }
 
   banner.style.display = 'block';
+}
+
+// Wrapper con throttle para no llamar en cada keystroke ineficientemente
+var _bannerThrottleTimer = null;
+function schedRenderBanner() {
+  if (_bannerThrottleTimer) return;
+  _bannerThrottleTimer = setTimeout(function() {
+    _bannerThrottleTimer = null;
+    try { renderBannerOnboarding(); } catch(e) {}
+  }, 250);
+}
+
+// Engancha listeners a todos los campos que pueden cambiar el checklist.
+// Se llama una sola vez después de armar el editor de perfil.
+function pfInitBannerListeners() {
+  // Selector + dropdowns
+  ['pf-vehiculo','pf-cbu','pf-emailMP','pf-metodoCobro'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && !el._bannerHooked) {
+      el.addEventListener('input', schedRenderBanner);
+      el.addEventListener('change', schedRenderBanner);
+      el._bannerHooked = true;
+    }
+  });
+  // Inputs de precios (4 packs × 4 ambientes + flete + por km)
+  ['pf-esc-p1','pf-esc-p2','pf-esc-p3','pf-esc-p4',
+   'pf-int-p1','pf-int-p2','pf-int-p3','pf-int-p4',
+   'pf-llv-p1','pf-llv-p2','pf-llv-p3','pf-llv-p4',
+   'pf-flt-p'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && !el._bannerHooked) {
+      el.addEventListener('input', schedRenderBanner);
+      el._bannerHooked = true;
+    }
+  });
+  // Cards de servicios: cuando se hace toggle (clase .active cambia), re-renderizar.
+  // Lo hacemos via MutationObserver porque el toggle es por click externo.
+  ['pf-svcEsencial','pf-svcIntegral','pf-svcLlave','pf-svcFlete'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && !el._bannerObserved) {
+      var obs = new MutationObserver(schedRenderBanner);
+      obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+      el._bannerObserved = true;
+    }
+  });
 }
 
 // ── FOTOS Y DNI EN EDITOR DE PERFIL ──
@@ -4464,10 +4521,12 @@ function pfOnFotosVehiculo(input) {
             } else {
               document.getElementById('pf-uploadTextCamion').textContent = count + ' foto' + (count > 1 ? 's' : '') + ' cargada' + (count > 1 ? 's' : '') + ' ✓';
             }
+            schedRenderBanner();
           };
           wrap.appendChild(btn);
           var total = _pfUrlsVehiculo.filter(Boolean).length;
           document.getElementById('pf-uploadTextCamion').textContent = total + ' foto' + (total > 1 ? 's' : '') + ' cargada' + (total > 1 ? 's' : '') + ' ✓ (tocá para agregar más)';
+          schedRenderBanner();
         })
         .catch(function() {
           overlay.innerHTML = '<span style="color:#ff6b6b;font-size:18px">⚠</span>';
@@ -4504,6 +4563,7 @@ function pfOnDNIUpload(input, lado) {
         text.textContent = lado === 'frente' ? 'Frente cargado ✓' : 'Dorso cargado ✓';
         // Disparar análisis solo del frente
         if (lado === 'frente') pfAnalizarDni();
+        schedRenderBanner();
       })
       .catch(function() {
         text.textContent = '⚠ Error — intentá de nuevo';
@@ -4596,6 +4656,7 @@ function pfCargarFotosExistentes() {
             document.getElementById('pf-uploadTextCamion').textContent = 'Subir fotos del vehículo';
             document.getElementById('pf-uploadAreaCamion').classList.remove('has-file');
           }
+          schedRenderBanner();
         };
         wrap.appendChild(btn);
         grid.appendChild(wrap);
