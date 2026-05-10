@@ -35,5 +35,9 @@
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/cron-onboarding", "schedule": "0 13 * * *" },
+    { "path": "/api/cron-onboarding", "schedule": "0 21 * * *" }
   ]
 }
