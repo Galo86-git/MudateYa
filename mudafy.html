@@ -486,6 +486,48 @@
   </div>
 </div>
 
+<!-- Modal de detalles adicionales (opcional, saltable) -->
+<div class="modal-overlay" id="detallesModal" onclick="if(event.target===this)document.getElementById('detallesModal').classList.remove('open')">
+  <div class="confirm-modal" style="max-width:520px;max-height:88vh;display:flex;flex-direction:column">
+    <button class="modal-close" type="button" onclick="document.getElementById('detallesModal').classList.remove('open')">×</button>
+    <div class="confirm-modal-header" style="text-align:center">
+      <div class="confirm-modal-icon">📋</div>
+      <h2 class="confirm-modal-title">¿Algo más que deba saber el mudancero?</h2>
+      <p class="confirm-modal-subtitle">Esto ayuda a una mejor cotización · <b>Todo opcional · 2 min</b></p>
+    </div>
+    <div style="overflow-y:auto;padding:0 4px;flex:1;min-height:0">
+      <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:8px 0 8px;font-family:monospace">Marcá lo que aplique</div>
+      <div id="pdm-checkboxes" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div id="pdm-escaleras-pisos" style="display:none;background:#FEF3C7;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px">
+        <label style="display:flex;align-items:center;gap:10px;color:#78350F">
+          <span>¿Cuántos pisos?</span>
+          <input type="number" id="pdm-pisos" min="1" max="10" placeholder="2"
+            style="width:60px;padding:6px 8px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;outline:none"/>
+        </label>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:monospace">¿Algo más?</div>
+      <textarea id="pdm-comentario" rows="3" placeholder="Ej: piano, caja fuerte, mascota grande, mueble pesado..."
+        style="width:100%;padding:10px 12px;border:1px solid var(--md-border);border-radius:10px;font-size:13px;outline:none;resize:vertical;line-height:1.5;box-sizing:border-box;font-family:inherit"></textarea>
+      <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:monospace">¿Querés agregar fotos? (opcional)</div>
+      <div style="border:2px dashed var(--md-border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;background:var(--md-bg);transition:all .2s"
+        onclick="document.getElementById('pdm-fotos-input').click()">
+        <div style="font-size:22px;margin-bottom:4px">📷</div>
+        <div id="pdm-fotos-text" style="font-size:13px;color:var(--md-text-2);font-weight:500">Subir fotos</div>
+        <div style="font-size:11px;color:var(--md-text-3,#94A3B8);font-family:monospace;margin-top:2px">Máx. 5 fotos · 5MB c/u</div>
+      </div>
+      <input type="file" id="pdm-fotos-input" accept="image/*" multiple style="display:none" onchange="pdmOnFotos(this)"/>
+      <div id="pdm-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+    </div>
+    <div class="confirm-actions" style="border-top:1px solid var(--md-border);padding-top:14px;margin-top:14px;flex-shrink:0;display:flex;flex-direction:column;gap:8px">
+      <button type="button" class="btn-confirm" id="pdm-btn-enviar" onclick="pdmEnviar()">
+        Enviar solicitud
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+      <button type="button" onclick="pdmSaltar()" style="background:transparent;border:none;color:var(--md-text-2);font-size:13px;cursor:pointer;text-decoration:underline;padding:6px;font-family:inherit">Saltar este paso</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal éxito -->
 <div class="modal-overlay" id="successModal">
   <div class="success-modal">
@@ -1033,9 +1075,175 @@ function cerrarConfirm() {
 }
 
 // ════════════════════════════════════════════════════════════
-// CONFIRMAR ENVIO - hace el POST real al backend
+// CONFIRMAR ENVIO - paso 1: mostrar detalles adicionales
+// (después del paso de detalles se dispara _enviarPedido)
 // ════════════════════════════════════════════════════════════
-async function confirmarEnvio() {
+function confirmarEnvio() {
+  if (!_mudanceros.length) return;
+  var destinatarios = _sel.size > 0
+    ? _mudanceros.filter(function(m){ return _sel.has(m.email); })
+    : _mudanceros;
+  if (!destinatarios.length) return;
+  // Mostrar modal de detalles adicionales
+  pdMudafyMostrar();
+}
+
+// ── PASO DETALLES MUDAFY ──
+// Idéntico al de index.html, mismo PD_OPCIONES, mismo backend (detallesAdicionales).
+var PD_OPCIONES_M = [
+  { id: 'ascensor',        label: 'Hay ascensor en origen y/o destino' },
+  { id: 'izaje',           label: 'Necesita izaje' },
+  { id: 'soga',            label: 'Necesita soga' },
+  { id: 'balconTerraza',   label: 'Hay balcón / terraza' },
+  { id: 'pasilloAngosto',  label: 'Pasillo angosto o difícil acceso' },
+  { id: 'escaleras',       label: 'Hay escaleras' },
+  { id: 'cocheraGarage',   label: 'Tiene puerta de cochera / garage' },
+  { id: 'estDificil',      label: 'Estacionamiento difícil en la cuadra' },
+  { id: 'mascotaEspecial', label: 'Mascota o algo especial' }
+];
+var _pdmFotosUrls = [];
+var _pdmCarpetaTmp = '';
+
+function pdMudafyMostrar() {
+  _pdmFotosUrls = [];
+  _pdmCarpetaTmp = 'pedidos-detalles/' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+  var cont = document.getElementById('pdm-checkboxes');
+  if (cont && !cont._rendered) {
+    cont.innerHTML = PD_OPCIONES_M.map(function(op) {
+      return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--md-border);border-radius:10px;cursor:pointer;font-size:13px;color:var(--md-text);transition:background .15s" onmouseover="this.style.background=\'var(--md-bg)\'" onmouseout="this.style.background=\'transparent\'">'
+        + '<input type="checkbox" id="pdm-chk-' + op.id + '" onchange="pdmOnToggle(\'' + op.id + '\')" style="margin:0;cursor:pointer"/>'
+        + '<span>' + op.label + '</span>'
+        + '</label>';
+    }).join('');
+    cont._rendered = true;
+  }
+  PD_OPCIONES_M.forEach(function(op) {
+    var el = document.getElementById('pdm-chk-' + op.id);
+    if (el) el.checked = false;
+  });
+  var co = document.getElementById('pdm-comentario'); if (co) co.value = '';
+  var pi = document.getElementById('pdm-pisos');      if (pi) pi.value = '';
+  var ep = document.getElementById('pdm-escaleras-pisos'); if (ep) ep.style.display = 'none';
+  var grid = document.getElementById('pdm-fotos-grid'); if (grid) grid.innerHTML = '';
+  var txtF = document.getElementById('pdm-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
+  document.getElementById('confirmModal').classList.remove('open');
+  document.getElementById('detallesModal').classList.add('open');
+}
+
+function pdmOnToggle(opId) {
+  if (opId === 'escaleras') {
+    var chk = document.getElementById('pdm-chk-escaleras');
+    var box = document.getElementById('pdm-escaleras-pisos');
+    if (chk && box) box.style.display = chk.checked ? 'block' : 'none';
+  }
+}
+
+async function pdmSubirFotoBlob(file, nombre) {
+  var res = await fetch('/api/upload-foto', {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type || 'image/jpeg',
+      'x-carpeta':    _pdmCarpetaTmp,
+      'x-nombre':     nombre
+    },
+    body: file
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error subiendo foto');
+  return json.url;
+}
+
+function pdmOnFotos(input) {
+  if (!input.files || !input.files.length) return;
+  if (_pdmFotosUrls.length + input.files.length > 5) {
+    alert('Podés subir hasta 5 fotos en total.');
+    input.value = '';
+    return;
+  }
+  var grid = document.getElementById('pdm-fotos-grid');
+  var btn  = document.getElementById('pdm-btn-enviar');
+  Array.from(input.files).forEach(function(file) {
+    if (file.size > 5 * 1024 * 1024) { alert('Una foto pesa más de 5MB.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:64px;height:64px';
+      var thumb = document.createElement('img');
+      thumb.src = e.target.result;
+      thumb.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--md-border);opacity:.6';
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(0,0,0,.2);font-size:18px';
+      ov.innerHTML = '⏳';
+      wrap.appendChild(thumb);
+      wrap.appendChild(ov);
+      grid.appendChild(wrap);
+      if (btn) btn.disabled = true;
+      var idx = _pdmFotosUrls.length;
+      _pdmFotosUrls.push(null);
+      pdmSubirFotoBlob(file, 'foto-' + idx)
+        .then(function(url) {
+          _pdmFotosUrls[idx] = url;
+          thumb.style.opacity = '1';
+          ov.remove();
+          var x = document.createElement('button');
+          x.type = 'button';
+          x.innerHTML = '✕';
+          x.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#0F1923;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
+          x.onclick = function(ev) {
+            ev.stopPropagation();
+            _pdmFotosUrls[idx] = null;
+            wrap.remove();
+            if (_pdmFotosUrls.filter(Boolean).length === 0) {
+              document.getElementById('pdm-fotos-text').textContent = 'Subir fotos';
+            }
+          };
+          wrap.appendChild(x);
+          document.getElementById('pdm-fotos-text').textContent = _pdmFotosUrls.filter(Boolean).length + ' foto(s) cargada(s) ✓';
+          if (btn && _pdmFotosUrls.every(function(u){ return u !== null; })) btn.disabled = false;
+        })
+        .catch(function() {
+          ov.innerHTML = '⚠';
+          if (btn) btn.disabled = false;
+        });
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function _pdmArmarDetalles() {
+  var d = {};
+  var algo = false;
+  PD_OPCIONES_M.forEach(function(op) {
+    var el = document.getElementById('pdm-chk-' + op.id);
+    if (el && el.checked) { d[op.id] = true; algo = true; }
+  });
+  if (d.escaleras) {
+    var p = parseInt(document.getElementById('pdm-pisos').value) || 0;
+    if (p > 0) d.escalerasPisos = p;
+  }
+  var c = (document.getElementById('pdm-comentario').value || '').trim();
+  if (c) { d.comentario = c; algo = true; }
+  var f = _pdmFotosUrls.filter(Boolean);
+  if (f.length) { d.fotos = f; algo = true; }
+  return algo ? d : null;
+}
+
+function pdmSaltar() {
+  document.getElementById('detallesModal').classList.remove('open');
+  _enviarPedido(null);
+}
+
+function pdmEnviar() {
+  var det = _pdmArmarDetalles();
+  document.getElementById('detallesModal').classList.remove('open');
+  _enviarPedido(det);
+}
+
+// ════════════════════════════════════════════════════════════
+// _enviarPedido - hace el POST real al backend (reemplazo de confirmarEnvio)
+// ════════════════════════════════════════════════════════════
+async function _enviarPedido(detallesAdicionales) {
   if (!_mudanceros.length) return;
 
   var destinatarios = _sel.size > 0
@@ -1085,7 +1293,9 @@ async function confirmarEnvio() {
       // Trackeo Mudafy
       partner: 'mudafy',
       partnerAsesor: _partner.asesor,
-      partnerPropiedad: _partner.propiedad
+      partnerPropiedad: _partner.propiedad,
+      // Detalles adicionales opcionales
+      detallesAdicionales: detallesAdicionales || null
     };
 
     var r = await fetch('/api/cotizaciones?action=publicar', {
