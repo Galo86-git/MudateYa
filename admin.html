@@ -612,6 +612,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
           <input class="search-input" id="searchMudanceros" placeholder="Buscar por nombre, empresa, zona o email…" oninput="filterMudanceros()"/>
           <select class="search-input" id="filterEstado" style="flex:0 0 140px" onchange="filterMudanceros()">
             <option value="">Estado: Todos</option>
+            <option value="pre-registrado">⏳ Pre-registrados</option>
             <option value="Pendiente">Pendientes</option>
             <option value="Aprobado">Aprobados</option>
             <option value="Rechazado">Rechazados</option>
@@ -1423,7 +1424,8 @@ async function loadMudanceros(){
         m.ultimaActualizacion || '',  // [22] última edición de perfil
         m.terminosAceptados === true,  // [23] firmó TyC (boolean)
         m.fechaAceptoTerminos || '',   // [24] fecha de firma TyC (ISO)
-        precioTipo                     // [25] 'packs' | 'legacy' | 'sin'
+        precioTipo,                    // [25] 'packs' | 'legacy' | 'sin'
+        m.estadoOnboarding || 'completo' // [26] 'pre-registrado' | 'completo'
       ];
     });
     var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
@@ -1579,7 +1581,12 @@ function filterMudanceros(){
 
   var filtered = mudancerosData.filter(function(m){
     var matchQ = !q || (m[1]||'').toLowerCase().includes(q) || (m[2]||'').toLowerCase().includes(q) || (m[4]||'').toLowerCase().includes(q) || (m[5]||'').toLowerCase().includes(q);
-    var matchE = !estado || getEstado(m) === estado;
+    var matchE;
+    if (estado === 'pre-registrado') {
+      matchE = m[26] === 'pre-registrado';
+    } else {
+      matchE = !estado || getEstado(m) === estado;
+    }
     // Filtro por última actualización
     var matchA = true;
     if (fAct) {
@@ -1630,13 +1637,17 @@ function filterMudanceros(){
           var est = getEstado(m);
           var badgeColor = est === 'Aprobado' ? '#22C36A' : est === 'Rechazado' ? '#EF4444' : '#F59E0B';
           var badgeBg = est === 'Aprobado' ? 'rgba(34,195,106,.1)' : est === 'Rechazado' ? 'rgba(239,68,68,.08)' : 'rgba(245,158,11,.08)';
+          var preReg = m[26] === 'pre-registrado' ? '<span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;flex-shrink:0;margin-right:4px">⏳ Pre-reg</span>' : '';
           return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">'
             +   '<div style="min-width:0;flex:1">'
             +     '<div style="font-size:14px;font-weight:600;color:#0F1923">'+(m[1]||'—')+'</div>'
             +     '<div style="font-size:11px;color:#64748B;font-family:var(--mono)">'+(m[4]||'')+'</div>'
             +   '</div>'
-            +   '<span style="background:'+badgeBg+';color:'+badgeColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px;flex-shrink:0">'+est+'</span>'
+            +   '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+            +     preReg
+            +     '<span style="background:'+badgeBg+';color:'+badgeColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px">'+est+'</span>'
+            +   '</div>'
             + '</div>'
             + '<div style="margin-bottom:10px;padding:6px 10px;background:#F5F7FA;border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
             +   '<span style="font-size:10px;color:#64748B;font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px">Última edición</span>'
@@ -1686,7 +1697,8 @@ function filterMudanceros(){
           } else {
             precioCell = '<span style="color:#475569;font-weight:600;font-size:11px;background:#F1F5F9;padding:3px 8px;border-radius:10px;white-space:nowrap" title="No tiene precios cargados">⚫ Sin precios</span>';
           }
-          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td>'+pillTiempoRel(m[22])+'</td><td><span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td>'+fechaAltaCell+'</td><td>'+precioCell+'</td><td>'+tycCell+'</td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
+          var preReg = m[26] === 'pre-registrado' ? '<span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:4px" title="Pre-registrado: solo cargó datos básicos, falta completar perfil">⏳ Pre-reg</span>' : '';
+          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[2]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td>'+pillTiempoRel(m[22])+'</td><td>'+preReg+'<span class="badge '+est.toLowerCase()+'">'+est+'</span></td><td>'+fechaAltaCell+'</td><td>'+precioCell+'</td><td>'+tycCell+'</td><td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td></tr>';
         }).join('')
       + '</tbody></table>';
   }
