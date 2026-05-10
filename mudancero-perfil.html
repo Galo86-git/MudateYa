@@ -761,7 +761,15 @@ function cerrarConfirm() {
 }
 
 function confirmarSolicitud() {
+  // En lugar de mandar la solicitud directamente, abrimos el modal de detalles
+  // adicionales (igual que index.html y mudafy.html). El cliente puede:
+  //   - Cargar características del lugar / comentario / fotos y dar Enviar
+  //   - Apretar "Saltar este paso" y mandar sin detalles
   cerrarConfirm();
+  pdpMostrar();
+}
+
+function _publicarPedidoMudancero(detallesAdicionales) {
   var email = new URLSearchParams(location.search).get('id');
   var busqueda = null;
   try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
@@ -818,6 +826,8 @@ function confirmarSolicitud() {
       km: parseInt(busqueda.km) || 0,
       modoCotizacion: 'dirigido',
       mudancerosInvitados: [email],
+      // Detalles adicionales opcionales (ascensor, izaje, escaleras, fotos…)
+      detallesAdicionales: detallesAdicionales || null
     })
   })
   .then(function(r){ return r.json(); })
@@ -836,6 +846,163 @@ function confirmarSolicitud() {
     if (btn) { btn.disabled = false; btn.textContent = 'Solicitar cotización →'; }
     alert('Error: ' + e.message);
   });
+}
+
+// ── PASO DETALLES ADICIONALES (opcional, saltable) — perfil del mudancero ──
+// Mismo patrón que en index.html / mudafy.html. Prefijo "pdp-" para no chocar
+// con los modales del index ("pd-") ni de mudafy ("pdm-").
+
+var PDP_OPCIONES = [
+  { id: 'ascensor',        label: 'Hay ascensor en origen y/o destino' },
+  { id: 'izaje',           label: 'Necesita izaje' },
+  { id: 'soga',            label: 'Necesita soga' },
+  { id: 'balconTerraza',   label: 'Hay balcón / terraza' },
+  { id: 'pasilloAngosto',  label: 'Pasillo angosto o difícil acceso' },
+  { id: 'escaleras',       label: 'Hay escaleras' },
+  { id: 'cocheraGarage',   label: 'Tiene puerta de cochera / garage' },
+  { id: 'estDificil',      label: 'Estacionamiento difícil en la cuadra' },
+  { id: 'mascotaEspecial', label: 'Mascota o algo especial' }
+];
+
+var _pdpFotosUrls = [];
+var _pdpCarpetaTmp = '';
+
+function pdpMostrar() {
+  _pdpFotosUrls = [];
+  _pdpCarpetaTmp = 'pedidos-detalles/' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+  // Render checkboxes (idempotente)
+  var cont = document.getElementById('pdp-checkboxes');
+  if (cont && !cont._rendered) {
+    cont.innerHTML = PDP_OPCIONES.map(function(op) {
+      return '<label class="pdp-chk-label">'
+        + '<input type="checkbox" id="pdp-chk-' + op.id + '" onchange="pdpOnToggle(\'' + op.id + '\')" style="margin:0;cursor:pointer"/>'
+        + '<span>' + op.label + '</span>'
+        + '</label>';
+    }).join('');
+    cont._rendered = true;
+  }
+  // Reset
+  PDP_OPCIONES.forEach(function(op) {
+    var el = document.getElementById('pdp-chk-' + op.id);
+    if (el) el.checked = false;
+  });
+  var co = document.getElementById('pdp-comentario'); if (co) co.value = '';
+  var pi = document.getElementById('pdp-pisos');      if (pi) pi.value = '';
+  var ep = document.getElementById('pdp-escaleras-pisos'); if (ep) ep.style.display = 'none';
+  var grid = document.getElementById('pdp-fotos-grid'); if (grid) grid.innerHTML = '';
+  var txtF = document.getElementById('pdp-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
+  var btn  = document.getElementById('pdp-btn-enviar'); if (btn) btn.disabled = false;
+  document.getElementById('pdpModal').classList.add('open');
+}
+
+function pdpOnToggle(opId) {
+  if (opId === 'escaleras') {
+    var chk = document.getElementById('pdp-chk-escaleras');
+    var box = document.getElementById('pdp-escaleras-pisos');
+    if (chk && box) box.style.display = chk.checked ? 'block' : 'none';
+  }
+}
+
+async function pdpSubirFotoBlob(file, nombre) {
+  var res = await fetch('/api/upload-foto', {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type || 'image/jpeg',
+      'x-carpeta':    _pdpCarpetaTmp,
+      'x-nombre':     nombre
+    },
+    body: file
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error subiendo foto');
+  return json.url;
+}
+
+function pdpOnFotos(input) {
+  if (!input.files || !input.files.length) return;
+  if (_pdpFotosUrls.length + input.files.length > 5) {
+    alert('Podés subir hasta 5 fotos en total.');
+    input.value = '';
+    return;
+  }
+  var grid = document.getElementById('pdp-fotos-grid');
+  var btn  = document.getElementById('pdp-btn-enviar');
+  Array.from(input.files).forEach(function(file) {
+    if (file.size > 5 * 1024 * 1024) { alert('Una foto pesa más de 5MB.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:64px;height:64px';
+      var thumb = document.createElement('img');
+      thumb.src = e.target.result;
+      thumb.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);opacity:.6';
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(0,0,0,.2)';
+      ov.innerHTML = '<span class="pdp-spinner"></span>';
+      wrap.appendChild(thumb);
+      wrap.appendChild(ov);
+      grid.appendChild(wrap);
+      if (btn) btn.disabled = true;
+      var idx = _pdpFotosUrls.length;
+      _pdpFotosUrls.push(null);
+      pdpSubirFotoBlob(file, 'foto-' + idx)
+        .then(function(url) {
+          _pdpFotosUrls[idx] = url;
+          thumb.style.opacity = '1';
+          ov.remove();
+          var x = document.createElement('button');
+          x.type = 'button';
+          x.innerHTML = '✕';
+          x.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#0F1923;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
+          x.onclick = function(ev) {
+            ev.stopPropagation();
+            _pdpFotosUrls[idx] = null;
+            wrap.remove();
+            if (_pdpFotosUrls.filter(Boolean).length === 0) {
+              document.getElementById('pdp-fotos-text').textContent = 'Subir fotos';
+            }
+          };
+          wrap.appendChild(x);
+          document.getElementById('pdp-fotos-text').textContent = _pdpFotosUrls.filter(Boolean).length + ' foto(s) cargada(s) ✓';
+          if (btn && _pdpFotosUrls.every(function(u){ return u !== null; })) btn.disabled = false;
+        })
+        .catch(function() {
+          ov.innerHTML = '<span style="color:#fff;font-size:18px">⚠</span>';
+          if (btn) btn.disabled = false;
+        });
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function _pdpArmarDetalles() {
+  var d = {};
+  var algo = false;
+  PDP_OPCIONES.forEach(function(op) {
+    var el = document.getElementById('pdp-chk-' + op.id);
+    if (el && el.checked) { d[op.id] = true; algo = true; }
+  });
+  if (d.escaleras) {
+    var p = parseInt(document.getElementById('pdp-pisos').value) || 0;
+    if (p > 0) d.escalerasPisos = p;
+  }
+  var c = (document.getElementById('pdp-comentario').value || '').trim();
+  if (c) { d.comentario = c; algo = true; }
+  var f = _pdpFotosUrls.filter(Boolean);
+  if (f.length) { d.fotos = f; algo = true; }
+  return algo ? d : null;
+}
+
+function pdpSaltar() {
+  document.getElementById('pdpModal').classList.remove('open');
+  _publicarPedidoMudancero(null);
+}
+
+function pdpEnviar() {
+  var det = _pdpArmarDetalles();
+  document.getElementById('pdpModal').classList.remove('open');
+  _publicarPedidoMudancero(det);
 }
 
 // ── Solicitar (entry point) ───────────────
@@ -969,15 +1136,58 @@ var _mudancero = null;
   </div>
 </div>
 
-<!-- MODAL CONFIRMACIÓN -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-icon">🚛</div>
-    <div class="confirm-title">¿Confirmás la solicitud?</div>
-    <div class="confirm-sub">Le vas a pedir cotización a <span class="confirm-nombre" id="confirmNombre">este mudancero</span>. Te va a contactar con su propuesta por email.</div>
-    <div class="confirm-btns">
-      <button class="confirm-btn-cancel" onclick="cerrarConfirm()">Cancelar</button>
-      <button class="confirm-btn-ok" onclick="confirmarSolicitud()">Sí, solicitar →</button>
+<!-- MODAL DETALLES ADICIONALES (paso intermedio entre confirmar y publicar) -->
+<style>
+  .pdp-modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,25,35,.55);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;padding:1rem}
+  .pdp-modal-overlay.open{display:flex}
+  .pdp-modal-box{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .pdp-modal-head{padding:20px 24px 12px;text-align:center;flex-shrink:0}
+  .pdp-modal-body{padding:0 24px;overflow-y:auto;flex:1;min-height:0}
+  .pdp-modal-foot{padding:14px 24px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+  .pdp-chk-label{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px;color:var(--text);transition:background .15s}
+  .pdp-chk-label:hover{background:var(--bg2)}
+  .pdp-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:Inter,sans-serif;font-size:13px;outline:none;line-height:1.5;box-sizing:border-box}
+  .pdp-uploader{border:2px dashed var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;background:var(--bg2);transition:all .2s}
+  .pdp-uploader:hover{border-color:var(--blue);background:var(--blue-lt)}
+  .pdp-spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:pdpSpin .7s linear infinite}
+  @keyframes pdpSpin{to{transform:rotate(360deg)}}
+  .pdp-btn-primary{width:100%;padding:13px;background:var(--blue);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif}
+  .pdp-btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .pdp-btn-skip{background:transparent;border:none;color:var(--text2);font-size:13px;cursor:pointer;text-decoration:underline;padding:6px;font-family:Inter,sans-serif}
+  .pdp-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px;font-family:'DM Mono',monospace}
+</style>
+
+<div class="pdp-modal-overlay" id="pdpModal">
+  <div class="pdp-modal-box">
+    <div class="pdp-modal-head">
+      <div style="font-size:1.6rem;margin-bottom:6px">📋</div>
+      <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:.3rem">¿Algo más que deba saber el mudancero?</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.4">Esto ayuda a una mejor cotización · <b>Todo opcional · 2 min</b></div>
+    </div>
+    <div class="pdp-modal-body">
+      <div class="pdp-label" style="margin-top:2px">Marcá lo que aplique</div>
+      <div id="pdp-checkboxes" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div id="pdp-escaleras-pisos" style="display:none;background:#FEF3C7;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px">
+        <label style="display:flex;align-items:center;gap:10px;color:#78350F">
+          <span>¿Cuántos pisos?</span>
+          <input type="number" id="pdp-pisos" min="1" max="10" placeholder="2"
+            style="width:60px;padding:6px 8px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;outline:none;font-family:inherit"/>
+        </label>
+      </div>
+      <div class="pdp-label">¿Algo más?</div>
+      <textarea id="pdp-comentario" rows="3" placeholder="Ej: piano, caja fuerte, mascota grande, mueble pesado..." class="pdp-input" style="resize:vertical"></textarea>
+      <div class="pdp-label">¿Querés agregar fotos? (opcional)</div>
+      <div class="pdp-uploader" onclick="document.getElementById('pdp-fotos-input').click()">
+        <div style="font-size:22px;margin-bottom:4px">📷</div>
+        <div id="pdp-fotos-text" style="font-size:13px;color:var(--text2);font-weight:500">Subir fotos</div>
+        <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">Máx. 5 fotos · 5MB c/u</div>
+      </div>
+      <input type="file" id="pdp-fotos-input" accept="image/*" multiple style="display:none" onchange="pdpOnFotos(this)"/>
+      <div id="pdp-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;margin-bottom:14px"></div>
+    </div>
+    <div class="pdp-modal-foot">
+      <button id="pdp-btn-enviar" class="pdp-btn-primary" onclick="pdpEnviar()">Enviar solicitud →</button>
+      <button class="pdp-btn-skip" onclick="pdpSaltar()">Saltar este paso</button>
     </div>
   </div>
 </div>
