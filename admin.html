@@ -2785,13 +2785,20 @@ function renderTabla(data) {
     var hasta  = (p.hasta||'').split(',')[0];
     var mud    = p.mudanceroNombre || p.mudanceroEmail || '—';
     var nCot   = p.cotizaciones || 0;
+    // Badge origen: Mudafy / asesor / directo (con comisión 25% en los dos primeros)
+    var origenBadge = '';
+    if (p.partner === 'mudafy') {
+      origenBadge = '<span title="Cliente Mudafy · comisión 25%" style="display:inline-block;background:#FFF1EE;color:#991B1B;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;font-family:var(--mono);border:1px solid #FECACA">🤝 MUDAFY 25%</span>';
+    } else if (p.origenAsesor || p.refAliado) {
+      origenBadge = '<span title="Cliente asesor inmobiliario · comisión 25%" style="display:inline-block;background:#FEF3F2;color:#991B1B;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;font-family:var(--mono);border:1px solid #FECACA">🏢 ASESOR 25%</span>';
+    }
     var cotChip = nCot > 0
       ? '<span style="background:#EEF4FF;color:#1A6FFF;font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:pointer" onclick="abrirPedidoModal(\''+esc(p.id)+'\',event)">'+nCot+' recibida'+(nCot!==1?'s':'')+'</span>'
       : '<span style="color:var(--text3);font-size:12px">0</span>';
 
     html += '<tr style="cursor:pointer" onclick="abrirPedidoModal(\''+esc(p.id)+'\')">'
       + '<td><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">'+(p.id||'—').slice(-6)+'</span></td>'
-      + '<td><span class="cot-tipo '+esc(p.tipo||'')+'">'+(p.tipo==='flete'?'📦 Flete':'🚛 Mudanza')+'</span></td>'
+      + '<td><span class="cot-tipo '+esc(p.tipo||'')+'">'+(p.tipo==='flete'?'📦 Flete':'🚛 Mudanza')+'</span>'+origenBadge+'</td>'
       + '<td style="font-size:12px;white-space:nowrap">'+esc(fecha)+'</td>'
       + '<td><div style="font-size:13px;font-weight:500">'+esc(p.nombre||'—')+'</div><div class="cot-email">'+esc(p.email||'—')+'</div></td>'
       + '<td><div class="cot-ruta">'+esc(desde)+' → '+esc(hasta)+'</div></td>'
