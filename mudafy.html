@@ -307,6 +307,9 @@
   .success-msg { font-size: 15px; color: var(--md-text-2); line-height: 1.5; margin-bottom: 24px; }
   .success-btn { display: inline-block; padding: 14px 28px; background: var(--md-coral); color: white; text-decoration: none; border-radius: 12px; font-size: 15px; font-weight: 800; }
   .success-btn:hover { background: var(--md-coral-dark); }
+  .success-btn-secondary { display: inline-block; padding: 14px 28px; background: white; color: var(--md-coral); text-decoration: none; border-radius: 12px; font-size: 15px; font-weight: 800; border: 2px solid var(--md-coral); }
+  .success-btn-secondary:hover { background: var(--md-coral-soft); }
+  .success-actions { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 
   /* Footer */
   .footer { text-align: center; padding: 28px 16px 12px; font-size: 12px; color: var(--md-text-3); font-weight: 500; }
@@ -491,7 +494,10 @@
     </div>
     <h2 class="success-title">¡Solicitud enviada!</h2>
     <p class="success-msg">Te enviamos un mail con el resumen. Los mudanceros te contactarán por WhatsApp con su cotización en las próximas horas.</p>
-    <a href="/mi-mudanza" class="success-btn">Ver mi mudanza →</a>
+    <div class="success-actions">
+      <a href="/mi-mudanza" class="success-btn">Ver mi mudanza →</a>
+      <a href="https://mudafy.com.ar" class="success-btn-secondary">Volver a Mudafy</a>
+    </div>
   </div>
 </div>
 
