@@ -1651,6 +1651,46 @@
         <button onclick="confirmarWA()" style="width:100%;padding:13px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Continuar →</button>
       </div>
 
+      <!-- PASO 1: Detalles adicionales (opcional, saltable) -->
+      <div id="pub-detalles" style="display:none;text-align:left;max-height:75vh;overflow-y:auto;padding:.2rem .2rem 1rem">
+        <div style="text-align:center;margin-bottom:1rem">
+          <div style="font-size:1.6rem;margin-bottom:6px">📋</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:.3rem">¿Algo más que deba saber el mudancero?</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.4">Esto ayuda a una mejor cotización · <b>Todo opcional · 2 min</b></div>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px;font-family:var(--mono)">Marcá lo que aplique</div>
+        <div id="pd-checkboxes" style="display:flex;flex-direction:column;gap:6px"></div>
+
+        <!-- Escaleras: input pisos -->
+        <div id="pd-escaleras-pisos" style="display:none;background:#FEF3C7;border-radius:var(--r);padding:10px 12px;margin-top:8px;font-size:12px">
+          <label style="display:flex;align-items:center;gap:10px;color:#78350F">
+            <span>¿Cuántos pisos?</span>
+            <input type="number" id="pd-pisos" min="1" max="10" placeholder="2"
+              style="width:60px;padding:6px 8px;border:1px solid #FDE68A;border-radius:6px;font-family:'Inter',sans-serif;font-size:13px;outline:none"/>
+          </label>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:var(--mono)">¿Algo más?</div>
+        <textarea id="pd-comentario" rows="3" placeholder="Ej: piano, caja fuerte, mascota grande, mueble pesado..."
+          style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);font-family:'Inter',sans-serif;font-size:13px;outline:none;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea>
+
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:var(--mono)">¿Querés agregar fotos? (opcional)</div>
+        <div id="pd-fotos-wrap" style="border:2px dashed var(--border);border-radius:var(--r);padding:14px;text-align:center;cursor:pointer;background:#F5F7FA;transition:all .2s"
+          onclick="document.getElementById('pd-fotos-input').click()">
+          <div style="font-size:22px;margin-bottom:4px">📷</div>
+          <div id="pd-fotos-text" style="font-size:13px;color:var(--text2);font-weight:500">Subir fotos</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">Máx. 5 fotos · 5MB c/u</div>
+        </div>
+        <input type="file" id="pd-fotos-input" accept="image/*" multiple style="display:none" onchange="pdOnFotos(this)"/>
+        <div id="pd-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
+          <button id="pd-btn-enviar" onclick="pdEnviar()" style="width:100%;padding:13px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Enviar solicitud →</button>
+          <button onclick="pdSaltar()" style="width:100%;padding:10px;background:transparent;border:none;color:var(--text2);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:underline">Saltar este paso</button>
+        </div>
+      </div>
+
       <div id="pub-ing" style="display:none;padding:1rem 0">
         <div style="position:relative;width:52px;height:52px;margin:0 auto 1rem">
           <span class="spinner" style="position:absolute;inset:0;width:52px;height:52px;border-width:3px;display:block"></span>
@@ -2630,11 +2670,12 @@
   var _modoPublicacion = null;
   async function _publicar(modo) {
     _modoPublicacion = modo;
-    // Si ya tenemos WA guardado, saltar el paso
+    // Si ya tenemos WA guardado, saltar el paso (vamos directo a detalles)
     var waGuardado = window._clienteWA || (_currentUser ? localStorage.getItem('clienteWA_'+_currentUser.email)||'' : '');
     if (waGuardado && waGuardado.replace(/\D/g,'').length >= 8) {
       document.getElementById('pub-wa').style.display = 'none';
-      _ejecutarPublicacion(modo, waGuardado);
+      document.getElementById('pubModal').classList.add('open');
+      _mostrarPasoDetalles(waGuardado);
       return;
     }
     // Mostrar paso WA
@@ -2660,10 +2701,180 @@
       window._clienteWA = wa;
     }
     document.getElementById('pub-wa').style.display = 'none';
-    _ejecutarPublicacion(_modoPublicacion, wa);
+    // En vez de publicar directo, mostrar el paso de detalles adicionales
+    _mostrarPasoDetalles(wa);
   }
 
-  async function _ejecutarPublicacion(modo, clienteWA) {
+  // ── PASO DETALLES ADICIONALES (opcional, saltable) ──
+  // El cliente puede tildar características del lugar (ascensor, izaje, escaleras…),
+  // agregar un comentario y subir fotos. Todo va al backend como detallesAdicionales.
+
+  var _detallesWA = null;          // guardamos el WA que vino del paso anterior
+  var _pdFotosUrls = [];           // URLs subidas a Blob para fotos opcionales
+  var _pdCarpetaTmp = '';
+
+  var PD_OPCIONES = [
+    { id: 'ascensor',        label: 'Hay ascensor en origen y/o destino' },
+    { id: 'izaje',           label: 'Necesita izaje' },
+    { id: 'soga',            label: 'Necesita soga' },
+    { id: 'balconTerraza',   label: 'Hay balcón / terraza' },
+    { id: 'pasilloAngosto',  label: 'Pasillo angosto o difícil acceso' },
+    { id: 'escaleras',       label: 'Hay escaleras' },
+    { id: 'cocheraGarage',   label: 'Tiene puerta de cochera / garage' },
+    { id: 'estDificil',      label: 'Estacionamiento difícil en la cuadra' },
+    { id: 'mascotaEspecial', label: 'Mascota o algo especial' }
+  ];
+
+  function _mostrarPasoDetalles(wa) {
+    _detallesWA = wa;
+    _pdFotosUrls = [];
+    _pdCarpetaTmp = 'pedidos-detalles/' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+    // Render checkboxes (idempotente)
+    var cont = document.getElementById('pd-checkboxes');
+    if (cont && !cont._rendered) {
+      cont.innerHTML = PD_OPCIONES.map(function(op) {
+        return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text);transition:all .15s" onmouseover="this.style.background=\'#F5F7FA\'" onmouseout="this.style.background=\'transparent\'">'
+          + '<input type="checkbox" id="pd-chk-' + op.id + '" onchange="pdOnToggle(\'' + op.id + '\')" style="margin:0;cursor:pointer"/>'
+          + '<span>' + op.label + '</span>'
+          + '</label>';
+      }).join('');
+      cont._rendered = true;
+    }
+    // Reset campos
+    PD_OPCIONES.forEach(function(op) {
+      var el = document.getElementById('pd-chk-' + op.id);
+      if (el) el.checked = false;
+    });
+    var co = document.getElementById('pd-comentario'); if (co) co.value = '';
+    var pi = document.getElementById('pd-pisos');      if (pi) pi.value = '';
+    var ep = document.getElementById('pd-escaleras-pisos'); if (ep) ep.style.display = 'none';
+    var grid = document.getElementById('pd-fotos-grid'); if (grid) grid.innerHTML = '';
+    var txtF = document.getElementById('pd-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
+
+    document.getElementById('pub-detalles').style.display = 'block';
+    document.getElementById('pubModal').classList.add('open');
+  }
+
+  function pdOnToggle(opId) {
+    // Mostrar input de pisos cuando se tilda escaleras
+    if (opId === 'escaleras') {
+      var chk = document.getElementById('pd-chk-escaleras');
+      var box = document.getElementById('pd-escaleras-pisos');
+      if (chk && box) box.style.display = chk.checked ? 'block' : 'none';
+    }
+  }
+
+  async function pdSubirFotoBlob(file, nombre) {
+    var res = await fetch('/api/upload-foto', {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type || 'image/jpeg',
+        'x-carpeta':    _pdCarpetaTmp,
+        'x-nombre':     nombre
+      },
+      body: file
+    });
+    var json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Error subiendo foto');
+    return json.url;
+  }
+
+  function pdOnFotos(input) {
+    if (!input.files || !input.files.length) return;
+    if (_pdFotosUrls.length + input.files.length > 5) {
+      alert('Podés subir hasta 5 fotos en total.');
+      input.value = '';
+      return;
+    }
+    var grid = document.getElementById('pd-fotos-grid');
+    var btn  = document.getElementById('pd-btn-enviar');
+    Array.from(input.files).forEach(function(file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Una de las fotos pesa más de 5MB.');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:64px;height:64px';
+        var thumb = document.createElement('img');
+        thumb.src = e.target.result;
+        thumb.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);opacity:.6';
+        var ov = document.createElement('div');
+        ov.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(0,0,0,.2);font-size:18px';
+        ov.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>';
+        wrap.appendChild(thumb);
+        wrap.appendChild(ov);
+        grid.appendChild(wrap);
+
+        if (btn) btn.disabled = true;
+        var idx = _pdFotosUrls.length;
+        _pdFotosUrls.push(null);
+        pdSubirFotoBlob(file, 'foto-' + idx)
+          .then(function(url) {
+            _pdFotosUrls[idx] = url;
+            thumb.style.opacity = '1';
+            ov.remove();
+            var x = document.createElement('button');
+            x.type = 'button';
+            x.innerHTML = '✕';
+            x.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#0F1923;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
+            x.onclick = function(ev) {
+              ev.stopPropagation();
+              _pdFotosUrls[idx] = null;
+              wrap.remove();
+              if (_pdFotosUrls.filter(Boolean).length === 0) {
+                document.getElementById('pd-fotos-text').textContent = 'Subir fotos';
+              }
+            };
+            wrap.appendChild(x);
+            document.getElementById('pd-fotos-text').textContent = _pdFotosUrls.filter(Boolean).length + ' foto(s) cargada(s) ✓';
+            if (btn && _pdFotosUrls.every(function(u){ return u !== null; })) btn.disabled = false;
+          })
+          .catch(function() {
+            ov.innerHTML = '<span style="color:#fff;font-size:18px">⚠</span>';
+            if (btn) btn.disabled = false;
+          });
+      };
+      reader.readAsDataURL(file);
+    });
+    input.value = '';
+  }
+
+  function _armarDetallesPayload() {
+    var detalles = {};
+    var algo = false;
+    PD_OPCIONES.forEach(function(op) {
+      var el = document.getElementById('pd-chk-' + op.id);
+      if (el && el.checked) {
+        detalles[op.id] = true;
+        algo = true;
+      }
+    });
+    // Pisos solo si escaleras
+    if (detalles.escaleras) {
+      var pisos = parseInt(document.getElementById('pd-pisos').value) || 0;
+      if (pisos > 0) detalles.escalerasPisos = pisos;
+    }
+    var coment = (document.getElementById('pd-comentario').value || '').trim();
+    if (coment) { detalles.comentario = coment; algo = true; }
+    var fotos = _pdFotosUrls.filter(Boolean);
+    if (fotos.length) { detalles.fotos = fotos; algo = true; }
+    return algo ? detalles : null;
+  }
+
+  function pdSaltar() {
+    document.getElementById('pub-detalles').style.display = 'none';
+    _ejecutarPublicacion(_modoPublicacion, _detallesWA, null);
+  }
+
+  function pdEnviar() {
+    var det = _armarDetallesPayload();
+    document.getElementById('pub-detalles').style.display = 'none';
+    _ejecutarPublicacion(_modoPublicacion, _detallesWA, det);
+  }
+
+  async function _ejecutarPublicacion(modo, clienteWA, detallesAdicionales) {
     document.getElementById('pub-ing').style.display = 'block';
     document.getElementById('pub-ok').style.display = 'none';
     document.getElementById('pubModal').classList.add('open');
@@ -2756,7 +2967,9 @@
           // ── Trackeo de partner B2B (Mudafy / futuro Remax / etc.) ──
           partner:        (_partner && _partner.nombre)    || '',
           partnerAsesor:  (_partner && _partner.asesor)    || '',
-          partnerPropiedad: (_partner && _partner.propiedad) || ''
+          partnerPropiedad: (_partner && _partner.propiedad) || '',
+          // ── Detalles adicionales opcionales (ascensor, izaje, escaleras, fotos…) ──
+          detallesAdicionales: detallesAdicionales || null
         })
       });
     } catch(e) { console.warn(e.message); }
