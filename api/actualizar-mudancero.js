@@ -191,6 +191,38 @@ module.exports = async function handler(req, res) {
       ultimaActualizacion: new Date().toISOString(),
     });
 
+    // ── AUTO-PROMOTE de pre-registrado → completo ──
+    // Si el perfil cumple los requisitos mínimos para empezar a recibir pedidos,
+    // marcamos estadoOnboarding='completo' para que desaparezca el badge "Pre-reg" en admin.
+    // El estado de aprobación (pendiente_revision/aprobado/rechazado) NO cambia acá; eso lo
+    // sigue manejando el admin manualmente.
+    function _toNum(v) {
+      if (v === null || v === undefined || v === '') return 0;
+      return parseInt(String(v).replace(/\./g,'').replace(/[^0-9]/g,''), 10) || 0;
+    }
+    function _packTienePrecio(pk) {
+      if (!pk || typeof pk !== 'object') return false;
+      return _toNum(pk.amb1) > 0 || _toNum(pk.amb2) > 0 || _toNum(pk.amb3) > 0 || _toNum(pk.amb4) > 0;
+    }
+    var sa = Array.isArray(actualizado.serviciosActivos) ? actualizado.serviciosActivos : [];
+    var algunPrecio =
+      (sa.indexOf('esencial') !== -1 && _packTienePrecio(actualizado.preciosEsencial)) ||
+      (sa.indexOf('integral') !== -1 && _packTienePrecio(actualizado.preciosIntegral)) ||
+      (sa.indexOf('llave')    !== -1 && _packTienePrecio(actualizado.preciosLlave)) ||
+      (sa.indexOf('flete')    !== -1 && _toNum(actualizado.precioFleteNuevo) > 0);
+    var tieneVehiculo  = !!actualizado.vehiculo;
+    var tieneFotoVeh   = (Array.isArray(actualizado.fotosVehiculo) && actualizado.fotosVehiculo.filter(Boolean).length > 0) || !!actualizado.fotoCamion;
+    var tieneDni       = !!actualizado.dniFrente;
+    var tieneCobro     = !!actualizado.cbu || !!actualizado.emailMP;
+
+    if (tieneVehiculo && algunPrecio && tieneFotoVeh && tieneDni && tieneCobro) {
+      actualizado.estadoOnboarding = 'completo';
+      // Si era pre-registrado, registramos cuándo completó el onboarding
+      if (perfil.estadoOnboarding === 'pre-registrado') {
+        actualizado.fechaCompletoOnboarding = new Date().toISOString();
+      }
+    }
+
     await setJSON(`mudancero:perfil:${data.email}`, actualizado);
 
     return res.status(200).json({ ok: true });
