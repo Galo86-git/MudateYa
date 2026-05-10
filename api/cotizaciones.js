@@ -2565,7 +2565,7 @@ async function notificarMudanceros(mudanza) {
   // Para el mudancero: NO mostramos asesor ni propiedad (info interna)
   // Solo aclaramos que es un cliente de Mudafy = lead premium
   const bannerMudafyMudancero = mudanza.partner === 'mudafy'
-    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🏠</span>Cliente de Mudafy · Acaba de cerrar la compra de su nuevo hogar</div>`
+    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🤝</span>Cliente de Mudafy</div>`
     : '';
 
   const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
