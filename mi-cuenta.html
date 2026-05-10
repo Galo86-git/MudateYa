@@ -1659,10 +1659,10 @@ function confirmarAccion(opts) {
         <!-- Se llena/oculta desde renderBannerOnboarding() según estadoOnboarding y campos faltantes -->
         <div id="bannerOnboarding" style="display:none;background:linear-gradient(135deg,#FEF3C7 0%,#FDE68A 100%);border:1px solid #F59E0B;border-radius:14px;padding:18px 20px;margin-bottom:1.2rem;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
           <div style="display:flex;align-items:flex-start;gap:14px">
-            <div style="font-size:28px;line-height:1">⏳</div>
+            <div id="bannerOnboardingIcon" style="font-size:28px;line-height:1">⏳</div>
             <div style="flex:1">
-              <div style="font-weight:700;color:#78350F;font-size:15px;margin-bottom:4px">Tu perfil está incompleto</div>
-              <div style="font-size:13px;color:#92400E;line-height:1.5;margin-bottom:10px">Para empezar a recibir pedidos, completá los datos de tu vehículo, servicios y precios. Te toma <strong>5 minutos</strong>.</div>
+              <div id="bannerOnboardingTitle" style="font-weight:700;color:#78350F;font-size:15px;margin-bottom:4px">Tu perfil está incompleto</div>
+              <div id="bannerOnboardingDesc" style="font-size:13px;color:#92400E;line-height:1.5;margin-bottom:10px">Para empezar a recibir pedidos, completá los datos de tu vehículo, servicios y precios. Te toma <strong>5 minutos</strong>.</div>
               <div id="checklistOnboarding" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#78350F;font-family:var(--mono);line-height:1.6"></div>
             </div>
           </div>
@@ -1733,7 +1733,7 @@ function confirmarAccion(opts) {
                 <option value="">— Otra ciudad —</option>
               </select>
             </div>
-            <div class="field"><label class="field-label">Zonas adicionales</label><input type="text" id="pf-zonas-extra" placeholder="Ej: Tigre, San Fernando, Escobar"/></div>
+            <input type="hidden" id="pf-zonas-extra" value=""/>
           </div>
         </div>
         <div class="card" style="margin-bottom:1rem">
@@ -4359,15 +4359,42 @@ function renderBannerOnboarding() {
     return;
   }
 
-  // Render del checklist
-  checklist.innerHTML = faltantes.map(function(f) {
-    return '<div>○ ' + f.icon + ' ' + f.txt + '</div>';
-  }).join('');
+  // Referencias a las partes del banner que cambian según estado
+  var bIcon  = document.getElementById('bannerOnboardingIcon');
+  var bTitle = document.getElementById('bannerOnboardingTitle');
+  var bDesc  = document.getElementById('bannerOnboardingDesc');
 
-  // Si está completo (sin faltantes) pero sigue marcado pre-registrado, mostramos un mensaje
-  // que avisa que ya puede guardar para activar
   if (faltantes.length === 0) {
-    checklist.innerHTML = '<div style="color:#22C36A;font-weight:600">✓ Tenés todo cargado · Guardá los cambios para que verifiquemos tu perfil</div>';
+    // ── ESTADO LISTO: todo cargado, falta solo guardar ──
+    banner.style.background = 'linear-gradient(135deg,#DCFCE7 0%,#BBF7D0 100%)';
+    banner.style.borderColor = '#22C36A';
+    if (bIcon)  bIcon.textContent = '✓';
+    if (bIcon)  bIcon.style.color = '#15803D';
+    if (bTitle) {
+      bTitle.textContent = 'Tu perfil está completo';
+      bTitle.style.color = '#14532D';
+    }
+    if (bDesc) {
+      bDesc.innerHTML = 'Guardá los cambios para que verifiquemos tu perfil. En menos de <strong>24hs</strong> empezás a recibir pedidos.';
+      bDesc.style.color = '#166534';
+    }
+    checklist.innerHTML = '';
+  } else {
+    // ── ESTADO INCOMPLETO: faltan items ──
+    banner.style.background = 'linear-gradient(135deg,#FEF3C7 0%,#FDE68A 100%)';
+    banner.style.borderColor = '#F59E0B';
+    if (bIcon)  { bIcon.textContent = '⏳'; bIcon.style.color = ''; }
+    if (bTitle) {
+      bTitle.textContent = 'Tu perfil está incompleto';
+      bTitle.style.color = '#78350F';
+    }
+    if (bDesc) {
+      bDesc.innerHTML = 'Para empezar a recibir pedidos, completá los datos de tu vehículo, servicios y precios. Te toma <strong>5 minutos</strong>.';
+      bDesc.style.color = '#92400E';
+    }
+    checklist.innerHTML = faltantes.map(function(f) {
+      return '<div>○ ' + f.icon + ' ' + f.txt + '</div>';
+    }).join('');
   }
 
   banner.style.display = 'block';
