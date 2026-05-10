@@ -72,21 +72,36 @@ module.exports = async function handler(req, res) {
 
     const emailSlug = data.email.replace(/[@.]/g, '-');
 
-    // Subir fotos nuevas si vienen en base64
+    // Subir fotos nuevas si vienen en base64, aceptar URLs si ya están subidas
     let fotoUrl     = perfil.foto      || '';
     let fotoCamionUrl = perfil.fotoCamion || '';
     let fotosVehUrls  = perfil.fotosVehiculo || [];
+    let dniFrenteUrl  = perfil.dniFrente || '';
+    let dniDorsoUrl   = perfil.dniDorso  || '';
+    let dniAnalisisData = perfil.dniAnalisis || null;
 
-    if (data.foto && data.foto.startsWith('data:image')) {
-      fotoUrl = await subirFotoBlob(data.foto, emailSlug + '-perfil') || fotoUrl;
+    // Foto de perfil: aceptar base64 (subir) o URL ya subida (mantener)
+    if (data.foto !== undefined) {
+      if (data.foto && data.foto.startsWith && data.foto.startsWith('data:image')) {
+        fotoUrl = await subirFotoBlob(data.foto, emailSlug + '-perfil') || fotoUrl;
+      } else if (data.foto && data.foto.startsWith && data.foto.startsWith('http')) {
+        fotoUrl = data.foto;
+      }
     }
-    if (data.fotoCamion && data.fotoCamion.startsWith('data:image')) {
-      fotoCamionUrl = await subirFotoBlob(data.fotoCamion, emailSlug + '-camion') || fotoCamionUrl;
+    // Foto camión (legacy single)
+    if (data.fotoCamion !== undefined) {
+      if (data.fotoCamion && data.fotoCamion.startsWith && data.fotoCamion.startsWith('data:image')) {
+        fotoCamionUrl = await subirFotoBlob(data.fotoCamion, emailSlug + '-camion') || fotoCamionUrl;
+      } else if (data.fotoCamion && data.fotoCamion.startsWith && data.fotoCamion.startsWith('http')) {
+        fotoCamionUrl = data.fotoCamion;
+      }
     }
+    // Fotos vehículo (array): mezcla de base64 (subir) y URLs (mantener)
     if (data.fotosVehiculo && Array.isArray(data.fotosVehiculo) && data.fotosVehiculo.length) {
       fotosVehUrls = [];
       for (var i = 0; i < data.fotosVehiculo.length; i++) {
         var f = data.fotosVehiculo[i];
+        if (!f) continue;
         if (f.startsWith('data:image')) {
           var url = await subirFotoBlob(f, emailSlug + '-veh-' + i);
           if (url) fotosVehUrls.push(url);
@@ -95,6 +110,26 @@ module.exports = async function handler(req, res) {
         }
       }
       if (!fotosVehUrls.length) fotosVehUrls = perfil.fotosVehiculo || [];
+    }
+    // DNI frente: base64 o URL
+    if (data.dniFrente !== undefined) {
+      if (data.dniFrente && data.dniFrente.startsWith && data.dniFrente.startsWith('data:image')) {
+        dniFrenteUrl = await subirFotoBlob(data.dniFrente, emailSlug + '-dni-frente') || dniFrenteUrl;
+      } else if (data.dniFrente && data.dniFrente.startsWith && data.dniFrente.startsWith('http')) {
+        dniFrenteUrl = data.dniFrente;
+      }
+    }
+    // DNI dorso: base64 o URL
+    if (data.dniDorso !== undefined) {
+      if (data.dniDorso && data.dniDorso.startsWith && data.dniDorso.startsWith('data:image')) {
+        dniDorsoUrl = await subirFotoBlob(data.dniDorso, emailSlug + '-dni-dorso') || dniDorsoUrl;
+      } else if (data.dniDorso && data.dniDorso.startsWith && data.dniDorso.startsWith('http')) {
+        dniDorsoUrl = data.dniDorso;
+      }
+    }
+    // DNI análisis (objeto con datos extraídos del DNI por OpenAI)
+    if (data.dniAnalisis !== undefined) {
+      dniAnalisisData = data.dniAnalisis || dniAnalisisData;
     }
 
     // Actualizar campos del perfil
@@ -150,6 +185,9 @@ module.exports = async function handler(req, res) {
       foto:          fotoUrl,
       fotoCamion:    fotoCamionUrl,
       fotosVehiculo: fotosVehUrls,
+      dniFrente:     dniFrenteUrl,
+      dniDorso:      dniDorsoUrl,
+      dniAnalisis:   dniAnalisisData,
       ultimaActualizacion: new Date().toISOString(),
     });
 
