@@ -776,7 +776,7 @@ module.exports = async function handler(req, res) {
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
-      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad } = req.body;
+      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
@@ -829,7 +829,31 @@ module.exports = async function handler(req, res) {
       const partnerAsesorNorm    = (typeof partnerAsesor === 'string' && partnerAsesor.length < 100) ? partnerAsesor : '';
       const partnerPropiedadNorm = (typeof partnerPropiedad === 'string' && partnerPropiedad.length < 100) ? partnerPropiedad : '';
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      // Sanitizar detallesAdicionales (opcionales, agregados por el cliente antes de enviar).
+      // Whitelist de claves booleanas + escalerasPisos (número 1-20) + comentario (string ≤500) + fotos (array de URLs)
+      let detallesNorm = null;
+      if (detallesAdicionales && typeof detallesAdicionales === 'object') {
+        const FLAGS = ['ascensor','izaje','soga','balconTerraza','pasilloAngosto','escaleras','cocheraGarage','estDificil','mascotaEspecial'];
+        const tmp = {};
+        FLAGS.forEach(function(k) { if (detallesAdicionales[k] === true) tmp[k] = true; });
+        if (detallesAdicionales.escalerasPisos) {
+          const p = parseInt(detallesAdicionales.escalerasPisos);
+          if (p > 0 && p <= 20) tmp.escalerasPisos = p;
+        }
+        if (typeof detallesAdicionales.comentario === 'string') {
+          const c = detallesAdicionales.comentario.trim().slice(0, 500);
+          if (c.length) tmp.comentario = c;
+        }
+        if (Array.isArray(detallesAdicionales.fotos)) {
+          const fs = detallesAdicionales.fotos
+            .filter(function(u) { return typeof u === 'string' && u.startsWith('http') && u.length < 600; })
+            .slice(0, 5);
+          if (fs.length) tmp.fotos = fs;
+        }
+        if (Object.keys(tmp).length > 0) detallesNorm = tmp;
+      }
+
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -1871,6 +1895,8 @@ module.exports = async function handler(req, res) {
           origenAsesor:     p.origenAsesor === true,
           refAliado:        p.refAliado || null,
           asesorEmail:      p.asesorEmail || null,
+          // Detalles adicionales que cargó el cliente (ascensor, fotos, etc) — para mostrar en admin/mi-cuenta
+          detallesAdicionales: p.detallesAdicionales || null,
         });
       }
 
@@ -2549,6 +2575,171 @@ module.exports = async function handler(req, res) {
 // ════════════════════════════════════════════════════
 // EMAILS
 // ════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
+// PDF DETALLES ADICIONALES DEL PEDIDO
+// Genera un PDF con las características del lugar que cargó el cliente
+// (ascensor, izaje, escaleras, etc), el comentario libre y las fotos
+// adjuntas. Se adjunta al mail del mudancero como base64.
+// Devuelve null si no hay datos para generar (no incluye PDF al mail).
+// ════════════════════════════════════════════════════
+async function generarPDFDetallesBase64(mudanza) {
+  if (!mudanza || !mudanza.detallesAdicionales) return null;
+  const d = mudanza.detallesAdicionales;
+  const hayAlgo = Object.keys(d).length > 0;
+  if (!hayAlgo) return null;
+
+  const PDFDocument = require('pdfkit');
+
+  // Labels legibles de las flags
+  const LABELS = {
+    ascensor:        'Hay ascensor en origen y/o destino',
+    izaje:           'Necesita izaje',
+    soga:            'Necesita soga',
+    balconTerraza:   'Hay balcón / terraza',
+    pasilloAngosto:  'Pasillo angosto o difícil acceso',
+    escaleras:       'Hay escaleras',
+    cocheraGarage:   'Tiene puerta de cochera / garage',
+    estDificil:      'Estacionamiento difícil en la cuadra',
+    mascotaEspecial: 'Mascota o algo especial'
+  };
+
+  // Pre-fetch de las fotos a buffer (PDFKit necesita buffers, no URLs)
+  const fotosBuffers = [];
+  if (Array.isArray(d.fotos)) {
+    for (let i = 0; i < d.fotos.length; i++) {
+      try {
+        const r = await fetch(d.fotos[i]);
+        if (r.ok) {
+          const ab = await r.arrayBuffer();
+          fotosBuffers.push(Buffer.from(ab));
+        }
+      } catch(e) { /* ignorar foto que falla */ }
+    }
+  }
+
+  return new Promise(function(resolve, reject) {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 },
+        info: { Title: 'Detalles adicionales · ' + (mudanza.id || '') }
+      });
+      const chunks = [];
+      doc.on('data', c => chunks.push(c));
+      doc.on('end', function() {
+        resolve(Buffer.concat(chunks).toString('base64'));
+      });
+      doc.on('error', reject);
+
+      const PW = 595.28;
+      const MARGIN = 50;
+      const CONTENT_W = PW - MARGIN * 2;
+
+      // ── Header navy con logo
+      doc.rect(0, 0, PW, 70).fill('#003580');
+      doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(22)
+         .text('MudateYa', MARGIN, 28);
+      doc.fontSize(11).fillColor('#FFFFFF').opacity(0.7)
+         .text('Detalles adicionales del pedido', MARGIN, 50)
+         .opacity(1);
+
+      let y = 100;
+
+      // ── ID del pedido
+      doc.fillColor('#94A3B8').font('Helvetica').fontSize(9)
+         .text('PEDIDO', MARGIN, y);
+      doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(14)
+         .text(mudanza.id || '—', MARGIN, y + 12);
+      y += 45;
+
+      // ── Datos del pedido
+      doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
+         .text('DATOS DEL PEDIDO', MARGIN, y);
+      y += 18;
+      doc.fillColor('#0F1923').font('Helvetica').fontSize(10);
+      function row(label, val) {
+        doc.fillColor('#64748B').font('Helvetica').fontSize(9)
+           .text(label, MARGIN, y, { width: 100 });
+        doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(10)
+           .text(val || '—', MARGIN + 110, y, { width: CONTENT_W - 110 });
+        y += 18;
+      }
+      row('Origen', mudanza.desde);
+      row('Destino', mudanza.hasta);
+      row('Tamaño', mudanza.ambientes);
+      row('Fecha', mudanza.fecha);
+      y += 10;
+
+      // ── Características del lugar (checkboxes marcados)
+      const flagsActivas = Object.keys(LABELS).filter(function(k) { return d[k] === true; });
+      if (flagsActivas.length > 0) {
+        doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
+           .text('CARACTERÍSTICAS DEL LUGAR', MARGIN, y);
+        y += 18;
+        flagsActivas.forEach(function(k) {
+          let label = LABELS[k];
+          if (k === 'escaleras' && d.escalerasPisos) {
+            label += ' (' + d.escalerasPisos + ' piso' + (d.escalerasPisos > 1 ? 's' : '') + ')';
+          }
+          doc.fillColor('#22C36A').font('Helvetica-Bold').fontSize(10).text('✓', MARGIN, y);
+          doc.fillColor('#0F1923').font('Helvetica').fontSize(10).text(label, MARGIN + 16, y, { width: CONTENT_W - 16 });
+          y += 16;
+        });
+        y += 10;
+      }
+
+      // ── Comentario libre
+      if (d.comentario) {
+        doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
+           .text('COMENTARIO DEL CLIENTE', MARGIN, y);
+        y += 18;
+        doc.fillColor('#F8FAFC').rect(MARGIN, y, CONTENT_W, 10).fill(); // separador suave
+        doc.fillColor('#0F1923').font('Helvetica').fontSize(10)
+           .text(d.comentario, MARGIN + 4, y, { width: CONTENT_W - 8, lineGap: 3 });
+        y = doc.y + 16;
+      }
+
+      // ── Fotos
+      if (fotosBuffers.length > 0) {
+        // Si nos queda poco espacio en la página, saltamos a la siguiente
+        if (y > 600) { doc.addPage(); y = 50; }
+        doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
+           .text('FOTOS DEL LUGAR', MARGIN, y);
+        y += 18;
+        // 2 fotos por fila, cada una ~240px ancho
+        const fotoW = (CONTENT_W - 10) / 2;
+        const fotoH = 180;
+        let col = 0;
+        let rowY = y;
+        fotosBuffers.forEach(function(buf, idx) {
+          const x = MARGIN + col * (fotoW + 10);
+          try {
+            doc.image(buf, x, rowY, { width: fotoW, height: fotoH, fit: [fotoW, fotoH], align: 'center' });
+          } catch(e) { /* foto inválida, skip */ }
+          col++;
+          if (col >= 2) {
+            col = 0;
+            rowY += fotoH + 10;
+            if (rowY > 700 && idx < fotosBuffers.length - 1) {
+              doc.addPage();
+              rowY = 50;
+            }
+          }
+        });
+      }
+
+      // ── Footer
+      const FH = doc.page.height;
+      doc.fillColor('#94A3B8').font('Helvetica').fontSize(8)
+         .text('Generado por MudateYa · mudateya.ar', MARGIN, FH - 30, { width: CONTENT_W, align: 'center' });
+
+      doc.end();
+    } catch(err) {
+      reject(err);
+    }
+  });
+}
+
 async function notificarMudanceros(mudanza) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const adminEmail = process.env.ADMIN_EMAIL;
@@ -2568,9 +2759,15 @@ async function notificarMudanceros(mudanza) {
     ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🤝</span>Cliente de Mudafy</div>`
     : '';
 
+  // Banner detalles adicionales — aparece si el cliente cargó detalles antes de enviar
+  const bannerDetalles = (mudanza.detallesAdicionales && Object.keys(mudanza.detallesAdicionales).length > 0)
+    ? `<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:11px 28px;font-size:13px;color:#1A6FFF;font-weight:600;display:flex;align-items:center"><span style="background:#1A6FFF;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">📋</span>El cliente agregó detalles adicionales · revisalos en el PDF adjunto</div>`
+    : '';
+
   const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
     <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
     ${bannerMudafyMudancero}
+    ${bannerDetalles}
     <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${tipoLabel} · ${mudanza.id}</div>
     <div style="padding:28px">
       <p style="font-size:15px;color:#0F1923;margin:0 0 20px">Hola${nombreMudancero ? ' ' + nombreMudancero : ''}, hay un nuevo pedido disponible en tu zona.</p>
@@ -2677,16 +2874,35 @@ async function notificarMudanceros(mudanza) {
       } catch(e) { /* ignorar errores individuales */ }
     }
 
+    // ── Generar PDF de detalles adicionales (una sola vez para todos los mudanceros) ──
+    let pdfDetallesBase64 = null;
+    let pdfDetallesNombre = null;
+    try {
+      if (mudanza.detallesAdicionales) {
+        pdfDetallesBase64 = await generarPDFDetallesBase64(mudanza);
+        pdfDetallesNombre = 'Detalles-' + (mudanza.id || 'pedido') + '.pdf';
+      }
+    } catch(e) {
+      console.warn('Error generando PDF detalles:', e.message);
+    }
+
     // Enviar en lotes de 5 para no saturar la API
     for (let i = 0; i < destinatarios.length; i += 5) {
       const lote = destinatarios.slice(i, i + 5);
       await Promise.all(lote.map(function(dest) {
-        return resend.emails.send({
+        const params = {
           from: 'MudateYa <noreply@mudateya.ar>',
           to: dest.email,
           subject: `${tipoLabel} disponible — ${mudanza.desde} → ${mudanza.hasta}`,
           html: emailHtml(dest.nombre),
-        }).catch(function(e) { console.error('Email mudancero error:', dest.email, e.message); });
+        };
+        if (pdfDetallesBase64) {
+          params.attachments = [{
+            filename: pdfDetallesNombre,
+            content:  pdfDetallesBase64,
+          }];
+        }
+        return resend.emails.send(params).catch(function(e) { console.error('Email mudancero error:', dest.email, e.message); });
       }));
     }
 
