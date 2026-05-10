@@ -1886,6 +1886,81 @@ function confirmarAccion(opts) {
           </div>
         </div>
 
+        <!-- ── FOTOS Y DOCUMENTACIÓN ── -->
+        <style>
+          .pf-up-area{border:2px dashed #CBD5E1;border-radius:12px;padding:1.2rem;text-align:center;cursor:pointer;transition:all .2s;background:#F5F7FA}
+          .pf-up-area:hover{border-color:#003580;background:rgba(0,53,128,.04)}
+          .pf-up-area.has-file{border-color:#22C36A;background:rgba(34,195,106,.06)}
+          .pf-up-icon{font-size:1.6rem;margin-bottom:4px}
+          .pf-up-text{font-size:13px;color:#475569;margin-bottom:2px;font-weight:500}
+          .pf-up-sub{font-size:11px;color:#64748B;font-family:var(--mono)}
+          .pf-up-preview{max-width:120px;max-height:120px;border-radius:8px;margin:0 auto 6px;display:none;object-fit:cover}
+          .pf-dni-result{display:none;background:#F0FDF4;border:1px solid rgba(34,195,106,.25);border-radius:10px;padding:.8rem 1rem;margin-top:.8rem;font-size:12px;color:#166534;font-family:var(--mono);line-height:1.6}
+          .pf-dni-result.show{display:block}
+          .pf-dni-result.warn{background:#FEF3C7;border-color:#FDE68A;color:#92400E}
+          .pf-dni-loading{display:none;align-items:center;justify-content:center;gap:8px;background:#F1F5F9;border-radius:10px;padding:.6rem;margin-top:.6rem;font-size:12px;color:#64748B;font-family:var(--mono)}
+          .pf-dni-loading.show{display:flex}
+          .pf-spinner{display:inline-block;width:14px;height:14px;border:2px solid #CBD5E1;border-top-color:#003580;border-radius:50%;animation:pfSpin .7s linear infinite}
+          @keyframes pfSpin{to{transform:rotate(360deg)}}
+          .pf-fotos-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+        </style>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-header"><span class="card-title">📷 Foto o logo de perfil</span></div>
+          <div style="padding:1.2rem">
+            <div class="pf-up-area" id="pf-uploadArea" onclick="document.getElementById('pf-fotoInput').click()">
+              <img id="pf-fotoPreview" class="pf-up-preview" alt="preview"/>
+              <div class="pf-up-icon" id="pf-uploadIcon">📷</div>
+              <div class="pf-up-text" id="pf-uploadText">Subir foto</div>
+              <div class="pf-up-sub">Cámara o galería · Máx. 5MB · Se muestra en tu perfil público</div>
+            </div>
+            <input type="file" id="pf-fotoInput" accept="image/*" onchange="pfOnFotoPerfil(this)" style="display:none"/>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-header"><span class="card-title">🚛 Fotos del vehículo <span style="color:#94A3B8;font-size:11px;font-weight:400;margin-left:6px">— al menos una</span></span></div>
+          <div style="padding:1.2rem">
+            <div class="pf-up-area" id="pf-uploadAreaCamion" onclick="document.getElementById('pf-fotoCamionInput').click()">
+              <div class="pf-up-icon" id="pf-uploadIconCamion">🚛</div>
+              <div class="pf-up-text" id="pf-uploadTextCamion">Subir fotos del vehículo</div>
+              <div class="pf-up-sub">Una o varias · Cámara o galería · Máx. 5MB c/u</div>
+            </div>
+            <input type="file" id="pf-fotoCamionInput" accept="image/*" multiple onchange="pfOnFotosVehiculo(this)" style="display:none"/>
+            <div class="pf-fotos-grid" id="pf-fotosVehiculoGrid"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-header"><span class="card-title">🪪 Verificación de DNI <span style="color:#94A3B8;font-size:11px;font-weight:400;margin-left:6px">— frente requerido</span></span></div>
+          <div style="padding:1.2rem">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.6rem">
+              <div>
+                <div style="font-size:11px;color:#475569;margin-bottom:6px;font-weight:600">Frente</div>
+                <div class="pf-up-area" id="pf-uploadDniFrente" onclick="document.getElementById('pf-dniFrente').click()">
+                  <img id="pf-dniFrente-preview" class="pf-up-preview" alt="DNI frente"/>
+                  <div class="pf-up-icon" id="pf-dniFrente-icon">🪪</div>
+                  <div class="pf-up-text" id="pf-dniFrente-text">Subir frente</div>
+                  <div class="pf-up-sub">Máx. 5MB · Análisis automático</div>
+                </div>
+                <input type="file" id="pf-dniFrente" accept="image/*" style="display:none" onchange="pfOnDNIUpload(this,'frente')"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#475569;margin-bottom:6px;font-weight:600">Dorso <span style="color:#94A3B8;font-weight:400">(opcional)</span></div>
+                <div class="pf-up-area" id="pf-uploadDniDorso" onclick="document.getElementById('pf-dniDorso').click()">
+                  <img id="pf-dniDorso-preview" class="pf-up-preview" alt="DNI dorso"/>
+                  <div class="pf-up-icon" id="pf-dniDorso-icon">🪪</div>
+                  <div class="pf-up-text" id="pf-dniDorso-text">Subir dorso</div>
+                  <div class="pf-up-sub">Máx. 5MB</div>
+                </div>
+                <input type="file" id="pf-dniDorso" accept="image/*" style="display:none" onchange="pfOnDNIUpload(this,'dorso')"/>
+              </div>
+            </div>
+            <div class="pf-dni-loading" id="pf-dniLoading"><span class="pf-spinner"></span> Analizando DNI con IA…</div>
+            <div class="pf-dni-result" id="pf-dniResult"></div>
+          </div>
+        </div>
+
         <div class="card" style="margin-bottom:1rem">
           <div class="card-header"><span class="card-title">🏦 Datos para cobrar</span></div>
           <div style="padding:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -4221,6 +4296,7 @@ async function cargarPreciosLeads(){
   }
   // Después de cargar todo el perfil, renderizar el banner de onboarding (si aplica)
   try { renderBannerOnboarding(); } catch(e) { console.warn('banner onboarding:', e.message); }
+  try { pfCargarFotosExistentes(); } catch(e) { console.warn('pfCargarFotos:', e.message); }
 }
 
 // ── BANNER DE ONBOARDING ──
@@ -4283,6 +4359,278 @@ function renderBannerOnboarding() {
   }
 
   banner.style.display = 'block';
+}
+
+// ── FOTOS Y DNI EN EDITOR DE PERFIL ──
+// Patrón: cada foto se sube a Vercel Blob (vía /api/upload-foto), guardamos la URL
+// en variables módulo. Al apretar "Guardar cambios" esas URLs se mandan al backend
+// junto con los demás campos del perfil (vía guardarPerfil → actualizar-mudancero).
+// El DNI se analiza automáticamente con OpenAI (vía /api/analizar-foto) y muestra
+// los datos extraídos al mudancero como feedback visual.
+
+var _pfUrlPerfil    = '';
+var _pfUrlsVehiculo = [];
+var _pfUrlDniFrente = '';
+var _pfUrlDniDorso  = '';
+var _pfDniData      = { frente: null, dorso: null, analisis: null };
+var _pfCarpetaTmp   = 'mudanceros/perfil-' + Date.now();
+
+async function pfSubirABlob(file, carpeta, nombre) {
+  var res = await fetch('/api/upload-foto', {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type || 'image/jpeg',
+      'x-carpeta': carpeta,
+      'x-nombre':  nombre,
+    },
+    body: file,
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error subiendo foto');
+  return json.url;
+}
+
+function pfCap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ── Foto de perfil ──
+function pfOnFotoPerfil(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) { alert('La foto pesa más de 5MB. Reducila e intentá de nuevo.'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var preview = document.getElementById('pf-fotoPreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('pf-uploadIcon').style.display = 'none';
+    document.getElementById('pf-uploadText').textContent = 'Subiendo… ⏳';
+    document.getElementById('pf-uploadArea').classList.add('has-file');
+    pfSubirABlob(file, _pfCarpetaTmp, 'perfil')
+      .then(function(url) {
+        _pfUrlPerfil = url;
+        document.getElementById('pf-uploadText').textContent = 'Foto cargada ✓';
+      })
+      .catch(function(err) {
+        document.getElementById('pf-uploadText').textContent = '⚠ Error — intentá de nuevo';
+        console.warn('upload perfil:', err.message);
+      });
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Fotos de vehículo (múltiples) ──
+function pfOnFotosVehiculo(input) {
+  if (!input.files || !input.files.length) return;
+  var grid = document.getElementById('pf-fotosVehiculoGrid');
+  Array.from(input.files).forEach(function(file) {
+    if (file.size > 5 * 1024 * 1024) { alert('Una foto pesa más de 5MB. Reducila e intentá de nuevo.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataUrl = e.target.result;
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:80px;height:80px';
+      var thumb = document.createElement('img');
+      thumb.src = dataUrl;
+      thumb.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;opacity:.7';
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(0,0,0,.15)';
+      overlay.innerHTML = '<span class="pf-spinner"></span>';
+      wrap.appendChild(thumb);
+      wrap.appendChild(overlay);
+      grid.appendChild(wrap);
+      document.getElementById('pf-uploadIconCamion').style.display = 'none';
+      document.getElementById('pf-uploadTextCamion').textContent = 'Subiendo… ⏳';
+      document.getElementById('pf-uploadAreaCamion').classList.add('has-file');
+      var idx = _pfUrlsVehiculo.length;
+      _pfUrlsVehiculo.push(null);
+      pfSubirABlob(file, _pfCarpetaTmp, 'vehiculo-' + idx)
+        .then(function(url) {
+          _pfUrlsVehiculo[idx] = url;
+          thumb.style.opacity = '1';
+          overlay.remove();
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.innerHTML = '✕';
+          btn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
+          btn.onclick = function(ev) {
+            ev.stopPropagation();
+            _pfUrlsVehiculo[idx] = null;  // marcamos como borrado, no usamos splice por idx
+            wrap.remove();
+            var count = _pfUrlsVehiculo.filter(Boolean).length;
+            if (count === 0) {
+              document.getElementById('pf-uploadIconCamion').style.display = '';
+              document.getElementById('pf-uploadTextCamion').textContent = 'Subir fotos del vehículo';
+              document.getElementById('pf-uploadAreaCamion').classList.remove('has-file');
+            } else {
+              document.getElementById('pf-uploadTextCamion').textContent = count + ' foto' + (count > 1 ? 's' : '') + ' cargada' + (count > 1 ? 's' : '') + ' ✓';
+            }
+          };
+          wrap.appendChild(btn);
+          var total = _pfUrlsVehiculo.filter(Boolean).length;
+          document.getElementById('pf-uploadTextCamion').textContent = total + ' foto' + (total > 1 ? 's' : '') + ' cargada' + (total > 1 ? 's' : '') + ' ✓ (tocá para agregar más)';
+        })
+        .catch(function() {
+          overlay.innerHTML = '<span style="color:#ff6b6b;font-size:18px">⚠</span>';
+        });
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+// ── DNI (frente / dorso) con análisis automático del frente ──
+function pfOnDNIUpload(input, lado) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) { alert('La foto pesa más de 5MB. Reducila e intentá de nuevo.'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var b64 = e.target.result.split(',')[1];
+    var dataUrl = e.target.result;
+    var preview = document.getElementById('pf-dni' + pfCap(lado) + '-preview');
+    var icon    = document.getElementById('pf-dni' + pfCap(lado) + '-icon');
+    var text    = document.getElementById('pf-dni' + pfCap(lado) + '-text');
+    var area    = document.getElementById('pf-uploadDni' + pfCap(lado));
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    icon.style.display = 'none';
+    text.textContent = 'Subiendo… ⏳';
+    area.classList.add('has-file');
+    _pfDniData[lado] = { b64: b64, mediaType: file.type || 'image/jpeg', dataUrl: dataUrl };
+    pfSubirABlob(file, _pfCarpetaTmp, 'dni-' + lado)
+      .then(function(url) {
+        if (lado === 'frente') { _pfUrlDniFrente = url; }
+        else                   { _pfUrlDniDorso  = url; }
+        text.textContent = lado === 'frente' ? 'Frente cargado ✓' : 'Dorso cargado ✓';
+        // Disparar análisis solo del frente
+        if (lado === 'frente') pfAnalizarDni();
+      })
+      .catch(function() {
+        text.textContent = '⚠ Error — intentá de nuevo';
+      });
+  };
+  reader.readAsDataURL(file);
+}
+
+async function pfAnalizarDni() {
+  if (!_pfDniData.frente || !_pfDniData.frente.b64) return;
+  var loading = document.getElementById('pf-dniLoading');
+  var result  = document.getElementById('pf-dniResult');
+  loading.classList.add('show');
+  result.classList.remove('show');
+  try {
+    var res = await fetch('/api/analizar-foto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imagen:    _pfDniData.frente.b64,
+        mediaType: _pfDniData.frente.mediaType,
+        tipo:      'dni'
+      })
+    });
+    var data = await res.json();
+    loading.classList.remove('show');
+    if (data && (data.legible === true || data.nombre)) {
+      _pfDniData.analisis = data;
+      var rows = [];
+      if (data.nombre)   rows.push('Nombre: <b>' + data.nombre + (data.apellido ? ' ' + data.apellido : '') + '</b>');
+      if (data.numero)   rows.push('DNI: <b>' + data.numero + '</b>');
+      if (data.fechaNacimiento) rows.push('Nacimiento: <b>' + data.fechaNacimiento + '</b>');
+      result.innerHTML = '✓ DNI analizado<br>' + rows.join(' · ');
+      result.classList.remove('warn');
+      result.classList.add('show');
+    } else {
+      result.innerHTML = '⚠ No pudimos leer los datos del DNI · La foto se subió igual, vamos a revisarla manualmente';
+      result.classList.add('warn');
+      result.classList.add('show');
+    }
+  } catch(e) {
+    loading.classList.remove('show');
+    // Si el endpoint no existe o falla, no es crítico — la foto ya se subió a Blob.
+    console.warn('Análisis DNI falló:', e.message);
+  }
+}
+
+// ── Cargar fotos existentes del perfil al abrir mi-cuenta ──
+function pfCargarFotosExistentes() {
+  var p = mudanceroPerfilRedis || {};
+
+  // Foto de perfil
+  if (p.foto) {
+    _pfUrlPerfil = p.foto;
+    var preview = document.getElementById('pf-fotoPreview');
+    if (preview) {
+      preview.src = p.foto;
+      preview.style.display = 'block';
+      document.getElementById('pf-uploadIcon').style.display = 'none';
+      document.getElementById('pf-uploadText').textContent = 'Foto cargada ✓ (tocá para cambiar)';
+      document.getElementById('pf-uploadArea').classList.add('has-file');
+    }
+  }
+
+  // Fotos de vehículo
+  var fotosV = Array.isArray(p.fotosVehiculo) ? p.fotosVehiculo.filter(Boolean) : [];
+  if (!fotosV.length && p.fotoCamion) fotosV = [p.fotoCamion];
+  if (fotosV.length) {
+    var grid = document.getElementById('pf-fotosVehiculoGrid');
+    if (grid) {
+      _pfUrlsVehiculo = fotosV.slice();
+      fotosV.forEach(function(url, i) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:80px;height:80px';
+        var thumb = document.createElement('img');
+        thumb.src = url;
+        thumb.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0';
+        wrap.appendChild(thumb);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.innerHTML = '✕';
+        btn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;padding:0';
+        btn.onclick = function(ev) {
+          ev.stopPropagation();
+          _pfUrlsVehiculo[i] = null;
+          wrap.remove();
+          var count = _pfUrlsVehiculo.filter(Boolean).length;
+          if (count === 0) {
+            document.getElementById('pf-uploadIconCamion').style.display = '';
+            document.getElementById('pf-uploadTextCamion').textContent = 'Subir fotos del vehículo';
+            document.getElementById('pf-uploadAreaCamion').classList.remove('has-file');
+          }
+        };
+        wrap.appendChild(btn);
+        grid.appendChild(wrap);
+      });
+      document.getElementById('pf-uploadIconCamion').style.display = 'none';
+      document.getElementById('pf-uploadTextCamion').textContent = fotosV.length + ' foto' + (fotosV.length > 1 ? 's' : '') + ' cargada' + (fotosV.length > 1 ? 's' : '') + ' ✓ (tocá para agregar más)';
+      document.getElementById('pf-uploadAreaCamion').classList.add('has-file');
+    }
+  }
+
+  // DNI frente
+  if (p.dniFrente) {
+    _pfUrlDniFrente = p.dniFrente;
+    var prF = document.getElementById('pf-dniFrente-preview');
+    if (prF) {
+      prF.src = p.dniFrente;
+      prF.style.display = 'block';
+      document.getElementById('pf-dniFrente-icon').style.display = 'none';
+      document.getElementById('pf-dniFrente-text').textContent = 'Frente cargado ✓';
+      document.getElementById('pf-uploadDniFrente').classList.add('has-file');
+    }
+  }
+
+  // DNI dorso
+  if (p.dniDorso) {
+    _pfUrlDniDorso = p.dniDorso;
+    var prD = document.getElementById('pf-dniDorso-preview');
+    if (prD) {
+      prD.src = p.dniDorso;
+      prD.style.display = 'block';
+      document.getElementById('pf-dniDorso-icon').style.display = 'none';
+      document.getElementById('pf-dniDorso-text').textContent = 'Dorso cargado ✓';
+      document.getElementById('pf-uploadDniDorso').classList.add('has-file');
+    }
+  }
 }
 
 function toggleMetodoCobroPanel(){
@@ -4379,6 +4727,13 @@ async function guardarPerfil(){
     preciosIntegral: preciosIntegral,
     preciosLlave: preciosLlave,
     precioFleteNuevo: precioFleteNuevo,
+    // Fotos y documentación: URLs de Vercel Blob (subidas en pfOnFotoPerfil/pfOnDNIUpload/pfOnFotosVehiculo)
+    foto:          _pfUrlPerfil    || mudanceroPerfilRedis && mudanceroPerfilRedis.foto || '',
+    fotoCamion:    (_pfUrlsVehiculo.filter(Boolean)[0]) || '',
+    fotosVehiculo: _pfUrlsVehiculo.filter(Boolean),
+    dniFrente:     _pfUrlDniFrente || mudanceroPerfilRedis && mudanceroPerfilRedis.dniFrente || '',
+    dniDorso:      _pfUrlDniDorso  || mudanceroPerfilRedis && mudanceroPerfilRedis.dniDorso  || '',
+    dniAnalisis:   _pfDniData.analisis || (mudanceroPerfilRedis && mudanceroPerfilRedis.dniAnalisis) || null,
     extra:document.getElementById('pf-notas').value.trim()
   };
 
