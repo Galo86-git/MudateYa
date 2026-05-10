@@ -151,15 +151,21 @@ module.exports = async function handler(req, res) {
     var titularCuenta   = body.titularCuenta;
     var fecha           = body.fecha;
     var refAliado       = body.refAliado || null; // slug del aliado que refirió (ej. 'A7K2')
+    // ── Alta corta (pre-registro): solo nombre, tel, email, cuil, zona ──
+    // Si llega tipoRegistro='corto', salteamos las validaciones de vehículo
+    // y DNI. El mudancero entra a mi-cuenta y completa lo demás desde ahí.
+    var tipoRegistro    = body.tipoRegistro === 'corto' ? 'corto' : 'completo';
+    var esPreRegistro   = tipoRegistro === 'corto';
 
     // ── VALIDACIONES BÁSICAS ────────────────────────────────────
-    if (!nombre || !telefono || !email || !zonaBase || !vehiculo) {
+    var camposBaseOk = !!(nombre && telefono && email && zonaBase);
+    if (!camposBaseOk || (!esPreRegistro && !vehiculo)) {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Email inválido' });
     }
-    if (!dniFrente) {
+    if (!dniFrente && !esPreRegistro) {
       return res.status(400).json({ error: "Falta la foto del DNI" });
     }
 
@@ -271,6 +277,11 @@ module.exports = async function handler(req, res) {
       titularCuenta:  titularCuenta  || '',
 
       estado:          'pendiente_revision',
+      // estadoOnboarding: 'pre-registrado' (alta corta) o 'completo' (alta completa).
+      // Cuando el mudancero completa precios, fotos y CBU desde mi-cuenta, lo pasamos
+      // a 'completo' (lo hace el guardarPerfil de mi-cuenta cuando hay datos suficientes).
+      estadoOnboarding: esPreRegistro ? 'pre-registrado' : 'completo',
+      tipoRegistro:    tipoRegistro,
       fechaRegistro:   new Date().toISOString(),
       fechaFormulario: fecha || new Date().toLocaleString('es-AR'),
       calificacion: 0, nroResenas: 0, trabajosCompletados: 0,
@@ -441,6 +452,53 @@ async function bienvenidaMudancero(perfil) {
   var resend = new Resend(process.env.RESEND_API_KEY);
   if (!process.env.RESEND_API_KEY) return;
 
+  var esPreRegistro = perfil.estadoOnboarding === 'pre-registrado';
+
+  // ── Email para ALTA CORTA: invitamos a completar el perfil ────
+  if (esPreRegistro) {
+    await resend.emails.send({
+      from:    'MudateYa <noreply@mudateya.ar>',
+      to:      perfil.email,
+      subject: '¡Bienvenido a MudateYa, ' + perfil.nombre.split(' ')[0] + '! Falta un paso 🚛',
+      html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
+        '<div style="background:#003580;padding:24px 28px;text-align:center">' +
+          '<div style="font-family:Georgia,serif;font-size:28px;font-weight:900;letter-spacing:2px;color:#fff">MUDATEYA</div>' +
+        '</div>' +
+        '<div style="padding:28px">' +
+          '<h2 style="margin:0 0 8px;color:#0F1923;font-size:20px">¡Hola, ' + perfil.nombre.split(' ')[0] + '! Bienvenido 🎉</h2>' +
+          '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 20px">Tu cuenta en MudateYa fue creada. Para empezar a recibir pedidos de clientes, necesitamos que completes tu perfil. Te toma <strong>5 minutos</strong>.</p>' +
+
+          '<div style="background:#FEF3C7;border-radius:12px;padding:16px 20px;margin-bottom:20px;border-left:4px solid #F59E0B">' +
+            '<div style="font-size:13px;color:#78350F;font-weight:600;margin-bottom:8px">⏳ Para activar tu perfil, completá:</div>' +
+            '<div style="font-size:13px;color:#78350F;line-height:1.7">' +
+              '• Datos del vehículo y equipo<br>' +
+              '• Servicios y precios (Esencial / Integral / Llave en mano)<br>' +
+              '• Foto del vehículo y de tu DNI<br>' +
+              '• CBU o cuenta de Mercado Pago' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="text-align:center;margin:24px 0">' +
+            '<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Completar mi perfil →</a>' +
+          '</div>' +
+
+          '<div style="background:#F5F7FA;border-radius:12px;padding:16px 20px;margin-bottom:20px">' +
+            '<div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Cómo funciona</div>' +
+            '<div style="display:flex;flex-direction:column;gap:10px">' +
+              paso('1', 'Completás tu perfil con vehículo, precios y documentación') +
+              paso('2', 'Verificamos tus datos en menos de 24hs') +
+              paso('3', 'Empezás a recibir pedidos de clientes en tu zona') +
+            '</div>' +
+          '</div>' +
+
+          '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:0">¿Preguntas? Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF">hola@mudateya.ar</a></p>' +
+        '</div>' +
+      '</div>',
+    });
+    return;
+  }
+
+  // ── Email para ALTA COMPLETA (flujo legacy) ────
   await resend.emails.send({
     from:    'MudateYa <noreply@mudateya.ar>',
     to:      perfil.email,
