@@ -1850,7 +1850,7 @@ function confirmarAccion(opts) {
 
             <div class="leads-banner" style="background:linear-gradient(135deg,#FEF3C7 0%,#FFFBEB 100%);border:1px solid #FDE68A;color:#92400E;margin-top:14px">
               ⚠️ <b>Comisión MudateYa: 15% en mudanzas / 20% en fletes</b>
-              <div style="font-size:11px;color:#92400E;margin-top:4px;font-weight:400;line-height:1.5">Las mudanzas que llegan derivadas de inmobiliarias pagan <b>25% de comisión</b> (incluye fee de la inmobiliaria que las refiere).</div>
+              <div style="font-size:11px;color:#92400E;margin-top:4px;font-weight:400;line-height:1.5">Las mudanzas que llegan derivadas de inmobiliarias o de <b>Mudafy</b> pagan <b>25% de comisión</b> (incluye fee del partner que las refiere).</div>
             </div>
           </div>
         </div>
@@ -2255,10 +2255,10 @@ function showScreen(name){
 // Comisión MudateYa según tipo y origen:
 // - Mudanza normal: 15%
 // - Flete normal: 20%
-// - Plan Referidos (mudanza vino de un asesor o aliado): 25%
-//   Esto se detecta con m.origenAsesor o m.refAliado (presentes en la mudanza completa)
+// - Plan Referidos (mudanza vino de un asesor, aliado, o partner Mudafy): 25%
+//   Esto se detecta con m.origenAsesor, m.refAliado o m.partner==='mudafy' (presentes en la mudanza completa)
 function _esPlanReferidos(m) {
-  return !!(m && (m.origenAsesor === true || m.refAliado));
+  return !!(m && (m.origenAsesor === true || m.refAliado || m.partner === 'mudafy'));
 }
 function calcFee(precio, ambientes, m) {
   var pct;
@@ -2781,11 +2781,14 @@ function renderRowPedido(m, tipo) {
       }
     }
   }
-  // Ruta compacta + indicador de origen (asesor vs sitio)
-  var esAsesor = !!(m.refAliado || m.origenAsesor);
-  var iconoOrigen = esAsesor
-    ? '<span title="Cliente referido por asesor inmobiliario · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🏢</span>'
-    : '';
+  // Ruta compacta + indicador de origen (Mudafy / asesor / sitio)
+  var esMudafy_l = m.partner === 'mudafy';
+  var esAsesor = !esMudafy_l && !!(m.refAliado || m.origenAsesor);
+  var iconoOrigen = esMudafy_l
+    ? '<span title="Cliente referido por Mudafy · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🤝</span>'
+    : (esAsesor
+      ? '<span title="Cliente referido por asesor inmobiliario · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🏢</span>'
+      : '');
   var ruta = (m.desde||'') + ' → ' + (m.hasta||'');
   // Fecha corta de la mudanza (la planificada por el cliente)
   var fechaCorta = '';
@@ -2825,25 +2828,38 @@ function seleccionarPedido(mudanzaId, tipo) {
   document.querySelectorAll('.pd-row-line').forEach(function(el){ el.classList.remove('active'); });
   var row = document.getElementById('pd-row-'+mudanzaId);
   if (row) row.classList.add('active');
-  // Banner de origen del cliente (asesor vs directo) con comisión
-  var esAsesor = !!(m.refAliado || m.origenAsesor);
+  // Banner de origen del cliente: Mudafy / asesor inmobiliario / directo
+  var esMudafy = m.partner === 'mudafy';
+  var esAsesor = !esMudafy && !!(m.refAliado || m.origenAsesor);
   // Mostrar referencia: preferir asesorEmail (legible), fallback a refAliado
   var refMostrar = m.asesorEmail || m.refAliado || '';
-  var bannerOrigen = esAsesor
-    ? '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FEF3F2;border:1px solid #FECACA;border-left:3px solid #DC2626;border-radius:8px;margin-bottom:14px">'
+  var bannerOrigen;
+  if (esMudafy) {
+    // Coral Mudafy
+    bannerOrigen = '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FFF1EE;border:1px solid #FECACA;border-left:3px solid #FF6B6B;border-radius:8px;margin-bottom:14px">'
+      + '<span style="font-size:18px;flex-shrink:0">🤝</span>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-size:12px;font-weight:700;color:#991B1B;line-height:1.3">Cliente referido por Mudafy</div>'
+      +   '<div style="font-size:11px;color:#7F1D1D;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>25%</b>'+(m.partnerPropiedad?' · '+esc(m.partnerPropiedad):'')+'</div>'
+      + '</div>'
+      + '</div>';
+  } else if (esAsesor) {
+    bannerOrigen = '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FEF3F2;border:1px solid #FECACA;border-left:3px solid #DC2626;border-radius:8px;margin-bottom:14px">'
       + '<span style="font-size:18px;flex-shrink:0">🏢</span>'
       + '<div style="flex:1;min-width:0">'
       +   '<div style="font-size:12px;font-weight:700;color:#991B1B;line-height:1.3">Cliente referido por asesor inmobiliario</div>'
       +   '<div style="font-size:11px;color:#7F1D1D;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>25%</b>'+(refMostrar?' · '+esc(refMostrar):'')+'</div>'
       + '</div>'
-      + '</div>'
-    : '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F0FDF4;border:1px solid #BBF7D0;border-left:3px solid #16A34A;border-radius:8px;margin-bottom:14px">'
+      + '</div>';
+  } else {
+    bannerOrigen = '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F0FDF4;border:1px solid #BBF7D0;border-left:3px solid #16A34A;border-radius:8px;margin-bottom:14px">'
       + '<span style="font-size:18px;flex-shrink:0">🌐</span>'
       + '<div style="flex:1;min-width:0">'
       +   '<div style="font-size:12px;font-weight:700;color:#15803D;line-height:1.3">Cliente directo del sitio</div>'
       +   '<div style="font-size:11px;color:#166534;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>15%</b></div>'
       + '</div>'
       + '</div>';
+  }
   // Renderizar contenido (reusa los renders existentes)
   // En mobile: header sticky con "← Volver" + botón Cotizar fixed abajo (CTA siempre visible)
   var esMobile = window.innerWidth <= 640;
