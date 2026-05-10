@@ -1561,7 +1561,7 @@ module.exports = async function handler(req, res) {
           if (!(m.anticipoPagado || m.saldoPagado)) continue;
           // Calcular comisión: 25% Plan Referidos / 20% flete / 15% mudanza normal
           const esFlete = (m.tipo || '').toLowerCase() === 'flete';
-          const esPlanReferidos = !!(m.origenAsesor === true || m.refAliado);
+          const esPlanReferidos = !!(m.origenAsesor === true || m.refAliado || m.partner === 'mudafy');
           const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
           const feePctLabel = (feePct * 100).toFixed(0) + '%';
           const cot = m.cotizacionAceptada || {};
@@ -1864,6 +1864,13 @@ module.exports = async function handler(req, res) {
           mudanceroNombre: mudanceroNombre,
           cotizaciones:    (p.cotizaciones || []).length,
           ambientes:       p.ambientes || null,
+          // Origen del pedido (para badges + cálculo comisión 25% en admin)
+          partner:          p.partner || null,
+          partnerAsesor:    p.partnerAsesor || null,
+          partnerPropiedad: p.partnerPropiedad || null,
+          origenAsesor:     p.origenAsesor === true,
+          refAliado:        p.refAliado || null,
+          asesorEmail:      p.asesorEmail || null,
         });
       }
 
@@ -3064,9 +3071,9 @@ async function logPedidoSheets(mudanza) {
 
   const cot = mudanza.cotizacionAceptada || {};
   const esFlete = mudanza.tipo === 'flete' || mudanza.ambientes === 'Flete';
-  // Plan Referidos (leads de asesores inmobiliarios): 25% flat
+  // Plan Referidos (leads de asesores inmobiliarios o partner Mudafy): 25% flat
   // Mudanzas normales: 15% · Fletes normales: 20%
-  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado);
+  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner === 'mudafy');
   const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   const precio = parseInt(cot.precio || 0);
   const fee = Math.round(precio * feePct);
@@ -3119,9 +3126,9 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   const esAnticipo = tipoPago === 'anticipo';
   const precioTotal = cot.precio || 0;
   const esFlete = (mudanza.tipo || '').toLowerCase() === 'flete';
-  // Plan Referidos: 25% si vino por asesor (origenAsesor) o por link de aliado (refAliado).
-  // Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
-  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado);
+  // Plan Referidos: 25% si vino por asesor (origenAsesor), por link de aliado (refAliado),
+  // o por partner Mudafy. Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
+  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner === 'mudafy');
   const comisionPct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
   // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
