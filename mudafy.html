@@ -486,17 +486,61 @@
   </div>
 </div>
 
-<!-- Modal de detalles adicionales (opcional, saltable) -->
+<!-- Modal de detalles adicionales -->
 <div class="modal-overlay" id="detallesModal" onclick="if(event.target===this)document.getElementById('detallesModal').classList.remove('open')">
   <div class="confirm-modal" style="max-width:520px;max-height:88vh;display:flex;flex-direction:column">
     <button class="modal-close" type="button" onclick="document.getElementById('detallesModal').classList.remove('open')">×</button>
     <div class="confirm-modal-header" style="text-align:center">
       <div class="confirm-modal-icon">📋</div>
-      <h2 class="confirm-modal-title">¿Algo más que deba saber el mudancero?</h2>
-      <p class="confirm-modal-subtitle">Esto ayuda a una mejor cotización · <b>Todo opcional · 2 min</b></p>
+      <h2 class="confirm-modal-title">Para cotizar bien, necesitamos algunos datos</h2>
+      <p class="confirm-modal-subtitle">2 minutos · los datos del lugar son obligatorios</p>
     </div>
     <div style="overflow-y:auto;padding:0 4px;flex:1;min-height:0">
-      <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:8px 0 8px;font-family:monospace">Marcá lo que aplique</div>
+
+      <!-- Bloque obligatorio: tipo + piso de origen y destino -->
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-left:3px solid #F59E0B;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:#78350F;text-transform:uppercase;letter-spacing:.6px;font-family:monospace;margin-bottom:10px">📍 Origen y destino · obligatorio <span style="color:#DC2626">*</span></div>
+
+        <!-- ORIGEN -->
+        <div style="font-size:12px;font-weight:700;color:#78350F;margin-bottom:6px">🏠 ¿De dónde te mudás?</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button type="button" onclick="pdmSetTipo('origen','casa')" id="pdm-tipo-origen-casa" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#78350F">🏡 Casa</button>
+          <button type="button" onclick="pdmSetTipo('origen','departamento')" id="pdm-tipo-origen-depto" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#78350F">🏢 Departamento</button>
+        </div>
+        <div id="pdm-depto-origen-wrap" style="display:none;margin-bottom:10px">
+          <div style="display:flex;gap:6px">
+            <div style="flex:1">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:monospace;display:block;margin-bottom:2px">Piso *</label>
+              <input type="text" id="pdm-piso-origen" placeholder="Ej: 8" maxlength="6" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" oninput="pdmValidar()"/>
+            </div>
+            <div style="flex:1.2">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:monospace;display:block;margin-bottom:2px">Depto (opcional)</label>
+              <input type="text" id="pdm-depto-origen" placeholder="Ej: A · 3 · PH" maxlength="10" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESTINO -->
+        <div style="font-size:12px;font-weight:700;color:#78350F;margin:12px 0 6px">🏁 ¿A dónde te mudás?</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button type="button" onclick="pdmSetTipo('destino','casa')" id="pdm-tipo-destino-casa" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#78350F">🏡 Casa</button>
+          <button type="button" onclick="pdmSetTipo('destino','departamento')" id="pdm-tipo-destino-depto" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#78350F">🏢 Departamento</button>
+        </div>
+        <div id="pdm-depto-destino-wrap" style="display:none">
+          <div style="display:flex;gap:6px">
+            <div style="flex:1">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:monospace;display:block;margin-bottom:2px">Piso *</label>
+              <input type="text" id="pdm-piso-destino" placeholder="Ej: 8" maxlength="6" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box" oninput="pdmValidar()"/>
+            </div>
+            <div style="flex:1.2">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:monospace;display:block;margin-bottom:2px">Depto (opcional)</label>
+              <input type="text" id="pdm-depto-destino" placeholder="Ej: A · 3 · PH" maxlength="10" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:8px 0 8px;font-family:monospace">Marcá lo que aplique (opcional)</div>
       <div id="pdm-checkboxes" style="display:flex;flex-direction:column;gap:6px"></div>
       <div id="pdm-escaleras-pisos" style="display:none;background:#FEF3C7;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px">
         <label style="display:flex;align-items:center;gap:10px;color:#78350F">
@@ -505,7 +549,7 @@
             style="width:60px;padding:6px 8px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;outline:none"/>
         </label>
       </div>
-      <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:monospace">¿Algo más?</div>
+      <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:monospace">¿Algo más? (opcional)</div>
       <textarea id="pdm-comentario" rows="3" placeholder="Ej: piano, caja fuerte, mascota grande, mueble pesado..."
         style="width:100%;padding:10px 12px;border:1px solid var(--md-border);border-radius:10px;font-size:13px;outline:none;resize:vertical;line-height:1.5;box-sizing:border-box;font-family:inherit"></textarea>
       <div style="font-size:11px;font-weight:700;color:var(--md-text-2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:monospace">¿Querés agregar fotos? (opcional)</div>
@@ -518,12 +562,12 @@
       <input type="file" id="pdm-fotos-input" accept="image/*" multiple style="display:none" onchange="pdmOnFotos(this)"/>
       <div id="pdm-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
     </div>
-    <div class="confirm-actions" style="border-top:1px solid var(--md-border);padding-top:14px;margin-top:14px;flex-shrink:0;display:flex;flex-direction:column;gap:8px">
-      <button type="button" class="btn-confirm" id="pdm-btn-enviar" onclick="pdmEnviar()">
+    <div class="confirm-actions" style="border-top:1px solid var(--md-border);padding-top:14px;margin-top:14px;flex-shrink:0">
+      <button type="button" class="btn-confirm" id="pdm-btn-enviar" onclick="pdmEnviar()" disabled style="opacity:.5;width:100%">
         Enviar solicitud
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
-      <button type="button" onclick="pdmSaltar()" style="background:transparent;border:none;color:var(--md-text-2);font-size:13px;cursor:pointer;text-decoration:underline;padding:6px;font-family:inherit">Saltar este paso</button>
+      <div id="pdm-validar-msg" style="display:none;font-size:11px;color:#DC2626;text-align:center;margin-top:8px;font-family:monospace">Completá el tipo de lugar (origen y destino) para continuar</div>
     </div>
   </div>
 </div>
@@ -1126,8 +1170,64 @@ function pdMudafyMostrar() {
   var ep = document.getElementById('pdm-escaleras-pisos'); if (ep) ep.style.display = 'none';
   var grid = document.getElementById('pdm-fotos-grid'); if (grid) grid.innerHTML = '';
   var txtF = document.getElementById('pdm-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
+  // Reset tipos origen/destino
+  _pdmTipoOrigen  = null;
+  _pdmTipoDestino = null;
+  ['pdm-tipo-origen-casa','pdm-tipo-origen-depto','pdm-tipo-destino-casa','pdm-tipo-destino-depto'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b) { b.style.background = '#fff'; b.style.color = '#78350F'; b.style.borderColor = '#FDE68A'; }
+  });
+  var po = document.getElementById('pdm-piso-origen');   if (po) po.value = '';
+  var dop = document.getElementById('pdm-depto-origen'); if (dop) dop.value = '';
+  var pd = document.getElementById('pdm-piso-destino');  if (pd) pd.value = '';
+  var ddp = document.getElementById('pdm-depto-destino');if (ddp) ddp.value = '';
+  var dow = document.getElementById('pdm-depto-origen-wrap');  if (dow) dow.style.display = 'none';
+  var ddw = document.getElementById('pdm-depto-destino-wrap'); if (ddw) ddw.style.display = 'none';
+  pdmValidar();
   document.getElementById('confirmModal').classList.remove('open');
   document.getElementById('detallesModal').classList.add('open');
+}
+
+// ── Tipo de lugar (casa/depto) por lado · Mudafy ──
+var _pdmTipoOrigen  = null;
+var _pdmTipoDestino = null;
+
+function pdmSetTipo(lado, tipo) {
+  if (lado === 'origen')  _pdmTipoOrigen  = tipo;
+  if (lado === 'destino') _pdmTipoDestino = tipo;
+  var idCasa  = 'pdm-tipo-' + lado + '-casa';
+  var idDepto = 'pdm-tipo-' + lado + '-depto';
+  var elCasa  = document.getElementById(idCasa);
+  var elDepto = document.getElementById(idDepto);
+  var sel = (tipo === 'casa') ? elCasa : elDepto;
+  var noSel = (tipo === 'casa') ? elDepto : elCasa;
+  if (sel)   { sel.style.background = '#F59E0B';   sel.style.color = '#fff';      sel.style.borderColor = '#F59E0B'; }
+  if (noSel) { noSel.style.background = '#fff';    noSel.style.color = '#78350F'; noSel.style.borderColor = '#FDE68A'; }
+  var wrap = document.getElementById('pdm-depto-' + lado + '-wrap');
+  if (wrap) wrap.style.display = (tipo === 'departamento') ? 'block' : 'none';
+  if (tipo === 'casa') {
+    var pisoEl  = document.getElementById('pdm-piso-'  + lado); if (pisoEl)  pisoEl.value = '';
+    var deptoEl = document.getElementById('pdm-depto-' + lado); if (deptoEl) deptoEl.value = '';
+  }
+  pdmValidar();
+}
+
+function pdmValidar() {
+  var btn = document.getElementById('pdm-btn-enviar');
+  var msg = document.getElementById('pdm-validar-msg');
+  if (!btn) return;
+  var ok = !!_pdmTipoOrigen && !!_pdmTipoDestino;
+  if (ok && _pdmTipoOrigen === 'departamento') {
+    var po = (document.getElementById('pdm-piso-origen').value || '').trim();
+    if (!po) ok = false;
+  }
+  if (ok && _pdmTipoDestino === 'departamento') {
+    var pd = (document.getElementById('pdm-piso-destino').value || '').trim();
+    if (!pd) ok = false;
+  }
+  btn.disabled = !ok;
+  btn.style.opacity = ok ? '1' : '.5';
+  if (msg) msg.style.display = ok ? 'none' : '';
 }
 
 function pdmOnToggle(opId) {
@@ -1229,21 +1329,39 @@ function _pdmArmarDetalles() {
   return algo ? d : null;
 }
 
-function pdmSaltar() {
-  document.getElementById('detallesModal').classList.remove('open');
-  _enviarPedido(null);
+function _pdmArmarLugar() {
+  var out = {
+    tipoOrigen:   _pdmTipoOrigen  || null,
+    tipoDestino:  _pdmTipoDestino || null,
+    pisoOrigen:   '',
+    pisoDestino:  '',
+    deptoOrigen:  '',
+    deptoDestino: ''
+  };
+  if (_pdmTipoOrigen === 'departamento') {
+    out.pisoOrigen  = (document.getElementById('pdm-piso-origen').value  || '').trim();
+    out.deptoOrigen = (document.getElementById('pdm-depto-origen').value || '').trim();
+  }
+  if (_pdmTipoDestino === 'departamento') {
+    out.pisoDestino  = (document.getElementById('pdm-piso-destino').value  || '').trim();
+    out.deptoDestino = (document.getElementById('pdm-depto-destino').value || '').trim();
+  }
+  return out;
 }
 
 function pdmEnviar() {
-  var det = _pdmArmarDetalles();
+  pdmValidar();
+  if (document.getElementById('pdm-btn-enviar').disabled) return;
+  var det   = _pdmArmarDetalles();
+  var lugar = _pdmArmarLugar();
   document.getElementById('detallesModal').classList.remove('open');
-  _enviarPedido(det);
+  _enviarPedido(det, lugar);
 }
 
 // ════════════════════════════════════════════════════════════
 // _enviarPedido - hace el POST real al backend (reemplazo de confirmarEnvio)
 // ════════════════════════════════════════════════════════════
-async function _enviarPedido(detallesAdicionales) {
+async function _enviarPedido(detallesAdicionales, lugar) {
   if (!_mudanceros.length) return;
 
   var destinatarios = _sel.size > 0
@@ -1270,6 +1388,15 @@ async function _enviarPedido(detallesAdicionales) {
   btn.disabled = true;
   btn.innerHTML = 'Enviando…';
 
+  // Datos del lugar: el modal de detalles (lugar) es la fuente de verdad ahora.
+  // Si por algún motivo no llegan, caemos a lo que tenía _busqueda (form principal).
+  var tipoOrigen   = (lugar && lugar.tipoOrigen)   || null;
+  var tipoDestino  = (lugar && lugar.tipoDestino)  || null;
+  var pisoOrigen   = (lugar && lugar.pisoOrigen)   || _busqueda.pisoOrigen   || '';
+  var pisoDestino  = (lugar && lugar.pisoDestino)  || _busqueda.pisoDestino  || '';
+  var deptoOrigen  = (lugar && lugar.deptoOrigen)  || '';
+  var deptoDestino = (lugar && lugar.deptoDestino) || '';
+
   try {
     var payload = {
       clienteEmail: _busqueda.cliente.email,
@@ -1286,8 +1413,13 @@ async function _enviarPedido(detallesAdicionales) {
       nivel: 'llave',
       modoCotizacion: 'dirigido',
       mudancerosInvitados: emails,
-      pisoOrigen:  _busqueda.pisoOrigen,
-      pisoDestino: _busqueda.pisoDestino,
+      // Datos del lugar (modal nuevo pisa lo del form principal)
+      tipoOrigen:   tipoOrigen,
+      tipoDestino:  tipoDestino,
+      pisoOrigen:   pisoOrigen,
+      pisoDestino:  pisoDestino,
+      deptoOrigen:  deptoOrigen,
+      deptoDestino: deptoDestino,
       ascOrigen:   _busqueda.ascOrigen,
       ascDestino:  _busqueda.ascDestino,
       // Trackeo Mudafy
