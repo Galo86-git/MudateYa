@@ -1655,11 +1655,54 @@
       <div id="pub-detalles" style="display:none;text-align:left;max-height:75vh;overflow-y:auto;padding:.2rem .2rem 1rem">
         <div style="text-align:center;margin-bottom:1rem">
           <div style="font-size:1.6rem;margin-bottom:6px">📋</div>
-          <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:.3rem">¿Algo más que deba saber el mudancero?</div>
-          <div style="font-size:12px;color:var(--text2);line-height:1.4">Esto ayuda a una mejor cotización · <b>Todo opcional · 2 min</b></div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:.3rem">Para cotizar bien, necesitamos algunos datos</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.4">2 minutos · los datos del lugar son obligatorios</div>
         </div>
 
-        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px;font-family:var(--mono)">Marcá lo que aplique</div>
+        <!-- Bloque obligatorio: tipo + piso de origen y destino -->
+        <div style="background:#FEF3C7;border:1px solid #FDE68A;border-left:3px solid #F59E0B;border-radius:var(--r);padding:12px 14px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:#78350F;text-transform:uppercase;letter-spacing:.6px;font-family:var(--mono);margin-bottom:10px">📍 Origen y destino · obligatorio <span style="color:#DC2626">*</span></div>
+
+          <!-- ORIGEN -->
+          <div style="font-size:12px;font-weight:700;color:#78350F;margin-bottom:6px">🏠 ¿De dónde te mudás?</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <button type="button" onclick="pdSetTipo('origen','casa')" id="pd-tipo-origen-casa" class="pd-tipo-btn" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏡 Casa</button>
+            <button type="button" onclick="pdSetTipo('origen','departamento')" id="pd-tipo-origen-depto" class="pd-tipo-btn" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏢 Departamento</button>
+          </div>
+          <div id="pd-depto-origen-wrap" style="display:none;margin-bottom:10px">
+            <div style="display:flex;gap:6px">
+              <div style="flex:1">
+                <label style="font-size:10px;color:#78350F;font-weight:700;font-family:var(--mono);display:block;margin-bottom:2px">Piso *</label>
+                <input type="text" id="pd-piso-origen" placeholder="Ej: 8" maxlength="6" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box" oninput="pdValidar()"/>
+              </div>
+              <div style="flex:1.2">
+                <label style="font-size:10px;color:#78350F;font-weight:700;font-family:var(--mono);display:block;margin-bottom:2px">Depto (opcional)</label>
+                <input type="text" id="pd-depto-origen" placeholder="Ej: A · 3 · PH" maxlength="10" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- DESTINO -->
+          <div style="font-size:12px;font-weight:700;color:#78350F;margin:12px 0 6px">🏁 ¿A dónde te mudás?</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <button type="button" onclick="pdSetTipo('destino','casa')" id="pd-tipo-destino-casa" class="pd-tipo-btn" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏡 Casa</button>
+            <button type="button" onclick="pdSetTipo('destino','departamento')" id="pd-tipo-destino-depto" class="pd-tipo-btn" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏢 Departamento</button>
+          </div>
+          <div id="pd-depto-destino-wrap" style="display:none">
+            <div style="display:flex;gap:6px">
+              <div style="flex:1">
+                <label style="font-size:10px;color:#78350F;font-weight:700;font-family:var(--mono);display:block;margin-bottom:2px">Piso *</label>
+                <input type="text" id="pd-piso-destino" placeholder="Ej: 8" maxlength="6" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box" oninput="pdValidar()"/>
+              </div>
+              <div style="flex:1.2">
+                <label style="font-size:10px;color:#78350F;font-weight:700;font-family:var(--mono);display:block;margin-bottom:2px">Depto (opcional)</label>
+                <input type="text" id="pd-depto-destino" placeholder="Ej: A · 3 · PH" maxlength="10" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px;font-family:var(--mono)">Marcá lo que aplique (opcional)</div>
         <div id="pd-checkboxes" style="display:flex;flex-direction:column;gap:6px"></div>
 
         <!-- Escaleras: input pisos -->
@@ -1671,7 +1714,7 @@
           </label>
         </div>
 
-        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:var(--mono)">¿Algo más?</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;font-family:var(--mono)">¿Algo más? (opcional)</div>
         <textarea id="pd-comentario" rows="3" placeholder="Ej: piano, caja fuerte, mascota grande, mueble pesado..."
           style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);font-family:'Inter',sans-serif;font-size:13px;outline:none;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea>
 
@@ -1685,9 +1728,9 @@
         <input type="file" id="pd-fotos-input" accept="image/*" multiple style="display:none" onchange="pdOnFotos(this)"/>
         <div id="pd-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
 
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
-          <button id="pd-btn-enviar" onclick="pdEnviar()" style="width:100%;padding:13px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Enviar solicitud →</button>
-          <button onclick="pdSaltar()" style="width:100%;padding:10px;background:transparent;border:none;color:var(--text2);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:underline">Saltar este paso</button>
+        <div style="margin-top:20px">
+          <button id="pd-btn-enviar" onclick="pdEnviar()" disabled style="width:100%;padding:13px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;opacity:.5">Enviar solicitud →</button>
+          <div id="pd-validar-msg" style="display:none;font-size:11px;color:#DC2626;text-align:center;margin-top:6px;font-family:var(--mono)">Completá el tipo de lugar (origen y destino) para continuar</div>
         </div>
       </div>
 
@@ -2750,9 +2793,69 @@
     var ep = document.getElementById('pd-escaleras-pisos'); if (ep) ep.style.display = 'none';
     var grid = document.getElementById('pd-fotos-grid'); if (grid) grid.innerHTML = '';
     var txtF = document.getElementById('pd-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
+    // Reset tipos origen/destino
+    _pdTipoOrigen = null;
+    _pdTipoDestino = null;
+    ['pd-tipo-origen-casa','pd-tipo-origen-depto','pd-tipo-destino-casa','pd-tipo-destino-depto'].forEach(function(id) {
+      var b = document.getElementById(id);
+      if (b) { b.style.background = '#fff'; b.style.color = '#78350F'; b.style.borderColor = '#FDE68A'; }
+    });
+    var po = document.getElementById('pd-piso-origen');   if (po) po.value = '';
+    var dop = document.getElementById('pd-depto-origen'); if (dop) dop.value = '';
+    var pd = document.getElementById('pd-piso-destino');  if (pd) pd.value = '';
+    var ddp = document.getElementById('pd-depto-destino');if (ddp) ddp.value = '';
+    var dow = document.getElementById('pd-depto-origen-wrap');  if (dow) dow.style.display = 'none';
+    var ddw = document.getElementById('pd-depto-destino-wrap'); if (ddw) ddw.style.display = 'none';
+    pdValidar();
 
     document.getElementById('pub-detalles').style.display = 'block';
     document.getElementById('pubModal').classList.add('open');
+  }
+
+  // ── Tipo de lugar (casa/depto) por lado ──
+  var _pdTipoOrigen  = null;  // 'casa' | 'departamento'
+  var _pdTipoDestino = null;
+
+  function pdSetTipo(lado, tipo) {
+    if (lado === 'origen')  _pdTipoOrigen  = tipo;
+    if (lado === 'destino') _pdTipoDestino = tipo;
+    // Visual: pintar el botón seleccionado, despintar el otro
+    var idCasa  = 'pd-tipo-' + lado + '-casa';
+    var idDepto = 'pd-tipo-' + lado + '-depto';
+    var elCasa  = document.getElementById(idCasa);
+    var elDepto = document.getElementById(idDepto);
+    var sel = (tipo === 'casa') ? elCasa : elDepto;
+    var noSel = (tipo === 'casa') ? elDepto : elCasa;
+    if (sel)   { sel.style.background = '#F59E0B';   sel.style.color = '#fff';      sel.style.borderColor = '#F59E0B'; }
+    if (noSel) { noSel.style.background = '#fff';    noSel.style.color = '#78350F'; noSel.style.borderColor = '#FDE68A'; }
+    // Mostrar/ocultar bloque de piso+depto
+    var wrap = document.getElementById('pd-depto-' + lado + '-wrap');
+    if (wrap) wrap.style.display = (tipo === 'departamento') ? 'block' : 'none';
+    // Si pasa a casa, limpiar los campos del depto para que no contaminen el payload
+    if (tipo === 'casa') {
+      var pisoEl  = document.getElementById('pd-piso-'  + lado); if (pisoEl)  pisoEl.value = '';
+      var deptoEl = document.getElementById('pd-depto-' + lado); if (deptoEl) deptoEl.value = '';
+    }
+    pdValidar();
+  }
+
+  function pdValidar() {
+    // El botón se habilita solo si: ambos tipos están elegidos y, si alguno es departamento, tiene piso.
+    var btn = document.getElementById('pd-btn-enviar');
+    var msg = document.getElementById('pd-validar-msg');
+    if (!btn) return;
+    var ok = !!_pdTipoOrigen && !!_pdTipoDestino;
+    if (ok && _pdTipoOrigen === 'departamento') {
+      var po = (document.getElementById('pd-piso-origen').value || '').trim();
+      if (!po) ok = false;
+    }
+    if (ok && _pdTipoDestino === 'departamento') {
+      var pd = (document.getElementById('pd-piso-destino').value || '').trim();
+      if (!pd) ok = false;
+    }
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '.5';
+    if (msg) msg.style.display = ok ? 'none' : '';
   }
 
   function pdOnToggle(opId) {
@@ -2863,18 +2966,39 @@
     return algo ? detalles : null;
   }
 
-  function pdSaltar() {
-    document.getElementById('pub-detalles').style.display = 'none';
-    _ejecutarPublicacion(_modoPublicacion, _detallesWA, null);
+  function _armarLugarPayload() {
+    // Datos del lugar: van como campos top-level del pedido (no dentro de detallesAdicionales)
+    // para que sean compatibles con los campos existentes pisoOrigen/pisoDestino que usa Mudafy.
+    var out = {
+      tipoOrigen:  _pdTipoOrigen  || null,    // 'casa' | 'departamento'
+      tipoDestino: _pdTipoDestino || null,
+      pisoOrigen:  '',
+      pisoDestino: '',
+      deptoOrigen:  '',
+      deptoDestino: ''
+    };
+    if (_pdTipoOrigen === 'departamento') {
+      out.pisoOrigen  = (document.getElementById('pd-piso-origen').value  || '').trim();
+      out.deptoOrigen = (document.getElementById('pd-depto-origen').value || '').trim();
+    }
+    if (_pdTipoDestino === 'departamento') {
+      out.pisoDestino  = (document.getElementById('pd-piso-destino').value  || '').trim();
+      out.deptoDestino = (document.getElementById('pd-depto-destino').value || '').trim();
+    }
+    return out;
   }
 
   function pdEnviar() {
-    var det = _armarDetallesPayload();
+    // Validación final (defensa por si llaman desde consola)
+    pdValidar();
+    if (document.getElementById('pd-btn-enviar').disabled) return;
+    var det   = _armarDetallesPayload();
+    var lugar = _armarLugarPayload();
     document.getElementById('pub-detalles').style.display = 'none';
-    _ejecutarPublicacion(_modoPublicacion, _detallesWA, det);
+    _ejecutarPublicacion(_modoPublicacion, _detallesWA, det, lugar);
   }
 
-  async function _ejecutarPublicacion(modo, clienteWA, detallesAdicionales) {
+  async function _ejecutarPublicacion(modo, clienteWA, detallesAdicionales, lugar) {
     document.getElementById('pub-ing').style.display = 'block';
     document.getElementById('pub-ok').style.display = 'none';
     document.getElementById('pubModal').classList.add('open');
@@ -2969,7 +3093,14 @@
           partnerAsesor:  (_partner && _partner.asesor)    || '',
           partnerPropiedad: (_partner && _partner.propiedad) || '',
           // ── Detalles adicionales opcionales (ascensor, izaje, escaleras, fotos…) ──
-          detallesAdicionales: detallesAdicionales || null
+          detallesAdicionales: detallesAdicionales || null,
+          // ── Datos del lugar (obligatorios, completados en el modal de detalles) ──
+          tipoOrigen:   lugar && lugar.tipoOrigen   || null,
+          tipoDestino:  lugar && lugar.tipoDestino  || null,
+          pisoOrigen:   lugar && lugar.pisoOrigen   || '',
+          pisoDestino:  lugar && lugar.pisoDestino  || '',
+          deptoOrigen:  lugar && lugar.deptoOrigen  || '',
+          deptoDestino: lugar && lugar.deptoDestino || ''
         })
       });
     } catch(e) { console.warn(e.message); }
