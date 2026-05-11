@@ -1577,53 +1577,74 @@ function renderMudanzaDetail(m) {
     + '<div class="stepper">'+stepperHtml+'</div>'
     + (function(){
         // ── Banner detalles enviados al mudancero ──
-        // Incluye: tipo de lugar (casa/depto) + características + comentario + fotos.
-        var det = m.detallesAdicionales;
-        var tieneTipo = !!(m.tipoOrigen || m.tipoDestino);
-        var tieneDet  = det && typeof det === 'object' && Object.keys(det).length > 0;
-        if (!tieneTipo && !tieneDet) return '';
-        function _fmtLugar(tipo, piso, depto) {
-          if (!tipo) return '—';
-          if (tipo === 'casa') return '🏡 Casa';
-          var t = '🏢 Depto';
+        // Muestra mini-card por lado (origen/destino) con tipo + características.
+        // Comentario + fotos compartidos debajo. Compat con modelo viejo.
+        var det     = m.detallesAdicionales;
+        var detO    = m.detallesOrigen;
+        var detD    = m.detallesDestino;
+        var tieneTipo  = !!(m.tipoOrigen || m.tipoDestino);
+        var tieneLados = !!(detO || detD);
+        var tieneCompartido = det && typeof det === 'object' && (det.comentario || (Array.isArray(det.fotos) && det.fotos.length));
+        var FLAGS_KEYS = ['ascensor','izaje','soga','balconTerraza','pasilloAngosto','escaleras','cocheraGarage','estDificil','mascotaEspecial'];
+        var tieneFlagsLegacy = det && FLAGS_KEYS.some(function(k){ return det[k] === true; });
+        if (!tieneTipo && !tieneLados && !tieneCompartido && !tieneFlagsLegacy) return '';
+
+        var LBL = {
+          ascensor: '🛗 Con ascensor',
+          izaje: '⚙️ Izaje',
+          soga: '🪢 Soga',
+          balconTerraza: '🌿 Balcón / terraza',
+          pasilloAngosto: '↔️ Pasillo angosto',
+          escaleras: '🪜 Escaleras',
+          cocheraGarage: '🚪 Cochera',
+          estDificil: '🚧 Estac. difícil',
+          mascotaEspecial: '🐾 Mascota / especial'
+        };
+
+        function _fmtTipoLinea(tipo, piso, depto) {
+          if (!tipo) return '<span style="color:#94A3B8;font-style:italic">No indicado</span>';
+          if (tipo === 'casa') return '🏡 <b>Casa</b>';
+          var t = '🏢 <b>Departamento</b>';
           if (piso)  t += ' · Piso ' + esc(piso);
           if (depto) t += ' · ' + esc(depto);
           return t;
         }
-        var tipoLugarHtml = '';
-        if (tieneTipo) {
-          tipoLugarHtml = '<div style="margin:6px 0 10px;padding:8px 10px;background:#fff;border-radius:6px;border:1px solid #C7D9FF">'
-            + '<div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Tipo de lugar</div>'
-            + '<div style="font-size:13px;color:#0F1923;font-weight:600;line-height:1.45">'
-            +   _fmtLugar(m.tipoOrigen, m.pisoOrigen, m.deptoOrigen)
-            +   ' <span style="color:#94A3B8;margin:0 4px">→</span> '
-            +   _fmtLugar(m.tipoDestino, m.pisoDestino, m.deptoDestino)
-            + '</div>'
-            + '</div>';
-        }
-        var LBL = {
-          ascensor: '🛗 Con ascensor',
-          izaje: '⚙️ Necesita izaje',
-          soga: '🪢 Necesita soga',
-          balconTerraza: '🌿 Balcón / terraza',
-          pasilloAngosto: '↔️ Pasillo angosto',
-          escaleras: '🪜 Escaleras',
-          cocheraGarage: '🚪 Puerta de cochera',
-          estDificil: '🚧 Estacionamiento difícil',
-          mascotaEspecial: '🐾 Mascota o algo especial'
-        };
-        var chips = '';
-        if (det) {
+
+        function _chipsLado(detalles) {
+          if (!detalles) return '';
+          var chips = '';
           Object.keys(LBL).forEach(function(k) {
-            if (det[k] === true) {
+            if (detalles[k] === true) {
               var label = LBL[k];
-              if (k === 'escaleras' && det.escalerasPisos) {
-                label += ' (' + det.escalerasPisos + ' piso' + (det.escalerasPisos > 1 ? 's' : '') + ')';
+              if (k === 'escaleras' && detalles.escalerasPisos) {
+                label += ' (' + detalles.escalerasPisos + ' piso' + (detalles.escalerasPisos > 1 ? 's' : '') + ')';
               }
-              chips += '<span style="display:inline-block;background:#fff;border:1px solid #C7D9FF;color:#1A6FFF;font-size:11px;padding:3px 8px;border-radius:6px;margin:2px 4px 2px 0;font-weight:600">' + esc(label) + '</span>';
+              chips += '<span style="display:inline-block;background:#fff;border:1px solid #C7D9FF;color:#1A6FFF;font-size:11px;padding:3px 8px;border-radius:6px;margin:3px 4px 0 0;font-weight:600">' + esc(label) + '</span>';
             }
           });
+          return chips;
         }
+
+        function _miniCard(emoji, titulo, tipo, piso, depto, detalles) {
+          var chips = _chipsLado(detalles);
+          return '<div style="background:#fff;border:1px solid #C7D9FF;border-left:3px solid #1A6FFF;border-radius:6px;padding:9px 11px">'
+            + '<div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">' + emoji + ' ' + titulo + '</div>'
+            + '<div style="font-size:13px;color:#0F1923;line-height:1.4;margin-bottom:' + (chips ? '6px' : '0') + '">' + _fmtTipoLinea(tipo, piso, depto) + '</div>'
+            + (chips ? '<div>' + chips + '</div>' : '')
+            + '</div>';
+        }
+
+        var cardsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 10px">'
+          + _miniCard('📍', 'Origen',  m.tipoOrigen,  m.pisoOrigen,  m.deptoOrigen,  detO)
+          + _miniCard('🏁', 'Destino', m.tipoDestino, m.pisoDestino, m.deptoDestino, detD)
+          + '</div>';
+
+        // Compat: flags legacy
+        var legacyChips = '';
+        if (!tieneLados && tieneFlagsLegacy) {
+          legacyChips = '<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Características</div><div>' + _chipsLado(det) + '</div></div>';
+        }
+
         var comentarioHtml = (det && det.comentario)
           ? '<div style="margin-top:8px;padding:8px 10px;background:#fff;border-radius:6px;border:1px solid #C7D9FF"><div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Comentario</div><div style="font-size:12px;color:#0F1923;line-height:1.45;white-space:pre-wrap">' + esc(det.comentario) + '</div></div>'
           : '';
@@ -1636,12 +1657,12 @@ function renderMudanzaDetail(m) {
           fotosHtml += '</div></div>';
         }
         return '<div style="padding:12px 14px;background:#EEF4FF;border:1px solid #C7D9FF;border-left:3px solid #1A6FFF;border-radius:10px;margin:0 0 14px 0">'
-          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
           +   '<span style="font-size:16px">📋</span>'
           +   '<span style="font-size:12px;font-weight:700;color:#1A6FFF">Detalles que enviaste al mudancero</span>'
           + '</div>'
-          + tipoLugarHtml
-          + (chips ? '<div style="margin:6px 0">' + chips + '</div>' : '')
+          + cardsHtml
+          + legacyChips
           + comentarioHtml
           + fotosHtml
           + '</div>';
