@@ -2860,13 +2860,34 @@ function seleccionarPedido(mudanzaId, tipo) {
       + '</div>'
       + '</div>';
   }
-  // ── Banner detalles adicionales del cliente ──
-  // El cliente puede haber agregado características del lugar, comentario y fotos
-  // antes de enviar la solicitud. Mostramos un resumen aquí para que el mudancero
-  // los vea al cotizar (también le llegó en el PDF adjunto del mail).
+  // ── Banner detalles del lugar ──
+  // Muestra tipo (casa/depto) + piso + depto + características + comentario + fotos.
+  // El tipo de lugar es obligatorio en pedidos nuevos. Lo demás es opcional.
   var bannerDetalles = '';
   var det = m.detallesAdicionales;
-  if (det && typeof det === 'object' && Object.keys(det).length > 0) {
+  var tieneTipo = !!(m.tipoOrigen || m.tipoDestino);
+  var tieneDet  = det && typeof det === 'object' && Object.keys(det).length > 0;
+  if (tieneTipo || tieneDet) {
+    // Línea de tipo de lugar (formato compacto: 🏡 Casa → 🏢 Dpto Piso 8 A)
+    function _fmtLugar(tipo, piso, depto) {
+      if (!tipo) return '—';
+      if (tipo === 'casa') return '🏡 Casa';
+      var t = '🏢 Depto';
+      if (piso)  t += ' · Piso ' + esc(piso);
+      if (depto) t += ' · ' + esc(depto);
+      return t;
+    }
+    var tipoLugarHtml = '';
+    if (tieneTipo) {
+      tipoLugarHtml = '<div style="margin:6px 0 10px;padding:8px 10px;background:#fff;border-radius:6px;border:1px solid #C7D9FF">'
+        + '<div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Tipo de lugar</div>'
+        + '<div style="font-size:13px;color:#0F1923;font-weight:600;line-height:1.45">'
+        +   _fmtLugar(m.tipoOrigen, m.pisoOrigen, m.deptoOrigen)
+        +   ' <span style="color:#94A3B8;margin:0 4px">→</span> '
+        +   _fmtLugar(m.tipoDestino, m.pisoDestino, m.deptoDestino)
+        + '</div>'
+        + '</div>';
+    }
     var LBL = {
       ascensor: '🛗 Con ascensor',
       izaje: '⚙️ Necesita izaje',
@@ -2879,20 +2900,22 @@ function seleccionarPedido(mudanzaId, tipo) {
       mascotaEspecial: '🐾 Mascota o algo especial'
     };
     var flagsChips = '';
-    Object.keys(LBL).forEach(function(k) {
-      if (det[k] === true) {
-        var label = LBL[k];
-        if (k === 'escaleras' && det.escalerasPisos) {
-          label += ' (' + det.escalerasPisos + ' piso' + (det.escalerasPisos > 1 ? 's' : '') + ')';
+    if (det) {
+      Object.keys(LBL).forEach(function(k) {
+        if (det[k] === true) {
+          var label = LBL[k];
+          if (k === 'escaleras' && det.escalerasPisos) {
+            label += ' (' + det.escalerasPisos + ' piso' + (det.escalerasPisos > 1 ? 's' : '') + ')';
+          }
+          flagsChips += '<span style="display:inline-block;background:#fff;border:1px solid #C7D9FF;color:#1A6FFF;font-size:11px;padding:3px 8px;border-radius:6px;margin:2px 4px 2px 0;font-weight:600">' + esc(label) + '</span>';
         }
-        flagsChips += '<span style="display:inline-block;background:#fff;border:1px solid #C7D9FF;color:#1A6FFF;font-size:11px;padding:3px 8px;border-radius:6px;margin:2px 4px 2px 0;font-weight:600">' + esc(label) + '</span>';
-      }
-    });
-    var comentarioHtml = det.comentario
+      });
+    }
+    var comentarioHtml = (det && det.comentario)
       ? '<div style="margin-top:8px;padding:8px 10px;background:#fff;border-radius:6px;border:1px solid #C7D9FF"><div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Comentario del cliente</div><div style="font-size:12px;color:#0F1923;line-height:1.45;white-space:pre-wrap">' + esc(det.comentario) + '</div></div>'
       : '';
     var fotosHtml = '';
-    if (Array.isArray(det.fotos) && det.fotos.length) {
+    if (det && Array.isArray(det.fotos) && det.fotos.length) {
       fotosHtml = '<div style="margin-top:8px"><div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Fotos del lugar</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
       det.fotos.forEach(function(url) {
         fotosHtml += '<a href="' + esc(url) + '" target="_blank" style="display:block"><img src="' + esc(url) + '" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #C7D9FF;cursor:pointer"/></a>';
@@ -2900,10 +2923,11 @@ function seleccionarPedido(mudanzaId, tipo) {
       fotosHtml += '</div></div>';
     }
     bannerDetalles = '<div style="padding:12px 14px;background:#EEF4FF;border:1px solid #C7D9FF;border-left:3px solid #1A6FFF;border-radius:8px;margin-bottom:14px">'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
       +   '<span style="font-size:16px">📋</span>'
-      +   '<span style="font-size:12px;font-weight:700;color:#1A6FFF">Detalles adicionales del cliente</span>'
+      +   '<span style="font-size:12px;font-weight:700;color:#1A6FFF">Detalles del lugar</span>'
       + '</div>'
+      + tipoLugarHtml
       + (flagsChips ? '<div style="margin:6px 0">' + flagsChips + '</div>' : '')
       + comentarioHtml
       + fotosHtml
