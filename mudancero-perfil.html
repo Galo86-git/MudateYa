@@ -769,7 +769,7 @@ function confirmarSolicitud() {
   pdpMostrar();
 }
 
-function _publicarPedidoMudancero(detallesAdicionales) {
+function _publicarPedidoMudancero(detallesAdicionales, lugar) {
   var email = new URLSearchParams(location.search).get('id');
   var busqueda = null;
   try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
@@ -827,7 +827,14 @@ function _publicarPedidoMudancero(detallesAdicionales) {
       modoCotizacion: 'dirigido',
       mudancerosInvitados: [email],
       // Detalles adicionales opcionales (ascensor, izaje, escaleras, fotos…)
-      detallesAdicionales: detallesAdicionales || null
+      detallesAdicionales: detallesAdicionales || null,
+      // Datos del lugar (obligatorios, completados en el modal de detalles)
+      tipoOrigen:   lugar && lugar.tipoOrigen   || null,
+      tipoDestino:  lugar && lugar.tipoDestino  || null,
+      pisoOrigen:   lugar && lugar.pisoOrigen   || '',
+      pisoDestino:  lugar && lugar.pisoDestino  || '',
+      deptoOrigen:  lugar && lugar.deptoOrigen  || '',
+      deptoDestino: lugar && lugar.deptoDestino || ''
     })
   })
   .then(function(r){ return r.json(); })
@@ -891,8 +898,63 @@ function pdpMostrar() {
   var ep = document.getElementById('pdp-escaleras-pisos'); if (ep) ep.style.display = 'none';
   var grid = document.getElementById('pdp-fotos-grid'); if (grid) grid.innerHTML = '';
   var txtF = document.getElementById('pdp-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
-  var btn  = document.getElementById('pdp-btn-enviar'); if (btn) btn.disabled = false;
+  // Reset tipos origen/destino
+  _pdpTipoOrigen  = null;
+  _pdpTipoDestino = null;
+  ['pdp-tipo-origen-casa','pdp-tipo-origen-depto','pdp-tipo-destino-casa','pdp-tipo-destino-depto'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b) { b.style.background = '#fff'; b.style.color = '#78350F'; b.style.borderColor = '#FDE68A'; }
+  });
+  var po = document.getElementById('pdp-piso-origen');   if (po) po.value = '';
+  var dop = document.getElementById('pdp-depto-origen'); if (dop) dop.value = '';
+  var pd = document.getElementById('pdp-piso-destino');  if (pd) pd.value = '';
+  var ddp = document.getElementById('pdp-depto-destino');if (ddp) ddp.value = '';
+  var dow = document.getElementById('pdp-depto-origen-wrap');  if (dow) dow.style.display = 'none';
+  var ddw = document.getElementById('pdp-depto-destino-wrap'); if (ddw) ddw.style.display = 'none';
+  pdpValidar();
   document.getElementById('pdpModal').classList.add('open');
+}
+
+// ── Tipo de lugar (casa/depto) por lado · perfil del mudancero ──
+var _pdpTipoOrigen  = null;
+var _pdpTipoDestino = null;
+
+function pdpSetTipo(lado, tipo) {
+  if (lado === 'origen')  _pdpTipoOrigen  = tipo;
+  if (lado === 'destino') _pdpTipoDestino = tipo;
+  var idCasa  = 'pdp-tipo-' + lado + '-casa';
+  var idDepto = 'pdp-tipo-' + lado + '-depto';
+  var elCasa  = document.getElementById(idCasa);
+  var elDepto = document.getElementById(idDepto);
+  var sel = (tipo === 'casa') ? elCasa : elDepto;
+  var noSel = (tipo === 'casa') ? elDepto : elCasa;
+  if (sel)   { sel.style.background = '#F59E0B';   sel.style.color = '#fff';      sel.style.borderColor = '#F59E0B'; }
+  if (noSel) { noSel.style.background = '#fff';    noSel.style.color = '#78350F'; noSel.style.borderColor = '#FDE68A'; }
+  var wrap = document.getElementById('pdp-depto-' + lado + '-wrap');
+  if (wrap) wrap.style.display = (tipo === 'departamento') ? 'block' : 'none';
+  if (tipo === 'casa') {
+    var pisoEl  = document.getElementById('pdp-piso-'  + lado); if (pisoEl)  pisoEl.value = '';
+    var deptoEl = document.getElementById('pdp-depto-' + lado); if (deptoEl) deptoEl.value = '';
+  }
+  pdpValidar();
+}
+
+function pdpValidar() {
+  var btn = document.getElementById('pdp-btn-enviar');
+  var msg = document.getElementById('pdp-validar-msg');
+  if (!btn) return;
+  var ok = !!_pdpTipoOrigen && !!_pdpTipoDestino;
+  if (ok && _pdpTipoOrigen === 'departamento') {
+    var po = (document.getElementById('pdp-piso-origen').value || '').trim();
+    if (!po) ok = false;
+  }
+  if (ok && _pdpTipoDestino === 'departamento') {
+    var pd = (document.getElementById('pdp-piso-destino').value || '').trim();
+    if (!pd) ok = false;
+  }
+  btn.disabled = !ok;
+  btn.style.opacity = ok ? '1' : '.5';
+  if (msg) msg.style.display = ok ? 'none' : '';
 }
 
 function pdpOnToggle(opId) {
@@ -994,15 +1056,33 @@ function _pdpArmarDetalles() {
   return algo ? d : null;
 }
 
-function pdpSaltar() {
-  document.getElementById('pdpModal').classList.remove('open');
-  _publicarPedidoMudancero(null);
+function _pdpArmarLugar() {
+  var out = {
+    tipoOrigen:   _pdpTipoOrigen  || null,
+    tipoDestino:  _pdpTipoDestino || null,
+    pisoOrigen:   '',
+    pisoDestino:  '',
+    deptoOrigen:  '',
+    deptoDestino: ''
+  };
+  if (_pdpTipoOrigen === 'departamento') {
+    out.pisoOrigen  = (document.getElementById('pdp-piso-origen').value  || '').trim();
+    out.deptoOrigen = (document.getElementById('pdp-depto-origen').value || '').trim();
+  }
+  if (_pdpTipoDestino === 'departamento') {
+    out.pisoDestino  = (document.getElementById('pdp-piso-destino').value  || '').trim();
+    out.deptoDestino = (document.getElementById('pdp-depto-destino').value || '').trim();
+  }
+  return out;
 }
 
 function pdpEnviar() {
-  var det = _pdpArmarDetalles();
+  pdpValidar();
+  if (document.getElementById('pdp-btn-enviar').disabled) return;
+  var det   = _pdpArmarDetalles();
+  var lugar = _pdpArmarLugar();
   document.getElementById('pdpModal').classList.remove('open');
-  _publicarPedidoMudancero(det);
+  _publicarPedidoMudancero(det, lugar);
 }
 
 // ── Solicitar (entry point) ───────────────
@@ -1161,11 +1241,55 @@ var _mudancero = null;
   <div class="pdp-modal-box">
     <div class="pdp-modal-head">
       <div style="font-size:1.6rem;margin-bottom:6px">📋</div>
-      <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:.3rem">¿Algo más que deba saber el mudancero?</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.4">Esto ayuda a una mejor cotización · <b>Todo opcional · 2 min</b></div>
+      <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:.3rem">Para cotizar bien, necesitamos algunos datos</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.4">2 minutos · los datos del lugar son obligatorios</div>
     </div>
     <div class="pdp-modal-body">
-      <div class="pdp-label" style="margin-top:2px">Marcá lo que aplique</div>
+
+      <!-- Bloque obligatorio: tipo + piso de origen y destino -->
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-left:3px solid #F59E0B;border-radius:10px;padding:12px 14px;margin:8px 0 14px">
+        <div style="font-size:11px;font-weight:700;color:#78350F;text-transform:uppercase;letter-spacing:.6px;font-family:'DM Mono',monospace;margin-bottom:10px">📍 Origen y destino · obligatorio <span style="color:#DC2626">*</span></div>
+
+        <!-- ORIGEN -->
+        <div style="font-size:12px;font-weight:700;color:#78350F;margin-bottom:6px">🏠 ¿De dónde te mudás?</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button type="button" onclick="pdpSetTipo('origen','casa')" id="pdp-tipo-origen-casa" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏡 Casa</button>
+          <button type="button" onclick="pdpSetTipo('origen','departamento')" id="pdp-tipo-origen-depto" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏢 Departamento</button>
+        </div>
+        <div id="pdp-depto-origen-wrap" style="display:none;margin-bottom:10px">
+          <div style="display:flex;gap:6px">
+            <div style="flex:1">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:'DM Mono',monospace;display:block;margin-bottom:2px">Piso *</label>
+              <input type="text" id="pdp-piso-origen" placeholder="Ej: 8" maxlength="6" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box" oninput="pdpValidar()"/>
+            </div>
+            <div style="flex:1.2">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:'DM Mono',monospace;display:block;margin-bottom:2px">Depto (opcional)</label>
+              <input type="text" id="pdp-depto-origen" placeholder="Ej: A · 3 · PH" maxlength="10" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESTINO -->
+        <div style="font-size:12px;font-weight:700;color:#78350F;margin:12px 0 6px">🏁 ¿A dónde te mudás?</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button type="button" onclick="pdpSetTipo('destino','casa')" id="pdp-tipo-destino-casa" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏡 Casa</button>
+          <button type="button" onclick="pdpSetTipo('destino','departamento')" id="pdp-tipo-destino-depto" style="flex:1;padding:9px 10px;border:1.5px solid #FDE68A;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:#78350F">🏢 Departamento</button>
+        </div>
+        <div id="pdp-depto-destino-wrap" style="display:none">
+          <div style="display:flex;gap:6px">
+            <div style="flex:1">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:'DM Mono',monospace;display:block;margin-bottom:2px">Piso *</label>
+              <input type="text" id="pdp-piso-destino" placeholder="Ej: 8" maxlength="6" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box" oninput="pdpValidar()"/>
+            </div>
+            <div style="flex:1.2">
+              <label style="font-size:10px;color:#78350F;font-weight:700;font-family:'DM Mono',monospace;display:block;margin-bottom:2px">Depto (opcional)</label>
+              <input type="text" id="pdp-depto-destino" placeholder="Ej: A · 3 · PH" maxlength="10" style="width:100%;padding:8px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pdp-label" style="margin-top:2px">Marcá lo que aplique (opcional)</div>
       <div id="pdp-checkboxes" style="display:flex;flex-direction:column;gap:6px"></div>
       <div id="pdp-escaleras-pisos" style="display:none;background:#FEF3C7;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px">
         <label style="display:flex;align-items:center;gap:10px;color:#78350F">
@@ -1174,7 +1298,7 @@ var _mudancero = null;
             style="width:60px;padding:6px 8px;border:1px solid #FDE68A;border-radius:6px;font-size:13px;outline:none;font-family:inherit"/>
         </label>
       </div>
-      <div class="pdp-label">¿Algo más?</div>
+      <div class="pdp-label">¿Algo más? (opcional)</div>
       <textarea id="pdp-comentario" rows="3" placeholder="Ej: piano, caja fuerte, mascota grande, mueble pesado..." class="pdp-input" style="resize:vertical"></textarea>
       <div class="pdp-label">¿Querés agregar fotos? (opcional)</div>
       <div class="pdp-uploader" onclick="document.getElementById('pdp-fotos-input').click()">
@@ -1186,8 +1310,8 @@ var _mudancero = null;
       <div id="pdp-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;margin-bottom:14px"></div>
     </div>
     <div class="pdp-modal-foot">
-      <button id="pdp-btn-enviar" class="pdp-btn-primary" onclick="pdpEnviar()">Enviar solicitud →</button>
-      <button class="pdp-btn-skip" onclick="pdpSaltar()">Saltar este paso</button>
+      <button id="pdp-btn-enviar" class="pdp-btn-primary" onclick="pdpEnviar()" disabled>Enviar solicitud →</button>
+      <div id="pdp-validar-msg" style="display:none;font-size:11px;color:#DC2626;text-align:center;margin-top:6px;font-family:'DM Mono',monospace">Completá el tipo de lugar (origen y destino) para continuar</div>
     </div>
   </div>
 </div>
