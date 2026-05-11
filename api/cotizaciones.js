@@ -829,28 +829,67 @@ module.exports = async function handler(req, res) {
       const partnerAsesorNorm    = (typeof partnerAsesor === 'string' && partnerAsesor.length < 100) ? partnerAsesor : '';
       const partnerPropiedadNorm = (typeof partnerPropiedad === 'string' && partnerPropiedad.length < 100) ? partnerPropiedad : '';
 
-      // Sanitizar detallesAdicionales (opcionales, agregados por el cliente antes de enviar).
-      // Whitelist de claves booleanas + escalerasPisos (número 1-20) + comentario (string ≤500) + fotos (array de URLs)
-      let detallesNorm = null;
+      // Sanitizar detalles del cliente. Modelo nuevo:
+      //   detallesAdicionales = { detallesOrigen, detallesDestino, comentario, fotos }
+      // Compat con modelo viejo (pedidos previos al cambio de mayo/2026):
+      //   detallesAdicionales = { ascensor, izaje, ..., comentario, fotos } (flags planos)
+      // Si reconocemos el modelo nuevo, los lados se guardan como detallesOrigen y detallesDestino
+      // top-level en la mudanza, y detallesAdicionales queda con solo {comentario, fotos}.
+      const FLAGS = ['ascensor','izaje','soga','balconTerraza','pasilloAngosto','escaleras','cocheraGarage','estDificil','mascotaEspecial'];
+
+      function _sanitizarLado(src) {
+        if (!src || typeof src !== 'object') return null;
+        const out = {};
+        FLAGS.forEach(function(k) { if (src[k] === true) out[k] = true; });
+        if (src.escalerasPisos) {
+          const p = parseInt(src.escalerasPisos);
+          if (p > 0 && p <= 20) out.escalerasPisos = p;
+        }
+        return Object.keys(out).length > 0 ? out : null;
+      }
+
+      let detallesOrigenNorm  = null;
+      let detallesDestinoNorm = null;
+      let detallesNorm = null; // solo comentario + fotos (compartido)
       if (detallesAdicionales && typeof detallesAdicionales === 'object') {
-        const FLAGS = ['ascensor','izaje','soga','balconTerraza','pasilloAngosto','escaleras','cocheraGarage','estDificil','mascotaEspecial'];
-        const tmp = {};
-        FLAGS.forEach(function(k) { if (detallesAdicionales[k] === true) tmp[k] = true; });
-        if (detallesAdicionales.escalerasPisos) {
-          const p = parseInt(detallesAdicionales.escalerasPisos);
-          if (p > 0 && p <= 20) tmp.escalerasPisos = p;
+        const tieneModeloNuevo = !!(detallesAdicionales.detallesOrigen || detallesAdicionales.detallesDestino);
+        if (tieneModeloNuevo) {
+          // Modelo nuevo: lados separados
+          detallesOrigenNorm  = _sanitizarLado(detallesAdicionales.detallesOrigen);
+          detallesDestinoNorm = _sanitizarLado(detallesAdicionales.detallesDestino);
+          // Compartido: solo comentario + fotos
+          const tmp = {};
+          if (typeof detallesAdicionales.comentario === 'string') {
+            const c = detallesAdicionales.comentario.trim().slice(0, 500);
+            if (c.length) tmp.comentario = c;
+          }
+          if (Array.isArray(detallesAdicionales.fotos)) {
+            const fs = detallesAdicionales.fotos
+              .filter(function(u) { return typeof u === 'string' && u.startsWith('http') && u.length < 600; })
+              .slice(0, 5);
+            if (fs.length) tmp.fotos = fs;
+          }
+          if (Object.keys(tmp).length > 0) detallesNorm = tmp;
+        } else {
+          // Modelo viejo: flags planos + comentario + fotos. Lo guardamos tal cual en detallesAdicionales.
+          const tmp = {};
+          FLAGS.forEach(function(k) { if (detallesAdicionales[k] === true) tmp[k] = true; });
+          if (detallesAdicionales.escalerasPisos) {
+            const p = parseInt(detallesAdicionales.escalerasPisos);
+            if (p > 0 && p <= 20) tmp.escalerasPisos = p;
+          }
+          if (typeof detallesAdicionales.comentario === 'string') {
+            const c = detallesAdicionales.comentario.trim().slice(0, 500);
+            if (c.length) tmp.comentario = c;
+          }
+          if (Array.isArray(detallesAdicionales.fotos)) {
+            const fs = detallesAdicionales.fotos
+              .filter(function(u) { return typeof u === 'string' && u.startsWith('http') && u.length < 600; })
+              .slice(0, 5);
+            if (fs.length) tmp.fotos = fs;
+          }
+          if (Object.keys(tmp).length > 0) detallesNorm = tmp;
         }
-        if (typeof detallesAdicionales.comentario === 'string') {
-          const c = detallesAdicionales.comentario.trim().slice(0, 500);
-          if (c.length) tmp.comentario = c;
-        }
-        if (Array.isArray(detallesAdicionales.fotos)) {
-          const fs = detallesAdicionales.fotos
-            .filter(function(u) { return typeof u === 'string' && u.startsWith('http') && u.length < 600; })
-            .slice(0, 5);
-          if (fs.length) tmp.fotos = fs;
-        }
-        if (Object.keys(tmp).length > 0) detallesNorm = tmp;
       }
 
       // Sanitizar tipo de lugar (casa/depto) y depto opcional.
@@ -864,7 +903,7 @@ module.exports = async function handler(req, res) {
       const pisoOrigenNorm  = (tipoOrigenNorm  === 'departamento' && typeof pisoOrigen  === 'string') ? pisoOrigen.trim().slice(0,10)  : (tipoOrigenNorm  === 'casa' ? '' : (pisoOrigen  || ''));
       const pisoDestinoNorm = (tipoDestinoNorm === 'departamento' && typeof pisoDestino === 'string') ? pisoDestino.trim().slice(0,10) : (tipoDestinoNorm === 'casa' ? '' : (pisoDestino || ''));
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -1908,6 +1947,9 @@ module.exports = async function handler(req, res) {
           asesorEmail:      p.asesorEmail || null,
           // Detalles adicionales que cargó el cliente (ascensor, fotos, etc) — para mostrar en admin/mi-cuenta
           detallesAdicionales: p.detallesAdicionales || null,
+          // Modelo nuevo: detalles separados por lado (origen/destino)
+          detallesOrigen:  p.detallesOrigen  || null,
+          detallesDestino: p.detallesDestino || null,
           // Tipo de lugar (casa/depto) y datos de depto si aplica — vienen del modal nuevo
           tipoOrigen:    p.tipoOrigen    || null,
           tipoDestino:   p.tipoDestino   || null,
@@ -2604,14 +2646,16 @@ async function generarPDFDetallesBase64(mudanza) {
   if (!mudanza) return null;
   const d = mudanza.detallesAdicionales || {};
   const tieneTipo = !!(mudanza.tipoOrigen || mudanza.tipoDestino);
-  const tieneDetalles = Object.keys(d).length > 0;
-  // Generar si hay tipo de lugar (caso nuevo, siempre con modal obligatorio) o
-  // si hay al menos un detalle adicional (compat con pedidos viejos).
-  if (!tieneTipo && !tieneDetalles) return null;
+  const tieneLados = !!(mudanza.detallesOrigen || mudanza.detallesDestino);
+  const tieneCompartido = Object.keys(d).length > 0; // comentario o fotos (o flags legacy)
+  // Generar si hay tipo (modelo nuevo siempre obligatorio), si hay detalles por lado,
+  // o si el modelo viejo tenía algo en detallesAdicionales (compat).
+  if (!tieneTipo && !tieneLados && !tieneCompartido) return null;
 
   const PDFDocument = require('pdfkit');
 
-  // Labels legibles de las flags
+  // Labels legibles de las flags (compat: si llega un pedido viejo con flags planos
+  // dentro de detallesAdicionales, también los mostramos).
   const LABELS = {
     ascensor:        'Hay ascensor en origen y/o destino',
     izaje:           'Necesita izaje',
@@ -2625,6 +2669,8 @@ async function generarPDFDetallesBase64(mudanza) {
   };
 
   // Pre-fetch de las fotos a buffer (PDFKit necesita buffers, no URLs)
+  // En el modelo nuevo, las fotos están en detallesAdicionales.fotos (compartido).
+  // En el viejo, también. En ambos casos se renderizan al final, debajo de las columnas.
   const fotosBuffers = [];
   if (Array.isArray(d.fotos)) {
     for (let i = 0; i < d.fotos.length; i++) {
@@ -2643,7 +2689,7 @@ async function generarPDFDetallesBase64(mudanza) {
       const doc = new PDFDocument({
         size: 'A4',
         margins: { top: 50, bottom: 50, left: 50, right: 50 },
-        info: { Title: 'Detalles adicionales · ' + (mudanza.id || '') }
+        info: { Title: 'Detalles del pedido · ' + (mudanza.id || '') }
       });
       const chunks = [];
       doc.on('data', c => chunks.push(c));
@@ -2661,7 +2707,7 @@ async function generarPDFDetallesBase64(mudanza) {
       doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(22)
          .text('MudateYa', MARGIN, 28);
       doc.fontSize(11).fillColor('#FFFFFF').opacity(0.7)
-         .text('Detalles adicionales del pedido', MARGIN, 50)
+         .text('Detalles del pedido', MARGIN, 50)
          .opacity(1);
 
       let y = 100;
@@ -2689,58 +2735,100 @@ async function generarPDFDetallesBase64(mudanza) {
       row('Destino', mudanza.hasta);
       row('Tamaño', mudanza.ambientes);
       row('Fecha', mudanza.fecha);
-      y += 10;
+      y += 14;
 
-      // ── Tipo de lugar (obligatorio en pedidos nuevos)
-      if (mudanza.tipoOrigen || mudanza.tipoDestino) {
-        doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
-           .text('TIPO DE LUGAR', MARGIN, y);
-        y += 18;
-        function lineaLugar(label, tipo, piso, depto) {
-          if (!tipo) return;
+      // ── 2 columnas: ORIGEN | DESTINO ──
+      // Cada columna muestra: tipo de lugar (casa/depto con piso/depto si aplica)
+      // + checkboxes marcados para ese lado.
+      const LABELS_CORTOS = {
+        ascensor:        'Con ascensor',
+        izaje:           'Necesita izaje',
+        soga:            'Necesita soga',
+        balconTerraza:   'Balcón / terraza',
+        pasilloAngosto:  'Pasillo angosto',
+        escaleras:       'Hay escaleras',
+        cocheraGarage:   'Puerta de cochera',
+        estDificil:      'Estac. difícil',
+        mascotaEspecial: 'Mascota / especial'
+      };
+      const COL_W = (CONTENT_W - 12) / 2;
+      const COL_X_O = MARGIN;
+      const COL_X_D = MARGIN + COL_W + 12;
+
+      function dibujarColumna(xCol, titulo, emoji, tipo, piso, depto, detallesLado) {
+        let cy = y;
+        // Caja con borde amarillo
+        const startY = cy;
+        // Header de la columna
+        doc.fillColor('#78350F').font('Helvetica-Bold').fontSize(11)
+           .text(emoji + '  ' + titulo, xCol + 10, cy + 10);
+        cy += 32;
+
+        // Tipo de lugar
+        if (tipo) {
+          doc.fillColor('#64748B').font('Helvetica').fontSize(8)
+             .text('TIPO DE LUGAR', xCol + 10, cy);
+          cy += 11;
           let txt;
           if (tipo === 'casa') {
-            txt = 'Casa';
+            txt = '🏡 Casa';
           } else {
-            txt = 'Departamento';
+            txt = '🏢 Departamento';
             if (piso)  txt += ' · Piso ' + piso;
             if (depto) txt += ' · Depto ' + depto;
           }
-          doc.fillColor('#64748B').font('Helvetica').fontSize(9)
-             .text(label, MARGIN, y, { width: 100 });
           doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(10)
-             .text(txt, MARGIN + 110, y, { width: CONTENT_W - 110 });
-          y += 18;
+             .text(txt, xCol + 10, cy, { width: COL_W - 20 });
+          cy = doc.y + 8;
+        } else {
+          doc.fillColor('#94A3B8').font('Helvetica-Oblique').fontSize(9)
+             .text('Tipo de lugar: no indicado', xCol + 10, cy, { width: COL_W - 20 });
+          cy += 14;
         }
-        lineaLugar('Origen',  mudanza.tipoOrigen,  mudanza.pisoOrigen,  mudanza.deptoOrigen);
-        lineaLugar('Destino', mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino);
-        y += 8;
+
+        // Checkboxes marcados
+        const flagsLado = detallesLado
+          ? Object.keys(LABELS_CORTOS).filter(function(k) { return detallesLado[k] === true; })
+          : [];
+        if (flagsLado.length > 0) {
+          doc.fillColor('#64748B').font('Helvetica').fontSize(8)
+             .text('CARACTERÍSTICAS', xCol + 10, cy);
+          cy += 11;
+          flagsLado.forEach(function(k) {
+            let lbl = LABELS_CORTOS[k];
+            if (k === 'escaleras' && detallesLado.escalerasPisos) {
+              lbl += ' (' + detallesLado.escalerasPisos + ' piso' + (detallesLado.escalerasPisos > 1 ? 's' : '') + ')';
+            }
+            doc.fillColor('#22C36A').font('Helvetica-Bold').fontSize(9).text('✓', xCol + 10, cy);
+            doc.fillColor('#0F1923').font('Helvetica').fontSize(9).text(lbl, xCol + 22, cy, { width: COL_W - 32 });
+            cy += 13;
+          });
+        } else if (tipo) {
+          doc.fillColor('#94A3B8').font('Helvetica-Oblique').fontSize(9)
+             .text('Sin características adicionales', xCol + 10, cy, { width: COL_W - 20 });
+          cy += 14;
+        }
+
+        // Border de la caja (calculado al final con la altura real)
+        const altura = Math.max(cy - startY + 10, 80);
+        doc.lineWidth(1).strokeColor('#FDE68A')
+           .rect(xCol, startY, COL_W, altura).stroke();
+        // Borde izquierdo grueso naranja
+        doc.lineWidth(3).strokeColor('#F59E0B')
+           .moveTo(xCol + 1.5, startY).lineTo(xCol + 1.5, startY + altura).stroke();
+        return startY + altura;
       }
 
-      // ── Características del lugar (checkboxes marcados)
-      const flagsActivas = Object.keys(LABELS).filter(function(k) { return d[k] === true; });
-      if (flagsActivas.length > 0) {
-        doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
-           .text('CARACTERÍSTICAS DEL LUGAR', MARGIN, y);
-        y += 18;
-        flagsActivas.forEach(function(k) {
-          let label = LABELS[k];
-          if (k === 'escaleras' && d.escalerasPisos) {
-            label += ' (' + d.escalerasPisos + ' piso' + (d.escalerasPisos > 1 ? 's' : '') + ')';
-          }
-          doc.fillColor('#22C36A').font('Helvetica-Bold').fontSize(10).text('✓', MARGIN, y);
-          doc.fillColor('#0F1923').font('Helvetica').fontSize(10).text(label, MARGIN + 16, y, { width: CONTENT_W - 16 });
-          y += 16;
-        });
-        y += 10;
-      }
+      const yFinO = dibujarColumna(COL_X_O, 'ORIGEN',  '📍', mudanza.tipoOrigen,  mudanza.pisoOrigen,  mudanza.deptoOrigen,  mudanza.detallesOrigen);
+      const yFinD = dibujarColumna(COL_X_D, 'DESTINO', '🏁', mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino, mudanza.detallesDestino);
+      y = Math.max(yFinO, yFinD) + 16;
 
-      // ── Comentario libre
+      // ── Comentario libre (compartido)
       if (d.comentario) {
         doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
            .text('COMENTARIO DEL CLIENTE', MARGIN, y);
         y += 18;
-        doc.fillColor('#F8FAFC').rect(MARGIN, y, CONTENT_W, 10).fill(); // separador suave
+        doc.fillColor('#F8FAFC').rect(MARGIN, y - 4, CONTENT_W, 6).fill();
         doc.fillColor('#0F1923').font('Helvetica').fontSize(10)
            .text(d.comentario, MARGIN + 4, y, { width: CONTENT_W - 8, lineGap: 3 });
         y = doc.y + 16;
@@ -2807,8 +2895,9 @@ async function notificarMudanceros(mudanza) {
     : '';
 
   // Banner detalles adicionales — aparece si el cliente cargó detalles antes de enviar
-  // Banner detalles del lugar — aparece si el pedido tiene tipo de lugar o detalles adicionales
+  // Banner detalles del lugar — aparece si el pedido tiene tipo de lugar, detalles por lado o detalles adicionales
   const tieneInfoExtra = !!(mudanza.tipoOrigen || mudanza.tipoDestino) ||
+    !!(mudanza.detallesOrigen || mudanza.detallesDestino) ||
     !!(mudanza.detallesAdicionales && Object.keys(mudanza.detallesAdicionales).length > 0);
   const bannerDetalles = tieneInfoExtra
     ? `<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:11px 28px;font-size:13px;color:#1A6FFF;font-weight:600;display:flex;align-items:center"><span style="background:#1A6FFF;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">📋</span>Detalles del lugar adjuntos en PDF</div>`
