@@ -374,37 +374,70 @@ function getDatosExtra(idx) {
 // ══════════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════════
-function renderPerfil(m, extra) {
-  var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
-  // Precio según ambientes y NIVEL de la búsqueda — debe matchear el index/landing.
-  // Mismo helper que precioMudanceroNivel() del index: usa preciosEsencial/Integral/Llave
-  // si el mudancero ya cargó el modelo nuevo; cae a m.precios solo como compat legacy.
-  var busqueda = {};
-  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual') || '{}'); } catch(e){}
+// ── Helper único: resuelve qué nivel y precio mostrar para este mudancero ──
+// Si el cliente buscó un nivel que el mudancero NO ofrece (preciosNivel = null
+// o amb correspondiente = 0/vacío), caemos al primer nivel que sí tenga cargado.
+// Devuelve: { nivel, precio, sustituido } donde `sustituido` es true si tuvimos
+// que cambiar el nivel pedido (para mostrar un avisito al usuario).
+function _resolverNivelYPrecio(m, nivelPedido, ambNum, esFlete) {
   var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
+  if (esFlete) {
+    return { nivel: 'flete', precio: pAmt(m.precioFleteNuevo) || pAmt(m.precios && m.precios.flete), sustituido: false };
+  }
+  var clave = ['amb1','amb2','amb3','amb4'][Math.min(ambNum,4)-1] || 'amb1';
+  var mapa = { esencial:'preciosEsencial', integral:'preciosIntegral', llave:'preciosLlave' };
+  var nivel = nivelPedido || 'esencial';
+  // 1. Intentar el nivel pedido
   var precio = 0;
-  if (busqueda.tipo === 'flete') {
-    // Flete: precio único, mismo modelo que el index
-    precio = pAmt(m.precioFleteNuevo) || pAmt(m.precios && m.precios.flete);
-  } else {
-    var nivel = busqueda.nivel || 'esencial';
-    var amb = Math.max(1, parseInt(busqueda.ambientes) || 2);
-    var clave = ['amb1','amb2','amb3','amb4'][Math.min(amb,4)-1] || 'amb1';
-    // Modelo nuevo: lee del nivel correspondiente
-    var mapa = { esencial:'preciosEsencial', integral:'preciosIntegral', llave:'preciosLlave' };
-    if (m[mapa[nivel]]) {
-      precio = pAmt(m[mapa[nivel]][clave]) || pAmt(m[mapa[nivel]].amb1);
-    }
-    // Compat legacy: solo si el perfil NO tiene NINGÚN dato del modelo nuevo
-    if (!precio) {
-      var tieneModeloNuevo = m.preciosEsencial || m.preciosIntegral || m.preciosLlave;
-      if (!tieneModeloNuevo) {
-        var multi = (nivel === 'integral') ? 1.5 : (nivel === 'llave' ? 2.25 : 1);
-        var base = pAmt(m.precios && m.precios[clave]) || pAmt(m.precios && m.precios.amb1);
-        precio = Math.round(base * multi);
+  if (m[mapa[nivel]]) {
+    precio = pAmt(m[mapa[nivel]][clave]) || pAmt(m[mapa[nivel]].amb1);
+  }
+  // 2. Si no hay precio en el nivel pedido, buscar el primer nivel disponible
+  //    (respeta el orden esencial < integral < llave para sustituir hacia arriba
+  //    si solo tiene packs más completos cargados).
+  var sustituido = false;
+  if (!precio) {
+    var ordenFallback = ['esencial','integral','llave'].filter(function(n){ return n !== nivel; });
+    for (var i = 0; i < ordenFallback.length; i++) {
+      var n = ordenFallback[i];
+      if (m[mapa[n]]) {
+        var p = pAmt(m[mapa[n]][clave]) || pAmt(m[mapa[n]].amb1);
+        if (p > 0) {
+          precio = p;
+          nivel = n;
+          sustituido = true;
+          break;
+        }
       }
     }
   }
+  // 3. Compat legacy: solo si NO hay modelo nuevo en ningún nivel
+  if (!precio) {
+    var tieneModeloNuevo = m.preciosEsencial || m.preciosIntegral || m.preciosLlave;
+    if (!tieneModeloNuevo) {
+      var multi = (nivelPedido === 'integral') ? 1.5 : (nivelPedido === 'llave' ? 2.25 : 1);
+      var base = pAmt(m.precios && m.precios[clave]) || pAmt(m.precios && m.precios.amb1);
+      precio = Math.round(base * multi);
+      nivel = nivelPedido || 'esencial';
+    }
+  }
+  return { nivel: nivel, precio: precio, sustituido: sustituido };
+}
+
+function renderPerfil(m, extra) {
+  var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
+  // Precio según ambientes y NIVEL de la búsqueda — debe matchear el index/landing.
+  // Si el mudancero no ofrece el nivel pedido, cae al primero que tenga cargado.
+  var busqueda = {};
+  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual') || '{}'); } catch(e){}
+  var esFleteR = busqueda.tipo === 'flete';
+  var ambR = Math.max(1, parseInt(busqueda.ambientes) || 2);
+  var resol = _resolverNivelYPrecio(m, busqueda.nivel || 'esencial', ambR, esFleteR);
+  var precio = resol.precio;
+  // Guardamos el nivel resuelto para usarlo después al publicar la cotización
+  // (así el mudancero recibe el pedido por el pack que efectivamente ofrece).
+  m._nivelResuelto = resol.nivel;
+  m._nivelSustituido = resol.sustituido;
   var ratingLabel = m.calificacion >= 4.8 ? 'Excepcional' : m.calificacion >= 4.5 ? 'Muy bueno' : m.calificacion >= 4 ? 'Bueno' : 'Bien';
   var starsHtml = '';
   for (var i = 1; i <= 5; i++) {
@@ -632,14 +665,23 @@ function renderPerfil(m, extra) {
       +'<div>'
         +'<div class="sidebar-card">'
           +(function(){
-            // Label que indica el nivel y ambientes seleccionados — sirve para que el cliente
-            // entienda que ese precio es para esos parámetros (y matchea exactamente el del index)
+            // Label que indica el nivel y ambientes — usa el nivel RESUELTO
+            // (puede haber cambiado del pedido si el mudancero solo ofrece otro pack)
+            var nivelMostrar = m._nivelResuelto || busqueda.nivel || 'esencial';
             var nivelLbl = busqueda.tipo === 'flete' ? 'Flete'
-              : (busqueda.nivel === 'integral' ? '🛠️ Integral'
-              : busqueda.nivel === 'llave'    ? '🔑 Llave en mano'
+              : (nivelMostrar === 'integral' ? '🛠️ Integral'
+              : nivelMostrar === 'llave'    ? '🔑 Llave en mano'
               : '📦 Esencial');
             var ambLbl = busqueda.tipo === 'flete' ? '' : ' · ' + (parseInt(busqueda.ambientes) || 2) + ' amb.';
-            return '<div class="precio-desde">'+nivelLbl+ambLbl+'</div>';
+            var html = '<div class="precio-desde">'+nivelLbl+ambLbl+'</div>';
+            // Avisito chico cuando sustituimos el nivel pedido
+            if (m._nivelSustituido && busqueda.tipo !== 'flete') {
+              var nivelPedidoLbl = busqueda.nivel === 'integral' ? 'Integral'
+                : busqueda.nivel === 'llave' ? 'Llave en mano'
+                : 'Esencial';
+              html += '<div style="font-size:11px;color:#64748B;margin:4px 0 0;line-height:1.3;font-family:\'DM Mono\',monospace">Este mudancero no ofrece <b>'+nivelPedidoLbl+'</b><br/>Te mostramos el pack que sí trabaja.</div>';
+            }
+            return html;
           })()
           +'<div class="precio-num">'+fmtPrecio(precio)+'</div>'
           +'<button class="btn-cot" onclick="solicitarCotizacion()">Solicitar cotización →</button>'
@@ -781,32 +823,18 @@ function _publicarPedidoMudancero(detallesAdicionales, lugar) {
 
   var esFlete = busqueda.tipo === 'flete';
   var ambNum = parseInt(busqueda.ambientes) || 2;
-  var nivel = esFlete ? 'flete' : (busqueda.nivel || 'esencial');
+  var nivelPedido = esFlete ? 'flete' : (busqueda.nivel || 'esencial');
 
-  // ── Calcular precio_estimado del mudancero específico (NO hardcoded) ──
-  // Usar el mismo cálculo que renderPerfil() arriba para que matchee con
-  // lo que el cliente vio en el perfil al solicitar la cotización.
-  var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
-  var precioEst = 0;
+  // ── Resolver nivel + precio del mudancero específico ──
+  // Si el mudancero no ofrece el nivel pedido, caemos al primero disponible.
+  // Importante: enviamos al backend el nivel RESUELTO para que el mudancero
+  // reciba el pedido por el pack que efectivamente ofrece. Si mandamos el
+  // pedido original (ej: "esencial" cuando solo ofrece "llave"), el mudancero
+  // verá un pedido por un pack que no trabaja.
   var m = _mudancero || {};
-  if (esFlete) {
-    precioEst = pAmt(m.precioFleteNuevo) || pAmt(m.precios && m.precios.flete);
-  } else {
-    var clave = ['amb1','amb2','amb3','amb4'][Math.min(ambNum,4)-1] || 'amb1';
-    var mapa = { esencial:'preciosEsencial', integral:'preciosIntegral', llave:'preciosLlave' };
-    if (m[mapa[nivel]]) {
-      precioEst = pAmt(m[mapa[nivel]][clave]) || pAmt(m[mapa[nivel]].amb1);
-    }
-    // Compat legacy: solo si NO tiene modelo nuevo
-    if (!precioEst) {
-      var tieneModeloNuevo = m.preciosEsencial || m.preciosIntegral || m.preciosLlave;
-      if (!tieneModeloNuevo) {
-        var multi = (nivel === 'integral') ? 1.5 : (nivel === 'llave' ? 2.25 : 1);
-        var base = pAmt(m.precios && m.precios[clave]) || pAmt(m.precios && m.precios.amb1);
-        precioEst = Math.round(base * multi);
-      }
-    }
-  }
+  var resol = _resolverNivelYPrecio(m, nivelPedido, ambNum, esFlete);
+  var nivel = resol.nivel;
+  var precioEst = resol.precio;
   // Si no se pudo calcular (mudancero sin precios cargados), 0 es honesto:
   // el mudancero entra a /mi-cuenta y carga el precio real al cotizar.
 
