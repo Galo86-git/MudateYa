@@ -2611,9 +2611,21 @@
     // Incluir el nivel actual (esencial/integral/llave) para que el perfil muestre
     // exactamente el mismo precio que la card del index. Sin esto, el perfil cae
     // a "esencial" por default y muestra un precio distinto.
-    var busquedaConNivel = Object.assign({}, _busqueda, { nivel: _nivel || 'esencial' });
+    var nivelActual = _nivel || 'llave';
+    var busquedaConNivel = Object.assign({}, _busqueda, { nivel: nivelActual });
     sessionStorage.setItem('busquedaActual', JSON.stringify(busquedaConNivel));
-    window.open('/mudancero?id=' + encodeURIComponent(email), '_blank');
+    // CRÍTICO: sessionStorage se aísla por pestaña. Al hacer window.open() la
+    // pestaña nueva arranca con storage vacío y el perfil no sabe el nivel que
+    // pidió el cliente. Pasamos los datos críticos por URL para que sobrevivan.
+    var qs = '?id=' + encodeURIComponent(email)
+      + '&nivel=' + encodeURIComponent(nivelActual)
+      + '&amb=' + encodeURIComponent(_busqueda.ambientes || 2)
+      + '&tipo=' + encodeURIComponent(_busqueda.tipo || 'mudanza');
+    if (_busqueda.desde) qs += '&desde=' + encodeURIComponent(_busqueda.desde);
+    if (_busqueda.hasta) qs += '&hasta=' + encodeURIComponent(_busqueda.hasta);
+    if (_busqueda.fecha) qs += '&fecha=' + encodeURIComponent(_busqueda.fecha);
+    if (_busqueda.km)    qs += '&km=' + encodeURIComponent(_busqueda.km);
+    window.open('/mudancero' + qs, '_blank');
   }
 
   // ══════════════════════════════════════════
