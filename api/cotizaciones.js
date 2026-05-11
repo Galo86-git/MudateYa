@@ -776,7 +776,7 @@ module.exports = async function handler(req, res) {
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
-      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales } = req.body;
+      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales, tipoOrigen, tipoDestino, deptoOrigen, deptoDestino } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
@@ -853,7 +853,18 @@ module.exports = async function handler(req, res) {
         if (Object.keys(tmp).length > 0) detallesNorm = tmp;
       }
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      // Sanitizar tipo de lugar (casa/depto) y depto opcional.
+      // Estos campos vienen del modal de detalles (obligatorios) o del form principal Mudafy.
+      const TIPOS_VALIDOS = ['casa', 'departamento'];
+      const tipoOrigenNorm  = (typeof tipoOrigen  === 'string' && TIPOS_VALIDOS.indexOf(tipoOrigen)  !== -1) ? tipoOrigen  : null;
+      const tipoDestinoNorm = (typeof tipoDestino === 'string' && TIPOS_VALIDOS.indexOf(tipoDestino) !== -1) ? tipoDestino : null;
+      const deptoOrigenNorm  = (typeof deptoOrigen  === 'string' && deptoOrigen.length  <= 20) ? deptoOrigen.trim()  : '';
+      const deptoDestinoNorm = (typeof deptoDestino === 'string' && deptoDestino.length <= 20) ? deptoDestino.trim() : '';
+      // Piso solo se acepta si el tipo es departamento; si es casa lo vaciamos para coherencia.
+      const pisoOrigenNorm  = (tipoOrigenNorm  === 'departamento' && typeof pisoOrigen  === 'string') ? pisoOrigen.trim().slice(0,10)  : (tipoOrigenNorm  === 'casa' ? '' : (pisoOrigen  || ''));
+      const pisoDestinoNorm = (tipoDestinoNorm === 'departamento' && typeof pisoDestino === 'string') ? pisoDestino.trim().slice(0,10) : (tipoDestinoNorm === 'casa' ? '' : (pisoDestino || ''));
+
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -1897,6 +1908,13 @@ module.exports = async function handler(req, res) {
           asesorEmail:      p.asesorEmail || null,
           // Detalles adicionales que cargó el cliente (ascensor, fotos, etc) — para mostrar en admin/mi-cuenta
           detallesAdicionales: p.detallesAdicionales || null,
+          // Tipo de lugar (casa/depto) y datos de depto si aplica — vienen del modal nuevo
+          tipoOrigen:    p.tipoOrigen    || null,
+          tipoDestino:   p.tipoDestino   || null,
+          pisoOrigen:    p.pisoOrigen    || '',
+          pisoDestino:   p.pisoDestino   || '',
+          deptoOrigen:   p.deptoOrigen   || '',
+          deptoDestino:  p.deptoDestino  || '',
         });
       }
 
@@ -2583,10 +2601,13 @@ module.exports = async function handler(req, res) {
 // Devuelve null si no hay datos para generar (no incluye PDF al mail).
 // ════════════════════════════════════════════════════
 async function generarPDFDetallesBase64(mudanza) {
-  if (!mudanza || !mudanza.detallesAdicionales) return null;
-  const d = mudanza.detallesAdicionales;
-  const hayAlgo = Object.keys(d).length > 0;
-  if (!hayAlgo) return null;
+  if (!mudanza) return null;
+  const d = mudanza.detallesAdicionales || {};
+  const tieneTipo = !!(mudanza.tipoOrigen || mudanza.tipoDestino);
+  const tieneDetalles = Object.keys(d).length > 0;
+  // Generar si hay tipo de lugar (caso nuevo, siempre con modal obligatorio) o
+  // si hay al menos un detalle adicional (compat con pedidos viejos).
+  if (!tieneTipo && !tieneDetalles) return null;
 
   const PDFDocument = require('pdfkit');
 
@@ -2669,6 +2690,32 @@ async function generarPDFDetallesBase64(mudanza) {
       row('Tamaño', mudanza.ambientes);
       row('Fecha', mudanza.fecha);
       y += 10;
+
+      // ── Tipo de lugar (obligatorio en pedidos nuevos)
+      if (mudanza.tipoOrigen || mudanza.tipoDestino) {
+        doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
+           .text('TIPO DE LUGAR', MARGIN, y);
+        y += 18;
+        function lineaLugar(label, tipo, piso, depto) {
+          if (!tipo) return;
+          let txt;
+          if (tipo === 'casa') {
+            txt = 'Casa';
+          } else {
+            txt = 'Departamento';
+            if (piso)  txt += ' · Piso ' + piso;
+            if (depto) txt += ' · Depto ' + depto;
+          }
+          doc.fillColor('#64748B').font('Helvetica').fontSize(9)
+             .text(label, MARGIN, y, { width: 100 });
+          doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(10)
+             .text(txt, MARGIN + 110, y, { width: CONTENT_W - 110 });
+          y += 18;
+        }
+        lineaLugar('Origen',  mudanza.tipoOrigen,  mudanza.pisoOrigen,  mudanza.deptoOrigen);
+        lineaLugar('Destino', mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino);
+        y += 8;
+      }
 
       // ── Características del lugar (checkboxes marcados)
       const flagsActivas = Object.keys(LABELS).filter(function(k) { return d[k] === true; });
@@ -2760,8 +2807,11 @@ async function notificarMudanceros(mudanza) {
     : '';
 
   // Banner detalles adicionales — aparece si el cliente cargó detalles antes de enviar
-  const bannerDetalles = (mudanza.detallesAdicionales && Object.keys(mudanza.detallesAdicionales).length > 0)
-    ? `<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:11px 28px;font-size:13px;color:#1A6FFF;font-weight:600;display:flex;align-items:center"><span style="background:#1A6FFF;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">📋</span>El cliente agregó detalles adicionales · revisalos en el PDF adjunto</div>`
+  // Banner detalles del lugar — aparece si el pedido tiene tipo de lugar o detalles adicionales
+  const tieneInfoExtra = !!(mudanza.tipoOrigen || mudanza.tipoDestino) ||
+    !!(mudanza.detallesAdicionales && Object.keys(mudanza.detallesAdicionales).length > 0);
+  const bannerDetalles = tieneInfoExtra
+    ? `<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:11px 28px;font-size:13px;color:#1A6FFF;font-weight:600;display:flex;align-items:center"><span style="background:#1A6FFF;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">📋</span>Detalles del lugar adjuntos en PDF</div>`
     : '';
 
   const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -2874,12 +2924,14 @@ async function notificarMudanceros(mudanza) {
       } catch(e) { /* ignorar errores individuales */ }
     }
 
-    // ── Generar PDF de detalles adicionales (una sola vez para todos los mudanceros) ──
+    // ── Generar PDF de detalles del pedido (una sola vez para todos los mudanceros) ──
+    // Se genera siempre que haya tipo de lugar (caso nuevo) o detallesAdicionales (compat).
+    // La función decide internamente si vale la pena generar.
     let pdfDetallesBase64 = null;
     let pdfDetallesNombre = null;
     try {
-      if (mudanza.detallesAdicionales) {
-        pdfDetallesBase64 = await generarPDFDetallesBase64(mudanza);
+      pdfDetallesBase64 = await generarPDFDetallesBase64(mudanza);
+      if (pdfDetallesBase64) {
         pdfDetallesNombre = 'Detalles-' + (mudanza.id || 'pedido') + '.pdf';
       }
     } catch(e) {
