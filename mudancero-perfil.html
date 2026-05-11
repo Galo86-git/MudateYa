@@ -379,6 +379,35 @@ function getDatosExtra(idx) {
 // o amb correspondiente = 0/vacío), caemos al primer nivel que sí tenga cargado.
 // Devuelve: { nivel, precio, sustituido } donde `sustituido` es true si tuvimos
 // que cambiar el nivel pedido (para mostrar un avisito al usuario).
+// ── Helper único: obtiene los parámetros de búsqueda con prioridad URL → sessionStorage ──
+// CRÍTICO en mobile: sessionStorage se aísla por pestaña, y el index abre el
+// perfil con window.open() en pestaña nueva. Si solo leemos sessionStorage, el
+// perfil arranca sin contexto y cae al fallback "esencial". La URL sobrevive al
+// cambio de pestaña, por eso el index pasa nivel/amb/tipo/desde/hasta por query
+// string. Guardamos lo recibido en sessionStorage para que el resto del flujo
+// (publicar pedido, modal de detalles) lo encuentre como antes.
+function _obtenerBusqueda() {
+  var qs = new URLSearchParams(location.search);
+  var fromUrl = {};
+  if (qs.get('nivel'))  fromUrl.nivel  = qs.get('nivel');
+  if (qs.get('amb'))    fromUrl.ambientes = qs.get('amb');
+  if (qs.get('tipo'))   fromUrl.tipo   = qs.get('tipo');
+  if (qs.get('desde'))  fromUrl.desde  = qs.get('desde');
+  if (qs.get('hasta'))  fromUrl.hasta  = qs.get('hasta');
+  if (qs.get('fecha'))  fromUrl.fecha  = qs.get('fecha');
+  if (qs.get('km'))     fromUrl.km     = qs.get('km');
+  var fromStorage = {};
+  try { fromStorage = JSON.parse(sessionStorage.getItem('busquedaActual') || '{}'); } catch(e){}
+  // Merge: lo de URL pisa storage (porque es más fresco al venir del click)
+  var merged = Object.assign({}, fromStorage, fromUrl);
+  // Persistir el merge en sessionStorage para que el resto del código que
+  // hace sessionStorage.getItem('busquedaActual') siga funcionando sin cambios.
+  if (Object.keys(fromUrl).length > 0) {
+    try { sessionStorage.setItem('busquedaActual', JSON.stringify(merged)); } catch(e){}
+  }
+  return merged;
+}
+
 function _resolverNivelYPrecio(m, nivelPedido, ambNum, esFlete) {
   var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
   if (esFlete) {
@@ -428,11 +457,10 @@ function renderPerfil(m, extra) {
   var initials = (m.nombre||'MV').split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase();
   // Precio según ambientes y NIVEL de la búsqueda — debe matchear el index/landing.
   // Si el mudancero no ofrece el nivel pedido, cae al primero que tenga cargado.
-  var busqueda = {};
-  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual') || '{}'); } catch(e){}
+  var busqueda = _obtenerBusqueda();
   var esFleteR = busqueda.tipo === 'flete';
   var ambR = Math.max(1, parseInt(busqueda.ambientes) || 2);
-  var resol = _resolverNivelYPrecio(m, busqueda.nivel || 'esencial', ambR, esFleteR);
+  var resol = _resolverNivelYPrecio(m, busqueda.nivel || 'llave', ambR, esFleteR);
   var precio = resol.precio;
   // Guardamos el nivel resuelto para usarlo después al publicar la cotización
   // (así el mudancero recibe el pedido por el pack que efectivamente ofrece).
@@ -667,7 +695,7 @@ function renderPerfil(m, extra) {
           +(function(){
             // Label que indica el nivel y ambientes — usa el nivel RESUELTO
             // (puede haber cambiado del pedido si el mudancero solo ofrece otro pack)
-            var nivelMostrar = m._nivelResuelto || busqueda.nivel || 'esencial';
+            var nivelMostrar = m._nivelResuelto || busqueda.nivel || 'llave';
             var nivelLbl = busqueda.tipo === 'flete' ? 'Flete'
               : (nivelMostrar === 'integral' ? '🛠️ Integral'
               : nivelMostrar === 'llave'    ? '🔑 Llave en mano'
@@ -813,8 +841,7 @@ function confirmarSolicitud() {
 
 function _publicarPedidoMudancero(detallesAdicionales, lugar) {
   var email = new URLSearchParams(location.search).get('id');
-  var busqueda = null;
-  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
+  var busqueda = _obtenerBusqueda();
   var user = null;
   try { user = JSON.parse(sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser')); } catch(e){}
 
@@ -823,7 +850,7 @@ function _publicarPedidoMudancero(detallesAdicionales, lugar) {
 
   var esFlete = busqueda.tipo === 'flete';
   var ambNum = parseInt(busqueda.ambientes) || 2;
-  var nivelPedido = esFlete ? 'flete' : (busqueda.nivel || 'esencial');
+  var nivelPedido = esFlete ? 'flete' : (busqueda.nivel || 'llave');
 
   // ── Resolver nivel + precio del mudancero específico ──
   // Si el mudancero no ofrece el nivel pedido, caemos al primero disponible.
@@ -1145,8 +1172,7 @@ function solicitarCotizacion() {
     return;
   }
 
-  var busqueda = null;
-  try { busqueda = JSON.parse(sessionStorage.getItem('busquedaActual')); } catch(e){}
+  var busqueda = _obtenerBusqueda();
   if (!busqueda || !busqueda.desde || !busqueda.hasta) {
     alert('No encontramos tu búsqueda. Volvé al inicio e ingresá origen y destino.');
     return;
