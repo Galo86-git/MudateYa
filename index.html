@@ -1715,6 +1715,12 @@
               </div>
             </div>
 
+            <!-- Hora de origen — solo en origen (no en destino). Es la hora aproximada
+                 a la que el mudancero llega a arrancar. El cliente afina por WhatsApp
+                 después de aceptar la cotización. Campo opcional. -->
+            <div class="pd-col-label" style="margin-top:12px">Hora aproximada de inicio <span style="font-weight:400;text-transform:none;color:#78350F;opacity:.7">(opcional)</span></div>
+            <input type="time" id="pd-hora-origen" class="pd-piso-input" style="width:140px"/>
+
             <div class="pd-col-label" style="margin-top:14px">Características <span style="font-weight:400;text-transform:none;color:#78350F;opacity:.7">(opcional)</span></div>
             <div id="pd-chks-origen"></div>
           </div>
@@ -2870,6 +2876,7 @@
     var dop = document.getElementById('pd-depto-origen'); if (dop) dop.value = '';
     var pdd = document.getElementById('pd-piso-destino'); if (pdd) pdd.value = '';
     var ddp = document.getElementById('pd-depto-destino');if (ddp) ddp.value = '';
+    var ho = document.getElementById('pd-hora-origen');   if (ho) ho.value = '';
     var dow = document.getElementById('pd-depto-origen-wrap');  if (dow) dow.style.display = 'none';
     var ddw = document.getElementById('pd-depto-destino-wrap'); if (ddw) ddw.style.display = 'none';
     pdValidar();
@@ -3042,7 +3049,8 @@
       pisoOrigen:  '',
       pisoDestino: '',
       deptoOrigen:  '',
-      deptoDestino: ''
+      deptoDestino: '',
+      horaOrigen:   ''
     };
     if (_pdTipoOrigen === 'departamento') {
       out.pisoOrigen  = (document.getElementById('pd-piso-origen').value  || '').trim();
@@ -3052,6 +3060,9 @@
       out.pisoDestino  = (document.getElementById('pd-piso-destino').value  || '').trim();
       out.deptoDestino = (document.getElementById('pd-depto-destino').value || '').trim();
     }
+    // Hora de origen: input type="time" devuelve "HH:MM" (24h). Vacío si no la cargó.
+    var horaEl = document.getElementById('pd-hora-origen');
+    if (horaEl) out.horaOrigen = (horaEl.value || '').trim();
     return out;
   }
 
@@ -3168,7 +3179,9 @@
           pisoOrigen:   lugar && lugar.pisoOrigen   || '',
           pisoDestino:  lugar && lugar.pisoDestino  || '',
           deptoOrigen:  lugar && lugar.deptoOrigen  || '',
-          deptoDestino: lugar && lugar.deptoDestino || ''
+          deptoDestino: lugar && lugar.deptoDestino || '',
+          // Hora aproximada de inicio (solo origen). String "HH:MM" 24h o "" si no la cargó.
+          horaOrigen:   lugar && lugar.horaOrigen   || ''
         })
       });
     } catch(e) { console.warn(e.message); }
