@@ -796,7 +796,7 @@ module.exports = async function handler(req, res) {
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
-      const MAX_ACTIVOS_POR_CLIENTE = 2;
+      const MAX_ACTIVOS_POR_CLIENTE = 10;
       const idxCliente = await getJSON(`cliente:${clienteEmail}`) || [];
       const ahora = new Date();
       let activosCliente = 0;
@@ -823,7 +823,7 @@ module.exports = async function handler(req, res) {
       const { modoCotizacion, mudancerosInvitados } = req.body;
       // modoCotizacion: 'abierto' (primeros 5) | 'dirigido' (cliente elige mudanceros)
       const modo = modoCotizacion || 'abierto';
-      const MAX_COT = 5;
+      const MAX_COT = 50;
 
       // km viene calculado desde el frontend (Google Maps lado cliente).
       // Si no llega, queda null — la cotización funciona igual sin el desglose por km.
