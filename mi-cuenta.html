@@ -2255,11 +2255,47 @@ function showScreen(name){
 // Comisión MudateYa según tipo y origen:
 // - Mudanza normal: 15%
 // - Flete normal: 20%
-// - Plan Referidos (mudanza vino de un asesor, aliado, o partner Mudafy): 25%
-//   Esto se detecta con m.origenAsesor, m.refAliado o m.partner==='mudafy' (presentes en la mudanza completa)
+// - Plan Referidos (mudanza vino de un asesor, aliado, Mudafy o cualquier
+//   inmobiliaria asociada): 25%. Se detecta con m.origenAsesor, m.refAliado
+//   o m.partner (truthy → cualquier slug de inmobiliaria, incluyendo 'mudafy').
 function _esPlanReferidos(m) {
-  return !!(m && (m.origenAsesor === true || m.refAliado || m.partner === 'mudafy'));
+  return !!(m && (m.origenAsesor === true || m.refAliado || m.partner));
 }
+
+// Pre-carga el nombre legible de cada inmobiliaria que aparece en los pedidos
+// del mudancero. Llama al endpoint público /api/inmobiliarias?action=obtener
+// (que no requiere token) por cada slug único distinto a 'mudafy' que aún no
+// esté cacheado. Mudafy se hardcodea para ahorrar llamadas innecesarias.
+// El resultado se guarda en window._inmoNombresCache, que es lo que los banners
+// (icono origen + banner del panel detalle) leen para mostrar el nombre.
+function _precargarNombresInmos() {
+  if (!window._inmoNombresCache) window._inmoNombresCache = { mudafy: 'Mudafy' };
+  var slugsNuevos = {};
+  var todas = (mudanzasDisponibles || []).concat(misCotizaciones || []);
+  todas.forEach(function(m) {
+    if (m && m.partner && m.partner !== 'mudafy' && !window._inmoNombresCache[m.partner]) {
+      slugsNuevos[m.partner] = true;
+    }
+  });
+  Object.keys(slugsNuevos).forEach(function(slug) {
+    // Fetch silencioso: si falla, dejamos el slug crudo como fallback
+    fetch('/api/inmobiliarias?action=obtener&slug=' + encodeURIComponent(slug))
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (data && data.nombre) {
+          window._inmoNombresCache[slug] = data.nombre;
+          // Re-renderizar para que los banners actualicen el nombre.
+          // Solo si la lista de pedidos está visible (no rompe si el usuario
+          // está en otra tab del panel).
+          if (typeof renderPedidos === 'function') {
+            try { renderPedidos(); } catch(e) {}
+          }
+        }
+      })
+      .catch(function() { /* silent fail, el slug crudo queda como fallback */ });
+  });
+}
+
 function calcFee(precio, ambientes, m) {
   var pct;
   if (_esPlanReferidos(m)) pct = 0.25;
@@ -2389,6 +2425,11 @@ async function loadPedidos(silencioso){
 
     mudanzasDisponibles = nuevosDisp;
     misCotizaciones = nuevasCot;
+
+    // Pre-cargar nombres de inmobiliarias que aparecen en los pedidos del mudancero.
+    // Esto pobla window._inmoNombresCache (slug → nombre) para que los banners
+    // muestren "Cliente referido por Meyrelles Williams" en lugar del slug crudo.
+    _precargarNombresInmos();
 
     // En modo silencioso: solo re-render si NO hay un bottom sheet abierto
     // (para no romper la lectura del usuario adentro del detalle)
@@ -2781,14 +2822,21 @@ function renderRowPedido(m, tipo) {
       }
     }
   }
-  // Ruta compacta + indicador de origen (Mudafy / asesor / sitio)
+  // Ruta compacta + indicador de origen (Mudafy / inmobiliaria / asesor / sitio)
   var esMudafy_l = m.partner === 'mudafy';
-  var esAsesor = !esMudafy_l && !!(m.refAliado || m.origenAsesor);
+  var esInmobiliaria_l = !!(m.partner && m.partner !== 'mudafy');
+  var esAsesor = !esMudafy_l && !esInmobiliaria_l && !!(m.refAliado || m.origenAsesor);
+  // Nombre legible de la inmobiliaria (de _inmoNombresCache si está cargado, sino slug)
+  var nombreInmoBadge = esInmobiliaria_l
+    ? ((window._inmoNombresCache && window._inmoNombresCache[m.partner]) || m.partner)
+    : '';
   var iconoOrigen = esMudafy_l
     ? '<span title="Cliente referido por Mudafy · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🤝</span>'
-    : (esAsesor
-      ? '<span title="Cliente referido por asesor inmobiliario · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🏢</span>'
-      : '');
+    : (esInmobiliaria_l
+      ? '<span title="Cliente referido por ' + nombreInmoBadge + ' · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🏠</span>'
+      : (esAsesor
+        ? '<span title="Cliente referido por asesor inmobiliario · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🏢</span>'
+        : ''));
   var ruta = (m.desde||'') + ' → ' + (m.hasta||'');
   // Fecha corta de la mudanza (la planificada por el cliente)
   var fechaCorta = '';
@@ -2828,9 +2876,14 @@ function seleccionarPedido(mudanzaId, tipo) {
   document.querySelectorAll('.pd-row-line').forEach(function(el){ el.classList.remove('active'); });
   var row = document.getElementById('pd-row-'+mudanzaId);
   if (row) row.classList.add('active');
-  // Banner de origen del cliente: Mudafy / asesor inmobiliario / directo
+  // Banner de origen del cliente: Mudafy / inmobiliaria asociada / asesor / directo
   var esMudafy = m.partner === 'mudafy';
-  var esAsesor = !esMudafy && !!(m.refAliado || m.origenAsesor);
+  var esInmobiliaria = !!(m.partner && m.partner !== 'mudafy');
+  var esAsesor = !esMudafy && !esInmobiliaria && !!(m.refAliado || m.origenAsesor);
+  // Nombre legible de la inmobiliaria (cache si está cargado, sino slug crudo)
+  var nombreInmo = esInmobiliaria
+    ? ((window._inmoNombresCache && window._inmoNombresCache[m.partner]) || m.partner)
+    : '';
   // Mostrar referencia: preferir asesorEmail (legible), fallback a refAliado
   var refMostrar = m.asesorEmail || m.refAliado || '';
   var bannerOrigen;
@@ -2841,6 +2894,16 @@ function seleccionarPedido(mudanzaId, tipo) {
       + '<div style="flex:1;min-width:0">'
       +   '<div style="font-size:12px;font-weight:700;color:#991B1B;line-height:1.3">Cliente referido por Mudafy</div>'
       +   '<div style="font-size:11px;color:#7F1D1D;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>25%</b>'+(m.partnerPropiedad?' · '+esc(m.partnerPropiedad):'')+'</div>'
+      + '</div>'
+      + '</div>';
+  } else if (esInmobiliaria) {
+    // Inmobiliaria asociada (Meyrelles Williams, etc.) — mismo color que Mudafy pero
+    // ícono casa y nombre dinámico desde el cache de window._inmoNombresCache.
+    bannerOrigen = '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FFF1EE;border:1px solid #FECACA;border-left:3px solid #FF6B6B;border-radius:8px;margin-bottom:14px">'
+      + '<span style="font-size:18px;flex-shrink:0">🏠</span>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-size:12px;font-weight:700;color:#991B1B;line-height:1.3">Cliente referido por '+esc(nombreInmo)+'</div>'
+      +   '<div style="font-size:11px;color:#7F1D1D;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>25%</b></div>'
       + '</div>'
       + '</div>';
   } else if (esAsesor) {
