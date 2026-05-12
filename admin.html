@@ -532,6 +532,9 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <a class="sidebar-item" onclick="showPage('asesores',event)" href="#">
         <span class="sidebar-icon">🏢</span> Asesores
       </a>
+      <a class="sidebar-item" onclick="showPage('inmobiliarias',event)" href="#">
+        <span class="sidebar-icon">🏠</span> Inmobiliarias
+      </a>
     </div>
 
     <!-- BOTTOM NAV MOBILE -->
@@ -568,7 +571,8 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <button onclick="showPage('zonas',event);setMobileNav('zonas');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🗺️ Zonas</button>
       <button onclick="showPage('transferencias',event);setMobileNav('transferencias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏦 Transferencias</button>
       <button onclick="showPage('aliados',event);setMobileNav('aliados');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🤝 Aliados</button>
-      <button onclick="showPage('asesores',event);setMobileNav('asesores');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🏢 Asesores</button>
+      <button onclick="showPage('asesores',event);setMobileNav('asesores');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏢 Asesores</button>
+      <button onclick="showPage('inmobiliarias',event);setMobileNav('inmobiliarias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🏠 Inmobiliarias</button>
     </div>
 
     <div class="admin-main">
@@ -1099,6 +1103,113 @@ tr:hover td{background:rgba(34,195,106,.03)}
         </div>
       </div>
 
+      <!-- INMOBILIARIAS (asociadas con comisión por viaje) -->
+      <div class="page" id="page-inmobiliarias">
+        <div class="page-header">
+          <h1 class="page-title">Inmobiliarias</h1>
+          <div class="page-subtitle">Inmobiliarias asociadas que derivan clientes a MudateYa. Cada una tiene su URL única <code style="background:#F3F4F6;padding:2px 6px;border-radius:4px;font-size:11px">mudateya.ar/inmobiliaria/{slug}</code> con su branding propio.</div>
+        </div>
+
+        <!-- Tabs internos -->
+        <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);padding:0">
+          <button class="ali-tab active" data-imotab="lista" onclick="inmoTab('lista')">📋 Lista</button>
+          <button class="ali-tab" data-imotab="nueva" onclick="inmoTab('nueva')">➕ Nueva</button>
+          <button class="ali-tab" data-imotab="comisiones" onclick="inmoTab('comisiones')">💰 Comisiones</button>
+        </div>
+
+        <!-- Tab Lista -->
+        <div class="imo-tab-content" id="imoTab-lista">
+          <div class="table-card">
+            <div id="inmoListaWrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+          </div>
+        </div>
+
+        <!-- Tab Nueva / Editar -->
+        <div class="imo-tab-content" id="imoTab-nueva" style="display:none">
+          <div class="table-card" style="padding:24px">
+            <form id="inmoForm" onsubmit="return inmoGuardar(event)">
+              <input type="hidden" id="inmoModo" value="crear"/>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px">
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Nombre <span style="color:#DC2626">*</span></label>
+                  <input type="text" id="inmoNombre" required maxlength="100" placeholder="Ej: Meyrelles Williams" oninput="inmoSugerirSlug()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box"/>
+                </div>
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Slug URL <span style="color:#DC2626">*</span></label>
+                  <input type="text" id="inmoSlug" required maxlength="50" pattern="[a-z0-9-]+" placeholder="meyrelles-williams" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:monospace;box-sizing:border-box"/>
+                  <div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:monospace">→ mudateya.ar/inmobiliaria/<span id="inmoSlugPreview" style="color:var(--blue);font-weight:600">slug</span></div>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px">
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">URL del logo</label>
+                  <input type="url" id="inmoLogo" maxlength="500" placeholder="https://..." oninput="inmoPreviewActualizar()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;box-sizing:border-box"/>
+                  <div style="font-size:11px;color:var(--text2);margin-top:4px">Subí el logo a Vercel Blob o cualquier CDN. PNG o SVG recomendado.</div>
+                </div>
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Color primario</label>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <input type="color" id="inmoColor" value="#003580" oninput="inmoPreviewActualizar()" style="width:50px;height:38px;padding:0;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:transparent"/>
+                    <input type="text" id="inmoColorTxt" maxlength="7" pattern="#[0-9a-fA-F]{6}" placeholder="#003580" oninput="document.getElementById('inmoColor').value=this.value;inmoPreviewActualizar()" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:monospace;box-sizing:border-box"/>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:16px">
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Comisión por viaje (%)</label>
+                  <input type="number" id="inmoComision" min="0" max="50" step="0.5" placeholder="10" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box"/>
+                  <div style="font-size:11px;color:var(--text2);margin-top:4px">Lo que MudateYa le paga a la inmobiliaria sobre el precio final del viaje cerrado.</div>
+                </div>
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Contacto - Nombre</label>
+                  <input type="text" id="inmoContactoNombre" maxlength="100" placeholder="Nombre del responsable" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box"/>
+                </div>
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Contacto - Email</label>
+                  <input type="email" id="inmoContactoEmail" maxlength="120" placeholder="contacto@..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box"/>
+                </div>
+              </div>
+
+              <!-- Preview del header -->
+              <div style="margin:24px 0;padding:0;background:#F5F7FA;border-radius:12px;border:1px solid var(--border);overflow:hidden">
+                <div style="padding:8px 16px;background:#fff;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;font-family:monospace">Vista previa del header en mobile / desktop</div>
+                <div id="inmoPreviewBox" style="background:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+                  <div id="inmoPreviewLogo" style="display:inline-flex;align-items:center;gap:10px">
+                    <span style="font-size:20px;font-weight:800;color:#003580;letter-spacing:-0.5px" id="inmoPreviewText">Tu inmobiliaria</span>
+                  </div>
+                  <span style="font-size:11px;color:#9CA3AF">Powered by <span style="font-weight:800;color:#003580">Mudate<span style="color:#17A356">Ya</span></span></span>
+                </div>
+                <div style="padding:16px 24px;background:#FAFAFA;text-align:center">
+                  <button type="button" id="inmoPreviewBtn" style="padding:10px 22px;background:#003580;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:default">Botón de acción</button>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+                <button type="button" onclick="inmoTab('lista')" style="padding:10px 22px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text);font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>
+                <button type="submit" id="inmoBtnGuardar" style="padding:10px 22px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-family:inherit">Guardar inmobiliaria</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tab Comisiones -->
+        <div class="imo-tab-content" id="imoTab-comisiones" style="display:none">
+          <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label style="font-size:12px;font-weight:700;color:var(--text2)">Inmobiliaria:</label>
+            <select id="inmoComFiltro" onchange="renderInmoComisiones()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;min-width:180px">
+              <option value="">— Todas —</option>
+            </select>
+            <button onclick="inmoExportComisiones()" style="padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">📥 Exportar Excel</button>
+          </div>
+          <div class="table-card">
+            <div id="inmoComisionesWrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1283,6 +1394,7 @@ function showPage(name, e){
   if(name === 'zonas') renderZonas();
   if(name === 'transferencias') loadTransferencias();
   if(name === 'fotos') cargarFotos();
+  if(name === 'inmobiliarias') { if(typeof renderInmoLista === 'function') renderInmoLista(); }
   // cerrar menu extra mobile si estaba abierto
   var em = document.getElementById('mobileExtraMenu');
   if(em) em.style.display = 'none';
@@ -4603,6 +4715,392 @@ function renderPedidosAsesores() {
 
   h += '</tbody></table></div>';
   wrap.innerHTML = h;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// INMOBILIARIAS — Gestión de inmobiliarias asociadas con comisión por viaje
+// ════════════════════════════════════════════════════════════════════
+
+var _inmoTokenAdmin = 'mya-admin-2026';
+
+// ── Navegación entre sub-tabs ──
+function inmoTab(tab) {
+  document.querySelectorAll('[data-imotab]').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.querySelector('[data-imotab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.imo-tab-content').forEach(function(c){ c.style.display = 'none'; });
+  var content = document.getElementById('imoTab-' + tab);
+  if (content) content.style.display = 'block';
+  if (tab === 'lista')      renderInmoLista();
+  if (tab === 'comisiones') renderInmoComisiones();
+  if (tab === 'nueva')      inmoResetForm();
+}
+
+// ── Sugerir slug automáticamente desde el nombre ──
+function inmoSugerirSlug() {
+  if (document.getElementById('inmoModo').value === 'editar') return;
+  var slugInput = document.getElementById('inmoSlug');
+  if (slugInput.dataset.editadoManual === '1') return;
+  var nombre = document.getElementById('inmoNombre').value;
+  var slug = nombre.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 50);
+  slugInput.value = slug;
+  inmoSlugPreview();
+}
+
+// Marcar slug como editado manualmente (para no pisarlo)
+(function watchSlugManual() {
+  var attempt = setInterval(function() {
+    var el = document.getElementById('inmoSlug');
+    if (el && !el._watched) {
+      el._watched = true;
+      el.addEventListener('input', function() {
+        this.dataset.editadoManual = '1';
+        inmoSlugPreview();
+      });
+      clearInterval(attempt);
+    }
+  }, 200);
+})();
+
+function inmoSlugPreview() {
+  var slug = (document.getElementById('inmoSlug').value || 'slug').toLowerCase();
+  var pv = document.getElementById('inmoSlugPreview');
+  if (pv) pv.textContent = slug;
+}
+
+// ── Preview en vivo del header ──
+function inmoPreviewActualizar() {
+  var nombre = document.getElementById('inmoNombre').value || 'Tu inmobiliaria';
+  var logo   = document.getElementById('inmoLogo').value.trim();
+  var color  = document.getElementById('inmoColor').value || '#003580';
+  document.getElementById('inmoColorTxt').value = color;
+  var logoBox = document.getElementById('inmoPreviewLogo');
+  if (logo) {
+    logoBox.innerHTML = '<img src="' + _inmoEscAttr(logo) + '" style="max-height:32px;max-width:140px;height:auto;width:auto;display:block" alt="' + _inmoEscAttr(nombre) + '"/>';
+  } else {
+    logoBox.innerHTML = '<span style="font-size:20px;font-weight:800;color:' + color + ';letter-spacing:-0.5px">' + _inmoEscHtml(nombre) + '</span>';
+  }
+  document.getElementById('inmoPreviewBtn').style.background = color;
+}
+
+function _inmoEscHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function _inmoEscAttr(s) { return _inmoEscHtml(s); }
+function _inmoFmt(n) { return (parseFloat(n) || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
+
+// ── Listar todas (admin) ──
+async function renderInmoLista() {
+  var wrap = document.getElementById('inmoListaWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  try {
+    var r = await fetch('/api/inmobiliarias?action=listar&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error');
+    var inmos = data.inmobiliarias || [];
+    if (!inmos.length) {
+      wrap.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text2)">Todavía no hay inmobiliarias cargadas.<br><br><button onclick="inmoTab(\'nueva\')" style="padding:10px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit">➕ Crear la primera</button></div>';
+      return;
+    }
+    var h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:700px">';
+    h += '<thead><tr style="background:#F8FAFC;border-bottom:1px solid var(--border)">';
+    h += '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Logo</th>';
+    h += '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Nombre</th>';
+    h += '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">URL</th>';
+    h += '<th style="text-align:right;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Comisión</th>';
+    h += '<th style="text-align:center;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Estado</th>';
+    h += '<th style="text-align:right;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Acciones</th>';
+    h += '</tr></thead><tbody>';
+    inmos.forEach(function(i) {
+      var url = 'mudateya.ar/inmobiliaria/' + i.slug;
+      var badge = i.activa
+        ? '<span style="display:inline-block;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:monospace">ACTIVA</span>'
+        : '<span style="display:inline-block;background:#FEE2E2;color:#991B1B;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:monospace">INACTIVA</span>';
+      h += '<tr style="border-bottom:1px solid var(--border)">';
+      h += '<td style="padding:10px 12px">' + (i.logo
+        ? '<img src="' + _inmoEscAttr(i.logo) + '" style="max-height:24px;max-width:80px"/>'
+        : '<span style="font-size:11px;color:var(--text3);font-family:monospace">sin logo</span>') + '</td>';
+      h += '<td style="padding:10px 12px;font-weight:600">' + _inmoEscHtml(i.nombre) + '<div style="font-size:11px;color:var(--text2);font-weight:400">' + _inmoEscHtml(i.contactoNombre || '') + (i.contactoEmail ? ' · ' + _inmoEscHtml(i.contactoEmail) : '') + '</div></td>';
+      h += '<td style="padding:10px 12px;font-family:monospace;font-size:12px"><a href="https://' + _inmoEscAttr(url) + '" target="_blank" style="color:var(--blue);text-decoration:none">' + _inmoEscHtml(url) + ' ↗</a></td>';
+      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:' + (parseFloat(i.comisionInmobiliaria) > 0 ? 'var(--text)' : 'var(--text3)') + '">' + (parseFloat(i.comisionInmobiliaria) || 0) + '%</td>';
+      h += '<td style="padding:10px 12px;text-align:center">' + badge + '</td>';
+      h += '<td style="padding:10px 12px;text-align:right;white-space:nowrap">';
+      h += '<button onclick="inmoEditar(\'' + i.slug + '\')" style="padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">✏️ Editar</button>';
+      h += i.activa
+        ? '<button onclick="inmoToggleActiva(\'' + i.slug + '\',false)" style="padding:5px 10px;background:transparent;border:1px solid #FECACA;color:#991B1B;border-radius:6px;font-size:12px;cursor:pointer">Desactivar</button>'
+        : '<button onclick="inmoToggleActiva(\'' + i.slug + '\',true)" style="padding:5px 10px;background:transparent;border:1px solid #BBF7D0;color:#065F46;border-radius:6px;font-size:12px;cursor:pointer">Reactivar</button>';
+      h += '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    wrap.innerHTML = h;
+  } catch(e) {
+    wrap.innerHTML = '<div style="padding:20px;color:#DC2626">Error: ' + _inmoEscHtml(e.message) + '</div>';
+  }
+}
+
+// ── Reset form (modo nueva) ──
+function inmoResetForm() {
+  document.getElementById('inmoModo').value = 'crear';
+  document.getElementById('inmoNombre').value = '';
+  var slugEl = document.getElementById('inmoSlug');
+  slugEl.value = '';
+  slugEl.readOnly = false;
+  delete slugEl.dataset.editadoManual;
+  document.getElementById('inmoLogo').value = '';
+  document.getElementById('inmoColor').value = '#003580';
+  document.getElementById('inmoColorTxt').value = '#003580';
+  document.getElementById('inmoComision').value = '';
+  document.getElementById('inmoContactoNombre').value = '';
+  document.getElementById('inmoContactoEmail').value = '';
+  document.getElementById('inmoBtnGuardar').textContent = 'Guardar inmobiliaria';
+  inmoSlugPreview();
+  inmoPreviewActualizar();
+}
+
+// ── Cargar datos en form para editar ──
+async function inmoEditar(slug) {
+  inmoTab('nueva');
+  try {
+    var r = await fetch('/api/inmobiliarias?action=listar&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var data = await r.json();
+    var inmo = (data.inmobiliarias || []).find(function(i){ return i.slug === slug; });
+    if (!inmo) { alert('No se encontró la inmobiliaria'); return; }
+    document.getElementById('inmoModo').value = 'editar';
+    document.getElementById('inmoNombre').value = inmo.nombre || '';
+    var slugEl = document.getElementById('inmoSlug');
+    slugEl.value = inmo.slug;
+    slugEl.readOnly = true;
+    slugEl.dataset.editadoManual = '1';
+    document.getElementById('inmoLogo').value = inmo.logo || '';
+    document.getElementById('inmoColor').value = inmo.colorPrimario || '#003580';
+    document.getElementById('inmoColorTxt').value = inmo.colorPrimario || '#003580';
+    document.getElementById('inmoComision').value = inmo.comisionInmobiliaria || '';
+    document.getElementById('inmoContactoNombre').value = inmo.contactoNombre || '';
+    document.getElementById('inmoContactoEmail').value = inmo.contactoEmail || '';
+    document.getElementById('inmoBtnGuardar').textContent = 'Guardar cambios';
+    inmoSlugPreview();
+    inmoPreviewActualizar();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── Guardar (crear o actualizar) ──
+async function inmoGuardar(e) {
+  if (e) e.preventDefault();
+  var modo = document.getElementById('inmoModo').value;
+  var body = {
+    nombre:               document.getElementById('inmoNombre').value.trim(),
+    slug:                 document.getElementById('inmoSlug').value.trim().toLowerCase(),
+    logo:                 document.getElementById('inmoLogo').value.trim(),
+    colorPrimario:        document.getElementById('inmoColor').value,
+    comisionInmobiliaria: parseFloat(document.getElementById('inmoComision').value) || 0,
+    contactoNombre:       document.getElementById('inmoContactoNombre').value.trim(),
+    contactoEmail:        document.getElementById('inmoContactoEmail').value.trim()
+  };
+  if (!body.nombre || !body.slug) { alert('Nombre y slug son obligatorios'); return false; }
+  if (!/^[a-z0-9-]+$/.test(body.slug)) { alert('Slug: solo letras minúsculas, números y guiones'); return false; }
+  var btn = document.getElementById('inmoBtnGuardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+  try {
+    var action = modo === 'editar' ? 'actualizar' : 'crear';
+    var r = await fetch('/api/inmobiliarias?action=' + action + '&token=' + encodeURIComponent(_inmoTokenAdmin), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error guardando');
+    alert(modo === 'editar' ? 'Inmobiliaria actualizada' : 'Inmobiliaria creada');
+    inmoTab('lista');
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = modo === 'editar' ? 'Guardar cambios' : 'Guardar inmobiliaria';
+  }
+  return false;
+}
+
+// ── Toggle activa/inactiva ──
+async function inmoToggleActiva(slug, activar) {
+  var confirmacion = activar
+    ? '¿Reactivar la inmobiliaria? Vuelve a aparecer su página pública.'
+    : '¿Desactivar la inmobiliaria? Su URL pública dejará de responder. Los pedidos viejos no se pierden.';
+  if (!confirm(confirmacion)) return;
+  try {
+    var action = activar ? 'reactivar' : 'desactivar';
+    var r = await fetch('/api/inmobiliarias?action=' + action + '&token=' + encodeURIComponent(_inmoTokenAdmin), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error');
+    renderInmoLista();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── Comisiones por inmobiliaria ──
+async function renderInmoComisiones() {
+  var wrap = document.getElementById('inmoComisionesWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  var filtro = document.getElementById('inmoComFiltro').value;
+  try {
+    var url = '/api/inmobiliarias?action=comisiones&token=' + encodeURIComponent(_inmoTokenAdmin);
+    if (filtro) url += '&slug=' + encodeURIComponent(filtro);
+    var r = await fetch(url);
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error');
+
+    var grupos;
+    if (filtro) {
+      grupos = [{
+        slug: filtro,
+        nombre: filtro,
+        resultados: data.resultados || [],
+        totalAdeudado: data.totalAdeudado || 0,
+        totalPagado:   data.totalPagado   || 0,
+        cantidad:      (data.resultados || []).length
+      }];
+    } else {
+      grupos = data.inmobiliarias || [];
+      // Poblar selector solo una vez
+      var sel = document.getElementById('inmoComFiltro');
+      if (sel.options.length <= 1) {
+        grupos.forEach(function(g) {
+          var opt = document.createElement('option');
+          opt.value = g.slug;
+          opt.textContent = g.nombre;
+          sel.appendChild(opt);
+        });
+      }
+    }
+
+    var totalGlobalDeuda = 0;
+    grupos.forEach(function(g) { totalGlobalDeuda += g.totalAdeudado || 0; });
+
+    var h = '';
+    if (totalGlobalDeuda > 0) {
+      h += '<div style="background:#FEF3C7;border-left:3px solid #F59E0B;padding:12px 16px;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+      h += '<div><strong style="color:#78350F">Total adeudado a inmobiliarias:</strong></div>';
+      h += '<div style="font-size:18px;font-weight:800;color:#78350F">$' + _inmoFmt(totalGlobalDeuda) + '</div>';
+      h += '</div>';
+    }
+
+    var totalMudanzas = 0;
+    grupos.forEach(function(g) { totalMudanzas += g.resultados.length; });
+    if (totalMudanzas === 0) {
+      h += '<div style="padding:32px;text-align:center;color:var(--text2)">No hay mudanzas con comisión registrada' + (filtro ? ' para esta inmobiliaria' : '') + '.</div>';
+      wrap.innerHTML = h;
+      return;
+    }
+
+    grupos.forEach(function(g) {
+      if (!g.resultados.length) return;
+      h += '<div style="margin-bottom:24px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:8px 12px;background:#F8FAFC;border-radius:6px">';
+      h += '<div style="font-weight:700;font-size:14px">' + _inmoEscHtml(g.nombre) + '</div>';
+      h += '<div style="font-size:12px;color:var(--text2)">' + g.cantidad + ' viajes · adeudado: <strong style="color:#78350F">$' + _inmoFmt(g.totalAdeudado) + '</strong>' + (g.totalPagado > 0 ? ' · pagado: <strong style="color:#065F46">$' + _inmoFmt(g.totalPagado) + '</strong>' : '') + '</div>';
+      h += '</div>';
+      h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:800px;font-size:13px">';
+      h += '<thead><tr style="background:#fff;border-bottom:1px solid var(--border)">';
+      h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">ID</th>';
+      h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Fecha</th>';
+      h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Cliente</th>';
+      h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Mudancero</th>';
+      h += '<th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Precio final</th>';
+      h += '<th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">%</th>';
+      h += '<th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Comisión</th>';
+      h += '<th style="text-align:center;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Estado</th>';
+      h += '</tr></thead><tbody>';
+      g.resultados.forEach(function(m) {
+        var estadoCell = m.liquidada
+          ? '<span style="font-size:10px;color:#065F46;background:#D1FAE5;padding:2px 6px;border-radius:4px;font-weight:700;font-family:monospace">PAGADA</span>'
+          : '<button onclick="inmoMarcarLiquidada(\'' + m.id + '\')" style="padding:3px 8px;background:#FEF3C7;border:1px solid #FDE68A;color:#78350F;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;font-family:monospace">MARCAR PAGADA</button>';
+        h += '<tr style="border-bottom:1px solid var(--border)">';
+        h += '<td style="padding:8px 10px;font-family:monospace;font-size:11px">' + _inmoEscHtml(m.id) + '</td>';
+        h += '<td style="padding:8px 10px;font-size:12px">' + _inmoEscHtml(m.fechaCompletada ? new Date(m.fechaCompletada).toLocaleDateString('es-AR') : '—') + '</td>';
+        h += '<td style="padding:8px 10px">' + _inmoEscHtml(m.cliente) + '</td>';
+        h += '<td style="padding:8px 10px">' + _inmoEscHtml(m.mudancero || '—') + '</td>';
+        h += '<td style="padding:8px 10px;text-align:right;font-family:monospace">$' + _inmoFmt(m.precioFinal) + '</td>';
+        h += '<td style="padding:8px 10px;text-align:right;font-family:monospace;color:var(--text2)">' + m.comisionPct + '%</td>';
+        h += '<td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:700">$' + _inmoFmt(m.comisionPagar) + '</td>';
+        h += '<td style="padding:8px 10px;text-align:center">' + estadoCell + '</td>';
+        h += '</tr>';
+      });
+      h += '</tbody></table></div></div>';
+    });
+    wrap.innerHTML = h;
+  } catch(e) {
+    wrap.innerHTML = '<div style="padding:20px;color:#DC2626">Error: ' + _inmoEscHtml(e.message) + '</div>';
+  }
+}
+
+async function inmoMarcarLiquidada(mudanzaId) {
+  if (!confirm('¿Marcar esta comisión como pagada a la inmobiliaria? Confirmá que ya hiciste la transferencia.')) return;
+  try {
+    var r = await fetch('/api/inmobiliarias?action=marcar-liquidada&token=' + encodeURIComponent(_inmoTokenAdmin), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: mudanzaId })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error');
+    renderInmoComisiones();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── Export Excel de comisiones ──
+async function inmoExportComisiones() {
+  try {
+    var filtro = document.getElementById('inmoComFiltro').value;
+    var url = '/api/inmobiliarias?action=comisiones&token=' + encodeURIComponent(_inmoTokenAdmin);
+    if (filtro) url += '&slug=' + encodeURIComponent(filtro);
+    var r = await fetch(url);
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error');
+    var grupos = filtro
+      ? [{ slug: filtro, nombre: filtro, resultados: data.resultados || [] }]
+      : (data.inmobiliarias || []);
+    var rows = [['Inmobiliaria','ID Mudanza','Fecha','Cliente','Mudancero','Desde','Hasta','Precio final','% Comisión','Comisión a pagar','Estado','Fecha liquidación']];
+    grupos.forEach(function(g) {
+      g.resultados.forEach(function(m) {
+        rows.push([
+          g.nombre,
+          m.id,
+          m.fechaCompletada ? new Date(m.fechaCompletada).toLocaleDateString('es-AR') : '',
+          m.cliente,
+          m.mudancero,
+          m.desde,
+          m.hasta,
+          m.precioFinal,
+          m.comisionPct,
+          m.comisionPagar,
+          m.liquidada ? 'PAGADA' : 'PENDIENTE',
+          m.fechaLiquidacion ? new Date(m.fechaLiquidacion).toLocaleDateString('es-AR') : ''
+        ]);
+      });
+    });
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Comisiones');
+    var fname = 'comisiones-inmobiliarias-' + new Date().toISOString().slice(0,10) + '.xlsx';
+    XLSX.writeFile(wb, fname);
+  } catch(e) {
+    alert('Error exportando: ' + e.message);
+  }
 }
 
 </script>
