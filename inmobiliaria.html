@@ -425,30 +425,12 @@
         <label class="field-label" for="input-desde">Desde · ¿De dónde te mudás? *</label>
         <input id="input-desde" class="field-input loading" type="text" placeholder="Cargando..." autocomplete="off" disabled/>
         <ul class="ac-dd" id="ac-desde"></ul>
-        <div class="field-altura">
-          <input class="field-input" id="piso-desde" type="text" placeholder="Piso (PB)" autocomplete="off"/>
-          <input class="field-input" id="depto-desde" type="text" placeholder="Depto (A)" autocomplete="off"/>
-          <label class="ascensor-toggle" id="asc-desde-toggle" onclick="toggleAscensor('desde')">
-            <input type="checkbox" id="asc-desde"/>
-            <span class="asc-icon">🛗</span>
-            <span class="asc-text">Ascensor</span>
-          </label>
-        </div>
       </div>
 
       <div class="field" id="fieldHasta">
         <label class="field-label" for="input-hasta">Hacia · Tu nuevo hogar *</label>
         <input id="input-hasta" class="field-input loading" type="text" placeholder="Cargando..." autocomplete="off" disabled/>
         <ul class="ac-dd" id="ac-hasta"></ul>
-        <div class="field-altura">
-          <input class="field-input" id="piso-hasta" type="text" placeholder="Piso (PB)" autocomplete="off"/>
-          <input class="field-input" id="depto-hasta" type="text" placeholder="Depto (A)" autocomplete="off"/>
-          <label class="ascensor-toggle" id="asc-hasta-toggle" onclick="toggleAscensor('hasta')">
-            <input type="checkbox" id="asc-hasta"/>
-            <span class="asc-icon">🛗</span>
-            <span class="asc-text">Ascensor</span>
-          </label>
-        </div>
       </div>
 
       <div class="field-row">
@@ -620,6 +602,11 @@
               </div>
             </div>
           </div>
+          <!-- Hora de origen — solo en origen (no en destino). Es la hora aproximada
+               a la que el mudancero tiene que llegar para arrancar el trabajo. El cliente
+               puede afinar después por WhatsApp tras aceptar la cotización. -->
+          <div class="pdm-col-label" style="margin-top:12px">Hora aproximada de inicio <span style="font-weight:400;text-transform:none;color:#78350F;opacity:.7">(opcional)</span></div>
+          <input type="time" id="pdm-hora-origen" class="pdm-piso-input" style="width:140px"/>
           <div class="pdm-col-label" style="margin-top:14px">Características <span style="font-weight:400;text-transform:none;color:#78350F;opacity:.7">(opcional)</span></div>
           <div id="pdm-chks-origen"></div>
         </div>
@@ -889,17 +876,6 @@ function cambiarAmb(delta) {
   document.getElementById('ambPlus').disabled  = (_amb >= 8);
 }
 
-// Toggle ascensor (estilo botón visual sí/no)
-function toggleAscensor(cual) {
-  var input = document.getElementById('asc-' + cual);
-  var toggle = document.getElementById('asc-' + cual + '-toggle');
-  // Esperar al click natural del input para invertir, sino hacerlo aquí
-  setTimeout(function(){
-    if (input.checked) toggle.classList.add('active');
-    else toggle.classList.remove('active');
-  }, 0);
-}
-
 // ════════════════════════════════════════════════════════════
 // Google Maps Autocomplete
 // ════════════════════════════════════════════════════════════
@@ -978,24 +954,22 @@ function buscar() {
   var desde = (document.getElementById('input-desde').value || '').trim();
   var hasta = (document.getElementById('input-hasta').value || '').trim();
   var fecha = document.getElementById('input-fecha').value;
-  var pisoDesde  = (document.getElementById('piso-desde').value || '').trim();
-  var deptoDesde = (document.getElementById('depto-desde').value || '').trim();
-  var ascDesde   = document.getElementById('asc-desde').checked;
-  var pisoHasta  = (document.getElementById('piso-hasta').value || '').trim();
-  var deptoHasta = (document.getElementById('depto-hasta').value || '').trim();
-  var ascHasta   = document.getElementById('asc-hasta').checked;
 
   if (!desde) { alert('Por favor ingresá la dirección desde donde te mudás.'); document.getElementById('input-desde').focus(); return; }
   if (!hasta) { alert('Por favor ingresá la dirección hacia donde te mudás.'); document.getElementById('input-hasta').focus(); return; }
   if (!fecha) { alert('Por favor seleccioná una fecha estimada.'); return; }
 
+  // Nota: piso/depto/ascensor antes se cargaban acá. Ahora se piden solo en el
+  // modal de detalles (pdmAbrir) para evitar redundancia y bajar fricción del form.
+  // _busqueda.pisoOrigen/Destino y ascOrigen/Destino quedan vacíos en este punto;
+  // _enviarPedido() los pisa con los datos del modal antes de hacer el POST.
   _busqueda = {
     cliente: { nombre: nombre, tel: tel, email: email, notas: notas },
     desde: desde, hasta: hasta,
-    pisoOrigen:  pisoDesde + (deptoDesde ? ' · Dpto ' + deptoDesde : ''),
-    pisoDestino: pisoHasta + (deptoHasta ? ' · Dpto ' + deptoHasta : ''),
-    ascOrigen:  ascDesde ? 'sí' : 'no',
-    ascDestino: ascHasta ? 'sí' : 'no',
+    pisoOrigen:  '',
+    pisoDestino: '',
+    ascOrigen:  'no',
+    ascDestino: 'no',
     ambientes: _amb, fecha: fecha,
     tipo: 'mudanza', nivel: 'llave'
   };
@@ -1579,7 +1553,8 @@ function _pdmArmarLugar() {
     pisoOrigen:   '',
     pisoDestino:  '',
     deptoOrigen:  '',
-    deptoDestino: ''
+    deptoDestino: '',
+    horaOrigen:   ''
   };
   if (_pdmTipoOrigen === 'departamento') {
     out.pisoOrigen  = (document.getElementById('pdm-piso-origen').value  || '').trim();
@@ -1589,6 +1564,9 @@ function _pdmArmarLugar() {
     out.pisoDestino  = (document.getElementById('pdm-piso-destino').value  || '').trim();
     out.deptoDestino = (document.getElementById('pdm-depto-destino').value || '').trim();
   }
+  // Hora de origen: input type="time" devuelve "HH:MM" (24h). Vacío si no la cargó.
+  var horaEl = document.getElementById('pdm-hora-origen');
+  if (horaEl) out.horaOrigen = (horaEl.value || '').trim();
   return out;
 }
 
@@ -1678,6 +1656,7 @@ async function _enviarPedido(detallesAdicionales, lugar) {
   var pisoDestino  = (lugar && lugar.pisoDestino)  || _busqueda.pisoDestino  || '';
   var deptoOrigen  = (lugar && lugar.deptoOrigen)  || '';
   var deptoDestino = (lugar && lugar.deptoDestino) || '';
+  var horaOrigen   = (lugar && lugar.horaOrigen)   || '';
 
   try {
     var payload = {
@@ -1702,6 +1681,8 @@ async function _enviarPedido(detallesAdicionales, lugar) {
       pisoDestino:  pisoDestino,
       deptoOrigen:  deptoOrigen,
       deptoDestino: deptoDestino,
+      // Hora aproximada de inicio (solo origen). String "HH:MM" 24h o "" si no la cargó.
+      horaOrigen:   horaOrigen,
       ascOrigen:   _busqueda.ascOrigen,
       ascDestino:  _busqueda.ascDestino,
       // Trackeo de la inmobiliaria (slug que vino en la URL)
@@ -1748,12 +1729,6 @@ function guardarForm() {
       cliNotas:  document.getElementById('cli-notas').value || '',
       desde:     document.getElementById('input-desde').value || '',
       hasta:     document.getElementById('input-hasta').value || '',
-      pisoDesde: document.getElementById('piso-desde').value || '',
-      deptoDesde:document.getElementById('depto-desde').value || '',
-      ascDesde:  document.getElementById('asc-desde').checked,
-      pisoHasta: document.getElementById('piso-hasta').value || '',
-      deptoHasta:document.getElementById('depto-hasta').value || '',
-      ascHasta:  document.getElementById('asc-hasta').checked,
       ambientes: _amb,
       fecha:     document.getElementById('input-fecha').value || ''
     };
@@ -1776,18 +1751,6 @@ function restaurarForm() {
     var inHasta = document.getElementById('input-hasta');
     if (d.desde && !inDesde.value) inDesde.value = d.desde;
     if (d.hasta && !inHasta.value) inHasta.value = d.hasta;
-    if (d.pisoDesde)  document.getElementById('piso-desde').value  = d.pisoDesde;
-    if (d.deptoDesde) document.getElementById('depto-desde').value = d.deptoDesde;
-    if (d.ascDesde) {
-      document.getElementById('asc-desde').checked = true;
-      document.getElementById('asc-desde-toggle').classList.add('active');
-    }
-    if (d.pisoHasta)  document.getElementById('piso-hasta').value  = d.pisoHasta;
-    if (d.deptoHasta) document.getElementById('depto-hasta').value = d.deptoHasta;
-    if (d.ascHasta) {
-      document.getElementById('asc-hasta').checked = true;
-      document.getElementById('asc-hasta-toggle').classList.add('active');
-    }
     // Ambientes
     if (d.ambientes && d.ambientes >= 1 && d.ambientes <= 8) {
       _amb = d.ambientes;
@@ -1806,9 +1769,7 @@ function restaurarForm() {
 
 // Bind: guardar en cada cambio
 function bindAutoGuardar() {
-  var ids = ['cli-nombre','cli-tel','cli-email','cli-notas','input-desde','input-hasta',
-             'piso-desde','depto-desde','asc-desde','piso-hasta','depto-hasta','asc-hasta',
-             'input-fecha'];
+  var ids = ['cli-nombre','cli-tel','cli-email','cli-notas','input-desde','input-hasta','input-fecha'];
   ids.forEach(function(id){
     var el = document.getElementById(id);
     if (!el) return;
