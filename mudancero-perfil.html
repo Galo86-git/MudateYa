@@ -889,7 +889,9 @@ function _publicarPedidoMudancero(detallesAdicionales, lugar) {
       pisoOrigen:   lugar && lugar.pisoOrigen   || '',
       pisoDestino:  lugar && lugar.pisoDestino  || '',
       deptoOrigen:  lugar && lugar.deptoOrigen  || '',
-      deptoDestino: lugar && lugar.deptoDestino || ''
+      deptoDestino: lugar && lugar.deptoDestino || '',
+      // Hora aproximada de inicio (solo origen). String "HH:MM" 24h o "" si no la cargó.
+      horaOrigen:   lugar && lugar.horaOrigen   || ''
     })
   })
   .then(function(r){ return r.json(); })
@@ -979,6 +981,7 @@ function pdpMostrar() {
   var dop = document.getElementById('pdp-depto-origen'); if (dop) dop.value = '';
   var pdd = document.getElementById('pdp-piso-destino'); if (pdd) pdd.value = '';
   var ddp = document.getElementById('pdp-depto-destino');if (ddp) ddp.value = '';
+  var ho = document.getElementById('pdp-hora-origen');   if (ho) ho.value = '';
   var dow = document.getElementById('pdp-depto-origen-wrap');  if (dow) dow.style.display = 'none';
   var ddw = document.getElementById('pdp-depto-destino-wrap'); if (ddw) ddw.style.display = 'none';
   pdpValidar();
@@ -1138,7 +1141,8 @@ function _pdpArmarLugar() {
     pisoOrigen:   '',
     pisoDestino:  '',
     deptoOrigen:  '',
-    deptoDestino: ''
+    deptoDestino: '',
+    horaOrigen:   ''
   };
   if (_pdpTipoOrigen === 'departamento') {
     out.pisoOrigen  = (document.getElementById('pdp-piso-origen').value  || '').trim();
@@ -1148,16 +1152,56 @@ function _pdpArmarLugar() {
     out.pisoDestino  = (document.getElementById('pdp-piso-destino').value  || '').trim();
     out.deptoDestino = (document.getElementById('pdp-depto-destino').value || '').trim();
   }
+  // Hora de origen: input type="time" devuelve "HH:MM" (24h). Vacío si no la cargó.
+  var horaEl = document.getElementById('pdp-hora-origen');
+  if (horaEl) out.horaOrigen = (horaEl.value || '').trim();
   return out;
 }
+
+// Cerrar el modal de detalles con la X (o click en overlay).
+// Limpiamos cualquier dato pendiente para que el próximo intento empiece limpio.
+function _pdpCerrar() {
+  document.getElementById('pdpModal').classList.remove('open');
+  _pdpDatosPendientes = null;
+}
+
+// Datos pre-armados del modal de detalles, los guardamos al apretar "Enviar"
+// para usarlos cuando el cliente confirme en el modal de confirmación final.
+var _pdpDatosPendientes = null;
 
 function pdpEnviar() {
   pdpValidar();
   if (document.getElementById('pdp-btn-enviar').disabled) return;
   var det   = _pdpArmarDetalles();
   var lugar = _pdpArmarLugar();
+  // Guardamos los datos y abrimos modal de confirmación FINAL (no envía directo).
+  // El modal de detalles queda abierto debajo por si el cliente cancela.
+  _pdpDatosPendientes = { det: det, lugar: lugar };
+  var nombre = _mudancero ? (_mudancero.empresa || _mudancero.nombre) : 'este mudancero';
+  var sub = document.getElementById('pdpConfirmEnvioSub');
+  if (sub) sub.innerHTML = 'Le vas a pedir cotización a <b>' + nombre + '</b>. Te va a contactar con su propuesta por email.';
+  document.getElementById('pdpConfirmEnvioOverlay').classList.add('open');
+}
+
+// Cancelar la confirmación final — vuelve al modal de detalles
+function _pdpCancelarConfirmEnvio() {
+  document.getElementById('pdpConfirmEnvioOverlay').classList.remove('open');
+  _pdpDatosPendientes = null;
+}
+
+// Confirmar y disparar el POST real
+function _pdpConfirmarYEnviar() {
+  if (!_pdpDatosPendientes) return;
+  var datos = _pdpDatosPendientes;
+  _pdpDatosPendientes = null;
+  var btn = document.getElementById('pdpConfirmEnvioOk');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; btn.style.opacity = '.6'; }
+  document.getElementById('pdpConfirmEnvioOverlay').classList.remove('open');
   document.getElementById('pdpModal').classList.remove('open');
-  _publicarPedidoMudancero(det, lugar);
+  setTimeout(function() {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sí, enviar →'; btn.style.opacity = '1'; }
+  }, 500);
+  _publicarPedidoMudancero(datos.det, datos.lugar);
 }
 
 // ── Solicitar (entry point) ───────────────
@@ -1276,6 +1320,21 @@ var _mudancero = null;
   </div>
 </div>
 
+<!-- Modal de confirmación FINAL — aparece después del modal de detalles,
+     justo antes de disparar el POST. Es la última red de seguridad. Si el
+     cliente cancela, vuelve al modal de detalles (sigue abierto debajo). -->
+<div class="confirm-overlay" id="pdpConfirmEnvioOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">📨</div>
+    <div class="confirm-title">¿Confirmás el envío?</div>
+    <div class="confirm-sub" id="pdpConfirmEnvioSub">Le vas a pedir cotización a este mudancero. Te va a contactar con su propuesta por email.</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-cancel" onclick="_pdpCancelarConfirmEnvio()">Cancelar</button>
+      <button class="confirm-btn-ok" id="pdpConfirmEnvioOk" onclick="_pdpConfirmarYEnviar()">Sí, enviar →</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LOGIN -->
 <div class="modal-ov" id="loginModal">
   <div class="modal-box">
@@ -1328,8 +1387,9 @@ var _mudancero = null;
   .pdp-extras{ background:#F5F7FA; border-radius:10px; padding:12px 14px; margin-top:14px; }
 </style>
 
-<div class="pdp-modal-overlay" id="pdpModal">
-  <div class="pdp-modal-box wide">
+<div class="pdp-modal-overlay" id="pdpModal" onclick="if(event.target===this) _pdpCerrar()">
+  <div class="pdp-modal-box wide" style="position:relative">
+    <button type="button" onclick="_pdpCerrar()" aria-label="Cerrar" style="position:absolute;top:12px;right:12px;width:32px;height:32px;background:#F1F5F9;border:1px solid #E2E8F0;color:#64748B;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;font-family:inherit">✕</button>
     <div class="pdp-modal-head">
       <div style="font-size:1.6rem;margin-bottom:6px">📋</div>
       <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:.3rem">Para cotizar bien, necesitamos algunos datos</div>
@@ -1358,6 +1418,11 @@ var _mudancero = null;
               </div>
             </div>
           </div>
+          <!-- Hora aproximada de inicio — solo en origen. Es la hora a la que el
+               mudancero llega a arrancar el trabajo. Opcional, el cliente afina
+               por WhatsApp después de aceptar la cotización. -->
+          <div class="pdp-col-label" style="margin-top:12px">Hora aproximada de inicio <span style="font-weight:400;text-transform:none;color:#78350F;opacity:.7">(opcional)</span></div>
+          <input type="time" id="pdp-hora-origen" class="pdp-piso-input" style="width:140px"/>
           <div class="pdp-col-label" style="margin-top:14px">Características <span style="font-weight:400;text-transform:none;color:#78350F;opacity:.7">(opcional)</span></div>
           <div id="pdp-chks-origen"></div>
         </div>
