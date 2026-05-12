@@ -2786,6 +2786,18 @@ var _cotizacionesData = [];
 async function cargarCotizaciones() {
   document.getElementById('cotizacionesList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
+    // Pre-cargar nombres de inmobiliarias para que el badge "🏠 INMO 25%" muestre
+    // el nombre legible, incluso si el admin no pasó antes por la pestaña Inmobiliarias.
+    if (!window._inmoNombresCache) {
+      try {
+        var rInm = await fetch('/api/inmobiliarias?action=listar&token=mya-admin-2026');
+        var dInm = await rInm.json();
+        window._inmoNombresCache = {};
+        (dInm.inmobiliarias || []).forEach(function(i) {
+          window._inmoNombresCache[i.slug] = i.nombre || i.slug;
+        });
+      } catch(e) { window._inmoNombresCache = {}; }
+    }
     var r = await fetch('/api/cotizaciones?action=admin-listar&token=mya-admin-2026');
     var d = await r.json();
     if (!d.ok) throw new Error(d.error || 'Error');
@@ -2918,10 +2930,15 @@ function renderTabla(data) {
     var hasta  = (p.hasta||'').split(',')[0];
     var mud    = p.mudanceroNombre || p.mudanceroEmail || '—';
     var nCot   = p.cotizaciones || 0;
-    // Badge origen: Mudafy / asesor / directo (con comisión 25% en los dos primeros)
+    // Badge origen: Mudafy / inmobiliaria asociada / asesor / directo (todos con comisión 25%)
     var origenBadge = '';
     if (p.partner === 'mudafy') {
       origenBadge = '<span title="Cliente Mudafy · comisión 25%" style="display:inline-block;background:#FFF1EE;color:#991B1B;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;font-family:var(--mono);border:1px solid #FECACA">🤝 MUDAFY 25%</span>';
+    } else if (p.partner) {
+      // Cualquier otra inmobiliaria asociada. Mostramos el nombre legible si está
+      // cacheado (_inmoNombresCache lo llena renderInmoLista). Sino, slug en mayúsculas.
+      var nombreInmo = (window._inmoNombresCache && window._inmoNombresCache[p.partner]) || p.partner.toUpperCase();
+      origenBadge = '<span title="Cliente de '+esc(nombreInmo)+' · comisión 25%" style="display:inline-block;background:#FFF1EE;color:#991B1B;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;font-family:var(--mono);border:1px solid #FECACA">🏠 '+esc(nombreInmo.toUpperCase())+' 25%</span>';
     } else if (p.origenAsesor || p.refAliado) {
       origenBadge = '<span title="Cliente asesor inmobiliario · comisión 25%" style="display:inline-block;background:#FEF3F2;color:#991B1B;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;font-family:var(--mono);border:1px solid #FECACA">🏢 ASESOR 25%</span>';
     }
@@ -4824,6 +4841,10 @@ async function renderInmoLista() {
     var data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Error');
     var inmos = data.inmobiliarias || [];
+    // Cachear mapa slug → nombre para que el badge "🏠 INMO 25%" en la tabla
+    // de cotizaciones muestre el nombre legible en lugar del slug crudo.
+    window._inmoNombresCache = window._inmoNombresCache || {};
+    inmos.forEach(function(i) { window._inmoNombresCache[i.slug] = i.nombre || i.slug; });
     if (!inmos.length) {
       wrap.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text2)">Todavía no hay inmobiliarias cargadas.<br><br><button onclick="inmoTab(\'nueva\')" style="padding:10px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit">➕ Crear la primera</button></div>';
       return;
