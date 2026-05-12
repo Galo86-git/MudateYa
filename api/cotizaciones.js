@@ -949,6 +949,8 @@ module.exports = async function handler(req, res) {
       if (!clientesTodos.includes(clienteEmail)) clientesTodos.push(clienteEmail);
       await setJSON('clientes:todos', clientesTodos);
       try { await notificarMudanceros(mudanza); } catch(e) { console.error(e.message); }
+      // Mail de confirmación al cliente con resumen del pedido
+      try { await notificarClienteNuevoPedido(mudanza); } catch(e) { console.error('Email cliente confirmación:', e.message); }
       // ── Hook aliados: crear atribución si el cliente vino por un link de aliado ──
       if (refAliado) {
         try { await hookCrearAtribucion(id, refAliado, tipo || 'mudanza'); } catch(e) { console.warn('Hook aliado publicar:', e.message); }
@@ -3118,6 +3120,170 @@ async function notificarMudanceros(mudanza) {
     }));
   } catch(e) {
     console.error('Error notificando mudanceros:', e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Mail de confirmación al cliente cuando publica un pedido nuevo.
+// Se dispara al final de la action 'publicar'. NO incluye PDF (a propósito):
+// el PDF lo recibe cuando una cotización es aceptada (notificarCliente).
+// Acá solo confirmamos que el pedido se publicó + resumen para que el cliente
+// tenga el ID en su mail y sepa cómo sigue el proceso.
+// ════════════════════════════════════════════════════════════════════
+async function notificarClienteNuevoPedido(mudanza) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  if (!process.env.RESEND_API_KEY) return;
+  if (!mudanza.clienteEmail) return;
+
+  const esFlete = mudanza.tipo === 'flete';
+  const tipoLabel = esFlete ? 'flete' : 'mudanza';
+  const expira = new Date(mudanza.expira).toLocaleString('es-AR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+  const nivelMap = { esencial: '📦 Esencial', integral: '🛠️ Integral', llave: '🔑 Llave en mano', flete: '🚚 Flete' };
+  const nivelLabel = esFlete ? '' : (nivelMap[mudanza.nivel] || '');
+
+  // Resolver info del partner (mismo patrón que en notificarMudanceros).
+  // Si vino de Mudafy o de una inmobiliaria asociada, lo aclaramos en el header.
+  let partnerNombre = null;
+  if (mudanza.partner) {
+    if (mudanza.partner === 'mudafy') partnerNombre = 'Mudafy';
+    else {
+      try {
+        const inmoCfg = await getJSON('inmobiliaria:' + mudanza.partner);
+        partnerNombre = (inmoCfg && inmoCfg.nombre) || mudanza.partner;
+      } catch(e) { partnerNombre = mudanza.partner; }
+    }
+  }
+
+  // Banner que aclara el origen del pedido al cliente
+  const bannerPartner = partnerNombre
+    ? `<div style="background:#FFF7ED;border-bottom:1px solid #FED7AA;padding:11px 28px;font-size:13px;color:#9A3412;font-weight:600;display:flex;align-items:center"><span style="background:#F59E0B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🏠</span>Pedido enviado vía ${partnerNombre}</div>`
+    : '';
+
+  // Helpers para formatear detalles por lado (origen/destino).
+  // Reusamos los mismos LABELS_CORTOS que el PDF para mantener consistencia.
+  const LABELS_LADO = {
+    ascensor:        'Con ascensor',
+    izaje:           'Necesita izaje',
+    soga:            'Necesita soga',
+    balconTerraza:   'Balcón / terraza',
+    pasilloAngosto:  'Pasillo angosto',
+    escaleras:       'Hay escaleras',
+    cocheraGarage:   'Puerta de cochera',
+    estDificil:      'Estac. difícil',
+    mascotaEspecial: 'Mascota / especial'
+  };
+
+  function formatTipoLado(tipo, piso, depto) {
+    if (!tipo) return '<span style="color:#94A3B8;font-style:italic">No indicado</span>';
+    if (tipo === 'casa') return 'Casa';
+    let txt = 'Departamento';
+    if (piso)  txt += ' · Piso ' + piso;
+    if (depto) txt += ' · Depto ' + depto;
+    return txt;
+  }
+
+  function formatDetallesLado(detallesLado) {
+    if (!detallesLado) return '';
+    const items = [];
+    Object.keys(LABELS_LADO).forEach(function(k) {
+      if (detallesLado[k] === true) {
+        let lbl = LABELS_LADO[k];
+        if (k === 'escaleras' && detallesLado.escalerasPisos) {
+          lbl += ' (' + detallesLado.escalerasPisos + ' piso' + (detallesLado.escalerasPisos > 1 ? 's' : '') + ')';
+        }
+        items.push(lbl);
+      }
+    });
+    if (!items.length) return '';
+    return '<div style="margin-top:6px;font-size:12px;color:#475569;line-height:1.6">' +
+      items.map(function(it) { return '• ' + it; }).join('<br>') +
+      '</div>';
+  }
+
+  // Bloque "Detalles del lugar" en 2 columnas (origen / destino), solo si hay datos.
+  const tieneDetallesLado = !!(mudanza.tipoOrigen || mudanza.tipoDestino || mudanza.detallesOrigen || mudanza.detallesDestino);
+  const bloqueDetallesLado = tieneDetallesLado ? `
+    <div style="margin-top:18px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:14px 16px">
+      <div style="font-size:11px;color:#92400E;font-weight:700;letter-spacing:1px;margin-bottom:10px">DETALLES DEL LUGAR</div>
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="vertical-align:top">
+          <td style="width:50%;padding-right:8px">
+            <div style="font-size:11px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Origen</div>
+            <div style="font-size:13px;color:#0F1923;font-weight:600">${formatTipoLado(mudanza.tipoOrigen, mudanza.pisoOrigen, mudanza.deptoOrigen)}</div>
+            ${formatDetallesLado(mudanza.detallesOrigen)}
+          </td>
+          <td style="width:50%;padding-left:8px;border-left:1px solid #FDE68A">
+            <div style="font-size:11px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;padding-left:8px">Destino</div>
+            <div style="font-size:13px;color:#0F1923;font-weight:600;padding-left:8px">${formatTipoLado(mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino)}</div>
+            <div style="padding-left:8px">${formatDetallesLado(mudanza.detallesDestino)}</div>
+          </td>
+        </tr>
+      </table>
+    </div>` : '';
+
+  // Comentario libre si el cliente lo cargó
+  const comentario = mudanza.detallesAdicionales && mudanza.detallesAdicionales.comentario;
+  const bloqueComentario = comentario ? `
+    <div style="margin-top:14px;background:#EEF4FF;border:1px solid #C7D9FF;border-radius:10px;padding:12px 14px">
+      <div style="font-size:11px;color:#1A6FFF;font-weight:700;letter-spacing:1px;margin-bottom:6px">TU COMENTARIO</div>
+      <div style="font-size:13px;color:#0F1923;line-height:1.5">${String(comentario).replace(/</g, '&lt;')}</div>
+    </div>` : '';
+
+  // Cantidad de fotos cargadas (no las adjuntamos al mail, solo lo mencionamos)
+  const fotosCount = (mudanza.fotos && mudanza.fotos.length) ||
+    (mudanza.detallesAdicionales && mudanza.detallesAdicionales.fotos && mudanza.detallesAdicionales.fotos.length) || 0;
+  const bloqueFotos = fotosCount > 0 ? `
+    <div style="margin-top:10px;font-size:12px;color:#64748B;background:#F5F7FA;border-radius:8px;padding:9px 12px">📷 Cargaste ${fotosCount} foto${fotosCount > 1 ? 's' : ''} — los mudanceros las van a ver al cotizar.</div>` : '';
+
+  const primerNombre = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#F5F7FA">
+<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+  <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Tu pedido fue publicado</span></div>
+  ${bannerPartner}
+  <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${esFlete ? '📦 Flete' : '🚛 Mudanza'} · ${mudanza.id}</div>
+  <div style="padding:28px">
+    <p style="font-size:15px;color:#0F1923;margin:0 0 8px"><strong>${primerNombre}</strong>, tu pedido fue publicado correctamente.</p>
+    <p style="font-size:14px;color:#475569;margin:0 0 20px;line-height:1.6">Los mudanceros verificados de tu zona ya recibieron tu solicitud. En las próximas horas vas a empezar a recibir cotizaciones. <strong>Cuando aceptes una</strong>, vas a poder coordinar el detalle con ese mudancero por WhatsApp.</p>
+
+    <div style="font-size:11px;color:#94A3B8;font-weight:700;letter-spacing:1px;margin-bottom:8px">RESUMEN DEL PEDIDO</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+      <tr><td style="color:#64748B;padding:8px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.desde || '—'}</td></tr>
+      <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.hasta || '—'}</td></tr>
+      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.ambientes || '—'}</td></tr>
+      ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Pack</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${nivelLabel}</td></tr>` : ''}
+      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.fecha || '—'}</td></tr>
+      ${mudanza.km ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
+      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Pedido publicado hasta</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
+    </table>
+
+    ${bloqueDetallesLado}
+    ${bloqueComentario}
+    ${bloqueFotos}
+
+    <div style="margin-top:22px;text-align:center">
+      <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 28px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mis pedidos →</a>
+    </div>
+
+    <div style="margin-top:24px;padding:14px 16px;background:#F5F7FA;border-radius:10px;font-size:12px;color:#475569;line-height:1.6">
+      <strong style="color:#0F1923">¿Dudas o algún cambio?</strong><br>
+      Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#003580;font-weight:600;text-decoration:none">hola@mudateya.ar</a> mencionando el ID de tu pedido: <code style="background:#fff;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px">${mudanza.id}</code>
+    </div>
+  </div>
+  <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace;text-align:center">MudateYa · Marketplace de mudanzas verificadas · mudateya.ar</div>
+</div>
+</body></html>`;
+
+  try {
+    await resend.emails.send({
+      from: 'MudateYa <noreply@mudateya.ar>',
+      to: mudanza.clienteEmail,
+      subject: `✅ Tu ${tipoLabel} ${mudanza.id} fue publicada · Mudanceros cotizando`,
+      html: html,
+      reply_to: 'hola@mudateya.ar'
+    });
+  } catch(e) {
+    console.error('Error enviando confirmación a cliente:', e.message);
   }
 }
 
