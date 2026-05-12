@@ -655,12 +655,18 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 // ── Configuración de la inmobiliaria ──
-// El slug viene de la URL: /inmobiliaria/{slug} → vercel.json hace rewrite a
-// /inmobiliaria.html?slug={slug}. Ese slug identifica a la inmobiliaria y se usa para:
-//   1. Cargar su branding (nombre, logo, color) desde /api/inmobiliarias?action=obtener
-//   2. Mandarlo como partner al publicar el pedido (para tracking + comisión)
+// El slug puede venir de dos lugares:
+//   1. Query string: /inmobiliaria.html?slug=X (cuando Vercel hace rewrite OK)
+//   2. Path: /inmobiliaria/X (extraído del pathname, fallback robusto)
+// Mantenemos los dos métodos porque algunas configs de Vercel descartan los query
+// params al hacer rewrite, y de la otra forma el slug viene en la URL directamente.
 var _qp = new URLSearchParams(window.location.search);
 var _inmoSlug = (_qp.get('slug') || '').toLowerCase().trim();
+if (!_inmoSlug) {
+  // Fallback: parsear del pathname. Ej: /inmobiliaria/meyrelles-williams → 'meyrelles-williams'
+  var m = window.location.pathname.match(/\/inmobiliaria\/([a-z0-9-]+)/i);
+  if (m) _inmoSlug = m[1].toLowerCase();
+}
 var _inmoConfig = null; // se rellena tras la llamada al backend
 
 var _amb = 2;
