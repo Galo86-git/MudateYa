@@ -36,6 +36,22 @@ async function setJSON(key, value, exSeconds) {
 }
 
 // ════════════════════════════════════════════════════
+// HELPERS DE FECHA
+// ════════════════════════════════════════════════════
+// El campo `fecha` se guarda como string ISO simple ("2026-05-19") tal cual
+// lo manda el input type="date" del HTML. Para mostrarlo a usuarios argentinos
+// lo convertimos a "19/05/2026" (formato dd/mm/yyyy). Acepta también ISO con
+// hora ("2026-05-19T10:00:00"), de la que descarta todo después de la T.
+// Si llega vacío o malformado devuelve '—' para no romper el render del email.
+function fmtFechaAR(fecha) {
+  if (!fecha || typeof fecha !== 'string') return '—';
+  const soloFecha = fecha.split('T')[0];
+  const m = soloFecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return fecha; // si ya viene en otro formato, devolverlo crudo
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+// ════════════════════════════════════════════════════
 // GENERADOR PDF con PDFKit
 // ════════════════════════════════════════════════════
 async function generarPDFBase64(datos) {
@@ -50,7 +66,7 @@ async function generarPDFBase64(datos) {
   const mudInits      = (datos.mudanceroNombre || 'MV').slice(0,2).toUpperCase();
   const desde         = datos.desde || '—';
   const hasta         = datos.hasta || '—';
-  const fechaMud      = datos.fecha || '—';
+  const fechaMud      = fmtFechaAR(datos.fecha);
   const ambientes     = datos.ambientes || '—';
   const objetos       = datos.objetos || datos.servicios || '—';
   const extras        = datos.extras || '';
@@ -2772,7 +2788,7 @@ async function generarPDFDetallesBase64(mudanza) {
       row('Origen', mudanza.desde);
       row('Destino', mudanza.hasta);
       row('Tamaño', mudanza.ambientes);
-      row('Fecha', mudanza.fecha);
+      row('Fecha', fmtFechaAR(mudanza.fecha));
       y += 14;
 
       // ── 2 columnas: ORIGEN | DESTINO ──
@@ -2989,7 +3005,7 @@ async function notificarMudanceros(mudanza) {
         <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.ambientes}</td></tr>
         ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${nivelLabel}</td></tr>` : ''}
         ${mudanza.km ? `<tr><td style="color:#64748B;padding:8px 0;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${mudanza.fecha}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
         ${mudanza.horaOrigen ? `<tr><td style="color:#64748B;padding:8px 0;font-size:13px">Hora aprox.</td><td style="font-size:13px;color:#0F1923;font-weight:700;padding:8px 0">⏰ ${mudanza.horaOrigen} hs</td></tr>` : ''}
         <tr${mudanza.horaOrigen ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:8px${mudanza.horaOrigen ? ' 8px' : ' 0'};font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
       </table>
@@ -3038,7 +3054,7 @@ async function notificarMudanceros(mudanza) {
         <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${mudanza.ambientes}</td></tr>
         ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${nivelLabel}</td></tr>` : ''}
         ${mudanza.km ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.fecha}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
         <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Modo</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.modoCotizacion === 'dirigido' ? '🎯 Dirigido' : '📢 Abierto'}</td></tr>
       </table>
 
@@ -3272,7 +3288,7 @@ async function notificarClienteNuevoPedido(mudanza) {
       <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.hasta || '—'}</td></tr>
       <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.ambientes || '—'}</td></tr>
       ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Pack</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${nivelLabel}</td></tr>` : ''}
-      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.fecha || '—'}</td></tr>
+      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
       ${mudanza.km ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
       <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Pedido publicado hasta</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
     </table>
@@ -3551,7 +3567,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
               <tr><td style="color:#64748B;padding:6px 0;width:35%;font-size:13px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:13px">${cot.mudanceroNombre}</td></tr>
               <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Teléfono</td><td style="font-size:13px;color:#0F1923">${cot.mudanceroTel || '—'}</td></tr>
               <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Ruta</td><td style="font-size:13px;color:#0F1923">${mudanza.desde} → ${mudanza.hasta}</td></tr>
-              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${mudanza.fecha}</td></tr>
+              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
               <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Ambientes</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes}</td></tr>
               ${cot.nota ? `<tr><td style="color:#64748B;padding:6px 0;font-size:13px">Nota</td><td style="font-size:13px;color:#475569;font-style:italic">${cot.nota}</td></tr>` : ''}
             </table>
@@ -3593,7 +3609,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
           </p>
           <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
             <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Ruta</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde} → ${mudanza.hasta}</td></tr>
-            <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.fecha||'—'}</td></tr>
+            <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
             <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes||'—'}</td></tr>
             <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Precio acordado</td><td style="color:#22C36A;font-weight:700;font-size:15px;padding:7px 0">${precioFmt}</td></tr>
           </table>
@@ -3646,7 +3662,7 @@ async function notificarMudanceroInvitado(mudanza, perfil) {
           <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde}</td></tr>
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
           <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes || '—'}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.fecha || '—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
           ${mudanza.precio_estimado ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Estimado cliente</td><td style="color:#22C36A;font-weight:700;font-size:14px">$${parseInt(mudanza.precio_estimado).toLocaleString('es-AR')}</td></tr>` : ''}
         </table>
         <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 16px;margin-bottom:20px">
@@ -3781,7 +3797,7 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
           <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde || '—'}</td></tr>
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta || '—'}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${mudanza.fecha || '—'}</td></tr>
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">${esAnticipo ? 'Anticipo recibido' : 'Saldo recibido'}</td><td style="color:#17A356;font-weight:700;font-size:14px;padding:7px 0">${montoFmt}</td></tr>
           ${!esAnticipo ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">A liquidar (neto)</td><td style="color:#17A356;font-weight:700;font-size:14px">${netoFmt}</td></tr>` : ''}
         </table>
@@ -3822,7 +3838,7 @@ async function notificarClienteAnticipoPagado(mudanza) {
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
           <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde||'—'}</td></tr>
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta||'—'}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${mudanza.fecha||'—'}</td></tr>
+          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${cot.mudanceroNombre||'—'}</td></tr>
           <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:14px">${saldoFmt} al completar</td></tr>
         </table>
