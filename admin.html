@@ -1144,9 +1144,30 @@ tr:hover td{background:rgba(34,195,106,.03)}
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px">
                 <div>
-                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">URL del logo</label>
-                  <input type="url" id="inmoLogo" maxlength="500" placeholder="https://..." oninput="inmoPreviewActualizar()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;box-sizing:border-box"/>
-                  <div style="font-size:11px;color:var(--text2);margin-top:4px">Subí el logo a Vercel Blob o cualquier CDN. PNG o SVG recomendado.</div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Logo</label>
+                  <!-- URL final del logo (oculto, se rellena al subir el archivo). Mantengo
+                       el ID inmoLogo para que el resto del JS (inmoGuardar, inmoEditar) lo lea
+                       sin cambios. -->
+                  <input type="hidden" id="inmoLogo" value=""/>
+                  <input type="file" id="inmoLogoFile" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" style="display:none" onchange="inmoSubirLogo(this.files[0])"/>
+                  <!-- Drop zone + preview -->
+                  <div id="inmoLogoBox" onclick="if(!document.getElementById('inmoLogoBoxLoading').style.display||document.getElementById('inmoLogoBoxLoading').style.display==='none') document.getElementById('inmoLogoFile').click()"
+                       ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='#F5F8FC'"
+                       ondragleave="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='#FAFBFC'"
+                       ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='#FAFBFC';if(event.dataTransfer.files[0]) inmoSubirLogo(event.dataTransfer.files[0])"
+                       style="border:2px dashed var(--border);border-radius:8px;padding:14px;cursor:pointer;background:#FAFBFC;text-align:center;transition:all .15s;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+                    <div id="inmoLogoBoxEmpty" style="font-size:13px;color:var(--text2)">
+                      📷 <strong style="color:var(--text)">Click o arrastrá</strong> · PNG / JPG / SVG · máx 2MB
+                    </div>
+                    <div id="inmoLogoBoxPreview" style="display:none;width:100%;align-items:center;gap:10px;justify-content:space-between">
+                      <img id="inmoLogoImg" src="" style="max-height:48px;max-width:160px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px"/>
+                      <button type="button" onclick="event.stopPropagation();inmoQuitarLogo()" style="padding:4px 10px;background:transparent;border:1px solid #FECACA;color:#991B1B;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✕ Quitar</button>
+                    </div>
+                    <div id="inmoLogoBoxLoading" style="display:none;font-size:12px;color:var(--text2)">
+                      <span class="spinner" style="vertical-align:middle"></span> Subiendo…
+                    </div>
+                  </div>
+                  <div id="inmoLogoError" style="font-size:11px;color:#DC2626;margin-top:4px;display:none"></div>
                 </div>
                 <div>
                   <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Color primario</label>
@@ -4858,6 +4879,7 @@ function inmoResetForm() {
   document.getElementById('inmoContactoNombre').value = '';
   document.getElementById('inmoContactoEmail').value = '';
   document.getElementById('inmoBtnGuardar').textContent = 'Guardar inmobiliaria';
+  _inmoActualizarBoxLogo('');
   inmoSlugPreview();
   inmoPreviewActualizar();
 }
@@ -4877,6 +4899,7 @@ async function inmoEditar(slug) {
     slugEl.readOnly = true;
     slugEl.dataset.editadoManual = '1';
     document.getElementById('inmoLogo').value = inmo.logo || '';
+    _inmoActualizarBoxLogo(inmo.logo || '');
     document.getElementById('inmoColor').value = inmo.colorPrimario || '#003580';
     document.getElementById('inmoColorTxt').value = inmo.colorPrimario || '#003580';
     document.getElementById('inmoComision').value = inmo.comisionInmobiliaria || '';
@@ -5100,6 +5123,93 @@ async function inmoExportComisiones() {
     XLSX.writeFile(wb, fname);
   } catch(e) {
     alert('Error exportando: ' + e.message);
+  }
+}
+
+// ── Subir logo a Vercel Blob vía /api/upload-foto ──
+// Reutilizamos el endpoint que ya usa el admin para fotos de mudanceros.
+// Solo cambia la carpeta destino (header x-carpeta = 'inmobiliarias') y el nombre
+// del archivo (slug + timestamp). La URL pública resultante se guarda en el
+// campo oculto inmoLogo, que es lo que finalmente se persiste en Redis.
+async function inmoSubirLogo(file) {
+  if (!file) return;
+  var errBox = document.getElementById('inmoLogoError');
+  errBox.style.display = 'none';
+  errBox.textContent = '';
+
+  // Validaciones en browser antes de subir (ahorra ancho de banda)
+  var TIPOS_OK = ['image/png','image/jpeg','image/jpg','image/svg+xml','image/webp'];
+  if (TIPOS_OK.indexOf(file.type) === -1) {
+    errBox.textContent = 'Formato no soportado. Usá PNG, JPG, SVG o WebP.';
+    errBox.style.display = 'block';
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    errBox.textContent = 'El archivo supera los 2MB. Reducí el tamaño antes de subirlo.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  // UI: mostrar loading
+  document.getElementById('inmoLogoBoxEmpty').style.display = 'none';
+  document.getElementById('inmoLogoBoxPreview').style.display = 'none';
+  document.getElementById('inmoLogoBoxLoading').style.display = 'block';
+
+  try {
+    // El nombre del archivo en Blob: prefijo con el slug si está cargado, sino
+    // 'logo' a secas. El endpoint le agrega timestamp al final automáticamente.
+    var slug = (document.getElementById('inmoSlug').value || 'logo').toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-').slice(0, 40);
+    var r = await fetch('/api/upload-foto', {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type,
+        'x-carpeta': 'inmobiliarias',
+        'x-nombre':  slug
+      },
+      body: file
+    });
+    var data = await r.json();
+    if (!r.ok || !data.url) throw new Error(data.error || 'No se pudo subir el archivo');
+
+    // Guardar URL en el campo oculto y refrescar previews
+    document.getElementById('inmoLogo').value = data.url;
+    _inmoActualizarBoxLogo(data.url);
+    inmoPreviewActualizar();
+  } catch(e) {
+    errBox.textContent = 'Error subiendo: ' + e.message;
+    errBox.style.display = 'block';
+    _inmoActualizarBoxLogo(document.getElementById('inmoLogo').value);
+  }
+}
+
+// ── Quitar logo (vuelve al estado vacío) ──
+// No borra el archivo de Blob, solo desvincula la URL de esta inmobiliaria.
+// Para borrar del blob físicamente habría que llamar a otro endpoint;
+// por ahora dejamos los archivos huérfanos (costo despreciable).
+function inmoQuitarLogo() {
+  document.getElementById('inmoLogo').value = '';
+  document.getElementById('inmoLogoFile').value = ''; // limpiar input para poder re-elegir el mismo archivo
+  _inmoActualizarBoxLogo('');
+  inmoPreviewActualizar();
+}
+
+// ── Sincronizar el drop zone con la URL actual del logo ──
+function _inmoActualizarBoxLogo(url) {
+  var empty   = document.getElementById('inmoLogoBoxEmpty');
+  var preview = document.getElementById('inmoLogoBoxPreview');
+  var loading = document.getElementById('inmoLogoBoxLoading');
+  var img     = document.getElementById('inmoLogoImg');
+  if (!empty || !preview || !loading || !img) return;
+  loading.style.display = 'none';
+  if (url) {
+    empty.style.display = 'none';
+    preview.style.display = 'flex';
+    img.src = url;
+  } else {
+    empty.style.display = 'block';
+    preview.style.display = 'none';
+    img.src = '';
   }
 }
 
