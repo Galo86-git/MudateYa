@@ -1784,6 +1784,25 @@
         <div style="font-size:1rem;font-weight:700;margin-bottom:.3rem">Publicando tu mudanza…</div>
         <p style="font-size:13px;color:var(--text2)">Notificando a los mudanceros</p>
       </div>
+
+      <!-- CONFIRMACIÓN — última red de seguridad antes del POST.
+           El cliente apretó "Enviar solicitud" del modal de detalles. Acá reconfirmamos
+           con cantidad de destinatarios. Si cancela, vuelve al modal de detalles. -->
+      <div id="pub-confirm" style="display:none;padding:1rem 0;text-align:center">
+        <div style="font-size:48px;margin-bottom:14px">📨</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:8px">¿Confirmás el envío?</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.55;margin:0 0 8px" id="pub-confirm-subtitle">
+          Tu solicitud va a llegar a los mudanceros verificados que cubren la zona.
+        </p>
+        <p style="font-size:13px;color:var(--text3,#94A3B8);line-height:1.5;margin:0 0 20px">
+          Vas a recibir cotizaciones en las próximas horas y un mail con el resumen.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:6px">
+          <button type="button" onclick="_pubCancelarConfirm()" style="flex:1;padding:13px 18px;background:#fff;border:1px solid var(--border,#E2E8F0);color:var(--text);border-radius:var(--r);font-weight:700;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">Cancelar</button>
+          <button type="button" id="pub-confirm-ok" onclick="_pubConfirmarEnviar()" style="flex:1.4;padding:13px 18px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-weight:700;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">Sí, enviar →</button>
+        </div>
+      </div>
+
       <div id="pub-ok" style="display:none;padding:1rem 0">
         <div style="font-size:3rem;margin-bottom:12px">🚀</div>
         <div style="font-size:1.1rem;font-weight:700;margin-bottom:.4rem">¡Publicada!</div>
@@ -3066,15 +3085,54 @@
     return out;
   }
 
+  // Datos pre-armados al apretar "Enviar solicitud" del modal de detalles.
+  // Se guardan acá hasta que el cliente confirma en el step "pub-confirm".
+  var _pubDatosPendientes = null;
+
   function pdEnviar() {
     pdValidar();
     if (document.getElementById('pd-btn-enviar').disabled) return;
     var det   = _armarDetallesPayload();
     var lugar = _armarLugarPayload();
-    // Volver al modal angosto antes de cerrar
+    // Guardar datos y abrir el paso de confirmación. NO disparamos el POST acá.
+    _pubDatosPendientes = { det: det, lugar: lugar };
+    // Subtítulo dinámico: cantidad de mudanceros destinatarios
+    var modo = _modoPublicacion;
+    var destinatarios = modo === 'dirigido' ? _sel.size : (_mudanceros ? _mudanceros.length : 0);
+    var sub = document.getElementById('pub-confirm-subtitle');
+    if (sub && destinatarios > 0) {
+      sub.innerHTML = 'Tu solicitud va a llegar a <b>' + destinatarios + ' mudancero' +
+        (destinatarios > 1 ? 's verificados' : ' verificado') +
+        '</b> que ' + (destinatarios > 1 ? 'cubren' : 'cubre') + ' la zona.';
+    }
+    // Cambiar de step: ocultar detalles, mostrar confirmación. Achicar el modal.
     document.getElementById('pubModalBox').classList.remove('wide');
     document.getElementById('pub-detalles').style.display = 'none';
-    _ejecutarPublicacion(_modoPublicacion, _detallesWA, det, lugar);
+    document.getElementById('pub-confirm').style.display = 'block';
+  }
+
+  // Cancelar la confirmación — volver al modal de detalles donde estaba el cliente
+  function _pubCancelarConfirm() {
+    document.getElementById('pub-confirm').style.display = 'none';
+    document.getElementById('pubModalBox').classList.add('wide');
+    document.getElementById('pub-detalles').style.display = 'block';
+    _pubDatosPendientes = null;
+  }
+
+  // Confirmar el envío: dispara el POST real con los datos guardados
+  function _pubConfirmarEnviar() {
+    if (!_pubDatosPendientes) return;
+    var datos = _pubDatosPendientes;
+    _pubDatosPendientes = null;
+    // Bloquear el botón para evitar doble click
+    var btn = document.getElementById('pub-confirm-ok');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; btn.style.opacity = '.6'; }
+    document.getElementById('pub-confirm').style.display = 'none';
+    // Restaurar el botón por si el cliente vuelve a abrir el modal
+    setTimeout(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sí, enviar →'; btn.style.opacity = '1'; }
+    }, 500);
+    _ejecutarPublicacion(_modoPublicacion, _detallesWA, datos.det, datos.lugar);
   }
 
   async function _ejecutarPublicacion(modo, clienteWA, detallesAdicionales, lugar) {
