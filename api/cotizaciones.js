@@ -819,13 +819,29 @@ module.exports = async function handler(req, res) {
         ? nivel
         : ((tipo || 'mudanza') === 'flete' ? 'flete' : null);
 
-      // Normalizar partner: aceptamos solo strings whitelisted. Si viene partner válido,
-      // lo guardamos junto con asesor y propiedad para trackeo de conversiones B2B.
-      // Estos campos los lee el admin (badge "Vía Mudafy") y los templates de mail
-      // (banner coral arriba para identificar el origen del lead).
-      const PARTNERS_VALIDOS = ['mudafy']; // futuro: añadir 'remax', etc.
-      const partnerNorm = (typeof partner === 'string' && PARTNERS_VALIDOS.indexOf(partner.toLowerCase()) !== -1)
-        ? partner.toLowerCase() : null;
+      // Normalizar partner: aceptamos 'mudafy' (legacy hardcoded) o cualquier slug
+      // de inmobiliaria que exista en Redis bajo inmobiliaria:{slug} y esté activa.
+      // Estos campos los lee el admin (badge "Vía Mudafy") y los templates de mail.
+      let partnerNorm = null;
+      let comisionInmobiliariaPct = 0;
+      if (typeof partner === 'string' && partner.length > 0 && partner.length < 60) {
+        const partnerLower = partner.toLowerCase();
+        // Whitelist legacy: mudafy queda hardcoded para no romper su flujo actual.
+        if (partnerLower === 'mudafy') {
+          partnerNorm = 'mudafy';
+        } else if (/^[a-z0-9-]+$/.test(partnerLower)) {
+          // Slug válido → buscar en Redis si es una inmobiliaria activa
+          try {
+            const inmoCfg = await getJSON('inmobiliaria:' + partnerLower);
+            if (inmoCfg && inmoCfg.activa !== false) {
+              partnerNorm = partnerLower;
+              comisionInmobiliariaPct = parseFloat(inmoCfg.comisionInmobiliaria) || 0;
+            }
+          } catch(e) {
+            console.warn('No se pudo verificar inmobiliaria:', partnerLower, e.message);
+          }
+        }
+      }
       const partnerAsesorNorm    = (typeof partnerAsesor === 'string' && partnerAsesor.length < 100) ? partnerAsesor : '';
       const partnerPropiedadNorm = (typeof partnerPropiedad === 'string' && partnerPropiedad.length < 100) ? partnerPropiedad : '';
 
@@ -903,7 +919,7 @@ module.exports = async function handler(req, res) {
       const pisoOrigenNorm  = (tipoOrigenNorm  === 'departamento' && typeof pisoOrigen  === 'string') ? pisoOrigen.trim().slice(0,10)  : (tipoOrigenNorm  === 'casa' ? '' : (pisoOrigen  || ''));
       const pisoDestinoNorm = (tipoDestinoNorm === 'departamento' && typeof pisoDestino === 'string') ? pisoDestino.trim().slice(0,10) : (tipoDestinoNorm === 'casa' ? '' : (pisoDestino || ''));
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -1112,6 +1128,17 @@ module.exports = async function handler(req, res) {
       mudanza.cotizacionAceptada.clienteNombre = mudanza.clienteNombre;
       mudanza.cotizacionAceptada.clienteEmail  = mudanza.clienteEmail;
       cot.estado = 'aceptada';
+
+      // Calcular comisión que MudateYa le debe a la inmobiliaria por el viaje cerrado.
+      // El % se fijó al publicar el pedido (snapshot en mudanza.comisionInmobiliariaPct)
+      // para que cambios futuros en la config de la inmo no afecten viajes ya cerrados.
+      // El monto a pagar se calcula sobre el precio final aceptado.
+      if (mudanza.partner && parseFloat(mudanza.comisionInmobiliariaPct) > 0) {
+        const precioFinal = parseFloat(cot.precio) || 0;
+        const pct = parseFloat(mudanza.comisionInmobiliariaPct);
+        mudanza.comisionInmobiliariaPagar = Math.round(precioFinal * pct / 100);
+      }
+
       await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
       try { await enviarEmailAceptacion(mudanza, cot); } catch(e) { console.error('Error email:', e.message); }
       return res.status(200).json({ ok: true, mudanza, cotizacion: cot });
