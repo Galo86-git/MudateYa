@@ -776,7 +776,7 @@ module.exports = async function handler(req, res) {
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
-      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales, tipoOrigen, tipoDestino, deptoOrigen, deptoDestino } = req.body;
+      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales, tipoOrigen, tipoDestino, deptoOrigen, deptoDestino, horaOrigen } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
@@ -919,7 +919,14 @@ module.exports = async function handler(req, res) {
       const pisoOrigenNorm  = (tipoOrigenNorm  === 'departamento' && typeof pisoOrigen  === 'string') ? pisoOrigen.trim().slice(0,10)  : (tipoOrigenNorm  === 'casa' ? '' : (pisoOrigen  || ''));
       const pisoDestinoNorm = (tipoDestinoNorm === 'departamento' && typeof pisoDestino === 'string') ? pisoDestino.trim().slice(0,10) : (tipoDestinoNorm === 'casa' ? '' : (pisoDestino || ''));
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      // Hora aproximada de inicio (solo origen). Aceptamos formato "HH:MM" 24h.
+      // Si no llega o es inválida, queda vacío — el campo es opcional.
+      let horaOrigenNorm = '';
+      if (typeof horaOrigen === 'string' && /^([01]?\d|2[0-3]):[0-5]\d$/.test(horaOrigen.trim())) {
+        horaOrigenNorm = horaOrigen.trim();
+      }
+
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -2786,7 +2793,7 @@ async function generarPDFDetallesBase64(mudanza) {
       const COL_X_O = MARGIN;
       const COL_X_D = MARGIN + COL_W + 12;
 
-      function dibujarColumna(xCol, titulo, emoji, tipo, piso, depto, detallesLado) {
+      function dibujarColumna(xCol, titulo, emoji, tipo, piso, depto, detallesLado, hora) {
         let cy = y;
         // Caja con borde amarillo
         const startY = cy;
@@ -2817,6 +2824,17 @@ async function generarPDFDetallesBase64(mudanza) {
           doc.fillColor('#94A3B8').font('Helvetica-Oblique').fontSize(9)
              .text('Tipo de lugar: no indicado', xCol + 10, cy, { width: COL_W - 20 });
           cy += 14;
+        }
+
+        // Hora aproximada de inicio — solo aparece si vino cargada (típicamente solo
+        // en la columna ORIGEN; el cliente puede o no haberla puesto, es opcional).
+        if (hora) {
+          doc.fillColor('#64748B').font('Helvetica').fontSize(8)
+             .text('HORA APROX. DE INICIO', xCol + 10, cy);
+          cy += 11;
+          doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(10)
+             .text(hora + ' hs', xCol + 10, cy);
+          cy += 18;
         }
 
         // Checkboxes marcados
@@ -2852,8 +2870,8 @@ async function generarPDFDetallesBase64(mudanza) {
         return startY + altura;
       }
 
-      const yFinO = dibujarColumna(COL_X_O, 'ORIGEN',  '', mudanza.tipoOrigen,  mudanza.pisoOrigen,  mudanza.deptoOrigen,  mudanza.detallesOrigen);
-      const yFinD = dibujarColumna(COL_X_D, 'DESTINO', '', mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino, mudanza.detallesDestino);
+      const yFinO = dibujarColumna(COL_X_O, 'ORIGEN',  '', mudanza.tipoOrigen,  mudanza.pisoOrigen,  mudanza.deptoOrigen,  mudanza.detallesOrigen,  mudanza.horaOrigen || '');
+      const yFinD = dibujarColumna(COL_X_D, 'DESTINO', '', mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino, mudanza.detallesDestino, '');
       y = Math.max(yFinO, yFinD) + 16;
 
       // ── Comentario libre (compartido)
@@ -2972,7 +2990,8 @@ async function notificarMudanceros(mudanza) {
         ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${nivelLabel}</td></tr>` : ''}
         ${mudanza.km ? `<tr><td style="color:#64748B;padding:8px 0;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
         <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${mudanza.fecha}</td></tr>
-        <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
+        ${mudanza.horaOrigen ? `<tr><td style="color:#64748B;padding:8px 0;font-size:13px">Hora aprox.</td><td style="font-size:13px;color:#0F1923;font-weight:700;padding:8px 0">⏰ ${mudanza.horaOrigen} hs</td></tr>` : ''}
+        <tr${mudanza.horaOrigen ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:8px${mudanza.horaOrigen ? ' 8px' : ' 0'};font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
       </table>
       <p style="font-size:12px;color:#64748B;margin:14px 0 0;line-height:1.5;background:#FFF7ED;border-left:3px solid #F59E0B;padding:9px 12px;border-radius:6px">💡 El precio lo cotizás vos según tu tarifa. Entrá a tu cuenta para enviar tu propuesta.</p>
       <div style="margin-top:20px">
@@ -3210,6 +3229,7 @@ async function notificarClienteNuevoPedido(mudanza) {
           <td style="width:50%;padding-right:8px">
             <div style="font-size:11px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Origen</div>
             <div style="font-size:13px;color:#0F1923;font-weight:600">${formatTipoLado(mudanza.tipoOrigen, mudanza.pisoOrigen, mudanza.deptoOrigen)}</div>
+            ${mudanza.horaOrigen ? `<div style="margin-top:4px;font-size:12px;color:#92400E;font-weight:600">⏰ Inicio aprox: ${mudanza.horaOrigen} hs</div>` : ''}
             ${formatDetallesLado(mudanza.detallesOrigen)}
           </td>
           <td style="width:50%;padding-left:8px;border-left:1px solid #FDE68A">
