@@ -677,6 +677,30 @@
   </div>
 </div>
 
+<!-- Modal de CONFIRMACIÓN antes de enviar la solicitud -->
+<!-- Se abre cuando el cliente apreta "Enviar solicitud" en el modal de detalles.
+     Es la última red de seguridad: confirma que realmente quiere disparar el envío
+     a los mudanceros. Si dice "Cancelar", vuelve al modal de detalles para revisar. -->
+<div class="modal-overlay" id="confirmEnvioModal" onclick="if(event.target===this)_cerrarConfirmEnvio()">
+  <div class="confirm-modal" style="max-width:440px">
+    <button class="modal-close" type="button" onclick="_cerrarConfirmEnvio()">×</button>
+    <div class="confirm-modal-header" style="text-align:center;border-bottom:none;padding-bottom:0;margin-bottom:14px">
+      <div class="confirm-modal-icon" style="background:var(--md-coral-soft);color:var(--md-coral)">📨</div>
+      <h2 class="confirm-modal-title" style="font-size:20px">¿Confirmás el envío?</h2>
+    </div>
+    <p style="text-align:center;font-size:14px;color:var(--md-text-2);line-height:1.55;margin:0 0 8px" id="confirmEnvioSubtitle">
+      Tu solicitud va a llegar a los mudanceros verificados que cubren la zona.
+    </p>
+    <p style="text-align:center;font-size:13px;color:var(--md-text-3);line-height:1.5;margin:0 0 22px">
+      Vas a recibir cotizaciones en las próximas horas y un mail con el resumen.
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button type="button" class="btn-secondary" onclick="_cerrarConfirmEnvio()" style="flex:1;padding:13px 18px;background:#fff;border:1px solid var(--md-border-2);color:var(--md-text);border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button type="button" id="confirmEnvioOk" class="btn-confirm" onclick="_confirmarYEnviarSolicitud()" style="flex:1.4;padding:13px 18px;background:var(--md-coral);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">Sí, enviar →</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal éxito -->
 <div class="modal-overlay" id="successModal">
   <div class="success-modal">
@@ -1568,13 +1592,52 @@ function _pdmArmarLugar() {
   return out;
 }
 
+// Datos pre-armados del modal de detalles, los guardamos al apretar "Enviar"
+// del modal de detalles para usarlos cuando el cliente confirme el envío.
+var _pdmDatosPendientes = null;
+
 function pdmEnviar() {
   pdmValidar();
   if (document.getElementById('pdm-btn-enviar').disabled) return;
   var det   = _pdmArmarDetalles();
   var lugar = _pdmArmarLugar();
+  // Guardamos los datos y abrimos el modal de confirmación.
+  // El modal de detalles SIGUE abierto debajo, así que si cancela puede revisar.
+  _pdmDatosPendientes = { det: det, lugar: lugar };
+  // Subtítulo dinámico con cantidad de mudanceros destinatarios
+  var destinatarios = _sel.size > 0 ? _sel.size : (_mudanceros ? _mudanceros.length : 0);
+  var sub = document.getElementById('confirmEnvioSubtitle');
+  if (sub && destinatarios > 0) {
+    sub.innerHTML = 'Tu solicitud va a llegar a <b>' + destinatarios + ' mudancero' +
+      (destinatarios > 1 ? 's verificados' : ' verificado') +
+      '</b> que ' + (destinatarios > 1 ? 'cubren' : 'cubre') + ' la zona.';
+  }
+  document.getElementById('confirmEnvioModal').classList.add('open');
+}
+
+// Cerrar el modal de confirmación sin enviar — el cliente vuelve al modal de
+// detalles que sigue abierto debajo para poder revisar/ajustar antes de reintentar.
+function _cerrarConfirmEnvio() {
+  document.getElementById('confirmEnvioModal').classList.remove('open');
+  _pdmDatosPendientes = null;
+}
+
+// Confirmar el envío: cerrar ambos modales y disparar el POST al backend.
+function _confirmarYEnviarSolicitud() {
+  if (!_pdmDatosPendientes) return;
+  var datos = _pdmDatosPendientes;
+  _pdmDatosPendientes = null;
+  // Bloquear el botón para evitar doble click mientras procesa
+  var btn = document.getElementById('confirmEnvioOk');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; btn.style.opacity = '.6'; }
+  // Cerrar ambos modales
+  document.getElementById('confirmEnvioModal').classList.remove('open');
   document.getElementById('detallesModal').classList.remove('open');
-  _enviarPedido(det, lugar);
+  // Restaurar el botón para próxima vez (por si el cliente vuelve a abrir)
+  setTimeout(function() {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sí, enviar →'; btn.style.opacity = '1'; }
+  }, 500);
+  _enviarPedido(datos.det, datos.lugar);
 }
 
 // ════════════════════════════════════════════════════════════
