@@ -1661,8 +1661,10 @@ module.exports = async function handler(req, res) {
           if (!m) continue;
           if (!(m.anticipoPagado || m.saldoPagado)) continue;
           // Calcular comisión: 25% Plan Referidos / 20% flete / 15% mudanza normal
+          // "Plan Referidos" se activa para: asesores inmobiliarios, refAliado, Mudafy
+          // y cualquier inmobiliaria asociada (partner truthy → vino de un canal pago).
           const esFlete = (m.tipo || '').toLowerCase() === 'flete';
-          const esPlanReferidos = !!(m.origenAsesor === true || m.refAliado || m.partner === 'mudafy');
+          const esPlanReferidos = !!(m.origenAsesor === true || m.refAliado || m.partner);
           const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
           const feePctLabel = (feePct * 100).toFixed(0) + '%';
           const cot = m.cotizacionAceptada || {};
@@ -2914,11 +2916,33 @@ async function notificarMudanceros(mudanza) {
   const nivelMap = { esencial: '📦 Esencial', integral: '🛠️ Integral', llave: '🔑 Llave en mano', flete: '🚚 Flete' };
   const nivelLabel = esFlete ? '' : (nivelMap[mudanza.nivel] || '');
 
-  // Banner Mudafy - solo aparece si el lead vino del partner
-  // Para el mudancero: NO mostramos asesor ni propiedad (info interna)
-  // Solo aclaramos que es un cliente de Mudafy = lead premium
-  const bannerMudafyMudancero = mudanza.partner === 'mudafy'
-    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🤝</span>Cliente de Mudafy</div>`
+  // ── Resolver info del partner (Mudafy o inmobiliaria asociada) ──
+  // Mudafy queda hardcoded por legacy. Para cualquier otro slug, leemos la config
+  // de Redis (inmobiliaria:{slug}) para mostrar el nombre real en el mail. Si la
+  // inmobiliaria no existe o se borró, fallback al slug crudo para no romper.
+  let partnerInfo = null;
+  if (mudanza.partner) {
+    if (mudanza.partner === 'mudafy') {
+      partnerInfo = { slug: 'mudafy', nombre: 'Mudafy', esPartner: true };
+    } else {
+      try {
+        const inmoCfg = await getJSON('inmobiliaria:' + mudanza.partner);
+        if (inmoCfg) {
+          partnerInfo = { slug: mudanza.partner, nombre: inmoCfg.nombre || mudanza.partner, esPartner: true };
+        } else {
+          partnerInfo = { slug: mudanza.partner, nombre: mudanza.partner, esPartner: true };
+        }
+      } catch(e) {
+        partnerInfo = { slug: mudanza.partner, nombre: mudanza.partner, esPartner: true };
+      }
+    }
+  }
+
+  // Banner para el MUDANCERO - le aclara que es un lead premium (con comisión 25%).
+  // Esto es importante: que sepa de antemano que la comisión sobre este pedido será
+  // mayor que la normal del 15%. Aplica tanto a Mudafy como a inmobiliarias nuevas.
+  const bannerMudafyMudancero = partnerInfo
+    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🤝</span>Cliente de ${partnerInfo.nombre} · Comisión 25%</div>`
     : '';
 
   // Banner detalles adicionales — aparece si el cliente cargó detalles antes de enviar
@@ -2954,18 +2978,23 @@ async function notificarMudanceros(mudanza) {
     <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
   </div></body></html>`;
 
-  // Banner Mudafy para ADMIN - banner arriba + sección "Origen del lead" en el cuerpo
-  // Para el admin SÍ mostramos asesor + propiedad porque es info interna de tracking
-  const bannerMudafyAdmin = mudanza.partner === 'mudafy'
-    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🏠</span>Lead vino de Mudafy · Conversión B2B</div>`
+  // Banner para el ADMIN — banner arriba + bloque "Origen del lead" en el cuerpo.
+  // Para el admin SÍ mostramos asesor + propiedad (Mudafy) o comisión a liquidar (inmo nueva).
+  const bannerMudafyAdmin = partnerInfo
+    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🏠</span>Lead vino de ${partnerInfo.nombre} · Conversión B2B</div>`
     : '';
 
-  const bloqueOrigenAdmin = mudanza.partner === 'mudafy'
-    ? `<div style="font-size:11px;color:#E85555;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">🏠 ORIGEN DEL LEAD — MUDAFY</div>
+  // Bloque "Origen del lead" en el cuerpo del mail al admin.
+  // Mudafy: muestra asesor + propiedad (info de CRM que viene en el URL).
+  // Inmobiliaria nueva: muestra el % de comisión a liquidar.
+  const comisionInmoPct = parseFloat(mudanza.comisionInmobiliariaPct) || 0;
+  const bloqueOrigenAdmin = partnerInfo
+    ? `<div style="font-size:11px;color:#E85555;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">🏠 ORIGEN DEL LEAD — ${partnerInfo.nombre.toUpperCase()}</div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:18px;background:#FFF5F5;border-radius:8px;overflow:hidden">
-        <tr><td style="color:#64748B;padding:9px 12px;width:35%;font-size:13px">Partner</td><td style="font-weight:700;color:#E85555;font-size:13px;padding:9px 0">🏠 Mudafy</td></tr>
+        <tr><td style="color:#64748B;padding:9px 12px;width:35%;font-size:13px">Partner</td><td style="font-weight:700;color:#E85555;font-size:13px;padding:9px 0">🏠 ${partnerInfo.nombre}</td></tr>
         ${mudanza.partnerAsesor ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:13px;border-top:1px solid rgba(255,107,107,0.15)">Asesor</td><td style="font-family:monospace;color:#0F1923;font-size:13px;padding:9px 0;border-top:1px solid rgba(255,107,107,0.15)">${mudanza.partnerAsesor}</td></tr>` : ''}
         ${mudanza.partnerPropiedad ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:13px;border-top:1px solid rgba(255,107,107,0.15)">Propiedad</td><td style="font-family:monospace;color:#0F1923;font-size:13px;padding:9px 0;border-top:1px solid rgba(255,107,107,0.15)">${mudanza.partnerPropiedad}</td></tr>` : ''}
+        ${comisionInmoPct > 0 ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:13px;border-top:1px solid rgba(255,107,107,0.15)">Comisión a liquidar</td><td style="font-weight:700;color:#78350F;font-size:13px;padding:9px 0;border-top:1px solid rgba(255,107,107,0.15)">${comisionInmoPct}% del precio final</td></tr>` : ''}
       </table>`
     : '';
 
@@ -3455,9 +3484,9 @@ async function logPedidoSheets(mudanza) {
 
   const cot = mudanza.cotizacionAceptada || {};
   const esFlete = mudanza.tipo === 'flete' || mudanza.ambientes === 'Flete';
-  // Plan Referidos (leads de asesores inmobiliarios o partner Mudafy): 25% flat
-  // Mudanzas normales: 15% · Fletes normales: 20%
-  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner === 'mudafy');
+  // Plan Referidos (leads de asesores inmobiliarios, partner Mudafy o cualquier
+  // inmobiliaria asociada): 25% flat. Mudanzas normales: 15% · Fletes normales: 20%
+  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner);
   const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   const precio = parseInt(cot.precio || 0);
   const fee = Math.round(precio * feePct);
@@ -3511,8 +3540,9 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   const precioTotal = cot.precio || 0;
   const esFlete = (mudanza.tipo || '').toLowerCase() === 'flete';
   // Plan Referidos: 25% si vino por asesor (origenAsesor), por link de aliado (refAliado),
-  // o por partner Mudafy. Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
-  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner === 'mudafy');
+  // por partner Mudafy, o por cualquier inmobiliaria asociada (partner truthy).
+  // Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
+  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner);
   const comisionPct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
   // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
