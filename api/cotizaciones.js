@@ -2788,9 +2788,11 @@ async function generarPDFDetallesBase64(mudanza) {
         let cy = y;
         // Caja con borde amarillo
         const startY = cy;
-        // Header de la columna
+        // Header de la columna — el "emoji" puede venir vacío (sin símbolo)
+        // porque muchos glifos Unicode no están en WinAnsi y se renderizan como basura.
+        const headerTxt = emoji ? (emoji + '  ' + titulo) : titulo;
         doc.fillColor('#78350F').font('Helvetica-Bold').fontSize(11)
-           .text(emoji + '  ' + titulo, xCol + 10, cy + 10);
+           .text(headerTxt, xCol + 10, cy + 10);
         cy += 32;
 
         // Tipo de lugar
@@ -2800,9 +2802,9 @@ async function generarPDFDetallesBase64(mudanza) {
           cy += 11;
           let txt;
           if (tipo === 'casa') {
-            txt = '🏡 Casa';
+            txt = 'Casa';
           } else {
-            txt = '🏢 Departamento';
+            txt = 'Departamento';
             if (piso)  txt += ' · Piso ' + piso;
             if (depto) txt += ' · Depto ' + depto;
           }
@@ -2828,7 +2830,7 @@ async function generarPDFDetallesBase64(mudanza) {
             if (k === 'escaleras' && detallesLado.escalerasPisos) {
               lbl += ' (' + detallesLado.escalerasPisos + ' piso' + (detallesLado.escalerasPisos > 1 ? 's' : '') + ')';
             }
-            doc.fillColor('#22C36A').font('Helvetica-Bold').fontSize(9).text('✓', xCol + 10, cy);
+            doc.fillColor('#22C36A').font('Helvetica-Bold').fontSize(13).text('\u2022', xCol + 10, cy - 2);
             doc.fillColor('#0F1923').font('Helvetica').fontSize(9).text(lbl, xCol + 22, cy, { width: COL_W - 32 });
             cy += 13;
           });
@@ -2848,8 +2850,8 @@ async function generarPDFDetallesBase64(mudanza) {
         return startY + altura;
       }
 
-      const yFinO = dibujarColumna(COL_X_O, 'ORIGEN',  '📍', mudanza.tipoOrigen,  mudanza.pisoOrigen,  mudanza.deptoOrigen,  mudanza.detallesOrigen);
-      const yFinD = dibujarColumna(COL_X_D, 'DESTINO', '🏁', mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino, mudanza.detallesDestino);
+      const yFinO = dibujarColumna(COL_X_O, 'ORIGEN',  '', mudanza.tipoOrigen,  mudanza.pisoOrigen,  mudanza.deptoOrigen,  mudanza.detallesOrigen);
+      const yFinD = dibujarColumna(COL_X_D, 'DESTINO', '', mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino, mudanza.detallesDestino);
       y = Math.max(yFinO, yFinD) + 16;
 
       // ── Comentario libre (compartido)
