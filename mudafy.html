@@ -188,10 +188,10 @@
   }
   .mud-row {
     display: grid;
-    grid-template-columns: minmax(220px, 2fr) 1.2fr 1.2fr minmax(140px, 1fr);
+    grid-template-columns: minmax(240px, 2.4fr) 1.3fr minmax(120px, 1fr);
     align-items: center;
     gap: 16px;
-    padding: 16px 20px;
+    padding: 14px 20px;
     border-bottom: 1px solid var(--md-border);
     transition: background 0.12s;
     cursor: pointer;
@@ -230,9 +230,22 @@
   .mud-row.head.selected { background: var(--md-bg); border-left: none; padding-left: 20px; }
 
   /* Columna 1: Empresa + zona */
-  .mud-empresa { font-size: 15px; font-weight: 800; color: var(--md-text); margin-bottom: 3px; }
+  .mud-empresa { font-size: 15px; font-weight: 800; color: var(--md-text); }
   .mud-meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .mud-zona { font-size: 12px; color: var(--md-text-2); }
+  .mud-zona { font-size: 13px; color: var(--md-text-2); font-weight: 600; }
+  /* Rating inline al lado del nombre — chico, discreto, una sola estrella + número.
+     Solo se muestra si el mudancero tiene calificación > 0 (sino el render lo omite). */
+  .mud-rating-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--md-text-2);
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .mud-rating-inline .star { color: var(--md-warning); font-size: 13px; line-height: 1; }
 
   /* Badges en línea */
   .mud-badge { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 5px; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
@@ -327,15 +340,23 @@
     .hero-title { font-size: 22px; }
     .top-bar { padding: 12px 16px; }
     .powered-by { display: none; }
-    /* Cards en lugar de filas en mobile */
+    /* Mobile: header oculto, 2 filas dentro de cada card.
+       Fila 1 (full): check + empresa con rating
+       Fila 2 (split): zona a la izquierda, precio a la derecha (alineado con margen) */
     .mud-row.head { display: none; }
     .mud-row {
-      grid-template-columns: 1fr;
-      gap: 8px;
-      padding: 14px 16px;
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "empresa empresa"
+        "zona    precio";
+      gap: 6px 12px;
+      padding: 12px 14px;
+      align-items: center;
     }
-    .mud-precio { text-align: left; }
-    .mud-precio-num { font-size: 16px; }
+    .mud-row > div:nth-child(1) { grid-area: empresa; }
+    .mud-row > div:nth-child(2) { grid-area: zona; padding-left: 34px; }
+    .mud-row > div:nth-child(3) { grid-area: precio; text-align: right; }
+    .mud-precio-num { font-size: 15px; }
   }
 </style>
 </head>
@@ -1027,42 +1048,36 @@ function renderCatalogo() {
   var html = '<div class="mud-table">'
     + '<div class="mud-row head">'
     +   '<div>Empresa</div>'
-    +   '<div>Calificación</div>'
-    +   '<div>Servicios</div>'
-    +   '<div style="text-align:right">Precio referencial</div>'
+    +   '<div>Zona</div>'
+    +   '<div style="text-align:right">Precio</div>'
     + '</div>';
 
   _mudanceros.forEach(function(m) {
     var precio = precioReferencial(m, _amb);
     var precioHtml = precio
-      ? '<div class="mud-precio-label">Desde</div><div class="mud-precio-num">' + fmtPrecio(precio) + '</div>'
-      : '<div class="mud-precio-label">Precio</div><div class="mud-precio-num" style="font-size:13px;color:var(--md-text-2)">A consultar</div>';
+      ? '<div class="mud-precio-num">' + fmtPrecio(precio) + '</div>'
+      : '<div class="mud-precio-num" style="font-size:13px;color:var(--md-text-2);font-weight:600">A consultar</div>';
 
     var sel = _sel.has(m.email);
     var emailEsc = m.email.replace(/'/g, "\\'");
+    // Rating chico inline — solo lo mostramos si el mudancero tiene reseñas
+    // reales (calificacion > 0). Si no, lo omitimos para mantener la fila limpia.
+    var rating = parseFloat(m.calificacion) || 0;
+    var ratingHtml = rating > 0
+      ? ' <span class="mud-rating-inline"><span class="star">★</span>' + rating.toFixed(1) + '</span>'
+      : '';
 
     html += '<div class="mud-row' + (sel ? ' selected' : '') + '" onclick="toggleSel(\'' + emailEsc + '\')">'
-      // Col 1: Empresa + zona + check visual
-      + '<div style="display:flex;align-items:center;gap:12px">'
+      // Col 1: Check + Empresa con rating chico al lado
+      + '<div style="display:flex;align-items:center;gap:12px;min-width:0">'
       +   '<div class="mud-check' + (sel ? ' active' : '') + '">'
       +     (sel ? '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' : '')
       +   '</div>'
-      +   '<div>'
-      +     '<div class="mud-empresa">' + escHtml(m.empresa || m.nombre || '—') + '</div>'
-      +     '<div class="mud-zona">📍 ' + escHtml(m.zonaBase || '—') + '</div>'
-      +   '</div>'
+      +   '<div class="mud-empresa" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(m.empresa || m.nombre || '—') + ratingHtml + '</div>'
       + '</div>'
-      // Col 2: Reseñas + trabajos
-      + '<div>'
-      +   '<div class="mud-rating"><span class="star">★</span><b>' + ((m.calificacion || 0).toFixed(1)) + '</b><span class="resenas-count">· ' + (m.nroResenas || 0) + ' reseñas</span></div>'
-      +   '<div class="mud-trabajos">' + (m.trabajosCompletados || 0) + ' trabajos completados</div>'
-      + '</div>'
-      // Col 3: Servicios
-      + '<div class="mud-services">'
-      +   '<span class="mud-badge badge-llave">🔑 Llave en mano</span>'
-      +   '<span class="mud-badge badge-seguro">🛡️ Con seguro</span>'
-      + '</div>'
-      // Col 4: Precio
+      // Col 2: Zona
+      + '<div class="mud-zona">' + escHtml(m.zonaBase || '—') + '</div>'
+      // Col 3: Precio
       + '<div class="mud-precio">' + precioHtml + '</div>'
       + '</div>';
   });
