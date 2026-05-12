@@ -2936,8 +2936,10 @@ function seleccionarPedido(mudanzaId, tipo) {
   // Compat: si vino el modelo viejo (flags planos en det), los mostramos como genéricos
   var FLAGS_KEYS = ['ascensor','izaje','soga','balconTerraza','pasilloAngosto','escaleras','cocheraGarage','estDificil','mascotaEspecial'];
   var tieneFlagsLegacy = det && FLAGS_KEYS.some(function(k){ return det[k] === true; });
+  // Hora de origen también dispara el render del bloque (aunque sea lo único cargado)
+  var tieneHora = !!m.horaOrigen;
 
-  if (tieneTipo || tieneLados || tieneCompartido || tieneFlagsLegacy) {
+  if (tieneTipo || tieneLados || tieneCompartido || tieneFlagsLegacy || tieneHora) {
     var LBL = {
       ascensor: '🛗 Con ascensor',
       izaje: '⚙️ Izaje',
@@ -2974,18 +2976,24 @@ function seleccionarPedido(mudanzaId, tipo) {
       return chips;
     }
 
-    function _miniCard(emoji, titulo, tipo, piso, depto, detalles) {
+    function _miniCard(emoji, titulo, tipo, piso, depto, detalles, hora) {
       var chips = _chipsLado(detalles);
+      // Bloque hora — solo aparece si el cliente la cargó (típicamente solo en origen).
+      // Le da al mudancero info crítica de timing visible de un vistazo.
+      var horaBlock = hora
+        ? '<div style="display:inline-block;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;font-size:11px;padding:3px 8px;border-radius:6px;margin:6px 4px 0 0;font-weight:700">⏰ Inicio aprox: ' + esc(hora) + ' hs</div>'
+        : '';
       return '<div style="background:#fff;border:1px solid #C7D9FF;border-left:3px solid #1A6FFF;border-radius:6px;padding:9px 11px">'
         + '<div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">' + emoji + ' ' + titulo + '</div>'
-        + '<div style="font-size:13px;color:#0F1923;line-height:1.4;margin-bottom:' + (chips ? '6px' : '0') + '">' + _fmtTipoLinea(tipo, piso, depto) + '</div>'
+        + '<div style="font-size:13px;color:#0F1923;line-height:1.4;margin-bottom:' + (chips || horaBlock ? '6px' : '0') + '">' + _fmtTipoLinea(tipo, piso, depto) + '</div>'
+        + (horaBlock ? '<div>' + horaBlock + '</div>' : '')
         + (chips ? '<div>' + chips + '</div>' : '')
         + '</div>';
     }
 
     var cardsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 10px">'
-      + _miniCard('📍', 'Origen',  m.tipoOrigen,  m.pisoOrigen,  m.deptoOrigen,  detO)
-      + _miniCard('🏁', 'Destino', m.tipoDestino, m.pisoDestino, m.deptoDestino, detD)
+      + _miniCard('📍', 'Origen',  m.tipoOrigen,  m.pisoOrigen,  m.deptoOrigen,  detO, m.horaOrigen)
+      + _miniCard('🏁', 'Destino', m.tipoDestino, m.pisoDestino, m.deptoDestino, detD, '')
       + '</div>';
 
     // Compat: flags legacy del modelo viejo (cuando no hay detO/detD)
