@@ -168,6 +168,16 @@ function bodyHtml(p) {
 
 // ── HANDLER ──
 module.exports = async function handler(req, res) {
+  // Skip silencioso en deployments preview de Vercel.
+  // Vercel ejecuta crons en TODOS los deployments (producción + previews),
+  // pero solo en producción el cron agrega el header x-vercel-cron. En previews
+  // sin ese header el código devolvía 401, ensuciando los logs con "errores"
+  // que no son errores reales. Acá detectamos preview y devolvemos 200 sin hacer nada.
+  // VERCEL_ENV = 'production' | 'preview' | 'development'
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+    return res.status(200).json({ ok: true, skipped: true, reason: 'no-production-env', env: process.env.VERCEL_ENV });
+  }
+
   // Seguridad: solo Vercel Cron o admin con token
   var esVercelCron = req.headers['x-vercel-cron'] === '1';
   var token        = (req.query && req.query.token) || (req.url && new URL(req.url, 'http://x').searchParams.get('token'));
