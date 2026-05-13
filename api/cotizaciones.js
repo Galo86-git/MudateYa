@@ -750,8 +750,13 @@ module.exports = async function handler(req, res) {
     if (!data || !data.email) {
       return res.status(401).json({ error: 'Link inválido o expirado. Pedí uno nuevo.' });
     }
-    // Borrar token inmediatamente (one-time use)
-    try { await redisCall('DEL', `magiclink:token:${token}`); } catch(e) {}
+    // NOTA: el token NO se borra al usarse. Vive sus 15 min de TTL completos y
+    // permite clicks ilimitados durante esa ventana. Esto resuelve un bug con
+    // clientes de mail corporativos (Outlook + Microsoft Defender, Mimecast,
+    // Proofpoint) que escanean el link antes de entregarlo, consumiéndolo si
+    // fuera one-time. Pasados los 15 min Redis lo borra solo por expiración.
+    // Trade-off de seguridad: si alguien con acceso al mail clickea dentro de
+    // los 15 min, también puede loguearse. Aceptable para mudanceros B2B.
 
     const emailNorm = data.email;
     const tipo = data.tipo || 'mudancero'; // tokens viejos = mudancero por default
