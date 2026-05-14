@@ -410,11 +410,6 @@
           <input id="cli-email" class="field-input" type="email" placeholder="juan@ejemplo.com" autocomplete="email"/>
         </div>
       </div>
-
-      <div class="field">
-        <label class="field-label" for="cli-notas">Notas (opcional)</label>
-        <textarea id="cli-notas" class="field-input" placeholder="Cosas especiales: piano, caja fuerte, mascota, etc."></textarea>
-      </div>
     </div>
 
     <!-- COLUMNA 2: Datos de la mudanza -->
@@ -942,7 +937,10 @@ function buscar() {
   var nombre = (document.getElementById('cli-nombre').value || '').trim();
   var tel    = (document.getElementById('cli-tel').value || '').trim();
   var email  = (document.getElementById('cli-email').value || '').trim();
-  var notas  = (document.getElementById('cli-notas').value || '').trim();
+  // El campo de notas fue removido del form principal — las notas se pueden
+  // agregar después al aceptar una cotización o coordinar con el mudancero.
+  // Lo dejamos vacío para no romper el contrato del payload (`servicios`).
+  var notas  = '';
 
   if (!nombre) { alert('Por favor ingresá tu nombre.'); document.getElementById('cli-nombre').focus(); return; }
   if (!tel)    { alert('Por favor ingresá tu teléfono.'); document.getElementById('cli-tel').focus(); return; }
@@ -1726,7 +1724,6 @@ function guardarForm() {
       cliNombre: document.getElementById('cli-nombre').value || '',
       cliTel:    document.getElementById('cli-tel').value || '',
       cliEmail:  document.getElementById('cli-email').value || '',
-      cliNotas:  document.getElementById('cli-notas').value || '',
       desde:     document.getElementById('input-desde').value || '',
       hasta:     document.getElementById('input-hasta').value || '',
       ambientes: _amb,
@@ -1745,7 +1742,6 @@ function restaurarForm() {
     if (d.cliNombre) document.getElementById('cli-nombre').value = d.cliNombre;
     if (d.cliTel)    document.getElementById('cli-tel').value    = d.cliTel;
     if (d.cliEmail)  document.getElementById('cli-email').value  = d.cliEmail;
-    if (d.cliNotas)  document.getElementById('cli-notas').value  = d.cliNotas;
     // Direcciones (no pisamos las pre-llenadas por Mudafy si ya las tenemos)
     var inDesde = document.getElementById('input-desde');
     var inHasta = document.getElementById('input-hasta');
@@ -1769,7 +1765,7 @@ function restaurarForm() {
 
 // Bind: guardar en cada cambio
 function bindAutoGuardar() {
-  var ids = ['cli-nombre','cli-tel','cli-email','cli-notas','input-desde','input-hasta','input-fecha'];
+  var ids = ['cli-nombre','cli-tel','cli-email','input-desde','input-hasta','input-fecha'];
   ids.forEach(function(id){
     var el = document.getElementById(id);
     if (!el) return;
