@@ -366,6 +366,127 @@
     .mud-row > div:nth-child(3) { grid-area: precio; text-align: right; }
     .mud-precio-num { font-size: 15px; }
   }
+
+  /* ════════════════════════════════════════════════
+     Tooltip "Llave en mano / Antiestrés"
+     ════════════════════════════════════════════════
+     Wrapper inline que envuelve el texto + ícono ⓘ. Al hover (desktop) o
+     focus (mobile/teclado) muestra el cartel explicativo con flecha.
+     Diseñado para ser descubrible: subrayado punteado en el texto y
+     ícono ⓘ al lado señalan al usuario que hay info adicional.
+  ──────────────────────────────────────────────── */
+  .tt-llave {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    color: var(--md-text);
+    font-weight: 700;
+    border-bottom: 1px dotted var(--md-coral, #FF6B6B);
+    padding-bottom: 1px;
+  }
+  .tt-llave .tt-info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--md-coral, #FF6B6B);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    margin-left: 4px;
+    vertical-align: middle;
+    line-height: 1;
+    font-family: Georgia, serif;
+    font-style: italic;
+  }
+  .tt-llave .tt-card {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    background: #003580;
+    color: #fff;
+    padding: 14px 16px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    z-index: 1000;
+    transition: opacity 180ms ease, transform 180ms ease, visibility 180ms;
+    pointer-events: none;
+  }
+  .tt-llave .tt-card::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-top-color: #003580;
+  }
+  .tt-llave:hover .tt-card,
+  .tt-llave:focus .tt-card,
+  .tt-llave.open .tt-card {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+  }
+  .tt-card-title {
+    font-weight: 800;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+  .tt-card-sub {
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+  .tt-card ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tt-card ul li {
+    margin: 5px 0;
+    padding-left: 16px;
+    position: relative;
+    color: rgba(255,255,255,0.92);
+    font-size: 12px;
+  }
+  .tt-card ul li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--md-coral, #FF6B6B);
+    font-weight: 800;
+  }
+  .tt-card ul li strong { color: #fff; }
+  .tt-card-foot {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    font-style: italic;
+  }
+  /* En mobile: ajustamos posición para que no se corte si la palabra está pegada al borde */
+  @media (max-width: 760px) {
+    .tt-llave .tt-card {
+      width: 280px;
+      font-size: 12px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -458,7 +579,7 @@
   <div class="catalogo-section" id="catalogoSection">
     <div class="catalogo-header">
       <h2 class="catalogo-title">Mudanceros disponibles · <span class="count" id="catCount">0</span></h2>
-      <p class="catalogo-meta">Verificados <strong>Llave en mano</strong> con <strong>seguro de mudanza</strong></p>
+      <p class="catalogo-meta">Verificados <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>Llave en mano / Antiestrés</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><div class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</div><div class="tt-card-sub">Nos encargamos de absolutamente todo</div><ul><li><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</li><li><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</li><li><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</li><li><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</li><li><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</li></ul><div class="tt-card-foot">Vos solo abrís la puerta.</div></span></span> con <strong>seguro de mudanza</strong></p>
     </div>
     <div id="catContent"></div>
 
@@ -1794,6 +1915,18 @@ function bindAutoGuardar() {
 // Restaurar form al cargar (después de aplicarPartner para no pisar la dirección de Mudafy)
 restaurarForm();
 bindAutoGuardar();
+
+// Tooltip "Llave en mano / Antiestrés": en mobile el hover no funciona, así que
+// el span tiene onclick que toggle la clase 'open'. Este listener cierra el
+// tooltip cuando el usuario hace tap fuera del span. Desktop no se ve afectado
+// porque ahí el hover natural se ocupa del show/hide.
+document.addEventListener('click', function(e) {
+  var ttsAbiertos = document.querySelectorAll('.tt-llave.open');
+  if (!ttsAbiertos.length) return;
+  ttsAbiertos.forEach(function(tt) {
+    if (!tt.contains(e.target)) tt.classList.remove('open');
+  });
+});
 </script>
 
 </body>
