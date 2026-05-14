@@ -431,8 +431,17 @@
     border: 7px solid transparent;
     border-top-color: #003580;
   }
-  .tt-llave:hover .tt-card,
-  .tt-llave:focus .tt-card,
+  /* Desktop con mouse: hover muestra el tooltip.
+     Mobile/touch: el .open (toggle por click) lo muestra. */
+  @media (hover: hover) {
+    .tt-llave:hover .tt-card,
+    .tt-llave:focus-visible .tt-card {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+  }
   .tt-llave.open .tt-card {
     visibility: visible;
     opacity: 1;
@@ -440,30 +449,31 @@
     pointer-events: auto;
   }
   .tt-card-title {
+    display: block;
     font-weight: 800;
     font-size: 14px;
     margin-bottom: 6px;
     color: #fff;
   }
   .tt-card-sub {
+    display: block;
     color: rgba(255,255,255,0.7);
     font-size: 11px;
     font-style: italic;
     margin-bottom: 10px;
   }
-  .tt-card ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .tt-list {
+    display: block;
   }
-  .tt-card ul li {
+  .tt-item {
+    display: block;
     margin: 5px 0;
     padding-left: 16px;
     position: relative;
     color: rgba(255,255,255,0.92);
     font-size: 12px;
   }
-  .tt-card ul li::before {
+  .tt-item::before {
     content: '✓';
     position: absolute;
     left: 0;
@@ -471,8 +481,9 @@
     color: var(--md-coral, #FF6B6B);
     font-weight: 800;
   }
-  .tt-card ul li strong { color: #fff; }
+  .tt-item strong { color: #fff; }
   .tt-card-foot {
+    display: block;
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid rgba(255,255,255,0.15);
@@ -579,7 +590,7 @@
   <div class="catalogo-section" id="catalogoSection">
     <div class="catalogo-header">
       <h2 class="catalogo-title">Mudanceros disponibles · <span class="count" id="catCount">0</span></h2>
-      <p class="catalogo-meta">Verificados <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>Llave en mano / Antiestrés</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><div class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</div><div class="tt-card-sub">Nos encargamos de absolutamente todo</div><ul><li><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</li><li><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</li><li><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</li><li><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</li><li><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</li></ul><div class="tt-card-foot">Vos solo abrís la puerta.</div></span></span> con <strong>seguro de mudanza</strong></p>
+      <p class="catalogo-meta">Verificados <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>Llave en mano / Antiestrés</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><span class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</span><span class="tt-card-sub">Nos encargamos de absolutamente todo</span><span class="tt-list"><span class="tt-item"><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</span><span class="tt-item"><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</span><span class="tt-item"><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</span><span class="tt-item"><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</span><span class="tt-item"><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</span></span><span class="tt-card-foot">Vos solo abrís la puerta.</span></span></span> con <strong>seguro de mudanza</strong></p>
     </div>
     <div id="catContent"></div>
 
