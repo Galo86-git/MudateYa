@@ -274,6 +274,22 @@
   .mud-precio { text-align: right; }
   .mud-precio-label { font-size: 10px; color: var(--md-text-3); font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
   .mud-precio-num { font-size: 17px; font-weight: 800; color: var(--md-coral); letter-spacing: -0.2px; margin-top: 2px; }
+  /* Badge ámbar para mudanceros que cobran por hora (cordobeses o m.tipoCobro==='porHora').
+     Aparece debajo del precio "/hr" en la columna Precio. Color ámbar/tabaco para
+     distinguirlo del coral del precio fijo y dejar claro al usuario que NO es precio cerrado. */
+  .mud-precio-hora-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #B45309;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    padding: 2px 7px;
+    border-radius: 5px;
+    margin-top: 4px;
+    white-space: nowrap;
+    letter-spacing: 0.1px;
+  }
 
   /* Estado vacío */
   .cat-loading, .cat-empty {
@@ -1201,6 +1217,21 @@ function _packTienePrecioCargado(pack) {
   return pAmt(pack.amb1) > 0 || pAmt(pack.amb2) > 0 || pAmt(pack.amb3) > 0 || pAmt(pack.amb4) > 0;
 }
 
+// ¿El mudancero cobra por hora? Lee de m.tipoCobro (campo del perfil, editable desde admin).
+// Valores posibles: 'porHora' | 'fijo'. Si no está seteado, fallback a heurística por zona
+// para preservar el comportamiento de los cordobeses ya en producción (mismo criterio que index.html).
+// Una vez que el admin edita explícitamente cada mudancero, el fallback no se activa.
+function esTarifaPorHora(m) {
+  if (!m) return false;
+  // 1) Modelo nuevo: campo explícito del perfil
+  if (m.tipoCobro === 'porHora') return true;
+  if (m.tipoCobro === 'fijo')    return false;
+  // 2) Fallback legacy: heurística geográfica (Córdoba)
+  var zonas = ((m.zonaBase || '') + ' ' + (m.zonasExtra || '')).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,''); // sin acentos
+  return /\b(cordoba|cba|nueva\s*cordoba|villa\s*carlos\s*paz|alta\s*gracia|rio\s*cuarto|villa\s*allende|vcp|saldan|jesus\s*maria)\b/.test(zonas);
+}
+
 // Cálculo de precio referencial para Llave en mano
 // Misma lógica que el index: sin fallback al amb1, sin multiplicadores.
 // Si el mudancero no cargó preciosLlave para ese ambiente, devolvemos 0 → no aparece.
@@ -1289,9 +1320,21 @@ function renderCatalogo() {
 
   _mudanceros.forEach(function(m) {
     var precio = precioReferencial(m, _amb);
-    var precioHtml = precio
-      ? '<div class="mud-precio-num">' + fmtPrecio(precio) + '</div>'
-      : '<div class="mud-precio-num" style="font-size:13px;color:var(--md-text-2);font-weight:600">A consultar</div>';
+    // Detectar si el mudancero cobra por hora (campo m.tipoCobro o heurística Córdoba).
+    // Si es por hora, mostramos "/hr" pegado al número y un badge ámbar abajo
+    // para que el asesor/cliente entienda que NO es precio cerrado de la mudanza.
+    var porHora = esTarifaPorHora(m);
+    var precioHtml;
+    if (precio > 0) {
+      if (porHora) {
+        precioHtml = '<div class="mud-precio-num">' + fmtPrecio(precio) + ' <span style="font-size:12px;font-weight:600;color:var(--md-text-2)">/hr</span></div>'
+                   + '<div class="mud-precio-hora-badge">⏱ Tarifa por hora</div>';
+      } else {
+        precioHtml = '<div class="mud-precio-num">' + fmtPrecio(precio) + '</div>';
+      }
+    } else {
+      precioHtml = '<div class="mud-precio-num" style="font-size:13px;color:var(--md-text-2);font-weight:600">A consultar</div>';
+    }
 
     var sel = _sel.has(m.email);
     var emailEsc = m.email.replace(/'/g, "\\'");
