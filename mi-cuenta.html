@@ -764,6 +764,16 @@ body.pd-panel-open .pd-list-col{flex:1.3}
 .cal-event.cal-st-aceptada  { border-left-color: #F59E0B; background: rgba(245,158,11,0.06); }
 .cal-event.cal-st-cotizada  { border-left-color: var(--blue);  background: rgba(26,111,255,0.06); }
 .cal-event.cal-st-completa  { border-left-color: #94A3B8; background: rgba(148,163,184,0.06); opacity: .7; }
+/* Marca "fecha estimada" — borde izquierdo punteado en lugar de sólido para
+   distinguir visualmente del trabajo con fecha exacta. */
+.cal-event.cal-event-estimada { border-left-style: dashed; }
+.cal-event-aprox {
+  display: inline-block;
+  font-family: var(--mono);
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 800;
+}
 .cal-event-more {
   font-size: 10px; color: var(--text3); padding: 1px 6px; cursor: pointer;
   background: none; border: none; text-align: left; font-family: inherit;
@@ -806,6 +816,15 @@ body.pd-panel-open .pd-list-col{flex:1.3}
 .cal-event-mobile.cal-st-aceptada  { border-left-color: #F59E0B; background: rgba(245,158,11,0.08); }
 .cal-event-mobile.cal-st-cotizada  { border-left-color: var(--blue);  background: rgba(26,111,255,0.08); }
 .cal-event-mobile.cal-st-completa  { border-left-color: #94A3B8; background: rgba(148,163,184,0.08); opacity: .7; }
+.cal-event-mobile.cal-event-estimada { border-left-style: dashed; }
+.cal-event-mobile-aprox {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: #B45309;
+  font-weight: 700;
+  margin-top: 2px;
+  letter-spacing: 0.2px;
+}
 .cal-event-mobile-hora {
   flex-shrink: 0; font-size: 13px; font-weight: 800;
   color: var(--text); font-family: var(--mono); min-width: 44px;
@@ -2992,59 +3011,98 @@ function _calEstadoVisual(m) {
 }
 
 // ── Helper: parsear fecha de la mudanza a Date ────────────────────────
-// El campo m.fecha puede venir en varios formatos según el backend y
-// migraciones históricas:
-//   - "2026-05-19"             (ISO simple — input HTML date)
-//   - "2026-05-19T10:00:00..." (ISO completo)
-//   - "19/05/2026"             (formato AR dd/mm/yyyy)
-//   - "19-05-2026"             (formato AR con guiones)
-//   - "5/19/2026"               (formato US — improbable pero por las dudas)
-//   - timestamp en ms (number)
-// Devuelve un objeto Date válido o null si no se puede parsear.
+// El campo m.fecha puede venir en varios formatos según el contexto:
+//   - Fecha EXACTA: "2026-05-19", "19/05/2026", "19-05-2026", "2026-05-19T10:00:00"
+//   - Fecha ESTIMADA (chip del form): "Esta semana", "En 2 semanas",
+//     "Este mes", "Próximo mes", "En 2-3 meses", "Sin fecha fija"
+//   - Timestamp numérico
+//
+// Cuando es estimada, calculamos una fecha aproximada para poder ubicarla
+// en el calendario. El mudancero ve un indicador "~" en el chip para saber
+// que la fecha no es exacta y debe coordinar con el cliente.
+//
+// Devuelve { date: Date, esEstimada: bool } o null si no se puede parsear.
 function _calParsearFecha(m) {
   if (!m || m.fecha == null || m.fecha === '') return null;
 
   // Caso 1: timestamp numérico
   if (typeof m.fecha === 'number' && m.fecha > 0) {
     var dn = new Date(m.fecha);
-    return isNaN(dn.getTime()) ? null : dn;
+    return isNaN(dn.getTime()) ? null : { date: dn, esEstimada: false };
   }
 
   var s = String(m.fecha).trim();
   if (!s) return null;
+  var sLower = s.toLowerCase();
+
+  // Caso 2: textos estimados de los chips del form. Cada uno se mapea a una
+  // fecha aproximada relativa a HOY (no a la fecha de publicación, porque
+  // queremos que el mudancero vea "esta semana" en la semana actual del
+  // calendario, no de cuando se publicó el pedido).
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  function diasDesdeHoy(n) {
+    var d = new Date(hoy); d.setDate(hoy.getDate() + n); return d;
+  }
+  // Calculamos próximo viernes para "esta semana" (día típico de mudanzas)
+  function proximoViernes() {
+    var d = new Date(hoy);
+    var dow = d.getDay(); // 0=dom, 5=vie, 6=sab
+    var dias = (5 - dow + 7) % 7;
+    if (dias === 0) dias = 7; // si hoy es viernes, vamos al siguiente
+    d.setDate(d.getDate() + dias);
+    return d;
+  }
+  // Lunes de la próxima semana
+  function lunesProxSemana() {
+    var d = new Date(hoy);
+    var dow = d.getDay();
+    var dias = (1 - dow + 7) % 7;
+    if (dias === 0) dias = 7;
+    d.setDate(d.getDate() + dias);
+    return d;
+  }
+
+  if (sLower === 'esta semana')      return { date: proximoViernes(),     esEstimada: true };
+  if (sLower === 'próxima semana' || sLower === 'proxima semana') return { date: lunesProxSemana(), esEstimada: true };
+  if (sLower === 'en 2 semanas')     return { date: diasDesdeHoy(14),     esEstimada: true };
+  if (sLower === 'en 3 semanas')     return { date: diasDesdeHoy(21),     esEstimada: true };
+  if (sLower === 'este mes')         return { date: diasDesdeHoy(10),     esEstimada: true };
+  if (sLower === 'próximo mes' || sLower === 'proximo mes' || sLower === 'en 1 mes') return { date: diasDesdeHoy(30), esEstimada: true };
+  if (sLower === 'en 2 meses')       return { date: diasDesdeHoy(60),     esEstimada: true };
+  if (sLower === 'en 2-3 meses')     return { date: diasDesdeHoy(75),     esEstimada: true };
+  if (sLower === 'en 3 meses')       return { date: diasDesdeHoy(90),     esEstimada: true };
+  if (sLower === 'sin fecha fija' || sLower === 'sin fecha' || sLower === 'flexible') return { date: proximoViernes(), esEstimada: true };
 
   // Sacar parte de hora si viene ISO completo (ej "2026-05-19T10:00")
   var sinHora = s.split('T')[0].split(' ')[0];
 
-  // Caso 2: ISO simple "YYYY-MM-DD"
+  // Caso 3: ISO simple "YYYY-MM-DD"
   var miso = sinHora.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (miso) {
-    return new Date(parseInt(miso[1]), parseInt(miso[2]) - 1, parseInt(miso[3]));
+    return { date: new Date(parseInt(miso[1]), parseInt(miso[2]) - 1, parseInt(miso[3])), esEstimada: false };
   }
 
-  // Caso 3: formato AR "dd/mm/yyyy" o "d/m/yyyy"
+  // Caso 4: formato AR "dd/mm/yyyy" o "d/m/yyyy"
   var mar = sinHora.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (mar) {
-    var d = parseInt(mar[1]), mo = parseInt(mar[2]), y = parseInt(mar[3]);
-    // Validación: si día > 12 es seguramente dd/mm. Si día <= 12 también
-    // asumimos AR (es el formato local). Solo si día > 31 sería raro.
-    if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12) {
-      return new Date(y, mo - 1, d);
+    var d1 = parseInt(mar[1]), mo1 = parseInt(mar[2]), y1 = parseInt(mar[3]);
+    if (d1 >= 1 && d1 <= 31 && mo1 >= 1 && mo1 <= 12) {
+      return { date: new Date(y1, mo1 - 1, d1), esEstimada: false };
     }
   }
 
-  // Caso 4: formato AR con guiones "dd-mm-yyyy"
+  // Caso 5: formato AR con guiones "dd-mm-yyyy"
   var mguion = sinHora.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if (mguion) {
     var d2 = parseInt(mguion[1]), mo2 = parseInt(mguion[2]), y2 = parseInt(mguion[3]);
     if (d2 >= 1 && d2 <= 31 && mo2 >= 1 && mo2 <= 12) {
-      return new Date(y2, mo2 - 1, d2);
+      return { date: new Date(y2, mo2 - 1, d2), esEstimada: false };
     }
   }
 
-  // Caso 5: fallback — intentar new Date() nativo (acepta ISO completo y otros)
+  // Caso 6: fallback — intentar new Date() nativo (acepta ISO completo y otros)
   var dnat = new Date(s);
-  if (!isNaN(dnat.getTime())) return dnat;
+  if (!isNaN(dnat.getTime())) return { date: dnat, esEstimada: false };
 
   return null;
 }
@@ -3077,11 +3135,17 @@ function _calFmtPrecio(m) {
 // ── Construye índice {YYYY-MM-DD: [mudanzas]} ─────────────────────────
 // Combina enviados + aceptados, indexa por fecha del trabajo. Las mudanzas
 // sin fecha parseable quedan fuera del calendario (no rompemos nada).
+// Si la fecha es estimada (chip "Esta semana", etc), también marcamos la
+// mudanza con _calFechaEstimada=true para que los chips muestren "~".
 function _calIndexarPorFecha(enviados, aceptados) {
   var idx = {};
   function add(m) {
-    var d = _calParsearFecha(m);
-    if (!d) return;
+    var parsed = _calParsearFecha(m);
+    if (!parsed || !parsed.date) return;
+    var d = parsed.date;
+    // Anotar en la propia mudanza si la fecha es estimada — el render del
+    // chip lo lee de ahí. No persistimos nada, es solo en memoria.
+    m._calFechaEstimada = !!parsed.esEstimada;
     var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     if (!idx[key]) idx[key] = [];
     idx[key].push(m);
@@ -3182,6 +3246,7 @@ function renderCalendarioCompleto(enviados, aceptados) {
     + '<span class="cal-legend-item"><span class="cal-legend-dot" style="background:#F59E0B"></span>Aceptada sin pago</span>'
     + '<span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--blue)"></span>Cotización pendiente</span>'
     + '<span class="cal-legend-item"><span class="cal-legend-dot" style="background:#94A3B8"></span>Completada</span>'
+    + '<span class="cal-legend-item" style="opacity:.85"><span style="display:inline-block;width:12px;height:10px;border-left:3px dashed #94A3B8;margin-right:2px"></span>~ Fecha estimada (a confirmar con el cliente)</span>'
     + '</div>';
 
   // Tres vistas (CSS decide cuál mostrar según viewport)
@@ -3257,8 +3322,13 @@ function _calRenderVistaMes(modo) {
       var maxEventos = 3; // antes de mostrar "+N más"
       eventos.slice(0, maxEventos).forEach(function(m) {
         var estado = _calEstadoVisual(m);
-        eventosHtml += '<button class="cal-event cal-st-' + estado + '" onclick="calAbrirPedido(\'' + (m.id || '').replace(/'/g,"\\'") + '\')" title="' + _calFmtRuta(m).replace(/"/g,'&quot;') + (_calFmtPrecio(m) ? ' · ' + _calFmtPrecio(m) : '') + '">' +
+        var esEst = m._calFechaEstimada;
+        // Si la fecha es estimada (chip "Esta semana", etc), marcamos con "~"
+        // y un title más explícito para que el mudancero entienda.
+        var titleTxt = _calFmtRuta(m).replace(/"/g,'&quot;') + (_calFmtPrecio(m) ? ' · ' + _calFmtPrecio(m) : '') + (esEst ? ' · Fecha estimada: ' + String(m.fecha || '').replace(/"/g,'&quot;') : '');
+        eventosHtml += '<button class="cal-event cal-st-' + estado + (esEst ? ' cal-event-estimada' : '') + '" onclick="calAbrirPedido(\'' + (m.id || '').replace(/'/g,"\\'") + '\')" title="' + titleTxt + '">' +
           (m.horaOrigen ? '<span class="cal-event-hora">' + m.horaOrigen + '</span> ' : '') +
+          (esEst ? '<span class="cal-event-aprox" aria-label="aproximada">~</span> ' : '') +
           '<span class="cal-event-ruta">' + _calFmtRuta(m) + '</span>' +
           '</button>';
       });
@@ -3299,10 +3369,15 @@ function _calRenderVistaSemana() {
       eventos.forEach(function(m) {
         var estado = _calEstadoVisual(m);
         var precio = _calFmtPrecio(m);
-        eventosHtml += '<button class="cal-event-mobile cal-st-' + estado + '" onclick="calAbrirPedido(\'' + (m.id || '').replace(/'/g,"\\'") + '\')">' +
-          '<div class="cal-event-mobile-hora">' + (m.horaOrigen || '—') + '</div>' +
+        var esEst = m._calFechaEstimada;
+        // Si la fecha es estimada, mostramos un indicador "~ aprox" arriba del precio
+        // y label de "fecha textual" para que el mudancero sepa coordinar.
+        var aproxLabel = esEst ? '<div class="cal-event-mobile-aprox">~ Fecha aprox: ' + String(m.fecha || '').replace(/</g,'&lt;') + '</div>' : '';
+        eventosHtml += '<button class="cal-event-mobile cal-st-' + estado + (esEst ? ' cal-event-estimada' : '') + '" onclick="calAbrirPedido(\'' + (m.id || '').replace(/'/g,"\\'") + '\')">' +
+          '<div class="cal-event-mobile-hora">' + (m.horaOrigen || (esEst ? '~' : '—')) + '</div>' +
           '<div class="cal-event-mobile-info">' +
             '<div class="cal-event-mobile-ruta">' + _calFmtRuta(m) + '</div>' +
+            aproxLabel +
             (precio ? '<div class="cal-event-mobile-meta">' + precio + (m.ambientes ? ' · ' + m.ambientes : '') + '</div>' : (m.ambientes ? '<div class="cal-event-mobile-meta">' + m.ambientes + '</div>' : '')) +
           '</div>' +
           '</button>';
