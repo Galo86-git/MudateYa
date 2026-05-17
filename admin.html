@@ -1113,6 +1113,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <!-- Tabs internos -->
         <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);padding:0">
           <button class="ali-tab active" data-imotab="lista" onclick="inmoTab('lista')">📋 Lista</button>
+          <button class="ali-tab" data-imotab="solicitudes" onclick="inmoTab('solicitudes')">📨 Solicitudes <span id="inmoSolBadge" style="display:none;background:#FF6B6B;color:#fff;padding:1px 7px;border-radius:10px;font-size:11px;margin-left:4px;font-weight:800">0</span></button>
           <button class="ali-tab" data-imotab="nueva" onclick="inmoTab('nueva')">➕ Nueva</button>
           <button class="ali-tab" data-imotab="comisiones" onclick="inmoTab('comisiones')">💰 Comisiones</button>
         </div>
@@ -1121,6 +1122,16 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="imo-tab-content" id="imoTab-lista">
           <div class="table-card">
             <div id="inmoListaWrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+          </div>
+        </div>
+
+        <!-- Tab Solicitudes pendientes -->
+        <div class="imo-tab-content" id="imoTab-solicitudes" style="display:none">
+          <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#92400E">
+            💡 <strong>Solicitudes pendientes</strong> son inmobiliarias que llenaron el form en <code style="background:#fff;padding:1px 6px;border-radius:4px;font-size:11px">/inmobiliarias-registro</code>. Acá podés revisarlas y, si te interesa la alianza, pasarlas al form "Nueva" pre-cargado.
+          </div>
+          <div class="table-card">
+            <div id="inmoSolicitudesWrap"><div class="loading"><span class="spinner"></span>Cargando solicitudes…</div></div>
           </div>
         </div>
 
@@ -1415,7 +1426,10 @@ function showPage(name, e){
   if(name === 'zonas') renderZonas();
   if(name === 'transferencias') loadTransferencias();
   if(name === 'fotos') cargarFotos();
-  if(name === 'inmobiliarias') { if(typeof renderInmoLista === 'function') renderInmoLista(); }
+  if(name === 'inmobiliarias') {
+    if(typeof renderInmoLista === 'function') renderInmoLista();
+    if(typeof inmoCargarBadgeSolicitudes === 'function') inmoCargarBadgeSolicitudes();
+  }
   // cerrar menu extra mobile si estaba abierto
   var em = document.getElementById('mobileExtraMenu');
   if(em) em.style.display = 'none';
@@ -4769,9 +4783,194 @@ function inmoTab(tab) {
   document.querySelectorAll('.imo-tab-content').forEach(function(c){ c.style.display = 'none'; });
   var content = document.getElementById('imoTab-' + tab);
   if (content) content.style.display = 'block';
-  if (tab === 'lista')      renderInmoLista();
-  if (tab === 'comisiones') renderInmoComisiones();
-  if (tab === 'nueva')      inmoResetForm();
+  if (tab === 'lista')       renderInmoLista();
+  if (tab === 'solicitudes') renderInmoSolicitudes();
+  if (tab === 'comisiones')  renderInmoComisiones();
+  if (tab === 'nueva')       inmoResetForm();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SOLICITUDES DE INMOBILIARIAS (form público /inmobiliarias-registro)
+// ════════════════════════════════════════════════════════════════════
+// Las solicitudes están en Redis como solicitud-inmo:{id} y el índice de
+// pendientes en solicitudes-inmo:pendientes (array de IDs).
+// Aprobar = pasar al form "Nueva" precargado para que Galo elija slug, color,
+// comisión, etc. Rechazar = marcar como rechazada (queda como histórico).
+
+async function renderInmoSolicitudes() {
+  var wrap = document.getElementById('inmoSolicitudesWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando solicitudes…</div>';
+
+  try {
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error cargando');
+
+    var sols = d.solicitudes || [];
+
+    // Actualizar badge en el tab
+    var badge = document.getElementById('inmoSolBadge');
+    if (badge) {
+      badge.textContent = sols.length;
+      badge.style.display = sols.length > 0 ? 'inline-block' : 'none';
+    }
+
+    if (sols.length === 0) {
+      wrap.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text3)"><div style="font-size:36px;margin-bottom:8px">📨</div><div style="font-size:14px;font-weight:600;color:var(--text2)">No hay solicitudes pendientes</div><div style="font-size:12px;margin-top:4px">Las nuevas inmobiliarias que llenen el form van a aparecer acá.</div></div>';
+      return;
+    }
+
+    var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html += '<thead><tr style="background:var(--surface2);border-bottom:1px solid var(--border)">'
+      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Inmobiliaria</th>'
+      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Contacto</th>'
+      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Zona</th>'
+      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Ops/mes</th>'
+      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Recibida</th>'
+      + '<th style="text-align:right;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Acciones</th>'
+      + '</tr></thead><tbody>';
+
+    sols.forEach(function(s){
+      var fecha = new Date(s.fechaSolicitud);
+      var fechaTxt = fecha.toLocaleDateString('es-AR', { day:'2-digit', month:'short' }) + ' ' + fecha.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+      var sitioHtml = s.sitio ? ('<div style="font-size:11px;color:var(--blue);margin-top:2px;font-family:monospace">' + escHtml(s.sitio) + '</div>') : '';
+      var logoHtml = s.logoUrl ? ('<img src="' + escAttr(s.logoUrl) + '" alt="logo" style="max-width:32px;max-height:24px;vertical-align:middle;margin-right:8px;object-fit:contain;border-radius:3px"/>') : '';
+
+      html += '<tr style="border-bottom:1px solid var(--border)">'
+        + '<td style="padding:12px">'
+          + logoHtml
+          + '<span style="font-weight:700;color:var(--text)">' + escHtml(s.nombre) + '</span>'
+          + sitioHtml
+        + '</td>'
+        + '<td style="padding:12px">'
+          + '<div style="font-weight:600;color:var(--text)">' + escHtml(s.contacto) + '</div>'
+          + '<div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:monospace">' + escHtml(s.email) + '</div>'
+          + '<div style="font-size:11px;color:var(--text3);font-family:monospace">' + escHtml(s.whatsapp) + '</div>'
+        + '</td>'
+        + '<td style="padding:12px;color:var(--text2)">' + escHtml(s.zona) + '</td>'
+        + '<td style="padding:12px"><span style="display:inline-block;padding:3px 10px;background:var(--surface2);border-radius:8px;font-size:12px;font-weight:700;color:var(--text)">' + escHtml(s.operacionesPorMes) + '</span></td>'
+        + '<td style="padding:12px;font-size:12px;color:var(--text3);font-family:monospace">' + fechaTxt + '</td>'
+        + '<td style="padding:12px;text-align:right;white-space:nowrap">'
+          + '<button onclick="inmoVerSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);font-family:inherit;margin-right:4px">👁 Ver</button>'
+          + '<button onclick="inmoAprobarSolicitud(\'' + s.id + '\')" style="background:var(--emerald);border:none;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;margin-right:4px">✓ Activar</button>'
+          + '<button onclick="inmoRechazarSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);font-family:inherit">✕ Rechazar</button>'
+        + '</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table></div>';
+    wrap.innerHTML = html;
+  } catch(e) {
+    wrap.innerHTML = '<div style="padding:24px;color:var(--text3);font-size:13px">Error cargando solicitudes: ' + (e.message || 'desconocido') + '</div>';
+  }
+}
+
+// Helper de escape (puede no existir global, lo definimos local)
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function escAttr(s) {
+  return String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+// Ver detalles completos de una solicitud
+window._inmoSolicitudesCache = [];
+async function inmoVerSolicitud(id) {
+  // Buscar en el DOM lo que ya tenemos para no re-fetchear
+  try {
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var d = await r.json();
+    var s = (d.solicitudes || []).find(function(x){ return x.id === id; });
+    if (!s) { alert('No se encontró la solicitud.'); return; }
+    var fecha = new Date(s.fechaSolicitud).toLocaleString('es-AR');
+    var detalle = 'SOLICITUD: ' + s.nombre + '\n\n'
+      + 'Contacto: ' + s.contacto + '\n'
+      + 'Email: ' + s.email + '\n'
+      + 'WhatsApp: ' + s.whatsapp + '\n'
+      + 'Zona: ' + s.zona + '\n'
+      + 'Operaciones por mes: ' + s.operacionesPorMes + '\n'
+      + 'Sitio/IG: ' + s.sitio + '\n'
+      + 'Logo: ' + (s.logoUrl ? s.logoUrl : '(no subió)') + '\n'
+      + 'Fecha solicitud: ' + fecha;
+    alert(detalle);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Aprobar = pre-cargar el form Nueva con los datos de la solicitud y dejar
+// que Galo elija slug/color/comisión y guarde. La solicitud queda marcada
+// como aprobada después de que se guarde la inmobiliaria.
+async function inmoAprobarSolicitud(id) {
+  try {
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var d = await r.json();
+    var s = (d.solicitudes || []).find(function(x){ return x.id === id; });
+    if (!s) { alert('No se encontró la solicitud.'); return; }
+
+    // Cambiar al tab "Nueva" y pre-cargar el form
+    inmoTab('nueva');
+    setTimeout(function(){
+      try {
+        var n  = document.getElementById('inmoNombre');     if (n)  n.value  = s.nombre || '';
+        var em = document.getElementById('inmoEmail');      if (em) em.value = s.email || '';
+        var wa = document.getElementById('inmoWapp');       if (wa) wa.value = s.whatsapp || '';
+        var lg = document.getElementById('inmoLogo');       if (lg) lg.value = s.logoUrl || '';
+        if (s.logoUrl && typeof _inmoActualizarBoxLogo === 'function') {
+          _inmoActualizarBoxLogo(s.logoUrl);
+        }
+        // Disparar sugerencia de slug a partir del nombre
+        if (typeof inmoSugerirSlug === 'function') inmoSugerirSlug();
+        if (typeof inmoPreviewActualizar === 'function') inmoPreviewActualizar();
+      } catch(e) { console.warn('No pude pre-cargar todo:', e); }
+    }, 100);
+
+    // Marcar la solicitud como "en proceso" para sacarla de pendientes
+    // (Galo todavía puede cancelar antes de guardar, pero limpiamos la cola
+    // visual para no procesar dos veces lo mismo).
+    await fetch('/api/inmobiliarias?action=procesar-solicitud&token=' + 'mya-admin-2026', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, estado: 'aprobada' })
+    });
+
+    alert('Datos cargados en el form. Completá slug, color y comisión, y dale "Guardar inmobiliaria".');
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Rechazar = sacar de pendientes y marcar como rechazada (queda como historial)
+async function inmoRechazarSolicitud(id) {
+  if (!confirm('¿Rechazar esta solicitud? Va a desaparecer de la lista de pendientes.')) return;
+  try {
+    var r = await fetch('/api/inmobiliarias?action=procesar-solicitud&token=' + 'mya-admin-2026', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, estado: 'rechazada' })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error rechazando');
+    renderInmoSolicitudes();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Al cargar la sección Inmobiliarias, también precargo el badge de solicitudes
+// pendientes para que se vea el contador aunque Galo esté en otro tab.
+async function inmoCargarBadgeSolicitudes() {
+  try {
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var d = await r.json();
+    var n = (d.solicitudes || []).length;
+    var badge = document.getElementById('inmoSolBadge');
+    if (badge) {
+      badge.textContent = n;
+      badge.style.display = n > 0 ? 'inline-block' : 'none';
+    }
+  } catch(e) { /* silent */ }
 }
 
 // ── Sugerir slug automáticamente desde el nombre ──
