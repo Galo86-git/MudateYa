@@ -481,6 +481,56 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // ── ADMIN: contar mudanzas asociadas (preview antes de eliminar) ──
+    // Devuelve cantidad de mudanzas que tienen partner === slug. Sirve para
+    // que el admin sepa qué impacto va a tener un eliminado permanente.
+    if (action === 'contar-mudanzas' && req.method === 'GET') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var slugC = (req.query.slug || '').toLowerCase().trim();
+      if (!slugValido(slugC)) return res.status(400).json({ error: 'Slug inválido' });
+      var idsC = (await getJSON('mudanzas:todos')) || [];
+      var totalC = 0;
+      for (var iC = 0; iC < idsC.length; iC++) {
+        var mC = await getJSON('mudanza:' + idsC[iC]);
+        if (mC && mC.partner === slugC) totalC++;
+      }
+      return res.status(200).json({ slug: slugC, mudanzasAsociadas: totalC });
+    }
+
+    // ── ADMIN: eliminar permanentemente (hard delete) ──
+    // Borra la inmobiliaria de Redis (key inmobiliaria:{slug}) y la saca del
+    // índice inmobiliarias:lista. ESTO ES IRREVERSIBLE.
+    //
+    // Guardrails:
+    //   1. Solo permitido si la inmobiliaria está YA desactivada (activa=false).
+    //   2. El body debe incluir confirmar=true para evitar borrados por accidente.
+    //   3. No tocamos las mudanzas históricas que tenían partner=slug. Quedan
+    //      con partner referenciando un slug que ya no existe, pero los datos
+    //      financieros y de viaje siguen siendo válidos para reportes.
+    if (action === 'eliminar' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var bodyE = req.body || {};
+      var slugE = (bodyE.slug || '').toLowerCase().trim();
+      if (!slugValido(slugE)) return res.status(400).json({ error: 'Slug inválido' });
+      if (bodyE.confirmar !== true) {
+        return res.status(400).json({ error: 'Falta confirmación explícita (confirmar:true)' });
+      }
+      var actualE = await getJSON('inmobiliaria:' + slugE);
+      if (!actualE) return res.status(404).json({ error: 'Inmobiliaria no encontrada' });
+      // Guardrail 1: solo permitir eliminar si ya está desactivada
+      if (actualE.activa !== false) {
+        return res.status(400).json({ error: 'Primero desactivá la inmobiliaria. Después podés eliminarla permanentemente.' });
+      }
+      // Borrar la key de Redis
+      await redisCall('del', ['inmobiliaria:' + slugE]);
+      // Sacar del índice de slugs
+      var listaE = (await getJSON('inmobiliarias:lista')) || [];
+      listaE = listaE.filter(function(s){ return s !== slugE; });
+      await setJSON('inmobiliarias:lista', listaE);
+      console.log('[eliminar-inmo] borrada permanentemente:', slugE);
+      return res.status(200).json({ ok: true, slug: slugE });
+    }
+
     // ── ADMIN: listar comisiones (pendientes y liquidadas) por inmobiliaria ──
     // Si no se pasa slug, devuelve todas.
     if (action === 'comisiones' && req.method === 'GET') {
