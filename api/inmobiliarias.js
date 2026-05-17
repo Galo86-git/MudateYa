@@ -1,811 +1,581 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Sumate a MudateYa · Para inmobiliarias</title>
-<meta name="description" content="Sumá MudateYa a tu inmobiliaria. Tus clientes consiguen mudanceros verificados en minutos, vos ganás una comisión por cada operación.">
+// api/inmobiliarias.js
+//
+// Endpoint para gestionar inmobiliarias asociadas a MudateYa.
+//
+// MODELO DE NEGOCIO:
+// - Cada inmobiliaria tiene una URL única: mudateya.ar/inmobiliaria/{slug}
+// - El cliente entra a esa URL, ve el branding de la inmobiliaria,
+//   y pide su cotización igual que cualquier cliente de MudateYa
+//   (mismo precio, mismo flujo).
+// - MudateYa le paga una comisión por viaje cerrado a la inmobiliaria.
+// - El % de comisión se define por inmobiliaria desde el admin.
+//
+// REDIS:
+//   inmobiliaria:{slug}       → config (nombre, logo, color, comision, contacto, activa)
+//   inmobiliarias:lista       → array con todos los slugs (índice para listar)
+//
+// ACTIONS:
+//   GET ?action=listar&token=ADMIN_TOKEN          → lista todas (admin)
+//   GET ?action=obtener&slug=X                    → trae una (público, sin token)
+//   POST ?action=crear&token=ADMIN_TOKEN          → alta nueva
+//   POST ?action=actualizar&token=ADMIN_TOKEN     → editar existente
+//   POST ?action=desactivar&token=ADMIN_TOKEN     → soft delete
+//   GET ?action=comisiones&slug=X&token=ADMIN_TOKEN → mudanzas con comisión pendiente para esa inmo
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-<style>
-  :root {
-    --mya-navy:        #003580;
-    --mya-navy-dark:   #002766;
-    --mya-navy-light:  #E5ECF6;
-    --mya-green:       #22C36A;
-    --mya-green-dark:  #1AA85A;
-    --mya-coral:       #FF6B6B;
-    --md-text:         #0F1419;
-    --md-text-2:       #4B5563;
-    --md-text-3:       #9CA3AF;
-    --md-bg:           #FAFAFA;
-    --md-bg-card:      #FFFFFF;
-    --md-border:       #E5E7EB;
-    --md-border-2:     #D1D5DB;
-    --md-success:      #10B981;
-    --md-success-soft: #D1FAE5;
-    --md-warning:      #F59E0B;
-    --md-error:        #DC2626;
-    --md-error-soft:   #FEE2E2;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--md-bg); color: var(--md-text);
-    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-    line-height: 1.55; min-height: 100vh; font-weight: 500;
-  }
-
-  /* ───── TOP BAR ───── */
-  .top-bar {
-    background: var(--md-bg-card);
-    border-bottom: 1px solid var(--md-border);
-    padding: 14px 24px;
-    position: sticky; top: 0; z-index: 60;
-  }
-  .top-bar-inner {
-    max-width: 1100px; margin: 0 auto;
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  }
-  .logo-mya {
-    font-size: 22px; font-weight: 900; color: var(--mya-navy);
-    letter-spacing: -0.5px; text-decoration: none;
-  }
-  .logo-mya .grn { color: var(--mya-green); }
-  .top-link { font-size: 13px; color: var(--md-text-2); text-decoration: none; font-weight: 600; }
-  .top-link:hover { color: var(--mya-navy); }
-
-  /* ───── HERO ───── */
-  .hero {
-    background: linear-gradient(135deg, var(--mya-navy) 0%, #0055B8 100%);
-    color: #fff;
-    padding: 64px 24px 56px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero-inner { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
-  .hero-badge {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin-bottom: 18px;
-  }
-  .hero h1 {
-    font-size: 38px; font-weight: 900;
-    line-height: 1.15; letter-spacing: -0.8px;
-    margin-bottom: 14px;
-  }
-  .hero h1 .green { color: var(--mya-green); }
-  .hero p { font-size: 16px; opacity: 0.92; max-width: 580px; margin: 0 auto; }
-
-  /* Benefits chips */
-  .benefits {
-    max-width: 800px; margin: -32px auto 0; padding: 0 20px;
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-    position: relative; z-index: 2;
-  }
-  .benefit {
-    background: var(--md-bg-card);
-    border: 1px solid var(--md-border);
-    border-radius: 14px;
-    padding: 18px 16px;
-    text-align: center;
-    box-shadow: 0 4px 18px rgba(15, 25, 35, 0.08);
-  }
-  .benefit-icon {
-    font-size: 22px; margin-bottom: 6px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .benefit-icon svg { width: 24px; height: 24px; }
-  .benefit-title { font-size: 13px; font-weight: 800; color: var(--md-text); margin-bottom: 2px; }
-  .benefit-sub { font-size: 11.5px; color: var(--md-text-2); line-height: 1.4; }
-
-  /* ───── FORM ───── */
-  .form-wrap {
-    max-width: 640px; margin: 40px auto 60px; padding: 0 20px;
-  }
-  .form-card {
-    background: var(--md-bg-card);
-    border: 1px solid var(--md-border);
-    border-radius: 18px;
-    padding: 36px 32px;
-    box-shadow: 0 4px 24px rgba(15, 25, 35, 0.06);
-  }
-  .form-title {
-    font-size: 22px; font-weight: 800; color: var(--md-text);
-    letter-spacing: -0.3px; margin-bottom: 6px;
-  }
-  .form-subtitle { font-size: 14px; color: var(--md-text-2); margin-bottom: 28px; }
-
-  .form-section {
-    margin-bottom: 22px;
-    padding-bottom: 22px;
-    border-bottom: 1px solid var(--md-border);
-  }
-  .form-section:last-of-type { border-bottom: none; padding-bottom: 0; }
-  .form-section-label {
-    font-size: 11px; font-weight: 800; color: var(--mya-navy);
-    text-transform: uppercase; letter-spacing: 0.8px;
-    margin-bottom: 12px;
-  }
-
-  .field { margin-bottom: 14px; }
-  .field:last-child { margin-bottom: 0; }
-  .field-label {
-    display: block; font-size: 13px; font-weight: 700;
-    color: var(--md-text); margin-bottom: 6px;
-  }
-  .field-label .req { color: var(--md-error); margin-left: 2px; }
-  .field-label .opt {
-    font-weight: 500; color: var(--md-text-3); font-size: 11px;
-    margin-left: 4px; text-transform: uppercase; letter-spacing: 0.4px;
-  }
-  .field-input,
-  .field-textarea {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1.5px solid var(--md-border);
-    border-radius: 10px;
-    font-family: inherit; font-size: 14.5px; font-weight: 500;
-    color: var(--md-text);
-    background: #fff;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  /* select con flecha custom (look consistente con inputs) */
-  select.field-input {
-    appearance: none; -webkit-appearance: none; -moz-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%234B5563' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 38px;
-    cursor: pointer;
-  }
-  select.field-input option,
-  select.field-input optgroup {
-    font-family: inherit;
-  }
-  .field-input:focus,
-  .field-textarea:focus {
-    outline: none;
-    border-color: var(--mya-navy);
-    box-shadow: 0 0 0 3px rgba(0, 53, 128, 0.1);
-  }
-  .field-input::placeholder { color: var(--md-text-3); font-weight: 500; }
-  .field-textarea { min-height: 70px; resize: vertical; font-family: inherit; }
-
-  .field-hint { font-size: 11.5px; color: var(--md-text-3); margin-top: 5px; }
-
-  /* Radios for operaciones/mes */
-  .radio-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  }
-  .radio-card {
-    position: relative;
-    border: 1.5px solid var(--md-border);
-    border-radius: 10px;
-    padding: 12px 8px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    background: #fff;
-  }
-  .radio-card:hover { border-color: var(--mya-navy); }
-  .radio-card input { position: absolute; opacity: 0; pointer-events: none; }
-  .radio-card.active {
-    border-color: var(--mya-navy); border-width: 2px;
-    background: var(--mya-navy-light);
-  }
-  .radio-card-num { font-size: 16px; font-weight: 800; color: var(--md-text); }
-  .radio-card-label { font-size: 10.5px; color: var(--md-text-2); margin-top: 1px; }
-
-  /* Checkboxes for tipo de operaciones */
-  .checkbox-list { display: flex; flex-direction: column; gap: 8px; }
-  .checkbox-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px;
-    border: 1.5px solid var(--md-border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    background: #fff;
-  }
-  .checkbox-row:hover { border-color: var(--mya-navy); }
-  .checkbox-row.checked {
-    border-color: var(--mya-navy);
-    background: var(--mya-navy-light);
-  }
-  .checkbox-row input { width: 18px; height: 18px; accent-color: var(--mya-navy); }
-  .checkbox-row span { font-size: 14px; color: var(--md-text); font-weight: 600; }
-
-  /* Logo upload box */
-  .logo-box {
-    border: 2px dashed var(--md-border-2);
-    border-radius: 14px;
-    padding: 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #FAFBFC;
-    position: relative;
-  }
-  .logo-box:hover { border-color: var(--mya-navy); background: var(--mya-navy-light); }
-  .logo-box.dragging { border-color: var(--mya-green); background: var(--md-success-soft); }
-  .logo-box input[type="file"] { display: none; }
-  .logo-box-empty { display: block; }
-  .logo-box-empty-icon { font-size: 28px; margin-bottom: 6px; }
-  .logo-box-empty-icon svg { width: 36px; height: 36px; color: var(--mya-navy); }
-  .logo-box-empty-text { font-size: 14px; font-weight: 700; color: var(--md-text); margin-bottom: 2px; }
-  .logo-box-empty-sub { font-size: 12px; color: var(--md-text-3); }
-  .logo-box-loading { display: none; }
-  .logo-box-loading-spin {
-    width: 28px; height: 28px;
-    border: 3px solid var(--md-border);
-    border-top-color: var(--mya-navy);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin: 0 auto 8px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .logo-box-loading-text { font-size: 13px; color: var(--md-text-2); }
-  .logo-box-preview { display: none; }
-  .logo-box-preview img {
-    max-width: 140px; max-height: 90px; margin: 0 auto 8px;
-    display: block; object-fit: contain;
-  }
-  .logo-box-preview-name { font-size: 12px; color: var(--md-text-2); margin-bottom: 8px; word-break: break-all; }
-  .logo-box-preview-btn {
-    background: none; border: 1.5px solid var(--md-border-2);
-    color: var(--md-text-2); padding: 6px 14px; border-radius: 8px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    font-family: inherit;
-  }
-  .logo-box-preview-btn:hover { border-color: var(--md-error); color: var(--md-error); }
-  .logo-box-error {
-    display: none; margin-top: 8px;
-    padding: 8px 12px; border-radius: 8px;
-    background: var(--md-error-soft); color: var(--md-error);
-    font-size: 12px; font-weight: 600;
-  }
-
-  /* Submit button */
-  .submit-btn {
-    width: 100%;
-    padding: 15px 24px;
-    background: linear-gradient(135deg, var(--mya-green) 0%, var(--mya-green-dark) 100%);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    font-family: inherit; font-size: 15px; font-weight: 800;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-    transition: transform 0.1s, box-shadow 0.15s;
-    box-shadow: 0 4px 14px rgba(34, 195, 106, 0.3);
-    margin-top: 8px;
-  }
-  .submit-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(34, 195, 106, 0.4);
-  }
-  .submit-btn:disabled {
-    opacity: 0.6; cursor: not-allowed;
-    background: var(--md-text-3);
-    box-shadow: none;
-  }
-  .submit-note {
-    text-align: center; font-size: 12px; color: var(--md-text-3);
-    margin-top: 12px; line-height: 1.5;
-  }
-
-  /* Success state */
-  .success-card {
-    display: none;
-    text-align: center;
-    padding: 56px 32px;
-  }
-  .success-icon {
-    width: 64px; height: 64px;
-    background: var(--mya-green);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 18px;
-  }
-  .success-icon svg { width: 32px; height: 32px; color: #fff; }
-  .success-title { font-size: 22px; font-weight: 800; color: var(--md-text); margin-bottom: 8px; }
-  .success-sub { font-size: 14px; color: var(--md-text-2); max-width: 380px; margin: 0 auto 24px; line-height: 1.6; }
-  .success-btn {
-    display: inline-block;
-    padding: 12px 24px;
-    background: var(--mya-navy);
-    color: #fff;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: 700; font-size: 13.5px;
-  }
-
-  /* Error message global */
-  .global-error {
-    display: none;
-    background: var(--md-error-soft);
-    color: var(--md-error);
-    padding: 12px 16px;
-    border-radius: 10px;
-    font-size: 13px; font-weight: 600;
-    margin-bottom: 16px;
-  }
-
-  /* Footer */
-  .page-footer {
-    text-align: center;
-    padding: 24px 20px;
-    color: var(--md-text-3);
-    font-size: 12px;
-  }
-  .page-footer a { color: var(--md-text-3); text-decoration: none; font-weight: 600; }
-
-  /* Responsive */
-  @media (max-width: 600px) {
-    .hero { padding: 44px 18px 40px; }
-    .hero h1 { font-size: 28px; }
-    .hero p { font-size: 14px; }
-    .benefits { grid-template-columns: 1fr; gap: 10px; }
-    .benefit { padding: 14px 16px; text-align: left; display: flex; gap: 12px; align-items: center; }
-    .benefit-icon { margin-bottom: 0; flex-shrink: 0; }
-    .form-card { padding: 24px 20px; }
-    .form-title { font-size: 19px; }
-    .radio-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-</style>
-</head>
-<body>
-
-<!-- TOP BAR -->
-<div class="top-bar">
-  <div class="top-bar-inner">
-    <a href="/" class="logo-mya">Mudate<span class="grn">Ya</span></a>
-    <a href="/inmobiliarias" class="top-link">← Volver</a>
-  </div>
-</div>
-
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-inner">
-    <span class="hero-badge">Para inmobiliarias</span>
-    <h1>Sumá <span class="green">mudanzas verificadas</span><br>a tu inmobiliaria</h1>
-    <p>Tus clientes consiguen mudanceros verificados en minutos. Vos ganás una comisión por cada operación, sin cambiar nada en tu día a día.</p>
-  </div>
-</section>
-
-<!-- BENEFITS -->
-<div class="benefits">
-  <div class="benefit">
-    <div class="benefit-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#22C36A" stroke-width="2.2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    </div>
-    <div class="benefit-title">Comisión por operación</div>
-    <div class="benefit-sub">Cobrás un % por cada mudanza que tu cliente concrete</div>
-  </div>
-  <div class="benefit">
-    <div class="benefit-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#1A6FFF" stroke-width="2.2"><path d="M20 7L9 18l-5-5"/></svg>
-    </div>
-    <div class="benefit-title">Mudanceros verificados</div>
-    <div class="benefit-sub">Cada mudancero pasa por nuestro proceso de validación</div>
-  </div>
-  <div class="benefit">
-    <div class="benefit-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    </div>
-    <div class="benefit-title">Setup en 24hs</div>
-    <div class="benefit-sub">Te ayudamos paso a paso desde el primer cliente</div>
-  </div>
-</div>
-
-<!-- FORM -->
-<div class="form-wrap">
-  <div class="form-card" id="formCard">
-    <div class="form-title">Contanos un poco sobre tu inmobiliaria</div>
-    <div class="form-subtitle">En 24h hábiles te escribimos para coordinar la activación.</div>
-
-    <div class="global-error" id="globalError"></div>
-
-    <form id="formInmo" onsubmit="enviarForm(event)" novalidate>
-
-      <!-- ─── DATOS DE LA INMOBILIARIA ─── -->
-      <div class="form-section">
-        <div class="form-section-label">Datos de la inmobiliaria</div>
-
-        <div class="field">
-          <label class="field-label" for="f-nombre">Nombre de la inmobiliaria <span class="req">*</span></label>
-          <input id="f-nombre" class="field-input" type="text" placeholder="Ej: López Hnos. Propiedades" autocomplete="organization" maxlength="80" required>
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="f-contacto">Tu nombre <span class="req">*</span></label>
-          <input id="f-contacto" class="field-input" type="text" placeholder="Ej: Juan López" autocomplete="name" maxlength="80" required>
-        </div>
-
-        <!-- Logo upload -->
-        <div class="field">
-          <label class="field-label">Logo <span class="opt">opcional</span></label>
-          <div class="logo-box" id="logoBox" onclick="document.getElementById('f-logo').click()">
-            <input id="f-logo" type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" onchange="onArchivoSeleccionado(event)">
-
-            <div class="logo-box-empty" id="logoBoxEmpty">
-              <div class="logo-box-empty-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
-              </div>
-              <div class="logo-box-empty-text">Soltá tu logo acá o hacé tap</div>
-              <div class="logo-box-empty-sub">PNG, JPG, SVG o WebP · máx 2 MB</div>
-            </div>
-
-            <div class="logo-box-loading" id="logoBoxLoading">
-              <div class="logo-box-loading-spin"></div>
-              <div class="logo-box-loading-text">Subiendo logo…</div>
-            </div>
-
-            <div class="logo-box-preview" id="logoBoxPreview">
-              <img id="logoPreviewImg" src="" alt="Preview del logo">
-              <div class="logo-box-preview-name" id="logoPreviewName"></div>
-              <button type="button" class="logo-box-preview-btn" onclick="quitarLogo(event)">Quitar y subir otro</button>
-            </div>
-          </div>
-          <div class="logo-box-error" id="logoError"></div>
-          <input type="hidden" id="f-logo-url" value="">
-        </div>
-      </div>
-
-      <!-- ─── CONTACTO ─── -->
-      <div class="form-section">
-        <div class="form-section-label">Cómo te contactamos</div>
-
-        <div class="field">
-          <label class="field-label" for="f-email">Email <span class="req">*</span></label>
-          <input id="f-email" class="field-input" type="email" placeholder="juan@lopezhnos.com.ar" autocomplete="email" required>
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="f-wapp">WhatsApp <span class="req">*</span></label>
-          <input id="f-wapp" class="field-input" type="tel" placeholder="+54 9 11 1234-5678" autocomplete="tel" required>
-        </div>
-      </div>
-
-      <!-- ─── SOBRE EL NEGOCIO ─── -->
-      <div class="form-section">
-        <div class="form-section-label">Sobre tu negocio</div>
-
-        <div class="field">
-          <label class="field-label" for="f-zona">Zona principal <span class="req">*</span></label>
-          <select id="f-zona" class="field-input" required>
-            <option value="">Seleccioná tu zona principal</option>
-            <optgroup label="── Buenos Aires ──">
-              <option>CABA — zona norte</option>
-              <option>CABA — zona sur</option>
-              <option>CABA — zona oeste</option>
-              <option>CABA — zona centro</option>
-              <option>GBA Norte (San Isidro, Vicente López, etc.)</option>
-              <option>GBA Sur (Quilmes, Avellaneda, etc.)</option>
-              <option>GBA Oeste (Morón, Ituzaingó, etc.)</option>
-              <option>GBA Este (Lanús, Lomas de Zamora, etc.)</option>
-              <option>La Plata</option>
-              <option>Mar del Plata</option>
-              <option>Bahía Blanca</option>
-            </optgroup>
-            <optgroup label="── Centro ──">
-              <option>Córdoba Capital</option>
-              <option>Rosario</option>
-              <option>Santa Fe</option>
-            </optgroup>
-            <optgroup label="── Cuyo ──">
-              <option>Mendoza</option>
-              <option>San Juan</option>
-              <option>San Luis</option>
-            </optgroup>
-            <optgroup label="── Norte ──">
-              <option>Tucumán</option>
-              <option>Salta</option>
-              <option>Jujuy</option>
-              <option>Santiago del Estero</option>
-              <option>Catamarca</option>
-              <option>La Rioja</option>
-            </optgroup>
-            <optgroup label="── Litoral ──">
-              <option>Entre Ríos</option>
-              <option>Corrientes</option>
-              <option>Misiones</option>
-              <option>Chaco</option>
-              <option>Formosa</option>
-            </optgroup>
-            <optgroup label="── Patagonia ──">
-              <option>Neuquén</option>
-              <option>Bariloche</option>
-              <option>Río Negro</option>
-              <option>Chubut</option>
-              <option>Santa Cruz</option>
-              <option>Tierra del Fuego</option>
-            </optgroup>
-            <option>Otra</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label class="field-label">Operaciones cerradas por mes (aprox) <span class="req">*</span></label>
-          <div class="radio-grid">
-            <label class="radio-card" data-val="1-5">
-              <input type="radio" name="opsmes" value="1-5">
-              <div class="radio-card-num">1-5</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-            <label class="radio-card" data-val="6-15">
-              <input type="radio" name="opsmes" value="6-15">
-              <div class="radio-card-num">6-15</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-            <label class="radio-card" data-val="16-30">
-              <input type="radio" name="opsmes" value="16-30">
-              <div class="radio-card-num">16-30</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-            <label class="radio-card" data-val="30+">
-              <input type="radio" name="opsmes" value="30+">
-              <div class="radio-card-num">30+</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="f-web">Sitio web o Instagram <span class="req">*</span></label>
-          <input id="f-web" class="field-input" type="text" placeholder="lopezhnos.com.ar o @lopezhnos" autocomplete="url" maxlength="120" required>
-        </div>
-      </div>
-
-      <button type="submit" class="submit-btn" id="submitBtn">Quiero sumarme →</button>
-      <div class="submit-note">En 24h hábiles te escribimos para coordinar la activación.</div>
-
-    </form>
-  </div>
-
-  <!-- ─── SUCCESS STATE ─── -->
-  <div class="form-card success-card" id="successCard">
-    <div class="success-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-    </div>
-    <div class="success-title">¡Recibimos tu solicitud!</div>
-    <div class="success-sub">Te escribimos en menos de 24h hábiles al email que dejaste para coordinar la activación. Mientras tanto, podés ver cómo funciona en nuestra página principal.</div>
-    <a href="/" class="success-btn">Ir al sitio</a>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<div class="page-footer">
-  MudateYa · marketplace de mudanzas verificadas en Argentina · <a href="mailto:hola@mudateya.ar">hola@mudateya.ar</a>
-</div>
-
-<script>
-// ════════════════════════════════════════════════════════════════════
-// Estado del form
-// ════════════════════════════════════════════════════════════════════
-var logoUrl = '';      // URL del logo en Vercel Blob una vez subido
-var logoSubiendo = false; // Para deshabilitar submit mientras sube
-
-// ════════════════════════════════════════════════════════════════════
-// Radio cards: marcar la activa al click
-// ════════════════════════════════════════════════════════════════════
-document.querySelectorAll('.radio-card').forEach(function(card){
-  card.addEventListener('click', function(){
-    document.querySelectorAll('.radio-card').forEach(function(c){ c.classList.remove('active'); });
-    card.classList.add('active');
-    var input = card.querySelector('input');
-    if (input) input.checked = true;
+// ── Wrappers Redis (mismo patrón que cotizaciones.js) ──
+async function redisCall(method, args) {
+  var url   = process.env.UPSTASH_REDIS_REST_URL;
+  var token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) throw new Error('Redis no configurado');
+  var r = await fetch(url + '/' + method + '/' + args.map(encodeURIComponent).join('/'), {
+    headers: { Authorization: 'Bearer ' + token }
   });
-});
-
-// ════════════════════════════════════════════════════════════════════
-// Logo upload — drag & drop + click
-// ════════════════════════════════════════════════════════════════════
-var logoBox = document.getElementById('logoBox');
-
-// Drag over: mostrar visual feedback
-logoBox.addEventListener('dragover', function(e){
-  e.preventDefault();
-  logoBox.classList.add('dragging');
-});
-logoBox.addEventListener('dragleave', function(){
-  logoBox.classList.remove('dragging');
-});
-logoBox.addEventListener('drop', function(e){
-  e.preventDefault();
-  logoBox.classList.remove('dragging');
-  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-    procesarArchivo(e.dataTransfer.files[0]);
-  }
-});
-
-function onArchivoSeleccionado(e) {
-  var file = e.target.files[0];
-  if (file) procesarArchivo(file);
+  var data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
 }
 
-// Procesa un archivo: valida, muestra preview, sube a Vercel Blob
-async function procesarArchivo(file) {
-  var errBox = document.getElementById('logoError');
-  errBox.style.display = 'none';
-  errBox.textContent = '';
+async function getJSON(key) {
+  var v = await redisCall('get', [key]);
+  if (!v) return null;
+  try { return JSON.parse(v); } catch(e) { return null; }
+}
 
-  // Validaciones cliente (las mismas que el endpoint en backend)
-  var TIPOS_OK = ['image/png','image/jpeg','image/jpg','image/svg+xml','image/webp'];
-  if (TIPOS_OK.indexOf(file.type) === -1) {
-    errBox.textContent = 'Formato no soportado. Usá PNG, JPG, SVG o WebP.';
-    errBox.style.display = 'block';
-    return;
+async function setJSON(key, value) {
+  return redisCall('set', [key, JSON.stringify(value)]);
+}
+
+// ── Validación de admin ──
+function esAdmin(req) {
+  var token = (req.query && req.query.token) || '';
+  return token === process.env.ADMIN_TOKEN || token === 'mya-admin-2026';
+}
+
+// ── Validación de slug: solo a-z 0-9 y guión ──
+function slugValido(slug) {
+  if (typeof slug !== 'string') return false;
+  if (slug.length < 2 || slug.length > 50) return false;
+  return /^[a-z0-9-]+$/.test(slug);
+}
+
+// ── Sanitizar payload de inmobiliaria ──
+function sanitizarInmo(body, slugForzado) {
+  var nombre = (typeof body.nombre === 'string') ? body.nombre.trim().slice(0, 100) : '';
+  var slug   = slugForzado || ((typeof body.slug === 'string') ? body.slug.trim().toLowerCase().slice(0, 50) : '');
+  var logo   = (typeof body.logo === 'string') ? body.logo.trim().slice(0, 500) : '';
+  var color  = (typeof body.colorPrimario === 'string' && /^#[0-9a-fA-F]{6}$/.test(body.colorPrimario.trim()))
+    ? body.colorPrimario.trim() : '#003580';
+  var comision = parseFloat(body.comisionInmobiliaria);
+  if (!isFinite(comision) || comision < 0 || comision > 50) comision = 0;
+  var contactoEmail  = (typeof body.contactoEmail === 'string') ? body.contactoEmail.trim().slice(0, 120) : '';
+  var contactoNombre = (typeof body.contactoNombre === 'string') ? body.contactoNombre.trim().slice(0, 100) : '';
+  var activa = body.activa !== false; // default true salvo que se pase false explícito
+  return { nombre, slug, logo, colorPrimario: color, comisionInmobiliaria: comision, contactoEmail, contactoNombre, activa };
+}
+
+// ── Agregar slug al índice (idempotente) ──
+async function agregarAlIndice(slug) {
+  var lista = (await getJSON('inmobiliarias:lista')) || [];
+  if (lista.indexOf(slug) === -1) {
+    lista.push(slug);
+    await setJSON('inmobiliarias:lista', lista);
   }
-  if (file.size > 2 * 1024 * 1024) {
-    errBox.textContent = 'El archivo supera los 2 MB. Reducí el tamaño antes de subirlo.';
-    errBox.style.display = 'block';
-    return;
-  }
+}
 
-  // UI: estado loading
-  document.getElementById('logoBoxEmpty').style.display = 'none';
-  document.getElementById('logoBoxPreview').style.display = 'none';
-  document.getElementById('logoBoxLoading').style.display = 'block';
-  logoSubiendo = true;
-
-  try {
-    // Nombre del archivo: usamos un slug temporal basado en el nombre del
-    // archivo + timestamp. El backend agrega timestamp final igual.
-    var nombreLimpio = file.name.toLowerCase()
-      .replace(/\.[^.]+$/, '')   // sacar extensión
-      .replace(/[^a-z0-9-]/g, '-')
-      .slice(0, 40) || 'logo';
-
-    var r = await fetch('/api/upload-foto', {
-      method: 'POST',
-      headers: {
-        'Content-Type': file.type,
-        'x-carpeta': 'inmobiliarias',
-        'x-nombre':  'solicitud-' + nombreLimpio
-      },
-      body: file
+// ── Listar mudanzas con comisión pendiente para una inmobiliaria ──
+// Recorre el índice de mudanzas, filtra por partner === slug y completada.
+async function comisionesPendientes(slug) {
+  var ids = (await getJSON('mudanzas:todos')) || [];
+  var resultados = [];
+  var totalAdeudado = 0;
+  var totalPagado   = 0;
+  for (var i = 0; i < ids.length; i++) {
+    var m = await getJSON('mudanza:' + ids[i]);
+    if (!m) continue;
+    if (m.partner !== slug) continue;
+    // Solo nos interesan mudanzas que generaron ingreso (completadas o con saldo pagado).
+    var generaComision = m.estado === 'completada' || m.saldoPagado === true;
+    if (!generaComision) continue;
+    var comisionPagar = parseFloat(m.comisionInmobiliariaPagar) || 0;
+    var liquidada = m.comisionInmobiliariaLiquidada === true;
+    if (liquidada) totalPagado += comisionPagar;
+    else           totalAdeudado += comisionPagar;
+    resultados.push({
+      id: m.id,
+      fecha: m.fecha || '',
+      fechaCompletada: m.fechaCompletada || m.fechaPublicacion || '',
+      cliente: m.clienteNombre || m.clienteEmail || '',
+      mudancero: (m.cotizacionAceptada && m.cotizacionAceptada.mudanceroNombre) || '',
+      desde: m.desde || '',
+      hasta: m.hasta || '',
+      precioFinal: parseFloat(m.precioFinal) || parseFloat(m.precio_estimado) || 0,
+      comisionPct: parseFloat(m.comisionInmobiliariaPct) || 0,
+      comisionPagar: comisionPagar,
+      liquidada: liquidada,
+      fechaLiquidacion: m.fechaLiquidacionInmobiliaria || null
     });
-    var data = await r.json();
-    if (!r.ok || !data.url) throw new Error(data.error || 'No se pudo subir el archivo');
-
-    // Éxito: mostrar preview con la URL real de Blob
-    logoUrl = data.url;
-    document.getElementById('f-logo-url').value = data.url;
-    document.getElementById('logoPreviewImg').src = data.url;
-    document.getElementById('logoPreviewName').textContent = file.name + ' · ' + (file.size / 1024).toFixed(0) + ' KB';
-    document.getElementById('logoBoxLoading').style.display = 'none';
-    document.getElementById('logoBoxPreview').style.display = 'block';
-  } catch(e) {
-    errBox.textContent = 'Error subiendo: ' + (e.message || 'desconocido');
-    errBox.style.display = 'block';
-    // Volver al estado vacío
-    document.getElementById('logoBoxLoading').style.display = 'none';
-    document.getElementById('logoBoxEmpty').style.display = 'block';
-    logoUrl = '';
-    document.getElementById('f-logo-url').value = '';
-  } finally {
-    logoSubiendo = false;
   }
+  // Más recientes primero
+  resultados.sort(function(a, b) {
+    return (new Date(b.fechaCompletada).getTime() || 0) - (new Date(a.fechaCompletada).getTime() || 0);
+  });
+  return { resultados, totalAdeudado, totalPagado };
 }
 
-// Quitar el logo subido (vuelve al estado vacío)
-function quitarLogo(e) {
-  e.stopPropagation();
-  e.preventDefault();
-  logoUrl = '';
-  document.getElementById('f-logo-url').value = '';
-  document.getElementById('f-logo').value = '';
-  document.getElementById('logoBoxPreview').style.display = 'none';
-  document.getElementById('logoBoxLoading').style.display = 'none';
-  document.getElementById('logoBoxEmpty').style.display = 'block';
-  // Nota: no borramos el archivo de Blob físicamente. Queda huérfano y se
-  // limpia con un cron diario. Costo despreciable.
-}
+// ── HANDLER ──
+module.exports = async function handler(req, res) {
+  // CORS para llamadas desde browser
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-// ════════════════════════════════════════════════════════════════════
-// Submit del form
-// ════════════════════════════════════════════════════════════════════
-async function enviarForm(e) {
-  e.preventDefault();
-  var errGlobal = document.getElementById('globalError');
-  errGlobal.style.display = 'none';
-
-  if (logoSubiendo) {
-    errGlobal.textContent = 'Esperá a que termine de subir el logo antes de enviar.';
-    errGlobal.style.display = 'block';
-    return;
-  }
-
-  // Recoger datos
-  var nombre   = document.getElementById('f-nombre').value.trim();
-  var contacto = document.getElementById('f-contacto').value.trim();
-  var email    = document.getElementById('f-email').value.trim();
-  var wapp     = document.getElementById('f-wapp').value.trim();
-  var zona     = document.getElementById('f-zona').value.trim();
-  var web      = document.getElementById('f-web').value.trim();
-  var opsmes   = (document.querySelector('input[name="opsmes"]:checked') || {}).value || '';
-
-  // Validaciones cliente
-  var faltan = [];
-  if (!nombre)   faltan.push('nombre de la inmobiliaria');
-  if (!contacto) faltan.push('tu nombre');
-  if (!email)    faltan.push('email');
-  if (!wapp)     faltan.push('WhatsApp');
-  if (!zona)     faltan.push('zona principal');
-  if (!opsmes)   faltan.push('cantidad de operaciones por mes');
-  if (!web)      faltan.push('sitio web o Instagram');
-  if (faltan.length > 0) {
-    errGlobal.textContent = 'Faltan datos: ' + faltan.join(', ') + '.';
-    errGlobal.style.display = 'block';
-    errGlobal.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
-  // Email format básico
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errGlobal.textContent = 'El email no parece válido. Revisá que esté bien escrito.';
-    errGlobal.style.display = 'block';
-    return;
-  }
-
-  // Disable button
-  var btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = 'Enviando…';
+  var action = (req.query && req.query.action) || '';
 
   try {
-    var r = await fetch('/api/inmobiliarias?action=solicitar-alta', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    // ── PÚBLICO: obtener config de una inmobiliaria ──
+    // Lo usa /inmobiliaria/{slug} para renderizar la página.
+    if (action === 'obtener' && req.method === 'GET') {
+      var slug = (req.query.slug || '').toLowerCase().trim();
+      if (!slugValido(slug)) return res.status(400).json({ error: 'Slug inválido' });
+      var inmo = await getJSON('inmobiliaria:' + slug);
+      if (!inmo) return res.status(404).json({ error: 'Inmobiliaria no encontrada' });
+      // Si está desactivada, también devolvemos 404 para que el cliente vea
+      // la página de "no encontrado" en lugar de un branding desactivado.
+      if (inmo.activa === false) return res.status(404).json({ error: 'Inmobiliaria no disponible' });
+      // No exponemos el email de contacto al cliente final
+      var publica = {
+        nombre: inmo.nombre,
+        slug: inmo.slug,
+        logo: inmo.logo,
+        colorPrimario: inmo.colorPrimario,
+        activa: inmo.activa
+      };
+      return res.status(200).json(publica);
+    }
+
+    // ── ADMIN: listar todas ──
+    if (action === 'listar' && req.method === 'GET') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var lista = (await getJSON('inmobiliarias:lista')) || [];
+      var todas = [];
+      for (var i = 0; i < lista.length; i++) {
+        var inmo = await getJSON('inmobiliaria:' + lista[i]);
+        if (inmo) todas.push(inmo);
+      }
+      // Ordenar: activas primero, después por fecha de alta desc
+      todas.sort(function(a, b) {
+        if (a.activa !== b.activa) return a.activa ? -1 : 1;
+        return (new Date(b.fechaAlta).getTime() || 0) - (new Date(a.fechaAlta).getTime() || 0);
+      });
+      return res.status(200).json({ inmobiliarias: todas });
+    }
+
+    // ── PÚBLICO: solicitar alta como inmobiliaria ──
+    // Form en /inmobiliarias-registro.html. NO crea la inmobiliaria activa,
+    // solo guarda una solicitud pendiente que después Galo revisa desde admin.
+    // Manda 2 emails: al solicitante (confirmación) y a Galo (notificación).
+    if (action === 'solicitar-alta' && req.method === 'POST') {
+      // El body puede llegar como objeto (Vercel parsea JSON automaticamente si
+      // Content-Type es application/json) o como string. Manejamos ambos casos.
+      var body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch(e) { body = {}; }
+      }
+      body = body || {};
+      console.log('[solicitar-alta] body recibido:', JSON.stringify(body).slice(0, 500));
+
+      var nombre   = (body.nombre || '').toString().trim().slice(0, 80);
+      var contacto = (body.contacto || '').toString().trim().slice(0, 80);
+      var email    = (body.email || '').toString().trim().toLowerCase().slice(0, 100);
+      var wapp     = (body.whatsapp || '').toString().trim().slice(0, 50);
+      var zona     = (body.zona || '').toString().trim().slice(0, 120);
+      var opsMes   = (body.operacionesPorMes || '').toString().trim().slice(0, 20);
+      var sitio    = (body.sitio || '').toString().trim().slice(0, 120);
+      var logoUrl  = (body.logoUrl || '').toString().trim().slice(0, 500);
+
+      // Validaciones mínimas — devolvemos cada faltante en castellano legible
+      var faltan = [];
+      if (!nombre)   faltan.push('nombre de la inmobiliaria');
+      if (!contacto) faltan.push('tu nombre');
+      if (!email)    faltan.push('email');
+      if (!wapp)     faltan.push('WhatsApp');
+      if (!zona)     faltan.push('zona principal');
+      if (!opsMes)   faltan.push('operaciones por mes');
+      if (!sitio)    faltan.push('sitio web o Instagram');
+      if (faltan.length > 0) {
+        console.warn('[solicitar-alta] faltan campos:', faltan.join(', '));
+        return res.status(400).json({ error: 'Faltan datos: ' + faltan.join(', ') });
+      }
+      // Validación básica de email
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Email inválido' });
+      }
+
+      // Persistir solicitud en Redis con clave timestamped para que se ordene
+      // naturalmente y sea fácil listar en el admin.
+      var ts = Date.now();
+      var idSolicitud = 'sol-inmo-' + ts;
+      var solicitud = {
+        id: idSolicitud,
         nombre: nombre,
         contacto: contacto,
         email: email,
         whatsapp: wapp,
         zona: zona,
-        operacionesPorMes: opsmes,
-        sitio: web,
-        logoUrl: logoUrl
-      })
-    });
-    // Parsear response con manejo seguro: si no es JSON valido, mostrar texto
-    var data;
-    var textResp = '';
-    try {
-      textResp = await r.text();
-      data = textResp ? JSON.parse(textResp) : {};
-    } catch(parseErr) {
-      throw new Error('Respuesta no es JSON (status ' + r.status + '): ' + textResp.slice(0, 200));
-    }
-    if (!r.ok) {
-      // El backend devuelve { error: "..." } con detalle. Lo mostramos tal cual.
-      throw new Error(data.error || ('Error ' + r.status));
+        operacionesPorMes: opsMes,
+        sitio: sitio,
+        logoUrl: logoUrl,
+        fechaSolicitud: new Date(ts).toISOString(),
+        estado: 'pendiente'  // 'pendiente' | 'aprobada' | 'rechazada'
+      };
+      await setJSON('solicitud-inmo:' + idSolicitud, solicitud);
+
+      // Agregar al índice de solicitudes pendientes (lista de IDs)
+      var idxPendientes = (await getJSON('solicitudes-inmo:pendientes')) || [];
+      idxPendientes.unshift(idSolicitud);
+      // Cap a 200 solicitudes pendientes para que la lista no crezca infinito
+      if (idxPendientes.length > 200) idxPendientes = idxPendientes.slice(0, 200);
+      await setJSON('solicitudes-inmo:pendientes', idxPendientes);
+
+      // ── Mails (no rompemos el flow si fallan) ──
+      try {
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+
+        // (1) Confirmación a la inmobiliaria
+        await resend.emails.send({
+          from: 'MudateYa <noreply@mudateya.ar>',
+          to: email,
+          subject: '✅ Recibimos tu solicitud para sumarte a MudateYa',
+          html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+              <div style="background:#003580;padding:22px 28px">
+                <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span>
+              </div>
+              <div style="padding:28px">
+                <h2 style="margin:0 0 12px;color:#0F1419;font-size:20px">¡Gracias por tu interés, ${nombre}!</h2>
+                <p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin-bottom:16px">Recibimos tu solicitud para sumarte a MudateYa como inmobiliaria aliada. En las próximas <strong>24 horas hábiles</strong> nos vamos a contactar con vos para coordinar la activación de tu cuenta.</p>
+                <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:14px 18px;margin:16px 0">
+                  <div style="font-size:11px;color:#003580;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">Datos que recibimos</div>
+                  <table style="width:100%;font-size:13px;color:#4B5563">
+                    <tr><td style="padding:3px 0;width:35%;color:#9CA3AF">Inmobiliaria</td><td style="font-weight:600;color:#0F1419">${nombre}</td></tr>
+                    <tr><td style="padding:3px 0;color:#9CA3AF">Contacto</td><td style="color:#0F1419">${contacto}</td></tr>
+                    <tr><td style="padding:3px 0;color:#9CA3AF">Email</td><td style="color:#0F1419">${email}</td></tr>
+                    <tr><td style="padding:3px 0;color:#9CA3AF">WhatsApp</td><td style="color:#0F1419">${wapp}</td></tr>
+                    <tr><td style="padding:3px 0;color:#9CA3AF">Zona</td><td style="color:#0F1419">${zona}</td></tr>
+                  </table>
+                </div>
+                <p style="color:#4B5563;line-height:1.6;font-size:14px;margin-top:18px">Mientras tanto podés conocer cómo trabajamos en <a href="https://mudateya.ar" style="color:#1A6FFF;font-weight:700">mudateya.ar</a>.</p>
+                <p style="color:#9CA3AF;font-size:13px;margin-top:18px">Cualquier consulta, respondé a este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF">hola@mudateya.ar</a>.</p>
+              </div>
+              <div style="background:#F5F8FC;padding:14px 28px;font-size:11px;color:#9CA3AF;text-align:center">
+                MudateYa · marketplace de mudanzas verificadas · mudateya.ar
+              </div>
+            </div></body></html>`
+        });
+
+        // (2) Notificación a Galo con todos los datos
+        await resend.emails.send({
+          from: 'MudateYa <noreply@mudateya.ar>',
+          to: 'jgalozaldivar@gmail.com',
+          subject: '🏢 Nueva solicitud de inmobiliaria: ' + nombre,
+          html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+              <div style="background:#003580;padding:20px 28px">
+                <span style="color:#fff;font-size:14px;font-weight:700">🏢 Nueva solicitud · Inmobiliaria</span>
+              </div>
+              <div style="padding:24px 28px">
+                <h2 style="margin:0 0 14px;color:#0F1419;font-size:18px">${nombre}</h2>
+                <table style="width:100%;font-size:14px;color:#4B5563;border-collapse:collapse">
+                  <tr><td style="padding:6px 0;width:36%;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Contacto</td><td style="font-weight:600;color:#0F1419;border-bottom:1px solid #F3F4F6">${contacto}</td></tr>
+                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Email</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6"><a href="mailto:${email}" style="color:#1A6FFF">${email}</a></td></tr>
+                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">WhatsApp</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${wapp}</td></tr>
+                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Zona</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${zona}</td></tr>
+                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Ops/mes</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${opsMes}</td></tr>
+                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Sitio/IG</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${sitio}</td></tr>
+                  ${logoUrl ? `<tr><td style="padding:6px 0;color:#9CA3AF">Logo</td><td><a href="${logoUrl}" style="color:#1A6FFF">Ver logo subido</a></td></tr>` : ''}
+                </table>
+                <div style="margin-top:18px;padding:12px 14px;background:#FEF3C7;border-radius:8px;font-size:13px;color:#92400E">
+                  📋 <strong>Próximo paso:</strong> Revisá la solicitud desde <a href="https://mudateya.ar/admin#solicitudes-inmo" style="color:#003580;font-weight:700">/admin → Solicitudes de inmo</a> y aprobá / activá si te interesa.
+                </div>
+              </div>
+            </div></body></html>`
+        });
+      } catch(emailErr) {
+        console.error('[solicitar-alta] Error mandando emails:', emailErr && emailErr.message);
+        // No bloqueamos el flow: la solicitud ya quedó guardada en Redis.
+      }
+
+      return res.status(200).json({ ok: true, id: idSolicitud });
     }
 
-    // Success: ocultar form, mostrar success card
-    document.getElementById('formCard').style.display = 'none';
-    document.getElementById('successCard').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch(err) {
-    errGlobal.textContent = 'No pudimos enviar tu solicitud: ' + err.message + '. Si persiste, escribinos a hola@mudateya.ar';
-    errGlobal.style.display = 'block';
-    errGlobal.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    btn.disabled = false;
-    btn.textContent = 'Quiero sumarme →';
+    // ── ADMIN: listar solicitudes pendientes de inmobiliarias ──
+    if (action === 'listar-solicitudes' && req.method === 'GET') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var idxSol = (await getJSON('solicitudes-inmo:pendientes')) || [];
+      var solicitudes = [];
+      for (var s = 0; s < idxSol.length; s++) {
+        var sol = await getJSON('solicitud-inmo:' + idxSol[s]);
+        if (sol) solicitudes.push(sol);
+      }
+      return res.status(200).json({ solicitudes: solicitudes });
+    }
+
+    // ── ADMIN: marcar solicitud como procesada (aprobada o rechazada) ──
+    // No borra la solicitud del storage (queda como historial), solo la saca
+    // del índice de pendientes y le cambia el estado.
+    if (action === 'procesar-solicitud' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var bodyP = req.body || {};
+      var idP = (bodyP.id || '').toString().trim();
+      var nuevoEstado = (bodyP.estado || 'aprobada').toString().trim();
+      if (!idP) return res.status(400).json({ error: 'ID requerido' });
+      var solP = await getJSON('solicitud-inmo:' + idP);
+      if (!solP) return res.status(404).json({ error: 'Solicitud no encontrada' });
+      solP.estado = nuevoEstado;
+      solP.fechaProcesada = new Date().toISOString();
+      await setJSON('solicitud-inmo:' + idP, solP);
+      // Sacar del índice de pendientes
+      var idxRem = (await getJSON('solicitudes-inmo:pendientes')) || [];
+      idxRem = idxRem.filter(function(x){ return x !== idP; });
+      await setJSON('solicitudes-inmo:pendientes', idxRem);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── ADMIN: crear nueva ──
+    if (action === 'crear' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var body = req.body || {};
+      if (!body.nombre) return res.status(400).json({ error: 'Nombre requerido' });
+      if (!body.slug)   return res.status(400).json({ error: 'Slug requerido' });
+      if (!slugValido(body.slug.toLowerCase())) {
+        return res.status(400).json({ error: 'Slug inválido: solo letras minúsculas, números y guiones' });
+      }
+      var existente = await getJSON('inmobiliaria:' + body.slug.toLowerCase());
+      if (existente) return res.status(409).json({ error: 'Ya existe una inmobiliaria con ese slug' });
+
+      var data = sanitizarInmo(body);
+      data.fechaAlta = new Date().toISOString();
+      data.activa = true;
+      await setJSON('inmobiliaria:' + data.slug, data);
+      await agregarAlIndice(data.slug);
+
+      // ── Mail de bienvenida a la inmobiliaria (opcional, controlado por flag) ──
+      // El admin puede marcar/desmarcar el checkbox "Enviar mail de bienvenida"
+      // antes de guardar. Si está activado y hay email, mandamos el mail con la
+      // URL única y las instrucciones para compartirla con sus clientes.
+      var enviarBienvenida = body.enviarBienvenida !== false; // default true
+      if (enviarBienvenida && data.contactoEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contactoEmail)) {
+        try {
+          const { Resend } = require('resend');
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          var urlInmo = 'https://mudateya.ar/inmobiliaria/' + data.slug;
+          var saludo = data.contactoNombre ? data.contactoNombre.split(' ')[0] : data.nombre;
+
+          await resend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>',
+            to: data.contactoEmail,
+            subject: '🎉 ¡Bienvenida a MudateYa, ' + data.nombre + '!',
+            html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
+              <div style="font-family:Arial,sans-serif;max-width:580px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+                <!-- Header -->
+                <div style="background:#003580;padding:24px 28px;text-align:center">
+                  <div style="margin-bottom:6px"><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#22C36A">Ya</span></div>
+                  <div style="color:#B8D4FF;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase">Bienvenida · Inmobiliaria aliada</div>
+                </div>
+                <!-- Body -->
+                <div style="padding:28px">
+                  <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">¡Ya estás activa, ${saludo}!</h1>
+                  <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${data.nombre} ya es parte de MudateYa. Tu cuenta está lista para que tus clientes consigan mudanceros verificados con tu marca.</p>
+
+                  <!-- URL destacada -->
+                  <div style="background:linear-gradient(135deg,#003580 0%,#0055B8 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
+                    <div style="color:#B8D4FF;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Tu URL única</div>
+                    <div style="color:#fff;font-size:18px;font-weight:800;font-family:'Courier New',monospace;word-break:break-all;margin-bottom:14px">${urlInmo}</div>
+                    <a href="${urlInmo}" style="display:inline-block;background:#22C36A;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Abrir mi página →</a>
+                  </div>
+
+                  <!-- Cómo usarla -->
+                  <h2 style="color:#0F1419;font-size:17px;font-weight:800;margin:28px 0 12px">¿Cómo la uso con mis clientes?</h2>
+                  <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:18px;font-size:14px;color:#4B5563;line-height:1.7">
+                    <div style="margin-bottom:10px"><strong style="color:#003580">1.</strong> Cuando un cliente cierra una operación con vos, compartile el link de arriba (por WhatsApp, mail, lo que prefieras).</div>
+                    <div style="margin-bottom:10px"><strong style="color:#003580">2.</strong> El cliente entra, completa los datos de su mudanza y recibe 3-5 cotizaciones de mudanceros verificados.</div>
+                    <div style="margin-bottom:10px"><strong style="color:#003580">3.</strong> Elige el que quiera, paga el 50% de seña por Mercado Pago y coordina con el mudancero.</div>
+                    <div><strong style="color:#003580">4.</strong> Cuando la mudanza se completa, vos cobrás una comisión automática sobre el viaje.</div>
+                  </div>
+
+                  <!-- Datos cuenta -->
+                  <div style="margin-top:24px;padding:16px;background:#FAFBFC;border:1px solid #E5E7EB;border-radius:10px;font-size:13px;color:#4B5563">
+                    <div style="font-size:11px;color:#9CA3AF;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Datos de tu cuenta</div>
+                    <div style="margin-bottom:4px"><strong style="color:#0F1419">Nombre:</strong> ${data.nombre}</div>
+                    <div style="margin-bottom:4px"><strong style="color:#0F1419">Slug:</strong> ${data.slug}</div>
+                    ${data.comisionInmobiliaria ? `<div style="margin-bottom:4px"><strong style="color:#0F1419">Comisión:</strong> ${data.comisionInmobiliaria}% sobre cada mudanza concretada</div>` : ''}
+                  </div>
+
+                  <!-- Soporte -->
+                  <p style="color:#4B5563;font-size:14px;margin-top:24px;line-height:1.6">¿Dudas o querés que te ayudemos a armar tu primer envío a clientes? Escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF;font-weight:700">hola@mudateya.ar</a> y te respondemos rápido.</p>
+                  <p style="color:#9CA3AF;font-size:13px;margin-top:18px">¡Bienvenida al equipo!<br><strong>El equipo de MudateYa</strong></p>
+                </div>
+                <!-- Footer -->
+                <div style="background:#F5F8FC;padding:14px 28px;font-size:11px;color:#9CA3AF;text-align:center">
+                  MudateYa · marketplace de mudanzas verificadas en Argentina · <a href="https://mudateya.ar" style="color:#9CA3AF">mudateya.ar</a>
+                </div>
+              </div></body></html>`
+          });
+          console.log('[crear-inmo] mail de bienvenida enviado a', data.contactoEmail);
+        } catch(emailErr) {
+          // No bloqueamos: la inmobiliaria ya quedó creada. El mail es nice-to-have.
+          console.error('[crear-inmo] Error mandando mail de bienvenida:', emailErr && emailErr.message);
+        }
+      }
+
+      return res.status(200).json({ ok: true, inmobiliaria: data });
+    }
+
+    // ── ADMIN: actualizar existente ──
+    if (action === 'actualizar' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var body = req.body || {};
+      var slug = (body.slug || '').toLowerCase().trim();
+      if (!slugValido(slug)) return res.status(400).json({ error: 'Slug inválido' });
+      var actual = await getJSON('inmobiliaria:' + slug);
+      if (!actual) return res.status(404).json({ error: 'Inmobiliaria no encontrada' });
+
+      // Mantener slug y fechaAlta originales, actualizar el resto
+      var data = sanitizarInmo(body, slug);
+      data.fechaAlta = actual.fechaAlta;
+      data.fechaActualizacion = new Date().toISOString();
+      // Si vienen explícitamente como inactiva, respetar; sino mantener
+      if (typeof body.activa === 'boolean') data.activa = body.activa;
+      await setJSON('inmobiliaria:' + slug, data);
+      return res.status(200).json({ ok: true, inmobiliaria: data });
+    }
+
+    // ── ADMIN: desactivar (soft delete) ──
+    // No borramos para no perder histórico de pedidos. Solo marcamos activa=false.
+    if (action === 'desactivar' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var body = req.body || {};
+      var slug = (body.slug || '').toLowerCase().trim();
+      if (!slugValido(slug)) return res.status(400).json({ error: 'Slug inválido' });
+      var actual = await getJSON('inmobiliaria:' + slug);
+      if (!actual) return res.status(404).json({ error: 'Inmobiliaria no encontrada' });
+      actual.activa = false;
+      actual.fechaDesactivacion = new Date().toISOString();
+      await setJSON('inmobiliaria:' + slug, actual);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── ADMIN: reactivar ──
+    if (action === 'reactivar' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var body = req.body || {};
+      var slug = (body.slug || '').toLowerCase().trim();
+      if (!slugValido(slug)) return res.status(400).json({ error: 'Slug inválido' });
+      var actual = await getJSON('inmobiliaria:' + slug);
+      if (!actual) return res.status(404).json({ error: 'Inmobiliaria no encontrada' });
+      actual.activa = true;
+      actual.fechaDesactivacion = null;
+      await setJSON('inmobiliaria:' + slug, actual);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── ADMIN: contar mudanzas asociadas (preview antes de eliminar) ──
+    // Devuelve cantidad de mudanzas que tienen partner === slug. Sirve para
+    // que el admin sepa qué impacto va a tener un eliminado permanente.
+    if (action === 'contar-mudanzas' && req.method === 'GET') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var slugC = (req.query.slug || '').toLowerCase().trim();
+      if (!slugValido(slugC)) return res.status(400).json({ error: 'Slug inválido' });
+      var idsC = (await getJSON('mudanzas:todos')) || [];
+      var totalC = 0;
+      for (var iC = 0; iC < idsC.length; iC++) {
+        var mC = await getJSON('mudanza:' + idsC[iC]);
+        if (mC && mC.partner === slugC) totalC++;
+      }
+      return res.status(200).json({ slug: slugC, mudanzasAsociadas: totalC });
+    }
+
+    // ── ADMIN: eliminar permanentemente (hard delete) ──
+    // Borra la inmobiliaria de Redis (key inmobiliaria:{slug}) y la saca del
+    // índice inmobiliarias:lista. ESTO ES IRREVERSIBLE.
+    //
+    // Guardrails:
+    //   1. Solo permitido si la inmobiliaria está YA desactivada (activa=false).
+    //   2. El body debe incluir confirmar=true para evitar borrados por accidente.
+    //   3. No tocamos las mudanzas históricas que tenían partner=slug. Quedan
+    //      con partner referenciando un slug que ya no existe, pero los datos
+    //      financieros y de viaje siguen siendo válidos para reportes.
+    if (action === 'eliminar' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var bodyE = req.body || {};
+      var slugE = (bodyE.slug || '').toLowerCase().trim();
+      if (!slugValido(slugE)) return res.status(400).json({ error: 'Slug inválido' });
+      if (bodyE.confirmar !== true) {
+        return res.status(400).json({ error: 'Falta confirmación explícita (confirmar:true)' });
+      }
+      var actualE = await getJSON('inmobiliaria:' + slugE);
+      if (!actualE) return res.status(404).json({ error: 'Inmobiliaria no encontrada' });
+      // Guardrail 1: solo permitir eliminar si ya está desactivada
+      if (actualE.activa !== false) {
+        return res.status(400).json({ error: 'Primero desactivá la inmobiliaria. Después podés eliminarla permanentemente.' });
+      }
+      // Borrar la key de Redis
+      await redisCall('del', ['inmobiliaria:' + slugE]);
+      // Sacar del índice de slugs
+      var listaE = (await getJSON('inmobiliarias:lista')) || [];
+      listaE = listaE.filter(function(s){ return s !== slugE; });
+      await setJSON('inmobiliarias:lista', listaE);
+      console.log('[eliminar-inmo] borrada permanentemente:', slugE);
+      return res.status(200).json({ ok: true, slug: slugE });
+    }
+
+    // ── ADMIN: listar comisiones (pendientes y liquidadas) por inmobiliaria ──
+    // Si no se pasa slug, devuelve todas.
+    if (action === 'comisiones' && req.method === 'GET') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var slug = (req.query.slug || '').toLowerCase().trim();
+      if (slug) {
+        if (!slugValido(slug)) return res.status(400).json({ error: 'Slug inválido' });
+        var data = await comisionesPendientes(slug);
+        return res.status(200).json(data);
+      }
+      // Todas las inmobiliarias
+      var lista = (await getJSON('inmobiliarias:lista')) || [];
+      var todas = [];
+      for (var j = 0; j < lista.length; j++) {
+        var d = await comisionesPendientes(lista[j]);
+        var inmo = await getJSON('inmobiliaria:' + lista[j]);
+        todas.push({
+          slug: lista[j],
+          nombre: (inmo && inmo.nombre) || lista[j],
+          totalAdeudado: d.totalAdeudado,
+          totalPagado: d.totalPagado,
+          cantidad: d.resultados.length,
+          resultados: d.resultados
+        });
+      }
+      return res.status(200).json({ inmobiliarias: todas });
+    }
+
+    // ── ADMIN: marcar una mudanza como liquidada ──
+    if (action === 'marcar-liquidada' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var body = req.body || {};
+      var id = (body.mudanzaId || '').trim();
+      if (!id) return res.status(400).json({ error: 'mudanzaId requerido' });
+      var mudanza = await getJSON('mudanza:' + id);
+      if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      mudanza.comisionInmobiliariaLiquidada = true;
+      mudanza.fechaLiquidacionInmobiliaria = new Date().toISOString();
+      await setJSON('mudanza:' + id, mudanza);
+      return res.status(200).json({ ok: true });
+    }
+
+    return res.status(400).json({ error: 'Acción no reconocida', action: action });
+  } catch (e) {
+    console.error('inmobiliarias.js error:', e.message, e.stack);
+    return res.status(500).json({ error: e.message });
   }
-}
-</script>
-</body>
-</html>
+};
