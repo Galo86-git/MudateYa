@@ -3100,6 +3100,36 @@ function _calParsearFecha(m) {
     }
   }
 
+  // Caso 5b: formato AR conversacional "DD de mes [de] YYYY"
+  // Ejemplos válidos: "22 de mayo de 2026", "5 de marzo de 2025",
+  // "22 de mayo 2026" (sin segundo "de"), "22 mayo 2026" (sin "de").
+  // Insensible a mayúsculas y a acentos en meses (junio/Junio/JUNIO).
+  var MESES_AR = {
+    enero:0, ene:0,
+    febrero:1, feb:1,
+    marzo:2, mar:2,
+    abril:3, abr:3,
+    mayo:4, may:4,
+    junio:5, jun:5,
+    julio:6, jul:6,
+    agosto:7, ago:7,
+    septiembre:8, setiembre:8, sep:8, sept:8,
+    octubre:9, oct:9,
+    noviembre:10, nov:10,
+    diciembre:11, dic:11
+  };
+  // Quitamos acentos para hacer el match robusto
+  var sNorm = sLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var mTxt = sNorm.match(/^(\d{1,2})\s+(?:de\s+)?([a-z]+)\.?\s+(?:de\s+)?(\d{4})$/);
+  if (mTxt) {
+    var d3 = parseInt(mTxt[1]);
+    var nombreMes = mTxt[2];
+    var y3 = parseInt(mTxt[3]);
+    if (MESES_AR.hasOwnProperty(nombreMes) && d3 >= 1 && d3 <= 31) {
+      return { date: new Date(y3, MESES_AR[nombreMes], d3), esEstimada: false };
+    }
+  }
+
   // Caso 6: fallback — intentar new Date() nativo (acepta ISO completo y otros)
   var dnat = new Date(s);
   if (!isNaN(dnat.getTime())) return { date: dnat, esEstimada: false };
