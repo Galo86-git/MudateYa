@@ -5082,9 +5082,14 @@ async function renderInmoLista() {
       h += '<td style="padding:10px 12px;text-align:center">' + badge + '</td>';
       h += '<td style="padding:10px 12px;text-align:right;white-space:nowrap">';
       h += '<button onclick="inmoEditar(\'' + i.slug + '\')" style="padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">✏️ Editar</button>';
-      h += i.activa
-        ? '<button onclick="inmoToggleActiva(\'' + i.slug + '\',false)" style="padding:5px 10px;background:transparent;border:1px solid #FECACA;color:#991B1B;border-radius:6px;font-size:12px;cursor:pointer">Desactivar</button>'
-        : '<button onclick="inmoToggleActiva(\'' + i.slug + '\',true)" style="padding:5px 10px;background:transparent;border:1px solid #BBF7D0;color:#065F46;border-radius:6px;font-size:12px;cursor:pointer">Reactivar</button>';
+      if (i.activa) {
+        h += '<button onclick="inmoToggleActiva(\'' + i.slug + '\',false)" style="padding:5px 10px;background:transparent;border:1px solid #FECACA;color:#991B1B;border-radius:6px;font-size:12px;cursor:pointer">Desactivar</button>';
+      } else {
+        h += '<button onclick="inmoToggleActiva(\'' + i.slug + '\',true)" style="padding:5px 10px;background:transparent;border:1px solid #BBF7D0;color:#065F46;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">Reactivar</button>';
+        // Eliminar permanente: solo aparece cuando ya está desactivada.
+        // Esto previene clicks accidentales en inmos activas con historial.
+        h += '<button onclick="inmoEliminarPermanente(\'' + i.slug + '\',\'' + _inmoEscAttr(i.nombre) + '\')" style="padding:5px 10px;background:#DC2626;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer" title="Eliminar permanentemente de la base de datos">🗑️ Eliminar</button>';
+      }
       h += '</td></tr>';
     });
     h += '</tbody></table></div>';
@@ -5226,6 +5231,64 @@ async function inmoToggleActiva(slug, activar) {
     renderInmoLista();
   } catch(e) {
     alert('Error: ' + e.message);
+  }
+}
+
+// ── Eliminar permanente (hard delete) ──
+// Solo se ofrece para inmobiliarias YA desactivadas. Hace 2 confirmaciones:
+//   (1) Pregunta si está seguro de borrar.
+//   (2) Si hay mudanzas asociadas, le avisa cuántas y vuelve a preguntar.
+// El backend valida que activa===false antes de borrar para doble seguridad.
+async function inmoEliminarPermanente(slug, nombre) {
+  // Primera confirmación: avisamos que es irreversible
+  var conf1 = confirm(
+    'ELIMINAR PERMANENTEMENTE\n\n' +
+    'Inmobiliaria: ' + nombre + '\nSlug: ' + slug + '\n\n' +
+    '⚠️ Esta acción es IRREVERSIBLE.\n' +
+    '• Se borra la inmobiliaria de la base de datos.\n' +
+    '• Su URL mudateya.ar/inmobiliaria/' + slug + ' deja de existir.\n' +
+    '• Las mudanzas históricas asociadas quedan en el sistema pero referenciarán a un slug que ya no existe.\n\n' +
+    '¿Querés continuar?'
+  );
+  if (!conf1) return;
+
+  // Chequeo de mudanzas asociadas — preview de impacto
+  var totalMudanzas = 0;
+  try {
+    var rC = await fetch('/api/inmobiliarias?action=contar-mudanzas&slug=' + encodeURIComponent(slug) + '&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var dC = await rC.json();
+    if (rC.ok) totalMudanzas = dC.mudanzasAsociadas || 0;
+  } catch(e) {
+    // Si falla el chequeo, seguimos igual con un warning
+    console.warn('No pude contar mudanzas asociadas:', e.message);
+  }
+
+  // Segunda confirmación: solo si hay mudanzas asociadas
+  if (totalMudanzas > 0) {
+    var conf2 = confirm(
+      '⚠️ ATENCIÓN: ' + totalMudanzas + ' mudanza(s) asociadas\n\n' +
+      'Esta inmobiliaria tiene ' + totalMudanzas + ' mudanza(s) cargada(s) en su historial. Si la eliminás:\n\n' +
+      '• Las mudanzas siguen en la base de datos.\n' +
+      '• Los reportes de comisión pueden quedar inconsistentes.\n' +
+      '• Si después querés ver "ventas históricas de ' + nombre + '", no vas a poder.\n\n' +
+      '¿Estás REALMENTE seguro? Escribí mentalmente "sí" antes de aceptar.'
+    );
+    if (!conf2) return;
+  }
+
+  // Ejecutar la eliminación
+  try {
+    var r = await fetch('/api/inmobiliarias?action=eliminar&token=' + encodeURIComponent(_inmoTokenAdmin), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, confirmar: true })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error eliminando');
+    alert('Inmobiliaria "' + nombre + '" eliminada permanentemente.');
+    renderInmoLista();
+  } catch(e) {
+    alert('Error al eliminar: ' + e.message);
   }
 }
 
