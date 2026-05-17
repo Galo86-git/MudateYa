@@ -360,6 +360,76 @@ module.exports = async function handler(req, res) {
       data.activa = true;
       await setJSON('inmobiliaria:' + data.slug, data);
       await agregarAlIndice(data.slug);
+
+      // ── Mail de bienvenida a la inmobiliaria (opcional, controlado por flag) ──
+      // El admin puede marcar/desmarcar el checkbox "Enviar mail de bienvenida"
+      // antes de guardar. Si está activado y hay email, mandamos el mail con la
+      // URL única y las instrucciones para compartirla con sus clientes.
+      var enviarBienvenida = body.enviarBienvenida !== false; // default true
+      if (enviarBienvenida && data.contactoEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contactoEmail)) {
+        try {
+          const { Resend } = require('resend');
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          var urlInmo = 'https://mudateya.ar/inmobiliaria/' + data.slug;
+          var saludo = data.contactoNombre ? data.contactoNombre.split(' ')[0] : data.nombre;
+
+          await resend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>',
+            to: data.contactoEmail,
+            subject: '🎉 ¡Bienvenida a MudateYa, ' + data.nombre + '!',
+            html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
+              <div style="font-family:Arial,sans-serif;max-width:580px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+                <!-- Header -->
+                <div style="background:#003580;padding:24px 28px;text-align:center">
+                  <div style="margin-bottom:6px"><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#22C36A">Ya</span></div>
+                  <div style="color:#B8D4FF;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase">Bienvenida · Inmobiliaria aliada</div>
+                </div>
+                <!-- Body -->
+                <div style="padding:28px">
+                  <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">¡Ya estás activa, ${saludo}!</h1>
+                  <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${data.nombre} ya es parte de MudateYa. Tu cuenta está lista para que tus clientes consigan mudanceros verificados con tu marca.</p>
+
+                  <!-- URL destacada -->
+                  <div style="background:linear-gradient(135deg,#003580 0%,#0055B8 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
+                    <div style="color:#B8D4FF;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Tu URL única</div>
+                    <div style="color:#fff;font-size:18px;font-weight:800;font-family:'Courier New',monospace;word-break:break-all;margin-bottom:14px">${urlInmo}</div>
+                    <a href="${urlInmo}" style="display:inline-block;background:#22C36A;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Abrir mi página →</a>
+                  </div>
+
+                  <!-- Cómo usarla -->
+                  <h2 style="color:#0F1419;font-size:17px;font-weight:800;margin:28px 0 12px">¿Cómo la uso con mis clientes?</h2>
+                  <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:18px;font-size:14px;color:#4B5563;line-height:1.7">
+                    <div style="margin-bottom:10px"><strong style="color:#003580">1.</strong> Cuando un cliente cierra una operación con vos, compartile el link de arriba (por WhatsApp, mail, lo que prefieras).</div>
+                    <div style="margin-bottom:10px"><strong style="color:#003580">2.</strong> El cliente entra, completa los datos de su mudanza y recibe 3-5 cotizaciones de mudanceros verificados.</div>
+                    <div style="margin-bottom:10px"><strong style="color:#003580">3.</strong> Elige el que quiera, paga el 50% de seña por Mercado Pago y coordina con el mudancero.</div>
+                    <div><strong style="color:#003580">4.</strong> Cuando la mudanza se completa, vos cobrás una comisión automática sobre el viaje.</div>
+                  </div>
+
+                  <!-- Datos cuenta -->
+                  <div style="margin-top:24px;padding:16px;background:#FAFBFC;border:1px solid #E5E7EB;border-radius:10px;font-size:13px;color:#4B5563">
+                    <div style="font-size:11px;color:#9CA3AF;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Datos de tu cuenta</div>
+                    <div style="margin-bottom:4px"><strong style="color:#0F1419">Nombre:</strong> ${data.nombre}</div>
+                    <div style="margin-bottom:4px"><strong style="color:#0F1419">Slug:</strong> ${data.slug}</div>
+                    ${data.comisionInmobiliaria ? `<div style="margin-bottom:4px"><strong style="color:#0F1419">Comisión:</strong> ${data.comisionInmobiliaria}% sobre cada mudanza concretada</div>` : ''}
+                  </div>
+
+                  <!-- Soporte -->
+                  <p style="color:#4B5563;font-size:14px;margin-top:24px;line-height:1.6">¿Dudas o querés que te ayudemos a armar tu primer envío a clientes? Escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF;font-weight:700">hola@mudateya.ar</a> y te respondemos rápido.</p>
+                  <p style="color:#9CA3AF;font-size:13px;margin-top:18px">¡Bienvenida al equipo!<br><strong>El equipo de MudateYa</strong></p>
+                </div>
+                <!-- Footer -->
+                <div style="background:#F5F8FC;padding:14px 28px;font-size:11px;color:#9CA3AF;text-align:center">
+                  MudateYa · marketplace de mudanzas verificadas en Argentina · <a href="https://mudateya.ar" style="color:#9CA3AF">mudateya.ar</a>
+                </div>
+              </div></body></html>`
+          });
+          console.log('[crear-inmo] mail de bienvenida enviado a', data.contactoEmail);
+        } catch(emailErr) {
+          // No bloqueamos: la inmobiliaria ya quedó creada. El mail es nice-to-have.
+          console.error('[crear-inmo] Error mandando mail de bienvenida:', emailErr && emailErr.message);
+        }
+      }
+
       return res.status(200).json({ ok: true, inmobiliaria: data });
     }
 
