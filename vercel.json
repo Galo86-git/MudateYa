@@ -15,6 +15,7 @@
     { "source": "/asesores", "destination": "/asesores.html" },
     { "source": "/mudafy", "destination": "/mudafy.html" },
     { "source": "/inmobiliaria/:slug", "destination": "/inmobiliaria.html?slug=:slug" },
+    { "source": "/inmobiliarias-registro", "destination": "/inmobiliarias-registro.html" },
     { "source": "/research-mudanceros", "destination": "/research-mudanceros.html" },
     { "source": "/asesor-login", "destination": "/asesor-login.html" },
     { "source": "/asesor-dashboard", "destination": "/asesor-dashboard.html" },
