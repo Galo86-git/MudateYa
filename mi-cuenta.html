@@ -2985,7 +2985,9 @@ function _calEstadoVisual(m) {
   var st = (m.estado || '').toLowerCase();
   if (st === 'completada' || st === 'finalizada' || st === 'cerrada') return 'completa';
   if (m.anticipo_pagado === true || m.anticipoPagado === true || st === 'pagada' || st === 'pago_anticipo') return 'pagada';
-  if (st === 'aceptada' || st === 'cotizacion_aceptada') return 'aceptada';
+  // Estados que indican que el cliente eligió a este mudancero pero todavía no pagó.
+  // Incluimos varios alias por compatibilidad con distintos backends.
+  if (st === 'aceptada' || st === 'cotizacion_aceptada' || st === 'asignada' || st === 'confirmada' || st === 'en_curso' || st === 'en-curso') return 'aceptada';
   return 'cotizada';
 }
 
@@ -3063,7 +3065,9 @@ function renderPaginaCalendario() {
     return;
   }
 
-  // Particionar igual que en renderPedidos
+  // Particionar igual que en renderPedidos, pero más permisivo para que
+  // las "aceptadas sin pago" entren al calendario aunque el backend use
+  // estados distintos (asignada, confirmada, en_curso, etc).
   var enviados  = misCotizaciones.filter(function(m){
     var st = (m.estado || '').toLowerCase();
     return st === 'buscando' || st === 'cotizado' || st === 'cotizada';
@@ -3071,9 +3075,21 @@ function renderPaginaCalendario() {
   var aceptados = misCotizaciones.filter(function(m){
     var st = (m.estado || '').toLowerCase();
     return st === 'cotizacion_aceptada' || st === 'aceptada' ||
+           st === 'asignada' || st === 'confirmada' || st === 'en_curso' || st === 'en-curso' ||
            st === 'pagada' || st === 'pago_anticipo' ||
            m.anticipoPagado === true;
   });
+
+  // Debug temporal: loguear las mudanzas que se descartan del calendario por
+  // no tener fecha válida. Para diagnosticar bugs como "no veo mi mudanza aceptada".
+  // TODO: borrar este log cuando confirmemos que todo anda.
+  var todasParaCal = enviados.concat(aceptados);
+  var sinFecha = todasParaCal.filter(function(m){ return !_calParsearFecha(m); });
+  if (sinFecha.length > 0) {
+    console.warn('[Calendario] ' + sinFecha.length + ' mudanza(s) descartadas por no tener fecha válida:',
+      sinFecha.map(function(m){ return { id: m.id, estado: m.estado, fecha: m.fecha }; }));
+  }
+  console.log('[Calendario] enviados:', enviados.length, '· aceptados:', aceptados.length, '· total visible:', todasParaCal.length - sinFecha.length);
 
   container.innerHTML = renderCalendarioCompleto(enviados, aceptados);
 }
