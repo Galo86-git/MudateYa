@@ -4851,10 +4851,12 @@ async function renderInmoSolicitudes() {
         + '<td style="padding:12px;color:var(--text2)">' + escHtml(s.zona) + '</td>'
         + '<td style="padding:12px"><span style="display:inline-block;padding:3px 10px;background:var(--surface2);border-radius:8px;font-size:12px;font-weight:700;color:var(--text)">' + escHtml(s.operacionesPorMes) + '</span></td>'
         + '<td style="padding:12px;font-size:12px;color:var(--text3);font-family:monospace">' + fechaTxt + '</td>'
-        + '<td style="padding:12px;text-align:right;white-space:nowrap">'
-          + '<button onclick="inmoVerSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);font-family:inherit;margin-right:4px">👁 Ver</button>'
-          + '<button onclick="inmoAprobarSolicitud(\'' + s.id + '\')" style="background:var(--emerald);border:none;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;margin-right:4px">✓ Activar</button>'
-          + '<button onclick="inmoRechazarSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);font-family:inherit">✕ Rechazar</button>'
+        + '<td style="padding:12px;text-align:right;min-width:240px">'
+          + '<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'
+          + '<button onclick="inmoAprobarSolicitud(\'' + s.id + '\')" style="background:#22C36A;border:none;color:#fff;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:800;font-family:inherit;white-space:nowrap;box-shadow:0 2px 6px rgba(34,195,106,0.3)">✓ Aprobar y activar</button>'
+          + '<button onclick="inmoVerSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);font-family:inherit;white-space:nowrap">👁 Ver</button>'
+          + '<button onclick="inmoRechazarSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);font-family:inherit;white-space:nowrap">✕ Rechazar</button>'
+          + '</div>'
         + '</td>'
         + '</tr>';
     });
