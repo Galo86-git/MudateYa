@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Sumate a MudateYa · Para inmobiliarias</title>
+<meta name="description" content="Sumá MudateYa a tu inmobiliaria. Tus clientes consiguen mudanceros verificados en minutos, vos ganás una comisión por cada operación.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --mya-navy:        #003580;
+    --mya-navy-dark:   #002766;
+    --mya-navy-light:  #E5ECF6;
+    --mya-green:       #22C36A;
+    --mya-green-dark:  #1AA85A;
+    --mya-coral:       #FF6B6B;
+    --md-text:         #0F1419;
+    --md-text-2:       #4B5563;
+    --md-text-3:       #9CA3AF;
+    --md-bg:           #FAFAFA;
+    --md-bg-card:      #FFFFFF;
+    --md-border:       #E5E7EB;
+    --md-border-2:     #D1D5DB;
+    --md-success:      #10B981;
+    --md-success-soft: #D1FAE5;
+    --md-warning:      #F59E0B;
+    --md-error:        #DC2626;
+    --md-error-soft:   #FEE2E2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--md-bg); color: var(--md-text);
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    line-height: 1.55; min-height: 100vh; font-weight: 500;
+  }
+
+  /* ───── TOP BAR ───── */
+  .top-bar {
+    background: var(--md-bg-card);
+    border-bottom: 1px solid var(--md-border);
+    padding: 14px 24px;
+    position: sticky; top: 0; z-index: 60;
+  }
+  .top-bar-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .logo-mya {
+    font-size: 22px; font-weight: 900; color: var(--mya-navy);
+    letter-spacing: -0.5px; text-decoration: none;
+  }
+  .logo-mya .grn { color: var(--mya-green); }
+  .top-link { font-size: 13px; color: var(--md-text-2); text-decoration: none; font-weight: 600; }
+  .top-link:hover { color: var(--mya-navy); }
+
+  /* ───── HERO ───── */
+  .hero {
+    background: linear-gradient(135deg, var(--mya-navy) 0%, #0055B8 100%);
+    color: #fff;
+    padding: 64px 24px 56px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-inner { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-size: 38px; font-weight: 900;
+    line-height: 1.15; letter-spacing: -0.8px;
+    margin-bottom: 14px;
+  }
+  .hero h1 .green { color: var(--mya-green); }
+  .hero p { font-size: 16px; opacity: 0.92; max-width: 580px; margin: 0 auto; }
+
+  /* Benefits chips */
+  .benefits {
+    max-width: 800px; margin: -32px auto 0; padding: 0 20px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    position: relative; z-index: 2;
+  }
+  .benefit {
+    background: var(--md-bg-card);
+    border: 1px solid var(--md-border);
+    border-radius: 14px;
+    padding: 18px 16px;
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(15, 25, 35, 0.08);
+  }
+  .benefit-icon {
+    font-size: 22px; margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .benefit-icon svg { width: 24px; height: 24px; }
+  .benefit-title { font-size: 13px; font-weight: 800; color: var(--md-text); margin-bottom: 2px; }
+  .benefit-sub { font-size: 11.5px; color: var(--md-text-2); line-height: 1.4; }
+
+  /* ───── FORM ───── */
+  .form-wrap {
+    max-width: 640px; margin: 40px auto 60px; padding: 0 20px;
+  }
+  .form-card {
+    background: var(--md-bg-card);
+    border: 1px solid var(--md-border);
+    border-radius: 18px;
+    padding: 36px 32px;
+    box-shadow: 0 4px 24px rgba(15, 25, 35, 0.06);
+  }
+  .form-title {
+    font-size: 22px; font-weight: 800; color: var(--md-text);
+    letter-spacing: -0.3px; margin-bottom: 6px;
+  }
+  .form-subtitle { font-size: 14px; color: var(--md-text-2); margin-bottom: 28px; }
+
+  .form-section {
+    margin-bottom: 22px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--md-border);
+  }
+  .form-section:last-of-type { border-bottom: none; padding-bottom: 0; }
+  .form-section-label {
+    font-size: 11px; font-weight: 800; color: var(--mya-navy);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 12px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block; font-size: 13px; font-weight: 700;
+    color: var(--md-text); margin-bottom: 6px;
+  }
+  .field-label .req { color: var(--md-error); margin-left: 2px; }
+  .field-label .opt {
+    font-weight: 500; color: var(--md-text-3); font-size: 11px;
+    margin-left: 4px; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .field-input,
+  .field-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--md-border);
+    border-radius: 10px;
+    font-family: inherit; font-size: 14.5px; font-weight: 500;
+    color: var(--md-text);
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  /* select con flecha custom (look consistente con inputs) */
+  select.field-input {
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%234B5563' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+    cursor: pointer;
+  }
+  select.field-input option,
+  select.field-input optgroup {
+    font-family: inherit;
+  }
+  .field-input:focus,
+  .field-textarea:focus {
+    outline: none;
+    border-color: var(--mya-navy);
+    box-shadow: 0 0 0 3px rgba(0, 53, 128, 0.1);
+  }
+  .field-input::placeholder { color: var(--md-text-3); font-weight: 500; }
+  .field-textarea { min-height: 70px; resize: vertical; font-family: inherit; }
+
+  .field-hint { font-size: 11.5px; color: var(--md-text-3); margin-top: 5px; }
+
+  /* Radios for operaciones/mes */
+  .radio-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  }
+  .radio-card {
+    position: relative;
+    border: 1.5px solid var(--md-border);
+    border-radius: 10px;
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #fff;
+  }
+  .radio-card:hover { border-color: var(--mya-navy); }
+  .radio-card input { position: absolute; opacity: 0; pointer-events: none; }
+  .radio-card.active {
+    border-color: var(--mya-navy); border-width: 2px;
+    background: var(--mya-navy-light);
+  }
+  .radio-card-num { font-size: 16px; font-weight: 800; color: var(--md-text); }
+  .radio-card-label { font-size: 10.5px; color: var(--md-text-2); margin-top: 1px; }
+
+  /* Checkboxes for tipo de operaciones */
+  .checkbox-list { display: flex; flex-direction: column; gap: 8px; }
+  .checkbox-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid var(--md-border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #fff;
+  }
+  .checkbox-row:hover { border-color: var(--mya-navy); }
+  .checkbox-row.checked {
+    border-color: var(--mya-navy);
+    background: var(--mya-navy-light);
+  }
+  .checkbox-row input { width: 18px; height: 18px; accent-color: var(--mya-navy); }
+  .checkbox-row span { font-size: 14px; color: var(--md-text); font-weight: 600; }
+
+  /* Logo upload box */
+  .logo-box {
+    border: 2px dashed var(--md-border-2);
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #FAFBFC;
+    position: relative;
+  }
+  .logo-box:hover { border-color: var(--mya-navy); background: var(--mya-navy-light); }
+  .logo-box.dragging { border-color: var(--mya-green); background: var(--md-success-soft); }
+  .logo-box input[type="file"] { display: none; }
+  .logo-box-empty { display: block; }
+  .logo-box-empty-icon { font-size: 28px; margin-bottom: 6px; }
+  .logo-box-empty-icon svg { width: 36px; height: 36px; color: var(--mya-navy); }
+  .logo-box-empty-text { font-size: 14px; font-weight: 700; color: var(--md-text); margin-bottom: 2px; }
+  .logo-box-empty-sub { font-size: 12px; color: var(--md-text-3); }
+  .logo-box-loading { display: none; }
+  .logo-box-loading-spin {
+    width: 28px; height: 28px;
+    border: 3px solid var(--md-border);
+    border-top-color: var(--mya-navy);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .logo-box-loading-text { font-size: 13px; color: var(--md-text-2); }
+  .logo-box-preview { display: none; }
+  .logo-box-preview img {
+    max-width: 140px; max-height: 90px; margin: 0 auto 8px;
+    display: block; object-fit: contain;
+  }
+  .logo-box-preview-name { font-size: 12px; color: var(--md-text-2); margin-bottom: 8px; word-break: break-all; }
+  .logo-box-preview-btn {
+    background: none; border: 1.5px solid var(--md-border-2);
+    color: var(--md-text-2); padding: 6px 14px; border-radius: 8px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    font-family: inherit;
+  }
+  .logo-box-preview-btn:hover { border-color: var(--md-error); color: var(--md-error); }
+  .logo-box-error {
+    display: none; margin-top: 8px;
+    padding: 8px 12px; border-radius: 8px;
+    background: var(--md-error-soft); color: var(--md-error);
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    padding: 15px 24px;
+    background: linear-gradient(135deg, var(--mya-green) 0%, var(--mya-green-dark) 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: inherit; font-size: 15px; font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(34, 195, 106, 0.3);
+    margin-top: 8px;
+  }
+  .submit-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(34, 195, 106, 0.4);
+  }
+  .submit-btn:disabled {
+    opacity: 0.6; cursor: not-allowed;
+    background: var(--md-text-3);
+    box-shadow: none;
+  }
+  .submit-note {
+    text-align: center; font-size: 12px; color: var(--md-text-3);
+    margin-top: 12px; line-height: 1.5;
+  }
+
+  /* Success state */
+  .success-card {
+    display: none;
+    text-align: center;
+    padding: 56px 32px;
+  }
+  .success-icon {
+    width: 64px; height: 64px;
+    background: var(--mya-green);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+  }
+  .success-icon svg { width: 32px; height: 32px; color: #fff; }
+  .success-title { font-size: 22px; font-weight: 800; color: var(--md-text); margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: var(--md-text-2); max-width: 380px; margin: 0 auto 24px; line-height: 1.6; }
+  .success-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--mya-navy);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 700; font-size: 13.5px;
+  }
+
+  /* Error message global */
+  .global-error {
+    display: none;
+    background: var(--md-error-soft);
+    color: var(--md-error);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  /* Footer */
+  .page-footer {
+    text-align: center;
+    padding: 24px 20px;
+    color: var(--md-text-3);
+    font-size: 12px;
+  }
+  .page-footer a { color: var(--md-text-3); text-decoration: none; font-weight: 600; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .hero { padding: 44px 18px 40px; }
+    .hero h1 { font-size: 28px; }
+    .hero p { font-size: 14px; }
+    .benefits { grid-template-columns: 1fr; gap: 10px; }
+    .benefit { padding: 14px 16px; text-align: left; display: flex; gap: 12px; align-items: center; }
+    .benefit-icon { margin-bottom: 0; flex-shrink: 0; }
+    .form-card { padding: 24px 20px; }
+    .form-title { font-size: 19px; }
+    .radio-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <a href="/" class="logo-mya">Mudate<span class="grn">Ya</span></a>
+    <a href="/inmobiliarias" class="top-link">← Volver</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-badge">Para inmobiliarias</span>
+    <h1>Sumá <span class="green">mudanzas verificadas</span><br>a tu inmobiliaria</h1>
+    <p>Tus clientes consiguen mudanceros verificados en minutos. Vos ganás una comisión por cada operación, sin cambiar nada en tu día a día.</p>
+  </div>
+</section>
+
+<!-- BENEFITS -->
+<div class="benefits">
+  <div class="benefit">
+    <div class="benefit-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#22C36A" stroke-width="2.2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="benefit-title">Comisión por operación</div>
+    <div class="benefit-sub">Cobrás un % por cada mudanza que tu cliente concrete</div>
+  </div>
+  <div class="benefit">
+    <div class="benefit-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1A6FFF" stroke-width="2.2"><path d="M20 7L9 18l-5-5"/></svg>
+    </div>
+    <div class="benefit-title">Mudanceros verificados</div>
+    <div class="benefit-sub">Cada mudancero pasa por nuestro proceso de validación</div>
+  </div>
+  <div class="benefit">
+    <div class="benefit-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="benefit-title">Setup en 24hs</div>
+    <div class="benefit-sub">Sin contrato. Sin costo de alta. Te ayudamos paso a paso.</div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div class="form-wrap">
+  <div class="form-card" id="formCard">
+    <div class="form-title">Contanos un poco sobre tu inmobiliaria</div>
+    <div class="form-subtitle">En 24h hábiles te escribimos para coordinar la activación. Sin costo, sin contrato.</div>
+
+    <div class="global-error" id="globalError"></div>
+
+    <form id="formInmo" onsubmit="enviarForm(event)" novalidate>
+
+      <!-- ─── DATOS DE LA INMOBILIARIA ─── -->
+      <div class="form-section">
+        <div class="form-section-label">Datos de la inmobiliaria</div>
+
+        <div class="field">
+          <label class="field-label" for="f-nombre">Nombre de la inmobiliaria <span class="req">*</span></label>
+          <input id="f-nombre" class="field-input" type="text" placeholder="Ej: López Hnos. Propiedades" autocomplete="organization" maxlength="80" required>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-contacto">Tu nombre <span class="req">*</span></label>
+          <input id="f-contacto" class="field-input" type="text" placeholder="Ej: Juan López" autocomplete="name" maxlength="80" required>
+        </div>
+
+        <!-- Logo upload -->
+        <div class="field">
+          <label class="field-label">Logo <span class="opt">opcional</span></label>
+          <div class="logo-box" id="logoBox" onclick="document.getElementById('f-logo').click()">
+            <input id="f-logo" type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" onchange="onArchivoSeleccionado(event)">
+
+            <div class="logo-box-empty" id="logoBoxEmpty">
+              <div class="logo-box-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+              </div>
+              <div class="logo-box-empty-text">Soltá tu logo acá o hacé tap</div>
+              <div class="logo-box-empty-sub">PNG, JPG, SVG o WebP · máx 2 MB</div>
+            </div>
+
+            <div class="logo-box-loading" id="logoBoxLoading">
+              <div class="logo-box-loading-spin"></div>
+              <div class="logo-box-loading-text">Subiendo logo…</div>
+            </div>
+
+            <div class="logo-box-preview" id="logoBoxPreview">
+              <img id="logoPreviewImg" src="" alt="Preview del logo">
+              <div class="logo-box-preview-name" id="logoPreviewName"></div>
+              <button type="button" class="logo-box-preview-btn" onclick="quitarLogo(event)">Quitar y subir otro</button>
+            </div>
+          </div>
+          <div class="logo-box-error" id="logoError"></div>
+          <input type="hidden" id="f-logo-url" value="">
+        </div>
+      </div>
+
+      <!-- ─── CONTACTO ─── -->
+      <div class="form-section">
+        <div class="form-section-label">Cómo te contactamos</div>
+
+        <div class="field">
+          <label class="field-label" for="f-email">Email <span class="req">*</span></label>
+          <input id="f-email" class="field-input" type="email" placeholder="juan@lopezhnos.com.ar" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-wapp">WhatsApp <span class="req">*</span></label>
+          <input id="f-wapp" class="field-input" type="tel" placeholder="+54 9 11 1234-5678" autocomplete="tel" required>
+        </div>
+      </div>
+
+      <!-- ─── SOBRE EL NEGOCIO ─── -->
+      <div class="form-section">
+        <div class="form-section-label">Sobre tu negocio</div>
+
+        <div class="field">
+          <label class="field-label" for="f-zona">Zona principal <span class="req">*</span></label>
+          <select id="f-zona" class="field-input" required>
+            <option value="">Seleccioná tu zona principal</option>
+            <optgroup label="── Buenos Aires ──">
+              <option>CABA — zona norte</option>
+              <option>CABA — zona sur</option>
+              <option>CABA — zona oeste</option>
+              <option>CABA — zona centro</option>
+              <option>GBA Norte (San Isidro, Vicente López, etc.)</option>
+              <option>GBA Sur (Quilmes, Avellaneda, etc.)</option>
+              <option>GBA Oeste (Morón, Ituzaingó, etc.)</option>
+              <option>GBA Este (Lanús, Lomas de Zamora, etc.)</option>
+              <option>La Plata</option>
+              <option>Mar del Plata</option>
+              <option>Bahía Blanca</option>
+            </optgroup>
+            <optgroup label="── Centro ──">
+              <option>Córdoba Capital</option>
+              <option>Rosario</option>
+              <option>Santa Fe</option>
+            </optgroup>
+            <optgroup label="── Cuyo ──">
+              <option>Mendoza</option>
+              <option>San Juan</option>
+              <option>San Luis</option>
+            </optgroup>
+            <optgroup label="── Norte ──">
+              <option>Tucumán</option>
+              <option>Salta</option>
+              <option>Jujuy</option>
+              <option>Santiago del Estero</option>
+              <option>Catamarca</option>
+              <option>La Rioja</option>
+            </optgroup>
+            <optgroup label="── Litoral ──">
+              <option>Entre Ríos</option>
+              <option>Corrientes</option>
+              <option>Misiones</option>
+              <option>Chaco</option>
+              <option>Formosa</option>
+            </optgroup>
+            <optgroup label="── Patagonia ──">
+              <option>Neuquén</option>
+              <option>Bariloche</option>
+              <option>Río Negro</option>
+              <option>Chubut</option>
+              <option>Santa Cruz</option>
+              <option>Tierra del Fuego</option>
+            </optgroup>
+            <option>Otra</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Operaciones cerradas por mes (aprox) <span class="req">*</span></label>
+          <div class="radio-grid">
+            <label class="radio-card" data-val="1-5">
+              <input type="radio" name="opsmes" value="1-5">
+              <div class="radio-card-num">1-5</div>
+              <div class="radio-card-label">por mes</div>
+            </label>
+            <label class="radio-card" data-val="6-15">
+              <input type="radio" name="opsmes" value="6-15">
+              <div class="radio-card-num">6-15</div>
+              <div class="radio-card-label">por mes</div>
+            </label>
+            <label class="radio-card" data-val="16-30">
+              <input type="radio" name="opsmes" value="16-30">
+              <div class="radio-card-num">16-30</div>
+              <div class="radio-card-label">por mes</div>
+            </label>
+            <label class="radio-card" data-val="30+">
+              <input type="radio" name="opsmes" value="30+">
+              <div class="radio-card-num">30+</div>
+              <div class="radio-card-label">por mes</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-web">Sitio web o Instagram <span class="req">*</span></label>
+          <input id="f-web" class="field-input" type="text" placeholder="lopezhnos.com.ar o @lopezhnos" autocomplete="url" maxlength="120" required>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Quiero sumarme →</button>
+      <div class="submit-note">En 24h hábiles te escribimos para coordinar la activación.<br>Sin costo de alta. Sin contrato.</div>
+
+    </form>
+  </div>
+
+  <!-- ─── SUCCESS STATE ─── -->
+  <div class="form-card success-card" id="successCard">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="success-title">¡Recibimos tu solicitud!</div>
+    <div class="success-sub">Te escribimos en menos de 24h hábiles al email que dejaste para coordinar la activación. Mientras tanto, podés ver cómo funciona en nuestra página principal.</div>
+    <a href="/" class="success-btn">Ir al sitio</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="page-footer">
+  MudateYa · marketplace de mudanzas verificadas en Argentina · <a href="mailto:hola@mudateya.ar">hola@mudateya.ar</a>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// Estado del form
+// ════════════════════════════════════════════════════════════════════
+var logoUrl = '';      // URL del logo en Vercel Blob una vez subido
+var logoSubiendo = false; // Para deshabilitar submit mientras sube
+
+// ════════════════════════════════════════════════════════════════════
+// Radio cards: marcar la activa al click
+// ════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.radio-card').forEach(function(card){
+  card.addEventListener('click', function(){
+    document.querySelectorAll('.radio-card').forEach(function(c){ c.classList.remove('active'); });
+    card.classList.add('active');
+    var input = card.querySelector('input');
+    if (input) input.checked = true;
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════
+// Logo upload — drag & drop + click
+// ════════════════════════════════════════════════════════════════════
+var logoBox = document.getElementById('logoBox');
+
+// Drag over: mostrar visual feedback
+logoBox.addEventListener('dragover', function(e){
+  e.preventDefault();
+  logoBox.classList.add('dragging');
+});
+logoBox.addEventListener('dragleave', function(){
+  logoBox.classList.remove('dragging');
+});
+logoBox.addEventListener('drop', function(e){
+  e.preventDefault();
+  logoBox.classList.remove('dragging');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+    procesarArchivo(e.dataTransfer.files[0]);
+  }
+});
+
+function onArchivoSeleccionado(e) {
+  var file = e.target.files[0];
+  if (file) procesarArchivo(file);
+}
+
+// Procesa un archivo: valida, muestra preview, sube a Vercel Blob
+async function procesarArchivo(file) {
+  var errBox = document.getElementById('logoError');
+  errBox.style.display = 'none';
+  errBox.textContent = '';
+
+  // Validaciones cliente (las mismas que el endpoint en backend)
+  var TIPOS_OK = ['image/png','image/jpeg','image/jpg','image/svg+xml','image/webp'];
+  if (TIPOS_OK.indexOf(file.type) === -1) {
+    errBox.textContent = 'Formato no soportado. Usá PNG, JPG, SVG o WebP.';
+    errBox.style.display = 'block';
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    errBox.textContent = 'El archivo supera los 2 MB. Reducí el tamaño antes de subirlo.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  // UI: estado loading
+  document.getElementById('logoBoxEmpty').style.display = 'none';
+  document.getElementById('logoBoxPreview').style.display = 'none';
+  document.getElementById('logoBoxLoading').style.display = 'block';
+  logoSubiendo = true;
+
+  try {
+    // Nombre del archivo: usamos un slug temporal basado en el nombre del
+    // archivo + timestamp. El backend agrega timestamp final igual.
+    var nombreLimpio = file.name.toLowerCase()
+      .replace(/\.[^.]+$/, '')   // sacar extensión
+      .replace(/[^a-z0-9-]/g, '-')
+      .slice(0, 40) || 'logo';
+
+    var r = await fetch('/api/upload-foto', {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type,
+        'x-carpeta': 'inmobiliarias',
+        'x-nombre':  'solicitud-' + nombreLimpio
+      },
+      body: file
+    });
+    var data = await r.json();
+    if (!r.ok || !data.url) throw new Error(data.error || 'No se pudo subir el archivo');
+
+    // Éxito: mostrar preview con la URL real de Blob
+    logoUrl = data.url;
+    document.getElementById('f-logo-url').value = data.url;
+    document.getElementById('logoPreviewImg').src = data.url;
+    document.getElementById('logoPreviewName').textContent = file.name + ' · ' + (file.size / 1024).toFixed(0) + ' KB';
+    document.getElementById('logoBoxLoading').style.display = 'none';
+    document.getElementById('logoBoxPreview').style.display = 'block';
+  } catch(e) {
+    errBox.textContent = 'Error subiendo: ' + (e.message || 'desconocido');
+    errBox.style.display = 'block';
+    // Volver al estado vacío
+    document.getElementById('logoBoxLoading').style.display = 'none';
+    document.getElementById('logoBoxEmpty').style.display = 'block';
+    logoUrl = '';
+    document.getElementById('f-logo-url').value = '';
+  } finally {
+    logoSubiendo = false;
+  }
+}
+
+// Quitar el logo subido (vuelve al estado vacío)
+function quitarLogo(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  logoUrl = '';
+  document.getElementById('f-logo-url').value = '';
+  document.getElementById('f-logo').value = '';
+  document.getElementById('logoBoxPreview').style.display = 'none';
+  document.getElementById('logoBoxLoading').style.display = 'none';
+  document.getElementById('logoBoxEmpty').style.display = 'block';
+  // Nota: no borramos el archivo de Blob físicamente. Queda huérfano y se
+  // limpia con un cron diario. Costo despreciable.
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Submit del form
+// ════════════════════════════════════════════════════════════════════
+async function enviarForm(e) {
+  e.preventDefault();
+  var errGlobal = document.getElementById('globalError');
+  errGlobal.style.display = 'none';
+
+  if (logoSubiendo) {
+    errGlobal.textContent = 'Esperá a que termine de subir el logo antes de enviar.';
+    errGlobal.style.display = 'block';
+    return;
+  }
+
+  // Recoger datos
+  var nombre   = document.getElementById('f-nombre').value.trim();
+  var contacto = document.getElementById('f-contacto').value.trim();
+  var email    = document.getElementById('f-email').value.trim();
+  var wapp     = document.getElementById('f-wapp').value.trim();
+  var zona     = document.getElementById('f-zona').value.trim();
+  var web      = document.getElementById('f-web').value.trim();
+  var opsmes   = (document.querySelector('input[name="opsmes"]:checked') || {}).value || '';
+
+  // Validaciones cliente
+  var faltan = [];
+  if (!nombre)   faltan.push('nombre de la inmobiliaria');
+  if (!contacto) faltan.push('tu nombre');
+  if (!email)    faltan.push('email');
+  if (!wapp)     faltan.push('WhatsApp');
+  if (!zona)     faltan.push('zona principal');
+  if (!opsmes)   faltan.push('cantidad de operaciones por mes');
+  if (!web)      faltan.push('sitio web o Instagram');
+  if (faltan.length > 0) {
+    errGlobal.textContent = 'Faltan datos: ' + faltan.join(', ') + '.';
+    errGlobal.style.display = 'block';
+    errGlobal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  // Email format básico
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errGlobal.textContent = 'El email no parece válido. Revisá que esté bien escrito.';
+    errGlobal.style.display = 'block';
+    return;
+  }
+
+  // Disable button
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try {
+    var r = await fetch('/api/inmobiliarias?action=solicitar-alta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: nombre,
+        contacto: contacto,
+        email: email,
+        whatsapp: wapp,
+        zona: zona,
+        operacionesPorMes: opsmes,
+        sitio: web,
+        logoUrl: logoUrl
+      })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'No se pudo enviar la solicitud');
+
+    // Success: ocultar form, mostrar success card
+    document.getElementById('formCard').style.display = 'none';
+    document.getElementById('successCard').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(err) {
+    errGlobal.textContent = 'No pudimos enviar tu solicitud: ' + err.message + '. Probá de nuevo o escribinos a hola@mudateya.ar';
+    errGlobal.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Quiero sumarme →';
+  }
+}
+</script>
+</body>
+</html>
