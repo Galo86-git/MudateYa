@@ -4919,14 +4919,17 @@ async function inmoAprobarSolicitud(id) {
     var s = (d.solicitudes || []).find(function(x){ return x.id === id; });
     if (!s) { alert('No se encontró la solicitud.'); return; }
 
-    // Cambiar al tab "Nueva" y pre-cargar el form
+    // Cambiar al tab "Nueva" y pre-cargar el form.
+    // IMPORTANTE: los IDs del form Nueva son inmoContactoEmail y inmoContactoNombre
+    // (no inmoEmail / inmoWapp como tenía un copy/paste anterior — ese bug hacía
+    // que el email no se cargara y el mail de bienvenida no se enviara).
     inmoTab('nueva');
     setTimeout(function(){
       try {
-        var n  = document.getElementById('inmoNombre');     if (n)  n.value  = s.nombre || '';
-        var em = document.getElementById('inmoEmail');      if (em) em.value = s.email || '';
-        var wa = document.getElementById('inmoWapp');       if (wa) wa.value = s.whatsapp || '';
-        var lg = document.getElementById('inmoLogo');       if (lg) lg.value = s.logoUrl || '';
+        var n  = document.getElementById('inmoNombre');         if (n)  n.value  = s.nombre || '';
+        var em = document.getElementById('inmoContactoEmail');  if (em) em.value = s.email || '';
+        var cn = document.getElementById('inmoContactoNombre'); if (cn) cn.value = s.contacto || '';
+        var lg = document.getElementById('inmoLogo');           if (lg) lg.value = s.logoUrl || '';
         if (s.logoUrl && typeof _inmoActualizarBoxLogo === 'function') {
           _inmoActualizarBoxLogo(s.logoUrl);
         }
