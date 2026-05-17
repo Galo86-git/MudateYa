@@ -1219,6 +1219,14 @@ tr:hover td{background:rgba(34,195,106,.03)}
                 </div>
               </div>
 
+              <!-- Checkbox: enviar mail de bienvenida (solo visible en modo "nueva") -->
+              <div id="inmoBienvenidaRow" style="margin-top:18px;padding:12px 14px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:10px;display:flex;align-items:center;gap:10px">
+                <input type="checkbox" id="inmoEnviarBienvenida" checked style="width:18px;height:18px;accent-color:#003580;cursor:pointer;flex-shrink:0">
+                <label for="inmoEnviarBienvenida" style="cursor:pointer;font-size:13px;color:var(--text2);line-height:1.4">
+                  <strong style="color:var(--text)">✉️ Enviar mail de bienvenida</strong> al guardar — incluye su URL única, instrucciones de uso y datos de la cuenta. <span style="color:var(--text3)">(Solo si cargaste email de contacto.)</span>
+                </label>
+              </div>
+
               <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
                 <button type="button" onclick="inmoTab('lista')" style="padding:10px 22px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text);font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>
                 <button type="submit" id="inmoBtnGuardar" style="padding:10px 22px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-family:inherit">Guardar inmobiliaria</button>
@@ -5101,6 +5109,11 @@ function inmoResetForm() {
   document.getElementById('inmoContactoNombre').value = '';
   document.getElementById('inmoContactoEmail').value = '';
   document.getElementById('inmoBtnGuardar').textContent = 'Guardar inmobiliaria';
+  // Checkbox bienvenida: visible y marcado por default en modo "crear"
+  var bienvRow = document.getElementById('inmoBienvenidaRow');
+  if (bienvRow) bienvRow.style.display = 'flex';
+  var bienvChk = document.getElementById('inmoEnviarBienvenida');
+  if (bienvChk) bienvChk.checked = true;
   _inmoActualizarBoxLogo('');
   inmoSlugPreview();
   inmoPreviewActualizar();
@@ -5128,6 +5141,9 @@ async function inmoEditar(slug) {
     document.getElementById('inmoContactoNombre').value = inmo.contactoNombre || '';
     document.getElementById('inmoContactoEmail').value = inmo.contactoEmail || '';
     document.getElementById('inmoBtnGuardar').textContent = 'Guardar cambios';
+    // En modo edición no aplica el mail de bienvenida (ya fue activada antes)
+    var bienvRow2 = document.getElementById('inmoBienvenidaRow');
+    if (bienvRow2) bienvRow2.style.display = 'none';
     inmoSlugPreview();
     inmoPreviewActualizar();
   } catch(e) {
@@ -5139,6 +5155,8 @@ async function inmoEditar(slug) {
 async function inmoGuardar(e) {
   if (e) e.preventDefault();
   var modo = document.getElementById('inmoModo').value;
+  var enviarBienvChk = document.getElementById('inmoEnviarBienvenida');
+  var enviarBienvenida = enviarBienvChk ? enviarBienvChk.checked : true;
   var body = {
     nombre:               document.getElementById('inmoNombre').value.trim(),
     slug:                 document.getElementById('inmoSlug').value.trim().toLowerCase(),
@@ -5146,10 +5164,18 @@ async function inmoGuardar(e) {
     colorPrimario:        document.getElementById('inmoColor').value,
     comisionInmobiliaria: parseFloat(document.getElementById('inmoComision').value) || 0,
     contactoNombre:       document.getElementById('inmoContactoNombre').value.trim(),
-    contactoEmail:        document.getElementById('inmoContactoEmail').value.trim()
+    contactoEmail:        document.getElementById('inmoContactoEmail').value.trim(),
+    // El backend solo respeta este flag en action=crear. En actualizar lo ignora.
+    enviarBienvenida:     enviarBienvenida
   };
   if (!body.nombre || !body.slug) { alert('Nombre y slug son obligatorios'); return false; }
   if (!/^[a-z0-9-]+$/.test(body.slug)) { alert('Slug: solo letras minúsculas, números y guiones'); return false; }
+  // Si va a mandar bienvenida pero no hay email, avisar
+  if (modo !== 'editar' && enviarBienvenida && !body.contactoEmail) {
+    if (!confirm('No cargaste email de contacto, así que no se va a poder enviar el mail de bienvenida. ¿Querés guardar igual?')) {
+      return false;
+    }
+  }
   var btn = document.getElementById('inmoBtnGuardar');
   btn.disabled = true;
   btn.textContent = 'Guardando…';
@@ -5162,7 +5188,16 @@ async function inmoGuardar(e) {
     });
     var data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Error guardando');
-    alert(modo === 'editar' ? 'Inmobiliaria actualizada' : 'Inmobiliaria creada');
+    var msg;
+    if (modo === 'editar') {
+      msg = 'Inmobiliaria actualizada.';
+    } else {
+      msg = 'Inmobiliaria creada.';
+      if (enviarBienvenida && body.contactoEmail) {
+        msg += '\n\n✉️ Mail de bienvenida enviado a ' + body.contactoEmail;
+      }
+    }
+    alert(msg);
     inmoTab('lista');
   } catch(e) {
     alert('Error: ' + e.message);
