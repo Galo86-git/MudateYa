@@ -1773,6 +1773,9 @@ function confirmarAccion(opts) {
         <span class="sidebar-icon">📋</span> Pedidos
         <span class="sidebar-badge" id="badgeNuevos" style="display:none">0</span>
       </a>
+      <a class="sidebar-item" onclick="showPage('calendario',event)" href="#">
+        <span class="sidebar-icon">📆</span> Calendario
+      </a>
       <a class="sidebar-item" onclick="showPage('historial',event)" href="#">
         <span class="sidebar-icon">📅</span> Historial
       </a>
@@ -1791,6 +1794,10 @@ function confirmarAccion(opts) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
           Pedidos
           <span class="mc-nav-badge" id="mcnav-badge-pedidos">0</span>
+        </button>
+        <button class="mc-nav-item" id="mcnav-calendario" onclick="showPage('calendario',event);setMcNav('calendario')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendario
         </button>
         <button class="mc-nav-item" id="mcnav-historial" onclick="showPage('historial',event);setMcNav('historial')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1817,6 +1824,12 @@ function confirmarAccion(opts) {
           </div>
           <aside class="pd-side-panel" id="pdSidePanel" aria-hidden="true"></aside>
         </div>
+      </div>
+
+      <!-- CALENDARIO -->
+      <div class="page" id="page-calendario">
+        <div class="page-title">Calendario</div>
+        <div id="calendarioContainer"><div class="loading"><span class="spinner"></span>Cargando calendario…</div></div>
       </div>
 
       <!-- HISTORIAL -->
@@ -2571,6 +2584,7 @@ function showPage(name, e){
   if(e && e.currentTarget) e.currentTarget.classList.add('active');
   if(name==='historial') loadHistorial();
   if(name==='ganancias') loadGanancias();
+  if(name==='calendario') renderPaginaCalendario();
 }
 
 function setMcNav(name) {
@@ -2886,15 +2900,11 @@ function renderPedidos(){
   var mbadge = document.getElementById('mcnav-badge-pedidos');
   if(mbadge){ mbadge.textContent = mudanzasDisponibles.length; mbadge.classList.toggle('show', mudanzasDisponibles.length > 0); }
 
-  // Tabs header — incluye un tab Calendario aparte que muestra los pedidos
-  // del mudancero en formato calendario (mes desktop / semana mobile).
-  // Se cuenta como "trabajos a la vista": cotizados pendientes + aceptados.
-  var trabajosCalendario = enviados.length + aceptados.length;
+  // Tabs header
   var tabs = [
     { id:'disponibles', label:'Disponibles', count: mudanzasDisponibles.length, color:'var(--emerald)' },
     { id:'enviados',    label:'En espera',   count: enviados.length,             color:'var(--sky)' },
     { id:'aceptados',   label:'Aceptados',   count: aceptados.length,            color:'var(--emerald)' },
-    { id:'calendario',  label:'📅 Calendario', count: trabajosCalendario,        color:'var(--md-coral, #FF6B6B)' },
     { id:'expirados',   label:'Expirados',   count: expirados.length,            color:'#64748B' },
   ];
 
@@ -2941,14 +2951,6 @@ function renderPedidos(){
       contentHtml += '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">El cliente eligió otro mudancero o la publicación venció.</div>';
       expirados.forEach(function(m){ contentHtml += renderRowPedido(m, 'expirados'); });
     }
-  }
-  else if (_tabActiva === 'calendario') {
-    // El render del calendario se delega a renderCalendarioCompleto() que monta
-    // todo el HTML/CSS interactivo: cabecera con navegación, vista mes desktop,
-    // vista semana mobile y vista mensual mobile con dots. Lee los datos de
-    // enviados (cotizados pendientes), aceptados (confirmados) y los pinta por
-    // fecha + color según estado.
-    contentHtml = renderCalendarioCompleto(enviados, aceptados);
   }
 
   document.getElementById('pedidosList').innerHTML = tabsHtml + contentHtml;
@@ -3047,7 +3049,36 @@ function _calIndexarPorFecha(enviados, aceptados) {
   return idx;
 }
 
-// ── Render principal del calendario ────────────────────────────────────
+// ── Render top-level del calendario (sección propia, no tab) ──────────
+// Esta función se llama desde showPage('calendario'). Construye los datos
+// desde misCotizaciones igual que el switch de tabs, pero los renderiza
+// dentro de #calendarioContainer en su propia página.
+function renderPaginaCalendario() {
+  var container = document.getElementById('calendarioContainer');
+  if (!container) return;
+
+  // Si todavía no se cargaron los pedidos, mostrar loader y esperar
+  if (!Array.isArray(misCotizaciones)) {
+    container.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando calendario…</div>';
+    return;
+  }
+
+  // Particionar igual que en renderPedidos
+  var enviados  = misCotizaciones.filter(function(m){
+    var st = (m.estado || '').toLowerCase();
+    return st === 'buscando' || st === 'cotizado' || st === 'cotizada';
+  });
+  var aceptados = misCotizaciones.filter(function(m){
+    var st = (m.estado || '').toLowerCase();
+    return st === 'cotizacion_aceptada' || st === 'aceptada' ||
+           st === 'pagada' || st === 'pago_anticipo' ||
+           m.anticipoPagado === true;
+  });
+
+  container.innerHTML = renderCalendarioCompleto(enviados, aceptados);
+}
+
+// ── Render principal del calendario (HTML interno) ─────────────────────
 function renderCalendarioCompleto(enviados, aceptados) {
   var hayDatos = (enviados.length + aceptados.length) > 0;
   if (!hayDatos) {
@@ -3237,7 +3268,7 @@ function calNavegar(delta) {
     if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
     if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
   }
-  renderPedidos();
+  renderPaginaCalendario();
 }
 
 // ── Handler: ir a "Hoy" ────────────────────────────────────────────────
@@ -3251,13 +3282,13 @@ function calIrHoy() {
   d.setDate(d.getDate() + diff);
   d.setHours(0,0,0,0);
   _calWeekStart = d;
-  renderPedidos();
+  renderPaginaCalendario();
 }
 
 // ── Handler: cambiar entre vista semana/mes en mobile ──────────────────
 function calSetVistaMobile(vista) {
   _calViewMobile = vista;
-  renderPedidos();
+  renderPaginaCalendario();
 }
 
 // ── Handler: desde vista mes mobile, tap en día → ir a vista semana ───
@@ -3269,7 +3300,7 @@ function calIrASemanaDelDia(year, month, day) {
   d.setHours(0,0,0,0);
   _calWeekStart = d;
   _calViewMobile = 'semana';
-  renderPedidos();
+  renderPaginaCalendario();
 }
 
 // ── Handler: click en chip → abrir el detalle del pedido ───────────────
@@ -3300,15 +3331,17 @@ function calAbrirPedido(mudanzaId) {
     alert('No se encontró el pedido. Quizás expiró o cambió de estado.');
     return;
   }
-  // Cambiar al tab donde corresponde y seleccionar el pedido
-  // Importante: setTabPedidos re-renderiza, después llamamos seleccionarPedido
-  // con un pequeño delay para que la fila exista en el DOM.
+  // Como el calendario es una página propia, cuando el usuario hace click en un
+  // chip lo llevamos a la página de Pedidos en el tab correcto y le seleccionamos
+  // el pedido. Es la forma natural de "ir al detalle" sin duplicar el modal.
+  showPage('pedidos');
+  setMcNav('pedidos');
   setTabPedidos(tipoTab);
   setTimeout(function(){
     if (typeof seleccionarPedido === 'function') {
       seleccionarPedido(mudanzaId, tipoTab);
     }
-  }, 50);
+  }, 80);
 }
 
 // ── Handler: "+N más" → cambiar a vista semana con ese día ─────────────
