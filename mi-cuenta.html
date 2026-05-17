@@ -664,6 +664,224 @@ body.pd-panel-open .pd-list-col{flex:1.3}
   body.pd-panel-open::after{content:'';position:fixed;inset:0;background:rgba(15,25,35,.4);backdrop-filter:blur(2px);z-index:199}
   body.pd-panel-open .pd-list-col{flex:1}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CALENDARIO DE MUDANCEROS
+   Vista mensual desktop · Vista semanal mobile · Vista mensual mobile (dots)
+   Estados con color:
+     verde  = mudanza confirmada (pago realizado)
+     ámbar  = aceptada pero sin pago todavía
+     azul   = cotización pendiente (esperando respuesta del cliente)
+     gris   = trabajo completado / pasado
+   ═══════════════════════════════════════════════════════════════════ */
+.cal-wrap { padding: 4px 0 24px; }
+.cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+}
+.cal-title { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -.2px; text-transform: capitalize; }
+.cal-nav { display: flex; gap: 6px; align-items: center; }
+.cal-nav-btn {
+  width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text2);
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all .15s; font-family: inherit;
+}
+.cal-nav-btn:hover { background: var(--surface2); border-color: var(--text3); color: var(--text); }
+.cal-nav-today {
+  height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all .15s;
+}
+.cal-nav-today:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+.cal-view-toggle {
+  display: inline-flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+}
+.cal-view-toggle-btn {
+  padding: 7px 12px; border: none; background: var(--surface);
+  color: var(--text2); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: all .15s;
+}
+.cal-view-toggle-btn.active { background: var(--blue); color: #fff; }
+.cal-view-toggle-btn:not(.active):hover { background: var(--surface2); }
+
+/* Leyenda de colores */
+.cal-legend {
+  display: flex; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 14px;
+  padding: 10px 12px; background: var(--surface2); border-radius: 8px;
+  border: 1px solid var(--border); font-size: 11px; color: var(--text2);
+}
+.cal-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* ───── VISTA MES (desktop por default) ───── */
+.cal-month-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.cal-month-dow {
+  background: var(--surface2); color: var(--text3); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 6px;
+  text-align: center; border-bottom: 1px solid var(--border);
+}
+.cal-month-cell {
+  min-height: 110px; padding: 6px 4px 6px 6px;
+  border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: var(--surface); position: relative;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.cal-month-cell:nth-child(7n) { border-right: none; }
+.cal-month-cell.cal-other-month { background: var(--surface2); opacity: 0.55; }
+.cal-month-cell.cal-today { background: linear-gradient(0deg, rgba(26,111,255,0.06), transparent); }
+.cal-month-cell.cal-past { opacity: 0.65; }
+.cal-month-cell.cal-past.cal-today { opacity: 1; }
+.cal-month-daynum {
+  font-size: 12px; font-weight: 700; color: var(--text2);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; line-height: 1;
+}
+.cal-month-cell.cal-today .cal-month-daynum {
+  background: var(--blue); color: #fff;
+}
+
+/* Chip de evento (mudanza) en vista mes */
+.cal-event {
+  display: block; width: 100%; padding: 3px 6px 3px 8px;
+  border-radius: 5px; border-left: 3px solid;
+  background: var(--surface); cursor: pointer;
+  font-size: 11px; line-height: 1.3; color: var(--text);
+  border-top: 1px solid rgba(0,0,0,0.04); border-right: 1px solid rgba(0,0,0,0.04); border-bottom: 1px solid rgba(0,0,0,0.04);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: transform .12s, box-shadow .12s;
+  text-align: left; font-family: inherit;
+}
+.cal-event:hover { transform: translateX(1px); box-shadow: 0 2px 8px rgba(15,25,35,0.08); }
+.cal-event-hora { font-weight: 800; color: var(--text); font-family: var(--mono); font-size: 10.5px; }
+.cal-event-ruta { color: var(--text2); margin-left: 4px; }
+.cal-event-precio { display: none; }
+.cal-event.cal-st-pagada    { border-left-color: var(--emerald); background: rgba(34,195,106,0.06); }
+.cal-event.cal-st-aceptada  { border-left-color: #F59E0B; background: rgba(245,158,11,0.06); }
+.cal-event.cal-st-cotizada  { border-left-color: var(--blue);  background: rgba(26,111,255,0.06); }
+.cal-event.cal-st-completa  { border-left-color: #94A3B8; background: rgba(148,163,184,0.06); opacity: .7; }
+.cal-event-more {
+  font-size: 10px; color: var(--text3); padding: 1px 6px; cursor: pointer;
+  background: none; border: none; text-align: left; font-family: inherit;
+}
+
+/* ───── VISTA SEMANA (mobile por default) ───── */
+.cal-week-wrap { display: flex; flex-direction: column; gap: 10px; }
+.cal-week-day {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; transition: border-color .15s;
+}
+.cal-week-day.cal-today { border-color: var(--blue); background: linear-gradient(0deg, rgba(26,111,255,0.04), transparent); }
+.cal-week-day.cal-past { opacity: 0.6; }
+.cal-week-day.cal-past.cal-today { opacity: 1; }
+.cal-week-day-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 8px;
+}
+.cal-week-day-label {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.6px; font-family: var(--mono);
+}
+.cal-week-day.cal-today .cal-week-day-label { color: var(--blue); }
+.cal-week-day-num { font-size: 16px; font-weight: 800; color: var(--text); }
+.cal-week-empty { font-size: 12px; color: var(--text3); font-style: italic; padding: 4px 0; }
+
+/* Evento mobile - más grande y legible */
+.cal-event-mobile {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border-radius: 8px;
+  border-left: 3px solid; cursor: pointer;
+  background: var(--surface2);
+  margin-bottom: 6px; transition: transform .12s;
+  font-family: inherit; border-top: none; border-right: none; border-bottom: none;
+  width: 100%; text-align: left;
+}
+.cal-event-mobile:active { transform: scale(0.98); }
+.cal-event-mobile:last-child { margin-bottom: 0; }
+.cal-event-mobile.cal-st-pagada    { border-left-color: var(--emerald); background: rgba(34,195,106,0.08); }
+.cal-event-mobile.cal-st-aceptada  { border-left-color: #F59E0B; background: rgba(245,158,11,0.08); }
+.cal-event-mobile.cal-st-cotizada  { border-left-color: var(--blue);  background: rgba(26,111,255,0.08); }
+.cal-event-mobile.cal-st-completa  { border-left-color: #94A3B8; background: rgba(148,163,184,0.08); opacity: .7; }
+.cal-event-mobile-hora {
+  flex-shrink: 0; font-size: 13px; font-weight: 800;
+  color: var(--text); font-family: var(--mono); min-width: 44px;
+}
+.cal-event-mobile-info { flex: 1; min-width: 0; }
+.cal-event-mobile-ruta {
+  font-size: 13px; color: var(--text); font-weight: 600; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cal-event-mobile-meta {
+  font-size: 11px; color: var(--text2); margin-top: 2px;
+  font-family: var(--mono);
+}
+
+/* ───── VISTA MES MOBILE (con dots) ───── */
+.cal-month-grid-mobile {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+}
+.cal-month-mobile-dow {
+  background: var(--surface2); color: var(--text3); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; padding: 6px 2px; text-align: center;
+}
+.cal-month-mobile-cell {
+  min-height: 48px; background: var(--surface); padding: 4px 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  cursor: pointer; font-family: inherit; border: none;
+  position: relative;
+}
+.cal-month-mobile-cell.cal-other-month { opacity: 0.4; }
+.cal-month-mobile-cell.cal-today { background: rgba(26,111,255,0.08); }
+.cal-month-mobile-cell.cal-past { opacity: 0.6; }
+.cal-month-mobile-cell.cal-past.cal-today { opacity: 1; }
+.cal-month-mobile-daynum { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.cal-month-mobile-cell.cal-today .cal-month-mobile-daynum { color: var(--blue); }
+.cal-month-mobile-dots {
+  display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; max-width: 32px;
+}
+.cal-month-mobile-dot { width: 5px; height: 5px; border-radius: 50%; }
+.cal-month-mobile-dot.cal-st-pagada   { background: var(--emerald); }
+.cal-month-mobile-dot.cal-st-aceptada { background: #F59E0B; }
+.cal-month-mobile-dot.cal-st-cotizada { background: var(--blue); }
+.cal-month-mobile-dot.cal-st-completa { background: #94A3B8; }
+
+/* Empty state del calendario */
+.cal-empty {
+  background: var(--surface); border: 1px dashed var(--border); border-radius: 12px;
+  padding: 36px 24px; text-align: center;
+}
+.cal-empty-icon { font-size: 36px; margin-bottom: 8px; }
+.cal-empty-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.cal-empty-sub { font-size: 13px; color: var(--text2); line-height: 1.5; max-width: 360px; margin: 0 auto 12px; }
+.cal-empty-btn {
+  display: inline-block; padding: 9px 18px; background: var(--blue); color: #fff;
+  border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+  border: none; font-family: inherit;
+}
+
+/* ───── Responsive: ocultar vista desktop en mobile y viceversa ───── */
+.cal-view-desktop-month { display: block; }
+.cal-view-mobile-week { display: none; }
+.cal-view-mobile-month { display: none; }
+
+@media (max-width: 760px) {
+  .cal-view-desktop-month { display: none; }
+  .cal-view-mobile-week.is-active { display: flex; flex-direction: column; gap: 10px; }
+  .cal-view-mobile-month.is-active { display: block; }
+  .cal-view-toggle { order: 3; }
+  .cal-header { flex-wrap: wrap; }
+  .cal-month-cell { min-height: 80px; padding: 4px 3px; }
+  .cal-event { font-size: 10px; }
+  .cal-legend { gap: 8px 10px; font-size: 10px; padding: 8px 10px; }
+}
+@media (min-width: 761px) {
+  .cal-view-toggle { display: none; }  /* en desktop no hay toggle, siempre mes */
+}
 </style>
 </head>
 <body>
@@ -2668,11 +2886,15 @@ function renderPedidos(){
   var mbadge = document.getElementById('mcnav-badge-pedidos');
   if(mbadge){ mbadge.textContent = mudanzasDisponibles.length; mbadge.classList.toggle('show', mudanzasDisponibles.length > 0); }
 
-  // Tabs header
+  // Tabs header — incluye un tab Calendario aparte que muestra los pedidos
+  // del mudancero en formato calendario (mes desktop / semana mobile).
+  // Se cuenta como "trabajos a la vista": cotizados pendientes + aceptados.
+  var trabajosCalendario = enviados.length + aceptados.length;
   var tabs = [
     { id:'disponibles', label:'Disponibles', count: mudanzasDisponibles.length, color:'var(--emerald)' },
     { id:'enviados',    label:'En espera',   count: enviados.length,             color:'var(--sky)' },
     { id:'aceptados',   label:'Aceptados',   count: aceptados.length,            color:'var(--emerald)' },
+    { id:'calendario',  label:'📅 Calendario', count: trabajosCalendario,        color:'var(--md-coral, #FF6B6B)' },
     { id:'expirados',   label:'Expirados',   count: expirados.length,            color:'#64748B' },
   ];
 
@@ -2720,10 +2942,379 @@ function renderPedidos(){
       expirados.forEach(function(m){ contentHtml += renderRowPedido(m, 'expirados'); });
     }
   }
+  else if (_tabActiva === 'calendario') {
+    // El render del calendario se delega a renderCalendarioCompleto() que monta
+    // todo el HTML/CSS interactivo: cabecera con navegación, vista mes desktop,
+    // vista semana mobile y vista mensual mobile con dots. Lee los datos de
+    // enviados (cotizados pendientes), aceptados (confirmados) y los pinta por
+    // fecha + color según estado.
+    contentHtml = renderCalendarioCompleto(enviados, aceptados);
+  }
 
   document.getElementById('pedidosList').innerHTML = tabsHtml + contentHtml;
   // Restaurar selección si la había
   setTimeout(restaurarPedidoSeleccionado, 0);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CALENDARIO DE MUDANCEROS
+// ════════════════════════════════════════════════════════════════════
+// Estado interno del calendario: año/mes que se está viendo + vista mobile
+// (semana/mes). El año/mes empieza en "hoy" pero el usuario puede navegar.
+var _calYear  = new Date().getFullYear();
+var _calMonth = new Date().getMonth(); // 0-11
+// Para vista semanal mobile: anchor en lunes de la semana actual
+var _calWeekStart = (function() {
+  var d = new Date();
+  var dow = d.getDay(); // 0=dom, 1=lun, ...
+  var diff = (dow === 0 ? -6 : 1 - dow); // movemos al lunes
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+})();
+var _calViewMobile = 'semana'; // 'semana' o 'mes' — solo aplica en mobile
+
+// ── Helper: determinar el estado visual de la mudanza ────────────────
+// Devuelve uno de: 'pagada' (confirmada con pago), 'aceptada' (cliente
+// aceptó pero no pagó), 'cotizada' (esperando respuesta), 'completa' (ya
+// se hizo el trabajo). El estado se mapea a color del chip.
+function _calEstadoVisual(m) {
+  if (!m) return 'cotizada';
+  var st = (m.estado || '').toLowerCase();
+  if (st === 'completada' || st === 'finalizada' || st === 'cerrada') return 'completa';
+  if (m.anticipo_pagado === true || m.anticipoPagado === true || st === 'pagada' || st === 'pago_anticipo') return 'pagada';
+  if (st === 'aceptada' || st === 'cotizacion_aceptada') return 'aceptada';
+  return 'cotizada';
+}
+
+// ── Helper: parsear fecha de la mudanza a Date ────────────────────────
+// El campo m.fecha puede venir como "2026-05-19" o "2026-05-19T10:00:00".
+// Devuelve un objeto Date o null si no se puede parsear.
+function _calParsearFecha(m) {
+  if (!m || !m.fecha) return null;
+  var s = String(m.fecha).split('T')[0];
+  var mm = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!mm) return null;
+  return new Date(parseInt(mm[1]), parseInt(mm[2]) - 1, parseInt(mm[3]));
+}
+
+// ── Helper: formatear hora "HH:MM" para mostrar ────────────────────────
+function _calFmtHora(m) {
+  return (m && m.horaOrigen) ? m.horaOrigen + 'h' : '';
+}
+
+// ── Helper: ruta compacta "Belgrano → Vicente López" ───────────────────
+function _calFmtRuta(m) {
+  function corto(dir) {
+    if (!dir) return '—';
+    // Tomar primera parte antes de coma, máx 18 chars
+    var primero = String(dir).split(',')[0].trim();
+    return primero.length > 18 ? primero.slice(0, 17) + '…' : primero;
+  }
+  return corto(m.desde) + ' → ' + corto(m.hasta);
+}
+
+// ── Helper: formatear precio del mudancero ────────────────────────────
+function _calFmtPrecio(m) {
+  // Buscamos el precio que cotizó este mudancero (cot.precio) o el aceptado
+  var p = (m.cotizacionAceptada && m.cotizacionAceptada.precio) ||
+          (m.miCotizacion && m.miCotizacion.precio) || 0;
+  if (!p) return '';
+  return '$ ' + parseInt(p).toLocaleString('es-AR');
+}
+
+// ── Construye índice {YYYY-MM-DD: [mudanzas]} ─────────────────────────
+// Combina enviados + aceptados, indexa por fecha del trabajo. Las mudanzas
+// sin fecha parseable quedan fuera del calendario (no rompemos nada).
+function _calIndexarPorFecha(enviados, aceptados) {
+  var idx = {};
+  function add(m) {
+    var d = _calParsearFecha(m);
+    if (!d) return;
+    var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    if (!idx[key]) idx[key] = [];
+    idx[key].push(m);
+  }
+  (enviados || []).forEach(add);
+  (aceptados || []).forEach(add);
+  // Ordenar cada día por hora (los sin hora al final)
+  Object.keys(idx).forEach(function(k) {
+    idx[k].sort(function(a,b){
+      var ha = (a.horaOrigen || 'zz'), hb = (b.horaOrigen || 'zz');
+      return ha.localeCompare(hb);
+    });
+  });
+  return idx;
+}
+
+// ── Render principal del calendario ────────────────────────────────────
+function renderCalendarioCompleto(enviados, aceptados) {
+  var hayDatos = (enviados.length + aceptados.length) > 0;
+  if (!hayDatos) {
+    return '<div class="cal-wrap"><div class="cal-empty">'
+      + '<div class="cal-empty-icon">📅</div>'
+      + '<div class="cal-empty-title">No tenés trabajos agendados</div>'
+      + '<div class="cal-empty-sub">Cuando aceptes cotizaciones o el cliente acepte alguna de las tuyas, vas a verlas acá organizadas por fecha.</div>'
+      + '<button class="cal-empty-btn" onclick="setTabPedidos(\'disponibles\')">Ver pedidos disponibles →</button>'
+      + '</div></div>';
+  }
+
+  // Guardamos el índice en window para que los event handlers de navegación
+  // puedan acceder sin re-pasar parámetros.
+  window._calIndex = _calIndexarPorFecha(enviados, aceptados);
+
+  // Header: título del mes + navegación + leyenda + toggle mobile
+  var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var titulo = (_calViewMobile === 'semana' && window.innerWidth <= 760)
+    ? _calTituloSemana()
+    : meses[_calMonth] + ' ' + _calYear;
+
+  var header = '<div class="cal-header">'
+    + '<div class="cal-title">' + titulo + '</div>'
+    + '<div class="cal-nav">'
+    +   '<button class="cal-nav-btn" onclick="calNavegar(-1)" aria-label="Anterior">‹</button>'
+    +   '<button class="cal-nav-today" onclick="calIrHoy()">Hoy</button>'
+    +   '<button class="cal-nav-btn" onclick="calNavegar(1)" aria-label="Siguiente">›</button>'
+    + '</div>'
+    + '<div class="cal-view-toggle">'
+    +   '<button class="cal-view-toggle-btn ' + (_calViewMobile === 'semana' ? 'active' : '') + '" onclick="calSetVistaMobile(\'semana\')">Semana</button>'
+    +   '<button class="cal-view-toggle-btn ' + (_calViewMobile === 'mes' ? 'active' : '') + '" onclick="calSetVistaMobile(\'mes\')">Mes</button>'
+    + '</div>'
+    + '</div>';
+
+  // Leyenda
+  var legend = '<div class="cal-legend">'
+    + '<span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--emerald)"></span>Confirmada con pago</span>'
+    + '<span class="cal-legend-item"><span class="cal-legend-dot" style="background:#F59E0B"></span>Aceptada sin pago</span>'
+    + '<span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--blue)"></span>Cotización pendiente</span>'
+    + '<span class="cal-legend-item"><span class="cal-legend-dot" style="background:#94A3B8"></span>Completada</span>'
+    + '</div>';
+
+  // Tres vistas (CSS decide cuál mostrar según viewport)
+  var vistaDesktopMes = _calRenderVistaMes('desktop');
+  var vistaMobileSemana = _calRenderVistaSemana();
+  var vistaMobileMes = _calRenderVistaMes('mobile');
+
+  return '<div class="cal-wrap">' + header + legend
+    + '<div class="cal-view-desktop-month">' + vistaDesktopMes + '</div>'
+    + '<div class="cal-view-mobile-week ' + (_calViewMobile === 'semana' ? 'is-active' : '') + '">' + vistaMobileSemana + '</div>'
+    + '<div class="cal-view-mobile-month ' + (_calViewMobile === 'mes' ? 'is-active' : '') + '">' + vistaMobileMes + '</div>'
+    + '</div>';
+}
+
+// ── Título de la semana (mobile) ──────────────────────────────────────
+function _calTituloSemana() {
+  var fin = new Date(_calWeekStart);
+  fin.setDate(fin.getDate() + 6);
+  var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var d1 = _calWeekStart.getDate();
+  var m1 = meses[_calWeekStart.getMonth()];
+  var d2 = fin.getDate();
+  var m2 = meses[fin.getMonth()];
+  if (m1 === m2) return d1 + '–' + d2 + ' ' + m1 + ' ' + fin.getFullYear();
+  return d1 + ' ' + m1 + ' – ' + d2 + ' ' + m2 + ' ' + fin.getFullYear();
+}
+
+// ── Render vista mensual (desktop o mobile-dots) ──────────────────────
+function _calRenderVistaMes(modo) {
+  // Calcular primer día de la grilla (lunes anterior o igual al día 1 del mes)
+  var primero = new Date(_calYear, _calMonth, 1);
+  var dow = primero.getDay(); // 0=dom...6=sab
+  var offset = (dow === 0 ? 6 : dow - 1); // queremos lunes como columna 1
+  var inicio = new Date(_calYear, _calMonth, 1 - offset);
+  // 6 filas × 7 columnas = 42 celdas
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var dows = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+  var headerDows = dows.map(function(d){
+    return '<div class="cal-month-dow' + (modo === 'mobile' ? ' cal-month-mobile-dow' : '') + '">' + d + '</div>';
+  }).join('');
+
+  var celdasHtml = '';
+  for (var i = 0; i < 42; i++) {
+    var d = new Date(inicio); d.setDate(inicio.getDate() + i);
+    var esOtroMes = d.getMonth() !== _calMonth;
+    var esHoy = d.getTime() === hoy.getTime();
+    var esPasado = d.getTime() < hoy.getTime();
+    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    var eventos = (window._calIndex && window._calIndex[key]) || [];
+
+    if (modo === 'mobile') {
+      // Vista mobile mensual: dots indicando cantidad y estado
+      var dots = '';
+      var maxDots = 4; // máximo de dots visibles
+      eventos.slice(0, maxDots).forEach(function(m) {
+        dots += '<span class="cal-month-mobile-dot cal-st-' + _calEstadoVisual(m) + '"></span>';
+      });
+      if (eventos.length > maxDots) {
+        dots += '<span class="cal-month-mobile-dot" style="background:var(--text3)"></span>';
+      }
+      celdasHtml += '<button class="cal-month-mobile-cell' +
+        (esOtroMes ? ' cal-other-month' : '') +
+        (esHoy ? ' cal-today' : '') +
+        (esPasado ? ' cal-past' : '') +
+        '" onclick="calIrASemanaDelDia(' + d.getFullYear() + ',' + d.getMonth() + ',' + d.getDate() + ')">' +
+        '<div class="cal-month-mobile-daynum">' + d.getDate() + '</div>' +
+        '<div class="cal-month-mobile-dots">' + dots + '</div>' +
+        '</button>';
+    } else {
+      // Vista desktop mensual: chips de eventos
+      var eventosHtml = '';
+      var maxEventos = 3; // antes de mostrar "+N más"
+      eventos.slice(0, maxEventos).forEach(function(m) {
+        var estado = _calEstadoVisual(m);
+        eventosHtml += '<button class="cal-event cal-st-' + estado + '" onclick="calAbrirPedido(\'' + (m.id || '').replace(/'/g,"\\'") + '\')" title="' + _calFmtRuta(m).replace(/"/g,'&quot;') + (_calFmtPrecio(m) ? ' · ' + _calFmtPrecio(m) : '') + '">' +
+          (m.horaOrigen ? '<span class="cal-event-hora">' + m.horaOrigen + '</span> ' : '') +
+          '<span class="cal-event-ruta">' + _calFmtRuta(m) + '</span>' +
+          '</button>';
+      });
+      if (eventos.length > maxEventos) {
+        var extra = eventos.length - maxEventos;
+        eventosHtml += '<button class="cal-event-more" onclick="calAbrirDiaCompleto(\'' + key + '\')">+ ' + extra + ' más</button>';
+      }
+      celdasHtml += '<div class="cal-month-cell' +
+        (esOtroMes ? ' cal-other-month' : '') +
+        (esHoy ? ' cal-today' : '') +
+        (esPasado ? ' cal-past' : '') +
+        '"><div class="cal-month-daynum">' + d.getDate() + '</div>' + eventosHtml + '</div>';
+    }
+  }
+
+  var gridClass = modo === 'mobile' ? 'cal-month-grid-mobile' : 'cal-month-grid';
+  return '<div class="' + gridClass + '">' + headerDows + celdasHtml + '</div>';
+}
+
+// ── Render vista semanal mobile ────────────────────────────────────────
+function _calRenderVistaSemana() {
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var dows = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var html = '';
+
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(_calWeekStart); d.setDate(_calWeekStart.getDate() + i);
+    var esHoy = d.getTime() === hoy.getTime();
+    var esPasado = d.getTime() < hoy.getTime();
+    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    var eventos = (window._calIndex && window._calIndex[key]) || [];
+
+    var eventosHtml = '';
+    if (eventos.length === 0) {
+      eventosHtml = '<div class="cal-week-empty">Sin trabajos este día</div>';
+    } else {
+      eventos.forEach(function(m) {
+        var estado = _calEstadoVisual(m);
+        var precio = _calFmtPrecio(m);
+        eventosHtml += '<button class="cal-event-mobile cal-st-' + estado + '" onclick="calAbrirPedido(\'' + (m.id || '').replace(/'/g,"\\'") + '\')">' +
+          '<div class="cal-event-mobile-hora">' + (m.horaOrigen || '—') + '</div>' +
+          '<div class="cal-event-mobile-info">' +
+            '<div class="cal-event-mobile-ruta">' + _calFmtRuta(m) + '</div>' +
+            (precio ? '<div class="cal-event-mobile-meta">' + precio + (m.ambientes ? ' · ' + m.ambientes : '') + '</div>' : (m.ambientes ? '<div class="cal-event-mobile-meta">' + m.ambientes + '</div>' : '')) +
+          '</div>' +
+          '</button>';
+      });
+    }
+
+    html += '<div class="cal-week-day' + (esHoy ? ' cal-today' : '') + (esPasado ? ' cal-past' : '') + '">' +
+      '<div class="cal-week-day-head">' +
+        '<span class="cal-week-day-label">' + dows[i] + (esHoy ? ' · HOY' : '') + '</span>' +
+        '<span class="cal-week-day-num">' + d.getDate() + ' ' + meses[d.getMonth()] + '</span>' +
+      '</div>' +
+      eventosHtml +
+      '</div>';
+  }
+  return html;
+}
+
+// ── Handler: navegar mes/semana atrás (-1) o adelante (+1) ─────────────
+function calNavegar(delta) {
+  if (_calViewMobile === 'semana' && window.innerWidth <= 760) {
+    var d = new Date(_calWeekStart);
+    d.setDate(d.getDate() + 7 * delta);
+    _calWeekStart = d;
+  } else {
+    _calMonth += delta;
+    if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+    if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+  }
+  renderPedidos();
+}
+
+// ── Handler: ir a "Hoy" ────────────────────────────────────────────────
+function calIrHoy() {
+  var h = new Date();
+  _calYear = h.getFullYear();
+  _calMonth = h.getMonth();
+  var d = new Date(h);
+  var dow = d.getDay();
+  var diff = (dow === 0 ? -6 : 1 - dow);
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  _calWeekStart = d;
+  renderPedidos();
+}
+
+// ── Handler: cambiar entre vista semana/mes en mobile ──────────────────
+function calSetVistaMobile(vista) {
+  _calViewMobile = vista;
+  renderPedidos();
+}
+
+// ── Handler: desde vista mes mobile, tap en día → ir a vista semana ───
+function calIrASemanaDelDia(year, month, day) {
+  var d = new Date(year, month, day);
+  var dow = d.getDay();
+  var diff = (dow === 0 ? -6 : 1 - dow);
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  _calWeekStart = d;
+  _calViewMobile = 'semana';
+  renderPedidos();
+}
+
+// ── Handler: click en chip → abrir el detalle del pedido ───────────────
+// Reutiliza seleccionarPedido() que ya existe, infiriendo el tipo (enviados,
+// aceptados, etc) según en qué array está el pedido. Si la mudanza está en
+// otro tab que no es Calendario, cambiamos el tab antes para que el modal
+// de detalle aparezca correctamente en su contexto natural.
+function calAbrirPedido(mudanzaId) {
+  if (!mudanzaId) return;
+  // Buscar en misCotizaciones (donde están enviados+aceptados+expirados)
+  var m = (misCotizaciones || []).find(function(x){ return x.id === mudanzaId; });
+  var tipoTab;
+  if (m) {
+    var st = (m.estado || '').toLowerCase();
+    if (st === 'cotizacion_aceptada' || st === 'aceptada' || st === 'pagada' || st === 'pago_anticipo' || m.anticipoPagado === true) {
+      tipoTab = 'aceptados';
+    } else if (st === 'buscando' || st === 'cotizado' || st === 'cotizada') {
+      tipoTab = 'enviados';
+    } else {
+      tipoTab = 'expirados';
+    }
+  } else {
+    // Fallback: chequear en disponibles
+    m = (mudanzasDisponibles || []).find(function(x){ return x.id === mudanzaId; });
+    if (m) tipoTab = 'disponibles';
+  }
+  if (!m) {
+    alert('No se encontró el pedido. Quizás expiró o cambió de estado.');
+    return;
+  }
+  // Cambiar al tab donde corresponde y seleccionar el pedido
+  // Importante: setTabPedidos re-renderiza, después llamamos seleccionarPedido
+  // con un pequeño delay para que la fila exista en el DOM.
+  setTabPedidos(tipoTab);
+  setTimeout(function(){
+    if (typeof seleccionarPedido === 'function') {
+      seleccionarPedido(mudanzaId, tipoTab);
+    }
+  }, 50);
+}
+
+// ── Handler: "+N más" → cambiar a vista semana con ese día ─────────────
+function calAbrirDiaCompleto(fechaKey) {
+  var parts = fechaKey.split('-');
+  calIrASemanaDelDia(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
 }
 
 // ── Fila compacta CRM ──
