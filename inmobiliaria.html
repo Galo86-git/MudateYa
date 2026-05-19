@@ -163,6 +163,56 @@
   .ac-item::before { content: '📍'; font-size: 13px; opacity: 0.6; }
   .ac-item:hover, .ac-item.kb { background: var(--md-coral-soft); color: var(--md-coral-dark); }
 
+  /* Altura inline (cuando la sugerencia elegida no incluye número) */
+  .altura-inline {
+    display: none;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: var(--md-coral-soft);
+    border: 1.5px solid var(--md-coral);
+    border-radius: 10px;
+    animation: alturaSlide 0.18s ease-out;
+  }
+  .altura-inline.show { display: block; }
+  .altura-inline-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--md-coral-dark);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .altura-inline-label::before { content: '🔢'; font-size: 13px; }
+  .altura-inline-row { display: flex; gap: 8px; align-items: stretch; }
+  .altura-inline input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1.5px solid var(--md-border-2);
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    background: var(--md-bg-card);
+    color: var(--md-text);
+  }
+  .altura-inline input:focus { outline: none; border-color: var(--md-coral); box-shadow: 0 0 0 3px rgba(255,107,107,0.15); }
+  .altura-inline-btn {
+    padding: 0 16px;
+    background: var(--md-coral);
+    color: var(--md-bg-card);
+    border: none;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .altura-inline-btn:hover { background: var(--md-coral-dark); }
+  .altura-inline-hint { font-size: 11px; color: var(--md-text-2); margin-top: 6px; }
+  @keyframes alturaSlide { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
   /* CTA principal */
   .cta-row { text-align: center; margin: 8px 0 28px; }
   .btn-primary {
@@ -568,12 +618,28 @@
         <label class="field-label" for="input-desde">Desde · ¿De dónde te mudás? *</label>
         <input id="input-desde" class="field-input loading" type="text" placeholder="Cargando..." autocomplete="off" disabled/>
         <ul class="ac-dd" id="ac-desde"></ul>
+        <div class="altura-inline" id="alt-desde">
+          <div class="altura-inline-label">Necesitamos la altura de la calle</div>
+          <div class="altura-inline-row">
+            <input type="text" id="alt-desde-input" placeholder="Ej: 1234" inputmode="numeric" maxlength="6"/>
+            <button type="button" class="altura-inline-btn" onclick="confirmarAltura('desde')">Confirmar</button>
+          </div>
+          <div class="altura-inline-hint" id="alt-desde-hint">Completá el número para continuar.</div>
+        </div>
       </div>
 
       <div class="field" id="fieldHasta">
         <label class="field-label" for="input-hasta">Hacia · Tu nuevo hogar *</label>
         <input id="input-hasta" class="field-input loading" type="text" placeholder="Cargando..." autocomplete="off" disabled/>
         <ul class="ac-dd" id="ac-hasta"></ul>
+        <div class="altura-inline" id="alt-hasta">
+          <div class="altura-inline-label">Necesitamos la altura de la calle</div>
+          <div class="altura-inline-row">
+            <input type="text" id="alt-hasta-input" placeholder="Ej: 4500" inputmode="numeric" maxlength="6"/>
+            <button type="button" class="altura-inline-btn" onclick="confirmarAltura('hasta')">Confirmar</button>
+          </div>
+          <div class="altura-inline-hint" id="alt-hasta-hint">Completá el número para continuar.</div>
+        </div>
       </div>
 
       <div class="field-row">
@@ -1022,6 +1088,79 @@ function cambiarAmb(delta) {
 // ════════════════════════════════════════════════════════════
 // Google Maps Autocomplete
 // ════════════════════════════════════════════════════════════
+// Detecta si una dirección tiene altura numérica en la parte de calle.
+// Acepta: "Av. Cabildo 1234, Belgrano, CABA" → true
+// Rechaza: "Av. Cabildo, Belgrano, CABA" → false
+// Rechaza: "Belgrano, CABA" → false (solo barrio/ciudad)
+function _direccionTieneAltura(str) {
+  if (!str) return false;
+  var partes = str.split(',');
+  if (!partes.length) return false;
+  var calle = partes[0]; // primera coma es la calle + altura
+  // Buscar un número de 1-6 dígitos en la parte de la calle
+  return /\b\d{1,6}\b/.test(calle);
+}
+
+// Mapea inputId → alturaContainerId (para mostrar el sub-campo correcto)
+var _altMap = {
+  'input-desde': { lado: 'desde', cont: 'alt-desde', inp: 'alt-desde-input', hint: 'alt-desde-hint' },
+  'input-hasta': { lado: 'hasta', cont: 'alt-hasta', inp: 'alt-hasta-input', hint: 'alt-hasta-hint' }
+};
+
+// Guarda la dirección sin altura mientras esperamos que el cliente la complete
+var _sinAltura = { desde: '', hasta: '' };
+
+function _abrirAltura(lado, direccionSinAltura) {
+  var info = _altMap['input-' + lado];
+  if (!info) return;
+  _sinAltura[lado] = direccionSinAltura;
+  var cont = document.getElementById(info.cont);
+  var inp = document.getElementById(info.inp);
+  var hint = document.getElementById(info.hint);
+  if (cont) cont.classList.add('show');
+  if (hint) hint.textContent = 'Completá el número para continuar.';
+  if (inp) {
+    inp.value = '';
+    inp.style.borderColor = '';
+    setTimeout(function(){ inp.focus(); }, 50);
+  }
+}
+
+function _cerrarAltura(lado) {
+  var info = _altMap['input-' + lado];
+  if (!info) return;
+  var cont = document.getElementById(info.cont);
+  if (cont) cont.classList.remove('show');
+  _sinAltura[lado] = '';
+}
+
+function confirmarAltura(lado) {
+  var info = _altMap['input-' + lado];
+  if (!info) return;
+  var inp = document.getElementById(info.inp);
+  var hint = document.getElementById(info.hint);
+  var num = (inp.value || '').replace(/\D/g, '').trim();
+  if (!num) {
+    if (inp) inp.style.borderColor = '#DC2626';
+    if (hint) { hint.textContent = 'Ingresá la altura (solo números).'; hint.style.color = '#DC2626'; }
+    if (inp) inp.focus();
+    return;
+  }
+  var direccionBase = _sinAltura[lado];
+  if (!direccionBase) {
+    // Fallback: si por algún motivo no quedó la base, tomar lo que esté en el input
+    direccionBase = (document.getElementById('input-' + lado).value || '').trim();
+  }
+  // Insertar el número después de la primera parte (calle), antes de la primera coma
+  var partes = direccionBase.split(',');
+  var calle = (partes[0] || '').trim();
+  var resto = partes.slice(1).join(',').trim();
+  var nuevaDir = calle + ' ' + num + (resto ? ', ' + resto : '');
+  var inputPrincipal = document.getElementById('input-' + lado);
+  if (inputPrincipal) inputPrincipal.value = nuevaDir;
+  _cerrarAltura(lado);
+}
+
 function makeAC(inputId, ddId) {
   var input = document.getElementById(inputId);
   var dd = document.getElementById(ddId);
@@ -1030,6 +1169,9 @@ function makeAC(inputId, ddId) {
   input.addEventListener('input', function() {
     clearTimeout(deb);
     var q = this.value.trim();
+    // Si el cliente vuelve a tipear, cerramos el sub-campo altura si estaba abierto
+    var infoLado = _altMap[inputId];
+    if (infoLado) _cerrarAltura(infoLado.lado);
     if (q.length < 2) { dd.classList.remove('open'); return; }
     deb = setTimeout(function() {
       new google.maps.places.AutocompleteService().getPlacePredictions(
@@ -1041,8 +1183,20 @@ function makeAC(inputId, ddId) {
             var li = document.createElement('li');
             li.className = 'ac-item';
             li.textContent = s.description;
-            li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
-            li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); });
+            var elegir = function(e) {
+              e.preventDefault();
+              input.value = s.description;
+              dd.classList.remove('open');
+              // Si la sugerencia no incluye altura, abrir el sub-campo
+              var info = _altMap[inputId];
+              if (info && !_direccionTieneAltura(s.description)) {
+                _abrirAltura(info.lado, s.description);
+              } else if (info) {
+                _cerrarAltura(info.lado);
+              }
+            };
+            li.addEventListener('mousedown', elegir);
+            li.addEventListener('touchend', elegir);
             dd.appendChild(li);
           });
           dd.classList.add('open');
@@ -1073,6 +1227,23 @@ function _onGmapsReady() {
   });
   makeAC('input-desde', 'ac-desde');
   makeAC('input-hasta', 'ac-hasta');
+  // Enter en el input de altura → confirmar
+  ['desde','hasta'].forEach(function(lado) {
+    var inp = document.getElementById('alt-' + lado + '-input');
+    if (inp) {
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); confirmarAltura(lado); }
+      });
+      // Solo aceptar dígitos
+      inp.addEventListener('input', function() {
+        var clean = (this.value || '').replace(/\D/g, '');
+        if (clean !== this.value) this.value = clean;
+        this.style.borderColor = '';
+        var hint = document.getElementById('alt-' + lado + '-hint');
+        if (hint) { hint.textContent = 'Completá el número para continuar.'; hint.style.color = ''; }
+      });
+    }
+  });
 }
 if (window._gmapsReady) _onGmapsReady();
 else window._gmapsCallbacks.push(_onGmapsReady);
@@ -1102,7 +1273,19 @@ function buscar() {
   var fecha = document.getElementById('input-fecha').value;
 
   if (!desde) { alert('Por favor ingresá la dirección desde donde te mudás.'); document.getElementById('input-desde').focus(); return; }
+  if (!_direccionTieneAltura(desde)) {
+    var info = _altMap['input-desde'];
+    if (info) _abrirAltura(info.lado, desde);
+    alert('Por favor ingresá la altura (número) de la calle de origen.');
+    return;
+  }
   if (!hasta) { alert('Por favor ingresá la dirección hacia donde te mudás.'); document.getElementById('input-hasta').focus(); return; }
+  if (!_direccionTieneAltura(hasta)) {
+    var info2 = _altMap['input-hasta'];
+    if (info2) _abrirAltura(info2.lado, hasta);
+    alert('Por favor ingresá la altura (número) de la calle de destino.');
+    return;
+  }
   if (!fecha) { alert('Por favor seleccioná una fecha estimada.'); return; }
 
   // Nota: piso/depto/ascensor antes se cargaban acá. Ahora se piden solo en el
