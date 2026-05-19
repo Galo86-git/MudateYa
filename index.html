@@ -207,6 +207,33 @@
   .fecha-chip:hover{border-color:var(--blue);color:var(--blue)}
   .fecha-chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
 
+  /* Popover altura — aparece anclado al segment cuando la dirección elegida no incluye número */
+  .altura-pop{
+    display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;
+    background:#fff;border:1.5px solid var(--blue);border-radius:var(--r2);
+    padding:12px;z-index:400;box-shadow:var(--shadow-lg);min-width:240px;
+  }
+  .altura-pop.open{display:block}
+  .altura-pop-label{
+    font-size:12px;font-weight:700;color:var(--blue-dark);
+    margin-bottom:8px;display:flex;align-items:center;gap:6px;
+  }
+  .altura-pop-label::before{content:'🔢';font-size:13px}
+  .altura-pop-row{display:flex;gap:6px;align-items:stretch}
+  .altura-pop input{
+    flex:1;padding:9px 11px;border:1.5px solid var(--border2);
+    border-radius:8px;font-size:14px;font-weight:600;
+    font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none;
+  }
+  .altura-pop input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-mid)}
+  .altura-pop-btn{
+    padding:0 14px;background:var(--blue);color:#fff;
+    border:none;border-radius:8px;font-size:13px;font-weight:700;
+    font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;
+  }
+  .altura-pop-btn:hover{background:var(--blue-dark)}
+  .altura-pop-hint{font-size:11px;color:var(--text2);margin-top:6px}
+
   /* Objetos (flete) */
   .obj-row{padding:.7rem 1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .obj-chip{
@@ -992,6 +1019,64 @@
     inp.focus();
   }
 
+  // ── Altura inline (cuando la sugerencia elegida no incluye número) ──
+  // Detecta si la primera parte (calle) de la dirección incluye altura numérica.
+  function _direccionTieneAltura(str) {
+    if (!str) return false;
+    var partes = str.split(',');
+    if (!partes.length) return false;
+    return /\b\d{1,6}\b/.test(partes[0]);
+  }
+  var _sinAltura = {};
+  function _abrirAltura(inputId, direccionSinAltura) {
+    _sinAltura[inputId] = direccionSinAltura;
+    var pop = document.getElementById('alt-pop-' + inputId);
+    var inp = document.getElementById('alt-input-' + inputId);
+    var hint = document.getElementById('alt-hint-' + inputId);
+    // Cerrar otros popovers de altura
+    document.querySelectorAll('.altura-pop.open').forEach(function(p){ p.classList.remove('open'); });
+    if (pop) pop.classList.add('open');
+    if (hint) { hint.textContent = 'Completá el número para continuar.'; hint.style.color = ''; }
+    if (inp) {
+      inp.value = '';
+      inp.style.borderColor = '';
+      setTimeout(function(){ inp.focus(); }, 50);
+    }
+  }
+  function _cerrarAltura(inputId) {
+    var pop = document.getElementById('alt-pop-' + inputId);
+    if (pop) pop.classList.remove('open');
+    _sinAltura[inputId] = '';
+  }
+  function confirmarAltura(inputId) {
+    var inp = document.getElementById('alt-input-' + inputId);
+    var hint = document.getElementById('alt-hint-' + inputId);
+    var num = (inp && inp.value ? inp.value : '').replace(/\D/g, '').trim();
+    if (!num) {
+      if (inp) inp.style.borderColor = '#DC2626';
+      if (hint) { hint.textContent = 'Ingresá la altura (solo números).'; hint.style.color = '#DC2626'; }
+      if (inp) inp.focus();
+      return;
+    }
+    var direccionBase = _sinAltura[inputId];
+    if (!direccionBase) {
+      direccionBase = (document.getElementById(inputId).value || '').trim();
+    }
+    var partes = direccionBase.split(',');
+    var calle = (partes[0] || '').trim();
+    var resto = partes.slice(1).join(',').trim();
+    var nuevaDir = calle + ' ' + num + (resto ? ', ' + resto : '');
+    var inputPrincipal = document.getElementById(inputId);
+    if (inputPrincipal) {
+      inputPrincipal.value = nuevaDir;
+      _validAddr[inputId] = true;
+      inputPrincipal.style.border = '';
+      inputPrincipal.style.background = '';
+      try { localStorage.setItem('mya_addr_' + inputId, nuevaDir); } catch(ex){}
+    }
+    _cerrarAltura(inputId);
+  }
+
   function makeAC(inputId, ddId) {
     var input = document.getElementById(inputId);
     var dd = document.getElementById(ddId);
@@ -1000,6 +1085,7 @@
     input.addEventListener('input', function() {
       clearTimeout(deb);
       _validAddr[inputId] = false; // invalidar al escribir manualmente
+      _cerrarAltura(inputId); // si vuelve a tipear, cerrar popover de altura
       var q = this.value.trim();
       if (q.length < 2) { dd.classList.remove('open'); return; }
       deb = setTimeout(function() {
@@ -1012,8 +1098,23 @@
               var li = document.createElement('li');
               li.className = 'ac-item';
               li.textContent = s.description;
-              li.addEventListener('mousedown', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; try{localStorage.setItem('mya_addr_'+inputId, s.description);}catch(ex){} });
-              li.addEventListener('touchend', function(e){ e.preventDefault(); input.value = s.description; dd.classList.remove('open'); _validAddr[inputId] = true; input.style.border=''; input.style.background=''; try{localStorage.setItem('mya_addr_'+inputId, s.description);}catch(ex){} });
+              var elegir = function(e){
+                e.preventDefault();
+                input.value = s.description;
+                dd.classList.remove('open');
+                _validAddr[inputId] = true;
+                input.style.border='';
+                input.style.background='';
+                try { localStorage.setItem('mya_addr_'+inputId, s.description); } catch(ex){}
+                // Si la sugerencia no incluye altura → abrir popover
+                if (!_direccionTieneAltura(s.description)) {
+                  _abrirAltura(inputId, s.description);
+                } else {
+                  _cerrarAltura(inputId);
+                }
+              };
+              li.addEventListener('mousedown', elegir);
+              li.addEventListener('touchend', elegir);
               dd.appendChild(li);
             });
             dd.classList.add('open');
@@ -1040,15 +1141,21 @@
           input.style.border=''; input.style.background='';
           // Guardar en localStorage
           try { localStorage.setItem('mya_addr_' + inputId, input.value); } catch(ex){}
-          // Mover foco al siguiente input
-          var nextId = {
-            'input-desde': 'input-hasta',
-            'input-hasta': 'input-desde',
-            'input-flete-desde': 'input-flete-hasta',
-            'input-flete-hasta': 'input-flete-desde'
-          }[inputId];
-          var nextEl = nextId ? document.getElementById(nextId) : null;
-          if (nextEl) { setTimeout(function(){ nextEl.focus(); }, 50); }
+          // Si esta sugerencia no incluye altura → abrir popover y NO mover foco
+          if (!_direccionTieneAltura(input.value)) {
+            _abrirAltura(inputId, input.value);
+          } else {
+            _cerrarAltura(inputId);
+            // Mover foco al siguiente input
+            var nextId = {
+              'input-desde': 'input-hasta',
+              'input-hasta': 'input-desde',
+              'input-flete-desde': 'input-flete-hasta',
+              'input-flete-hasta': 'input-flete-desde'
+            }[inputId];
+            var nextEl = nextId ? document.getElementById(nextId) : null;
+            if (nextEl) { setTimeout(function(){ nextEl.focus(); }, 50); }
+          }
         }
       }
       else if (e.key === 'Escape') { dd.classList.remove('open'); }
@@ -1065,6 +1172,20 @@
     ['input-desde','input-hasta','input-flete-desde','input-flete-hasta'].forEach(function(id) {
       var ddId = {'input-desde':'ac-desde','input-hasta':'ac-hasta','input-flete-desde':'ac-flete-desde','input-flete-hasta':'ac-flete-hasta'}[id];
       makeAC(id, ddId);
+      // Enter en input de altura → confirmar; restringir a dígitos
+      var altInp = document.getElementById('alt-input-' + id);
+      if (altInp) {
+        altInp.addEventListener('keydown', function(e){
+          if (e.key === 'Enter') { e.preventDefault(); confirmarAltura(id); }
+        });
+        altInp.addEventListener('input', function(){
+          var clean = (this.value || '').replace(/\D/g, '');
+          if (clean !== this.value) this.value = clean;
+          this.style.borderColor = '';
+          var hint = document.getElementById('alt-hint-' + id);
+          if (hint) { hint.textContent = 'Completá el número para continuar.'; hint.style.color = ''; }
+        });
+      }
     });
     if (document.getElementById('resultados') && document.getElementById('resultados').classList.contains('show')) initMapaMini();
   };
@@ -1218,6 +1339,14 @@
             </span>
             <input id="input-desde" class="seg-input" placeholder="Ej: Palermo, CABA" autocomplete="off"/>
             <ul class="ac-drop" id="ac-desde"></ul>
+            <div class="altura-pop" id="alt-pop-input-desde" onclick="event.stopPropagation()">
+              <div class="altura-pop-label">Necesitamos la altura de la calle</div>
+              <div class="altura-pop-row">
+                <input type="text" id="alt-input-input-desde" placeholder="Ej: 1234" inputmode="numeric" maxlength="6"/>
+                <button type="button" class="altura-pop-btn" onclick="confirmarAltura('input-desde')">Confirmar</button>
+              </div>
+              <div class="altura-pop-hint" id="alt-hint-input-desde">Completá el número para continuar.</div>
+            </div>
           </div>
           <div class="swap-btn" onclick="swapDir()" title="Intercambiar">⇄</div>
           <div class="search-segment" id="seg-hasta" style="flex:1.2;position:relative">
@@ -1227,6 +1356,14 @@
             </span>
             <input id="input-hasta" class="seg-input" placeholder="Ej: Quilmes, GBA" autocomplete="off"/>
             <ul class="ac-drop" id="ac-hasta"></ul>
+            <div class="altura-pop" id="alt-pop-input-hasta" onclick="event.stopPropagation()">
+              <div class="altura-pop-label">Necesitamos la altura de la calle</div>
+              <div class="altura-pop-row">
+                <input type="text" id="alt-input-input-hasta" placeholder="Ej: 4500" inputmode="numeric" maxlength="6"/>
+                <button type="button" class="altura-pop-btn" onclick="confirmarAltura('input-hasta')">Confirmar</button>
+              </div>
+              <div class="altura-pop-hint" id="alt-hint-input-hasta">Completá el número para continuar.</div>
+            </div>
           </div>
           <div class="search-segment" id="seg-fecha" style="flex:1;position:relative;cursor:pointer" onclick="toggleFechaPopup(event)">
             <span class="seg-label">📅 Fecha</span>
@@ -1272,12 +1409,28 @@
             <span class="seg-label">📍 Desde</span>
             <input id="input-flete-desde" class="seg-input" placeholder="Ej: Palermo, CABA" autocomplete="off"/>
             <ul class="ac-drop" id="ac-flete-desde"></ul>
+            <div class="altura-pop" id="alt-pop-input-flete-desde" onclick="event.stopPropagation()">
+              <div class="altura-pop-label">Necesitamos la altura de la calle</div>
+              <div class="altura-pop-row">
+                <input type="text" id="alt-input-input-flete-desde" placeholder="Ej: 1234" inputmode="numeric" maxlength="6"/>
+                <button type="button" class="altura-pop-btn" onclick="confirmarAltura('input-flete-desde')">Confirmar</button>
+              </div>
+              <div class="altura-pop-hint" id="alt-hint-input-flete-desde">Completá el número para continuar.</div>
+            </div>
           </div>
           <div class="swap-btn" onclick="swapFlete()">⇄</div>
           <div class="search-segment" style="flex:1.2;position:relative">
             <span class="seg-label">🏁 Hasta</span>
             <input id="input-flete-hasta" class="seg-input" placeholder="Ej: Quilmes, GBA" autocomplete="off"/>
             <ul class="ac-drop" id="ac-flete-hasta"></ul>
+            <div class="altura-pop" id="alt-pop-input-flete-hasta" onclick="event.stopPropagation()">
+              <div class="altura-pop-label">Necesitamos la altura de la calle</div>
+              <div class="altura-pop-row">
+                <input type="text" id="alt-input-input-flete-hasta" placeholder="Ej: 4500" inputmode="numeric" maxlength="6"/>
+                <button type="button" class="altura-pop-btn" onclick="confirmarAltura('input-flete-hasta')">Confirmar</button>
+              </div>
+              <div class="altura-pop-hint" id="alt-hint-input-flete-hasta">Completá el número para continuar.</div>
+            </div>
           </div>
           <div class="search-segment" style="flex:.8;position:relative;cursor:pointer" onclick="toggleFechaPopup(event,'flete')">
             <span class="seg-label">📅 ¿Cuándo?</span>
@@ -1939,6 +2092,11 @@
     });
     // Cerrar AC dropdowns
     document.querySelectorAll('.ac-drop').forEach(function(d){ d.classList.remove('open'); });
+    // Cerrar popovers de altura si el click no fue dentro de uno
+    var dentroPop = e.target && (e.target.closest ? e.target.closest('.altura-pop') : null);
+    if (!dentroPop) {
+      document.querySelectorAll('.altura-pop.open').forEach(function(p){ p.classList.remove('open'); });
+    }
   });
 
   // ══════════════════════════════════════════
@@ -2037,6 +2195,7 @@
       return;
     }
     if (!tieneNumDesde) {
+      _abrirAltura(idDesde, desde);
       setAddrError(idDesde, '⚠ Ingresá la dirección con número (ej: Corrientes 1234)');
       return;
     }
@@ -2049,6 +2208,7 @@
       return;
     }
     if (!tieneNumHasta) {
+      _abrirAltura(idHasta, hasta);
       setAddrError(idHasta, '⚠ Ingresá la dirección con número (ej: Av. Rivadavia 1234)');
       return;
     }
