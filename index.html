@@ -779,19 +779,21 @@
   .step-block h3{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text)}
   .step-block p{font-size:12px;color:var(--text2);line-height:1.55;font-weight:300}
 
-  .aud-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-top:1.5rem;border-radius:var(--r2);overflow:hidden}
+  .aud-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);margin-top:1.5rem;border-radius:var(--r2);overflow:hidden}
   .aud-card{background:#fff;padding:1.3rem 1.2rem;transition:background .2s}
   .aud-card:hover{background:var(--bg2)}
   .aud-icon{font-size:1.5rem;margin-bottom:.5rem;display:block}
   .aud-title{font-size:1.1rem;font-weight:800;margin-bottom:.3rem}
   .aud-card.cl .aud-title{color:var(--blue)}
   .aud-card.mud .aud-title{color:#003580}
+  .aud-card.inmo .aud-title{color:#22C36A}
   .aud-desc{font-size:12px;color:var(--text2);font-weight:300;line-height:1.55;margin-bottom:.7rem}
   .aud-list{list-style:none;display:flex;flex-direction:column;gap:4px}
   .aud-list li{font-size:12px;color:var(--text2);display:flex;align-items:flex-start;gap:6px}
   .aud-arr{font-weight:700;flex-shrink:0}
   .aud-card.cl .aud-arr{color:var(--blue)}
   .aud-card.mud .aud-arr{color:#003580}
+  .aud-card.inmo .aud-arr{color:#22C36A}
 
   /* Alianzas: grid 2 columnas siempre (incluso mobile) */
   .partners-grid{
@@ -1652,7 +1654,7 @@
   <section class="section" id="para-quien">
     <div class="sec-inner">
       <div class="sec-eyebrow">Para todos</div>
-      <div class="sec-title">Hecho para los dos lados</div>
+      <div class="sec-title">Pensado para cada parte</div>
       <div class="aud-grid">
         <div class="aud-card cl">
           <span class="aud-icon">🏠</span>
@@ -1674,6 +1676,17 @@
             <li><span class="aud-arr">→</span>Reseñas reales que construyen tu reputación</li>
           </ul>
           <a href="/mudanceros" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:#003580;color:#fff;transition:opacity .2s">Sumarme como Empresa de Mudanzas →</a>
+        </div>
+        <div class="aud-card inmo">
+          <span class="aud-icon">🔑</span>
+          <div class="aud-title">Inmobiliarias</div>
+          <p class="aud-desc">Sumá una mudanza confiable a tu servicio, justo en la entrega de llaves.</p>
+          <ul class="aud-list">
+            <li><span class="aud-arr">→</span>Un beneficio más para cerrar la operación</li>
+            <li><span class="aud-arr">→</span>Mudanceros verificados que cuidan tu marca</li>
+            <li><span class="aud-arr">→</span>Integración simple, sin fricción para tu equipo</li>
+          </ul>
+          <a href="https://mudateya.ar/inmobiliarias-registro" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:#22C36A;color:#fff;transition:opacity .2s">Registrar mi inmobiliaria →</a>
         </div>
       </div>
     </div>
