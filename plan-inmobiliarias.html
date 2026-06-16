@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MudateYa · Plan para inmobiliarias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#003580;
+    --green:#22C36A;
+    --coral:#FF6B6B;
+    --blue:#1A6FFF;
+    --bg:#F5F7FA;
+    --line:#E5E9F0;
+    --t1:#0F1923;
+    --t2:#475569;
+    --t3:#64748B;
+    --r:10px;
+    --r2:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--t1);
+    background:var(--bg);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sheet{max-width:880px;margin:0 auto;background:#fff;}
+
+  /* Topbar */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 40px;border-bottom:1px solid var(--line);
+  }
+  .brand{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--navy);text-decoration:none}
+  .brand span{color:var(--green)}
+  .pill{
+    font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    color:var(--navy);background:rgba(0,53,128,.07);
+    padding:6px 12px;border-radius:999px;
+  }
+
+  /* Hero */
+  .hero{padding:46px 40px 38px}
+  .hero h1{
+    font-size:42px;font-weight:900;line-height:1.08;letter-spacing:-.8px;
+    color:var(--navy);margin-bottom:14px;max-width:640px;
+  }
+  .hero h1 b{color:var(--green);font-weight:900}
+  .hero .lead{font-size:17px;color:var(--t2);max-width:600px}
+
+  /* Section scaffolding */
+  .section{padding:32px 40px;border-top:1px solid var(--line)}
+  .eyebrow{
+    font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    color:var(--blue);margin-bottom:10px;
+  }
+  .section h2{font-size:24px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px;color:var(--t1)}
+  .section p.intro{font-size:15.5px;color:var(--t2);max-width:640px}
+
+  /* Earnings */
+  .earn-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;margin-top:22px}
+  .stat-card{
+    background:var(--navy);border-radius:var(--r2);padding:28px 26px;color:#fff;
+  }
+  .stat-card .k{font-size:13px;font-weight:600;color:rgba(255,255,255,.72);letter-spacing:.2px}
+  .stat-card .big{
+    font-family:'Bebas Neue',sans-serif;font-size:64px;line-height:.95;letter-spacing:1px;
+    color:#fff;margin:6px 0 4px;
+  }
+  .stat-card .big em{color:var(--green);font-style:normal}
+  .stat-card .ex{
+    margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.16);
+    font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.7;
+  }
+  .stat-card .ex strong{color:#fff}
+
+  .ladder{display:flex;flex-direction:column;gap:10px}
+  .rung{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;
+  }
+  .rung.top{border-color:var(--green);background:rgba(34,195,106,.05)}
+  .rung .lvl{font-size:14px;font-weight:800;color:var(--t1)}
+  .rung .vol{font-size:12.5px;color:var(--t3);margin-top:1px}
+  .rung .pct{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:.5px;color:var(--navy)}
+  .rung.top .pct{color:var(--green)}
+  .ladder .foot{font-size:12.5px;color:#fff;background:var(--navy);padding:9px 12px;border-radius:8px;margin-top:4px}
+
+  /* Steps */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;margin-top:22px}
+  .step{background:#fff;padding:22px 18px}
+  .step .n{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--green);letter-spacing:1px;line-height:1}
+  .step h3{font-size:14.5px;font-weight:800;margin:8px 0 5px;color:var(--t1)}
+  .step p{font-size:12.5px;color:var(--t2);line-height:1.5}
+
+  /* Reasons */
+  .reasons{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
+  .reason{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r);padding:15px 16px}
+  .reason .ic{flex:0 0 22px;width:22px;height:22px;color:var(--green)}
+  .reason h4{font-size:14px;font-weight:800;margin-bottom:2px;color:var(--t1)}
+  .reason p{font-size:12.5px;color:var(--t2);line-height:1.5}
+
+  /* Team callout */
+  .team{display:flex;gap:18px;align-items:center;background:var(--bg);border-radius:var(--r2);padding:22px 24px;margin-top:6px}
+  .team .em{font-family:'Bebas Neue',sans-serif;font-size:46px;color:var(--coral);letter-spacing:1px;line-height:.9;flex:0 0 auto}
+  .team p{font-size:14px;color:var(--t2)}
+  .team p strong{color:var(--t1)}
+
+  /* CTA */
+  .cta{
+    background:var(--navy);color:#fff;padding:38px 40px;text-align:center;
+  }
+  .cta h2{font-size:26px;font-weight:900;letter-spacing:-.4px;margin-bottom:8px;color:#fff}
+  .cta p{font-size:15px;color:rgba(255,255,255,.8);margin-bottom:20px}
+  .cta a.btn{
+    display:inline-block;background:var(--green);color:#fff;text-decoration:none;
+    font-weight:800;font-size:15px;padding:14px 30px;border-radius:var(--r);
+  }
+  .cta .url{display:block;margin-top:14px;font-size:13px;color:rgba(255,255,255,.65)}
+
+  .foot{padding:18px 40px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--t3);border-top:1px solid rgba(255,255,255,.12);background:var(--navy)}
+  .foot a{color:rgba(255,255,255,.75);text-decoration:none}
+  .foot .b{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:#fff}
+  .foot .b span{color:var(--green)}
+
+  @media (max-width:720px){
+    .topbar,.hero,.section,.cta,.foot{padding-left:22px;padding-right:22px}
+    .hero h1{font-size:32px}
+    .earn-grid{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr 1fr}
+    .reasons{grid-template-columns:1fr}
+  }
+  @media print{
+    body{background:#fff}
+    .sheet{max-width:none}
+    .section,.cta,.steps,.stat-card{break-inside:avoid}
+    .topbar{position:static}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="topbar">
+    <a href="https://mudateya.ar" class="brand">Mudate<span>Ya</span></a>
+    <span class="pill">Para inmobiliarias</span>
+  </div>
+
+  <header class="hero">
+    <h1>Sumá <b>un plus</b> a tu inmobiliaria</h1>
+    <p class="lead">Ofrecé a tus clientes una mudanza confiable justo en la entrega de llaves, y ganá una comisión por cada operación, sin cambiar nada en tu día a día.</p>
+  </header>
+
+  <section class="section">
+    <div class="eyebrow">La oportunidad</div>
+    <h2>Cada entrega de llaves es una mudanza esperando suceder</h2>
+    <p class="intro">Tus clientes ya se van a mudar. Con MudateYa convertís esa demanda en un servicio para cerrar la operación —empresas verificadas y todo resuelto— y cobrás por cada mudanza concretada.</p>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Cuánto ganás</div>
+    <h2>Una comisión por cada mudanza concretada</h2>
+    <div class="earn-grid">
+      <div class="stat-card">
+        <div class="k">En una mudanza Llave en mano promedio</div>
+        <div class="big"><em>$100.000</em></div>
+        <div class="k">de comisión, sobre un ticket de ~$2.000.000</div>
+        <div class="ex">
+          Cuanto más derivás, más cobrás: la comisión <strong>escala por volumen</strong> y se aplica a todas las mudanzas del mes. Se liquida mensualmente por Mercado Pago, solo sobre operaciones completadas.
+        </div>
+      </div>
+      <div class="ladder">
+        <div class="rung">
+          <div><div class="lvl">Inicial</div><div class="vol">1 a 5 mudanzas por mes</div></div>
+          <div class="pct">5%</div>
+        </div>
+        <div class="rung">
+          <div><div class="lvl">Plus</div><div class="vol">6 a 10 mudanzas por mes</div></div>
+          <div class="pct">6%</div>
+        </div>
+        <div class="rung top">
+          <div><div class="lvl">Máximo</div><div class="vol">Más de 10 por mes</div></div>
+          <div class="pct">7%</div>
+        </div>
+        <div class="foot">% sobre el valor de cada mudanza concretada. Al subir de nivel, la tasa aplica a todas las mudanzas del mes.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Cómo funciona</div>
+    <h2>Cuatro pasos, cero fricción</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="n">01</div>
+        <h3>Tu link único</h3>
+        <p>Te damos un enlace y código propios de tu inmobiliaria para derivar a tus clientes.</p>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <h3>Recomendás en la entrega</h3>
+        <p>En el momento de la llave, tu asesor le pasa MudateYa al cliente. Es una recomendación, no una venta.</p>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <h3>Tu cliente se muda</h3>
+        <p>Compara empresas verificadas, elige y contrata. Todo el proceso queda resuelto.</p>
+      </div>
+      <div class="step">
+        <div class="n">04</div>
+        <h3>Cobrás</h3>
+        <p>Liquidación mensual por Mercado Pago, sobre cada mudanza efectivamente completada.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Por qué es sin riesgo</div>
+    <h2>Sumás, no te complicás</h2>
+    <div class="reasons">
+      <div class="reason">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 7L9 18l-5-5"/></svg>
+        <div><h4>Empresas verificadas</h4><p>Cada empresa de mudanzas pasa por nuestro proceso de validación. Cuida tu cliente y tu marca.</p></div>
+      </div>
+      <div class="reason">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 7L9 18l-5-5"/></svg>
+        <div><h4>Sin costo de alta</h4><p>Sumarte es gratis. No hay cuotas, mínimos ni permanencia. Solo ganás cuando tu cliente se muda.</p></div>
+      </div>
+      <div class="reason">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 7L9 18l-5-5"/></svg>
+        <div><h4>Sin cambiar tu operación</h4><p>No agregás trabajo a tu equipo: una recomendación en el momento justo y listo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Tu diferencial</div>
+    <h2>Lográ la exclusividad</h2>
+    <div class="team">
+      <div class="em">★</div>
+      <p>Mientras otras inmobiliarias dejan la mudanza librada al azar, <strong>vos ofrecés un servicio confiable y resuelto</strong>. Ser aliada de MudateYa es un plus exclusivo que te pone por delante de las inmobiliarias que todavía no lo tienen.</p>
+    </div>
+  </section>
+
+  <div class="cta">
+    <h2>Sumate como inmobiliaria aliada</h2>
+    <p>Activá tu link en minutos y empezá a sumar un plus a tu servicio.</p>
+    <a class="btn" href="https://mudateya.ar/inmobiliarias-registro">Registrar mi inmobiliaria →</a>
+    <span class="url">mudateya.ar/inmobiliarias-registro</span>
+  </div>
+
+  <div class="foot">
+    <span class="b">Mudate<span>Ya</span></span>
+    <span>hola@mudateya.ar · mudateya.ar</span>
+  </div>
+
+</div>
+</body>
+</html>
