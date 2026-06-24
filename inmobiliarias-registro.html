@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Sumate a MudateYa · Para inmobiliarias</title>
-<meta name="description" content="Sumá MudateYa a tu inmobiliaria. Tus clientes consiguen mudanceros verificados en minutos, vos ganás una comisión por cada operación.">
+<title>Sumate a MudateYa · Para inmobiliarias y asesores</title>
+<meta name="description" content="Sumá MudateYa a tu inmobiliaria o a tu servicio como asesor. Tus clientes consiguen mudanceros verificados en minutos, vos ganás una comisión por cada operación.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -379,8 +379,8 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <span class="hero-badge">Para inmobiliarias</span>
-    <h1>Sumá <span class="green">UN PLUS</span><br>a tu inmobiliaria</h1>
+    <span class="hero-badge">Para inmobiliarias y asesores</span>
+    <h1>Sumá <span class="green">UN PLUS</span><br>a tu servicio</h1>
   </div>
 </section>
 
@@ -417,13 +417,13 @@
 
     <form id="formInmo" onsubmit="enviarForm(event)" novalidate>
 
-      <!-- ─── DATOS DE LA INMOBILIARIA ─── -->
+      <!-- ─── DATOS DE LA INMOBILIARIA / ASESOR ─── -->
       <div class="form-section">
-        <div class="form-section-label">Datos de la inmobiliaria</div>
+        <div class="form-section-label">Datos de la inmobiliaria o asesor</div>
 
         <div class="field">
-          <label class="field-label" for="f-nombre">Nombre de la inmobiliaria <span class="req">*</span></label>
-          <input id="f-nombre" class="field-input" type="text" placeholder="Ej: López Hnos. Propiedades" autocomplete="organization" maxlength="80" required>
+          <label class="field-label" for="f-nombre">Nombre de la inmobiliaria o asesor <span class="req">*</span></label>
+          <input id="f-nombre" class="field-input" type="text" placeholder="Ej: López Hnos. Propiedades o Juan López" autocomplete="organization" maxlength="80" required>
         </div>
 
         <div class="field">
@@ -737,7 +737,7 @@ async function enviarForm(e) {
 
   // Validaciones cliente
   var faltan = [];
-  if (!nombre)   faltan.push('nombre de la inmobiliaria');
+  if (!nombre)   faltan.push('nombre de la inmobiliaria o asesor');
   if (!contacto) faltan.push('tu nombre');
   if (!email)    faltan.push('email');
   if (!wapp)     faltan.push('WhatsApp');
