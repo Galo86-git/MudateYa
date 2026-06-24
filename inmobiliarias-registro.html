@@ -228,56 +228,6 @@
   .checkbox-row input { width: 18px; height: 18px; accent-color: var(--mya-navy); }
   .checkbox-row span { font-size: 14px; color: var(--md-text); font-weight: 600; }
 
-  /* Logo upload box */
-  .logo-box {
-    border: 2px dashed var(--md-border-2);
-    border-radius: 14px;
-    padding: 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #FAFBFC;
-    position: relative;
-  }
-  .logo-box:hover { border-color: var(--mya-navy); background: var(--mya-navy-light); }
-  .logo-box.dragging { border-color: var(--mya-green); background: var(--md-success-soft); }
-  .logo-box input[type="file"] { display: none; }
-  .logo-box-empty { display: block; }
-  .logo-box-empty-icon { font-size: 28px; margin-bottom: 6px; }
-  .logo-box-empty-icon svg { width: 36px; height: 36px; color: var(--mya-navy); }
-  .logo-box-empty-text { font-size: 14px; font-weight: 700; color: var(--md-text); margin-bottom: 2px; }
-  .logo-box-empty-sub { font-size: 12px; color: var(--md-text-3); }
-  .logo-box-loading { display: none; }
-  .logo-box-loading-spin {
-    width: 28px; height: 28px;
-    border: 3px solid var(--md-border);
-    border-top-color: var(--mya-navy);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin: 0 auto 8px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .logo-box-loading-text { font-size: 13px; color: var(--md-text-2); }
-  .logo-box-preview { display: none; }
-  .logo-box-preview img {
-    max-width: 140px; max-height: 90px; margin: 0 auto 8px;
-    display: block; object-fit: contain;
-  }
-  .logo-box-preview-name { font-size: 12px; color: var(--md-text-2); margin-bottom: 8px; word-break: break-all; }
-  .logo-box-preview-btn {
-    background: none; border: 1.5px solid var(--md-border-2);
-    color: var(--md-text-2); padding: 6px 14px; border-radius: 8px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    font-family: inherit;
-  }
-  .logo-box-preview-btn:hover { border-color: var(--md-error); color: var(--md-error); }
-  .logo-box-error {
-    display: none; margin-top: 8px;
-    padding: 8px 12px; border-radius: 8px;
-    background: var(--md-error-soft); color: var(--md-error);
-    font-size: 12px; font-weight: 600;
-  }
-
   /* Submit button */
   .submit-btn {
     width: 100%;
@@ -431,34 +381,6 @@
           <input id="f-contacto" class="field-input" type="text" placeholder="Ej: Juan López" autocomplete="name" maxlength="80" required>
         </div>
 
-        <!-- Logo upload -->
-        <div class="field">
-          <label class="field-label">Logo <span class="opt">opcional</span></label>
-          <div class="logo-box" id="logoBox" onclick="document.getElementById('f-logo').click()">
-            <input id="f-logo" type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" onchange="onArchivoSeleccionado(event)">
-
-            <div class="logo-box-empty" id="logoBoxEmpty">
-              <div class="logo-box-empty-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
-              </div>
-              <div class="logo-box-empty-text">Soltá tu logo acá o hacé tap</div>
-              <div class="logo-box-empty-sub">PNG, JPG, SVG o WebP · máx 2 MB</div>
-            </div>
-
-            <div class="logo-box-loading" id="logoBoxLoading">
-              <div class="logo-box-loading-spin"></div>
-              <div class="logo-box-loading-text">Subiendo logo…</div>
-            </div>
-
-            <div class="logo-box-preview" id="logoBoxPreview">
-              <img id="logoPreviewImg" src="" alt="Preview del logo">
-              <div class="logo-box-preview-name" id="logoPreviewName"></div>
-              <button type="button" class="logo-box-preview-btn" onclick="quitarLogo(event)">Quitar y subir otro</button>
-            </div>
-          </div>
-          <div class="logo-box-error" id="logoError"></div>
-          <input type="hidden" id="f-logo-url" value="">
-        </div>
       </div>
 
       <!-- ─── CONTACTO ─── -->
@@ -590,12 +512,6 @@
 
 <script>
 // ════════════════════════════════════════════════════════════════════
-// Estado del form
-// ════════════════════════════════════════════════════════════════════
-var logoUrl = '';      // URL del logo en Vercel Blob una vez subido
-var logoSubiendo = false; // Para deshabilitar submit mientras sube
-
-// ════════════════════════════════════════════════════════════════════
 // Radio cards: marcar la activa al click
 // ════════════════════════════════════════════════════════════════════
 document.querySelectorAll('.radio-card').forEach(function(card){
@@ -608,123 +524,12 @@ document.querySelectorAll('.radio-card').forEach(function(card){
 });
 
 // ════════════════════════════════════════════════════════════════════
-// Logo upload — drag & drop + click
-// ════════════════════════════════════════════════════════════════════
-var logoBox = document.getElementById('logoBox');
-
-// Drag over: mostrar visual feedback
-logoBox.addEventListener('dragover', function(e){
-  e.preventDefault();
-  logoBox.classList.add('dragging');
-});
-logoBox.addEventListener('dragleave', function(){
-  logoBox.classList.remove('dragging');
-});
-logoBox.addEventListener('drop', function(e){
-  e.preventDefault();
-  logoBox.classList.remove('dragging');
-  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-    procesarArchivo(e.dataTransfer.files[0]);
-  }
-});
-
-function onArchivoSeleccionado(e) {
-  var file = e.target.files[0];
-  if (file) procesarArchivo(file);
-}
-
-// Procesa un archivo: valida, muestra preview, sube a Vercel Blob
-async function procesarArchivo(file) {
-  var errBox = document.getElementById('logoError');
-  errBox.style.display = 'none';
-  errBox.textContent = '';
-
-  // Validaciones cliente (las mismas que el endpoint en backend)
-  var TIPOS_OK = ['image/png','image/jpeg','image/jpg','image/svg+xml','image/webp'];
-  if (TIPOS_OK.indexOf(file.type) === -1) {
-    errBox.textContent = 'Formato no soportado. Usá PNG, JPG, SVG o WebP.';
-    errBox.style.display = 'block';
-    return;
-  }
-  if (file.size > 2 * 1024 * 1024) {
-    errBox.textContent = 'El archivo supera los 2 MB. Reducí el tamaño antes de subirlo.';
-    errBox.style.display = 'block';
-    return;
-  }
-
-  // UI: estado loading
-  document.getElementById('logoBoxEmpty').style.display = 'none';
-  document.getElementById('logoBoxPreview').style.display = 'none';
-  document.getElementById('logoBoxLoading').style.display = 'block';
-  logoSubiendo = true;
-
-  try {
-    // Nombre del archivo: usamos un slug temporal basado en el nombre del
-    // archivo + timestamp. El backend agrega timestamp final igual.
-    var nombreLimpio = file.name.toLowerCase()
-      .replace(/\.[^.]+$/, '')   // sacar extensión
-      .replace(/[^a-z0-9-]/g, '-')
-      .slice(0, 40) || 'logo';
-
-    var r = await fetch('/api/upload-foto', {
-      method: 'POST',
-      headers: {
-        'Content-Type': file.type,
-        'x-carpeta': 'inmobiliarias',
-        'x-nombre':  'solicitud-' + nombreLimpio
-      },
-      body: file
-    });
-    var data = await r.json();
-    if (!r.ok || !data.url) throw new Error(data.error || 'No se pudo subir el archivo');
-
-    // Éxito: mostrar preview con la URL real de Blob
-    logoUrl = data.url;
-    document.getElementById('f-logo-url').value = data.url;
-    document.getElementById('logoPreviewImg').src = data.url;
-    document.getElementById('logoPreviewName').textContent = file.name + ' · ' + (file.size / 1024).toFixed(0) + ' KB';
-    document.getElementById('logoBoxLoading').style.display = 'none';
-    document.getElementById('logoBoxPreview').style.display = 'block';
-  } catch(e) {
-    errBox.textContent = 'Error subiendo: ' + (e.message || 'desconocido');
-    errBox.style.display = 'block';
-    // Volver al estado vacío
-    document.getElementById('logoBoxLoading').style.display = 'none';
-    document.getElementById('logoBoxEmpty').style.display = 'block';
-    logoUrl = '';
-    document.getElementById('f-logo-url').value = '';
-  } finally {
-    logoSubiendo = false;
-  }
-}
-
-// Quitar el logo subido (vuelve al estado vacío)
-function quitarLogo(e) {
-  e.stopPropagation();
-  e.preventDefault();
-  logoUrl = '';
-  document.getElementById('f-logo-url').value = '';
-  document.getElementById('f-logo').value = '';
-  document.getElementById('logoBoxPreview').style.display = 'none';
-  document.getElementById('logoBoxLoading').style.display = 'none';
-  document.getElementById('logoBoxEmpty').style.display = 'block';
-  // Nota: no borramos el archivo de Blob físicamente. Queda huérfano y se
-  // limpia con un cron diario. Costo despreciable.
-}
-
-// ════════════════════════════════════════════════════════════════════
 // Submit del form
 // ════════════════════════════════════════════════════════════════════
 async function enviarForm(e) {
   e.preventDefault();
   var errGlobal = document.getElementById('globalError');
   errGlobal.style.display = 'none';
-
-  if (logoSubiendo) {
-    errGlobal.textContent = 'Esperá a que termine de subir el logo antes de enviar.';
-    errGlobal.style.display = 'block';
-    return;
-  }
 
   // Recoger datos
   var nombre   = document.getElementById('f-nombre').value.trim();
@@ -773,8 +578,7 @@ async function enviarForm(e) {
         whatsapp: wapp,
         zona: zona,
         operacionesPorMes: opsmes,
-        sitio: web,
-        logoUrl: logoUrl
+        sitio: web
       })
     });
     // Parsear response con manejo seguro: si no es JSON valido, mostrar texto
