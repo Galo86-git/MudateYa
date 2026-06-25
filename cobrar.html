@@ -177,6 +177,18 @@
   function whatsapp(){ var txt = "Te paso el link para pagar tu trabajo con MudateYa (pago protegido): " + ultimoLink; window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank"); }
 
   // ── ARRANQUE: se ejecuta cuando la página está lista ──
+  function tryAutoLogin(attempt){
+    var saved = loadCode();
+    console.log("MYA · intento " + attempt + " · código guardado:", saved || "(ninguno)");
+    if(saved){
+      $("codigo").value = saved;
+      $("recordar").checked = true;
+      entrar(true);
+      return;
+    }
+    if(attempt < 6){ setTimeout(function(){ tryAutoLogin(attempt + 1); }, 200); }
+  }
+
   function init(){
     $("btnEntrar").addEventListener("click", function(){ entrar(false); });
     $("codigo").addEventListener("keydown", function(e){ if(e.key==="Enter"){ entrar(false); } });
@@ -185,15 +197,7 @@
     $("btnCopiar").addEventListener("click", copiar);
     $("btnWhatsapp").addEventListener("click", whatsapp);
     $("btnNuevo").addEventListener("click", nuevo);
-
-    // si hay un código guardado en este teléfono, entrar solo
-    var saved = loadCode();
-    console.log("MYA · código guardado:", saved || "(ninguno)");
-    if(saved){
-      $("codigo").value = saved;
-      $("recordar").checked = true;
-      entrar(true);
-    }
+    tryAutoLogin(0);
   }
 
   if(document.readyState === "loading"){
