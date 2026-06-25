@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MudateYa · Cobrá tu trabajo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{--navy:#003580;--green:#22C36A;--coral:#FF5A5F;--ink:#16202E;--mute:#5B6675;--light:#F5F8FC;--line:#E3E9F2;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:#EEF3F9;color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .top .m{width:40px;height:40px;border-radius:50%;background:var(--green);color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:24px;display:flex;align-items:center;justify-content:center;}
+  .top b{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--navy);letter-spacing:.5px;display:block;line-height:1;}
+  .top span{font-size:12px;color:var(--mute);}
+  .card{background:#fff;border-radius:16px;box-shadow:0 12px 32px rgba(0,30,80,.12);padding:22px 22px;width:100%;max-width:400px;}
+  h2{font-family:'Bebas Neue',sans-serif;font-size:21px;color:var(--navy);margin:0 0 4px;letter-spacing:.5px;}
+  .desc{font-size:12.5px;color:var(--mute);margin:0 0 16px;}
+  label{font-size:11px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;margin-top:12px;}
+  input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;font-family:'Inter',sans-serif;font-size:14px;outline:none;color:var(--ink);background:#fff;}
+  input:focus,select:focus{border-color:var(--navy);}
+  .btn{background:var(--green);color:var(--navy);border:none;border-radius:11px;padding:13px;font-family:'Inter',sans-serif;font-size:14.5px;font-weight:700;cursor:pointer;width:100%;margin-top:18px;transition:filter .15s;}
+  .btn:hover{filter:brightness(.95);}
+  .btn.navy{background:var(--navy);color:#fff;}
+  .btn.ghost{background:var(--light);color:var(--navy);border:1.5px solid var(--line);}
+  .out{font-size:12.5px;margin-top:10px;min-height:16px;text-align:center;}
+  .out .err{color:#c0392b;font-weight:600;}
+  .hide{display:none;}
+  .hello{background:#E7F8EF;border-radius:10px;padding:9px 12px;font-size:13px;color:var(--ink);margin-bottom:6px;}
+  .hello b{color:var(--navy);}
+  /* QR result */
+  .qrwrap{text-align:center;}
+  #qr{display:inline-block;padding:14px;background:#fff;border:1px solid var(--line);border-radius:14px;margin:6px 0 12px;}
+  #qr img,#qr canvas{display:block;}
+  .amount{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--navy);margin:2px 0;}
+  .concepto-lbl{font-size:13px;color:var(--ink);font-weight:600;}
+  .protege{display:flex;align-items:center;justify-content:center;gap:7px;background:#E7F8EF;border-radius:10px;padding:9px;font-size:11.5px;color:var(--ink);margin:12px 0;}
+  .protege svg{width:16px;height:16px;}
+  .lk{font-size:11px;color:var(--navy);word-break:break-all;background:var(--light);border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0;}
+  .foot{font-size:11px;color:var(--mute);text-align:center;margin-top:14px;max-width:400px;}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="m">M</div>
+    <div><b>MudateYa</b><span>Cobrá tu trabajo con un QR</span></div>
+  </div>
+
+  <!-- PASO 1: código -->
+  <div class="card" id="cardLogin">
+    <h2>Ingresá tu código</h2>
+    <p class="desc">Es el código que te dio MudateYa. Con eso generás el QR para que tu cliente te pague.</p>
+    <label>Código de contratista</label>
+    <input id="codigo" type="text" placeholder="MYA-XXXXX" autocomplete="off" style="text-transform:uppercase;">
+    <button class="btn navy" id="btnEntrar">Entrar</button>
+    <div class="out" id="loginout"></div>
+  </div>
+
+  <!-- PASO 2: cargar trabajo -->
+  <div class="card hide" id="cardForm">
+    <div class="hello">Hola, <b id="nombreContra">—</b> 👋</div>
+    <h2>Nuevo cobro</h2>
+    <p class="desc">Cargá el trabajo y el monto. Te generamos el QR para cobrarle al cliente.</p>
+    <label>¿Qué trabajo hiciste?</label>
+    <input id="concepto" placeholder="Ej: Reparación de pérdida en cocina">
+    <label>Categoría</label>
+    <select id="categoria">
+      <option value="Limpieza post-mudanza">Limpieza post-mudanza</option>
+      <option value="Limpieza de obra">Limpieza de obra</option>
+      <option value="Plomería">Plomería</option>
+      <option value="Gas (matriculado)">Gas (matriculado)</option>
+      <option value="Electricidad (matriculado)">Electricidad (matriculado)</option>
+      <option value="Pintura">Pintura</option>
+      <option value="Cerrajería">Cerrajería</option>
+      <option value="Flete / Logística">Flete / Logística</option>
+      <option value="Otro">Otro</option>
+    </select>
+    <label>Cliente (opcional)</label>
+    <input id="cliente" placeholder="Nombre del cliente">
+    <label>Monto a cobrar (ARS)</label>
+    <input id="monto" type="number" min="0" placeholder="Ej: 50000">
+    <button class="btn" id="btnGenerar">Generar QR de cobro</button>
+    <div class="out" id="formout"></div>
+  </div>
+
+  <!-- PASO 3: QR -->
+  <div class="card hide qrwrap" id="cardQR">
+    <h2>¡Listo para cobrar!</h2>
+    <div class="concepto-lbl" id="qrConcepto">—</div>
+    <div class="amount" id="qrMonto">—</div>
+    <div id="qr"></div>
+    <div class="protege">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" fill="#22C36A"/></svg>
+      Pago protegido por MudateYa
+    </div>
+    <div class="lk" id="qrLink"></div>
+    <button class="btn" id="btnCopiar">Copiar link de pago</button>
+    <button class="btn ghost" id="btnWhatsapp">Enviar por WhatsApp</button>
+    <button class="btn ghost" id="btnNuevo">Hacer otro cobro</button>
+  </div>
+
+  <div class="foot">El cliente escanea el QR (o abre el link) y paga. La plata queda protegida por MudateYa hasta que se acredita tu pago.</div>
+
+<script>
+  var API = "/api/servicios";
+  var codigoActual = "";
+  var ultimoLink = "";
+
+  function $(id){ return document.getElementById(id); }
+  function show(id){ $(id).classList.remove("hide"); }
+  function hide(id){ $(id).classList.add("hide"); }
+  function fmt(n){ return "$" + Number(n).toLocaleString("es-AR"); }
+
+  function entrar(){
+    var cod = $("codigo").value.trim().toUpperCase();
+    if(!cod){ $("loginout").innerHTML = '<span class="err">Ingresá tu código.</span>'; return; }
+    $("loginout").textContent = "Verificando…";
+    fetch(API, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ action:"validar_contratista", codigo: cod }) })
+      .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, d:d }; }); })
+      .then(function(res){
+        if(!res.ok || res.d.error){ $("loginout").innerHTML = '<span class="err">'+(res.d.error||"Código inválido")+'</span>'; return; }
+        codigoActual = cod;
+        $("nombreContra").textContent = res.d.nombre;
+        $("loginout").textContent = "";
+        hide("cardLogin"); show("cardForm");
+      })
+      .catch(function(){ $("loginout").innerHTML = '<span class="err">No se pudo conectar.</span>'; });
+  }
+
+  function generar(){
+    var concepto = $("concepto").value.trim();
+    var monto = $("monto").value;
+    if(!concepto || !monto){ $("formout").innerHTML = '<span class="err">Completá el trabajo y el monto.</span>'; return; }
+    $("formout").textContent = "Generando QR…";
+    var body = {
+      action:"crear",
+      codigo: codigoActual,
+      concepto: concepto,
+      categoria: $("categoria").value,
+      cliente: $("cliente").value.trim(),
+      monto: monto
+    };
+    fetch(API, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body) })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.error){ $("formout").innerHTML = '<span class="err">'+data.error+'</span>'; return; }
+        $("formout").textContent = "";
+        mostrarQR(data.servicio);
+      })
+      .catch(function(){ $("formout").innerHTML = '<span class="err">No se pudo generar. Probá de nuevo.</span>'; });
+  }
+
+  function mostrarQR(s){
+    ultimoLink = s.init_point;
+    $("qrConcepto").textContent = s.concepto;
+    $("qrMonto").textContent = fmt(s.monto);
+    $("qrLink").textContent = s.init_point;
+    $("qr").innerHTML = "";
+    new QRCode($("qr"), { text: s.init_point, width: 200, height: 200, colorDark:"#003580", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M });
+    hide("cardForm"); show("cardQR");
+  }
+
+  function nuevo(){
+    $("concepto").value=""; $("cliente").value=""; $("monto").value="";
+    hide("cardQR"); show("cardForm");
+  }
+
+  function copiar(){
+    if(navigator.clipboard){ navigator.clipboard.writeText(ultimoLink); }
+    alert("Link copiado:\n" + ultimoLink);
+  }
+  function whatsapp(){
+    var txt = "Te paso el link para pagar tu trabajo con MudateYa (pago protegido): " + ultimoLink;
+    window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank");
+  }
+
+  $("btnEntrar").addEventListener("click", entrar);
+  $("codigo").addEventListener("keydown", function(e){ if(e.key==="Enter"){ entrar(); } });
+  $("btnGenerar").addEventListener("click", generar);
+  $("btnCopiar").addEventListener("click", copiar);
+  $("btnWhatsapp").addEventListener("click", whatsapp);
+  $("btnNuevo").addEventListener("click", nuevo);
+</script>
+</body>
+</html>
