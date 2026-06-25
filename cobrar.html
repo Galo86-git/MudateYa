@@ -49,7 +49,6 @@
     <div><b>MudateYa</b><span>Cobrá tu trabajo con un QR</span></div>
   </div>
 
-  <!-- PASO 1: código -->
   <div class="card" id="cardLogin">
     <h2>Ingresá tu código</h2>
     <p class="desc">Es el código que te dio MudateYa. Con eso generás el QR para que tu cliente te pague.</p>
@@ -60,7 +59,6 @@
     <div class="out" id="loginout"></div>
   </div>
 
-  <!-- PASO 2: cargar trabajo -->
   <div class="card hide" id="cardForm">
     <div class="hello"><span>Hola, <b id="nombreContra">—</b></span><a id="btnSalir">Salir</a></div>
     <h2>Nuevo cobro</h2>
@@ -87,7 +85,6 @@
     <div class="out" id="formout"></div>
   </div>
 
-  <!-- PASO 3: QR -->
   <div class="card hide qrwrap" id="cardQR">
     <h2>¡Listo para cobrar!</h2>
     <div class="concepto-lbl" id="qrConcepto">—</div>
@@ -116,20 +113,21 @@
   function hide(id){ $(id).classList.add("hide"); }
   function fmt(n){ return "$" + Number(n).toLocaleString("es-AR"); }
 
-  // ── recordar código en este teléfono ──
   function loadCode(){ try { return localStorage.getItem(CODE_KEY) || ""; } catch(e){ return ""; } }
   function saveCode(c){ try { localStorage.setItem(CODE_KEY, c); } catch(e){} }
   function clearCode(){ try { localStorage.removeItem(CODE_KEY); } catch(e){} }
 
-  function entrar(){
+  // entrar(isAuto): si isAuto es true (auto-login al abrir), NO borra el código si falla por red
+  function entrar(isAuto){
     var cod = $("codigo").value.trim().toUpperCase();
-    if(!cod){ $("loginout").innerHTML = '<span class="err">Ingresá tu código.</span>'; return; }
-    $("loginout").textContent = "Verificando…";
+    if(!cod){ if(!isAuto){ $("loginout").innerHTML = '<span class="err">Ingresá tu código.</span>'; } return; }
+    $("loginout").textContent = isAuto ? "Entrando con tu código guardado…" : "Verificando…";
     fetch(API, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ action:"validar_contratista", codigo: cod }) })
-      .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, d:d }; }); })
+      .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, status:r.status, d:d }; }); })
       .then(function(res){
         if(!res.ok || res.d.error){
-          clearCode(); // si había un código guardado inválido/desactivado, lo limpiamos
+          // solo limpiamos el guardado si el código es realmente inválido/inactivo (401)
+          if(res.status === 401){ clearCode(); }
           $("loginout").innerHTML = '<span class="err">'+(res.d.error||"Código inválido")+'</span>';
           return;
         }
@@ -139,16 +137,13 @@
         $("loginout").textContent = "";
         hide("cardLogin"); show("cardForm");
       })
-      .catch(function(){ $("loginout").innerHTML = '<span class="err">No se pudo conectar.</span>'; });
+      .catch(function(){ $("loginout").innerHTML = '<span class="err">No se pudo conectar. Probá de nuevo.</span>'; });
   }
 
   function salir(){
-    clearCode();
-    codigoActual = "";
-    $("codigo").value = "";
-    $("concepto").value=""; $("cliente").value=""; $("monto").value="";
-    hide("cardForm"); hide("cardQR"); show("cardLogin");
-    $("loginout").textContent = "";
+    clearCode(); codigoActual = "";
+    $("codigo").value = ""; $("concepto").value=""; $("cliente").value=""; $("monto").value="";
+    hide("cardForm"); hide("cardQR"); show("cardLogin"); $("loginout").textContent = "";
   }
 
   function generar(){
@@ -178,23 +173,34 @@
   }
 
   function nuevo(){ $("concepto").value=""; $("cliente").value=""; $("monto").value=""; hide("cardQR"); show("cardForm"); }
-
   function copiar(){ if(navigator.clipboard){ navigator.clipboard.writeText(ultimoLink); } alert("Link copiado:\n" + ultimoLink); }
   function whatsapp(){ var txt = "Te paso el link para pagar tu trabajo con MudateYa (pago protegido): " + ultimoLink; window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank"); }
 
-  $("btnEntrar").addEventListener("click", entrar);
-  $("codigo").addEventListener("keydown", function(e){ if(e.key==="Enter"){ entrar(); } });
-  $("btnGenerar").addEventListener("click", generar);
-  $("btnSalir").addEventListener("click", salir);
-  $("btnCopiar").addEventListener("click", copiar);
-  $("btnWhatsapp").addEventListener("click", whatsapp);
-  $("btnNuevo").addEventListener("click", nuevo);
+  // ── ARRANQUE: se ejecuta cuando la página está lista ──
+  function init(){
+    $("btnEntrar").addEventListener("click", function(){ entrar(false); });
+    $("codigo").addEventListener("keydown", function(e){ if(e.key==="Enter"){ entrar(false); } });
+    $("btnGenerar").addEventListener("click", generar);
+    $("btnSalir").addEventListener("click", salir);
+    $("btnCopiar").addEventListener("click", copiar);
+    $("btnWhatsapp").addEventListener("click", whatsapp);
+    $("btnNuevo").addEventListener("click", nuevo);
 
-  // ── al abrir: si hay un código guardado en este teléfono, entra solo ──
-  (function(){
+    // si hay un código guardado en este teléfono, entrar solo
     var saved = loadCode();
-    if(saved){ $("codigo").value = saved; entrar(); }
-  })();
+    console.log("MYA · código guardado:", saved || "(ninguno)");
+    if(saved){
+      $("codigo").value = saved;
+      $("recordar").checked = true;
+      entrar(true);
+    }
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 </script>
 </body>
 </html>
