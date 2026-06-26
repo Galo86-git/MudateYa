@@ -237,6 +237,44 @@
   .catalogo-meta { font-size: 13px; color: var(--md-text-2); }
   .catalogo-meta strong { color: var(--md-text); }
 
+  /* ── SELECTOR DE NIVEL DE SERVICIO ───────────── */
+  .nivel-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .nivel-card {
+    position: relative;
+    text-align: left;
+    background: var(--md-bg-card);
+    border: 2px solid var(--md-border);
+    border-radius: 14px;
+    padding: 13px 15px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+  .nivel-card:hover { border-color: var(--md-coral); }
+  .nivel-card.active {
+    border-color: var(--md-coral);
+    background: var(--md-coral-soft);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  .nivel-card.empty { opacity: 0.5; }
+  .nivel-card.empty:hover { border-color: var(--md-border); }
+  .nivel-card-top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin-bottom: 4px;
+  }
+  .nivel-card-name { font-size: 15px; font-weight: 800; color: var(--md-text); letter-spacing: -0.2px; }
+  .nivel-card-count {
+    font-size: 11px; font-weight: 800;
+    color: var(--md-coral); background: var(--md-coral-light);
+    padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  }
+  .nivel-card.empty .nivel-card-count { color: var(--md-text-3); background: var(--md-bg); }
+  .nivel-card-desc { font-size: 12px; color: var(--md-text-2); font-weight: 500; line-height: 1.4; }
+
   /* Tabla CRM */
   .mud-table {
     background: var(--md-bg-card);
@@ -409,6 +447,7 @@
   /* ── Mobile ──────────────────────────────── */
   @media (max-width: 760px) {
     .top-grid { grid-template-columns: 1fr; }
+    .nivel-selector { grid-template-columns: 1fr; }
     .container { padding: 18px 14px 30px; }
     .panel { padding: 16px 18px; }
     .hero-title { font-size: 22px; }
@@ -672,8 +711,9 @@
   <div class="catalogo-section" id="catalogoSection">
     <div class="catalogo-header">
       <h2 class="catalogo-title">Mudanceros disponibles · <span class="count" id="catCount">0</span></h2>
-      <p class="catalogo-meta">Verificados <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>Llave en mano / Antiestrés</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><span class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</span><span class="tt-card-sub">Nos encargamos de absolutamente todo</span><span class="tt-list"><span class="tt-item"><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</span><span class="tt-item"><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</span><span class="tt-item"><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</span><span class="tt-item"><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</span><span class="tt-item"><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</span></span><span class="tt-card-foot">Vos solo abrís la puerta.</span></span></span> con <strong>seguro de mudanza</strong></p>
+      <p class="catalogo-meta">Verificados · con <strong>seguro de mudanza</strong> incluido · <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>¿Qué es Llave en mano?</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><span class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</span><span class="tt-card-sub">Nos encargamos de absolutamente todo</span><span class="tt-list"><span class="tt-item"><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</span><span class="tt-item"><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</span><span class="tt-item"><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</span><span class="tt-item"><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</span><span class="tt-item"><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</span></span><span class="tt-card-foot">Vos solo abrís la puerta.</span></span></span></p>
     </div>
+    <div id="nivelSelector" class="nivel-selector" style="display:none"></div>
     <div id="catContent"></div>
 
     <div class="cta-footer" id="ctaFooter" style="display:none">
@@ -955,8 +995,38 @@ var _inmoConfig = null; // se rellena tras la llamada al backend
 
 var _amb = 2;
 var _busqueda = null;
-var _mudanceros = [];
+var _todos = [];            // mudanceros de la zona, sin filtrar por nivel (se cachea tras el fetch)
+var _mudanceros = [];       // subconjunto de _todos que califica para el nivel elegido
+var _nivel = 'llave';       // nivel de servicio elegido. Default 'llave' = comportamiento histórico.
 var _sel = new Set(); // emails seleccionados (empty = pedir a todos)
+
+// ── NIVELES DE SERVICIO ──────────────────────────────────────
+// Tres niveles. Cada uno tiene su flag en serviciosActivos y su pack de precios.
+// Regla de aparición (igual que la histórica de Llave, replicada a cada nivel):
+//   aparece en nivel X  ⇔  serviciosActivos incluye flagX  Y  preciosX tiene algún amb > 0
+// El seguro de mudanza es requisito transversal a los tres niveles.
+var NIVELES = {
+  esencial: {
+    flag: 'esencial',
+    pack: 'preciosEsencial',
+    label: 'Esencial',
+    desc: 'Carga, transporte y descarga. El embalaje corre por tu cuenta.'
+  },
+  integral: {
+    flag: 'integral',
+    pack: 'preciosIntegral',
+    label: 'Integral',
+    desc: 'Transporte + embalaje de frágiles y desarmado/armado de muebles.'
+  },
+  llave: {
+    flag: 'llave',
+    pack: 'preciosLlave',
+    label: 'Llave en mano',
+    desc: 'Nos encargamos de todo: embalan, mueven, desembalan y ubican (Antiestrés).'
+  }
+};
+// Orden de presentación (de menor a mayor alcance) y de preferencia para el default.
+var NIVELES_ORDEN = ['esencial', 'integral', 'llave'];
 
 // ── Aplicar branding de la inmobiliaria ──
 // Setea color, logo, título de la página y meta description según la config en Redis.
@@ -1300,7 +1370,7 @@ function buscar() {
     ascOrigen:  'no',
     ascDestino: 'no',
     ambientes: _amb, fecha: fecha,
-    tipo: 'mudanza', nivel: 'llave'
+    tipo: 'mudanza', nivel: _nivel
   };
 
   // Mostrar sección catálogo y cargar
@@ -1338,8 +1408,10 @@ function detectarZonaSimple(desde, hasta) {
 
 async function cargarCatalogo() {
   var content = document.getElementById('catContent');
-  content.innerHTML = '<div class="cat-loading"><div class="cat-loading-spin"></div><div style="font-weight:700;color:var(--md-text)">Buscando mudanceros con Llave en mano y seguro…</div></div>';
+  content.innerHTML = '<div class="cat-loading"><div class="cat-loading-spin"></div><div style="font-weight:700;color:var(--md-text)">Buscando mudanceros verificados en tu zona…</div></div>';
   document.getElementById('ctaFooter').style.display = 'none';
+  var selCont = document.getElementById('nivelSelector');
+  if (selCont) selCont.style.display = 'none';
 
   try {
     // Misma lógica que el index: detectar zona y pasar como ?zona=GBA
@@ -1348,48 +1420,101 @@ async function cargarCatalogo() {
     var url = '/api/cotizaciones?action=catalogo' + (zona ? '&zona=' + encodeURIComponent(zona) : '');
     var r = await fetch(url);
     var d = await r.json();
-    var todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
-
-    // Filtro DURO: Llave en mano + Seguro
-    // Buscamos "seguro" en TODOS los campos donde puede aparecer:
-    //   - seguroMudanza: true       → modelo nuevo (campo dedicado)
-    //   - verificadoSeguro: true    → modelo viejo (verificación admin)
-    //   - servicios contiene "seguro" → texto libre del perfil
-    //   - serviciosActivos incluye "seguro" → array del modelo nuevo
-    //   - extra contiene "seguro" → notas/extras del perfil
-    //   - vehiculo contiene "seguro" → algunos lo pusieron acá
-    function _strSeguro(v) {
-      return v && String(v).toLowerCase().indexOf('seguro') !== -1;
-    }
-    _mudanceros = todos.filter(function(m) {
-      var sa = m.serviciosActivos;
-      // Llave en mano: requiere estar en serviciosActivos Y tener preciosLlave con
-      // al menos un precio > 0. Sin esto, no inventamos precios — si el mudancero
-      // no cargó Llave con precio real, no aparece (mismo criterio que el index).
-      var tieneLlave = Array.isArray(sa)
-        && sa.indexOf('llave') !== -1
-        && _packTienePrecioCargado(m.preciosLlave);
-      var tieneSeguro = !!m.seguroMudanza
-        || !!m.verificadoSeguro
-        || _strSeguro(m.servicios)
-        || _strSeguro(m.extra)
-        || _strSeguro(m.vehiculo)
-        || _strSeguro(m.zonaBase)
-        || _strSeguro(m.zonasExtra)
-        || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
-      return tieneLlave && tieneSeguro;
-    });
+    // Cacheamos TODOS los mudanceros de la zona sin filtrar por nivel. El filtro
+    // por nivel se hace client-side (aplicarNivel) para poder cambiar de nivel sin
+    // re-fetchear y mostrar los contadores de disponibilidad por nivel en el selector.
+    _todos = (d.mudanceros && d.mudanceros.length) ? d.mudanceros : [];
 
     // Debug panel — se activa con ?debug=1 en la URL
     if (_qp.get('debug') === '1') {
-      mostrarDebug(todos);
+      mostrarDebug(_todos);
     }
 
-    renderCatalogo();
+    // Elegir nivel inicial robusto: respetamos el default ('llave') si tiene
+    // disponibilidad; si no, caemos al primer nivel (en orden de preferencia) que
+    // tenga al menos un mudancero, para no abrir en un estado vacío.
+    _nivel = _elegirNivelInicial();
+    if (selCont) selCont.style.display = '';
+    aplicarNivel(_nivel); // setea _mudanceros + render del selector y la lista
   } catch (e) {
     console.error('Error catálogo:', e);
     content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">⚠️</div><div class="cat-empty-title">No pudimos cargar el catálogo</div><div class="cat-empty-msg">Probá de nuevo en unos segundos.</div></div>';
   }
+}
+
+// ── FILTRO POR NIVEL ─────────────────────────────────────────
+// "seguro" puede estar en muchos campos (modelo nuevo y viejo). Centralizamos acá.
+function _strSeguro(v) {
+  return v && String(v).toLowerCase().indexOf('seguro') !== -1;
+}
+function _tieneSeguro(m) {
+  var sa = m.serviciosActivos;
+  return !!m.seguroMudanza
+    || !!m.verificadoSeguro
+    || _strSeguro(m.servicios)
+    || _strSeguro(m.extra)
+    || _strSeguro(m.vehiculo)
+    || _strSeguro(m.zonaBase)
+    || _strSeguro(m.zonasExtra)
+    || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
+}
+// ¿El mudancero califica para este nivel?
+//   serviciosActivos incluye el flag del nivel  Y  el pack del nivel tiene precio  Y  tiene seguro.
+// Sin precio cargado en ese nivel NO aparece (regla pedida por Galo).
+function _califica(m, nivelKey) {
+  var cfg = NIVELES[nivelKey];
+  if (!cfg) return false;
+  var sa = m.serviciosActivos;
+  var tieneNivel = Array.isArray(sa)
+    && sa.indexOf(cfg.flag) !== -1
+    && _packTienePrecioCargado(m[cfg.pack]);
+  return tieneNivel && _tieneSeguro(m);
+}
+function _contarNivel(nivelKey) {
+  var n = 0;
+  for (var i = 0; i < _todos.length; i++) { if (_califica(_todos[i], nivelKey)) n++; }
+  return n;
+}
+// Default: 'llave' si tiene disponibilidad; si no, primer nivel del orden que tenga > 0.
+function _elegirNivelInicial() {
+  if (_contarNivel('llave') > 0) return 'llave';
+  for (var i = 0; i < NIVELES_ORDEN.length; i++) {
+    if (_contarNivel(NIVELES_ORDEN[i]) > 0) return NIVELES_ORDEN[i];
+  }
+  return 'llave'; // todos vacíos → mostramos empty-state de Llave
+}
+
+// Cambiar de nivel: re-filtra _todos, limpia la selección (el pool y los precios
+// cambian) y re-renderiza selector + lista.
+function aplicarNivel(nivelKey) {
+  if (!NIVELES[nivelKey]) return;
+  _nivel = nivelKey;
+  if (_busqueda) _busqueda.nivel = nivelKey;
+  _sel.clear();
+  _mudanceros = _todos.filter(function(m) { return _califica(m, nivelKey); });
+  renderSelectorNiveles();
+  renderCatalogo();
+}
+
+// Render del selector de 3 niveles con contador de disponibilidad por nivel.
+function renderSelectorNiveles() {
+  var cont = document.getElementById('nivelSelector');
+  if (!cont) return;
+  var html = '';
+  NIVELES_ORDEN.forEach(function(k) {
+    var cfg = NIVELES[k];
+    var n = _contarNivel(k);
+    var activo = (k === _nivel);
+    var vacio = (n === 0);
+    html += '<div class="nivel-card' + (activo ? ' active' : '') + (vacio ? ' empty' : '') + '" onclick="aplicarNivel(\'' + k + '\')">'
+      + '<div class="nivel-card-top">'
+      +   '<span class="nivel-card-name">' + cfg.label + '</span>'
+      +   '<span class="nivel-card-count">' + (vacio ? 'Sin disp.' : n + (n === 1 ? ' disp.' : ' disp.')) + '</span>'
+      + '</div>'
+      + '<div class="nivel-card-desc">' + cfg.desc + '</div>'
+      + '</div>';
+  });
+  cont.innerHTML = html;
 }
 
 // Helper: ¿el pack {amb1..amb4} tiene al menos un precio > 0 cargado?
@@ -1415,17 +1540,17 @@ function esTarifaPorHora(m) {
   return /\b(cordoba|cba|nueva\s*cordoba|villa\s*carlos\s*paz|alta\s*gracia|rio\s*cuarto|villa\s*allende|vcp|saldan|jesus\s*maria)\b/.test(zonas);
 }
 
-// Cálculo de precio referencial para Llave en mano
-// Misma lógica que el index: sin fallback al amb1, sin multiplicadores.
-// Si el mudancero no cargó preciosLlave para ese ambiente, devolvemos 0 → no aparece.
+// Cálculo de precio referencial para el NIVEL elegido (_nivel).
+// Lee del pack del nivel activo (preciosEsencial / preciosIntegral / preciosLlave).
+// Sin fallback al amb1, sin multiplicadores. Si no está cargado para ese ambiente, 0.
 function precioReferencial(m, ambientes) {
   var pAmt = function(v) { return parseInt(String(v||0).replace(/\./g,'').replace(/,/g,'')) || 0; };
   var amb = Math.max(1, ambientes || 2);
   var clave = ['amb1','amb2','amb3','amb4'][Math.min(amb,4)-1] || 'amb1';
-  // Solo aceptamos preciosLlave real para el ambiente exacto. Sin fallback al amb1,
-  // sin multiplicadores sobre precios viejos. Si no está cargado, 0.
-  if (m && m.preciosLlave && _packTienePrecioCargado(m.preciosLlave)) {
-    var p = pAmt(m.preciosLlave[clave]);
+  var packName = (NIVELES[_nivel] && NIVELES[_nivel].pack) || 'preciosLlave';
+  var pack = m && m[packName];
+  if (pack && _packTienePrecioCargado(pack)) {
+    var p = pAmt(pack[clave]);
     return p > 0 ? p : 0;
   }
   return 0;
@@ -1446,35 +1571,37 @@ function mostrarDebug(todos) {
   if (existing) existing.remove();
 
   var html = '<div id="debugPanel" style="background:#1F2937;color:#E5E7EB;padding:16px;border-radius:12px;margin:16px 0;font-family:monospace;font-size:12px;line-height:1.6">'
-    + '<div style="font-weight:800;color:#FCA5A5;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">🐛 Debug · Backend devolvió ' + todos.length + ' mudanceros aprobados en zona</div>';
+    + '<div style="font-weight:800;color:#FCA5A5;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">🐛 Debug · Backend devolvió ' + todos.length + ' mudanceros aprobados en zona</div>'
+    + '<div style="color:#FCD34D;margin-bottom:8px">Disponibles por nivel → '
+    +   'Esencial: ' + _contarNivel('esencial') + ' · '
+    +   'Integral: ' + _contarNivel('integral') + ' · '
+    +   'Llave: ' + _contarNivel('llave') + '</div>';
 
-  todos.forEach(function(m, idx) {
+  todos.forEach(function(m) {
     var sa = m.serviciosActivos;
-    var tieneLlave = Array.isArray(sa) && sa.indexOf('llave') !== -1;
-    function _strSeguro(v) { return v && String(v).toLowerCase().indexOf('seguro') !== -1; }
-    var tieneSeguro = !!m.seguroMudanza
-      || !!m.verificadoSeguro
-      || _strSeguro(m.servicios)
-      || _strSeguro(m.extra)
-      || _strSeguro(m.vehiculo)
-      || _strSeguro(m.zonaBase)
-      || _strSeguro(m.zonasExtra)
-      || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
-    var pasa = tieneLlave && tieneSeguro;
+    var seguro = _tieneSeguro(m);
+    // Por nivel: flag presente + pack con precio
+    var lineasNivel = NIVELES_ORDEN.map(function(k) {
+      var cfg = NIVELES[k];
+      var flagOk = Array.isArray(sa) && sa.indexOf(cfg.flag) !== -1;
+      var precioOk = _packTienePrecioCargado(m[cfg.pack]);
+      var ok = flagOk && precioOk && seguro;
+      return '<span style="color:' + (ok ? '#10B981' : '#F87171') + '">'
+        + (ok ? '✓' : '✗') + ' ' + cfg.label
+        + ' (flag:' + flagOk + ' precio:' + precioOk + ')</span>';
+    }).join('<br>');
+    var pasaAlguno = NIVELES_ORDEN.some(function(k){ return _califica(m, k); });
 
     html += '<div style="border-top:1px solid #374151;padding-top:8px;margin-top:8px">'
-      + '<div style="color:' + (pasa ? '#10B981' : '#F87171') + ';font-weight:700">'
-      +   (pasa ? '✓ PASA' : '✗ NO PASA')
+      + '<div style="color:' + (pasaAlguno ? '#10B981' : '#F87171') + ';font-weight:700">'
+      +   (pasaAlguno ? '✓ APARECE' : '✗ NO APARECE en ningún nivel')
       +   ' · ' + escHtml(m.empresa || m.nombre || '?')
       + '</div>'
       + '<div style="color:#9CA3AF;margin-left:16px">'
       +   'serviciosActivos: ' + (Array.isArray(sa) ? '[' + sa.join(', ') + ']' : 'null') + '<br>'
-      +   '<span style="color:' + (tieneLlave ? '#10B981' : '#F87171') + '">→ tieneLlave: ' + tieneLlave + '</span><br>'
-      +   'seguroMudanza: ' + m.seguroMudanza + ' · verificadoSeguro: ' + m.verificadoSeguro + '<br>'
-      +   'servicios: "' + escHtml((m.servicios || '').slice(0, 80)) + '"<br>'
-      +   'extra: "' + escHtml((m.extra || '').slice(0, 80)) + '"<br>'
-      +   'vehiculo: "' + escHtml((m.vehiculo || '').slice(0, 80)) + '"<br>'
-      +   '<span style="color:' + (tieneSeguro ? '#10B981' : '#F87171') + '">→ tieneSeguro: ' + tieneSeguro + '</span>'
+      +   lineasNivel + '<br>'
+      +   'seguroMudanza: ' + m.seguroMudanza + ' · verificadoSeguro: ' + m.verificadoSeguro + ' · '
+      +   '<span style="color:' + (seguro ? '#10B981' : '#F87171') + '">tieneSeguro: ' + seguro + '</span>'
       + '</div>'
       + '</div>';
   });
@@ -1488,7 +1615,14 @@ function renderCatalogo() {
   document.getElementById('catCount').textContent = _mudanceros.length;
 
   if (!_mudanceros.length) {
-    content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">🔎</div><div class="cat-empty-title">No encontramos mudanceros con todos los requisitos</div><div class="cat-empty-msg">Necesitamos mudanceros que ofrezcan <strong>Llave en mano</strong> + <strong>Seguro de mudanza</strong> en esa zona. Probá con otra dirección o contactanos: hola@mudateya.ar</div></div>';
+    var nombreNivel = (NIVELES[_nivel] && NIVELES[_nivel].label) || 'este nivel';
+    // ¿Hay disponibilidad en otro nivel? Lo sugerimos para no dejar al usuario en un callejón.
+    var otros = NIVELES_ORDEN.filter(function(k){ return k !== _nivel && _contarNivel(k) > 0; })
+      .map(function(k){ return NIVELES[k].label; });
+    var sugerencia = otros.length
+      ? 'Probá con <strong>' + otros.join('</strong> o <strong>') + '</strong> arriba'
+      : 'Probá con otra dirección o contactanos: hola@mudateya.ar';
+    content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">🔎</div><div class="cat-empty-title">No hay mudanceros con ' + escHtml(nombreNivel) + ' en esa zona</div><div class="cat-empty-msg">Necesitamos mudanceros que ofrezcan <strong>' + escHtml(nombreNivel) + '</strong> + <strong>seguro de mudanza</strong> acá. ' + sugerencia + '.</div></div>';
     document.getElementById('ctaFooter').style.display = 'none';
     return;
   }
@@ -1634,6 +1768,7 @@ function pedirATodos() {
     +   '<div class="confirm-row"><span class="confirm-row-label">Desde</span><span class="confirm-row-val">' + escHtml(_busqueda.desde) + (_busqueda.pisoOrigen ? ' <span style="color:var(--md-text-3);font-weight:500">· ' + escHtml(_busqueda.pisoOrigen) + ' ' + ascDesdeStr + '</span>' : '') + '</span></div>'
     +   '<div class="confirm-row"><span class="confirm-row-label">Hacia</span><span class="confirm-row-val">' + escHtml(_busqueda.hasta) + (_busqueda.pisoDestino ? ' <span style="color:var(--md-text-3);font-weight:500">· ' + escHtml(_busqueda.pisoDestino) + ' ' + ascHastaStr + '</span>' : '') + '</span></div>'
     +   '<div class="confirm-row"><span class="confirm-row-label">Ambientes</span><span class="confirm-row-val">' + _busqueda.ambientes + '</span></div>'
+    +   '<div class="confirm-row"><span class="confirm-row-label">Servicio</span><span class="confirm-row-val">' + escHtml((NIVELES[_nivel] && NIVELES[_nivel].label) || _nivel) + '</span></div>'
     +   '<div class="confirm-row"><span class="confirm-row-label">Fecha</span><span class="confirm-row-val">' + escHtml(fechaFmt) + '</span></div>'
     + '</div>'
     // Mudanceros destinatarios
@@ -2027,7 +2162,7 @@ async function _enviarPedido(detallesAdicionales, lugar) {
       zonaBase: _busqueda.desde,
       precio_estimado: precioEstimado,
       tipo: 'mudanza',
-      nivel: 'llave',
+      nivel: _nivel,
       modoCotizacion: 'dirigido',
       mudancerosInvitados: emails,
       // Datos del lugar (modal nuevo pisa lo del form principal)
