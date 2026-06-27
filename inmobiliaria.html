@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Coordiná tu mudanza · MudateYa</title>
-<meta name="description" content="Coordiná tu mudanza con mudanceros verificados. Servicio Llave en mano y seguro de mudanza incluido.">
+<meta name="description" content="Coordiná tu mudanza con mudanceros verificados. Pedí presupuesto a todos y elegí sin sorpresas: Esencial, Integral o Llave en mano.">
 <link rel="icon" type="image/svg+xml" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -711,7 +711,7 @@
   <div class="catalogo-section" id="catalogoSection">
     <div class="catalogo-header">
       <h2 class="catalogo-title">Mudanceros disponibles · <span class="count" id="catCount">0</span></h2>
-      <p class="catalogo-meta">Verificados · con <strong>seguro de mudanza</strong> incluido · <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>¿Qué es Llave en mano?</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><span class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</span><span class="tt-card-sub">Nos encargamos de absolutamente todo</span><span class="tt-list"><span class="tt-item"><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</span><span class="tt-item"><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</span><span class="tt-item"><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</span><span class="tt-item"><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</span><span class="tt-item"><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</span></span><span class="tt-card-foot">Vos solo abrís la puerta.</span></span></span></p>
+      <p class="catalogo-meta"><strong>Pedile presupuesto a todos y elegí sin sorpresas.</strong> · <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>¿Qué es Llave en mano?</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><span class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</span><span class="tt-card-sub">Nos encargamos de absolutamente todo</span><span class="tt-list"><span class="tt-item"><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</span><span class="tt-item"><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</span><span class="tt-item"><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</span><span class="tt-item"><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</span><span class="tt-item"><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</span></span><span class="tt-card-foot">Vos solo abrís la puerta.</span></span></span></p>
     </div>
     <div id="nivelSelector" class="nivel-selector" style="display:none"></div>
     <div id="catContent"></div>
@@ -1459,16 +1459,17 @@ function _tieneSeguro(m) {
     || (Array.isArray(sa) && sa.indexOf('seguro') !== -1);
 }
 // ¿El mudancero califica para este nivel?
-//   serviciosActivos incluye el flag del nivel  Y  el pack del nivel tiene precio  Y  tiene seguro.
+//   serviciosActivos incluye el flag del nivel  Y  el pack del nivel tiene precio.
 // Sin precio cargado en ese nivel NO aparece (regla pedida por Galo).
+// NOTA: el seguro ya NO es requisito para aparecer (mostramos todos los que ofrecen
+// el nivel con precio). _tieneSeguro se mantiene para el panel de debug.
 function _califica(m, nivelKey) {
   var cfg = NIVELES[nivelKey];
   if (!cfg) return false;
   var sa = m.serviciosActivos;
-  var tieneNivel = Array.isArray(sa)
+  return Array.isArray(sa)
     && sa.indexOf(cfg.flag) !== -1
     && _packTienePrecioCargado(m[cfg.pack]);
-  return tieneNivel && _tieneSeguro(m);
 }
 function _contarNivel(nivelKey) {
   var n = 0;
@@ -1585,7 +1586,7 @@ function mostrarDebug(todos) {
       var cfg = NIVELES[k];
       var flagOk = Array.isArray(sa) && sa.indexOf(cfg.flag) !== -1;
       var precioOk = _packTienePrecioCargado(m[cfg.pack]);
-      var ok = flagOk && precioOk && seguro;
+      var ok = flagOk && precioOk;
       return '<span style="color:' + (ok ? '#10B981' : '#F87171') + '">'
         + (ok ? '✓' : '✗') + ' ' + cfg.label
         + ' (flag:' + flagOk + ' precio:' + precioOk + ')</span>';
@@ -1622,7 +1623,7 @@ function renderCatalogo() {
     var sugerencia = otros.length
       ? 'Probá con <strong>' + otros.join('</strong> o <strong>') + '</strong> arriba'
       : 'Probá con otra dirección o contactanos: hola@mudateya.ar';
-    content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">🔎</div><div class="cat-empty-title">No hay mudanceros con ' + escHtml(nombreNivel) + ' en esa zona</div><div class="cat-empty-msg">Necesitamos mudanceros que ofrezcan <strong>' + escHtml(nombreNivel) + '</strong> + <strong>seguro de mudanza</strong> acá. ' + sugerencia + '.</div></div>';
+    content.innerHTML = '<div class="cat-empty"><div class="cat-empty-icon">🔎</div><div class="cat-empty-title">No hay mudanceros con ' + escHtml(nombreNivel) + ' en esa zona</div><div class="cat-empty-msg">Todavía no hay mudanceros que ofrezcan <strong>' + escHtml(nombreNivel) + '</strong> con precio cargado acá. ' + sugerencia + '.</div></div>';
     document.getElementById('ctaFooter').style.display = 'none';
     return;
   }
