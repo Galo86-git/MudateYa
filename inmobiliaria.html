@@ -236,6 +236,16 @@
   .catalogo-title .count { color: var(--md-coral); }
   .catalogo-meta { font-size: 13px; color: var(--md-text-2); }
   .catalogo-meta strong { color: var(--md-text); }
+  /* CTA hero del catálogo — llamada a la acción grande */
+  .catalogo-cta {
+    font-size: 27px;
+    line-height: 1.12;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    color: var(--md-text);
+    margin: 0 0 8px;
+  }
+  .catalogo-cta .cta-hl { color: var(--md-coral); }
 
   /* ── SELECTOR DE NIVEL DE SERVICIO ───────────── */
   .nivel-selector {
@@ -448,6 +458,7 @@
   @media (max-width: 760px) {
     .top-grid { grid-template-columns: 1fr; }
     .nivel-selector { grid-template-columns: 1fr; }
+    .catalogo-cta { font-size: 22px; }
     .container { padding: 18px 14px 30px; }
     .panel { padding: 16px 18px; }
     .hero-title { font-size: 22px; }
@@ -709,9 +720,9 @@
 
   <!-- ═════ CATÁLOGO CRM ═════ -->
   <div class="catalogo-section" id="catalogoSection">
+    <p class="catalogo-cta">Pedile presupuesto a todos y elegí <span class="cta-hl">sin sorpresas</span></p>
     <div class="catalogo-header">
       <h2 class="catalogo-title">Mudanceros disponibles · <span class="count" id="catCount">0</span></h2>
-      <p class="catalogo-meta"><strong>Pedile presupuesto a todos y elegí sin sorpresas.</strong> · <span class="tt-llave" tabindex="0" onclick="this.classList.toggle('open')"><strong>¿Qué es Llave en mano?</strong><span class="tt-info" aria-hidden="true">i</span><span class="tt-card" role="tooltip"><span class="tt-card-title">🔑 Llave en mano (o "Antiestrés")</span><span class="tt-card-sub">Nos encargamos de absolutamente todo</span><span class="tt-list"><span class="tt-item"><strong>Embalaje completo:</strong> empacamos toda la casa (vajilla, ropa, libros, frágiles).</span><span class="tt-item"><strong>Desarmado:</strong> desarmamos muebles, camas, electrodomésticos grandes.</span><span class="tt-item"><strong>Transporte:</strong> cargamos, transportamos y descargamos en tu nuevo hogar.</span><span class="tt-item"><strong>Armado:</strong> rearmamos todos los muebles ya en destino.</span><span class="tt-item"><strong>Ubicación:</strong> dejamos cada cosa en su lugar.</span></span><span class="tt-card-foot">Vos solo abrís la puerta.</span></span></span></p>
     </div>
     <div id="nivelSelector" class="nivel-selector" style="display:none"></div>
     <div id="catContent"></div>
