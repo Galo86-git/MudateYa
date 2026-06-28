@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MudateYa Mobility · Casos</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#E7E3DA;--paper:#FCFAF5;--ink:#16242F;--navy:#0E2C49;--brass:#9A7B3F;--brass-soft:#B8975A;--mute:#6B6B63;--line:#D8D2C6;--soft:#F3EFE7;--display:'Fraunces',serif;--body:'Inter',sans-serif;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.5;}
+  .topbar{background:var(--navy);color:#ECE8E0;padding:14px 22px;display:flex;align-items:center;gap:10px;}
+  .topbar .m{width:32px;height:32px;border-radius:50%;background:var(--brass);color:#fff;font-family:var(--display);font-weight:600;font-size:18px;display:flex;align-items:center;justify-content:center;}
+  .topbar b{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:.3px;}
+  .topbar .sub{font-size:11px;color:#C8C0B0;}
+  .topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+  .topbar .tlink{font-size:11.5px;color:#D8CFBE;cursor:pointer;background:none;border:none;text-decoration:underline;}
+
+  .wrap{max-width:1080px;margin:30px auto;padding:0 22px;}
+  .head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:22px;flex-wrap:wrap;}
+  .head h1{font-family:var(--display);font-weight:600;font-size:30px;color:var(--navy);margin:0;}
+  .head .count{font-size:13px;color:var(--mute);}
+  .btn{font-family:var(--body);font-size:13px;font-weight:600;border:none;border-radius:24px;padding:10px 20px;cursor:pointer;}
+  .btn.primary{background:var(--navy);color:#fff;}
+  .btn.primary:hover{background:#0a2138;}
+  .btn.ghost{background:var(--soft);color:var(--navy);border:1px solid var(--line);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+  .card{background:var(--paper);border:1px solid #E6E0D4;border-radius:8px;padding:20px;cursor:pointer;transition:box-shadow .15s,transform .1s;text-decoration:none;color:inherit;display:block;}
+  .card:hover{box-shadow:0 10px 26px rgba(14,44,73,.12);transform:translateY(-2px);}
+  .card .nm{font-family:var(--display);font-weight:600;font-size:21px;color:var(--navy);margin:0 0 2px;}
+  .card .co{font-size:13px;color:var(--mute);margin-bottom:14px;}
+  .card .row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink);padding:4px 0;border-top:1px solid var(--soft);}
+  .card .row span:first-child{color:var(--mute);}
+  .estado{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;}
+  .estado.nuevo{background:#F2E9D8;color:#8A6A2E;}
+  .estado.en_curso{background:#E5E9EF;color:var(--navy);}
+  .estado.cerrado{background:#E7EDE3;color:#4C6B43;}
+  .bar{height:6px;border-radius:6px;background:#E9E4DA;overflow:hidden;margin-top:12px;}
+  .bar i{display:block;height:100%;background:var(--brass);}
+  .empty{text-align:center;color:var(--mute);padding:60px 20px;font-size:14px;}
+
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(14,44,73,.4);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:100;overflow:auto;}
+  .ov.show{display:flex;}
+  .modal{background:var(--paper);border-radius:10px;max-width:560px;width:100%;padding:28px 30px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal h2{font-family:var(--display);font-weight:600;font-size:24px;color:var(--navy);margin:0 0 18px;}
+  .modal label{display:block;font-size:11.5px;font-weight:600;color:var(--navy);margin:12px 0 4px;letter-spacing:.2px;}
+  .modal input,.modal select{width:100%;font-family:var(--body);font-size:13.5px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:#fff;}
+  .modal .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;}
+  .msg{font-size:12.5px;color:#c0392b;margin-top:10px;min-height:16px;}
+  @media(max-width:520px){.modal .two{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="m">M</span><div><b>MudateYa · Mobility</b><div class="sub">Gestión de casos</div></div>
+  <div class="right"><button class="tlink" id="btnToken">Cambiar token</button></div>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <div><h1>Casos</h1><div class="count" id="count"></div></div>
+    <button class="btn primary" id="btnNuevo">+ Nuevo caso</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none;">Todavía no hay casos. Creá el primero con “+ Nuevo caso”.</div>
+</div>
+
+<!-- MODAL NUEVO CASO -->
+<div class="ov" id="ov">
+  <div class="modal">
+    <h2>Nuevo caso</h2>
+    <label>Cliente (empresa / club / embajada)</label>
+    <input id="f_empresa" placeholder="Ej: Patagonia Energía S.A.">
+    <div class="two">
+      <div><label>Tipo de organización</label>
+        <select id="f_tipoOrg"><option>Empresa</option><option>Club</option><option>Embajada</option></select></div>
+      <div><label>Contacto del cliente</label>
+        <input id="f_contacto" placeholder="Nombre — cargo"></div>
+    </div>
+    <div class="two">
+      <div><label>Persona a trasladar</label><input id="f_nombre" placeholder="Nombre y apellido"></div>
+      <div><label>Cargo / rol</label><input id="f_cargo" placeholder="Ej: Gerente de Operaciones"></div>
+    </div>
+    <div class="two">
+      <div><label>Origen</label><input id="f_origen" placeholder="Ciudad / barrio"></div>
+      <div><label>Destino</label><input id="f_destino" placeholder="Ciudad destino"></div>
+    </div>
+    <div class="two">
+      <div><label>Fecha de llegada</label><input id="f_fechaLlegada" placeholder="dd/mm/aaaa"></div>
+      <div><label>Duración asignación</label><input id="f_duracion" placeholder="Ej: 24 meses"></div>
+    </div>
+    <label>Coordinador asignado</label>
+    <select id="f_coordinador"><option>Galo</option><option>Juan</option><option>Nano</option></select>
+    <div class="msg" id="msg"></div>
+    <div class="acts">
+      <button class="btn ghost" id="btnCancel">Cancelar</button>
+      <button class="btn primary" id="btnCrear">Crear caso</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var API = "/api/casos";
+  var TOKEN = "";
+  try{ TOKEN = localStorage.getItem("mya_admin_token") || ""; }catch(e){}
+
+  function ensureToken(force){
+    if(force || !TOKEN){
+      var t = prompt("Token de acceso (lo comparten los 3 socios):", TOKEN || "");
+      if(t !== null){ TOKEN = t; try{ localStorage.setItem("mya_admin_token", TOKEN); }catch(e){} }
+    }
+  }
+  function headers(){ return {"Content-Type":"application/json","x-admin-token":TOKEN}; }
+  function esc(s){ var d=document.createElement("div"); d.textContent = s==null?"":String(s); return d.innerHTML; }
+
+  function estadoLabel(e){ return e==="en_curso"?"En curso":(e==="cerrado"?"Cerrado":"Nuevo"); }
+
+  function render(casos){
+    var grid = document.getElementById("grid");
+    var empty = document.getElementById("empty");
+    document.getElementById("count").textContent = casos.length + (casos.length===1?" caso activo":" casos activos");
+    grid.innerHTML = "";
+    if(!casos.length){ empty.style.display="block"; return; }
+    empty.style.display="none";
+    for(var i=0;i<casos.length;i++){
+      var c = casos[i];
+      var a = document.createElement("a");
+      a.className = "card";
+      a.href = "caso.html?id=" + encodeURIComponent(c.id);
+      var est = c.estado || "nuevo";
+      var av = Number(c.avance)||0;
+      a.innerHTML =
+        '<div class="nm">'+esc(c.nombre||"(sin nombre)")+'</div>'+
+        '<div class="co">'+esc(c.empresa||"")+'</div>'+
+        '<div class="row"><span>Destino</span><span>'+esc(c.destino||"—")+'</span></div>'+
+        '<div class="row"><span>Llegada</span><span>'+esc(c.fechaLlegada||"—")+'</span></div>'+
+        '<div class="row"><span>Coordinador</span><span>'+esc(c.coordinador||"—")+'</span></div>'+
+        '<div class="row" style="border-top:none;margin-top:6px"><span class="estado '+est+'">'+estadoLabel(est)+'</span><span>'+av+'%</span></div>'+
+        '<div class="bar"><i style="width:'+av+'%"></i></div>';
+      grid.appendChild(a);
+    }
+  }
+
+  function cargar(){
+    ensureToken(false);
+    fetch(API, { headers: headers() })
+      .then(function(r){ if(r.status===401){ throw new Error("Token incorrecto"); } return r.json(); })
+      .then(function(data){ render(data.casos || []); })
+      .catch(function(e){
+        document.getElementById("grid").innerHTML = "";
+        document.getElementById("empty").style.display="block";
+        document.getElementById("empty").textContent = e.message==="Token incorrecto" ? "Token incorrecto. Tocá “Cambiar token”." : "No se pudo cargar. Revisá la conexión.";
+        if(e.message==="Token incorrecto"){ ensureToken(true); }
+      });
+  }
+
+  // modal
+  var ov = document.getElementById("ov");
+  function openModal(){ ov.classList.add("show"); }
+  function closeModal(){ ov.classList.remove("show"); document.getElementById("msg").textContent=""; }
+  document.getElementById("btnNuevo").addEventListener("click", openModal);
+  document.getElementById("btnCancel").addEventListener("click", closeModal);
+  ov.addEventListener("click", function(e){ if(e.target===ov) closeModal(); });
+
+  document.getElementById("btnCrear").addEventListener("click", function(){
+    var nombre = document.getElementById("f_nombre").value.trim();
+    if(!nombre){ document.getElementById("msg").textContent = "Cargá al menos el nombre de la persona."; return; }
+    var payload = {
+      action:"crear",
+      empresa: document.getElementById("f_empresa").value.trim(),
+      tipoOrg: document.getElementById("f_tipoOrg").value,
+      contacto: document.getElementById("f_contacto").value.trim(),
+      nombre: nombre,
+      cargo: document.getElementById("f_cargo").value.trim(),
+      origen: document.getElementById("f_origen").value.trim(),
+      destino: document.getElementById("f_destino").value.trim(),
+      fechaLlegada: document.getElementById("f_fechaLlegada").value.trim(),
+      duracion: document.getElementById("f_duracion").value.trim(),
+      coordinador: document.getElementById("f_coordinador").value
+    };
+    document.getElementById("btnCrear").textContent = "Creando…";
+    fetch(API, { method:"POST", headers: headers(), body: JSON.stringify(payload) })
+      .then(function(r){ if(r.status===401){ throw new Error("Token incorrecto"); } return r.json(); })
+      .then(function(data){
+        document.getElementById("btnCrear").textContent = "Crear caso";
+        if(data.caso && data.caso.id){ location.href = "caso.html?id=" + encodeURIComponent(data.caso.id); }
+        else { document.getElementById("msg").textContent = data.error || "No se pudo crear."; }
+      })
+      .catch(function(e){ document.getElementById("btnCrear").textContent = "Crear caso"; document.getElementById("msg").textContent = e.message; });
+  });
+
+  document.getElementById("btnToken").addEventListener("click", function(){ ensureToken(true); cargar(); });
+
+  cargar();
+})();
+</script>
+</body>
+</html>
