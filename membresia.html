@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Membresía · No estás solo</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400;9..144,1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#E7E3DA;--paper:#F4F1EB;--ink:#16242F;--navy:#0E2C49;--navy2:#0a2138;--brass:#9A7B3F;--brass-soft:#B8975A;--mute:#5C5C56;--line:rgba(20,36,47,.14);--display:'Fraunces',serif;--body:'Inter',sans-serif;}
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:var(--body);background:var(--paper);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px;margin:0 auto;padding:0 22px;}
+  .eyebrow{font-size:11px;letter-spacing:3.5px;text-transform:uppercase;color:var(--brass);font-weight:600;}
+  .rule{width:42px;height:1px;background:var(--brass);margin:16px 0;}
+  em{font-style:italic;}
+
+  /* HERO */
+  .hero{background:var(--navy);color:#ECE8E0;padding:64px 22px 60px;text-align:center;}
+  .hero .eyebrow{color:var(--brass-soft);}
+  .hero .rule{margin:16px auto;}
+  .hero h1{font-family:var(--display);font-weight:500;font-size:46px;line-height:1.05;letter-spacing:-.5px;color:#fff;margin:16px 0 18px;}
+  .hero h1 em{color:var(--brass-soft);}
+  .hero p{font-size:17px;color:#C7CFD8;max-width:540px;margin:0 auto;line-height:1.6;}
+
+  /* SELECTOR DE PERFIL */
+  .pick{max-width:760px;margin:-34px auto 0;padding:0 22px;position:relative;z-index:5;}
+  .pickcards{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:560px){.pickcards{grid-template-columns:1fr;}}
+  .pc{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:26px 18px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s,box-shadow .15s;box-shadow:0 8px 24px rgba(14,44,73,.10);display:flex;align-items:center;justify-content:center;}
+  .pc:hover{box-shadow:0 12px 30px rgba(14,44,73,.16);}
+  .pc.sel{border-color:var(--brass);background:#FBF7EE;}
+  .pc .t{font-family:var(--display);font-weight:500;font-size:24px;color:var(--navy);letter-spacing:-.3px;}
+
+  .section{padding:54px 0;}
+  h2{font-family:var(--display);font-weight:500;font-size:33px;line-height:1.12;color:var(--navy);margin:0 0 14px;letter-spacing:-.3px;}
+  h2 em{color:var(--brass);}
+  .lead{font-size:16.5px;color:var(--mute);line-height:1.7;margin:0;}
+
+  /* dolor */
+  .dolor{background:var(--bg);}
+  .dolor .big{font-family:var(--display);font-weight:400;font-size:27px;line-height:1.4;color:var(--navy);}
+  .dolor .big em{color:var(--brass);font-style:italic;}
+
+  /* promesa */
+  .promesa{text-align:center;}
+  .promesa h2{font-size:38px;}
+
+  /* pilares */
+  .pilar{display:grid;grid-template-columns:46px 1fr;gap:18px;padding:22px 0;border-top:1px solid var(--line);align-items:start;}
+  .pilar:first-of-type{border-top:none;}
+  .pilar .pi{font-family:var(--display);font-weight:500;font-size:21px;font-style:italic;color:var(--brass);line-height:1;padding-top:4px;position:relative;}
+  .pilar .pi::after{content:"";position:absolute;left:2px;bottom:-4px;width:20px;height:1px;background:var(--brass-soft);opacity:.5;}
+  .pilar h3{font-family:var(--display);font-weight:600;font-size:20px;color:var(--navy);margin:0 0 4px;}
+  .pilar p{font-size:14.5px;color:var(--mute);margin:0;line-height:1.6;}
+
+  /* la vida (tres mundos) */
+  .mundos{background:var(--bg);}
+  .mundo{margin-bottom:24px;}
+  .mundo .k{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--brass);font-weight:600;}
+  .mundo h3{font-family:var(--display);font-weight:600;font-size:23px;color:var(--navy);margin:5px 0 8px;}
+  .mundo p{font-size:14.5px;color:var(--mute);margin:0 0 10px;line-height:1.6;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{font-size:12.5px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:6px 12px;}
+
+  /* cierre */
+  .cierre{background:var(--navy);color:#ECE8E0;text-align:center;}
+  .cierre h2{color:#fff;font-style:italic;font-weight:400;font-size:34px;}
+  .cierre p{font-size:16px;color:#C7CFD8;max-width:500px;margin:0 auto 26px;}
+  .price{font-family:var(--display);font-size:15px;color:var(--brass-soft);margin-bottom:8px;}
+  .btn{display:inline-block;background:var(--brass);color:#fff;font-weight:600;font-size:14px;letter-spacing:.3px;padding:15px 30px;border-radius:3px;text-decoration:none;}
+  .btn:hover{background:var(--brass-soft);}
+  .excl{font-size:12.5px;color:#8A98A6;margin-top:18px;font-style:italic;}
+
+  .switchnote{text-align:center;font-size:12.5px;color:var(--mute);padding:14px 0 0;}
+  .switchnote a{color:var(--brass);cursor:pointer;font-weight:600;}
+
+  .perfilview{display:none;}
+  .perfilview.show{display:block;}
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s;}
+  .reveal.in{opacity:1;transform:none;}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1!important;transform:none!important;}html{scroll-behavior:auto;}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">La membresía</div>
+  <div class="rule"></div>
+  <h1>Tu vida, resuelta.<br><em>Y alguien que se ocupa.</em></h1>
+</div>
+
+<div class="pick" id="pick">
+  <div class="pickcards">
+    <div class="pc" data-p="solo"><div class="t">Para mí</div></div>
+    <div class="pc" data-p="flia"><div class="t">Para mi familia</div></div>
+  </div>
+  <div class="switchnote" id="hint" style="padding-top:12px;">Elegí para quién es y te mostramos cómo se siente.</div>
+</div>
+
+<!-- ══════════ SOLO ══════════ -->
+<div class="perfilview" id="view-solo">
+  <section class="section dolor">
+    <div class="wrap reveal">
+      <div class="eyebrow">La idea</div><div class="rule"></div>
+      <p class="big">Imaginá llegar a una ciudad nueva y que <em>ya esté todo listo.</em></p>
+    </div>
+  </section>
+
+  <section class="section promesa">
+    <div class="wrap reveal">
+      <div class="eyebrow">La promesa</div><div class="rule" style="margin:16px auto;"></div>
+      <h2>Tu vida, lista desde el día uno.</h2>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="reveal"><div class="eyebrow">Lo que tenés siempre</div><div class="rule"></div></div>
+      <div class="pilar reveal"><div class="pi">I</div><div><h3>Tu persona</h3><p>Un coordinador dedicado que te conoce — no un call center. Sabe quién sos, qué te gusta y cómo te gustan las cosas.</p></div></div>
+      <div class="pilar reveal"><div class="pi">II</div><div><h3>Una sola llamada</h3><p>Lo que necesites, cuando lo necesites. Un mensaje y está hecho. Sin buscar, sin googlear, sin esperar.</p></div></div>
+      <div class="pilar reveal"><div class="pi">III</div><div><h3>Siempre un paso adelante</h3><p>Nos adelantamos a lo que viene y te lo dejamos resuelto antes de que lo pienses. Magia que en realidad es organización.</p></div></div>
+      <div class="pilar reveal"><div class="pi">IV</div><div><h3>La mejor red, ya filtrada</h3><p>Médico, gimnasio, limpieza, lo que sea: los mejores, de confianza, listos para vos. Y con respaldo nuestro.</p></div></div>
+    </div>
+  </section>
+
+  <section class="section mundos">
+    <div class="wrap">
+      <div class="reveal"><div class="eyebrow">Tu vida, resuelta</div><div class="rule"></div></div>
+      <div class="mundo reveal"><div class="k">Tu base</div><h3>Una casa que ya funciona</h3><p>El departamento elegido, los servicios andando, la limpieza, lo cotidiano — todo listo para que solo llegues y vivas.</p><div class="chips"><span class="chip">Departamento</span><span class="chip">Servicios</span><span class="chip">Limpieza</span><span class="chip">Equipamiento</span></div></div>
+      <div class="mundo reveal"><div class="k">Tu mundo</div><h3>La ciudad, en tus términos</h3><p>El gimnasio, tu deporte, los mejores lugares para comer. Tu vida social, lista para encender.</p><div class="chips"><span class="chip">Gimnasio y deporte</span><span class="chip">Salud</span><span class="chip">Tu círculo</span><span class="chip">Los mejores lugares</span></div></div>
+      <div class="mundo reveal"><div class="k">Tus momentos</div><h3>La buena vida, resuelta</h3><p>Las vacaciones armadas, la escapada perfecta, entradas y eventos. Vos disfrutás; del resto nos ocupamos.</p><div class="chips"><span class="chip">Vacaciones</span><span class="chip">Cenas y experiencias</span><span class="chip">Escapadas</span><span class="chip">Lo exclusivo</span></div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════ FAMILIA ══════════ -->
+<div class="perfilview" id="view-flia">
+  <section class="section dolor">
+    <div class="wrap reveal">
+      <div class="eyebrow">La idea</div><div class="rule"></div>
+      <p class="big">Imaginá una mudanza en la que <em>no tenés que ocuparte de nada.</em></p>
+    </div>
+  </section>
+
+  <section class="section promesa">
+    <div class="wrap reveal">
+      <div class="eyebrow">La promesa</div><div class="rule" style="margin:16px auto;"></div>
+      <h2>Todo resuelto, para que disfrutes a tu familia.</h2>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="reveal"><div class="eyebrow">Lo que tenés siempre</div><div class="rule"></div></div>
+      <div class="pilar reveal"><div class="pi">I</div><div><h3>Tu persona</h3><p>Un coordinador dedicado que conoce a tu familia — no un call center. Los nombres de los chicos, sus rutinas, cómo te gustan las cosas.</p></div></div>
+      <div class="pilar reveal"><div class="pi">II</div><div><h3>Una sola llamada</h3><p>Necesitás una niñera para hoy, un turno con el pediatra, una mano con algo. Un mensaje y resuelto. No tenés que saber a quién llamar.</p></div></div>
+      <div class="pilar reveal"><div class="pi">III</div><div><h3>Siempre un paso adelante</h3><p>El cumple de tu hijo, el control del pediatra, las próximas vacaciones: nos adelantamos y lo dejamos listo. Una cosa menos en tu cabeza.</p></div></div>
+      <div class="pilar reveal"><div class="pi">IV</div><div><h3>Solo gente de confianza</h3><p>Mucama, niñera, pediatra, colegio: los mejores, ya chequeados. Lo más difícil de un lugar nuevo —confiar— ya está resuelto.</p></div></div>
+    </div>
+  </section>
+
+  <section class="section mundos">
+    <div class="wrap">
+      <div class="reveal"><div class="eyebrow">La vida de la familia, resuelta</div><div class="rule"></div></div>
+      <div class="mundo reveal"><div class="k">La casa</div><h3>Funcionando sola</h3><p>La vivienda, los servicios, la mucama, la niñera, los proveedores de confianza. La infraestructura entera, entregada lista.</p><div class="chips"><span class="chip">Vivienda</span><span class="chip">Mucama</span><span class="chip">Niñera</span><span class="chip">Proveedores</span></div></div>
+      <div class="mundo reveal"><div class="k">Los chicos y vos</div><h3>Todos en su lugar</h3><p>El colegio, el pediatra, las actividades para que hagan amigos rápido. Y vos: tu trabajo o proyecto, tu red, tu tiempo.</p><div class="chips"><span class="chip">Colegio</span><span class="chip">Pediatra</span><span class="chip">Tu carrera</span><span class="chip">Tu red</span></div></div>
+      <div class="mundo reveal"><div class="k">Sus momentos</div><h3>La buena vida en familia</h3><p>El cumpleaños de los chicos, las vacaciones armadas, los festejos. Vos presente y disfrutando; de la logística nos ocupamos.</p><div class="chips"><span class="chip">Cumpleaños</span><span class="chip">Vacaciones</span><span class="chip">Celebraciones</span><span class="chip">Escapadas</span></div></div>
+    </div>
+  </section>
+</div>
+
+<!-- CIERRE (compartido) -->
+<section class="section cierre" id="cierre" style="display:none;">
+  <div class="wrap reveal">
+    <div class="eyebrow" style="color:var(--brass-soft)">Pertenecé</div>
+    <div class="rule" style="margin:16px auto;"></div>
+    <h2>Una vida que se siente fácil.</h2>
+    <div class="excl">Membresía anual · Por referido o invitación</div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var pcs = document.querySelectorAll(".pc");
+  function show(p){
+    document.getElementById("view-solo").classList.toggle("show", p==="solo");
+    document.getElementById("view-flia").classList.toggle("show", p==="flia");
+    document.getElementById("cierre").style.display="block";
+    for(var i=0;i<pcs.length;i++){ pcs[i].classList.toggle("sel", pcs[i].getAttribute("data-p")===p); }
+    document.getElementById("hint").style.display="none";
+    runReveal();
+    var v = document.getElementById("view-"+p);
+    if(v){ window.scrollTo({top: v.offsetTop - 10, behavior:"smooth"}); }
+  }
+  for(var i=0;i<pcs.length;i++){
+    pcs[i].addEventListener("click", function(){ show(this.getAttribute("data-p")); });
+  }
+  function runReveal(){
+    var els = document.querySelectorAll(".perfilview.show .reveal, #cierre .reveal");
+    if(!('IntersectionObserver' in window)){ for(var i=0;i<els.length;i++){els[i].classList.add('in');} return; }
+    var obs = new IntersectionObserver(function(es){ for(var j=0;j<es.length;j++){ if(es[j].isIntersecting){ es[j].target.classList.add('in'); obs.unobserve(es[j].target); } } },{threshold:.12});
+    for(var k=0;k<els.length;k++){ obs.observe(els[k]); }
+  }
+})();
+</script>
+</body>
+</html>
