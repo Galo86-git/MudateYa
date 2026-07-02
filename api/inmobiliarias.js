@@ -381,12 +381,11 @@ module.exports = async function handler(req, res) {
               <div style="font-family:Arial,sans-serif;max-width:580px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
                 <!-- Header -->
                 <div style="background:#003580;padding:24px 28px;text-align:center">
-                  <div style="margin-bottom:6px"><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#22C36A">Ya</span></div>
-                  <div style="color:#B8D4FF;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase">Bienvenida · Inmobiliaria aliada</div>
+                  <div><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#22C36A">Ya</span></div>
                 </div>
                 <!-- Body -->
                 <div style="padding:28px">
-                  <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">¡Ya estás activa, ${saludo}!</h1>
+                  <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">Cuenta activada</h1>
                   <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${data.nombre} ya es parte de MudateYa. Tu cuenta está lista para que tus clientes consigan mudanceros verificados con tu marca.</p>
 
                   <!-- URL destacada -->
