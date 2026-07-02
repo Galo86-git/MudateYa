@@ -399,7 +399,7 @@ module.exports = async function handler(req, res) {
                   <h2 style="color:#0F1419;font-size:17px;font-weight:800;margin:28px 0 12px">¿Cómo la uso con mis clientes?</h2>
                   <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:18px;font-size:14px;color:#4B5563;line-height:1.7">
                     <div style="margin-bottom:10px"><strong style="color:#003580">1.</strong> Cuando un cliente cierra una operación con vos, compartile el link de arriba (por WhatsApp, mail, lo que prefieras).</div>
-                    <div style="margin-bottom:10px"><strong style="color:#003580">2.</strong> El cliente entra, completa los datos de su mudanza y recibe 3-5 cotizaciones de mudanceros verificados.</div>
+                    <div style="margin-bottom:10px"><strong style="color:#003580">2.</strong> El cliente entra, completa los datos de su mudanza y recibe cotizaciones de mudanceros verificados.</div>
                     <div style="margin-bottom:10px"><strong style="color:#003580">3.</strong> Elige el que quiera, paga el 50% de seña por Mercado Pago y coordina con el mudancero.</div>
                     <div><strong style="color:#003580">4.</strong> Cuando la mudanza se completa, vos cobrás una comisión automática sobre el viaje.</div>
                   </div>
