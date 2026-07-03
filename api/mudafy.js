@@ -124,6 +124,18 @@ module.exports = async function handler(req, res) {
       if (!email || !emailValido(email)) return res.status(400).json({ error: 'Email inválido.' });
       if (!whatsapp || whatsapp.replace(/\D/g, '').length < 8) return res.status(400).json({ error: 'WhatsApp inválido.' });
 
+      // ── No duplicar por email: si ya hay un asesor activo con ese mail,
+      //    devolvemos su link existente (alta idempotente) en vez de crear otro. ──
+      var emailKey = 'mudafy:email:' + email.toLowerCase();
+      var existenteCod = await getJSON(emailKey);
+      if (existenteCod) {
+        var existente = await getJSON('mudafy:asesor:' + existenteCod);
+        if (existente && existente.activo !== false) {
+          var linkExist = LINK_BASE + '?asesor=' + encodeURIComponent(existente.codigo);
+          return res.status(200).json({ ok: true, yaExistia: true, codigo: existente.codigo, link: linkExist });
+        }
+      }
+
       var codigo = await generarCodigo(nombre);
       var asesor = {
         codigo: codigo,
@@ -137,6 +149,7 @@ module.exports = async function handler(req, res) {
       };
       await setJSON('mudafy:asesor:' + codigo, asesor);
       await agregarAlIndice(codigo);
+      await setJSON(emailKey, codigo);
 
       var link = LINK_BASE + '?asesor=' + encodeURIComponent(codigo);
       var qrUrl = SITE_BASE + '/api/mudafy?action=qr&codigo=' + encodeURIComponent(codigo);
@@ -234,6 +247,32 @@ module.exports = async function handler(req, res) {
       res.setHeader('Content-Type', 'image/png');
       res.setHeader('Cache-Control', 'public, max-age=86400');
       return res.status(200).end(png);
+    }
+
+    // ── ADMIN: eliminar un asesor por código ──
+    if (action === 'eliminar' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var codDel = ((req.body && req.body.codigo) || '').trim();
+      if (!codDel) return res.status(400).json({ error: 'Falta el código.' });
+      var aDel = await getJSON('mudafy:asesor:' + codDel);
+      await redisCall('del', ['mudafy:asesor:' + codDel]);
+      var idxDel = (await getJSON('mudafy:asesores')) || [];
+      await setJSON('mudafy:asesores', idxDel.filter(function(c){ return c !== codDel; }));
+      if (aDel && aDel.email) await redisCall('del', ['mudafy:email:' + aDel.email.toLowerCase()]);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── ADMIN: eliminar TODOS los asesores (limpieza de datos de prueba) ──
+    if (action === 'eliminar-todos' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      var idsAll = (await getJSON('mudafy:asesores')) || [];
+      for (var k = 0; k < idsAll.length; k++) {
+        var aAll = await getJSON('mudafy:asesor:' + idsAll[k]);
+        await redisCall('del', ['mudafy:asesor:' + idsAll[k]]);
+        if (aAll && aAll.email) await redisCall('del', ['mudafy:email:' + aAll.email.toLowerCase()]);
+      }
+      await setJSON('mudafy:asesores', []);
+      return res.status(200).json({ ok: true, borrados: idsAll.length });
     }
 
     // ── PÚBLICO: obtener un asesor por código (para mostrar su nombre en el form) ──
