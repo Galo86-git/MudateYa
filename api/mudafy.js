@@ -146,10 +146,35 @@ module.exports = async function handler(req, res) {
         const { Resend } = require('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
         var primerNombre = nombre.split(' ')[0];
+
+        // QR embebido en el propio mail (attachment inline por CID). Más robusto
+        // que un <img> a un endpoint externo, que Gmail puede no cargar. Si la
+        // generación falla, el mail igual sale con el link y sin QR inline.
+        var qrAttachments = [];
+        var qrBloqueHtml =
+          '<div style="text-align:center;margin:0 0 22px">'
+          + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
+          + '<a href="' + qrUrl + '" style="display:inline-block;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
+          + '</div>';
+        try {
+          const QRCode = require('qrcode');
+          var qrBuf = await QRCode.toBuffer(link, { type: 'png', width: 600, margin: 1, color: { dark: '#003580', light: '#FFFFFF' } });
+          qrAttachments = [{ filename: 'mudateya-qr-' + codigo + '.png', content: qrBuf.toString('base64'), content_type: 'image/png', content_id: 'qrmudafy' }];
+          qrBloqueHtml =
+            '<div style="text-align:center;margin:0 0 22px">'
+            + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
+            + '<img src="cid:qrmudafy" alt="QR de tu link" width="180" height="180" style="display:block;margin:0 auto;border:1px solid #E5E7EB;border-radius:12px;padding:8px;background:#fff"/>'
+            + '<a href="' + qrUrl + '" style="display:inline-block;margin-top:10px;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
+            + '</div>';
+        } catch (qrErr) {
+          console.warn('No se pudo generar el QR para el mail:', qrErr.message);
+        }
+
         await resend.emails.send({
           from: 'MudateYa <noreply@mudateya.ar>',
           to: email,
           subject: '✅ Ya sos aliado de MudateYa · tu link y QR',
+          attachments: qrAttachments,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
               <div style="background:#003580;padding:22px 28px">
@@ -174,11 +199,7 @@ module.exports = async function handler(req, res) {
                   <a href="${link}" style="color:#003580;font-weight:700;font-size:14px;word-break:break-all;text-decoration:none">${link.replace(/^https?:\/\//, '')}</a>
                 </div>
 
-                <div style="text-align:center;margin:0 0 22px">
-                  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>
-                  <img src="${qrUrl}" alt="QR de tu link" width="180" height="180" style="display:block;margin:0 auto;border:1px solid #E5E7EB;border-radius:12px;padding:8px;background:#fff"/>
-                  <a href="${qrUrl}" style="display:inline-block;margin-top:10px;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>
-                </div>
+                ${qrBloqueHtml}
 
                 <div style="background:#FFF5F5;border-left:3px solid #FF5A5F;border-radius:8px;padding:12px 16px;margin:0 0 8px">
                   <div style="font-size:13px;color:#0F1419;line-height:1.7">
