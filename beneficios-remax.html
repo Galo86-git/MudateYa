@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Beneficios · Programa de Aliados · MudateYa × RE/MAX</title>
+<meta name="description" content="Programa de aliados MudateYa para asesores de RE/MAX. En alquiler ganás comisión; en compraventa tu cliente recibe un beneficio que escala con la mudanza."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --coral:#DC1C2E; --coral-soft:#F7DADD;
+    --blue:#003DA5; --blue-soft:#DCE6F5; --blue-border:#C2D3EC;
+    --navy:#003580; --green:#22C36A;
+    --ink:#0F1923; --t2:#475569; --t3:#94A3B8;
+    --line:#E5E9F0; --bg:#EEF2F7; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.55; -webkit-font-smoothing:antialiased;
+    padding:24px 14px;
+  }
+  .wrap{max-width:660px; margin:0 auto; background:var(--card); border:1px solid var(--line); border-radius:20px; overflow:hidden; box-shadow:0 14px 44px rgba(15,25,35,.07)}
+
+  /* Header co-brand */
+  .head{background:var(--coral); padding:22px 26px}
+  .head .brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .head .mya{font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1.5px; color:#fff; line-height:1}
+  .head .x{color:#F0B7BC; font-size:17px; font-weight:700}
+  .head .chip{background:#fff; border-radius:7px; padding:6px 9px; display:inline-flex}
+  .head .chip img{height:26px; width:auto; display:block}
+  .head .tag{color:#F7D6D9; font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; margin-top:12px}
+
+  /* Hero */
+  .hero{padding:26px 26px 8px}
+  .hero h1{font-size:24px; font-weight:900; line-height:1.22; letter-spacing:-.4px; margin-bottom:10px}
+  .hero p{font-size:15px; color:var(--t2); line-height:1.6}
+
+  /* Columnas */
+  .cols{display:flex; gap:16px; padding:18px 22px 6px}
+  .col{flex:1; border-radius:14px; overflow:hidden; border:1px solid var(--line); display:flex; flex-direction:column}
+  .col.alq{border-color:#F1D3D6}
+  .col.cv{border-color:var(--blue-border)}
+  .col-head{padding:15px 17px; color:#fff}
+  .col.alq .col-head{background:var(--coral)}
+  .col.cv .col-head{background:var(--blue)}
+  .col-head .t{font-size:16px; font-weight:900; letter-spacing:.3px}
+  .col-head .s{font-size:12.5px; font-weight:600; opacity:.9; margin-top:2px}
+  .col-body{padding:18px 17px; flex:1}
+
+  /* Cálculo alquiler */
+  .calc{border:1px solid #F1D3D6; border-radius:12px; padding:16px 14px; text-align:center}
+  .calc .k{font-size:11px; color:var(--t3); font-weight:700; text-transform:uppercase; letter-spacing:.4px}
+  .calc .big{font-size:28px; font-weight:900; color:var(--ink); margin-top:6px}
+  .calc .mid{font-size:13px; color:var(--t2); margin-top:2px}
+  .calc .div{height:1px; background:#F1D3D6; margin:14px 0}
+  .calc .win{font-size:32px; font-weight:900; color:var(--coral); margin-top:2px}
+  .col-body .exp{font-size:13px; color:var(--t2); line-height:1.6; margin-top:15px}
+
+  /* Tabla compraventa */
+  .cv-intro{font-size:13px; color:var(--t2); line-height:1.6; margin-bottom:13px}
+  table.tiers{width:100%; border-collapse:collapse; border:1px solid var(--blue-border); border-radius:10px; overflow:hidden}
+  table.tiers th{font-size:10.5px; font-weight:800; color:var(--blue); text-transform:uppercase; letter-spacing:.3px; text-align:left; padding:8px 11px; background:#EEF3FB}
+  table.tiers td{padding:9px 11px; border-top:1px solid var(--blue-soft); font-size:13px; vertical-align:top}
+  table.tiers td.val{font-weight:800; color:var(--ink); white-space:nowrap}
+  table.tiers td.ben{color:#334155}
+  table.tiers tr.top td.ben{color:var(--blue); font-weight:700}
+  .cv-foot{font-size:13px; color:var(--t2); line-height:1.6; margin-top:13px}
+
+  /* Bonus */
+  .bonus{margin:12px 22px 4px; background:var(--coral); border-radius:14px; padding:20px 20px; text-align:center; color:#fff}
+  .bonus .b-k{font-size:12px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:#fff; opacity:.95}
+  .bonus .b-t{font-size:17px; font-weight:800; line-height:1.4; margin-top:7px}
+  .bonus .b-s{font-size:12.5px; color:var(--coral-soft); margin-top:6px}
+
+  /* Cierre + footer */
+  .cierre{margin:16px 22px 6px; border:1px solid var(--line); border-radius:12px; padding:18px; text-align:center}
+  .cierre .c-t{font-size:16px; font-weight:800; color:var(--navy)}
+  .cierre .c-s{font-size:13px; color:var(--t2); margin-top:5px}
+  .foot{padding:16px 26px 22px; text-align:center; font-size:12px; color:var(--t3)}
+
+  @media (max-width:600px){
+    .cols{flex-direction:column; gap:14px}
+    .hero h1{font-size:22px}
+    .head .mya{font-size:27px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Header -->
+    <div class="head">
+      <div class="brand">
+        <span class="mya">MudateYa</span>
+        <span class="x">&times;</span>
+        <span class="chip"><span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;line-height:1"><span style="color:#DC1C2E">RE/</span><span style="color:#003DA5">MAX</span></span></span>
+      </div>
+      <div class="tag">Programa de aliados</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+      <h1>En cada operación que cerrás, alguien gana.</h1>
+      <p>Si es <strong>alquiler</strong>, ganás vos. Si es <strong>compraventa</strong>, gana tu cliente — y vos quedás como el que se ocupó de todo.</p>
+    </div>
+
+    <!-- Columnas -->
+    <div class="cols">
+
+      <div class="col alq">
+        <div class="col-head">
+          <div class="t">🔑 ALQUILER</div>
+          <div class="s">Ganás una comisión</div>
+        </div>
+        <div class="col-body">
+          <div class="calc">
+            <div class="k">Una mudanza llave en mano promedio</div>
+            <div class="big">$2.000.000</div>
+            <div class="mid">× 5% de comisión</div>
+            <div class="div"></div>
+            <div class="k">Para vos</div>
+            <div class="win">$100.000</div>
+          </div>
+          <div class="exp">Cobrás una comisión por <strong>cada mudanza que tu cliente concrete</strong>. Se liquida todos los meses sobre las operaciones completadas. Sin tope: cuanto más derivás, más ganás.</div>
+        </div>
+      </div>
+
+      <div class="col cv">
+        <div class="col-head">
+          <div class="t">🏡 COMPRAVENTA</div>
+          <div class="s">Un regalo para tu cliente</div>
+        </div>
+        <div class="col-body">
+          <div class="cv-intro"><strong>MudateYa le regala a tu cliente</strong> un beneficio que escala con el valor de la mudanza:</div>
+          <table class="tiers">
+            <tr><th>Valor de la mudanza</th><th>El cliente recibe</th></tr>
+            <tr><td class="val">+ $1.000.000</td><td class="ben">Big Box</td></tr>
+            <tr><td class="val">+ $2.000.000</td><td class="ben">Limpieza en origen <strong>o</strong> destino</td></tr>
+            <tr><td class="val">+ $3.000.000</td><td class="ben">Limpieza en <strong>ambos</strong> hogares</td></tr>
+            <tr class="top"><td class="val">+ $4.000.000</td><td class="ben">Limpieza en ambos + Big Box</td></tr>
+          </table>
+          <div class="cv-foot">Cuanto más grande la operación, más grande el regalo. Tu cliente se muda sin estrés — y se acuerda de <strong>quién se lo hizo fácil</strong>.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bonus -->
+    <div class="bonus">
+      <div class="b-k">🏆 Bonus Aliado del Año</div>
+      <div class="b-t">Si superás las 10 operaciones en el año (alquiler + compraventa), te llevás un <strong>premio especial</strong>.</div>
+      <div class="b-s">Vos derivás, nosotros premiamos.</div>
+    </div>
+
+    <!-- Cierre -->
+    <div class="cierre">
+      <div class="c-t">MudateYa es la seguridad de mudarse.</div>
+      <div class="c-s">Sumás un plus a tu servicio, sin costo y sin trabajo extra.</div>
+    </div>
+
+    <div class="foot">mudateya.ar · hola@mudateya.ar</div>
+
+  </div>
+</body>
+</html>
