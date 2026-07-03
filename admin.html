@@ -968,6 +968,12 @@ tr:hover td{background:rgba(34,195,106,.03)}
           <h1 class="page-title">Mudafy · Aliados</h1>
           <div class="page-subtitle">Asesores de Mudafy y lo que cierran. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva limpieza de destino, sin comisión). <a href="/mudafy-altas.html" target="_blank" style="color:var(--blue);font-weight:600">Ver altas en vivo →</a></div>
         </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;font-size:13px">
+          <span style="color:var(--text2);font-weight:600">Link de registro de asesores:</span>
+          <code style="background:#F3F4F6;padding:6px 10px;border-radius:6px;font-size:12px;color:var(--text)">mudateya.ar/mudafy-registro.html</code>
+          <button class="btn-sm" onclick="_copiarTexto('https://mudateya.ar/mudafy-registro.html', this)">Copiar</button>
+          <a href="/mudafy-registro.html" target="_blank" style="color:var(--blue);font-weight:600;text-decoration:none">Abrir →</a>
+        </div>
         <div class="metrics-grid" id="mudafyMetricas" style="margin-bottom:1.2rem"></div>
         <div class="table-card">
           <div id="mudafyWrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -979,6 +985,12 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="page-header">
           <h1 class="page-title">RE/MAX · Aliados</h1>
           <div class="page-subtitle">Asesores de RE/MAX y lo que cierran. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva su beneficio, sin comisión). <a href="/remax-altas.html" target="_blank" style="color:var(--blue);font-weight:600">Ver altas en vivo →</a></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;font-size:13px">
+          <span style="color:var(--text2);font-weight:600">Link de registro de asesores:</span>
+          <code style="background:#F3F4F6;padding:6px 10px;border-radius:6px;font-size:12px;color:var(--text)">mudateya.ar/remax-registro.html</code>
+          <button class="btn-sm" onclick="_copiarTexto('https://mudateya.ar/remax-registro.html', this)">Copiar</button>
+          <a href="/remax-registro.html" target="_blank" style="color:var(--blue);font-weight:600;text-decoration:none">Abrir →</a>
         </div>
         <div class="metrics-grid" id="remaxMetricas" style="margin-bottom:1.2rem"></div>
         <div class="table-card">
@@ -4780,6 +4792,21 @@ function inmoPreviewActualizar() {
 function _inmoEscHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function _inmoEscAttr(s) { return _inmoEscHtml(s); }
 function _inmoFmt(n) { return (parseFloat(n) || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
+
+// Copiar texto al portapapeles (con feedback en el botón)
+function _copiarTexto(txt, btn) {
+  var orig = btn.textContent;
+  function ok() { btn.textContent = '¡Copiado!'; setTimeout(function(){ btn.textContent = orig; }, 1500); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(ok, function(){ _copiarFallback(txt); ok(); });
+  } else { _copiarFallback(txt); ok(); }
+}
+function _copiarFallback(txt) {
+  var ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
 
 // ════════════════════════════════════════════════════════════════════
 // MUDAFY — tracking por asesor: altas + operaciones cerradas + comisiones
