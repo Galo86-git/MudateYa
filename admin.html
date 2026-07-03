@@ -581,7 +581,6 @@ tr:hover td{background:rgba(34,195,106,.03)}
           <div class="metric-card blue"><div class="metric-label">Revenue (fees)</div><div class="metric-val" id="m-revenue">—</div><div class="metric-sub" id="m-revenue-sub">sin operaciones aún</div></div>
           <div class="metric-card amber"><div class="metric-label">Mudanceros activos</div><div class="metric-val" id="m-mudanceros">—</div><div class="metric-sub" id="m-pendientes-sub">— pendientes</div></div>
           <div class="metric-card red"><div class="metric-label">Mudanzas</div><div class="metric-val" id="m-mudanzas">—</div><div class="metric-sub">registradas</div></div>
-          <div class="metric-card" style="background:#F0FDF4;border-color:#BBF7D0"><div class="metric-label" style="color:#15803D">Encuesta Packs</div><div class="metric-val" style="color:#15803D" id="m-encuesta-si">—</div><div class="metric-sub" id="m-encuesta-sub">cargando…</div></div>
         </div>
         <div class="table-card" id="dash-transfer-section" style="display:none">
           <div class="table-header">
@@ -1181,7 +1180,7 @@ function toggleMobileMenu() {
 
 // ── DATA LOADING ───────────────────────────────────────────────────────────
 async function loadAll(){
-  await Promise.all([loadMudanceros(), loadPagos(), loadTransferencias(), loadEncuesta()]);
+  await Promise.all([loadMudanceros(), loadPagos(), loadTransferencias()]);
   renderDashboard();
 }
 
