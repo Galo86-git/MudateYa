@@ -39,11 +39,22 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   /* Hero */
   .hero{background:linear-gradient(145deg,#FF6E73,#FA5560); color:#fff; padding:30px 24px 28px; text-align:center}
-  .hero-icons{display:flex; justify-content:center; align-items:center; gap:12px; margin-bottom:12px}
-  .hero-icons svg{width:42px; height:42px; opacity:.95}
-  .hero h1{font-size:27px; font-weight:900; line-height:1.12; letter-spacing:-.5px; margin-bottom:8px}
-  .hero h1 b{color:#fff}
-  .hero p{font-size:14px; color:rgba(255,255,255,.82); max-width:360px; margin:0 auto}
+  .hero-scene{position:relative; width:260px; height:92px; margin:0 auto}
+  .hero-scene .casa{position:absolute; right:2px; bottom:6px; width:74px; height:74px; opacity:.97}
+  .hero-scene .camion-wrap{position:absolute; left:0; bottom:6px; animation:camionAndar 3s ease-in-out infinite}
+  .hero-scene .camion{display:block; width:84px; height:84px; opacity:.97; animation:camionBob .6s ease-in-out infinite}
+  @keyframes camionAndar{
+    0%{transform:translateX(0); opacity:0}
+    14%{opacity:1}
+    62%{transform:translateX(100px); opacity:1}
+    80%{transform:translateX(100px); opacity:1}
+    100%{transform:translateX(100px); opacity:0}
+  }
+  @keyframes camionBob{0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)}}
+  @media (prefers-reduced-motion:reduce){
+    .hero-scene .camion-wrap{animation:none; transform:translateX(100px)}
+    .hero-scene .camion{animation:none}
+  }
 
   /* Form */
   .body{padding:22px 24px 26px}
@@ -87,7 +98,9 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   .again a{color:var(--navy); font-weight:700; text-decoration:none; cursor:pointer}
 
   @media (max-width:400px){
-    .hero h1{font-size:24px}
+    .hero-scene{width:236px; height:86px}
+    .hero-scene .camion{width:78px; height:78px}
+    .hero-scene .casa{width:68px; height:68px}
   }
 </style>
 </head>
@@ -105,11 +118,12 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
     <!-- ═══════════ ESTADO FORM ═══════════ -->
     <div id="formState">
       <div class="hero">
-        <div class="hero-icons" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h11v9H1z"/><path d="M12 9h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.7"/><circle cx="16" cy="17.5" r="1.7"/></svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+        <div class="hero-scene" aria-hidden="true">
+          <span class="camion-wrap">
+            <svg class="camion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h11v9H1z"/><path d="M12 9h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.7"/><circle cx="16" cy="17.5" r="1.7"/></svg>
+          </span>
+          <svg class="casa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
         </div>
-        <h1>Tu cliente se muda<br><b>Ganalo vos</b></h1>
       </div>
 
       <div class="body">
