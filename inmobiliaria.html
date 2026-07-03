@@ -156,6 +156,27 @@
 
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+  /* Toggle tipo de operación (alquiler / compraventa) */
+  .op-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .op-btn {
+    padding: 11px 12px;
+    border: 1.5px solid var(--md-border-2);
+    border-radius: 10px;
+    background: var(--md-bg-card);
+    color: var(--md-text);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .op-btn:hover { border-color: var(--md-coral); }
+  .op-btn.sel {
+    background: var(--md-coral-soft);
+    border-color: var(--md-coral);
+    color: var(--md-coral-dark);
+  }
+
   /* Autocomplete */
   .ac-dd { position: absolute; top: 100%; left: 0; right: 0; background: var(--md-bg-card); border: 1px solid var(--md-border-2); border-radius: 10px; margin-top: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.12); list-style: none; padding: 5px; z-index: 100; display: none; max-height: 240px; overflow-y: auto; }
   .ac-dd.open { display: block; }
@@ -655,6 +676,14 @@
         <div class="field">
           <label class="field-label" for="cli-email">Email *</label>
           <input id="cli-email" class="field-input" type="email" placeholder="juan@ejemplo.com" autocomplete="email"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Tipo de operación *</label>
+        <div class="op-toggle">
+          <button type="button" class="op-btn" id="op-alquiler" onclick="setOperacion('alquiler')">Alquiler</button>
+          <button type="button" class="op-btn" id="op-compraventa" onclick="setOperacion('compraventa')">Compraventa</button>
         </div>
       </div>
     </div>
@@ -1331,6 +1360,13 @@ else window._gmapsCallbacks.push(_onGmapsReady);
 // ════════════════════════════════════════════════════════════
 // VALIDACIÓN + BÚSQUEDA
 // ════════════════════════════════════════════════════════════
+var _operacion = '';
+function setOperacion(v) {
+  _operacion = v;
+  document.getElementById('op-alquiler').classList.toggle('sel', v === 'alquiler');
+  document.getElementById('op-compraventa').classList.toggle('sel', v === 'compraventa');
+}
+
 function buscar() {
   // Validar datos del cliente
   var nombre = (document.getElementById('cli-nombre').value || '').trim();
@@ -1346,6 +1382,7 @@ function buscar() {
   if (tel.replace(/\D/g,'').length < 8) { alert('El teléfono parece muy corto. Revisalo.'); document.getElementById('cli-tel').focus(); return; }
   if (!email)  { alert('Por favor ingresá tu email.'); document.getElementById('cli-email').focus(); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); document.getElementById('cli-email').focus(); return; }
+  if (!_operacion) { alert('Por favor seleccioná el tipo de operación (alquiler o compraventa).'); return; }
 
   // Validar mudanza
   var desde = (document.getElementById('input-desde').value || '').trim();
@@ -1380,6 +1417,7 @@ function buscar() {
     ascOrigen:  'no',
     ascDestino: 'no',
     ambientes: _amb, fecha: fecha,
+    tipoOperacion: _operacion,
     tipo: 'mudanza', nivel: _nivel
   };
 
@@ -2191,6 +2229,8 @@ async function _enviarPedido(detallesAdicionales, lugar) {
       partner: _inmoSlug,
       partnerAsesor: '',
       partnerPropiedad: '',
+      // Tipo de operación inmobiliaria que originó la mudanza
+      tipoOperacion: _busqueda.tipoOperacion || '',
       // Detalles adicionales opcionales
       detallesAdicionales: detallesAdicionales || null
     };
@@ -2228,6 +2268,7 @@ function guardarForm() {
       cliNombre: document.getElementById('cli-nombre').value || '',
       cliTel:    document.getElementById('cli-tel').value || '',
       cliEmail:  document.getElementById('cli-email').value || '',
+      cliOperacion: _operacion,
       desde:     document.getElementById('input-desde').value || '',
       hasta:     document.getElementById('input-hasta').value || '',
       ambientes: _amb,
@@ -2246,6 +2287,7 @@ function restaurarForm() {
     if (d.cliNombre) document.getElementById('cli-nombre').value = d.cliNombre;
     if (d.cliTel)    document.getElementById('cli-tel').value    = d.cliTel;
     if (d.cliEmail)  document.getElementById('cli-email').value  = d.cliEmail;
+    if (d.cliOperacion) setOperacion(d.cliOperacion);
     // Direcciones (no pisamos las pre-llenadas por Mudafy si ya las tenemos)
     var inDesde = document.getElementById('input-desde');
     var inHasta = document.getElementById('input-hasta');
