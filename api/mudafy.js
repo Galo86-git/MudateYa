@@ -25,6 +25,9 @@
 //    atribuida a Mudafy + este asesor. Reusa el form de partner ya existente.
 var LINK_BASE = 'https://mudateya.ar/inmobiliaria/mudafy';
 
+// ── Base del sitio, para construir URLs absolutas (QR en el mail, etc.) ──
+var SITE_BASE = 'https://mudateya.ar';
+
 // ── Wrappers Redis (mismo patrón que cotizaciones.js / inmobiliarias.js) ──
 async function redisCall(method, args) {
   var url   = process.env.UPSTASH_REDIS_REST_URL;
@@ -136,7 +139,80 @@ module.exports = async function handler(req, res) {
       await agregarAlIndice(codigo);
 
       var link = LINK_BASE + '?asesor=' + encodeURIComponent(codigo);
+      var qrUrl = SITE_BASE + '/api/mudafy?action=qr&codigo=' + encodeURIComponent(codigo);
+
+      // ── Mail de bienvenida al asesor (no rompemos el alta si falla) ──
+      try {
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        var primerNombre = nombre.split(' ')[0];
+        await resend.emails.send({
+          from: 'MudateYa <noreply@mudateya.ar>',
+          to: email,
+          subject: '✅ Ya sos aliado de MudateYa · tu link y QR',
+          html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+              <div style="background:#003580;padding:22px 28px">
+                <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span>
+                <span style="color:#B8D4FF;font-size:13px;font-weight:600;margin-left:8px">× Mudafy</span>
+              </div>
+              <div style="padding:28px">
+                <h2 style="margin:0 0 10px;color:#0F1419;font-size:21px">¡Listo, ${primerNombre}! Ya estás dado de alta 🎉</h2>
+                <p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin:0 0 20px">Ya sos aliado de MudateYa a través de Mudafy. Este es tu <strong>link único</strong>: compartilo con tus clientes cuando cierren una operación y ellos consiguen mudanceros verificados.</p>
+
+                <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:14px 18px;margin:0 0 20px">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:8px">Tus datos</div>
+                  <table style="font-size:14px;color:#0F1419;line-height:1.8">
+                    <tr><td style="color:#64748B;padding-right:12px">Nombre</td><td style="font-weight:600">${nombre}</td></tr>
+                    <tr><td style="color:#64748B;padding-right:12px">Email</td><td style="font-weight:600">${email}</td></tr>
+                    <tr><td style="color:#64748B;padding-right:12px">WhatsApp</td><td style="font-weight:600">${whatsapp}</td></tr>
+                  </table>
+                </div>
+
+                <div style="border:1px dashed #CBD5E1;border-radius:10px;padding:14px 16px;margin:0 0 18px">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:6px">Tu link único</div>
+                  <a href="${link}" style="color:#003580;font-weight:700;font-size:14px;word-break:break-all;text-decoration:none">${link.replace(/^https?:\/\//, '')}</a>
+                </div>
+
+                <div style="text-align:center;margin:0 0 22px">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>
+                  <img src="${qrUrl}" alt="QR de tu link" width="180" height="180" style="display:block;margin:0 auto;border:1px solid #E5E7EB;border-radius:12px;padding:8px;background:#fff"/>
+                  <a href="${qrUrl}" style="display:inline-block;margin-top:10px;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>
+                </div>
+
+                <div style="background:#FFF5F5;border-left:3px solid #FF5A5F;border-radius:8px;padding:12px 16px;margin:0 0 8px">
+                  <div style="font-size:13px;color:#0F1419;line-height:1.7">
+                    <strong>🔑 Alquiler:</strong> ganás una comisión por cada mudanza que tu cliente concrete.<br>
+                    <strong>🏡 Compraventa:</strong> le regalás a tu cliente la limpieza de la casa nueva.
+                  </div>
+                </div>
+              </div>
+              <div style="background:#FAFAFA;border-top:1px solid #E5E7EB;padding:16px 28px;text-align:center">
+                <span style="font-size:12px;color:#94A3B8">MudateYa · la seguridad de mudarse · mudateya.ar</span>
+              </div>
+            </div>
+          </body></html>`
+        });
+      } catch (mailErr) {
+        console.warn('No se pudo enviar el mail de alta Mudafy:', mailErr.message);
+      }
+
       return res.status(200).json({ ok: true, codigo: codigo, link: link });
+    }
+
+    // ── PÚBLICO: QR (PNG) del link del asesor. Lo usa el <img> del mail y se
+    //    puede abrir/descargar directo. Se genera server-side con 'qrcode'. ──
+    if (action === 'qr' && req.method === 'GET') {
+      var codQr = (req.query.codigo || '').trim();
+      if (!codQr) return res.status(400).json({ error: 'Falta el código.' });
+      var aQr = await getJSON('mudafy:asesor:' + codQr);
+      if (!aQr || aQr.activo === false) return res.status(404).json({ error: 'Asesor no encontrado.' });
+      var linkQr = LINK_BASE + '?asesor=' + encodeURIComponent(codQr);
+      const QRCode = require('qrcode');
+      var png = await QRCode.toBuffer(linkQr, { type: 'png', width: 600, margin: 1, color: { dark: '#003580', light: '#FFFFFF' } });
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.status(200).end(png);
     }
 
     // ── PÚBLICO: obtener un asesor por código (para mostrar su nombre en el form) ──
