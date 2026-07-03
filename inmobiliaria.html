@@ -1032,6 +1032,11 @@ if (!_inmoSlug) {
 }
 var _inmoConfig = null; // se rellena tras la llamada al backend
 
+// Código de asesor (canal Mudafy). Viene en ?asesor={codigo} del link único que
+// el asesor comparte con su cliente. Se atribuye en el pedido como partnerAsesor,
+// para trackear qué asesor derivó cada mudanza bajo el partner (ej. mudafy).
+var _partnerAsesor = (_qp.get('asesor') || '').trim().slice(0, 60);
+
 var _amb = 2;
 var _busqueda = null;
 var _todos = [];            // mudanceros de la zona, sin filtrar por nivel (se cachea tras el fetch)
@@ -2227,7 +2232,7 @@ async function _enviarPedido(detallesAdicionales, lugar) {
       ascDestino:  _busqueda.ascDestino,
       // Trackeo de la inmobiliaria (slug que vino en la URL)
       partner: _inmoSlug,
-      partnerAsesor: '',
+      partnerAsesor: _partnerAsesor || '',
       partnerPropiedad: '',
       // Tipo de operación inmobiliaria que originó la mudanza
       tipoOperacion: _busqueda.tipoOperacion || '',
