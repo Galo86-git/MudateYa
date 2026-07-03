@@ -111,6 +111,7 @@ async function comisionesPendientes(slug) {
       precioFinal: parseFloat(m.precioFinal) || parseFloat(m.precio_estimado) || 0,
       comisionPct: parseFloat(m.comisionInmobiliariaPct) || 0,
       comisionPagar: comisionPagar,
+      tipoOperacion: m.tipoOperacion || '',
       liquidada: liquidada,
       fechaLiquidacion: m.fechaLiquidacionInmobiliaria || null
     });
