@@ -1167,7 +1167,10 @@ module.exports = async function handler(req, res) {
       // El % se fijó al publicar el pedido (snapshot en mudanza.comisionInmobiliariaPct)
       // para que cambios futuros en la config de la inmo no afecten viajes ya cerrados.
       // El monto a pagar se calcula sobre el precio final aceptado.
-      if (mudanza.partner && parseFloat(mudanza.comisionInmobiliariaPct) > 0) {
+      // RÉGIMEN por tipo de operación: en COMPRAVENTA la inmobiliaria ya cobró su
+      // comisión de venta, así que MudateYa NO paga comisión de referido (queda en $0
+      // y se ofrece limpieza de destino aparte). En ALQUILER sí se paga.
+      if (mudanza.partner && parseFloat(mudanza.comisionInmobiliariaPct) > 0 && mudanza.tipoOperacion !== 'compraventa') {
         const precioFinal = parseFloat(cot.precio) || 0;
         const pct = parseFloat(mudanza.comisionInmobiliariaPct);
         mudanza.comisionInmobiliariaPagar = Math.round(precioFinal * pct / 100);
