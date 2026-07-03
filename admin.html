@@ -535,6 +535,9 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <a class="sidebar-item" onclick="showPage('inmobiliarias',event)" href="#">
         <span class="sidebar-icon">🏠</span> Inmobiliarias
       </a>
+      <a class="sidebar-item" onclick="showPage('mudafy',event)" href="#">
+        <span class="sidebar-icon">🤝</span> Mudafy
+      </a>
     </div>
 
     <!-- BOTTOM NAV MOBILE -->
@@ -572,7 +575,8 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <button onclick="showPage('transferencias',event);setMobileNav('transferencias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏦 Transferencias</button>
       <button onclick="showPage('aliados',event);setMobileNav('aliados');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🤝 Aliados</button>
       <button onclick="showPage('asesores',event);setMobileNav('asesores');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏢 Asesores</button>
-      <button onclick="showPage('inmobiliarias',event);setMobileNav('inmobiliarias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🏠 Inmobiliarias</button>
+      <button onclick="showPage('inmobiliarias',event);setMobileNav('inmobiliarias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏠 Inmobiliarias</button>
+      <button onclick="showPage('mudafy',event);setMobileNav('mudafy');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🤝 Mudafy</button>
     </div>
 
     <div class="admin-main">
@@ -1250,6 +1254,18 @@ tr:hover td{background:rgba(34,195,106,.03)}
         </div>
       </div>
 
+      <!-- ═══════════ MUDAFY ═══════════ -->
+      <div class="page" id="page-mudafy">
+        <div class="page-header">
+          <h1 class="page-title">Mudafy · Aliados</h1>
+          <div class="page-subtitle">Asesores de Mudafy y lo que cierran. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva limpieza de destino, sin comisión). <a href="/mudafy-altas.html" target="_blank" style="color:var(--blue);font-weight:600">Ver altas en vivo →</a></div>
+        </div>
+        <div class="metrics-grid" id="mudafyMetricas" style="margin-bottom:1.2rem"></div>
+        <div class="table-card">
+          <div id="mudafyWrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1438,6 +1454,7 @@ function showPage(name, e){
     if(typeof renderInmoLista === 'function') renderInmoLista();
     if(typeof inmoCargarBadgeSolicitudes === 'function') inmoCargarBadgeSolicitudes();
   }
+  if(name === 'mudafy') { if(typeof renderMudafy === 'function') renderMudafy(); }
   // cerrar menu extra mobile si estaba abierto
   var em = document.getElementById('mobileExtraMenu');
   if(em) em.style.display = 'none';
@@ -5042,6 +5059,101 @@ function inmoPreviewActualizar() {
 function _inmoEscHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function _inmoEscAttr(s) { return _inmoEscHtml(s); }
 function _inmoFmt(n) { return (parseFloat(n) || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
+
+// ════════════════════════════════════════════════════════════════════
+// MUDAFY — tracking por asesor: altas + operaciones cerradas + comisiones
+// Cruza /api/mudafy?action=listar (asesores) con
+// /api/inmobiliarias?action=comisiones&slug=mudafy (viajes con partnerAsesor).
+// ════════════════════════════════════════════════════════════════════
+function _mfMetric(label, val, bg, color) {
+  return '<div class="metric-card" style="background:' + bg + ';border-color:' + bg + '"><div class="metric-label" style="color:' + color + '">' + label + '</div><div class="metric-val" style="color:' + color + '">' + val + '</div></div>';
+}
+function _mfTh(t)  { return '<th style="text-align:left;padding:8px 12px;font-weight:600;color:var(--text2);font-size:11px">' + t + '</th>'; }
+function _mfThR(t) { return '<th style="text-align:right;padding:8px 12px;font-weight:600;color:var(--text2);font-size:11px">' + t + '</th>'; }
+
+async function renderMudafy() {
+  var wrap = document.getElementById('mudafyWrap');
+  var mets = document.getElementById('mudafyMetricas');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  try {
+    var tok = _inmoTokenAdmin;
+
+    // 1) Asesores dados de alta
+    var rA = await fetch('/api/mudafy?action=listar&token=' + encodeURIComponent(tok));
+    var dA = await rA.json();
+    if (!rA.ok) throw new Error(dA.error || 'Error al listar asesores');
+    var asesores = dA.asesores || [];
+
+    // 2) Comisiones del canal (viajes cerrados con partnerAsesor)
+    var rC = await fetch('/api/inmobiliarias?action=comisiones&slug=mudafy&token=' + encodeURIComponent(tok));
+    var dC = {};
+    try { dC = await rC.json(); } catch (e) { dC = {}; }
+    var resultados    = (rC.ok && dC.resultados) ? dC.resultados : [];
+    var totalAdeudado = (rC.ok && dC.totalAdeudado) ? dC.totalAdeudado : 0;
+    var totalPagado   = (rC.ok && dC.totalPagado) ? dC.totalPagado : 0;
+
+    // 3) Agrupar viajes por asesor
+    var stats = {};
+    function bucket(k) { if (!stats[k]) stats[k] = { ops:0, alq:0, cv:0, adeudado:0, pagado:0 }; return stats[k]; }
+    for (var i = 0; i < resultados.length; i++) {
+      var m = resultados[i];
+      var b = bucket(m.partnerAsesor || '(directo)');
+      b.ops++;
+      if (m.tipoOperacion === 'compraventa') b.cv++;
+      else if (m.tipoOperacion === 'alquiler') b.alq++;
+      if (m.liquidada) b.pagado += (parseFloat(m.comisionPagar) || 0);
+      else             b.adeudado += (parseFloat(m.comisionPagar) || 0);
+    }
+
+    // 4) Filas: asesores registrados + claves sueltas (viajes sin asesor conocido)
+    var filas = [];
+    for (var k = 0; k < asesores.length; k++) {
+      var a = asesores[k];
+      var b2 = stats[a.codigo] || { ops:0, alq:0, cv:0, adeudado:0, pagado:0 };
+      filas.push({ nombre: a.nombre, email: a.email, b: b2 });
+      delete stats[a.codigo];
+    }
+    for (var key in stats) {
+      if (!stats.hasOwnProperty(key)) continue;
+      filas.push({ nombre: (key === '(directo)' ? 'Directo Mudafy (sin asesor)' : key), email: '', b: stats[key] });
+    }
+
+    // 5) Métricas
+    mets.innerHTML =
+      _mfMetric('Asesores de alta', asesores.length, '#EEF4FF', '#1E40AF') +
+      _mfMetric('Operaciones cerradas', resultados.length, '#F0FFF4', '#15803D') +
+      _mfMetric('Comisión adeudada', '$' + _inmoFmt(totalAdeudado), '#FEF3C7', '#92400E') +
+      _mfMetric('Comisión pagada', '$' + _inmoFmt(totalPagado), '#F0FDF4', '#166534');
+
+    if (!filas.length) {
+      wrap.innerHTML = '<div style="padding:36px;text-align:center;color:var(--text2)">Todavía no hay asesores dados de alta.</div>';
+      return;
+    }
+
+    // 6) Orden: más comisión adeudada primero, luego más operaciones
+    filas.sort(function(x, y) { return (y.b.adeudado - x.b.adeudado) || (y.b.ops - x.b.ops); });
+
+    var h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:720px;font-size:13px">';
+    h += '<thead><tr style="background:#fff;border-bottom:1px solid var(--border)">';
+    h += _mfTh('Asesor') + _mfTh('Operaciones') + _mfTh('Alq / CV') + _mfThR('Comisión adeudada') + _mfThR('Comisión pagada');
+    h += '</tr></thead><tbody>';
+    for (var f = 0; f < filas.length; f++) {
+      var row = filas[f];
+      h += '<tr style="border-bottom:1px solid var(--border)">';
+      h += '<td style="padding:10px 12px"><div style="font-weight:700">' + _inmoEscHtml(row.nombre || '—') + '</div>' + (row.email ? '<div style="font-size:11px;color:var(--text2)">' + _inmoEscHtml(row.email) + '</div>' : '') + '</td>';
+      h += '<td style="padding:10px 12px;font-weight:700">' + row.b.ops + '</td>';
+      h += '<td style="padding:10px 12px;color:var(--text2)">' + row.b.alq + ' alq · ' + row.b.cv + ' cv</td>';
+      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">$' + _inmoFmt(row.b.adeudado) + '</td>';
+      h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(row.b.pagado) + '</td>';
+      h += '</tr>';
+    }
+    h += '</tbody></table></div>';
+    wrap.innerHTML = h;
+  } catch (e) {
+    wrap.innerHTML = '<div style="padding:20px;color:#DC2626">Error: ' + _inmoEscHtml(e.message) + '</div>';
+  }
+}
 
 // ── Listar todas (admin) ──
 async function renderInmoLista() {
