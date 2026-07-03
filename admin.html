@@ -5296,6 +5296,20 @@ async function inmoEliminarPermanente(slug, nombre) {
 }
 
 // ── Comisiones por inmobiliaria ──
+// Badge de tipo de operación para la tabla de comisiones.
+// Compraventa lleva el flag de limpieza de destino (parte del régimen: compraventa
+// no paga comisión pero se ofrece limpieza). Alquiler es badge simple. Vacío = "—".
+function _inmoOpBadge(tipo) {
+  if (tipo === 'alquiler') {
+    return '<span style="font-size:10px;color:#1E40AF;background:#DBEAFE;padding:2px 6px;border-radius:4px;font-weight:700">Alquiler</span>';
+  }
+  if (tipo === 'compraventa') {
+    return '<span style="font-size:10px;color:#065F46;background:#D1FAE5;padding:2px 6px;border-radius:4px;font-weight:700">Compraventa</span>'
+         + '<div style="font-size:9px;color:#78350F;margin-top:3px;white-space:nowrap">🧹 limpieza destino</div>';
+  }
+  return '<span style="color:var(--text3)">—</span>';
+}
+
 async function renderInmoComisiones() {
   var wrap = document.getElementById('inmoComisionesWrap');
   if (!wrap) return;
@@ -5353,10 +5367,18 @@ async function renderInmoComisiones() {
 
     grupos.forEach(function(g) {
       if (!g.resultados.length) return;
+      var nAlq = 0, nCompra = 0;
+      g.resultados.forEach(function(m) {
+        if (m.tipoOperacion === 'compraventa') nCompra++;
+        else if (m.tipoOperacion === 'alquiler') nAlq++;
+      });
+      var opResumen = '';
+      if (nAlq) opResumen += ' · <span style="color:#1E40AF;font-weight:600">' + nAlq + ' alquiler</span>';
+      if (nCompra) opResumen += ' · <span style="color:#065F46;font-weight:600">' + nCompra + ' compraventa</span>';
       h += '<div style="margin-bottom:24px">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:8px 12px;background:#F8FAFC;border-radius:6px">';
       h += '<div style="font-weight:700;font-size:14px">' + _inmoEscHtml(g.nombre) + '</div>';
-      h += '<div style="font-size:12px;color:var(--text2)">' + g.cantidad + ' viajes · adeudado: <strong style="color:#78350F">$' + _inmoFmt(g.totalAdeudado) + '</strong>' + (g.totalPagado > 0 ? ' · pagado: <strong style="color:#065F46">$' + _inmoFmt(g.totalPagado) + '</strong>' : '') + '</div>';
+      h += '<div style="font-size:12px;color:var(--text2)">' + g.cantidad + ' viajes' + opResumen + ' · adeudado: <strong style="color:#78350F">$' + _inmoFmt(g.totalAdeudado) + '</strong>' + (g.totalPagado > 0 ? ' · pagado: <strong style="color:#065F46">$' + _inmoFmt(g.totalPagado) + '</strong>' : '') + '</div>';
       h += '</div>';
       h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:800px;font-size:13px">';
       h += '<thead><tr style="background:#fff;border-bottom:1px solid var(--border)">';
@@ -5364,6 +5386,7 @@ async function renderInmoComisiones() {
       h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Fecha</th>';
       h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Cliente</th>';
       h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Mudancero</th>';
+      h += '<th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Operación</th>';
       h += '<th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Precio final</th>';
       h += '<th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">%</th>';
       h += '<th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Comisión</th>';
@@ -5378,6 +5401,7 @@ async function renderInmoComisiones() {
         h += '<td style="padding:8px 10px;font-size:12px">' + _inmoEscHtml(m.fechaCompletada ? new Date(m.fechaCompletada).toLocaleDateString('es-AR') : '—') + '</td>';
         h += '<td style="padding:8px 10px">' + _inmoEscHtml(m.cliente) + '</td>';
         h += '<td style="padding:8px 10px">' + _inmoEscHtml(m.mudancero || '—') + '</td>';
+        h += '<td style="padding:8px 10px">' + _inmoOpBadge(m.tipoOperacion) + '</td>';
         h += '<td style="padding:8px 10px;text-align:right;font-family:monospace">$' + _inmoFmt(m.precioFinal) + '</td>';
         h += '<td style="padding:8px 10px;text-align:right;font-family:monospace;color:var(--text2)">' + m.comisionPct + '%</td>';
         h += '<td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:700">$' + _inmoFmt(m.comisionPagar) + '</td>';
@@ -5420,7 +5444,7 @@ async function inmoExportComisiones() {
     var grupos = filtro
       ? [{ slug: filtro, nombre: filtro, resultados: data.resultados || [] }]
       : (data.inmobiliarias || []);
-    var rows = [['Inmobiliaria','ID Mudanza','Fecha','Cliente','Mudancero','Desde','Hasta','Precio final','% Comisión','Comisión a pagar','Estado','Fecha liquidación']];
+    var rows = [['Inmobiliaria','ID Mudanza','Fecha','Cliente','Mudancero','Operación','Desde','Hasta','Precio final','% Comisión','Comisión a pagar','Estado','Fecha liquidación']];
     grupos.forEach(function(g) {
       g.resultados.forEach(function(m) {
         rows.push([
@@ -5429,6 +5453,7 @@ async function inmoExportComisiones() {
           m.fechaCompletada ? new Date(m.fechaCompletada).toLocaleDateString('es-AR') : '',
           m.cliente,
           m.mudancero,
+          (m.tipoOperacion === 'compraventa' ? 'Compraventa' : (m.tipoOperacion === 'alquiler' ? 'Alquiler' : '')),
           m.desde,
           m.hasta,
           m.precioFinal,
