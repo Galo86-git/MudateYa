@@ -39,6 +39,8 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   /* Hero */
   .hero{background:linear-gradient(145deg,#FF6E73,#FA5560); color:#fff; padding:30px 24px 28px; text-align:center}
+  .hero-icons{display:flex; justify-content:center; align-items:center; gap:12px; margin-bottom:12px}
+  .hero-icons svg{width:42px; height:42px; opacity:.95}
   .hero h1{font-size:27px; font-weight:900; line-height:1.12; letter-spacing:-.5px; margin-bottom:8px}
   .hero h1 b{color:#fff}
   .hero p{font-size:14px; color:rgba(255,255,255,.82); max-width:360px; margin:0 auto}
@@ -103,7 +105,11 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
     <!-- ═══════════ ESTADO FORM ═══════════ -->
     <div id="formState">
       <div class="hero">
-        <h1>Tu cliente se muda igual.<br><b>Ganalo vos.</b></h1>
+        <div class="hero-icons" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h11v9H1z"/><path d="M12 9h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.7"/><circle cx="16" cy="17.5" r="1.7"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+        </div>
+        <h1>Tu cliente se muda<br><b>Ganalo vos</b></h1>
       </div>
 
       <div class="body">
@@ -152,6 +158,10 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.8.7-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.1-.3.2-.5.1-.7-.3-1.4-.7-2-1.5-.2-.3.2-.3.5-.9.1-.1 0-.3 0-.4 0-.1-.5-1.3-.7-1.7-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.1 1.6 2.5 4 3.4.6.2 1 .4 1.3.5.6.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1z"/></svg>
             Compartir por WhatsApp
           </button>
+          <button type="button" class="btn" onclick="descargarQR()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Descargar QR
+          </button>
           <button type="button" class="btn btn-outline" onclick="copiarLink()" id="btnCopiar">Copiar link</button>
         </div>
 
@@ -166,6 +176,7 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 var ORIGEN = 'planetario-2026';
 var _link = '';
 var _nombre = '';
+var _codigo = '';
 
 function _mostrarError(msg) {
   var e = document.getElementById('gerror');
@@ -204,6 +215,7 @@ async function registrar() {
     if (!r.ok) throw new Error(data.error || ('Error ' + r.status));
 
     _link = data.link || '';
+    _codigo = data.codigo || '';
     _nombre = nombre;
     mostrarExito();
   } catch (err) {
@@ -247,6 +259,26 @@ function _copiarFallback() {
   ta.select();
   try { document.execCommand('copy'); } catch (e) {}
   document.body.removeChild(ta);
+}
+
+function descargarQR() {
+  try {
+    // Genero un QR de alta resolución al vuelo (720px) para que se vea nítido
+    // al mostrarlo o imprimirlo, independiente del tamaño en pantalla.
+    var tmp = document.createElement('canvas');
+    new QRious({ element: tmp, value: _link, size: 720, level: 'M', background: '#ffffff', foreground: '#003580' });
+    var dataUrl = tmp.toDataURL('image/png');
+    var a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'mudateya-qr-' + (_codigo || 'link') + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (e) {
+    // Fallback: si el navegador no permite descarga directa, abro la imagen
+    // en una pestaña nueva para que la guarde manualmente (mantener presionado).
+    try { window.open(document.getElementById('qrCanvas').toDataURL('image/png'), '_blank'); } catch (e2) {}
+  }
 }
 
 function compartirWhatsApp() {
