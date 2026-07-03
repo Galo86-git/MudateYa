@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Sumate a MudateYa · Aliados Mudafy</title>
-<meta name="description" content="Programa de aliados MudateYa para asesores de Mudafy. Registrate y obtené tu link único para que tus clientes consigan mudanceros verificados."/>
+<meta name="description" content="Sumate a MudateYa como aliado de Mudafy. Registrate y obtené tu link único para que tus clientes consigan mudanceros verificados."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <script>/*! QRious v4.0.2 | (C) 2017 Alasdair Mercer | GPL v3 License
@@ -15,9 +15,9 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 //# sourceMappingURL=qrious.min.js.map</script>
 <style>
   :root{
-    --navy:#003580; --green:#22C36A; --coral:#FF6B6B;
+    --navy:#003580; --green:#22C36A; --coral:#FF6B6B; --mudafy:#FF5A5F;
     --ink:#0F1923; --t2:#475569; --t3:#94A3B8;
-    --line:#E5E9F0; --bg:#EEF2F7; --card:#FFFFFF;
+    --line:#E5E9F0; --bg:#FFFFFF; --card:#FFFFFF;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
@@ -30,28 +30,18 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   /* Header co-brand */
   .cobrand{display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:18px}
-  .cobrand .mya{font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1px; color:var(--navy)}
+  .cobrand .mya{font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:1px; color:var(--navy)}
   .cobrand .mya span{color:var(--green)}
   .cobrand .x{color:var(--t3); font-size:16px; font-weight:600}
-  .cobrand .partner{font-weight:800; font-size:17px; color:var(--ink); letter-spacing:.2px}
+  .cobrand .mudafy-logo{height:34px; width:auto; display:block}
 
   .card{background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 12px 40px rgba(15,25,35,.06)}
 
   /* Hero */
-  .hero{background:var(--navy); color:#fff; padding:26px 24px 24px; text-align:center}
-  .badge{display:inline-block; font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#B8D4FF; border:1px solid rgba(184,212,255,.35); padding:5px 11px; border-radius:999px; margin-bottom:12px}
+  .hero{background:linear-gradient(145deg,#FF6E73,#FA5560); color:#fff; padding:30px 24px 28px; text-align:center}
   .hero h1{font-size:27px; font-weight:900; line-height:1.12; letter-spacing:-.5px; margin-bottom:8px}
-  .hero h1 b{color:var(--green)}
+  .hero h1 b{color:#fff}
   .hero p{font-size:14px; color:rgba(255,255,255,.82); max-width:360px; margin:0 auto}
-
-  /* Régimen: dos beneficios */
-  .regimen{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line)}
-  .reg{background:#fff; padding:16px 14px; text-align:center}
-  .reg .ic{font-size:22px; line-height:1}
-  .reg .k{font-size:12px; font-weight:800; color:var(--ink); margin:7px 0 2px; text-transform:uppercase; letter-spacing:.3px}
-  .reg .v{font-size:12px; color:var(--t2); line-height:1.4}
-  .reg.alq .k{color:var(--navy)}
-  .reg.cv  .k{color:#15803D}
 
   /* Form */
   .body{padding:22px 24px 26px}
@@ -68,7 +58,7 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   .finput:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(0,53,128,.12)}
   .gerror{display:none; background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; font-size:13px; font-weight:600; padding:10px 13px; border-radius:10px; margin-bottom:14px}
   .btn{
-    width:100%; padding:14px; border:none; border-radius:12px; background:var(--green); color:#fff;
+    width:100%; padding:14px; border:none; border-radius:12px; background:var(--mudafy); color:#fff;
     font-size:15px; font-weight:800; font-family:inherit; cursor:pointer; transition:transform .12s, opacity .15s;
     display:flex; align-items:center; justify-content:center; gap:8px;
   }
@@ -96,7 +86,6 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   @media (max-width:400px){
     .hero h1{font-size:24px}
-    .regimen{grid-template-columns:1fr}
   }
 </style>
 </head>
@@ -106,7 +95,7 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   <div class="cobrand">
     <span class="mya">Mudate<span>Ya</span></span>
     <span class="x">×</span>
-    <span class="partner">Mudafy</span>
+    <img class="mudafy-logo" src="data:image/png;base64,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" alt="Mudafy" width="158" height="34"/>
   </div>
 
   <div class="card">
@@ -114,22 +103,7 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
     <!-- ═══════════ ESTADO FORM ═══════════ -->
     <div id="formState">
       <div class="hero">
-        <span class="badge">Programa de aliados · Planetario · 4 ago</span>
         <h1>Tu cliente se muda igual.<br><b>Ganalo vos.</b></h1>
-        <p>Sumate como aliado y ofrecele a tus clientes mudanceros verificados. Registrate y llevate tu link único.</p>
-      </div>
-
-      <div class="regimen">
-        <div class="reg alq">
-          <div class="ic">🔑</div>
-          <div class="k">Alquiler</div>
-          <div class="v">Ganás una comisión por cada mudanza que tu cliente concrete.</div>
-        </div>
-        <div class="reg cv">
-          <div class="ic">🏡</div>
-          <div class="k">Compraventa</div>
-          <div class="v">Le regalás a tu cliente la limpieza de la casa nueva.</div>
-        </div>
       </div>
 
       <div class="body">
@@ -149,10 +123,6 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
         <div class="field">
           <label class="flabel" for="f-wapp">WhatsApp <span class="req">*</span></label>
           <input id="f-wapp" class="finput" type="tel" placeholder="+54 9 11 1234-5678" autocomplete="tel" inputmode="tel" maxlength="40"/>
-        </div>
-        <div class="field">
-          <label class="flabel" for="f-zona">Zona donde operás <span style="color:var(--t3);font-weight:600">(opcional)</span></label>
-          <input id="f-zona" class="finput" type="text" placeholder="Ej: Zona Norte, CABA…" maxlength="80"/>
         </div>
 
         <button type="button" class="btn" id="btnEnviar" onclick="registrar()">
@@ -211,7 +181,6 @@ async function registrar() {
   var nombre = (document.getElementById('f-nombre').value || '').trim();
   var email  = (document.getElementById('f-email').value || '').trim();
   var wapp   = (document.getElementById('f-wapp').value || '').trim();
-  var zona   = (document.getElementById('f-zona').value || '').trim();
 
   if (!nombre) { _mostrarError('Ingresá tu nombre y apellido.'); document.getElementById('f-nombre').focus(); return; }
   if (!email)  { _mostrarError('Ingresá tu email.'); document.getElementById('f-email').focus(); return; }
@@ -226,7 +195,7 @@ async function registrar() {
     var r = await fetch('/api/mudafy?action=registrar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombre, email: email, whatsapp: wapp, zona: zona, origen: ORIGEN })
+      body: JSON.stringify({ nombre: nombre, email: email, whatsapp: wapp, origen: ORIGEN })
     });
     var data;
     var txt = await r.text();
@@ -289,7 +258,6 @@ function reiniciar() {
   document.getElementById('f-nombre').value = '';
   document.getElementById('f-email').value = '';
   document.getElementById('f-wapp').value = '';
-  document.getElementById('f-zona').value = '';
   var btn = document.getElementById('btnEnviar');
   btn.disabled = false;
   btn.innerHTML = 'Generar mi link <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
