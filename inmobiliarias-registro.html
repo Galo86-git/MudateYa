@@ -381,6 +381,18 @@
           <input id="f-contacto" class="field-input" type="text" placeholder="Ej: Juan López" autocomplete="name" maxlength="80" required>
         </div>
 
+        <div class="field">
+          <label class="field-label" for="f-colegio">Matrícula profesional <span class="req">*</span></label>
+          <div style="display:grid;grid-template-columns:140px 1fr;gap:8px">
+            <select id="f-colegio" class="field-input" required>
+              <option value="">Colegio</option>
+              <option value="CUCICBA">CUCICBA</option>
+              <option value="CMCPSI">CMCPSI</option>
+            </select>
+            <input id="f-matricula" class="field-input" type="text" placeholder="N° de matrícula" autocomplete="off" maxlength="20" required>
+          </div>
+        </div>
+
       </div>
 
       <!-- ─── CONTACTO ─── -->
@@ -534,6 +546,8 @@ async function enviarForm(e) {
   // Recoger datos
   var nombre   = document.getElementById('f-nombre').value.trim();
   var contacto = document.getElementById('f-contacto').value.trim();
+  var colegio  = document.getElementById('f-colegio').value.trim();
+  var matricula= document.getElementById('f-matricula').value.trim();
   var email    = document.getElementById('f-email').value.trim();
   var wapp     = document.getElementById('f-wapp').value.trim();
   var zona     = document.getElementById('f-zona').value.trim();
@@ -544,6 +558,8 @@ async function enviarForm(e) {
   var faltan = [];
   if (!nombre)   faltan.push('nombre de la inmobiliaria');
   if (!contacto) faltan.push('tu nombre');
+  if (!colegio)  faltan.push('colegio profesional');
+  if (!matricula)faltan.push('número de matrícula');
   if (!email)    faltan.push('email');
   if (!wapp)     faltan.push('WhatsApp');
   if (!zona)     faltan.push('zona principal');
@@ -574,6 +590,8 @@ async function enviarForm(e) {
       body: JSON.stringify({
         nombre: nombre,
         contacto: contacto,
+        colegio: colegio,
+        matricula: matricula,
         email: email,
         whatsapp: wapp,
         zona: zona,
