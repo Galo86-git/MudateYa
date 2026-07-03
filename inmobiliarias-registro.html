@@ -382,15 +382,42 @@
         </div>
 
         <div class="field">
-          <label class="field-label" for="f-colegio">Matrícula profesional <span class="req">*</span></label>
-          <div style="display:grid;grid-template-columns:140px 1fr;gap:8px">
-            <select id="f-colegio" class="field-input" required>
-              <option value="">Colegio</option>
-              <option value="CUCICBA">CUCICBA</option>
-              <option value="CMCPSI">CMCPSI</option>
-            </select>
-            <input id="f-matricula" class="field-input" type="text" placeholder="N° de matrícula" autocomplete="off" maxlength="20" required>
-          </div>
+          <label class="field-label" for="f-colegio">Colegio donde estás matriculado <span class="req">*</span></label>
+          <select id="f-colegio" class="field-input" required>
+            <option value="">Seleccioná tu colegio</option>
+            <optgroup label="── CABA ──">
+              <option>CUCICBA — CABA</option>
+            </optgroup>
+            <optgroup label="── Gran Buenos Aires ──">
+              <option>San Isidro — CMCPSI</option>
+              <option>San Martín — CMCPSM</option>
+              <option>Morón</option>
+              <option>Moreno – Gral. Rodríguez</option>
+              <option>La Matanza</option>
+              <option>Lomas de Zamora</option>
+              <option>Avellaneda – Lanús</option>
+              <option>Quilmes</option>
+              <option>Zárate – Campana</option>
+              <option>La Plata</option>
+            </optgroup>
+            <optgroup label="── Resto de Provincia de Bs. As. ──">
+              <option>Mercedes</option>
+              <option>Junín</option>
+              <option>Pergamino</option>
+              <option>San Nicolás</option>
+              <option>Azul</option>
+              <option>Dolores</option>
+              <option>Mar del Plata</option>
+              <option>Necochea</option>
+              <option>Trenque Lauquen</option>
+              <option>Bahía Blanca</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-matricula">Número de matrícula <span class="req">*</span></label>
+          <input id="f-matricula" class="field-input" type="text" placeholder="Ej: 1234" autocomplete="off" maxlength="20" required>
         </div>
 
       </div>
