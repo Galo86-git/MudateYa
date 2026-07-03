@@ -112,6 +112,7 @@ async function comisionesPendientes(slug) {
       comisionPct: parseFloat(m.comisionInmobiliariaPct) || 0,
       comisionPagar: comisionPagar,
       tipoOperacion: m.tipoOperacion || '',
+      partnerAsesor: m.partnerAsesor || '',
       liquidada: liquidada,
       fechaLiquidacion: m.fechaLiquidacionInmobiliaria || null
     });
