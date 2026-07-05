@@ -12,6 +12,7 @@
     { "source": "/aceptar-terminos", "destination": "/aceptar-terminos.html" },
     { "source": "/privacidad", "destination": "/privacidad.html" },
     { "source": "/contacto", "destination": "/contacto.html" },
+    { "source": "/mya-mobility", "destination": "/mya-mobility.html" },
     { "source": "/asesores", "destination": "/asesores.html" },
     { "source": "/mudafy", "destination": "/mudafy.html" },
     { "source": "/inmobiliaria/:slug", "destination": "/inmobiliaria.html?slug=:slug" },
