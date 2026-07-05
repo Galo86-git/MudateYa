@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MudateYa Mobility — Relocation B2B · AMBA + Vaca Muerta</title>
+<meta name="description" content="La capa B2B de relocation de MudateYa: un solo responsable coordina mudanza, vivienda y adaptación. Inmobiliarias, desarrolladoras, clubes, colegios, cuerpo diplomático y Vaca Muerta."/>
+<meta property="og:title" content="MudateYa Mobility — No es una mudanza. Es una llegada."/>
+<meta property="og:description" content="Relocation B2B en el AMBA y la cuenca de Vaca Muerta. Un solo responsable, de origen a destino."/>
+<meta property="og:url" content="https://mudateya.ar/mya-mobility"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MudateYa Mobility — No es una mudanza. Es una llegada."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F2440;
+  --navy-2:#142C4C;
+  --navy-card:#1B3A5F;
+  --navy-card-2:#1E4066;
+  --gold:#C6A464;
+  --gold-bright:#E0C488;
+  --line:rgba(198,164,100,.30);
+  --line-soft:rgba(255,255,255,.08);
+  --white:#F4EFE4;
+  --muted:rgba(240,238,230,.64);
+  --muted-2:rgba(240,238,230,.46);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  color:var(--white);line-height:1.65;position:relative;
+  background:
+    radial-gradient(1200px 720px at 82% -8%, rgba(198,164,100,.13), transparent 58%),
+    radial-gradient(1000px 680px at 10% 104%, rgba(198,164,100,.08), transparent 56%),
+    linear-gradient(178deg,#0F2440 0%,#0C1D34 62%,#0A1830 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;
+}
+/* grain sutil */
+body::after{
+  content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+
+/* ══ display type ══ */
+.display{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;line-height:.92;letter-spacing:.3px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:3.4px;text-transform:uppercase;color:var(--gold)}
+.gold{color:var(--gold)}
+
+/* ══ NAV ══ */
+nav{
+  background:rgba(13,32,58,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  height:64px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;position:sticky;top:0;z-index:500;
+}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+.brand-badge{
+  width:34px;height:34px;border-radius:9px;flex:0 0 auto;
+  background:linear-gradient(150deg,var(--gold-bright),var(--gold));
+  box-shadow:0 3px 12px rgba(198,164,100,.28),inset 0 1px 0 rgba(255,255,255,.35);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Anton',sans-serif;color:var(--navy-2);font-size:20px;line-height:1;
+}
+.brand-txt{display:flex;flex-direction:column;line-height:1.05}
+.brand-txt b{font-weight:700;font-size:14px;letter-spacing:.3px;color:#fff}
+.brand-txt span{font-weight:700;font-size:14px;letter-spacing:.3px;color:var(--gold)}
+.nav-back{font-size:12px;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:7px;transition:color .2s,gap .2s}
+.nav-back:hover{color:var(--gold);gap:10px}
+
+/* ══ rings backdrop ══ */
+.rings{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.rings span{position:absolute;border:1px solid rgba(198,164,100,.10);border-radius:50%}
+
+/* ══ HERO ══ */
+.hero{position:relative;padding:104px 0 76px;overflow:hidden}
+.hero .rings span:nth-child(1){width:820px;height:820px;top:-340px;right:-280px;border-color:rgba(198,164,100,.11)}
+.hero .rings span:nth-child(2){width:600px;height:600px;top:-230px;right:-160px}
+.hero .rings span:nth-child(3){width:380px;height:380px;top:-120px;right:-50px;border-color:rgba(198,164,100,.07)}
+.hero-inner{position:relative;z-index:2}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:12px}
+.hero .eyebrow::before{content:'';width:26px;height:2px;background:var(--gold)}
+.hero .display{font-size:clamp(46px,8.4vw,92px);margin:24px 0 28px;text-shadow:0 2px 40px rgba(198,164,100,.08)}
+.hero-lede{font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:680px;line-height:1.72}
+.hero-lede b{color:var(--white);font-weight:600}
+
+.hero-stats{display:flex;gap:0;margin-top:44px;border-top:1px solid var(--line);max-width:700px}
+.hero-stats div{flex:1;padding:22px 22px 6px 0}
+.hero-stats div+div{padding-left:28px;border-left:1px solid var(--line)}
+.hero-stats .n{font-family:'Anton',sans-serif;font-size:27px;color:var(--gold);letter-spacing:.5px}
+.hero-stats .l{font-size:12px;color:var(--muted-2);margin-top:4px;letter-spacing:.4px}
+
+/* ══ CANALES index ══ */
+.canales{padding:20px 0 46px;position:relative;z-index:2}
+.canales-head{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.canales-head .eyebrow{white-space:nowrap}
+.canales-head .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.canales-head .pill{font-size:10px;font-weight:600;letter-spacing:2px;color:var(--gold);border:1px solid var(--line);border-radius:20px;padding:5px 13px;white-space:nowrap}
+
+.group{margin-top:38px}
+.group-label{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.group-label .dash{width:24px;height:2px;background:var(--gold)}
+.group-label .t{font-size:11px;font-weight:600;letter-spacing:2.6px;text-transform:uppercase;color:var(--muted)}
+
+.chan{
+  display:flex;align-items:center;gap:22px;position:relative;overflow:hidden;
+  background:linear-gradient(120deg,rgba(30,64,102,.42),rgba(20,44,76,.30));
+  border:1px solid var(--line-soft);border-radius:12px;padding:19px 24px;
+  text-decoration:none;color:inherit;margin-bottom:11px;
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.chan::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);transition:width .22s ease}
+.chan:hover{transform:translateX(7px);border-color:var(--line);box-shadow:0 14px 36px rgba(0,0,0,.30)}
+.chan:hover::before{width:5px}
+.chan .num{font-family:'Anton',sans-serif;font-size:28px;color:var(--gold);min-width:40px;padding-left:6px}
+.chan .name{font-size:17px;font-weight:600;letter-spacing:.3px;flex:1}
+.chan .tag{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--navy-2);background:linear-gradient(140deg,var(--gold-bright),var(--gold));border-radius:20px;padding:5px 12px;text-transform:uppercase}
+.chan .arw{color:var(--gold);font-size:18px;opacity:.75;transition:transform .22s ease,opacity .22s ease}
+.chan:hover .arw{transform:translateX(4px);opacity:1}
+.chan.expansion::before{background:linear-gradient(180deg,var(--gold),rgba(198,164,100,.3))}
+
+/* ══ VERTICAL detail sections ══ */
+.vert{padding:82px 0;position:relative;overflow:hidden;scroll-margin-top:72px;border-top:1px solid transparent;border-image:linear-gradient(90deg,transparent,var(--line),transparent) 1}
+.vert .wrap{position:relative;z-index:2}
+.ghost{
+  position:absolute;top:26px;right:-4px;z-index:0;pointer-events:none;user-select:none;
+  font-family:'Anton',sans-serif;font-size:300px;line-height:.8;color:transparent;
+  -webkit-text-stroke:1.5px rgba(198,164,100,.07);text-stroke:1.5px rgba(198,164,100,.07);
+}
+.vert-eyebrow{display:inline-flex;align-items:center;gap:12px;margin-bottom:22px}
+.vert-eyebrow::before{content:'';width:24px;height:2px;background:var(--gold)}
+.vert h2{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;font-size:clamp(31px,4.8vw,50px);line-height:.98;letter-spacing:.4px;max-width:15ch}
+.vert h2 .gold{display:block}
+.vert-intro{font-size:16px;color:var(--muted);max-width:730px;margin-top:24px;line-height:1.74}
+.vert-intro b{color:var(--white);font-weight:600}
+
+.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:40px 0 8px;border-top:1px solid var(--line)}
+.pillars div{padding:22px 22px 0 0}
+.pillars div+div{padding-left:26px;border-left:1px solid var(--line)}
+.pillars .n{font-family:'Anton',sans-serif;font-size:24px;color:var(--gold)}
+.pillars .l{font-size:13px;color:var(--muted-2);margin-top:4px;line-height:1.5}
+
+.subcards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:48px}
+.subcard{
+  position:relative;overflow:hidden;border-radius:14px;padding:30px 28px;
+  background:linear-gradient(158deg,rgba(30,64,102,.60),rgba(18,40,72,.34));
+  border:1px solid var(--line-soft);
+  transition:transform .26s ease,border-color .26s ease,box-shadow .26s ease;
+}
+.subcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent 72%)}
+.subcard:hover{transform:translateY(-5px);border-color:var(--line);box-shadow:0 24px 56px rgba(0,0,0,.38)}
+.subcard h3{font-size:18px;font-weight:700;letter-spacing:.2px;margin-bottom:13px;color:#fff}
+.subcard p{font-size:14px;color:var(--muted);line-height:1.72}
+
+.resuelto{margin-top:50px}
+.resuelto .rlabel{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.resuelto .rlabel .dash{width:24px;height:2px;background:var(--gold)}
+.resuelto .rlabel .t{font-size:11px;font-weight:600;letter-spacing:2.6px;text-transform:uppercase;color:var(--muted)}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feat{
+  position:relative;border:1px solid var(--line-soft);border-radius:10px;padding:17px 18px 17px 40px;
+  background:rgba(255,255,255,.025);transition:border-color .2s ease,background .2s ease,transform .2s ease;
+}
+.feat::before{
+  content:'';position:absolute;left:16px;top:20px;width:13px;height:8px;
+  border-left:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:rotate(-45deg);
+}
+.feat:hover{border-color:var(--line);background:rgba(198,164,100,.06);transform:translateY(-2px)}
+.feat .ft{font-size:14px;font-weight:600;color:#fff;margin-bottom:2px}
+.feat .fs{font-size:12px;color:var(--muted-2);line-height:1.5}
+
+.quote{position:relative;margin-top:52px;padding:0 0 0 30px}
+.quote::before{content:'\201C';position:absolute;left:-8px;top:-46px;font-family:'Anton',sans-serif;font-size:130px;line-height:1;color:rgba(198,164,100,.18)}
+.quote .bar{position:absolute;left:0;top:4px;bottom:4px;width:3px;background:linear-gradient(180deg,var(--gold),rgba(198,164,100,.2))}
+.quote p{font-size:clamp(18px,2.6vw,24px);font-weight:600;line-height:1.42;color:#fff;font-style:italic}
+.tagline{margin-top:20px;font-size:14px;letter-spacing:.4px;color:var(--gold);font-weight:600}
+.top-link{display:inline-flex;align-items:center;gap:8px;margin-top:36px;font-size:13px;font-weight:600;letter-spacing:.4px;color:var(--muted);text-decoration:none;border:1px solid var(--line-soft);border-radius:30px;padding:9px 18px;transition:color .2s,border-color .2s,gap .2s,background .2s}
+.top-link:hover{color:var(--gold);border-color:var(--line);gap:11px;background:rgba(198,164,100,.05)}
+#canales{scroll-margin-top:84px}
+
+/* ══ CTA ══ */
+.cta{position:relative;padding:104px 0 112px;overflow:hidden;border-top:1px solid var(--line)}
+.cta .rings span:nth-child(1){width:900px;height:900px;bottom:-480px;left:-340px;border-color:rgba(198,164,100,.10)}
+.cta .rings span:nth-child(2){width:640px;height:640px;bottom:-350px;left:-220px}
+.cta .rings span:nth-child(3){width:400px;height:400px;bottom:-220px;left:-100px;border-color:rgba(198,164,100,.06)}
+.cta-inner{position:relative;z-index:2}
+.cta .eyebrow{display:inline-flex;align-items:center;gap:12px}
+.cta .eyebrow::before{content:'';width:26px;height:2px;background:var(--gold)}
+.cta .display{font-size:clamp(42px,7.6vw,82px);margin:22px 0 26px;text-shadow:0 2px 40px rgba(198,164,100,.10)}
+.cta-body{font-size:17px;color:var(--muted);max-width:640px;line-height:1.72}
+.cta-body b{color:var(--white);font-weight:600}
+.cta-card{
+  position:relative;overflow:hidden;margin-top:48px;max-width:620px;
+  background:linear-gradient(125deg,var(--gold-bright) 0%,var(--gold) 55%,#B8955A 100%);
+  border-radius:18px;padding:36px 38px;color:var(--navy-2);
+  box-shadow:0 26px 60px rgba(198,164,100,.24),inset 0 1px 0 rgba(255,255,255,.4);
+}
+.cta-card::after{content:'';position:absolute;width:300px;height:300px;border:1px solid rgba(20,44,76,.14);border-radius:50%;top:-160px;right:-120px}
+.cta-card .k{position:relative;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(20,44,76,.72)}
+.cta-card a.mail{position:relative;display:inline-block;font-family:'Anton',sans-serif;font-size:clamp(27px,4.6vw,40px);letter-spacing:.5px;color:var(--navy-2);text-decoration:none;margin:9px 0 6px;text-transform:uppercase;transition:opacity .2s}
+.cta-card a.mail:hover{opacity:.78}
+.cta-card .site{position:relative;font-size:13px;font-weight:700;color:rgba(20,44,76,.74)}
+
+/* ══ FOOTER ══ */
+footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);padding:28px 0;position:relative;z-index:2}
+.foot-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.foot-l{font-size:12px;color:var(--muted);letter-spacing:.5px}
+.foot-l b{color:#fff;font-weight:700}
+.foot-r{display:flex;gap:22px}
+.foot-r a{font-size:12px;color:var(--muted-2);text-decoration:none;transition:color .2s}
+.foot-r a:hover{color:var(--gold)}
+
+/* ══ reveal ══ */
+.rev{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.rev.in{opacity:1;transform:none}
+
+/* ══ responsive ══ */
+@media(max-width:760px){
+  .wrap{padding:0 20px}
+  nav{padding:0 20px;height:58px}
+  .hero{padding:64px 0 52px}
+  .hero-stats{flex-direction:column}
+  .hero-stats div{padding:16px 0}
+  .hero-stats div+div{padding-left:0;border-left:none;border-top:1px solid var(--line)}
+  .ghost{display:none}
+  .pillars{grid-template-columns:1fr}
+  .pillars div{padding:16px 0}
+  .pillars div+div{padding-left:0;border-left:none;border-top:1px solid var(--line)}
+  .subcards{grid-template-columns:1fr}
+  .feats{grid-template-columns:1fr}
+  .chan{gap:14px;padding:16px 16px}
+  .chan .num{font-size:23px;min-width:32px;padding-left:0}
+  .chan .name{font-size:15px}
+  .chan .tag{display:none}
+  .vert{padding:58px 0}
+  .cta{padding:70px 0 78px}
+  .cta-card{padding:30px 24px}
+  .foot-inner{flex-direction:column;align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rev{opacity:1;transform:none;transition:none}
+  .chan,.feat,.subcard,.arw,.nav-back{transition:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/mya-mobility" class="brand">
+    <span class="brand-badge">M</span>
+    <span class="brand-txt"><b>MudateYa</b><span>Mobility</span></span>
+  </a>
+  <a href="/" class="nav-back">← Volver a MudateYa</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="rings"><span></span><span></span><span></span></div>
+  <div class="wrap hero-inner">
+    <div class="eyebrow">Relocation B2B · AMBA + Vaca Muerta</div>
+    <h1 class="display">No es una mudanza.<br/><span class="gold">Es una llegada.</span></h1>
+    <p class="hero-lede">MudateYa Mobility es la capa <b>B2B de relocation</b>: un solo responsable coordina mudanza, vivienda y adaptación para que el talento y su familia lleguen enfocados solo en lo suyo. <b>Seis canales en el AMBA</b> y la expansión a <b>Neuquén / Vaca Muerta</b> con C·HOST.</p>
+    <div class="hero-stats">
+      <div><div class="n">6 canales</div><div class="l">activos en el AMBA</div></div>
+      <div><div class="n">Vaca Muerta</div><div class="l">expansión con C·HOST</div></div>
+      <div><div class="n">1 responsable</div><div class="l">de origen a destino</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CANALES -->
+<section class="canales" id="canales">
+  <div class="wrap">
+    <div class="canales-head">
+      <div class="eyebrow">Canales</div>
+      <div class="pill">4 grupos · 7 canales</div>
+      <div class="rule"></div>
+    </div>
+
+    <div class="group">
+      <div class="group-label"><span class="dash"></span><span class="t">Real Estate</span></div>
+      <a href="#real-estate" class="chan"><span class="num">01</span><span class="name">Inmobiliarias</span><span class="arw">→</span></a>
+      <a href="#real-estate" class="chan"><span class="num">02</span><span class="name">Desarrolladoras</span><span class="arw">→</span></a>
+    </div>
+
+    <div class="group">
+      <div class="group-label"><span class="dash"></span><span class="t">Instituciones</span></div>
+      <a href="#instituciones" class="chan"><span class="num">03</span><span class="name">Clubes de Fútbol Profesional</span><span class="arw">→</span></a>
+      <a href="#instituciones" class="chan"><span class="num">04</span><span class="name">Colegios</span><span class="arw">→</span></a>
+    </div>
+
+    <div class="group">
+      <div class="group-label"><span class="dash"></span><span class="t">Diplomáticos</span></div>
+      <a href="#diplomaticos" class="chan"><span class="num">05</span><span class="name">Cuerpo Diplomático Extranjero</span><span class="arw">→</span></a>
+      <a href="#diplomaticos" class="chan"><span class="num">06</span><span class="name">Regreso a la Argentina</span><span class="arw">→</span></a>
+    </div>
+
+    <div class="group">
+      <div class="group-label"><span class="dash"></span><span class="t">Energía · Vaca Muerta</span></div>
+      <a href="#energia" class="chan expansion"><span class="num">07</span><span class="name">C·HOST · Vaca Muerta</span><span class="tag">Expansión</span><span class="arw">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- REAL ESTATE -->
+<section class="vert" id="real-estate">
+  <span class="ghost" aria-hidden="true">01</span>
+  <div class="wrap">
+    <div class="eyebrow vert-eyebrow rev">Real Estate · Canales 01–02</div>
+    <h2 class="rev">Interceptamos la mudanza <span class="gold">antes de Google.</span></h2>
+    <p class="vert-intro rev">En real estate, la mudanza aparece en el momento de mayor decisión del cliente —la firma del alquiler o la entrega de la unidad—: el <b>momento cero de la verdad</b>, antes de que busque en Google. MudateYa le da a inmobiliarias y desarrolladoras una herramienta para capturar ese momento y transformarlo en un beneficio de marca, sin costo ni gestión de su lado.</p>
+    <div class="pillars rev">
+      <div><div class="n">Momento cero</div><div class="l">la mudanza se decide en la operación, antes de Google</div></div>
+      <div><div class="n">Sin costo</div><div class="l">ni gestión para la inmobiliaria o desarrolladora</div></div>
+      <div><div class="n">1 responsable</div><div class="l">de origen a destino</div></div>
+    </div>
+    <div class="subcards rev">
+      <div class="subcard">
+        <h3>Inmobiliarias</h3>
+        <p>La mudanza es donde el cliente pasa del entusiasmo de la firma al estrés de la logística, y ahí la agencia puede marcar la diferencia. Con MudateYa, la inmobiliaria le ofrece la mudanza completa como beneficio de cierre: coordinamos todo de punta a punta —embalaje, traslado y montaje— con red verificada y un solo responsable. La agencia suma un diferencial concreto, fideliza al cliente y no toca una caja.</p>
+      </div>
+      <div class="subcard">
+        <h3>Desarrolladoras</h3>
+        <p>La entrega de las llaves es el momento más esperado de la obra, y donde para la familia recién empieza lo difícil. Cada comprador recibe la mudanza resuelta como beneficio de marca de la desarrolladora: embalaje, traslado, montaje y la casa lista desde el día uno. La última milla queda impecable, sin costo ni gestión de su parte, e ideal para entregas concentradas donde muchas familias se mudan a la vez.</p>
+      </div>
+    </div>
+    <div class="resuelto rev">
+      <div class="rlabel"><span class="dash"></span><span class="t">Todo resuelto, en un solo lugar</span></div>
+      <div class="feats">
+        <div class="feat"><div class="ft">Embalaje y protección</div><div class="fs">de todo, profesional</div></div>
+        <div class="feat"><div class="ft">Traslado puerta a puerta</div><div class="fs">con seguimiento</div></div>
+        <div class="feat"><div class="ft">Montaje e instalación</div><div class="fs">muebles armados</div></div>
+        <div class="feat"><div class="ft">Casa lista el día uno</div><div class="fs">lista para habitar</div></div>
+        <div class="feat"><div class="ft">Red verificada y asegurada</div><div class="fs">en todo el AMBA</div></div>
+        <div class="feat"><div class="ft">Un solo responsable</div><div class="fs">una sola gestión</div></div>
+      </div>
+    </div>
+    <div class="quote rev"><span class="bar"></span><p>La mudanza deja de ser un problema del cliente y pasa a ser un activo de la marca de la agencia.</p></div>
+    <div class="tagline rev">La inmobiliaria suma. El cliente se muda tranquilo. MudateYa ejecuta.</div>
+    <a href="#canales" class="top-link rev">↑ Volver a los canales</a>
+  </div>
+</section>
+
+<!-- INSTITUCIONES -->
+<section class="vert" id="instituciones">
+  <span class="ghost" aria-hidden="true">03</span>
+  <div class="wrap">
+    <div class="eyebrow vert-eyebrow rev">Instituciones · Canales 03–04</div>
+    <h2 class="rev">El talento llega. <span class="gold">La institución delega.</span></h2>
+    <p class="vert-intro rev">Clubes y colegios incorporan cada temporada talento y familias de otras provincias y del exterior. La logística de esa llegada no puede competir con lo importante —jugar, enseñar—. MudateYa instala <b>llave en mano</b> para que la institución se enfoque en lo suyo y la familia se adapte desde el primer día.</p>
+    <div class="pillars rev">
+      <div><div class="n">48 hs</div><div class="l">y el refuerzo tiene que entrenar</div></div>
+      <div><div class="n">Nac. + Ext.</div><div class="l">de dónde llegan las familias</div></div>
+      <div><div class="n">1 interlocutor</div><div class="l">para toda la operación</div></div>
+    </div>
+    <div class="subcards rev">
+      <div class="subcard">
+        <h3>Clubes de Fútbol Profesional</h3>
+        <p>Cada temporada los clubes incorporan jugadores de otras provincias y del exterior que tienen que estar entrenando en 48 horas, sin tiempo para perder en logística. Instalamos al refuerzo y a su familia de punta a punta: vivienda cerca del predio, colegio de los chicos y la ciudad resuelta. Llega enfocado únicamente en jugar y, como la familia se adapta, rinde antes.</p>
+      </div>
+      <div class="subcard">
+        <h3>Colegios</h3>
+        <p>Los colegios internacionales y bilingües reciben cada año familias que llegan de otra provincia o del exterior, y esa primera transición define buena parte de la impresión que se llevan de la institución. Nos ocupamos de instalarlas de punta a punta: la mudanza, la búsqueda de vivienda y la adaptación a la ciudad, para que los chicos arranquen el año sin fricción y las familias se sientan acompañadas.</p>
+      </div>
+    </div>
+    <div class="resuelto rev">
+      <div class="rlabel"><span class="dash"></span><span class="t">Todo resuelto, en un solo lugar</span></div>
+      <div class="feats">
+        <div class="feat"><div class="ft">Vivienda cerca</div><div class="fs">del predio o el colegio</div></div>
+        <div class="feat"><div class="ft">Colegio de los chicos</div><div class="fs">búsqueda y reinserción</div></div>
+        <div class="feat"><div class="ft">Mudanza completa</div><div class="fs">embalaje, traslado, montaje</div></div>
+        <div class="feat"><div class="ft">Día a día resuelto</div><div class="fs">la ciudad, lista</div></div>
+        <div class="feat"><div class="ft">Adaptación de la familia</div><div class="fs">acompañamiento</div></div>
+        <div class="feat"><div class="ft">Un solo responsable</div><div class="fs">discreción total</div></div>
+      </div>
+    </div>
+    <div class="quote rev"><span class="bar"></span><p>Si la familia se adapta, el talento rinde. Nosotros nos ocupamos de que se adapte desde el primer día.</p></div>
+    <div class="tagline rev">El jugador, en la cancha. Los chicos, en clase. La familia, en casa.</div>
+    <a href="#canales" class="top-link rev">↑ Volver a los canales</a>
+  </div>
+</section>
+
+<!-- DIPLOMÁTICOS -->
+<section class="vert" id="diplomaticos">
+  <span class="ghost" aria-hidden="true">05</span>
+  <div class="wrap">
+    <div class="eyebrow vert-eyebrow rev">Diplomáticos · Canales 05–06</div>
+    <h2 class="rev">Que la misión <span class="gold">sea la misión.</span></h2>
+    <p class="vert-intro rev">El cuerpo diplomático rota de forma permanente: llegan las misiones extranjeras y regresan las argentinas. En los dos sentidos, la logística no puede robarle tiempo a la función. MudateYa instala y reinstala de punta a punta, con <b>discreción total</b>, para que el diplomático esté operativo desde el primer día y su familia se sienta en casa.</p>
+    <div class="pillars rev">
+      <div><div class="n">+70</div><div class="l">embajadas con sede en la Argentina</div></div>
+      <div><div class="n">2 vías</div><div class="l">llegada y regreso</div></div>
+      <div><div class="n">Total</div><div class="l">discreción en cada operación</div></div>
+    </div>
+    <div class="subcards rev">
+      <div class="subcard">
+        <h3>Cuerpo Diplomático Extranjero</h3>
+        <p>Un diplomático que asume funciones no puede perder semanas resolviendo dónde vivir o a qué colegio mandar a sus hijos, y si su familia no se adapta, su desempeño se resiente. Apenas llega, lo instalamos a él y a su familia: vivienda cerca de la sede, colegio internacional o bilingüe y la ciudad resuelta. Todo con discreción total y un solo interlocutor, para que esté operativo desde el primer día.</p>
+      </div>
+      <div class="subcard">
+        <h3>Regreso a la Argentina</h3>
+        <p>Volver al país después de años afuera es, en la práctica, empezar de nuevo: vivienda, colegios y una familia que también tiene que readaptarse a una ciudad que cambió mientras no estaban. Cuando termina la misión, reinstalamos al diplomático argentino y a su familia en el AMBA de punta a punta, coordinado por un solo responsable, para que el regreso sea el cierre tranquilo de la misión y no otra misión en sí mismo.</p>
+      </div>
+    </div>
+    <div class="resuelto rev">
+      <div class="rlabel"><span class="dash"></span><span class="t">Todo resuelto, en un solo lugar</span></div>
+      <div class="feats">
+        <div class="feat"><div class="ft">Vivienda cerca de la sede</div><div class="fs">o reinstalación en el AMBA</div></div>
+        <div class="feat"><div class="ft">Colegio internacional</div><div class="fs">o bilingüe para los hijos</div></div>
+        <div class="feat"><div class="ft">Mudanza y reinstalación</div><div class="fs">de punta a punta</div></div>
+        <div class="feat"><div class="ft">Día a día resuelto</div><div class="fs">la ciudad, lista</div></div>
+        <div class="feat"><div class="ft">Adaptación de la familia</div><div class="fs">acompañamiento</div></div>
+        <div class="feat"><div class="ft">Discreción total</div><div class="fs">en cada operación</div></div>
+      </div>
+    </div>
+    <div class="quote rev"><span class="bar"></span><p>La discreción no es un extra: es la condición. Un solo interlocutor, cero fricción, de la llegada al regreso.</p></div>
+    <div class="tagline rev">El diplomático, en su misión. Su familia, en casa.</div>
+    <a href="#canales" class="top-link rev">↑ Volver a los canales</a>
+  </div>
+</section>
+
+<!-- ENERGÍA · VACA MUERTA -->
+<section class="vert" id="energia">
+  <span class="ghost" aria-hidden="true">07</span>
+  <div class="wrap">
+    <div class="eyebrow vert-eyebrow rev">Energía · Vaca Muerta · Canal 07 · Expansión</div>
+    <h2 class="rev">Mueven la energía del país. <span class="gold">Nosotros, a su gente.</span></h2>
+    <p class="vert-intro rev">Vaca Muerta es una de las mayores reservas de shale del mundo, y las operadoras de la cuenca suman talento de todo el país y del exterior a Neuquén sin parar. Con <b>C·HOST</b> en el territorio, MudateYa resuelve la relocalización corporativa completa: del traslado al arraigo, con un solo aliado.</p>
+    <div class="pillars rev">
+      <div><div class="n">Corporativo</div><div class="l">relocation integral, no mudanza de consumo</div></div>
+      <div><div class="n">Neuquén</div><div class="l">cerca de la operación · red en la cuenca</div></div>
+      <div><div class="n">C·HOST</div><div class="l">aliado en el territorio</div></div>
+    </div>
+    <div class="subcards rev">
+      <div class="subcard">
+        <h3>C·HOST · Vaca Muerta</h3>
+        <p>Las operadoras de la cuenca suman permanentemente talento de todo el país y del exterior a Neuquén, y cada semana perdida en logística se traduce en costo operativo. Junto a C·HOST resolvemos la relocalización completa y la operadora delega toda la operación en un solo aliado: llega enfocada en producir, y la familia no solo llega a la cuenca, se queda.</p>
+      </div>
+      <div class="subcard">
+        <h3>El movimiento + la llegada</h3>
+        <p>MudateYa se ocupa de la logística y la mudanza de origen a destino, con red verificada y cobertura en toda la cuenca. C·HOST integra en el territorio: hoja de ruta a medida, conexión con la ciudad y su comunidad y acompañamiento de la familia, hasta que la asignación se vuelve un proyecto de vida. Un solo aliado, una sola gestión.</p>
+      </div>
+    </div>
+    <div class="resuelto rev">
+      <div class="rlabel"><span class="dash"></span><span class="t">Todo resuelto, en un solo lugar</span></div>
+      <div class="feats">
+        <div class="feat"><div class="ft">Logística origen–destino</div><div class="fs">red en toda la cuenca</div></div>
+        <div class="feat"><div class="ft">Vivienda en Neuquén / Añelo</div><div class="fs">cerca de la operación</div></div>
+        <div class="feat"><div class="ft">Colegio de los chicos</div><div class="fs">para la familia</div></div>
+        <div class="feat"><div class="ft">Soft-landing C·HOST</div><div class="fs">hoja de ruta a medida</div></div>
+        <div class="feat"><div class="ft">Integración cultural</div><div class="fs">vínculos locales</div></div>
+        <div class="feat"><div class="ft">Un solo aliado</div><div class="fs">una sola gestión</div></div>
+      </div>
+    </div>
+    <div class="quote rev"><span class="bar"></span><p>Llegar no es lo mismo que quedarse. Nosotros movemos la mudanza; C·HOST construye el arraigo.</p></div>
+    <div class="tagline rev">El talento llega. La familia se queda. La empresa gana.</div>
+    <a href="#canales" class="top-link rev">↑ Volver a los canales</a>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="rings"><span></span><span></span><span></span></div>
+  <div class="wrap cta-inner">
+    <div class="eyebrow rev">Un solo responsable, de origen a destino</div>
+    <h2 class="display rev">El talento llega.<br/><span class="gold">La familia se queda.</span></h2>
+    <p class="cta-body rev">Coordinamos la mudanza, la vivienda y la adaptación de cada familia —en el AMBA y en la cuenca de Vaca Muerta— para que el talento llegue enfocado solo en lo suyo. <b>Cada llegada, resuelta.</b></p>
+    <div class="cta-card rev">
+      <div class="k">Coordinemos una conversación</div>
+      <a class="mail" href="mailto:contacto&#64;mudateya.ar">contacto&#64;mudateya.ar</a>
+      <div class="site">mudateya.ar</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot-inner">
+    <div class="foot-l"><b>MudateYa Mobility</b> · Relocation B2B · AMBA + Vaca Muerta</div>
+    <div class="foot-r">
+      <a href="/">MudateYa</a>
+      <a href="/terminos">Términos</a>
+      <a href="/privacidad">Privacidad</a>
+      <a href="/contacto">Contacto</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var els = document.querySelectorAll('.rev');
+  if (!('IntersectionObserver' in window) || !els.length) {
+    for (var i=0;i<els.length;i++){ els[i].classList.add('in'); }
+    return;
+  }
+  var obs = new IntersectionObserver(function(entries){
+    for (var j=0;j<entries.length;j++){
+      if (entries[j].isIntersecting){
+        entries[j].target.classList.add('in');
+        obs.unobserve(entries[j].target);
+      }
+    }
+  }, { threshold:0.12, rootMargin:'0px 0px -40px 0px' });
+  for (var k=0;k<els.length;k++){ obs.observe(els[k]); }
+})();
+</script>
+
+</body>
+</html>
