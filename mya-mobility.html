@@ -222,25 +222,45 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
 /* ══ responsive ══ */
 @media(max-width:760px){
   .wrap{padding:0 20px}
-  nav{padding:0 20px;height:58px}
-  .hero{padding:64px 0 52px}
-  .hero-stats{flex-direction:column}
-  .hero-stats div{padding:16px 0}
-  .hero-stats div+div{padding-left:0;border-left:none;border-top:1px solid var(--line)}
+  nav{padding:0 18px;height:56px}
+  .hero{padding:56px 0 48px}
+  .hero .display{font-size:clamp(38px,10.6vw,52px);line-height:.98;margin:18px 0 22px}
+  .hero-lede{font-size:15px}
+  .hero-stats{flex-direction:column;margin-top:34px}
+  .hero-stats div{padding:14px 0 2px}
+  .hero-stats div+div{padding-left:0;border-left:none;border-top:1px solid var(--line);padding-top:14px}
+  .hero-stats .n{font-size:24px}
   .ghost{display:none}
-  .pillars{grid-template-columns:1fr}
-  .pillars div{padding:16px 0}
-  .pillars div+div{padding-left:0;border-left:none;border-top:1px solid var(--line)}
-  .subcards{grid-template-columns:1fr}
-  .feats{grid-template-columns:1fr}
-  .chan{gap:14px;padding:16px 16px}
-  .chan .num{font-size:23px;min-width:32px;padding-left:0}
+  .canales{padding:8px 0 36px}
+  .group{margin-top:30px}
+  .chan{gap:14px;padding:17px 16px}
+  .chan .num{font-size:23px;min-width:30px;padding-left:0}
   .chan .name{font-size:15px}
   .chan .tag{display:none}
-  .vert{padding:58px 0}
-  .cta{padding:70px 0 78px}
-  .cta-card{padding:30px 24px}
+  .vert{padding:52px 0}
+  .vert h2{font-size:clamp(30px,7.8vw,42px);line-height:1.02}
+  .vert-intro{font-size:15px;margin-top:20px}
+  .pillars{grid-template-columns:1fr;margin-top:32px}
+  .pillars div{padding:15px 0 0}
+  .pillars div+div{padding-left:0;border-left:none;border-top:1px solid var(--line);padding-top:15px}
+  .subcards{grid-template-columns:1fr;gap:14px;margin-top:34px}
+  .subcard{padding:24px 22px}
+  .feats{grid-template-columns:1fr;gap:12px}
+  .resuelto{margin-top:38px}
+  .quote{margin-top:40px}
+  .quote::before{font-size:100px;top:-34px}
+  .top-link{margin-top:28px;padding:13px 22px}
+  .cta{padding:64px 0 72px}
+  .cta .display{font-size:clamp(36px,9.6vw,48px);line-height:.98;margin:16px 0 20px}
+  .cta-body{font-size:15px}
+  .cta-card{padding:26px 22px;margin-top:34px}
+  .cta-card a.mail{font-size:clamp(18px,5.2vw,24px);word-break:break-word;overflow-wrap:anywhere}
   .foot-inner{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:360px){
+  .cta-card{padding:24px 20px}
+  .cta-card a.mail{font-size:16px}
+  .hero-lede,.vert-intro,.cta-body{font-size:14.5px}
 }
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
