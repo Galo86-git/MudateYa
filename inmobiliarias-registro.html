@@ -467,10 +467,6 @@
           </div>
         </div>
 
-        <div class="field">
-          <label class="field-label" for="f-web">Sitio web o Instagram <span class="req">*</span></label>
-          <input id="f-web" class="field-input" type="text" placeholder="lopezhnos.com.ar o @lopezhnos" autocomplete="url" maxlength="120" required>
-        </div>
       </div>
 
       <button type="submit" class="submit-btn" id="submitBtn">Quiero sumarme →</button>
@@ -523,7 +519,6 @@ async function enviarForm(e) {
   var matricula= document.getElementById('f-matricula').value.trim();
   var email    = document.getElementById('f-email').value.trim();
   var wapp     = document.getElementById('f-wapp').value.trim();
-  var web      = document.getElementById('f-web').value.trim();
   var opsmes   = (document.querySelector('input[name="opsmes"]:checked') || {}).value || '';
 
   // Validaciones cliente
@@ -535,7 +530,6 @@ async function enviarForm(e) {
   if (!email)    faltan.push('email');
   if (!wapp)     faltan.push('WhatsApp');
   if (!opsmes)   faltan.push('cantidad de operaciones por mes');
-  if (!web)      faltan.push('sitio web o Instagram');
   if (faltan.length > 0) {
     errGlobal.textContent = 'Faltan datos: ' + faltan.join(', ') + '.';
     errGlobal.style.display = 'block';
@@ -565,8 +559,7 @@ async function enviarForm(e) {
         matricula: matricula,
         email: email,
         whatsapp: wapp,
-        operacionesPorMes: opsmes,
-        sitio: web
+        operacionesPorMes: opsmes
       })
     });
     // Parsear response con manejo seguro: si no es JSON valido, mostrar texto
