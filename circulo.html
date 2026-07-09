@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El Círculo · MudateYa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --obsidiana:#14171C; --grafito:#2A2E35; --linea-oscura:#30353D;
+    --peltre:#8B929E; --platino:#C6CBD4; --plata:#DDE1E7;
+    --marfil:#F4F1EA; --marfil-2:#ECE8DF; --navy:#0F2440; --verde:#2E7D57;
+    --tinta:#1B1E24; --mut:#7A756B;
+    --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ background:var(--marfil); color:var(--tinta); font-family:var(--sans);
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; text-decoration:none; }
+  .wrap{ max-width:1120px; margin:0 auto; padding:0 34px; }
+  .caps{ font-size:11px; letter-spacing:.26em; text-transform:uppercase; font-weight:600; }
+
+  /* nav */
+  nav{ background:var(--obsidiana); border-bottom:.5px solid var(--linea-oscura); }
+  .nav-in{ display:flex; align-items:center; justify-content:space-between; height:70px; }
+  .mark{ font-family:var(--serif); font-weight:600; font-size:24px; color:var(--marfil); letter-spacing:.01em; }
+  .mark span{ color:var(--platino); }
+  .nav-links{ display:flex; align-items:center; gap:30px; }
+  .nav-links a{ font-size:13px; color:var(--peltre); transition:color .2s; }
+  .nav-links a:hover{ color:var(--plata); }
+  .btn-ingresar{ border:.5px solid var(--peltre); color:var(--plata)!important; padding:9px 18px;
+    border-radius:2px; letter-spacing:.14em; text-transform:uppercase; font-size:11px; font-weight:600;
+    transition:border-color .2s, background .2s; }
+  .btn-ingresar:hover{ border-color:var(--platino); background:#1B1F26; }
+
+  /* hero */
+  .hero{ background:var(--obsidiana); color:var(--marfil); padding:96px 0 104px; }
+  .hero .kick{ color:var(--peltre); margin-bottom:26px; }
+  .hero h1{ font-family:var(--serif); font-weight:400; font-size:64px; line-height:1.04;
+    letter-spacing:.004em; max-width:15ch; }
+  .hero p{ color:var(--peltre); font-size:17px; line-height:1.6; max-width:52ch; margin-top:26px; }
+  .hero-cta{ display:flex; gap:16px; align-items:center; margin-top:40px; flex-wrap:wrap; }
+  .lead-link{ display:inline-block; background:var(--platino); color:var(--obsidiana); padding:14px 26px;
+    border-radius:2px; font-size:12px; letter-spacing:.14em; text-transform:uppercase; font-weight:600;
+    transition:background .2s; }
+  .lead-link:hover{ background:var(--plata); }
+
+  /* catalogo */
+  .catalogo{ background:var(--marfil); padding:56px 0 96px; }
+  .cat-head{ display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:34px; }
+  .cat-head h2{ font-family:var(--serif); font-weight:500; font-size:38px; color:var(--tinta); letter-spacing:.004em; }
+  .cat-head .meta{ color:var(--mut); font-size:13.5px; letter-spacing:.02em; }
+  .filtros{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:36px; }
+  .chip{ border:.5px solid #CFC9BC; background:transparent; color:var(--grafito); font-family:var(--sans);
+    font-size:12px; letter-spacing:.04em; padding:9px 16px; border-radius:2px; cursor:pointer;
+    transition:border-color .2s, background .2s, color .2s; }
+  .chip:hover{ border-color:var(--grafito); }
+  .chip.on{ background:var(--obsidiana); border-color:var(--obsidiana); color:var(--marfil); }
+
+  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+  .card{ background:var(--obsidiana); border:.5px solid var(--linea-oscura); border-radius:3px;
+    padding:16px; transition:border-color .25s; }
+  .card:hover{ border-color:var(--peltre); }
+  .card.vendido{ opacity:.55; }
+  .photo{ position:relative; height:210px; background:#20242B; border:.5px solid var(--linea-oscura);
+    border-radius:2px; }
+  .photo .idx{ position:absolute; top:12px; left:13px; color:var(--peltre); font-size:11px;
+    letter-spacing:.16em; font-weight:600; }
+  .photo .band{ position:absolute; top:12px; right:13px; color:var(--platino); font-size:10px;
+    letter-spacing:.14em; text-transform:uppercase; font-weight:600; }
+  .card .eyebrow{ color:var(--peltre); font-size:10.5px; letter-spacing:.20em; text-transform:uppercase;
+    font-weight:600; margin:18px 0 8px; }
+  .card .pname{ font-family:var(--serif); font-weight:500; font-size:19px; color:var(--marfil); line-height:1.14; }
+  .card .pmeta{ color:var(--peltre); font-size:12.5px; margin-top:7px; letter-spacing:.01em; }
+  .card .divi{ height:.5px; background:var(--linea-oscura); margin:16px 0 14px; }
+  .prow{ display:flex; align-items:center; justify-content:space-between; }
+  .price{ font-family:var(--serif); font-weight:500; font-size:20px; color:var(--platino); letter-spacing:.01em; }
+  .state{ font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; font-weight:600;
+    color:var(--plata); display:flex; align-items:center; gap:7px; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--verde); }
+  .state.reservado{ color:var(--peltre); }
+  .state.reservado .dot{ background:var(--peltre); }
+  .state.vendido{ color:var(--peltre); }
+  .state.vendido .dot{ display:none; }
+
+  /* footer */
+  footer{ background:var(--obsidiana); color:var(--marfil); padding:64px 0 44px; }
+  .foot-lock{ font-family:var(--serif); font-weight:400; font-size:22px; line-height:1.4; max-width:26ch; }
+  .foot-lock b{ font-weight:600; }
+  .foot-meta{ color:var(--peltre); font-size:12px; letter-spacing:.04em; margin-top:26px;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    border-top:.5px solid var(--linea-oscura); padding-top:20px; }
+
+  @media (max-width:760px){
+    .wrap{ padding:0 22px; }
+    .nav-links{ gap:16px; }
+    .nav-links a.hide-sm{ display:none; }
+    .hero{ padding:64px 0 72px; }
+    .hero h1{ font-size:42px; }
+    .cat-head h2{ font-size:30px; }
+    .grid{ grid-template-columns:repeat(2,1fr); gap:16px; }
+  }
+  @media (max-width:360px){
+    .grid{ grid-template-columns:1fr; }
+    .hero h1{ font-size:36px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <div class="mark">El Círculo<span>.</span></div>
+    <div class="nav-links">
+      <a href="#catalogo" class="hide-sm">Catálogo</a>
+      <a href="#" class="btn-ingresar">Mi link</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="caps kick">Membresía privada · MudateYa</div>
+    <h1>Lo que una casa libera, otra recibe.</h1>
+    <p>Un círculo cerrado donde los muebles y objetos que una casa deja llegan a otra
+       del mismo círculo de confianza. Se entra por invitación de un miembro.</p>
+    <div class="hero-cta">
+      <a href="#catalogo" class="lead-link">Ver el catálogo</a>
+    </div>
+  </div>
+</header>
+
+<section class="catalogo" id="catalogo">
+  <div class="wrap">
+    <div class="cat-head">
+      <h2>El drop de esta semana</h2>
+      <div class="meta">10 piezas · precios en USD · retiro el sábado</div>
+    </div>
+
+    <div class="filtros">
+      <button class="chip on" onclick="filtrar('todos', this)">Todos</button>
+      <button class="chip" onclick="filtrar('sillones', this)">Sillones y sofás</button>
+      <button class="chip" onclick="filtrar('mesas', this)">Mesas</button>
+      <button class="chip" onclick="filtrar('iluminacion', this)">Iluminación</button>
+      <button class="chip" onclick="filtrar('arte', this)">Arte y objetos</button>
+      <button class="chip" onclick="filtrar('textiles', this)">Alfombras y textiles</button>
+    </div>
+
+    <div class="grid" id="grid">
+
+      <div class="card" data-cat="sillones">
+        <div class="photo"><span class="idx">01 / 10</span><span class="band">500–1.000</span></div>
+        <div class="eyebrow">Sillones y sofás</div>
+        <div class="pname">Sillón de cuero, mediados de siglo</div>
+        <div class="pmeta">Muy bueno · roble y cuero natural</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 850</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+      <div class="card" data-cat="sillones">
+        <div class="photo"><span class="idx">02 / 10</span><span class="band">Firma</span></div>
+        <div class="eyebrow">Sillones y sofás</div>
+        <div class="pname">Sofá de tres cuerpos, lino arena</div>
+        <div class="pmeta">Excelente · lino natural</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 1.200</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+      <div class="card" data-cat="mesas">
+        <div class="photo"><span class="idx">03 / 10</span><span class="band">Firma</span></div>
+        <div class="eyebrow">Mesas</div>
+        <div class="pname">Mesa de comedor, roble macizo</div>
+        <div class="pmeta">Muy bueno · roble macizo</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 1.500</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+      <div class="card" data-cat="mesas">
+        <div class="photo"><span class="idx">04 / 10</span><span class="band">Hasta 500</span></div>
+        <div class="eyebrow">Mesas</div>
+        <div class="pname">Mesa ratona de mármol Carrara</div>
+        <div class="pmeta">Bueno · mármol y bronce</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 480</span><span class="state reservado"><span class="dot"></span>Reservado</span></div>
+      </div>
+
+      <div class="card" data-cat="iluminacion">
+        <div class="photo"><span class="idx">05 / 10</span><span class="band">Hasta 500</span></div>
+        <div class="eyebrow">Iluminación</div>
+        <div class="pname">Lámpara de pie, bronce y opalina</div>
+        <div class="pmeta">Muy bueno · bronce</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 320</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+      <div class="card" data-cat="iluminacion">
+        <div class="photo"><span class="idx">06 / 10</span><span class="band">500–1.000</span></div>
+        <div class="eyebrow">Iluminación</div>
+        <div class="pname">Araña de bronce, seis luces</div>
+        <div class="pmeta">Excelente · bronce</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 900</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+      <div class="card" data-cat="arte">
+        <div class="photo"><span class="idx">07 / 10</span><span class="band">Firma</span></div>
+        <div class="eyebrow">Arte y objetos</div>
+        <div class="pname">Óleo firmado, paisaje pampeano</div>
+        <div class="pmeta">Excelente · óleo sobre tela</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 1.800</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+      <div class="card vendido" data-cat="arte">
+        <div class="photo"><span class="idx">08 / 10</span><span class="band">Hasta 500</span></div>
+        <div class="eyebrow">Arte y objetos</div>
+        <div class="pname">Par de jarrones de cerámica esmaltada</div>
+        <div class="pmeta">Muy bueno · cerámica</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 220</span><span class="state vendido"><span class="dot"></span>Vendido</span></div>
+      </div>
+
+      <div class="card" data-cat="textiles">
+        <div class="photo"><span class="idx">09 / 10</span><span class="band">Firma</span></div>
+        <div class="eyebrow">Alfombras y textiles</div>
+        <div class="pname">Alfombra persa anudada a mano</div>
+        <div class="pmeta">Muy bueno · lana</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 1.400</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+      <div class="card" data-cat="textiles">
+        <div class="photo"><span class="idx">10 / 10</span><span class="band">500–1.000</span></div>
+        <div class="eyebrow">Alfombras y textiles</div>
+        <div class="pname">Alfombra de lana natural, 2×3</div>
+        <div class="pmeta">Bueno · lana</div>
+        <div class="divi"></div>
+        <div class="prow"><span class="price">USD 600</span><span class="state"><span class="dot"></span>Disponible</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-lock"><b>MudateYa es la seguridad de mudarse.</b> El Círculo, la seguridad de comprar y vender puertas adentro.</div>
+    <div class="foot-meta">
+      <span>El Círculo · una membresía de MudateYa</span>
+      <span>Se ingresa por invitación de un miembro</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+function filtrar(cat, btn){
+  var chips = document.querySelectorAll('.chip');
+  var i;
+  for(i=0; i<chips.length; i++){ chips[i].classList.remove('on'); }
+  btn.classList.add('on');
+
+  var cards = document.querySelectorAll('#grid .card');
+  var j;
+  for(j=0; j<cards.length; j++){
+    var c = cards[j];
+    if(cat === 'todos' || c.getAttribute('data-cat') === cat){
+      c.style.display = '';
+    } else {
+      c.style.display = 'none';
+    }
+  }
+}
+</script>
+
+</body>
+</html>
