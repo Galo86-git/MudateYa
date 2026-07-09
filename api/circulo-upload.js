@@ -1,6 +1,7 @@
 // api/circulo-upload.js
-// Recibe una foto comprimida (base64 en JSON) y la guarda en Vercel Blob.
-// Requiere: npm i @vercel/blob  +  store de Blob conectado (BLOB_READ_WRITE_TOKEN).
+// Sube una foto comprimida (base64 en JSON) al store PRIVADO de Vercel Blob.
+// Devuelve el pathname (no la URL), porque en un store privado la URL no es pública:
+// las fotos se sirven después vía /api/circulo-foto.
 
 var blobLib = require('@vercel/blob');
 
@@ -19,16 +20,15 @@ module.exports = async function handler(req, res) {
 
     var base64 = String(data).split(',')[1];
     var buffer = Buffer.from(base64, 'base64');
-
-    // ~4.5MB es el límite de la función; comprimida en el cliente entra sobrada.
     if (buffer.length > 4200000) {
       return res.status(413).json({ error: 'La imagen es muy pesada' });
     }
 
     var nombre = 'circulo/' + Date.now() + '-' + Math.random().toString(16).slice(2, 8) + '.jpg';
-    var blob = await blobLib.put(nombre, buffer, { access: 'public', contentType: 'image/jpeg' });
+    var token = process.env.BLOB_READ_WRITE_TOKEN;
+    var blob = await blobLib.put(nombre, buffer, { access: 'private', contentType: 'image/jpeg', token: token });
 
-    return res.status(200).json({ url: blob.url });
+    return res.status(200).json({ pathname: blob.pathname });
   } catch (e) {
     console.error('circulo-upload:', e.message);
     return res.status(500).json({ error: e.message });
