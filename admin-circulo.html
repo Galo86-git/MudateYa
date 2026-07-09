@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>El Círculo · Carga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --obsidiana:#14171C; --grafito:#2A2E35; --linea:#30353D;
+    --peltre:#8B929E; --platino:#C6CBD4; --marfil:#F4F1EA; --marfil-2:#ECE8DF;
+    --verde:#2E7D57; --coral:#B4482F; --tinta:#1B1E24; --mut:#6F6B62;
+    --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--marfil); color:var(--tinta); font-family:var(--sans); font-size:16px; line-height:1.5; }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 18px; }
+
+  header{ background:var(--obsidiana); color:var(--marfil); }
+  .head-in{ display:flex; align-items:center; justify-content:space-between; height:60px; }
+  .mark{ font-family:var(--serif); font-weight:600; font-size:20px; }
+  .mark span{ color:var(--platino); }
+  .head-r{ display:flex; align-items:center; gap:12px; font-size:12px; color:var(--peltre); }
+  .logout{ color:var(--platino); cursor:pointer; border:.5px solid var(--peltre); padding:6px 10px; border-radius:2px; }
+
+  /* login */
+  #login{ min-height:70vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:18px; padding:40px 18px; }
+  #login h1{ font-family:var(--serif); font-weight:600; font-size:26px; color:var(--tinta); }
+  #login p{ color:var(--mut); font-size:14px; max-width:34ch; }
+
+  #app{ display:none; padding:22px 0 60px; }
+  .drop-bar{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px; }
+  .drop-bar .d{ font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--mut); font-weight:600; }
+  .drop-bar .c{ font-size:12px; color:var(--peltre); }
+
+  .card{ background:#fff; border:.5px solid #E1DCD0; border-radius:6px; padding:18px; margin-bottom:22px; }
+  .card h2{ font-family:var(--serif); font-weight:600; font-size:19px; margin-bottom:16px; }
+
+  label.f{ display:block; font-size:12px; letter-spacing:.04em; color:var(--mut); font-weight:600;
+    text-transform:uppercase; margin:14px 0 6px; }
+  input, select, textarea{ width:100%; font-family:var(--sans); font-size:16px; color:var(--tinta);
+    background:var(--marfil-2); border:.5px solid #DAD4C6; border-radius:4px; padding:12px 12px; }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--grafito); }
+  textarea{ min-height:74px; resize:vertical; }
+  .row2{ display:flex; gap:12px; }
+  .row2 > div{ flex:1; }
+
+  .banda{ font-size:13px; color:var(--mut); margin-top:6px; }
+  .banda b{ color:var(--tinta); font-weight:600; }
+
+  .fotos{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+  .thumb{ width:78px; height:78px; border-radius:4px; background:#20242B; border:.5px solid var(--linea);
+    position:relative; background-size:cover; background-position:center; }
+  .thumb .x{ position:absolute; top:-7px; right:-7px; width:22px; height:22px; border-radius:50%;
+    background:var(--obsidiana); color:#fff; font-size:14px; line-height:22px; text-align:center; cursor:pointer; }
+  .thumb.load{ display:flex; align-items:center; justify-content:center; color:var(--peltre); font-size:11px; }
+  .btn-foto{ display:inline-block; margin-top:10px; background:var(--obsidiana); color:var(--marfil);
+    border:none; border-radius:4px; padding:12px 18px; font-size:13px; font-weight:600; cursor:pointer;
+    letter-spacing:.04em; }
+
+  .btn-guardar{ width:100%; margin-top:20px; background:var(--verde); color:#fff; border:none; border-radius:4px;
+    padding:15px; font-size:15px; font-weight:600; cursor:pointer; letter-spacing:.03em; }
+  .btn-guardar:disabled{ background:#B7B2A6; cursor:default; }
+  .msg{ font-size:13px; margin-top:10px; min-height:18px; }
+  .msg.ok{ color:var(--verde); }
+  .msg.err{ color:var(--coral); }
+
+  /* lista */
+  .lista-t{ font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--mut); font-weight:600; margin-bottom:12px; }
+  .item{ display:flex; gap:12px; background:#fff; border:.5px solid #E1DCD0; border-radius:6px; padding:12px; margin-bottom:12px; }
+  .item .im{ width:64px; height:64px; border-radius:4px; background:#20242B; background-size:cover; background-position:center; flex:0 0 auto; }
+  .item .in{ flex:1; min-width:0; }
+  .item .nm{ font-weight:600; font-size:14px; }
+  .item .mt{ font-size:12px; color:var(--mut); margin-top:2px; }
+  .item .pr{ font-family:var(--serif); font-weight:600; font-size:15px; margin-top:4px; }
+  .estados{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .est{ font-size:11px; padding:5px 9px; border-radius:3px; border:.5px solid #DAD4C6; background:var(--marfil-2);
+    color:var(--mut); cursor:pointer; letter-spacing:.02em; }
+  .est.on{ background:var(--obsidiana); border-color:var(--obsidiana); color:var(--marfil); }
+  .est.del{ margin-left:auto; color:var(--coral); border-color:#E3C4BB; background:#FBF2EF; }
+  .vacio{ color:var(--mut); font-size:14px; padding:8px 0; }
+
+  @media (max-width:360px){
+    .row2{ flex-direction:column; gap:0; }
+    .thumb{ width:70px; height:70px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-in">
+    <div class="mark">El Círculo<span>.</span> · Carga</div>
+    <div class="head-r" id="headUser" style="display:none">
+      <span id="userName"></span>
+      <span class="logout" onclick="logout()">Salir</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div id="login">
+    <h1>Carga del catálogo</h1>
+    <p>Acceso solo para el equipo. Ingresá con tu cuenta de Google autorizada.</p>
+    <div id="googleBtn"></div>
+  </div>
+
+  <div id="app">
+
+    <div class="drop-bar">
+      <span class="d">Drop <span id="dropId">—</span></span>
+      <span class="c"><span id="dropCount">0</span> piezas cargadas</span>
+    </div>
+
+    <div class="card">
+      <h2>Nueva pieza</h2>
+
+      <label class="f">Fotos</label>
+      <div class="fotos" id="fotos"></div>
+      <input type="file" id="fileFotos" accept="image/*" capture="environment" multiple onchange="manejarFotos(this)" style="display:none">
+      <button type="button" class="btn-foto" onclick="abrirFotos()">Agregar fotos</button>
+
+      <label class="f">Nombre de la pieza</label>
+      <input type="text" id="nombre" placeholder="Sillón de cuero, mediados de siglo">
+
+      <div class="row2">
+        <div>
+          <label class="f">Categoría</label>
+          <select id="categoria">
+            <option value="sillones">Sillones y sofás</option>
+            <option value="mesas">Mesas</option>
+            <option value="sillas">Sillas y bancos</option>
+            <option value="dormitorio">Dormitorio</option>
+            <option value="guardado">Guardado</option>
+            <option value="iluminacion">Iluminación</option>
+            <option value="textiles">Alfombras y textiles</option>
+            <option value="arte">Arte y objetos</option>
+            <option value="exterior">Exterior y jardín</option>
+          </select>
+        </div>
+        <div>
+          <label class="f">Condición</label>
+          <select id="condicion">
+            <option value="Excelente">Excelente</option>
+            <option value="Muy bueno" selected>Muy bueno</option>
+            <option value="Bueno">Bueno</option>
+            <option value="A restaurar">A restaurar</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="f">Material</label>
+      <input type="text" id="material" placeholder="Roble y cuero natural">
+
+      <label class="f">Descripción (opcional)</label>
+      <textarea id="descripcion" placeholder="Detalle de la pieza para la vista ampliada."></textarea>
+
+      <label class="f">Precio en USD</label>
+      <input type="number" id="precio" inputmode="numeric" placeholder="850" oninput="actualizarBanda()">
+      <div class="banda" id="bandaTxt">Banda: —</div>
+
+      <button type="button" class="btn-guardar" id="btnGuardar" onclick="guardarPieza()">Guardar pieza</button>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="lista-t">En este drop</div>
+    <div id="lista"></div>
+
+  </div>
+</div>
+
+<script>
+var GOOGLE_CLIENT_ID = '';
+var ADMIN_EMAILS = [];
+var currentUser = null;
+var fotosPieza = [];
+
+window.onload = async function(){
+  try{
+    var r = await fetch('/api/admin-config');
+    var cfg = await r.json();
+    GOOGLE_CLIENT_ID = cfg.googleClientId;
+    ADMIN_EMAILS = cfg.adminEmails || [];
+  }catch(e){ console.error('config:', e); }
+
+  var saved = sessionStorage.getItem('adminUser');
+  if(saved){
+    try{
+      var parsed = JSON.parse(saved);
+      if(parsed._expires && Date.now() > parsed._expires){ sessionStorage.removeItem('adminUser'); }
+      else if(isAuthorized(parsed.email)){ currentUser = parsed; showApp(); return; }
+    }catch(e){ sessionStorage.removeItem('adminUser'); }
+  }
+
+  if(GOOGLE_CLIENT_ID && window.google){
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential });
+    google.accounts.id.renderButton(document.getElementById('googleBtn'), { theme:'filled_black', size:'large', text:'signin_with', width:260 });
+  }
+};
+
+function handleCredential(response){
+  var payload = JSON.parse(atob(response.credential.split('.')[1]));
+  if(!isAuthorized(payload.email)){ alert('Tu email (' + payload.email + ') no tiene acceso.'); return; }
+  currentUser = { name: payload.name, email: payload.email };
+  var s = { name: currentUser.name, email: currentUser.email, _expires: Date.now() + 24*60*60*1000 };
+  sessionStorage.setItem('adminUser', JSON.stringify(s));
+  showApp();
+}
+
+function isAuthorized(email){
+  if(!ADMIN_EMAILS || ADMIN_EMAILS.length === 0) return false;
+  return ADMIN_EMAILS.indexOf(String(email).toLowerCase().trim()) !== -1;
+}
+
+function logout(){ sessionStorage.removeItem('adminUser'); window.location.reload(); }
+
+function showApp(){
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('headUser').style.display = 'flex';
+  document.getElementById('userName').textContent = currentUser.name;
+  cargarPiezas();
+}
+
+// ── FOTOS ──────────────────────────────────────────────────────
+function abrirFotos(){ document.getElementById('fileFotos').click(); }
+
+function manejarFotos(input){
+  var files = input.files;
+  var k;
+  for(k=0; k<files.length; k++){ procesarUna(files[k]); }
+  input.value = '';
+}
+
+function procesarUna(file){
+  var slot = document.createElement('div');
+  slot.className = 'thumb load';
+  slot.textContent = 'subiendo…';
+  document.getElementById('fotos').appendChild(slot);
+
+  comprimirImagen(file, 1600, 0.82, function(blob){
+    var reader = new FileReader();
+    reader.onload = function(){
+      fetch('/api/circulo-upload', {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ data: reader.result })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d.url){ throw new Error(d.error || 'error'); }
+        fotosPieza.push(d.url);
+        pintarThumb(slot, d.url);
+      })
+      .catch(function(e){ slot.textContent = 'error'; console.warn(e.message); });
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+function pintarThumb(slot, url){
+  slot.className = 'thumb';
+  slot.textContent = '';
+  slot.style.backgroundImage = 'url(' + url + ')';
+  var x = document.createElement('div');
+  x.className = 'x';
+  x.textContent = '×';
+  x.onclick = function(){ quitarFoto(url, slot); };
+  slot.appendChild(x);
+}
+
+function quitarFoto(url, slot){
+  var i = fotosPieza.indexOf(url);
+  if(i !== -1){ fotosPieza.splice(i, 1); }
+  slot.parentNode.removeChild(slot);
+}
+
+function comprimirImagen(file, maxLado, calidad, cb){
+  var reader = new FileReader();
+  reader.onload = function(){
+    var img = new Image();
+    img.onload = function(){
+      var w = img.width, h = img.height;
+      if(w > h && w > maxLado){ h = Math.round(h * maxLado / w); w = maxLado; }
+      else if(h > maxLado){ w = Math.round(w * maxLado / h); h = maxLado; }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob){ cb(blob); }, 'image/jpeg', calidad);
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── BANDA ──────────────────────────────────────────────────────
+function bandaDeUSD(usd){
+  usd = Number(usd) || 0;
+  if(usd < 500) return 'Hasta 500';
+  if(usd < 1000) return '500–1.000';
+  return 'Firma';
+}
+function actualizarBanda(){
+  var v = document.getElementById('precio').value;
+  document.getElementById('bandaTxt').innerHTML = v ? ('Banda: <b>' + bandaDeUSD(v) + '</b>') : 'Banda: —';
+}
+
+// ── GUARDAR ────────────────────────────────────────────────────
+function guardarPieza(){
+  var nombre = document.getElementById('nombre').value.trim();
+  var precio = document.getElementById('precio').value;
+  var msg = document.getElementById('msg');
+  msg.className = 'msg';
+  msg.textContent = '';
+
+  if(!nombre){ msg.className = 'msg err'; msg.textContent = 'Falta el nombre.'; return; }
+  if(!precio || Number(precio) <= 0){ msg.className = 'msg err'; msg.textContent = 'Falta el precio.'; return; }
+
+  var btn = document.getElementById('btnGuardar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  var body = {
+    nombre: nombre,
+    categoria: document.getElementById('categoria').value,
+    condicion: document.getElementById('condicion').value,
+    material: document.getElementById('material').value.trim(),
+    descripcion: document.getElementById('descripcion').value.trim(),
+    precioUSD: Number(precio),
+    fotos: fotosPieza.slice()
+  };
+
+  fetch('/api/circulo?action=guardar-pieza', {
+    method:'POST', headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(body)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    btn.disabled = false; btn.textContent = 'Guardar pieza';
+    if(!d.ok){ throw new Error(d.error || 'error'); }
+    msg.className = 'msg ok'; msg.textContent = 'Pieza guardada.';
+    limpiarForm();
+    cargarPiezas();
+  })
+  .catch(function(e){
+    btn.disabled = false; btn.textContent = 'Guardar pieza';
+    msg.className = 'msg err'; msg.textContent = 'No se pudo guardar: ' + e.message;
+  });
+}
+
+function limpiarForm(){
+  document.getElementById('nombre').value = '';
+  document.getElementById('material').value = '';
+  document.getElementById('descripcion').value = '';
+  document.getElementById('precio').value = '';
+  document.getElementById('bandaTxt').textContent = 'Banda: —';
+  document.getElementById('fotos').innerHTML = '';
+  fotosPieza = [];
+}
+
+// ── LISTA ──────────────────────────────────────────────────────
+function cargarPiezas(){
+  fetch('/api/circulo?action=catalogo')
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    document.getElementById('dropId').textContent = d.drop || '—';
+    var piezas = d.piezas || [];
+    document.getElementById('dropCount').textContent = piezas.length;
+    renderLista(piezas);
+  })
+  .catch(function(e){ console.warn(e.message); });
+}
+
+function renderLista(piezas){
+  var cont = document.getElementById('lista');
+  cont.innerHTML = '';
+  if(piezas.length === 0){ cont.innerHTML = '<div class="vacio">Todavía no cargaste piezas en este drop.</div>'; return; }
+
+  var i;
+  for(i=0; i<piezas.length; i++){
+    var p = piezas[i];
+    var foto = (p.fotos && p.fotos[0]) ? p.fotos[0] : '';
+    var el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML =
+      '<div class="im" style="background-image:url(' + foto + ')"></div>' +
+      '<div class="in">' +
+        '<div class="nm">' + escapar(p.nombre) + '</div>' +
+        '<div class="mt">' + escapar(p.condicion) + ' · ' + escapar(p.material) + ' · ' + p.banda + '</div>' +
+        '<div class="pr">USD ' + Number(p.precioUSD).toLocaleString('es-AR') + '</div>' +
+        '<div class="estados">' +
+          botonEstado(p.id, 'disponible', 'Disponible', p.estado) +
+          botonEstado(p.id, 'reservado', 'Reservado', p.estado) +
+          botonEstado(p.id, 'vendido', 'Vendido', p.estado) +
+          '<span class="est del" onclick="eliminarPieza(\'' + p.id + '\')">Eliminar</span>' +
+        '</div>' +
+      '</div>';
+    cont.appendChild(el);
+  }
+}
+
+function botonEstado(id, estado, txt, actual){
+  var cls = 'est' + (estado === actual ? ' on' : '');
+  return '<span class="' + cls + '" onclick="cambiarEstado(\'' + id + '\',\'' + estado + '\')">' + txt + '</span>';
+}
+
+function cambiarEstado(id, estado){
+  fetch('/api/circulo?action=cambiar-estado', {
+    method:'POST', headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ id: id, estado: estado })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(){ cargarPiezas(); })
+  .catch(function(e){ console.warn(e.message); });
+}
+
+function eliminarPieza(id){
+  if(!confirm('¿Eliminar esta pieza?')) return;
+  fetch('/api/circulo?action=eliminar', {
+    method:'POST', headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ id: id })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(){ cargarPiezas(); })
+  .catch(function(e){ console.warn(e.message); });
+}
+
+function escapar(s){
+  return String(s || '').replace(/[&<>"]/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+  });
+}
+</script>
+
+</body>
+</html>
