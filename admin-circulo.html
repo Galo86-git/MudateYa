@@ -229,6 +229,8 @@ function showApp(){
 // ── FOTOS ──────────────────────────────────────────────────────
 function abrirFotos(){ document.getElementById('fileFotos').click(); }
 
+function fotoSrc(pathname){ return '/api/circulo-foto?pathname=' + encodeURIComponent(pathname); }
+
 function manejarFotos(input){
   var files = input.files;
   var k;
@@ -251,9 +253,9 @@ function procesarUna(file){
       })
       .then(function(r){ return r.json(); })
       .then(function(d){
-        if(!d.url){ throw new Error(d.error || 'error'); }
-        fotosPieza.push(d.url);
-        pintarThumb(slot, d.url);
+        if(!d.pathname){ throw new Error(d.error || 'error'); }
+        fotosPieza.push(d.pathname);
+        pintarThumb(slot, d.pathname);
       })
       .catch(function(e){ slot.textContent = 'error'; console.warn(e.message); });
     };
@@ -261,19 +263,19 @@ function procesarUna(file){
   });
 }
 
-function pintarThumb(slot, url){
+function pintarThumb(slot, pathname){
   slot.className = 'thumb';
   slot.textContent = '';
-  slot.style.backgroundImage = 'url(' + url + ')';
+  slot.style.backgroundImage = 'url(' + fotoSrc(pathname) + ')';
   var x = document.createElement('div');
   x.className = 'x';
   x.textContent = '×';
-  x.onclick = function(){ quitarFoto(url, slot); };
+  x.onclick = function(){ quitarFoto(pathname, slot); };
   slot.appendChild(x);
 }
 
-function quitarFoto(url, slot){
-  var i = fotosPieza.indexOf(url);
+function quitarFoto(pathname, slot){
+  var i = fotosPieza.indexOf(pathname);
   if(i !== -1){ fotosPieza.splice(i, 1); }
   slot.parentNode.removeChild(slot);
 }
@@ -381,7 +383,7 @@ function renderLista(piezas){
   var i;
   for(i=0; i<piezas.length; i++){
     var p = piezas[i];
-    var foto = (p.fotos && p.fotos[0]) ? p.fotos[0] : '';
+    var foto = (p.fotos && p.fotos[0]) ? fotoSrc(p.fotos[0]) : '';
     var el = document.createElement('div');
     el.className = 'item';
     el.innerHTML =
