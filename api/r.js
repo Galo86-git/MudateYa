@@ -163,6 +163,26 @@ module.exports = async function handler(req, res) {
       ? cfgIn.destino
       : DESTINO_FALLBACK;
 
+    // ── MODO DIAGNÓSTICO ──────────────────────────────────────────
+    // Agregando &debug=1 a la URL, en vez de redirigir devuelve JSON con
+    // todo lo que ve el handler. Sirve para saber si el problema está acá
+    // adentro o en una capa de más arriba (ruteo, Cloudflare, caché).
+    if (req.query && req.query.debug === '1') {
+      return res.status(200).json({
+        ok: true,
+        slugRecibido:  (req.query && req.query.slug) || null,
+        slugNormalizado: slugIn,
+        claveRedis:    'redir:' + slugIn,
+        encontrado:    !!cfgIn,
+        activo:        cfgIn ? (cfgIn.activo !== false) : null,
+        destinoConfig: cfgIn ? cfgIn.destino : null,
+        destinoFinal:  destinoFinal,
+        usaFallback:   destinoFinal === DESTINO_FALLBACK,
+        url:           req.url || null,
+        redisOk:       !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+      });
+    }
+
     // Contar el escaneo. Si falla, redirigimos igual: la métrica nunca puede
     // romper el flujo de alguien parado frente a un cartel con el celular.
     try { await redisCall('incr', ['redir:hits:' + slugIn]); }
@@ -176,7 +196,12 @@ module.exports = async function handler(req, res) {
 
   } catch (e) {
     console.error('Error en /api/r:', e.message);
-    // Ante cualquier error, mandamos al home en vez de mostrar una pantalla de error.
+    // Con &debug=1 mostramos el error real en vez de tragarlo, para poder
+    // diagnosticar. Sin debug, redirigimos al home: nadie parado frente a un
+    // cartel con el celular tiene que ver una pantalla de error.
+    if (req.query && req.query.debug === '1') {
+      return res.status(500).json({ ok: false, error: e.message, stack: (e.stack || '').split('\n').slice(0, 4) });
+    }
     res.setHeader('Location', DESTINO_FALLBACK);
     return res.status(302).end();
   }
