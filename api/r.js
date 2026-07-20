@@ -99,15 +99,21 @@ module.exports = async function handler(req, res) {
       if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       var slugs = (await getJSON('redir:slugs')) || [];
       var lista = [];
+      var huerfanos = [];
       for (var i = 0; i < slugs.length; i++) {
         var cfg = await getJSON('redir:' + slugs[i]);
-        if (!cfg) continue;
+        if (!cfg) {
+          // Está en el índice pero no tiene config detrás: el QR con este slug
+          // manda al fallback. Lo reportamos en vez de esconderlo.
+          huerfanos.push(slugs[i]);
+          continue;
+        }
         var hits = await redisCall('get', ['redir:hits:' + slugs[i]]);
         cfg.escaneos = parseInt(hits) || 0;
         lista.push(cfg);
       }
       lista.sort(function(a, b) { return (b.escaneos || 0) - (a.escaneos || 0); });
-      return res.status(200).json({ ok: true, redirects: lista });
+      return res.status(200).json({ ok: true, redirects: lista, huerfanos: huerfanos });
     }
 
     // ── Crear o actualizar un redirect ──
@@ -133,9 +139,22 @@ module.exports = async function handler(req, res) {
       await setJSON('redir:' + slug, cfg);
       await agregarAlIndice(slug);
 
+      // Verificación de escritura: releemos lo que acabamos de guardar. Si no
+      // está, avisamos en vez de devolver ok. Guardar a ciegas es lo que hace
+      // que después el QR mande al fallback sin que nadie se entere.
+      var verificacion = await getJSON('redir:' + slug);
+      if (!verificacion || verificacion.destino !== destino) {
+        return res.status(500).json({
+          error: 'Se guardó pero no se pudo verificar en Redis. Probá de nuevo.',
+          guardado: cfg,
+          releido: verificacion
+        });
+      }
+
       return res.status(200).json({
         ok: true,
-        redirect: cfg,
+        verificado: true,
+        redirect: verificacion,
         url: 'https://mudateya.ar/r/' + slug
       });
     }
