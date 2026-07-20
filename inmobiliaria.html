@@ -53,6 +53,14 @@
   .logo-inmo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
   .logo-inmo-img { max-height: 32px; max-width: 140px; height: auto; width: auto; display: block; }
   .logo-inmo-text { font-size: 20px; font-weight: 800; color: var(--inmo-color); letter-spacing: -0.5px; }
+  /* Cuando el link trae ?asesor=, la marca pasa a dos líneas: inmobiliaria arriba, asesor abajo. */
+  .logo-inmo.con-asesor { flex-direction: column; align-items: flex-start; gap: 0; }
+  .logo-inmo.con-asesor .logo-inmo-text { font-size: 17px; line-height: 1.2; }
+  .logo-inmo-asesor { font-size: 12px; font-weight: 600; color: var(--md-text-2); line-height: 1.3; margin-top: 1px; }
+  @media (max-width: 520px) {
+    .logo-inmo.con-asesor .logo-inmo-text { font-size: 15px; }
+    .logo-inmo-asesor { font-size: 11px; }
+  }
   .powered-by { font-size: 11px; color: var(--md-text-3); display: flex; align-items: center; gap: 5px; }
   .powered-by .mya-mini { font-weight: 800; color: var(--mya-navy); letter-spacing: -0.3px; }
   .powered-by .mya-mini .grn { color: #17A356; }
@@ -1159,6 +1167,58 @@ function _ajustarLuminancia(hex, deltaPct) {
 function _escHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function _escAttr(s) { return _escHtml(s); }
 
+// ── Marca del asesor en el header ──────────────────────────────────
+// Cuando el link trae ?asesor={codigo}, arriba a la izquierda mostramos la
+// inmobiliaria del asesor y su nombre, en vez del nombre del canal.
+// Hace falta sobre todo en el canal "independientes": ahí el slug es un
+// paraguas y la inmobiliaria real solo se conoce leyendo el código del asesor.
+// En Mudafy y RE/MAX el canal ya es la inmobiliaria, así que solo agregamos
+// el nombre del asesor debajo del logo que ya se está mostrando.
+var ENDPOINTS_ASESOR = {
+  mudafy:         '/api/mudafy?action=obtener&codigo=',
+  remax:          '/api/remax?action=obtener&codigo=',
+  independientes: '/api/independientes?action=obtener&codigo='
+};
+
+function aplicarMarcaAsesor(a) {
+  if (!a || !a.nombre) return;
+
+  var logoBox = document.getElementById('inmoLogo');
+  if (!logoBox) return;
+
+  // Si el canal tiene logo propio (Mudafy, RE/MAX), lo dejamos y colgamos el
+  // nombre del asesor abajo. Si no, la inmobiliaria del asesor es el título.
+  var tieneLogoImg = !!logoBox.querySelector('.logo-inmo-img');
+
+  if (!tieneLogoImg) {
+    var titulo = a.inmobiliaria || (_inmoConfig && _inmoConfig.nombre) || 'MudateYa';
+    logoBox.innerHTML = '<span class="logo-inmo-text">' + _escHtml(titulo) + '</span>';
+  }
+
+  var linea = document.createElement('span');
+  linea.className = 'logo-inmo-asesor';
+  linea.textContent = a.nombre;
+  logoBox.appendChild(linea);
+  logoBox.className = 'logo-inmo con-asesor';
+}
+
+function cargarMarcaAsesor() {
+  if (!_partnerAsesor) return;
+  var base = ENDPOINTS_ASESOR[(_inmoSlug || '').toLowerCase()];
+  if (!base) return;
+
+  fetch(base + encodeURIComponent(_partnerAsesor))
+    .then(function(r) {
+      if (!r.ok) throw new Error('Asesor no encontrado');
+      return r.json();
+    })
+    .then(aplicarMarcaAsesor)
+    .catch(function(e) {
+      // Código viejo, borrado o inactivo: dejamos el header como estaba.
+      console.warn('No se pudo cargar el asesor:', e.message);
+    });
+}
+
 // ── Cargar config de la inmobiliaria al iniciar ──
 (function cargarInmo() {
   if (!_inmoSlug) {
@@ -1172,11 +1232,13 @@ function _escAttr(s) { return _escHtml(s); }
       return r.json();
     })
     .then(aplicarConfigInmo)
+    .then(cargarMarcaAsesor)
     .catch(function(e) {
       console.warn('Error cargando config:', e.message);
       // Fallback: dejar el branding default de MudateYa
       var logoBox = document.getElementById('inmoLogo');
       if (logoBox) logoBox.innerHTML = '<span class="logo-inmo-text">MudateYa</span>';
+      cargarMarcaAsesor();
     });
 })();
 
