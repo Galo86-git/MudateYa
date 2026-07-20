@@ -27,7 +27,10 @@
 //   POST ?action=admin-eliminar&token=…      → borra un slug
 
 // ── Fallback cuando el slug no existe o está apagado ──
-var DESTINO_FALLBACK = 'https://mudateya.ar/';
+// Apunta al registro de inmobiliarias en vez del home: si un slug se pierde o
+// se apaga, el que escaneó el QR igual cae en una página donde puede convertir,
+// en lugar de quedar suelto en la portada sin saber qué hacer.
+var DESTINO_FALLBACK = 'https://mudateya.ar/inmobiliarias-registro';
 
 // ── Wrappers Redis (mismo patrón que mudafy.js / independientes.js) ──
 async function redisCall(method, args) {
