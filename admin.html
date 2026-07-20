@@ -538,6 +538,9 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <a class="sidebar-item" onclick="showPage('otros',event)" href="#">
         <span class="sidebar-icon">🏢</span> Otros Asesores
       </a>
+      <a class="sidebar-item" onclick="showPage('redirs',event)" href="#">
+        <span class="sidebar-icon">🔗</span> QR / Redirects
+      </a>
     </div>
 
     <!-- BOTTOM NAV MOBILE -->
@@ -577,6 +580,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <button onclick="showPage('mudafy',event);setMobileNav('mudafy');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🤝 Mudafy</button>
       <button onclick="showPage('remax',event);setMobileNav('remax');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🎈 RE/MAX</button>
       <button onclick="showPage('otros',event);setMobileNav('otros');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🏢 Otros Asesores</button>
+      <button onclick="showPage('redirs',event);setMobileNav('redirs');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🔗 QR / Redirects</button>
     </div>
 
     <div class="admin-main">
@@ -1032,6 +1036,44 @@ tr:hover td{background:rgba(34,195,106,.03)}
           <div id="otrosWrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
       </div>
+
+      <!-- ═══════════ QR / REDIRECTS ═══════════ -->
+      <div class="page" id="page-redirs">
+        <div class="page-header">
+          <h1 class="page-title">QR / Redirects</h1>
+          <div class="page-subtitle">El QR impreso apunta a <code style="font-size:11px">mudateya.ar/r/{slug}</code> y el destino lo cambiás desde acá. Sirve para reutilizar el mismo cartel o tarjeta en distintas campañas sin reimprimir nada. El cambio impacta al instante.</div>
+        </div>
+
+        <div class="metrics-grid" id="redirMetricas" style="margin-bottom:1.2rem"></div>
+
+        <div class="table-card" style="padding:18px;margin-bottom:1.2rem">
+          <div style="font-size:14px;font-weight:700;margin-bottom:12px" id="redirFormTitulo">Nuevo redirect</div>
+          <div style="display:grid;gap:10px;grid-template-columns:1fr;max-width:640px">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px">Slug (lo que va en la URL del QR)</label>
+              <input id="redirSlug" type="text" placeholder="asesores" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit"/>
+              <div style="font-size:11.5px;color:var(--text2);margin-top:4px">Queda como <code id="redirPreview">mudateya.ar/r/…</code></div>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px">Nombre interno</label>
+              <input id="redirNombre" type="text" placeholder="QR captación asesores · Planetario" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit"/>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px">Destino (URL completa)</label>
+              <input id="redirDestino" type="text" placeholder="https://mudateya.ar/asesor-registro.html?origen=planetario-2026" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit"/>
+              <div style="font-size:11.5px;color:var(--text2);margin-top:4px">Agregale <code>?origen=</code> para poder distinguir después de qué campaña vino cada alta.</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+              <button class="btn-sm" id="redirBtnGuardar" onclick="redirGuardar()" style="background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700">Guardar</button>
+              <button class="btn-sm" onclick="redirLimpiarForm()">Limpiar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div id="redirWrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+      </div>
       </div>
 
     </div>
@@ -1225,6 +1267,7 @@ function showPage(name, e){
   if(name === 'mudafy') { if(typeof renderMudafy === 'function') renderMudafy(); }
   if(name === 'remax') { if(typeof renderRemax === 'function') renderRemax(); }
   if(name === 'otros') { if(typeof renderOtros === 'function') renderOtros(); }
+  if(name === 'redirs') { if(typeof renderRedirs === 'function') renderRedirs(); }
   // cerrar menu extra mobile si estaba abierto
   var em = document.getElementById('mobileExtraMenu');
   if(em) em.style.display = 'none';
@@ -5294,6 +5337,206 @@ function _otrosTablaInmo(filas) {
   }
   h += '</tbody></table></div>';
   return h;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// QR / REDIRECTS — /api/r
+// El QR impreso apunta a mudateya.ar/r/{slug}; acá se decide a dónde manda.
+// El endpoint responde 302 con no-store, así que cambiar el destino tiene
+// efecto inmediato en todos los QR ya repartidos.
+// ════════════════════════════════════════════════════════════════════
+var _redirData = [];
+
+function _redirNormSlug(txt) {
+  return String(txt || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+function _redirUrl(slug) {
+  return 'https://mudateya.ar/r/' + slug;
+}
+
+function redirLimpiarForm() {
+  document.getElementById('redirSlug').value = '';
+  document.getElementById('redirNombre').value = '';
+  document.getElementById('redirDestino').value = '';
+  document.getElementById('redirFormTitulo').textContent = 'Nuevo redirect';
+  document.getElementById('redirPreview').textContent = 'mudateya.ar/r/…';
+}
+
+function _redirPintarPreview() {
+  var s = _redirNormSlug(document.getElementById('redirSlug').value);
+  document.getElementById('redirPreview').textContent = s ? _redirUrl(s).replace(/^https?:\/\//, '') : 'mudateya.ar/r/…';
+}
+
+async function renderRedirs() {
+  var wrap = document.getElementById('redirWrap');
+  var mets = document.getElementById('redirMetricas');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+
+  // El preview del slug se engancha una sola vez
+  var inputSlug = document.getElementById('redirSlug');
+  if (inputSlug && !inputSlug._hooked) {
+    inputSlug.addEventListener('input', _redirPintarPreview);
+    inputSlug._hooked = true;
+  }
+
+  try {
+    var r = await fetch('/api/r?action=admin-listar&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error al listar');
+    _redirData = d.redirects || [];
+
+    var totalEsc = 0, activos = 0, i;
+    for (i = 0; i < _redirData.length; i++) {
+      totalEsc += (parseInt(_redirData[i].escaneos) || 0);
+      if (_redirData[i].activo !== false) activos++;
+    }
+
+    mets.innerHTML =
+      _mfMetric('Redirects', _redirData.length, '#EEF4FF', '#1E40AF') +
+      _mfMetric('Activos', activos, '#F0FDF4', '#166534') +
+      _mfMetric('Escaneos totales', totalEsc, '#FEF3C7', '#92400E');
+
+    if (!_redirData.length) {
+      wrap.innerHTML = '<div style="padding:36px;text-align:center;color:var(--text2)">Todavía no hay redirects. Creá el primero con el formulario de arriba.</div>';
+      return;
+    }
+
+    var h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:860px;font-size:13px">';
+    h += '<thead><tr style="background:#fff;border-bottom:1px solid var(--border)">';
+    h += _mfTh('Redirect') + _mfTh('URL del QR') + _mfTh('Destino actual') + _mfTh('Escaneos') + _mfTh('Estado') + _mfTh('');
+    h += '</tr></thead><tbody>';
+
+    for (i = 0; i < _redirData.length; i++) {
+      var x = _redirData[i];
+      var activo = x.activo !== false;
+      h += '<tr style="border-bottom:1px solid var(--border)">';
+      h += '<td style="padding:10px 12px"><div style="font-weight:700">' + _inmoEscHtml(x.nombre || x.slug) + '</div>' +
+           '<div style="font-size:11px;color:var(--text2)">Actualizado ' + _redirFecha(x.updatedAt) + '</div></td>';
+      h += '<td style="padding:10px 12px"><code style="background:#F3F4F6;padding:2px 6px;border-radius:4px;font-size:11.5px">/r/' + _inmoEscHtml(x.slug) + '</code></td>';
+      h += '<td style="padding:10px 12px;max-width:280px"><a href="' + _inmoEscHtml(x.destino) + '" target="_blank" style="color:var(--blue);font-size:12px;word-break:break-all;text-decoration:none">' + _inmoEscHtml(String(x.destino || '').replace(/^https?:\/\//, '')) + '</a></td>';
+      h += '<td style="padding:10px 12px;font-weight:700">' + (parseInt(x.escaneos) || 0) + '</td>';
+      h += '<td style="padding:10px 12px">' +
+           '<span style="display:inline-block;background:' + (activo ? '#F0FDF4' : '#F3F4F6') + ';color:' + (activo ? '#166534' : '#6B7280') + ';border:1px solid ' + (activo ? '#BBF7D0' : '#E5E7EB') + ';font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px;text-transform:uppercase">' + (activo ? 'Activo' : 'Apagado') + '</span></td>';
+      h += '<td style="padding:10px 12px;white-space:nowrap">' +
+           '<button class="btn-sm" onclick="redirCopiar(\'' + _inmoEscHtml(x.slug) + '\', this)">Copiar</button> ' +
+           '<button class="btn-sm" onclick="redirEditar(\'' + _inmoEscHtml(x.slug) + '\')">Cambiar destino</button> ' +
+           '<button class="btn-sm" onclick="redirToggle(\'' + _inmoEscHtml(x.slug) + '\')">' + (activo ? 'Apagar' : 'Encender') + '</button> ' +
+           '<button class="btn-sm" onclick="redirBorrar(\'' + _inmoEscHtml(x.slug) + '\')" style="color:#DC2626;border-color:#FECACA">Borrar</button>' +
+           '</td>';
+      h += '</tr>';
+    }
+    h += '</tbody></table></div>';
+    wrap.innerHTML = h;
+  } catch (e) {
+    wrap.innerHTML = '<div style="padding:20px;color:#DC2626">Error: ' + _inmoEscHtml(e.message) + '</div>';
+  }
+}
+
+function _redirFecha(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'2-digit' }); }
+  catch (e) { return iso; }
+}
+
+function redirCopiar(slug, btn) {
+  _copiarTexto(_redirUrl(slug), btn);
+}
+
+// Trae el redirect al formulario para editarlo. El slug queda fijo: cambiarlo
+// sería crear otro redirect y dejar muertos los QR ya impresos con el anterior.
+function redirEditar(slug) {
+  var x = null, i;
+  for (i = 0; i < _redirData.length; i++) {
+    if (_redirData[i].slug === slug) { x = _redirData[i]; break; }
+  }
+  if (!x) return;
+  document.getElementById('redirSlug').value = x.slug;
+  document.getElementById('redirNombre').value = x.nombre || '';
+  document.getElementById('redirDestino').value = x.destino || '';
+  document.getElementById('redirFormTitulo').textContent = 'Editando /r/' + x.slug;
+  _redirPintarPreview();
+  document.getElementById('redirDestino').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function _redirSet(payload) {
+  var r = await fetch('/api/r?action=admin-set&token=' + encodeURIComponent(_inmoTokenAdmin), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  var d = {};
+  try { d = await r.json(); } catch (e) { d = {}; }
+  if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+  return d;
+}
+
+async function redirGuardar() {
+  var slug    = _redirNormSlug(document.getElementById('redirSlug').value);
+  var nombre  = (document.getElementById('redirNombre').value || '').trim();
+  var destino = (document.getElementById('redirDestino').value || '').trim();
+
+  if (!slug) { alert('Escribí un slug para la URL del QR.'); return; }
+  if (!/^https?:\/\/[^\s]+$/i.test(destino)) { alert('El destino tiene que ser una URL completa, arrancando con https://'); return; }
+
+  var existe = false, i;
+  for (i = 0; i < _redirData.length; i++) { if (_redirData[i].slug === slug) existe = true; }
+  if (existe && !window.confirm('Ya existe /r/' + slug + '.\n\nSe va a cambiar su destino. Todos los QR impresos con esa URL van a empezar a apuntar al destino nuevo.\n\n¿Seguimos?')) return;
+
+  var btn = document.getElementById('redirBtnGuardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  try {
+    await _redirSet({ slug: slug, nombre: nombre, destino: destino });
+    redirLimpiarForm();
+    await renderRedirs();
+  } catch (e) {
+    alert('No se pudo guardar: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Guardar';
+}
+
+async function redirToggle(slug) {
+  var x = null, i;
+  for (i = 0; i < _redirData.length; i++) {
+    if (_redirData[i].slug === slug) { x = _redirData[i]; break; }
+  }
+  if (!x) return;
+  var nuevoActivo = (x.activo === false);
+  if (!nuevoActivo && !window.confirm('Apagar /r/' + slug + '?\n\nLos QR que ya repartiste van a mandar al home hasta que lo vuelvas a encender.')) return;
+
+  try {
+    await _redirSet({ slug: x.slug, nombre: x.nombre, destino: x.destino, activo: nuevoActivo });
+    await renderRedirs();
+  } catch (e) {
+    alert('No se pudo cambiar el estado: ' + e.message);
+  }
+}
+
+async function redirBorrar(slug) {
+  if (!window.confirm('¿Borrar /r/' + slug + '?\n\nLos QR impresos con esa URL dejan de funcionar y mandan al home.\nTambién se pierde el contador de escaneos.\n\nSi solo querés pausarlo, usá Apagar.')) return;
+  try {
+    var r = await fetch('/api/r?action=admin-eliminar&token=' + encodeURIComponent(_inmoTokenAdmin), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug })
+    });
+    var d = {};
+    try { d = await r.json(); } catch (e) { d = {}; }
+    if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+    await renderRedirs();
+  } catch (e) {
+    alert('No se pudo borrar: ' + e.message);
+  }
 }
 
 // ── Listar todas (admin) ──
