@@ -241,6 +241,9 @@ module.exports = async function handler(req, res) {
                     <strong>🏡 Compraventa:</strong> le regalás a tu cliente la limpieza de la casa nueva.
                   </div>
                 </div>
+                <div style="text-align:center;margin-top:16px">
+                  <a href="${SITE_BASE}/beneficios-asesores.html" style="display:inline-block;background:#003580;color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:12px 22px;border-radius:10px">Ver tus beneficios completos →</a>
+                </div>
               </div>
               <div style="background:#FAFAFA;border-top:1px solid #E5E7EB;padding:16px 28px;text-align:center">
                 <span style="font-size:12px;color:#94A3B8">MudateYa · la seguridad de mudarse · mudateya.ar</span>
