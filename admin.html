@@ -5204,6 +5204,7 @@ function _otrosTablaAsesor(filas) {
     h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(row.b.pagado) + '</td>';
     h += '<td style="padding:10px 12px;white-space:nowrap">' +
          (row.codigo ? '<button class="btn-sm" onclick="otrosCopiarLink(\'' + _inmoEscHtml(row.codigo) + '\', this)">Link</button>' : '') +
+         (row.codigo ? ' <button class="btn-sm" onclick="otrosBorrar(\'' + _inmoEscHtml(row.codigo) + '\', this)" style="color:#DC2626;border-color:#FECACA">Borrar</button>' : '') +
          '</td>';
     h += '</tr>';
   }
@@ -5214,6 +5215,46 @@ function _otrosTablaAsesor(filas) {
 function otrosCopiarLink(codigo, btn) {
   var url = 'https://mudateya.ar/inmobiliaria/independientes?asesor=' + encodeURIComponent(codigo);
   _copiarTexto(url, btn);
+}
+
+// ── Borrar un asesor del canal ──────────────────────────────────────
+// Libera el email para que se pueda volver a registrar (típicamente porque
+// escribió mal la inmobiliaria). OJO: al re-registrarse le sale un código
+// NUEVO, así que el link y el QR que ya haya compartido dejan de atribuir.
+// Las operaciones ya cerradas no se tocan: quedan en el reporte de comisiones
+// bajo el código viejo, como fila suelta sin asesor asociado.
+async function otrosBorrar(codigo, btn) {
+  var fila = null, i;
+  for (i = 0; i < _otrosFilas.length; i++) {
+    if (_otrosFilas[i].codigo === codigo) { fila = _otrosFilas[i]; break; }
+  }
+
+  var quien = fila ? (fila.nombre + (fila.inmobiliaria ? ' · ' + fila.inmobiliaria : '')) : codigo;
+  var aviso = '¿Borrar a ' + quien + '?\n\n' +
+              'Se libera su email para que se registre de nuevo.\n' +
+              'Su link y su QR actuales dejan de funcionar.';
+  if (fila && fila.b && fila.b.ops) {
+    aviso += '\n\n⚠ Tiene ' + fila.b.ops + ' operación/es cerrada/s. Quedan en el reporte, pero sin asesor asociado.';
+  }
+  if (!window.confirm(aviso)) return;
+
+  var textoOriginal = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Borrando…'; }
+
+  try {
+    var r = await fetch('/api/independientes?action=eliminar&token=' + encodeURIComponent(_inmoTokenAdmin), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo: codigo })
+    });
+    var d = {};
+    try { d = await r.json(); } catch (e) { d = {}; }
+    if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+    await renderOtros();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+    alert('No se pudo borrar: ' + e.message);
+  }
 }
 
 function _otrosTablaInmo(filas) {
