@@ -3,248 +3,165 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tus beneficios · Programa de Asesores MudateYa</title>
-<meta name="description" content="Qué gana tu cliente y qué ganás vos cada vez que compartís tu link de asesor de MudateYa."/>
+<title>Beneficios · Programa de Asesores · MudateYa</title>
+<meta name="description" content="Programa de asesores de MudateYa. En alquiler ganás comisión; en compraventa tu cliente recibe un beneficio que escala con la mudanza."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
   :root{
     --navy:#003580; --navy2:#142C4C; --green:#22C36A; --coral:#FF6B6B;
     --ink:#0F1923; --t2:#475569; --t3:#94A3B8;
-    --line:#E5E9F0; --soft:#F5F8FC;
+    --line:#E5E9F0; --soft:#F5F8FC; --page:#F1F3F6;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
   body{
     font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    color:var(--ink); background:#fff; line-height:1.6; -webkit-font-smoothing:antialiased;
+    color:var(--ink); background:var(--page); line-height:1.55; -webkit-font-smoothing:antialiased;
+    padding:22px 16px 34px;
   }
-  .wrap{max-width:940px; margin:0 auto; padding:0 20px}
+  .card{
+    max-width:660px; margin:0 auto; background:#fff; border-radius:16px; overflow:hidden;
+    box-shadow:0 10px 34px rgba(15,25,35,.07);
+  }
 
-  /* ── Topbar ── */
-  .topbar{border-bottom:1px solid var(--line); padding:16px 0; position:sticky; top:0; background:rgba(255,255,255,.94); backdrop-filter:blur(6px); z-index:20}
-  .topbar-in{display:flex; align-items:center; justify-content:space-between; gap:12px}
-  .logo{font-family:'Bebas Neue',sans-serif; font-size:27px; letter-spacing:1px; color:var(--navy); line-height:1}
-  .logo span{color:var(--green)}
-  .tag{font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--navy); background:#EEF3FB; border:1px solid #DCE6F5; border-radius:999px; padding:5px 10px}
+  /* ── Barra superior ── */
+  .head{background:var(--navy); padding:22px 26px 20px}
+  .head-top{display:flex; align-items:center; gap:12px}
+  .brand{font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1.5px; color:#fff; line-height:1}
+  .brand span{color:var(--green)}
+  .head .prog{font-size:11px; font-weight:800; letter-spacing:1.1px; text-transform:uppercase; color:#9CC0F2; margin-top:10px}
 
-  /* ── Hero ── */
-  .hero{padding:58px 0 46px; border-bottom:1px solid var(--line)}
-  .eyebrow{font-size:12px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--green); margin-bottom:14px}
-  h1{font-family:'Bebas Neue',sans-serif; font-size:clamp(40px,7vw,68px); line-height:.98; letter-spacing:.5px; color:var(--navy); margin-bottom:18px}
-  h1 em{font-style:normal; color:var(--ink)}
-  .lede{font-size:17px; color:var(--t2); max-width:610px}
+  /* ── Intro ── */
+  .intro{padding:26px 26px 4px}
+  h1{font-size:24px; font-weight:900; letter-spacing:-.4px; color:var(--ink); line-height:1.22; margin-bottom:10px}
+  .lede{font-size:14.5px; color:var(--t2)}
   .lede strong{color:var(--ink); font-weight:700}
 
-  /* ── Secciones ── */
-  section{padding:52px 0; border-bottom:1px solid var(--line)}
-  h2{font-family:'Bebas Neue',sans-serif; font-size:clamp(28px,4.4vw,40px); letter-spacing:.6px; color:var(--navy); margin-bottom:8px; line-height:1.05}
-  .sub{font-size:15px; color:var(--t2); margin-bottom:28px; max-width:640px}
+  /* ── Columnas ── */
+  .cols{display:grid; gap:16px; padding:22px 26px 6px}
+  @media(min-width:620px){ .cols{grid-template-columns:1fr 1fr; align-items:start} }
+  .col{border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column}
+  .col-head{padding:13px 16px; color:#fff}
+  .col-head .t{font-size:14px; font-weight:900; letter-spacing:.3px; text-transform:uppercase}
+  .col-head .s{font-size:12.5px; font-weight:700; margin-top:2px; opacity:.92}
+  .col-head.alq{background:var(--green)}
+  .col-head.cv{background:var(--navy)}
+  .col-body{padding:16px; font-size:13.5px; color:var(--t2)}
+  .col-body strong{color:var(--ink); font-weight:700}
+  .col-body p + p{margin-top:11px}
 
-  /* ── Pasos ── */
-  .pasos{display:grid; gap:2px; background:var(--line); border:1px solid var(--line); border-radius:14px; overflow:hidden}
-  @media(min-width:760px){ .pasos{grid-template-columns:repeat(3,1fr)} }
-  .paso{background:#fff; padding:24px 22px}
-  .paso-n{font-family:'Bebas Neue',sans-serif; font-size:19px; color:var(--green); letter-spacing:1px; margin-bottom:8px}
-  .paso h3{font-size:15px; font-weight:800; margin-bottom:6px}
-  .paso p{font-size:14px; color:var(--t2)}
+  /* ── Caja de la cuenta ── */
+  .calc{border:1px solid var(--line); border-radius:10px; padding:16px 14px; text-align:center; margin-bottom:14px}
+  .calc .lbl{font-size:10.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:var(--t3); line-height:1.35; margin-bottom:6px}
+  .calc .big{font-size:27px; font-weight:900; color:var(--ink); letter-spacing:-.6px}
+  .calc .op{font-size:12.5px; color:var(--t2); margin-top:6px; padding-bottom:13px; border-bottom:1px solid var(--line)}
+  .calc .lbl2{font-size:10.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:var(--t3); margin:13px 0 4px}
+  .calc .out{font-size:31px; font-weight:900; color:var(--green); letter-spacing:-.8px}
 
-  /* ── Los dos casos ── */
-  .casos{display:grid; gap:18px}
-  @media(min-width:760px){ .casos{grid-template-columns:1.05fr .95fr; align-items:start} }
-  .caso{border:1px solid var(--line); border-radius:14px; padding:24px 22px}
-  .caso.alq{border-left:4px solid var(--green)}
-  .caso.cv{border-left:4px solid var(--coral); background:var(--soft)}
-  .caso-k{font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--t3); margin-bottom:8px}
-  .caso h3{font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:.5px; color:var(--navy); margin-bottom:10px}
-  .caso p{font-size:14.5px; color:var(--t2)}
-  .caso p + p{margin-top:10px}
+  /* ── Tabla ── */
+  .tabla{width:100%; border-collapse:collapse; margin:12px 0 13px; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  .tabla th{background:#E8EFFA; text-align:left; font-size:10.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--navy); padding:9px 12px; line-height:1.3}
+  .tabla td{padding:10px 12px; border-top:1px solid var(--line); font-size:13px; color:var(--t2); vertical-align:top}
+  .tabla td.val{font-weight:800; color:var(--ink); white-space:nowrap}
+  .tabla tr:last-child td{color:var(--navy); font-weight:700}
+  .tabla tr:last-child td.val{color:var(--navy)}
+  .tabla b{color:var(--ink); font-weight:800}
+  .tabla tr:last-child b{color:var(--navy)}
 
-  /* ── Servicios ── */
-  .niveles{display:grid; gap:14px}
-  @media(min-width:760px){ .niveles{grid-template-columns:repeat(3,1fr)} }
-  .nivel{border:1px solid var(--line); border-radius:14px; padding:20px}
-  .nivel h3{font-size:15px; font-weight:800; color:var(--navy); margin-bottom:6px}
-  .nivel p{font-size:13.5px; color:var(--t2)}
+  /* ── Bonus ── */
+  .bonus{margin:18px 26px 6px; background:var(--navy); border-radius:12px; padding:18px 22px; text-align:center; color:#fff}
+  .bonus .k{font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#9CC0F2; margin-bottom:8px}
+  .bonus .t{font-size:16px; font-weight:800; line-height:1.4}
+  .bonus .s{font-size:12.5px; color:#B8D4FF; margin-top:8px}
 
-  /* ── Link (elemento firma) ── */
-  .linkcard{border:1px solid var(--line); border-radius:16px; overflow:hidden}
-  .linkcard-top{background:var(--navy); color:#fff; padding:20px 24px}
-  .linkcard-top .k{font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#9CC0F2; margin-bottom:6px}
-  .linkcard-top .u{font-size:15px; font-weight:700; word-break:break-all; font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  .linkcard-top .u b{color:var(--green); font-weight:700}
-  .linkcard-body{padding:20px 24px}
-  .linkcard-body p{font-size:14.5px; color:var(--t2)}
-  .linkcard-body p + p{margin-top:10px}
-  .usos{list-style:none; margin-top:14px; display:grid; gap:9px}
-  .usos li{font-size:14px; color:var(--ink); padding-left:20px; position:relative}
-  .usos li::before{content:'→'; position:absolute; left:0; color:var(--green); font-weight:700}
+  /* ── Cierre ── */
+  .cierre{margin:16px 26px 26px; border:1px solid var(--line); border-radius:12px; padding:20px; text-align:center}
+  .cierre .f{font-size:16px; font-weight:800; color:var(--navy)}
+  .cierre .s{font-size:13px; color:var(--t2); margin-top:6px}
 
-  /* ── CTA ── */
-  .cta{display:inline-flex; align-items:center; gap:8px; background:var(--navy); color:#fff; text-decoration:none; font-weight:800; font-size:15px; padding:13px 24px; border-radius:12px; transition:transform .12s}
-  .cta:hover{transform:translateY(-1px)}
-  .cta.ghost{background:#fff; color:var(--navy); border:1.5px solid var(--navy)}
-  .ctas{display:flex; gap:12px; flex-wrap:wrap; margin-top:22px}
+  .pie{max-width:660px; margin:14px auto 0; text-align:center; font-size:12.5px; color:var(--t3)}
+  .pie a{color:var(--navy); font-weight:600; text-decoration:none}
 
-  /* ── FAQ ── */
-  .faq{display:grid; gap:0; border-top:1px solid var(--line)}
-  .faq-i{border-bottom:1px solid var(--line); padding:18px 0}
-  .faq-q{font-size:15px; font-weight:700; margin-bottom:5px}
-  .faq-a{font-size:14.5px; color:var(--t2)}
-
-  footer{padding:34px 0 46px; text-align:center}
-  footer .f-logo{font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--navy); letter-spacing:1px}
-  footer .f-logo span{color:var(--green)}
-  footer .f-line{font-size:13px; color:var(--t3); margin-top:6px}
-  footer a{color:var(--navy); font-weight:600; text-decoration:none}
-
-  @media (prefers-reduced-motion:reduce){ *{transition:none !important} html{scroll-behavior:auto} }
+  @media(max-width:420px){
+    h1{font-size:21px}
+    .calc .big{font-size:24px}
+    .calc .out{font-size:27px}
+  }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="wrap topbar-in">
-    <span class="logo">Mudate<span>Ya</span></span>
-    <span class="tag">Programa de Asesores</span>
-  </div>
-</div>
+<div class="card">
 
-<div class="hero">
-  <div class="wrap">
-    <div class="eyebrow">Tus beneficios</div>
-    <h1>Firmaste.<br>Ahora tu cliente<br><em>se tiene que mudar.</em></h1>
-    <p class="lede">Esa parte suele volver a vos: que si conocés a alguien, que si el flete, que le salió carísimo. Con tu link, <strong>dejás de improvisar recomendaciones</strong> y le pasás algo que responde por vos.</p>
-  </div>
-</div>
-
-<section>
-  <div class="wrap">
-    <h2>Cómo funciona</h2>
-    <p class="sub">Tres pasos, en este orden. No tenés que gestionar nada después de compartir el link.</p>
-    <div class="pasos">
-      <div class="paso">
-        <div class="paso-n">Paso 1</div>
-        <h3>Compartís tu link</h3>
-        <p>En la entrega de llaves, por WhatsApp o con tu QR. Es tuyo y no vence.</p>
-      </div>
-      <div class="paso">
-        <div class="paso-n">Paso 2</div>
-        <h3>Tu cliente publica</h3>
-        <p>Carga la mudanza en dos minutos y recibe cotizaciones de mudanceros verificados.</p>
-      </div>
-      <div class="paso">
-        <div class="paso-n">Paso 3</div>
-        <h3>Elige y se muda</h3>
-        <p>Compara precios, contrata y paga por la plataforma. Vos no tocás plata ni coordinás nada.</p>
-      </div>
+  <div class="head">
+    <div class="head-top">
+      <span class="brand">Mudate<span>Ya</span></span>
     </div>
+    <div class="prog">Programa de asesores</div>
   </div>
-</section>
 
-<section>
-  <div class="wrap">
-    <h2>Depende de la operación</h2>
-    <p class="sub">El beneficio cambia según lo que cerraste. Los dos casos están cubiertos.</p>
-    <div class="casos">
-      <div class="caso alq">
-        <div class="caso-k">Si fue alquiler</div>
-        <h3>Ganás una comisión</h3>
-        <p>Por cada mudanza que tu cliente concrete a través de tu link, te corresponde una comisión sobre la operación.</p>
-        <p>Se acredita cuando el servicio está terminado y pago. Lo seguís desde tu panel, sin tener que reclamarlo.</p>
-      </div>
-      <div class="caso cv">
-        <div class="caso-k">Si fue compraventa</div>
-        <h3>Le regalás la limpieza</h3>
-        <p>Tu cliente recibe la limpieza de la casa nueva antes de entrar. Ese caso no genera comisión para vos: el beneficio va entero a él.</p>
-        <p>Es un cierre que se recuerda, y no te cuesta nada.</p>
-      </div>
-    </div>
+  <div class="intro">
+    <h1>En cada operación que cerrás, alguien gana.</h1>
+    <p class="lede">Si es <strong>alquiler</strong>, ganás vos. Si es <strong>compraventa</strong>, gana tu cliente — y vos quedás como el que se ocupó de todo.</p>
   </div>
-</section>
 
-<section>
-  <div class="wrap">
-    <h2>Qué puede contratar</h2>
-    <p class="sub">Tres niveles, para que elija según cuánto quiera hacer él y cuánto prefiera delegar.</p>
-    <div class="niveles">
-      <div class="nivel">
-        <h3>Esencial</h3>
-        <p>El traslado. Él embala, nosotros movemos. Para quien ya tiene todo listo.</p>
-      </div>
-      <div class="nivel">
-        <h3>Integral</h3>
-        <p>Embalaje y traslado. Llegan con las cajas y se encargan de proteger todo.</p>
-      </div>
-      <div class="nivel">
-        <h3>Llave en mano · Antiestrés</h3>
-        <p>Embalan, mudan y desembalan. Tu cliente abre la puerta y ya está instalado.</p>
-      </div>
-    </div>
-  </div>
-</section>
+  <div class="cols">
 
-<section>
-  <div class="wrap">
-    <h2>Tu link es tu firma</h2>
-    <p class="sub">Todo lo que entre por ahí queda atribuido a vos. Si tu cliente llega a MudateYa por Google, no.</p>
-    <div class="linkcard">
-      <div class="linkcard-top">
-        <div class="k">Así se ve el tuyo</div>
-        <div class="u">mudateya.ar/inmobiliaria/independientes?asesor=<b>tu-codigo</b></div>
+    <div class="col">
+      <div class="col-head alq">
+        <div class="t">🔑 Alquiler</div>
+        <div class="s">Ganás una comisión</div>
       </div>
-      <div class="linkcard-body">
-        <p>Te lo mandamos por mail cuando te registraste, junto con tu QR listo para imprimir o mandar.</p>
-        <ul class="usos">
-          <li>Pegalo en la firma de tu mail</li>
-          <li>Imprimí el QR y dejalo en el mostrador</li>
-          <li>Mandalo por WhatsApp junto con las llaves</li>
-        </ul>
-        <div class="ctas">
-          <a class="cta ghost" href="/asesor-registro.html">Recuperar mi link →</a>
+      <div class="col-body">
+        <div class="calc">
+          <div class="lbl">Una mudanza llave en mano promedio</div>
+          <div class="big">$2.000.000</div>
+          <div class="op">× 5% de comisión</div>
+          <div class="lbl2">Para vos</div>
+          <div class="out">$100.000</div>
         </div>
+        <p>Cobrás una comisión por <strong>cada mudanza que tu cliente concrete</strong>. Se liquida todos los meses sobre las operaciones completadas. Sin tope: cuanto más derivás, más ganás.</p>
       </div>
     </div>
-  </div>
-</section>
 
-<section>
-  <div class="wrap">
-    <h2>Preguntas</h2>
-    <div class="faq">
-      <div class="faq-i">
-        <div class="faq-q">¿Tengo que hacer algo después de pasar el link?</div>
-        <div class="faq-a">No. Tu cliente publica, elige y paga por la plataforma. Vos no coordinás la mudanza ni manejás el dinero.</div>
+    <div class="col">
+      <div class="col-head cv">
+        <div class="t">🏡 Compraventa</div>
+        <div class="s">Un regalo para tu cliente</div>
       </div>
-      <div class="faq-i">
-        <div class="faq-q">¿Los mudanceros están verificados?</div>
-        <div class="faq-a">Sí. Todos pasan por verificación de identidad antes de poder cotizar. Tu cliente ve las reseñas de cada uno antes de decidir.</div>
-      </div>
-      <div class="faq-i">
-        <div class="faq-q">¿Y si mi cliente ya conoce MudateYa?</div>
-        <div class="faq-a">Mientras entre por tu link, la operación queda atribuida a vos.</div>
-      </div>
-      <div class="faq-i">
-        <div class="faq-q">Me equivoqué al cargar mi inmobiliaria.</div>
-        <div class="faq-a">Escribinos y lo corregimos sin cambiarte el código, así tu link y tu QR siguen funcionando.</div>
-      </div>
-      <div class="faq-i">
-        <div class="faq-q">¿En qué zonas opera?</div>
-        <div class="faq-a">CABA y Gran Buenos Aires, más Córdoba y Rosario.</div>
+      <div class="col-body">
+        <p><strong>MudateYa le regala a tu cliente</strong> un beneficio que escala con el valor de la mudanza:</p>
+        <table class="tabla">
+          <thead>
+            <tr><th>Valor de la mudanza</th><th>El cliente recibe</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="val">+ $1.000.000</td><td>Big Box</td></tr>
+            <tr><td class="val">+ $2.000.000</td><td>Limpieza en origen <b>o</b> destino</td></tr>
+            <tr><td class="val">+ $3.000.000</td><td>Limpieza en <b>ambos</b> hogares</td></tr>
+            <tr><td class="val">+ $4.000.000</td><td>Limpieza en ambos + Big Box</td></tr>
+          </tbody>
+        </table>
+        <p>Cuanto más grande la operación, más grande el regalo. Tu cliente se muda sin estrés — y se acuerda de <strong>quién se lo hizo fácil</strong>.</p>
       </div>
     </div>
-    <div class="ctas">
-      <a class="cta" href="https://wa.me/5491133364677" target="_blank" rel="noopener">Escribinos por WhatsApp</a>
-    </div>
-  </div>
-</section>
 
-<footer>
-  <div class="wrap">
-    <div class="f-logo">Mudate<span>Ya</span></div>
-    <div class="f-line">La seguridad de mudarse · <a href="mailto:hola&#64;mudateya.ar">hola&#64;mudateya.ar</a></div>
   </div>
-</footer>
+
+  <div class="bonus">
+    <div class="k">🏆 Bonus Asesor del Año</div>
+    <div class="t">Si superás las 10 operaciones en el año (alquiler + compraventa), te llevás un premio especial.</div>
+    <div class="s">Vos derivás, nosotros premiamos.</div>
+  </div>
+
+  <div class="cierre">
+    <div class="f">MudateYa es la seguridad de mudarse.</div>
+    <div class="s">Sumás un plus a tu servicio, sin costo y sin trabajo extra.</div>
+  </div>
+
+</div>
+
+<div class="pie">mudateya.ar · <a href="mailto:hola&#64;mudateya.ar">hola&#64;mudateya.ar</a></div>
 
 </body>
 </html>
