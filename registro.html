@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>MudateYa</title>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ACÁ SE CAMBIA EL DESTINO DEL QR.
+
+     Es la ÚNICA línea que hay que tocar. Cambiás la URL, deployás, y
+     todos los QR ya impresos empiezan a mandar al lugar nuevo.
+
+     Destinos usados habitualmente:
+       https://mudateya.ar/inmobiliarias-registro
+       https://mudateya.ar/asesor-registro.html
+       https://mudateya.ar/mudafy-registro.html
+       https://mudateya.ar/remax-registro.html
+
+     Tip: agregale ?origen=loquesea para saber después de qué evento
+     vino cada alta. Ejemplo:
+       https://mudateya.ar/asesor-registro.html?origen=expo-octubre
+     ══════════════════════════════════════════════════════════════════ -->
+<script data-cfasync="false">
+  var DESTINO = 'https://mudateya.ar/inmobiliarias-registro';
+</script>
+<!-- ══════════════════════════════════════════════════════════════════ -->
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:#fff; color:#0F1923; min-height:100vh;
+    display:flex; align-items:center; justify-content:center; padding:24px; text-align:center;
+  }
+  .logo{font-size:26px; font-weight:900; color:#003580; letter-spacing:-.5px; margin-bottom:20px}
+  .logo span{color:#22C36A}
+  .spin{
+    width:32px; height:32px; margin:0 auto 14px;
+    border:3px solid #E5E9F0; border-top-color:#003580; border-radius:50%;
+    animation:girar .8s linear infinite;
+  }
+  @keyframes girar{to{transform:rotate(360deg)}}
+  .msg{font-size:14px; color:#475569}
+  .alt{margin-top:20px}
+  .alt a{display:inline-block; background:#003580; color:#fff; text-decoration:none; font-weight:700; font-size:14px; padding:11px 22px; border-radius:10px}
+  @media (prefers-reduced-motion:reduce){ .spin{animation:none} }
+</style>
+</head>
+<body>
+<div>
+  <div class="logo">Mudate<span>Ya</span></div>
+  <div class="spin"></div>
+  <div class="msg">Un segundo…</div>
+  <div class="alt"><a id="link" href="https://mudateya.ar/">Continuar →</a></div>
+</div>
+
+<script data-cfasync="false">
+// El salto se hace apenas carga. El botón "Continuar" queda visible por si
+// algún navegador bloquea la redirección automática.
+(function() {
+  document.getElementById('link').href = DESTINO;
+  window.location.replace(DESTINO);
+})();
+</script>
+</body>
+</html>
