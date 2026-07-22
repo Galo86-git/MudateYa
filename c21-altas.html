@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Altas en vivo · Aliados CENTURY 21 · MudateYa</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --navy:#003580; --green:#22C36A; --c21gold:#BEAF87; --c21dark:#252526;
+    --ink:#0F1923; --t2:#475569; --t3:#94A3B8;
+    --line:#E5E9F0; --bg:#F5F7FA; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+
+  #dash{max-width:960px; margin:0 auto; padding:20px 16px 60px}
+  .top{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px}
+  .brand{display:flex; align-items:center; gap:8px}
+  .brand .mya{font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:1px; color:var(--navy)}
+  .brand .mya span{color:var(--green)}
+  .brand .tag{font-size:12px; font-weight:700; color:#8A7743; background:#FAF8F3; border:1px solid var(--c21gold); padding:3px 9px; border-radius:999px}
+  .live{display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:var(--t2)}
+  .dot{width:9px; height:9px; border-radius:50%; background:var(--green); animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1; transform:scale(1)} 50%{opacity:.35; transform:scale(.8)}}
+
+  .counter{background:linear-gradient(150deg,#2E2E30,#1C1C1E); color:#fff; border-bottom:3px solid var(--c21gold); border-radius:18px; padding:26px 24px; text-align:center; margin-bottom:18px}
+  .counter .n{font-family:'Bebas Neue',sans-serif; font-size:76px; line-height:.9; letter-spacing:1px; color:var(--c21gold)}
+  .counter .l{font-size:14px; font-weight:600; opacity:.92; margin-top:6px; text-transform:uppercase; letter-spacing:.5px}
+  .counter .u{font-size:12px; opacity:.8; margin-top:10px}
+
+  .table-card{background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden}
+  .thead{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line)}
+  .thead h2{font-size:14px; font-weight:800}
+  .btn-sm{padding:7px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer; color:var(--navy)}
+  .scroll{overflow-x:auto}
+  table{width:100%; border-collapse:collapse; min-width:520px; font-size:13px}
+  th{text-align:left; padding:9px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--t3); background:#FAFBFC; border-bottom:1px solid var(--line)}
+  td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .nom{font-weight:700; color:var(--ink)}
+  .muted{color:var(--t2); font-size:12px}
+  .mono{font-family:'Inter',monospace; font-size:12px; color:var(--t2)}
+  .lk{max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:5px}
+  .badge-new{display:inline-block; font-size:9px; font-weight:800; color:var(--c21dark); background:var(--c21gold); padding:1px 6px; border-radius:5px; margin-left:6px; letter-spacing:.5px; vertical-align:middle}
+  .copy{padding:5px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; color:var(--navy); white-space:nowrap}
+  .del{padding:5px 9px; border:1px solid #FECACA; border-radius:7px; background:#FEF2F2; font-size:12px; cursor:pointer; color:#B91C1C; margin-left:4px}
+  .btn-sm.danger{color:#B91C1C; border-color:#FECACA; background:#FEF2F2}
+  @keyframes flashNew{0%{background:#F3EDDF} 100%{background:transparent}}
+  tr.nueva td{animation:flashNew 2.6s ease-out}
+  .empty{padding:40px 20px; text-align:center; color:var(--t2); font-size:14px}
+  .err{padding:30px 20px; text-align:center; color:#B91C1C; font-size:13px; font-weight:600}
+  .spin{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--navy); border-radius:50%; animation:sp .7s linear infinite; vertical-align:middle}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="dash">
+  <div class="top">
+    <div class="brand">
+      <span class="mya">Mudate<span>Ya</span></span>
+      <span class="tag">Aliados CENTURY 21</span>
+    </div>
+    <div class="live"><span class="dot"></span> En vivo · al instante</div>
+  </div>
+
+  <div class="counter">
+    <div class="n" id="cNum">—</div>
+    <div class="l">asesores dados de alta</div>
+    <div class="u" id="cUpd">—</div>
+  </div>
+
+  <div class="table-card">
+    <div class="thead">
+      <h2>Últimas altas</h2>
+      <div style="display:flex; gap:8px">
+        <button class="btn-sm" onclick="cargar(true)" id="btnRefresh">Actualizar ahora</button>
+        <button class="btn-sm danger" onclick="borrarTodos()">Borrar todos</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Oficina</th><th>Email</th><th>WhatsApp</th><th>Link</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="5" class="empty"><span class="spin"></span> Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var LINK_BASE = 'https://mudateya.ar/inmobiliaria/c21';
+// Token de admin: mismo patrón que admin.html (localStorage.adminToken o el default).
+// No se pide por pantalla.
+var _token = (function(){ try { return localStorage.getItem('adminToken') || 'mya-admin-2026'; } catch(e){ return 'mya-admin-2026'; } })();
+var _vistos = {};      // códigos ya vistos (para detectar nuevos)
+var _timer = null;
+var _primeraCarga = true;
+
+async function fetchAltas() {
+  var r = await fetch('/api/c21?action=listar&token=' + encodeURIComponent(_token));
+  var txt = await r.text();
+  var data;
+  try { data = txt ? JSON.parse(txt) : {}; } catch(pe) { throw new Error('Respuesta inesperada (' + r.status + ')'); }
+  if (!r.ok) throw new Error(data.error || ('Error ' + r.status));
+  return data;
+}
+
+async function cargar(manual) {
+  var btn = document.getElementById('btnRefresh');
+  if (manual && btn) { btn.disabled = true; btn.textContent = 'Actualizando…'; }
+  try {
+    var data = await fetchAltas();
+    render(data);
+  } catch (err) {
+    if (_primeraCarga) {
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="5" class="err">No se pudo cargar: ' + esc(err.message || 'error') + '</td></tr>';
+    }
+  } finally {
+    if (manual && btn) { btn.disabled = false; btn.textContent = 'Actualizar ahora'; }
+  }
+}
+
+function render(data) {
+  var asesores = (data && data.asesores) || [];
+  var total = (data && typeof data.total === 'number') ? data.total : asesores.length;
+
+  document.getElementById('cNum').textContent = total;
+  var now = new Date();
+  document.getElementById('cUpd').textContent = 'Actualizado ' + now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+  var tbody = document.getElementById('tbody');
+  if (!asesores.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Todavía no hay asesores dados de alta. Cuando alguien se registre, va a aparecer acá.</td></tr>';
+    _primeraCarga = false;
+    return;
+  }
+
+  var h = '';
+  for (var i = 0; i < asesores.length; i++) {
+    var a = asesores[i];
+    var esNuevo = !_primeraCarga && !_vistos[a.codigo];
+    var link = LINK_BASE + '?asesor=' + encodeURIComponent(a.codigo);
+    h += '<tr class="' + (esNuevo ? 'nueva' : '') + '">';
+    h += '<td><span class="nom">' + esc(a.nombre || '—') + '</span>' + (esNuevo ? '<span class="badge-new">NUEVO</span>' : '') + '</td>';
+    h += '<td class="muted">' + esc(a.oficina || '—') + '</td>';
+    h += '<td>' + esc(a.email || '—') + '</td>';
+    h += '<td class="muted">' + esc(a.whatsapp || '—') + '</td>';
+    h += '<td><div class="mono lk">' + esc(link.replace(/^https?:\/\//, '')) + '</div><button class="copy" onclick="copiar(this, \'' + esc(link) + '\')">Copiar</button> <button class="del" onclick="eliminar(\'' + esc(a.codigo) + '\')" title="Eliminar">🗑</button></td>';
+    h += '</tr>';
+  }
+  tbody.innerHTML = h;
+
+  for (var j = 0; j < asesores.length; j++) _vistos[asesores[j].codigo] = true;
+  _primeraCarga = false;
+}
+
+function copiar(btn, link) {
+  function ok(){ var t = btn.textContent; btn.textContent = '¡Copiado!'; setTimeout(function(){ btn.textContent = t; }, 1500); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(ok, function(){ fallback(link); ok(); });
+  } else { fallback(link); ok(); }
+}
+function fallback(link) {
+  var ta = document.createElement('textarea'); ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function eliminar(codigo) {
+  if (!confirm('¿Eliminar este asesor? No se puede deshacer.')) return;
+  try {
+    var r = await fetch('/api/c21?action=eliminar&token=' + encodeURIComponent(_token), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo: codigo })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    delete _vistos[codigo];
+    cargar(true);
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function borrarTodos() {
+  if (!confirm('¿Borrar TODOS los asesores? Es para limpiar datos de prueba y no se puede deshacer.')) return;
+  try {
+    var r = await fetch('/api/c21?action=eliminar-todos&token=' + encodeURIComponent(_token), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    _vistos = {};
+    cargar(true);
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// Arranque: carga inicial + auto-refresh cada 10s. Sin token por pantalla.
+cargar(false);
+_timer = setInterval(function(){ cargar(false); }, 3000);
+</script>
+</body>
+</html>
