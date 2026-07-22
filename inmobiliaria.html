@@ -1177,10 +1177,14 @@ function _escAttr(s) { return _escHtml(s); }
 // paraguas y la inmobiliaria real solo se conoce leyendo el código del asesor.
 // En Mudafy y RE/MAX el canal ya es la inmobiliaria, así que solo agregamos
 // el nombre del asesor debajo del logo que ya se está mostrando.
+// Los canales viejos siguen apuntando a su endpoint dedicado; los nuevos usan
+// el genérico /api/canales. Ambos devuelven la misma forma ({nombre, zona, ...}),
+// así que aplicarMarcaAsesor() no distingue.
 var ENDPOINTS_ASESOR = {
   mudafy:         '/api/mudafy?action=obtener&codigo=',
   remax:          '/api/remax?action=obtener&codigo=',
-  independientes: '/api/independientes?action=obtener&codigo='
+  independientes: '/api/independientes?action=obtener&codigo=',
+  c21:            '/api/canales?action=obtener&canal=c21&codigo='
 };
 
 function aplicarMarcaAsesor(a) {
