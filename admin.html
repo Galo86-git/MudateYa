@@ -535,6 +535,9 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <a class="sidebar-item" onclick="showPage('remax',event)" href="#">
         <span class="sidebar-icon">🎈</span> RE/MAX
       </a>
+      <a class="sidebar-item" onclick="showPage('c21',event)" href="#">
+        <span class="sidebar-icon">🏅</span> CENTURY 21
+      </a>
       <a class="sidebar-item" onclick="showPage('otros',event)" href="#">
         <span class="sidebar-icon">🏢</span> Otros Asesores
       </a>
@@ -579,6 +582,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <button onclick="showPage('inmobiliarias',event);setMobileNav('inmobiliarias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏠 Inmobiliarias</button>
       <button onclick="showPage('mudafy',event);setMobileNav('mudafy');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🤝 Mudafy</button>
       <button onclick="showPage('remax',event);setMobileNav('remax');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🎈 RE/MAX</button>
+      <button onclick="showPage('c21',event);setMobileNav('c21');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏅 CENTURY 21</button>
       <button onclick="showPage('otros',event);setMobileNav('otros');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🏢 Otros Asesores</button>
       <button onclick="showPage('redirs',event);setMobileNav('redirs');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🔗 QR / Redirects</button>
     </div>
@@ -1006,6 +1010,24 @@ tr:hover td{background:rgba(34,195,106,.03)}
         </div>
       </div>
 
+      <!-- ═══════════ CENTURY 21 ═══════════ -->
+      <div class="page" id="page-c21">
+        <div class="page-header">
+          <h1 class="page-title">CENTURY 21 · Aliados</h1>
+          <div class="page-subtitle">Asesores de CENTURY 21 y lo que cierran. La comisión del canal es la cargada en <a href="#" onclick="showPage('inmobiliarias',event);return false" style="color:var(--blue);font-weight:600">Inmobiliarias → c21</a> (alquiler paga comisión; compraventa lleva su beneficio, sin comisión).</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;font-size:13px">
+          <span style="color:var(--text2);font-weight:600">Link de registro de asesores:</span>
+          <code style="background:#F3F4F6;padding:6px 10px;border-radius:6px;font-size:12px;color:var(--text)">mudateya.ar/c21-registro.html</code>
+          <button class="btn-sm" onclick="_copiarTexto('https://mudateya.ar/c21-registro.html', this)">Copiar</button>
+          <a href="/c21-registro.html" target="_blank" style="color:var(--blue);font-weight:600;text-decoration:none">Abrir →</a>
+        </div>
+        <div class="metrics-grid" id="c21Metricas" style="margin-bottom:1.2rem"></div>
+        <div class="table-card">
+          <div id="c21Wrap"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+      </div>
+
       <!-- ═══════════ OTROS ASESORES ═══════════ -->
       <div class="page" id="page-otros">
         <div class="page-header">
@@ -1266,6 +1288,7 @@ function showPage(name, e){
   }
   if(name === 'mudafy') { if(typeof renderMudafy === 'function') renderMudafy(); }
   if(name === 'remax') { if(typeof renderRemax === 'function') renderRemax(); }
+  if(name === 'c21') { if(typeof renderC21 === 'function') renderC21(); }
   if(name === 'otros') { if(typeof renderOtros === 'function') renderOtros(); }
   if(name === 'redirs') { if(typeof renderRedirs === 'function') renderRedirs(); }
   // cerrar menu extra mobile si estaba abierto
@@ -5030,6 +5053,93 @@ async function renderRemax() {
     for (var key in stats) {
       if (!stats.hasOwnProperty(key)) continue;
       filas.push({ nombre: (key === '(directo)' ? 'Directo RE/MAX (sin asesor)' : key), email: '', b: stats[key] });
+    }
+
+    // 5) Métricas
+    mets.innerHTML =
+      _mfMetric('Asesores de alta', asesores.length, '#EEF4FF', '#1E40AF') +
+      _mfMetric('Operaciones cerradas', resultados.length, '#F0FFF4', '#15803D') +
+      _mfMetric('Comisión adeudada', '$' + _inmoFmt(totalAdeudado), '#FEF3C7', '#92400E') +
+      _mfMetric('Comisión pagada', '$' + _inmoFmt(totalPagado), '#F0FDF4', '#166534');
+
+    if (!filas.length) {
+      wrap.innerHTML = '<div style="padding:36px;text-align:center;color:var(--text2)">Todavía no hay asesores dados de alta.</div>';
+      return;
+    }
+
+    // 6) Orden: más comisión adeudada primero, luego más operaciones
+    filas.sort(function(x, y) { return (y.b.adeudado - x.b.adeudado) || (y.b.ops - x.b.ops); });
+
+    var h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:720px;font-size:13px">';
+    h += '<thead><tr style="background:#fff;border-bottom:1px solid var(--border)">';
+    h += _mfTh('Asesor') + _mfTh('Operaciones') + _mfTh('Alq / CV') + _mfThR('Comisión adeudada') + _mfThR('Comisión pagada');
+    h += '</tr></thead><tbody>';
+    for (var f = 0; f < filas.length; f++) {
+      var row = filas[f];
+      h += '<tr style="border-bottom:1px solid var(--border)">';
+      h += '<td style="padding:10px 12px"><div style="font-weight:700">' + _inmoEscHtml(row.nombre || '—') + '</div>' + (row.email ? '<div style="font-size:11px;color:var(--text2)">' + _inmoEscHtml(row.email) + '</div>' : '') + '</td>';
+      h += '<td style="padding:10px 12px;font-weight:700">' + row.b.ops + '</td>';
+      h += '<td style="padding:10px 12px;color:var(--text2)">' + row.b.alq + ' alq · ' + row.b.cv + ' cv</td>';
+      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">$' + _inmoFmt(row.b.adeudado) + '</td>';
+      h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(row.b.pagado) + '</td>';
+      h += '</tr>';
+    }
+    h += '</tbody></table></div>';
+    wrap.innerHTML = h;
+  } catch (e) {
+    wrap.innerHTML = '<div style="padding:20px;color:#DC2626">Error: ' + _inmoEscHtml(e.message) + '</div>';
+  }
+}
+
+// ════ CENTURY 21 — mismo tracking por asesor que Mudafy y RE/MAX ════
+// Única diferencia: pega al endpoint genérico /api/canales en vez de a uno
+// dedicado. La forma de la respuesta es idéntica, así que el render es el mismo.
+async function renderC21() {
+  var wrap = document.getElementById('c21Wrap');
+  var mets = document.getElementById('c21Metricas');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  try {
+    var tok = _inmoTokenAdmin;
+
+    // 1) Asesores dados de alta
+    var rA = await fetch('/api/canales?action=listar&canal=c21&token=' + encodeURIComponent(tok));
+    var dA = await rA.json();
+    if (!rA.ok) throw new Error(dA.error || 'Error al listar asesores');
+    var asesores = dA.asesores || [];
+
+    // 2) Comisiones del canal (viajes cerrados con partnerAsesor)
+    var rC = await fetch('/api/inmobiliarias?action=comisiones&slug=c21&token=' + encodeURIComponent(tok));
+    var dC = {};
+    try { dC = await rC.json(); } catch (e) { dC = {}; }
+    var resultados    = (rC.ok && dC.resultados) ? dC.resultados : [];
+    var totalAdeudado = (rC.ok && dC.totalAdeudado) ? dC.totalAdeudado : 0;
+    var totalPagado   = (rC.ok && dC.totalPagado) ? dC.totalPagado : 0;
+
+    // 3) Agrupar viajes por asesor
+    var stats = {};
+    function bucket(k) { if (!stats[k]) stats[k] = { ops:0, alq:0, cv:0, adeudado:0, pagado:0 }; return stats[k]; }
+    for (var i = 0; i < resultados.length; i++) {
+      var m = resultados[i];
+      var b = bucket(m.partnerAsesor || '(directo)');
+      b.ops++;
+      if (m.tipoOperacion === 'compraventa') b.cv++;
+      else if (m.tipoOperacion === 'alquiler') b.alq++;
+      if (m.liquidada) b.pagado += (parseFloat(m.comisionPagar) || 0);
+      else             b.adeudado += (parseFloat(m.comisionPagar) || 0);
+    }
+
+    // 4) Filas: asesores registrados + claves sueltas (viajes sin asesor conocido)
+    var filas = [];
+    for (var k = 0; k < asesores.length; k++) {
+      var a = asesores[k];
+      var b2 = stats[a.codigo] || { ops:0, alq:0, cv:0, adeudado:0, pagado:0 };
+      filas.push({ nombre: a.nombre, email: a.email, b: b2 });
+      delete stats[a.codigo];
+    }
+    for (var key in stats) {
+      if (!stats.hasOwnProperty(key)) continue;
+      filas.push({ nombre: (key === '(directo)' ? 'Directo CENTURY 21 (sin asesor)' : key), email: '', b: stats[key] });
     }
 
     // 5) Métricas
