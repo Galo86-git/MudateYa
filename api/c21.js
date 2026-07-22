@@ -233,7 +233,7 @@ module.exports = async function handler(req, res) {
                   </div>
                 </div>
                 <div style="text-align:center;margin-top:16px">
-                  <a href="${SITE_BASE}/beneficios-asesores.html" style="display:inline-block;background:#252526;color:#BEAF87;text-decoration:none;font-weight:800;font-size:14px;padding:12px 22px;border-radius:10px">Ver tus beneficios completos →</a>
+                  <a href="${SITE_BASE}/beneficios-c21.html" style="display:inline-block;background:#252526;color:#BEAF87;text-decoration:none;font-weight:800;font-size:14px;padding:12px 22px;border-radius:10px">Ver tus beneficios completos →</a>
                 </div>
               </div>
               <div style="background:#FAFAFA;border-top:1px solid #E5E7EB;padding:16px 28px;text-align:center">
