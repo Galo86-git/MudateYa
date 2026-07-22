@@ -56,12 +56,9 @@
   /* Cuando el link trae ?asesor=, la marca pasa a dos líneas: inmobiliaria arriba, asesor abajo. */
   .logo-inmo.con-asesor { flex-direction: column; align-items: flex-start; gap: 0; }
   .logo-inmo.con-asesor .logo-inmo-text { font-size: 17px; line-height: 1.2; }
-  /* El logo también se achica: si queda en 32px, el bloque de 2 líneas estira la top-bar. */
-  .logo-inmo.con-asesor .logo-inmo-img { max-height: 26px; max-width: 118px; }
   .logo-inmo-asesor { font-size: 12px; font-weight: 600; color: var(--md-text-2); line-height: 1.3; margin-top: 1px; }
   @media (max-width: 520px) {
     .logo-inmo.con-asesor .logo-inmo-text { font-size: 15px; }
-    .logo-inmo.con-asesor .logo-inmo-img { max-height: 22px; max-width: 100px; }
     .logo-inmo-asesor { font-size: 11px; }
   }
   .powered-by { font-size: 11px; color: var(--md-text-3); display: flex; align-items: center; gap: 5px; }
@@ -1177,14 +1174,11 @@ function _escAttr(s) { return _escHtml(s); }
 // paraguas y la inmobiliaria real solo se conoce leyendo el código del asesor.
 // En Mudafy y RE/MAX el canal ya es la inmobiliaria, así que solo agregamos
 // el nombre del asesor debajo del logo que ya se está mostrando.
-// Los canales viejos siguen apuntando a su endpoint dedicado; los nuevos usan
-// el genérico /api/canales. Ambos devuelven la misma forma ({nombre, zona, ...}),
-// así que aplicarMarcaAsesor() no distingue.
 var ENDPOINTS_ASESOR = {
   mudafy:         '/api/mudafy?action=obtener&codigo=',
   remax:          '/api/remax?action=obtener&codigo=',
   independientes: '/api/independientes?action=obtener&codigo=',
-  c21:            '/api/canales?action=obtener&canal=c21&codigo='
+  c21:            '/api/c21?action=obtener&codigo='
 };
 
 function aplicarMarcaAsesor(a) {
