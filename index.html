@@ -1289,49 +1289,6 @@
 
   </div>
 
-  <!-- BANNER MUNDIAL -->
-  <div id="bannerMundial" style="position:relative;background:#74ACDF;color:#003580;text-align:center;font-family:'Inter',sans-serif;font-weight:700;font-size:13.5px;letter-spacing:.2px;padding:10px 46px;line-height:1.4;box-shadow:inset 0 -2px 0 rgba(255,255,255,.55)">
-    <svg width="26" height="17" viewBox="0 0 30 20" role="img" aria-label="Bandera de Argentina" style="vertical-align:-3px;margin-right:7px;border-radius:2px"><rect width="30" height="20" fill="#75AADB"/><rect y="6.667" width="30" height="6.667" fill="#fff"/><circle cx="15" cy="10" r="3.4" fill="none" stroke="#F6B40E" stroke-width="1.5" stroke-dasharray="0.5 1.5"/><circle cx="15" cy="10" r="2" fill="#F6B40E"/></svg>¡Vamos la Selección! Todo el aliento desde MudateYa <span style="opacity:.8">★★★</span>
-    <button type="button" onclick="cerrarBannerMundial()" aria-label="Cerrar" style="position:absolute;top:50%;right:12px;transform:translateY(-50%);background:transparent;border:none;color:#003580;font-size:20px;line-height:1;cursor:pointer;padding:4px;font-weight:700">&times;</button>
-  </div>
-  <script>
-    function cerrarBannerMundial(){
-      var b = document.getElementById('bannerMundial');
-      if (b) { b.style.display = 'none'; }
-      try { localStorage.setItem('bannerMundialCerrado', '1'); } catch (e) {}
-    }
-    (function(){
-      var dismissed = false;
-      try { dismissed = (localStorage.getItem('bannerMundialCerrado') === '1'); } catch (e) {}
-      if (dismissed) {
-        var bd = document.getElementById('bannerMundial');
-        if (bd) { bd.style.display = 'none'; }
-        return;
-      }
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
-      var st = document.createElement('style');
-      st.textContent = '@keyframes mundialFloat{0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:0}15%{opacity:1}80%{opacity:1}100%{transform:translateY(-115vh) translateX(var(--drift,0px)) rotate(360deg);opacity:0}}';
-      document.head.appendChild(st);
-      function lanzarPelotas(){
-        var cont = document.createElement('div');
-        cont.id = 'mundialBalls';
-        cont.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;overflow:hidden';
-        var i, b, dur;
-        for (i = 0; i < 11; i++) {
-          b = document.createElement('span');
-          b.textContent = '\u26BD';
-          dur = 1500 + Math.floor(Math.random() * 500);
-          b.style.cssText = 'position:absolute;bottom:-60px;left:' + (Math.random() * 100) + '%;font-size:' + (22 + Math.floor(Math.random() * 26)) + 'px;will-change:transform,opacity;--drift:' + Math.floor(Math.random() * 60 - 30) + 'px;animation:mundialFloat ' + dur + 'ms ease-in ' + Math.floor(Math.random() * 400) + 'ms forwards';
-          cont.appendChild(b);
-        }
-        document.body.appendChild(cont);
-        setTimeout(function(){ if (cont && cont.parentNode) { cont.parentNode.removeChild(cont); } }, 2600);
-      }
-      if (document.body) { lanzarPelotas(); }
-      else { window.addEventListener('DOMContentLoaded', lanzarPelotas); }
-    })();
-  </script>
-
   <!-- NAV -->
   <nav>
     <a href="/" class="nav-logo">Mudate<span>Ya</span></a>
@@ -1731,7 +1688,7 @@
             <li><span class="aud-arr">→</span>Empresas de mudanzas verificadas que cuidan tu marca</li>
             <li><span class="aud-arr">→</span>Integración simple, sin fricción para tu equipo</li>
           </ul>
-          <a href="/plan-inmobiliarias" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:#22C36A;color:#fff;transition:opacity .2s">Ver el plan →</a>
+          <a href="https://mudateya.ar/inmobiliarias-registro" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:#22C36A;color:#fff;transition:opacity .2s">Ver el plan →</a>
         </div>
       </div>
     </div>
