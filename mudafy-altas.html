@@ -49,6 +49,7 @@
   .lk{max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:5px}
   .badge-new{display:inline-block; font-size:9px; font-weight:800; color:#fff; background:var(--mudafy); padding:1px 6px; border-radius:5px; margin-left:6px; letter-spacing:.5px; vertical-align:middle}
   .copy{padding:5px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; color:var(--navy); white-space:nowrap}
+  .del{padding:5px 9px; border:1px solid #FECACA; border-radius:7px; background:#FEF2F2; font-size:12px; cursor:pointer; color:#B91C1C; margin-left:4px}
   @keyframes flashNew{0%{background:#FFE7E8} 100%{background:transparent}}
   tr.nueva td{animation:flashNew 2.6s ease-out}
   .empty{padding:40px 20px; text-align:center; color:var(--t2); font-size:14px}
@@ -151,7 +152,7 @@ function render(data) {
     h += '<td><span class="nom">' + esc(a.nombre || '—') + '</span>' + (esNuevo ? '<span class="badge-new">NUEVO</span>' : '') + '</td>';
     h += '<td>' + esc(a.email || '—') + '</td>';
     h += '<td class="muted">' + esc(a.whatsapp || '—') + '</td>';
-    h += '<td><div class="mono lk">' + esc(link.replace(/^https?:\/\//, '')) + '</div><button class="copy" onclick="copiar(this, \'' + esc(link) + '\')">Copiar</button></td>';
+    h += '<td><div class="mono lk">' + esc(link.replace(/^https?:\/\//, '')) + '</div><button class="copy" onclick="copiar(this, \'' + esc(link) + '\')">Copiar</button> <button class="del" onclick="eliminar(\'' + esc(a.codigo) + '\')" title="Eliminar">🗑</button></td>';
     h += '</tr>';
   }
   tbody.innerHTML = h;
@@ -175,6 +176,19 @@ function fallback(link) {
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function eliminar(codigo) {
+  if (!confirm('¿Eliminar este asesor? No se puede deshacer.')) return;
+  try {
+    var r = await fetch('/api/mudafy?action=eliminar&token=' + encodeURIComponent(_token), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo: codigo })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    delete _vistos[codigo];
+    cargar(true);
+  } catch (e) { alert('Error: ' + e.message); }
 }
 
 // Arranque: carga inicial + auto-refresh cada 10s. Sin token por pantalla.
