@@ -50,7 +50,6 @@
   .badge-new{display:inline-block; font-size:9px; font-weight:800; color:var(--c21dark); background:var(--c21gold); padding:1px 6px; border-radius:5px; margin-left:6px; letter-spacing:.5px; vertical-align:middle}
   .copy{padding:5px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; color:var(--navy); white-space:nowrap}
   .del{padding:5px 9px; border:1px solid #FECACA; border-radius:7px; background:#FEF2F2; font-size:12px; cursor:pointer; color:#B91C1C; margin-left:4px}
-  .btn-sm.danger{color:#B91C1C; border-color:#FECACA; background:#FEF2F2}
   @keyframes flashNew{0%{background:#F3EDDF} 100%{background:transparent}}
   tr.nueva td{animation:flashNew 2.6s ease-out}
   .empty{padding:40px 20px; text-align:center; color:var(--t2); font-size:14px}
@@ -81,18 +80,17 @@
       <h2>Últimas altas</h2>
       <div style="display:flex; gap:8px">
         <button class="btn-sm" onclick="cargar(true)" id="btnRefresh">Actualizar ahora</button>
-        <button class="btn-sm danger" onclick="borrarTodos()">Borrar todos</button>
       </div>
     </div>
     <div class="scroll">
       <table>
         <thead>
           <tr>
-            <th>Nombre</th><th>Oficina</th><th>Email</th><th>WhatsApp</th><th>Link</th>
+            <th>Nombre</th><th>Email</th><th>WhatsApp</th><th>Link</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="5" class="empty"><span class="spin"></span> Cargando…</td></tr>
+          <tr><td colspan="4" class="empty"><span class="spin"></span> Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -125,7 +123,7 @@ async function cargar(manual) {
     render(data);
   } catch (err) {
     if (_primeraCarga) {
-      document.getElementById('tbody').innerHTML = '<tr><td colspan="5" class="err">No se pudo cargar: ' + esc(err.message || 'error') + '</td></tr>';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="err">No se pudo cargar: ' + esc(err.message || 'error') + '</td></tr>';
     }
   } finally {
     if (manual && btn) { btn.disabled = false; btn.textContent = 'Actualizar ahora'; }
@@ -142,7 +140,7 @@ function render(data) {
 
   var tbody = document.getElementById('tbody');
   if (!asesores.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Todavía no hay asesores dados de alta. Cuando alguien se registre, va a aparecer acá.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Todavía no hay asesores dados de alta. Cuando alguien se registre, va a aparecer acá.</td></tr>';
     _primeraCarga = false;
     return;
   }
@@ -154,7 +152,6 @@ function render(data) {
     var link = LINK_BASE + '?asesor=' + encodeURIComponent(a.codigo);
     h += '<tr class="' + (esNuevo ? 'nueva' : '') + '">';
     h += '<td><span class="nom">' + esc(a.nombre || '—') + '</span>' + (esNuevo ? '<span class="badge-new">NUEVO</span>' : '') + '</td>';
-    h += '<td class="muted">' + esc(a.oficina || '—') + '</td>';
     h += '<td>' + esc(a.email || '—') + '</td>';
     h += '<td class="muted">' + esc(a.whatsapp || '—') + '</td>';
     h += '<td><div class="mono lk">' + esc(link.replace(/^https?:\/\//, '')) + '</div><button class="copy" onclick="copiar(this, \'' + esc(link) + '\')">Copiar</button> <button class="del" onclick="eliminar(\'' + esc(a.codigo) + '\')" title="Eliminar">🗑</button></td>';
@@ -196,18 +193,6 @@ async function eliminar(codigo) {
   } catch (e) { alert('Error: ' + e.message); }
 }
 
-async function borrarTodos() {
-  if (!confirm('¿Borrar TODOS los asesores? Es para limpiar datos de prueba y no se puede deshacer.')) return;
-  try {
-    var r = await fetch('/api/c21?action=eliminar-todos&token=' + encodeURIComponent(_token), {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
-    });
-    var d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Error');
-    _vistos = {};
-    cargar(true);
-  } catch (e) { alert('Error: ' + e.message); }
-}
 
 // Arranque: carga inicial + auto-refresh cada 10s. Sin token por pantalla.
 cargar(false);
