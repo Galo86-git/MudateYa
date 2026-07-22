@@ -133,10 +133,6 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
         <div class="gerror" id="gerror"></div>
 
         <div class="field">
-          <label class="flabel" for="f-oficina">Oficina C21 <span style="color:var(--t3);font-weight:600">(opcional)</span></label>
-          <input id="f-oficina" class="finput" type="text" placeholder="Ej: CENTURY 21 Núñez" autocomplete="organization" maxlength="80"/>
-        </div>
-        <div class="field">
           <label class="flabel" for="f-nombre">Nombre y apellido <span class="req">*</span></label>
           <input id="f-nombre" class="finput" type="text" placeholder="Ej: Juan López" autocomplete="name" maxlength="80"/>
         </div>
@@ -207,7 +203,6 @@ async function registrar() {
   var e = document.getElementById('gerror');
   e.style.display = 'none';
 
-  var oficina = (document.getElementById('f-oficina').value || '').trim();
   var nombre = (document.getElementById('f-nombre').value || '').trim();
   var email  = (document.getElementById('f-email').value || '').trim();
   var wapp   = (document.getElementById('f-wapp').value || '').trim();
@@ -225,7 +220,7 @@ async function registrar() {
     var r = await fetch('/api/c21?action=registrar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombre, email: email, whatsapp: wapp, oficina: oficina, origen: ORIGEN })
+      body: JSON.stringify({ nombre: nombre, email: email, whatsapp: wapp, origen: ORIGEN })
     });
     var data;
     var txt = await r.text();
@@ -306,7 +301,6 @@ function compartirWhatsApp() {
 }
 
 function reiniciar() {
-  document.getElementById('f-oficina').value = '';
   document.getElementById('f-nombre').value = '';
   document.getElementById('f-email').value = '';
   document.getElementById('f-wapp').value = '';
