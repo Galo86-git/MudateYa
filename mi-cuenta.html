@@ -4108,7 +4108,10 @@ function renderCardCotizacion(m) {
   var clienteNombre = m.clienteNombre || '';
   var clienteEmail  = m.clienteEmail  || '';
   var clienteWA     = m.clienteWA     || '';
-  var waLink = clienteWA ? 'https://wa.me/54'+clienteWA.replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+esc((clienteNombre||'').split(' ')[0])+', te contacto por la mudanza que acepté en MudateYa ('+esc(m.desde)+' → '+esc(m.hasta)+') 🚛') : '';
+  // Gate de contacto: los datos del cliente se liberan recién con el anticipo (50%).
+  // El servidor ya no manda clienteWA antes de eso; esto es el espejo en la vista.
+  var contactoOk    = m.anticipoPagado === true;
+  var waLink = (contactoOk && clienteWA) ? 'https://wa.me/54'+clienteWA.replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+esc((clienteNombre||'').split(' ')[0])+', te contacto por la mudanza que acepté en MudateYa ('+esc(m.desde)+' → '+esc(m.hasta)+') 🚛') : '';
   var mailLink = clienteEmail ? 'mailto:'+clienteEmail+'?subject='+encodeURIComponent('Mudanza MudateYa – '+m.desde+' → '+m.hasta) : '';
 
   var badge = completada ? '<span class="badge aceptado">✓ Completada</span>'
@@ -4221,16 +4224,24 @@ function renderCardCotizacion(m) {
       +'</div>' : '')
     + bloqueCotDesglose
     +(cot?.nota?'<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic">"'+cot.nota+'"</div>':'')
-    +((isAcept||enCurso||completada)&&(clienteNombre||clienteWA) ? '<div style="margin-top:10px;background:var(--blue-light);border:1px solid rgba(26,111,255,.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
-      +'<div style="flex:1">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--blue);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
-      +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(clienteNombre||'—')+'</div>'
-      +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(clienteWA?'📱 '+clienteWA:clienteEmail||'Sin contacto')+'</div>'
-      +'</div>'
-      +'<div style="display:flex;gap:6px;flex-shrink:0">'
-      +(waLink?'<a href="'+waLink+'" target="_blank" rel="noopener" class="btn btn-green" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">💬 WhatsApp</a>':'')
-      +(mailLink?'<a href="'+mailLink+'" class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">📧 Email</a>':'')
-      +'</div></div>' : '')
+    +((isAcept||enCurso||completada)&&clienteNombre ? (contactoOk
+      ? '<div style="margin-top:10px;background:var(--blue-light);border:1px solid rgba(26,111,255,.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
+        +'<div style="flex:1">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--blue);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(clienteNombre||'—')+'</div>'
+        +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+(clienteWA?'📱 '+clienteWA:clienteEmail||'Sin contacto')+'</div>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px;flex-shrink:0">'
+        +(waLink?'<a href="'+waLink+'" target="_blank" rel="noopener" class="btn btn-green" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">💬 WhatsApp</a>':'')
+        +(mailLink?'<a href="'+mailLink+'" class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;text-decoration:none">📧 Email</a>':'')
+        +'</div></div>'
+      : '<div style="margin-top:10px;background:var(--surface2);border:1px dashed var(--border2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
+        +'<div style="flex:1">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cliente</div>'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(clienteNombre||'—')+'</div>'
+        +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">🔒 Contacto disponible al confirmarse el anticipo</div>'
+        +'</div></div>'
+    ) : '')
     + estadoBtns
     + ajusteBadge
     +'</div>';
