@@ -36,6 +36,72 @@ async function setJSON(key, value, exSeconds) {
 }
 
 // ════════════════════════════════════════════════════
+// GATE DE CONTACTO — los celulares se liberan con el anticipo
+// ════════════════════════════════════════════════════
+// Regla de negocio: el celular del cliente (clienteWA) y el del mudancero
+// (mudanceroTel) solo viajan en el payload cuando el anticipo del 50% está
+// efectivamente pagado, y solo entre las dos partes de la cotización aceptada.
+//
+// Por qué se hace acá y no en el front: ocultar el dato en el HTML no sirve,
+// el JSON de la respuesta queda visible en devtools / Network. Si el número
+// no tiene que verse todavía, no tiene que salir del servidor.
+//
+// Los handlers de admin NO pasan por acá: el panel sigue viendo todo.
+
+function contactoLiberado(m) {
+  return !!(m && m.anticipoPagado === true);
+}
+
+// Devuelve true si este mudancero es el que ganó el pedido.
+function esMudanceroAceptado(m, emailMudancero) {
+  if (!m || !emailMudancero) return false;
+  if (m.mudanceroAceptado) return m.mudanceroAceptado === emailMudancero;
+  return !!(m.cotizacionAceptada && m.cotizacionAceptada.mudanceroEmail === emailMudancero);
+}
+
+// Vista para el MUDANCERO (por-zona, mis-cotizaciones).
+// - clienteWA: solo si ganó el pedido Y el anticipo está pagado.
+// - mudanceroTel de OTROS mudanceros: nunca (no tiene por qué ver a la competencia).
+function sanitizarParaMudancero(m, emailMudancero) {
+  if (!m) return m;
+  const copia = JSON.parse(JSON.stringify(m));
+  if (!(esMudanceroAceptado(copia, emailMudancero) && contactoLiberado(copia))) {
+    delete copia.clienteWA;
+    if (copia.cotizacionAceptada) delete copia.cotizacionAceptada.clienteWA;
+  }
+  if (Array.isArray(copia.cotizaciones)) {
+    copia.cotizaciones = copia.cotizaciones.map(function(c) {
+      if (!c || c.mudanceroEmail === emailMudancero) return c;
+      const cc = Object.assign({}, c);
+      delete cc.mudanceroTel;
+      return cc;
+    });
+  }
+  return copia;
+}
+
+// Vista para el CLIENTE (mis-mudanzas, respuesta de aceptar).
+// - mudanceroTel: solo el de la cotización aceptada Y con anticipo pagado.
+// - clienteWA no se toca: es su propio número.
+function sanitizarParaCliente(m) {
+  if (!m) return m;
+  const copia = JSON.parse(JSON.stringify(m));
+  const liberado = contactoLiberado(copia);
+  const idAceptada = copia.cotizacionAceptada ? copia.cotizacionAceptada.id : null;
+  if (Array.isArray(copia.cotizaciones)) {
+    copia.cotizaciones = copia.cotizaciones.map(function(c) {
+      if (!c) return c;
+      if (liberado && idAceptada && c.id === idAceptada) return c;
+      const cc = Object.assign({}, c);
+      delete cc.mudanceroTel;
+      return cc;
+    });
+  }
+  if (copia.cotizacionAceptada && !liberado) delete copia.cotizacionAceptada.mudanceroTel;
+  return copia;
+}
+
+// ════════════════════════════════════════════════════
 // HELPERS DE FECHA
 // ════════════════════════════════════════════════════
 // El campo `fecha` se guarda como string ISO simple ("2026-05-19") tal cual
@@ -1178,7 +1244,11 @@ module.exports = async function handler(req, res) {
 
       await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
       try { await enviarEmailAceptacion(mudanza, cot); } catch(e) { console.error('Error email:', e.message); }
-      return res.status(200).json({ ok: true, mudanza, cotizacion: cot });
+      // Gate de contacto: al aceptar todavía no hay anticipo pagado, así que
+      // la respuesta sale sin el teléfono del mudancero.
+      const mudanzaSegura = sanitizarParaCliente(mudanza);
+      const cotSegura = (mudanzaSegura.cotizaciones || []).find(c => c.id === cot.id) || mudanzaSegura.cotizacionAceptada;
+      return res.status(200).json({ ok: true, mudanza: mudanzaSegura, cotizacion: cotSegura });
     }
 
     if (action === 'mis-mudanzas' && req.method === 'GET') {
@@ -1198,7 +1268,8 @@ module.exports = async function handler(req, res) {
           try {
             const m = await getJSON(`mudanza:${id}`);
             // Excluir mudanzas marcadas como eliminadas (defensa en profundidad)
-            if (m && m.estado !== 'eliminada') mudanzas.push(m);
+            // Gate de contacto: mudanceroTel solo con anticipo pagado
+            if (m && m.estado !== 'eliminada') mudanzas.push(sanitizarParaCliente(m));
           } catch(e) {}
         }
         return res.status(200).json({ mudanzas });
@@ -2336,7 +2407,9 @@ module.exports = async function handler(req, res) {
         if (m.modoCotizacion === 'dirigido' && email && !(m.mudancerosInvitados||[]).includes(email)) continue; // modo dirigido: solo invitados
         if (email && m.cotizaciones.find(c => c.mudanceroEmail === email)) continue;
         if (rechazados.includes(id)) continue; // ocultar rechazados
-        disponibles.push(m);
+        // Gate de contacto: acá el pedido siempre está en 'buscando', así que
+        // el celular del cliente nunca sale. Se sanitiza igual por defensa.
+        disponibles.push(sanitizarParaMudancero(m, email));
       }
       return res.status(200).json({ mudanzas: disponibles });
     }
@@ -2355,7 +2428,10 @@ module.exports = async function handler(req, res) {
       const mudanzas = [];
       for (const id of ids) {
         const m = await getJSON(`mudanza:${id}`);
-        if (m) mudanzas.push({ ...m, miCotizacion: m.cotizaciones.find(c => c.mudanceroEmail === email) });
+        if (!m) continue;
+        // Gate de contacto: clienteWA solo si ganó el pedido y pagó el anticipo
+        const seguro = sanitizarParaMudancero(m, email);
+        mudanzas.push({ ...seguro, miCotizacion: (seguro.cotizaciones || []).find(c => c.mudanceroEmail === email) });
       }
       return res.status(200).json({ mudanzas });
     }
@@ -3292,7 +3368,7 @@ async function notificarClienteNuevoPedido(mudanza) {
   <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${esFlete ? '📦 Flete' : '🚛 Mudanza'} · ${mudanza.id}</div>
   <div style="padding:28px">
     <p style="font-size:15px;color:#0F1923;margin:0 0 8px"><strong>${primerNombre}</strong>, tu pedido fue publicado correctamente.</p>
-    <p style="font-size:14px;color:#475569;margin:0 0 20px;line-height:1.6">Los mudanceros verificados de tu zona ya recibieron tu solicitud. En las próximas horas vas a empezar a recibir cotizaciones. <strong>Cuando aceptes una</strong>, vas a poder coordinar el detalle con ese mudancero por WhatsApp.</p>
+    <p style="font-size:14px;color:#475569;margin:0 0 20px;line-height:1.6">Los mudanceros verificados de tu zona ya recibieron tu solicitud. En las próximas horas vas a empezar a recibir cotizaciones. <strong>Cuando aceptes una y abones el anticipo</strong>, se habilitan los datos de contacto y vas a poder coordinar el detalle con ese mudancero por WhatsApp.</p>
 
     <div style="font-size:11px;color:#94A3B8;font-weight:700;letter-spacing:1px;margin-bottom:8px">RESUMEN DEL PEDIDO</div>
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
@@ -3577,7 +3653,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
           <div style="background:#F5F7FA;border:1px solid #E2E8F0;border-radius:10px;padding:16px 20px;margin:0 0 20px">
             <table style="width:100%;border-collapse:collapse">
               <tr><td style="color:#64748B;padding:6px 0;width:35%;font-size:13px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:13px">${cot.mudanceroNombre}</td></tr>
-              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Teléfono</td><td style="font-size:13px;color:#0F1923">${cot.mudanceroTel || '—'}</td></tr>
+              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Contacto</td><td style="font-size:13px;color:#94A3B8">🔒 Se habilita con el anticipo</td></tr>
               <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Ruta</td><td style="font-size:13px;color:#0F1923">${mudanza.desde} → ${mudanza.hasta}</td></tr>
               <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
               <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Ambientes</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes}</td></tr>
@@ -3813,6 +3889,13 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">${esAnticipo ? 'Anticipo recibido' : 'Saldo recibido'}</td><td style="color:#17A356;font-weight:700;font-size:14px;padding:7px 0">${montoFmt}</td></tr>
           ${!esAnticipo ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">A liquidar (neto)</td><td style="color:#17A356;font-weight:700;font-size:14px">${netoFmt}</td></tr>` : ''}
         </table>
+        ${esAnticipo ? `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:10px;padding:16px 20px;margin-bottom:20px">
+          <div style="font-size:11px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:10px">🔓 CONTACTO HABILITADO</div>
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="color:#64748B;padding:5px 0;width:35%;font-size:13px">Cliente</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.clienteNombre || '—'}</td></tr>
+            ${mudanza.clienteWA ? `<tr><td style="color:#64748B;padding:5px 0;font-size:13px">WhatsApp</td><td style="font-size:13px"><a href="https://wa.me/54${String(mudanza.clienteWA).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:700">${mudanza.clienteWA}</a></td></tr>` : `<tr><td style="color:#64748B;padding:5px 0;font-size:13px">Email</td><td style="font-size:13px;color:#0F1923">${mudanza.clienteEmail || '—'}</td></tr>`}
+          </table>
+        </div>` : ''}
         ${accion}
       </div>
       <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
@@ -3852,8 +3935,12 @@ async function notificarClienteAnticipoPagado(mudanza) {
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta||'—'}</td></tr>
           <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${cot.mudanceroNombre||'—'}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:14px">${saldoFmt} al completar</td></tr>
+          ${cot.mudanceroTel ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">WhatsApp</td><td style="font-size:13px;padding:7px 0"><a href="https://wa.me/54${String(cot.mudanceroTel).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:700">${cot.mudanceroTel}</a></td></tr>` : ''}
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:14px;padding:7px 0">${saldoFmt} al completar</td></tr>
         </table>
+        ${cot.mudanceroTel ? `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:10px;padding:14px 18px;margin-bottom:20px">
+          <p style="margin:0;font-size:13px;color:#166534;line-height:1.6">🔓 Con el anticipo confirmado ya tenés habilitado el contacto directo de ${cot.mudanceroNombre||'tu mudancero'}.</p>
+        </div>` : ''}
         <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mi mudanza →</a>
       </div>
       <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
