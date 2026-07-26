@@ -367,7 +367,7 @@ async function notificarAdmin(perfil) {
     '</div>';
 
   await resend.emails.send({
-    from:    'MudateYa <noreply@mudateya.ar>',
+    from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:      adminMail,
     subject: '🚛 Nuevo mudancero — ' + perfil.nombre + ' · ' + perfil.id,
     html:
@@ -457,7 +457,7 @@ async function bienvenidaMudancero(perfil) {
   // ── Email para ALTA CORTA: invitamos a completar el perfil ────
   if (esPreRegistro) {
     await resend.emails.send({
-      from:    'MudateYa <noreply@mudateya.ar>',
+      from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to:      perfil.email,
       subject: '¡Bienvenido a MudateYa, ' + perfil.nombre.split(' ')[0] + '! Falta un paso 🚛',
       html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
@@ -500,7 +500,7 @@ async function bienvenidaMudancero(perfil) {
 
   // ── Email para ALTA COMPLETA (flujo legacy) ────
   await resend.emails.send({
-    from:    'MudateYa <noreply@mudateya.ar>',
+    from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:      perfil.email,
     subject: '¡Tu solicitud fue recibida, ' + perfil.nombre.split(' ')[0] + '! 🚛',
     html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +

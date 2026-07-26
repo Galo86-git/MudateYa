@@ -115,7 +115,7 @@ async function enviarMagicLink(email, token, nombre) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa Asesores <noreply@mudateya.ar>',
+      from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: email,
       subject: 'Accedé a tu panel de Asesor MudateYa',
       html: html
@@ -149,7 +149,7 @@ async function enviarEmailBienvenida(asesor) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa Asesores <noreply@mudateya.ar>',
+      from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: asesor.email,
       subject: '🎉 Bienvenido a MudateYa Asesores',
       html: html
@@ -184,7 +184,7 @@ async function enviarEmailAdminNuevoAsesor(asesor) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">Notificación automática · MudateYa</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: 'jgalozaldivar@gmail.com',
       subject: '🤝 Nuevo Asesor: ' + asesor.nombre + ' (' + (asesor.inmobiliaria || '—') + ')',
       html: html
@@ -240,7 +240,7 @@ async function enviarEmailAdminNuevoPedido(pedido, asesor) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">Notificación automática · MudateYa</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: 'jgalozaldivar@gmail.com',
       subject: '📋 Nuevo pedido asesor: ' + asesor.nombre + ' → ' + pedido.cliente.nombre,
       html: html
@@ -294,7 +294,7 @@ async function enviarEmailClientePacks(pedido, asesor) {
       : 'Tus ' + cantPacks + ' opciones de mudanza — cortesía de ' + asesor.nombre;
 
     var result = await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: pedido.cliente.email,
       subject: subject,
       html: html
@@ -359,7 +359,7 @@ async function enviarEmailMudanceroPedidoAsesor(mudanza, cot, mudancero) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: mudancero.email,
       subject: '🎯 Nueva mudanza ' + nivelLbl + ' · ' + mudanza.clienteNombre,
       html: html
@@ -392,7 +392,7 @@ async function enviarEmailAsesorClienteEligio(pedido, nivel, mudancero) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa Asesores <noreply@mudateya.ar>',
+      from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: pedido.asesorEmail,
       subject: '✅ ' + pedido.cliente.nombre + ' eligió ' + nivelLbl,
       html: html
@@ -1202,7 +1202,7 @@ module.exports = async function handler(req, res) {
           var icAsesor = await getJSON('asesor:' + icPedido.asesorEmail);
           var icAsesorNombre = (icAsesor && icAsesor.nombre) ? icAsesor.nombre.split(' ')[0] : 'Asesor';
           icResend.emails.send({
-            from: 'MudateYa <noreply@mudateya.ar>',
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
             to: icPedido.asesorEmail,
             subject: '❌ ' + clienteNombre + ' canceló su mudanza',
             html:

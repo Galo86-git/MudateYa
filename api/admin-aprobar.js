@@ -61,7 +61,7 @@ async function enviarEmailAltaExitosa(perfil) {
   const linkTerminos = `https://mudateya.ar/aceptar-terminos?token=${token}`;
 
   await resend.emails.send({
-    from:    'MudateYa <noreply@mudateya.ar>',
+    from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:      perfil.email,
     subject: '🎉 ¡Fuiste aprobado en MudateYa! Activá tu cuenta',
     html: `

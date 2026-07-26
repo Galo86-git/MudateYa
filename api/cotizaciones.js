@@ -524,7 +524,7 @@ async function enviarEmailAltaMudancero(perfil) {
   const empresa = perfil.empresa ? ' · ' + perfil.empresa : '';
   const linkTerminos = 'https://mudateya.ar/aceptar-terminos?token=' + token;
   await resend.emails.send({
-    from:    'MudateYa <noreply@mudateya.ar>',
+    from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:      perfil.email,
     subject: '🎉 ¡Fuiste aprobado en MudateYa! Activá tu cuenta',
     html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
@@ -772,7 +772,7 @@ module.exports = async function handler(req, res) {
 
     try {
       await resend.emails.send({
-        from:    'MudateYa <noreply@mudateya.ar>',
+        from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
         to:      emailNorm,
         subject: '🔑 Tu link de acceso a MudateYa',
         html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
@@ -843,7 +843,7 @@ module.exports = async function handler(req, res) {
 
     try {
       await resend.emails.send({
-        from:    'MudateYa <noreply@mudateya.ar>',
+        from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
         to:      emailNorm,
         subject: '🔑 Tu link para publicar tu mudanza en MudateYa',
         html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
@@ -1731,7 +1731,7 @@ module.exports = async function handler(req, res) {
                 const perfil = await getJSON(`mudancero:perfil:${emailMud}`);
                 const nombre = (perfil && perfil.nombre) ? perfil.nombre.split(' ')[0] : 'Mudancero';
                 resend.emails.send({
-                  from: 'MudateYa <noreply@mudateya.ar>',
+                  from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
                   to: emailMud,
                   subject: `❌ Mudanza cancelada — ${rutaTxt}`,
                   html: `
@@ -2251,7 +2251,7 @@ module.exports = async function handler(req, res) {
             hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires'
           });
           await resendTyC.emails.send({
-            from: 'MudateYa <noreply@mudateya.ar>',
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
             to: adminEmail,
             subject: `[ADMIN] ✅ TyC firmados — ${perfil.nombre || datos.email}`,
             html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -3275,7 +3275,7 @@ async function notificarMudanceros(mudanza) {
   if (adminEmail) {
     try {
       await resend.emails.send({
-        from: 'MudateYa <noreply@mudateya.ar>',
+        from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
         to: adminEmail,
         subject: `[ADMIN] ${tipoLabel} — ${mudanza.desde} → ${mudanza.hasta} · ${mudanza.id}`,
         html: emailHtmlAdmin(),
@@ -3324,7 +3324,7 @@ async function notificarMudanceros(mudanza) {
       const lote = destinatarios.slice(i, i + 5);
       await Promise.all(lote.map(function(dest) {
         const params = {
-          from: 'MudateYa <noreply@mudateya.ar>',
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
           to: dest.email,
           subject: `${tipoLabel} disponible — ${mudanza.desde} → ${mudanza.hasta}`,
           html: emailHtml(dest.nombre),
@@ -3550,7 +3550,7 @@ async function notificarCliente(mudanza, cotizacion) {
   }
 
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `💰 Cotización de ${cotizacion.mudanceroNombre} — $${String(cotizacion.precio).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`,  
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -3743,7 +3743,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
   // ── 3. Email al CLIENTE con botón de pago ────────
   if (mudanza.clienteEmail) {
     await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: mudanza.clienteEmail,
       subject: `✅ Aceptaste la cotización — Pagá ahora con Mercado Pago`,
       html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -3794,7 +3794,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
   // ── 4. Email al MUDANCERO ────────────────────────
   if (cot.mudanceroEmail) {
     await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: cot.mudanceroEmail,
       subject: `🎉 ¡Aceptaron tu cotización! — ${mudanza.desde} → ${mudanza.hasta}`,
       html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -3845,7 +3845,7 @@ async function notificarMudanceroInvitado(mudanza, perfil) {
   }).catch(function(e){ console.error('Push invitado error:', perfil.email, e && e.message); });
 
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:   perfil.email,
     subject: `⭐ Te eligieron — ${mudanza.desde} → ${mudanza.hasta}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -3984,7 +3984,7 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
     : `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver liquidación →</a>`;
 
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: cot.mudanceroEmail,
     subject,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4035,7 +4035,7 @@ async function notificarClienteAnticipoPagado(mudanza) {
   const saldo = calcularSaldo(mudanza);
   const saldoFmt = '$' + saldo.toLocaleString('es-AR');
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `✅ Anticipo confirmado — ${(mudanza.desde||'').split(',')[0]} → ${(mudanza.hasta||'').split(',')[0]}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4067,7 +4067,7 @@ async function notificarClienteSaldoPendiente(mudanza) {
   const saldo = calcularSaldo(mudanza);
   const saldoFmt = '$' + saldo.toLocaleString('es-AR');
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `🏁 Mudanza completada — Pagá el saldo final ${saldoFmt}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4105,7 +4105,7 @@ async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {
     ? `⏰ Recordatorio: ${cot.mudanceroNombre || 'tu mudancero'} espera tu respuesta sobre el nuevo precio`
     : `⚠️ ${cot.mudanceroNombre || 'Tu mudancero'} propuso un ajuste de precio — ${nuevoFmt}`;
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: subject,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4139,7 +4139,7 @@ async function notificarMudanceroAjusteAceptado(mudanza) {
   const saldo = calcularSaldo(mudanza);
   const saldoFmt = '$' + saldo.toLocaleString('es-AR');
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: cot.mudanceroEmail,
     subject: `✅ El cliente aceptó el ajuste — ${nuevoFmt}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4166,7 +4166,7 @@ async function notificarClienteAjusteAceptado(mudanza) {
   const saldo = calcularSaldo(mudanza);
   const saldoFmt = '$' + saldo.toLocaleString('es-AR');
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `✅ Ajuste confirmado — Saldo ajustado a ${saldoFmt}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4191,7 +4191,7 @@ async function notificarMudanceroAjusteRechazado(mudanza) {
   const cot = mudanza.cotizacionAceptada || {};
   if (!cot.mudanceroEmail) return;
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: cot.mudanceroEmail,
     subject: `❌ El cliente rechazó el ajuste — Mudanza cancelada`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4215,7 +4215,7 @@ async function notificarClienteMudanzaCancelada(mudanza, refundOk) {
     ? `Procesamos el reintegro de <strong>${anticipoFmt}</strong>. Vas a ver el acreditado en 5 a 10 días hábiles en tu medio de pago original.`
     : `Estamos procesando el reintegro de <strong>${anticipoFmt}</strong>. Te vamos a contactar dentro de las próximas 24 horas para completar la devolución.`;
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `Mudanza cancelada — Reintegro en proceso`,
     html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
@@ -4238,7 +4238,7 @@ async function notificarAdminAjusteAlto(mudanza) {
   const cot = mudanza.cotizacionAceptada || {};
   const ajuste = mudanza.ajustePrecio || {};
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: admin,
     subject: `⚠️ Ajuste alto (+${ajuste.deltaPct}%) en ${mudanza.id}`,
     html: `<div style="font-family:Arial,sans-serif;padding:20px">
@@ -4260,7 +4260,7 @@ async function notificarAdminRefundManual(mudanza, error) {
   const admin = process.env.ADMIN_EMAIL || 'jgalozaldivar@gmail.com';
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>',
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: admin,
     subject: `🚨 Refund manual requerido — ${mudanza.id}`,
     html: `<div style="font-family:Arial,sans-serif;padding:20px">

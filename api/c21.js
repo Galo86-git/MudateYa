@@ -194,7 +194,7 @@ module.exports = async function handler(req, res) {
         }
 
         await resend.emails.send({
-          from: 'MudateYa <noreply@mudateya.ar>',
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
           to: email,
           subject: '✅ Ya sos aliado de MudateYa a través de CENTURY 21 · tu link y QR',
           attachments: qrAttachments,

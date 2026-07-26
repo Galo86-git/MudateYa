@@ -228,7 +228,7 @@ module.exports = async function handler(req, res) {
       // Enviar
       try {
         await resend.emails.send({
-          from:    'MudateYa <noreply@mudateya.ar>',
+          from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
           to:      perfil.email,
           subject: mail.subject,
           html:    mail.html,

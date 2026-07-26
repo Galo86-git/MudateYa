@@ -118,7 +118,7 @@ async function enviarMagicLink(email, token, nombre) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa Aliados <noreply@mudateya.ar>',
+      from: 'MudateYa Aliados <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: email,
       subject: 'Accedé a tu panel de Aliado MudateYa',
       html: html
@@ -150,7 +150,7 @@ async function enviarEmailBienvenida(aliado) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa Aliados <noreply@mudateya.ar>',
+      from: 'MudateYa Aliados <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: aliado.email,
       subject: '🎉 Bienvenido a Aliados MudateYa',
       html: html
@@ -188,7 +188,7 @@ async function enviarEmailAdminNuevoAliado(aliado) {
       '<p style="color:#94A3B8;font-size:11px;text-align:center">Notificación automática · MudateYa</p>' +
       '</div>';
     await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: 'jgalozaldivar@gmail.com',
       subject: '🤝 Nuevo Aliado: ' + aliado.nombre + ' (' + aliado.slug + ')',
       html: html

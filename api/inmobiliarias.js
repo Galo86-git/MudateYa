@@ -246,7 +246,7 @@ module.exports = async function handler(req, res) {
 
         // (1) Confirmación a la inmobiliaria
         await resend.emails.send({
-          from: 'MudateYa <noreply@mudateya.ar>',
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
           to: email,
           subject: '✅ Recibimos tu solicitud para sumarte a MudateYa',
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
@@ -278,7 +278,7 @@ module.exports = async function handler(req, res) {
 
         // (2) Notificación a Galo con todos los datos
         await resend.emails.send({
-          from: 'MudateYa <noreply@mudateya.ar>',
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
           to: 'jgalozaldivar@gmail.com',
           subject: '🏢 Nueva solicitud de inmobiliaria: ' + nombre,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
@@ -375,7 +375,7 @@ module.exports = async function handler(req, res) {
           var saludo = data.contactoNombre ? data.contactoNombre.split(' ')[0] : data.nombre;
 
           await resend.emails.send({
-            from: 'MudateYa <noreply@mudateya.ar>',
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
             to: data.contactoEmail,
             subject: '🎉 ¡Bienvenida a MudateYa, ' + data.nombre + '!',
             html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
