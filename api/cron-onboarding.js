@@ -181,7 +181,7 @@ module.exports = async function handler(req, res) {
   // Seguridad: solo Vercel Cron o admin con token
   var esVercelCron = req.headers['x-vercel-cron'] === '1';
   var token        = (req.query && req.query.token) || (req.url && new URL(req.url, 'http://x').searchParams.get('token'));
-  var esAdmin      = token === (process.env.ADMIN_TOKEN || 'mya-admin-2026');
+  var esAdmin      = require('./_auth').esAdmin(req);
   if (!esVercelCron && !esAdmin) {
     return res.status(401).json({ error: 'No autorizado' });
   }

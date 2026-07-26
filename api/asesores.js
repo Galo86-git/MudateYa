@@ -50,7 +50,7 @@ async function getString(key) {
 }
 
 // ── Constantes ──────────────────────────────────────────────────────
-var ADMIN_FALLBACK = 'mya-admin-2026';
+var { esAdmin } = require('./_auth');
 var MAGIC_LINK_TTL = 900;              // 15 min
 var SESSION_TTL    = 60 * 60 * 24 * 30; // 30 días
 var PEDIDO_TTL     = 60 * 60 * 24 * 30; // pedido público vive 30 días
@@ -1262,7 +1262,7 @@ module.exports = async function handler(req, res) {
     // ══════════════════════════════════════════════════════════════
 
     function checkAdmin(tok) {
-      return tok === process.env.ADMIN_TOKEN || tok === ADMIN_FALLBACK;
+      return esAdmin(req);
     }
 
     // ── ADMIN-LIST: todos los asesores ────────────────────────────

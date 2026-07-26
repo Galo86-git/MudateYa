@@ -2,7 +2,7 @@
 // GET  → lista mudanceros con fotos actuales
 // POST → actualiza foto, fotoCamion y fotosVehiculo en Redis
 
-var ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'mya-admin-2026';
+var { esAdmin } = require('./_auth');
 
 async function redis(method) {
   var args  = Array.prototype.slice.call(arguments, 1);
@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   var token = req.headers['x-admin-token'] || req.query.token;
-  if (token !== ADMIN_TOKEN) return res.status(401).json({ error: 'No autorizado' });
+  if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
 
   // GET — listar todos los mudanceros con sus fotos actuales
   if (req.method === 'GET') {

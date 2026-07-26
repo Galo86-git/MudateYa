@@ -56,10 +56,9 @@ async function setJSON(key, value) {
 }
 
 // ── Validación de admin ──
-function esAdmin(req) {
-  var token = (req.query && req.query.token) || req.headers['x-admin-token'] || '';
-  return token === process.env.ADMIN_TOKEN || token === 'mya-admin-2026';
-}
+// Validación de admin: delegada en api/_auth.js (master token o sesión
+// firmada emitida por /api/admin-sesion). Sin fallback hardcodeado.
+var { esAdmin } = require('./_auth');
 
 // ── Normalizar slug: minúsculas, sin acentos, solo a-z 0-9 y guión ──
 function normSlug(txt) {

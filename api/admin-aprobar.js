@@ -2,6 +2,9 @@
 // Maneja la aprobación/rechazo de mudanceros desde el panel de admin
 // Cuando aprueba: actualiza Redis + Sheets + manda email de alta con link de aceptación de términos
 
+
+var { esAdmin } = require('./_auth');
+
 const { Resend } = require('resend');
 
 async function redisCall(method, ...args) {
@@ -156,8 +159,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Método no permitido' });
 
   // Verificar token de admin
-  const adminToken = req.headers['x-admin-token'] || req.body?.adminToken;
-  if (adminToken !== process.env.ADMIN_TOKEN) {
+  if (!esAdmin(req)) {
     return res.status(401).json({ error: 'No autorizado' });
   }
 

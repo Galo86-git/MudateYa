@@ -35,7 +35,7 @@ async function getString(key) {
 }
 
 // ── Constantes ──────────────────────────────────────────────────────
-var ADMIN_FALLBACK = 'mya-admin-2026';
+var { esAdmin } = require('./_auth');
 var MAGIC_LINK_TTL = 900; // 15 minutos
 var SESSION_TTL = 60 * 60 * 24 * 30; // 30 días
 
@@ -678,7 +678,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-list' && req.method === 'GET') {
       var admToken = req.query.token || req.headers['x-admin-token'];
-      if (admToken !== process.env.ADMIN_TOKEN && admToken !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var idx = await getJSON('aliados:todos') || [];
@@ -715,7 +715,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-detalle' && req.method === 'GET') {
       var admToken2 = req.query.token || req.headers['x-admin-token'];
-      if (admToken2 !== process.env.ADMIN_TOKEN && admToken2 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var dEmail = String(req.query.email || '').toLowerCase();
@@ -727,7 +727,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-marcar-pagado' && req.method === 'POST') {
       var admToken3 = req.headers['x-admin-token'];
-      if (admToken3 !== process.env.ADMIN_TOKEN && admToken3 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var mpBody = req.body || {};
@@ -789,7 +789,7 @@ module.exports = async function handler(req, res) {
     // ── Admin: acreditar/cancelar altas manualmente ──
     if (action === 'admin-acreditar-alta' && req.method === 'POST') {
       var admTokA = req.headers['x-admin-token'];
-      if (admTokA !== process.env.ADMIN_TOKEN && admTokA !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var rAA = await acreditarAlta((req.body||{}).mudanceroEmail);
@@ -798,7 +798,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-cancelar-alta' && req.method === 'POST') {
       var admTokC = req.headers['x-admin-token'];
-      if (admTokC !== process.env.ADMIN_TOKEN && admTokC !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var rCA = await cancelarAlta((req.body||{}).mudanceroEmail);
@@ -808,7 +808,7 @@ module.exports = async function handler(req, res) {
     // Admin: listar altas pendientes de acreditación
     if (action === 'admin-altas-pendientes' && req.method === 'GET') {
       var admTokLA = req.query.token || req.headers['x-admin-token'];
-      if (admTokLA !== process.env.ADMIN_TOKEN && admTokLA !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var idxLA = await getJSON('aliados:todos') || [];
@@ -830,7 +830,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-cambiar-estado' && req.method === 'POST') {
       var admToken4 = req.headers['x-admin-token'];
-      if (admToken4 !== process.env.ADMIN_TOKEN && admToken4 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var ceBody = req.body || {};
@@ -846,7 +846,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-config' && req.method === 'GET') {
       var admToken5 = req.query.token || req.headers['x-admin-token'];
-      if (admToken5 !== process.env.ADMIN_TOKEN && admToken5 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       return res.status(200).json({ ok:true, config: await getConfig() });
@@ -854,7 +854,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-config-update' && req.method === 'POST') {
       var admToken6 = req.headers['x-admin-token'];
-      if (admToken6 !== process.env.ADMIN_TOKEN && admToken6 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var cuBody = req.body || {};
@@ -875,7 +875,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-ranking' && req.method === 'GET') {
       var admToken7 = req.query.token || req.headers['x-admin-token'];
-      if (admToken7 !== process.env.ADMIN_TOKEN && admToken7 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var periodo = String(req.query.periodo || 'mes'); // mes | trimestre | anio
@@ -913,7 +913,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-historial-pagos' && req.method === 'GET') {
       var admToken8 = req.query.token || req.headers['x-admin-token'];
-      if (admToken8 !== process.env.ADMIN_TOKEN && admToken8 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var histP = await getJSON('aliados:pagos') || [];
@@ -923,7 +923,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-metricas' && req.method === 'GET') {
       var admToken9 = req.query.token || req.headers['x-admin-token'];
-      if (admToken9 !== process.env.ADMIN_TOKEN && admToken9 !== ADMIN_FALLBACK) {
+      if (!esAdmin(req)) {
         return res.status(403).json({ error: 'No autorizado' });
       }
       var emailsM = await getJSON('aliados:todos') || [];

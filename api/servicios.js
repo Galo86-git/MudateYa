@@ -24,7 +24,7 @@ async function setJSON(key, value, exSeconds) {
   else await redisCall('SET', key, str);
 }
 
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'mya-admin-2026';
+const { esAdmin } = require('./_auth');
 const ESTADOS = ['link_generado', 'pagado_cliente', 'pagado_contratista'];
 
 function genCodigo() {
@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const adminToken = req.headers['x-admin-token'] || (req.body && req.body.token) || (req.query && req.query.token);
-  const isAdmin = adminToken === ADMIN_TOKEN;
+  const isAdmin = esAdmin(req);
 
   try {
     if (req.method === 'GET') {

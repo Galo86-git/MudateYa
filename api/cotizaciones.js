@@ -1,4 +1,7 @@
 // api/cotizaciones.js — Upstash Redis + PDF con pdfmake
+
+var { esAdmin } = require('./_auth');
+
 const { Resend } = require('resend');
 
 // Helper de push notifications (definido en api/push.js)
@@ -1691,7 +1694,7 @@ module.exports = async function handler(req, res) {
     // ── Admin: listar usuarios/clientes ──────────────────────────────
     if (action === 'admin-usuarios' && req.method === 'GET') {
       const { token } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
 
@@ -1758,7 +1761,7 @@ module.exports = async function handler(req, res) {
     // ── Admin: listar pagos ───────────────────────────────────────────
     if (action === 'admin-pagos' && req.method === 'GET') {
       const { token } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       const activas = await getJSON('mudanzas:activas') || [];
@@ -1837,7 +1840,7 @@ module.exports = async function handler(req, res) {
     // ── Admin: listar mudanceros ──────────────────────────────────────
     if (action === 'admin-mudanceros' && req.method === 'GET') {
       const { token } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       const todos = await getJSON('mudanceros:todos') || [];
@@ -1854,7 +1857,7 @@ module.exports = async function handler(req, res) {
     // ── Admin: aprobar / rechazar mudancero ──────────────────────────
     if (action === 'admin-editar-mudancero' && req.method === 'POST') {
       const { token, email, cambios } = req.body;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       if (!email || !cambios) return res.status(400).json({ error: 'Faltan datos' });
@@ -1969,7 +1972,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-aprobar-mudancero' && req.method === 'POST') {
       const { token, email, nuevoEstado, verificadoIdentidad, verificadoVehiculo } = req.body;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       if (!email || !nuevoEstado) return res.status(400).json({ error: 'Faltan datos' });
@@ -2005,7 +2008,7 @@ module.exports = async function handler(req, res) {
     // ── Verificar todos los aprobados (one-shot) ─────────────────────
     if (action === 'admin-verificar-todos' && req.method === 'POST') {
       const { token } = req.body;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       const todos = await getJSON('mudanceros:todos') || [];
@@ -2024,7 +2027,7 @@ module.exports = async function handler(req, res) {
     // ── Admin: listar todas las cotizaciones/pedidos (GET) ───────────
     if (action === 'admin-listar' && req.method === 'GET') {
       const { token } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
 
@@ -2108,7 +2111,7 @@ module.exports = async function handler(req, res) {
     // ── Admin: detalle de un pedido con cotizaciones (GET) ───────────
     if (action === 'admin-pedido' && req.method === 'GET') {
       const { token, id } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       if (!id) return res.status(400).json({ error: 'Falta id' });
@@ -2445,7 +2448,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'encuesta-stats' && req.method === 'GET') {
       const token = req.query.token;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(403).json({ error: 'No autorizado' });
+      if (!esAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
       const si = await redisCall('GET', 'encuesta:packs:si');
       const no = await redisCall('GET', 'encuesta:packs:no');
       return res.status(200).json({ si: parseInt(si) || 0, no: parseInt(no) || 0 });
@@ -2453,7 +2456,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-patch-perfil' && req.method === 'POST') {
       const { token, email, trabajosCompletados, calificacion, nroResenas } = req.body;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(401).json({ error: 'No autorizado' });
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       if (!email) return res.status(400).json({ error: 'Falta email' });
       const perfil = await getJSON(`mudancero:perfil:${email}`);
       if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
@@ -2466,7 +2469,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-fix-resena' && req.method === 'POST') {
       const { token, mudanzaId } = req.body;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(401).json({ error: 'No autorizado' });
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
@@ -2490,7 +2493,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'admin-fix-estado' && req.method === 'POST') {
       const { token, mudanzaId, forzar } = req.body;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') return res.status(401).json({ error: 'No autorizado' });
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
       if (!m.saldoPagado && !forzar) return res.status(400).json({ error: 'Saldo no pagado, no se puede completar' });
@@ -2511,7 +2514,7 @@ module.exports = async function handler(req, res) {
     // type='textsearch' → textsearch (buscar por nombre)
     if (action === 'places-research' && req.method === 'GET') {
       const { token, type } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'No autorizado' });
       }
       const apiKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -2563,7 +2566,7 @@ module.exports = async function handler(req, res) {
     // Cachea el resultado en Redis 30 días para no re-scrapear cada vez.
     if (action === 'scrape-email' && req.method === 'GET') {
       const { token, url, force } = req.query;
-      if (token !== process.env.ADMIN_TOKEN && token !== 'mya-admin-2026') {
+      if (!esAdmin(req)) {
         return res.status(401).json({ error: 'No autorizado' });
       }
       if (!url) return res.status(400).json({ error: 'Falta url' });
