@@ -345,7 +345,7 @@ module.exports = async function handler(req, res) {
                 <div style="background:${canal.fondoAviso};border-left:3px solid ${canal.color};border-radius:8px;padding:12px 16px;margin:0 0 8px">
                   <div style="font-size:13px;color:#0F1419;line-height:1.7">
                     <strong>🔑 Alquiler:</strong> ganás una comisión por cada mudanza que tu cliente concrete.<br>
-                    <strong>🏡 Compraventa:</strong> le regalás a tu cliente la limpieza de la casa nueva.
+                    <strong>🏡 Compraventa:</strong> le regalás a tu cliente un regalo especial que escala con el valor de la mudanza.
                   </div>
                 </div>
                 <div style="text-align:center;margin-top:16px">

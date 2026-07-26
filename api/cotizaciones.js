@@ -1003,8 +1003,8 @@ module.exports = async function handler(req, res) {
       const partnerAsesorNorm    = (typeof partnerAsesor === 'string' && partnerAsesor.length < 100) ? partnerAsesor : '';
       const partnerPropiedadNorm = (typeof partnerPropiedad === 'string' && partnerPropiedad.length < 100) ? partnerPropiedad : '';
       // Tipo de operación inmobiliaria que originó la mudanza. Solo interno (NO va al PDF).
-      // Define el régimen: 'compraventa' → sin comisión de referido + limpieza gratis destino;
-      // 'alquiler' → con comisión de referido. La lógica de comisión/limpieza se aplica aparte.
+      // Define el régimen: 'compraventa' → sin comisión de referido + regalo especial al cliente;
+      // 'alquiler' → con comisión de referido. La lógica de comisión/regalo se aplica aparte.
       const tipoOperacionNorm = (tipoOperacion === 'alquiler' || tipoOperacion === 'compraventa') ? tipoOperacion : '';
 
       // Sanitizar detalles del cliente. Modelo nuevo:
@@ -1329,7 +1329,7 @@ module.exports = async function handler(req, res) {
       // El monto a pagar se calcula sobre el precio final aceptado.
       // RÉGIMEN por tipo de operación: en COMPRAVENTA la inmobiliaria ya cobró su
       // comisión de venta, así que MudateYa NO paga comisión de referido (queda en $0
-      // y se ofrece limpieza de destino aparte). En ALQUILER sí se paga.
+      // y el cliente recibe un regalo especial aparte). En ALQUILER sí se paga.
       if (mudanza.partner && parseFloat(mudanza.comisionInmobiliariaPct) > 0 && mudanza.tipoOperacion !== 'compraventa') {
         const precioFinal = parseFloat(cot.precio) || 0;
         const pct = parseFloat(mudanza.comisionInmobiliariaPct);

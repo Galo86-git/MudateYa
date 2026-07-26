@@ -10,7 +10,8 @@
 // - El link del asesor manda al cliente al form de publicar ya existente,
 //   atribuido con partner=remax + partnerAsesor={codigo}.
 // - RÉGIMEN (igual que inmobiliarias): ALQUILER paga comisión al asesor;
-//   COMPRAVENTA no paga comisión pero se ofrece limpieza de destino.
+//   COMPRAVENTA no paga comisión: el cliente recibe un regalo especial que
+//   escala con el valor de la mudanza (ver páginas de beneficios).
 //
 // REDIS:
 //   remax:asesor:{codigo}  → { codigo, nombre, email, whatsapp, zona, origen, activo, createdAt }
@@ -216,7 +217,7 @@ module.exports = async function handler(req, res) {
                 <div style="background:#FFF5F5;border-left:3px solid #DC1C2E;border-radius:8px;padding:12px 16px;margin:0 0 8px">
                   <div style="font-size:13px;color:#0F1419;line-height:1.7">
                     <strong>🔑 Alquiler:</strong> ganás una comisión por cada mudanza que tu cliente concrete.<br>
-                    <strong>🏡 Compraventa:</strong> le regalás a tu cliente la limpieza de la casa nueva.
+                    <strong>🏡 Compraventa:</strong> le regalás a tu cliente un regalo especial que escala con el valor de la mudanza.
                   </div>
                 </div>
                 <div style="text-align:center;margin-top:16px">
