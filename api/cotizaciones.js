@@ -133,6 +133,46 @@ function fmtFechaAR(fecha) {
 // 2. Se incluye el día de la semana. Desde que la vigencia se cuenta en
 //    horas hábiles, un pedido del viernes vence el lunes: decir sólo
 //    "3 de agosto" obliga al mudancero a ir a mirar el calendario.
+// ════════════════════════════════════════════════════
+// VALIDEZ DEL PRESUPUESTO
+//
+// Una cotización vale 7 días CORRIDOS desde que el mudancero la emitió
+// (cot.fecha). Pasado ese plazo el cliente ya no la puede aceptar: el
+// precio quedó viejo y el mudancero no puede quedar obligado a sostenerlo.
+//
+// El número está acá y en ningún otro lado. El PDF, el bot y la validación
+// del backend leen todos de la misma constante, para que no vuelva a pasar
+// que un documento diga 7 días y otro diga 24 horas.
+const DIAS_VALIDEZ_COTIZACION = 7;
+
+// Devuelve el Date en que vence una cotización, o null si no se puede saber.
+function vencimientoCotizacion(cot, mudanza) {
+  const base = (cot && cot.fecha) || (mudanza && mudanza.fechaPublicacion);
+  if (!base) return null;
+  const d = new Date(base);
+  if (isNaN(d.getTime())) return null;
+  return new Date(d.getTime() + DIAS_VALIDEZ_COTIZACION * 24 * 60 * 60 * 1000);
+}
+
+// true si ya venció. Si no se puede determinar la fecha (cotizaciones viejas
+// sin el campo), devuelve false: preferimos dejar pasar antes que bloquear
+// a un cliente por un dato que falta.
+function cotizacionVencida(cot, mudanza) {
+  const v = vencimientoCotizacion(cot, mudanza);
+  if (!v) return false;
+  return Date.now() > v.getTime();
+}
+
+// "martes 4 de agosto de 2026" — para imprimir en el PDF.
+function fmtValidezAR(cot, mudanza) {
+  const v = vencimientoCotizacion(cot, mudanza);
+  if (!v) return '';
+  return v.toLocaleDateString('es-AR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'America/Argentina/Buenos_Aires'
+  });
+}
+
 function fmtVencimientoAR(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -152,6 +192,7 @@ async function generarPDFBase64(datos) {
 
   // ── DATOS ────────────────────────────────────────────────────────
   const nro           = datos.id || 'MYA-0001';
+  const validoHasta   = datos.validoHasta || '';
   const fechaDoc      = datos.fechaEmision || new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' });
   const clienteNombre = datos.clienteNombre || '—';
   const clienteEmail  = datos.clienteEmail  || '—';
@@ -266,7 +307,7 @@ async function generarPDFBase64(datos) {
   hLine(0, PW, Y, C_BGRN, 0.5);
   hLine(0, PW, Y + 24, C_BGRN, 0.5);
   doc.font('Helvetica-Bold').fontSize(8).fillColor(C_GRND);
-  doc.text('PRESUPUESTO OFICIAL  -  Valido 7 dias', ML, Y + 8);
+  doc.text(validoHasta ? ('PRESUPUESTO OFICIAL  -  Valido hasta el ' + validoHasta) : 'PRESUPUESTO OFICIAL', ML, Y + 8);
 
   Y = 116;
 
@@ -458,7 +499,7 @@ async function generarPDFBase64(datos) {
   doc.font('Helvetica').fontSize(8).fillColor(C_TEXT3);
   doc.text('  mudateya.ar  -  hola@mudateya.ar', ML + 56, Y, { lineBreak: false });
   doc.font('Helvetica').fontSize(7).fillColor(C_TEXT3);
-  doc.text('Valida 7 dias  |  ' + nro, 0, Y, { width: PW - MR, align: 'right' });
+  doc.text((validoHasta ? ('Valido hasta el ' + validoHasta + '  |  ') : '') + nro, 0, Y, { width: PW - MR, align: 'right' });
 
   doc.end();
 
@@ -1173,6 +1214,28 @@ module.exports = async function handler(req, res) {
       const cot = mudanza.cotizaciones.find(c => c.id === cotizacionId);
       if (!cot) return res.status(404).json({ error: 'Cotización no encontrada' });
 
+      // ── La mudanza tiene que seguir abierta ──────────────────────────
+      // Sin esto se podía aceptar una segunda cotización sobre una mudanza
+      // ya adjudicada, pisando cotizacionAceptada/montoTotal con un anticipo
+      // del primer mudancero ya cobrado.
+      const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas'];
+      if (mudanza.estado && ESTADOS_ACEPTABLES.indexOf(mudanza.estado) === -1) {
+        return res.status(409).json({
+          error: 'Esta mudanza ya no está abierta para aceptar cotizaciones.',
+          estado: mudanza.estado
+        });
+      }
+
+      // ── El presupuesto tiene que estar vigente ───────────────────────
+      if (cotizacionVencida(cot, mudanza)) {
+        return res.status(410).json({
+          error: 'Este presupuesto venció. Los presupuestos tienen una validez de ' +
+                 DIAS_VALIDEZ_COTIZACION + ' días. Podés volver a publicar el pedido para recibir precios actualizados.',
+          vencida: true,
+          vencioEl: fmtValidezAR(cot, mudanza)
+        });
+      }
+
       // Si la cotización tiene propuestas[] múltiples, elegir cuál mostrar en el PDF
       let precioPDF = cot.precio;
       let notaPDF = cot.nota;
@@ -1199,6 +1262,7 @@ module.exports = async function handler(req, res) {
 
       const pdfBase64 = await generarPDFBase64({
         id:                cot.id + (propuestaNivel ? '-' + propuestaNivel : ''),
+        validoHasta:       fmtValidezAR(cot, mudanza),
         fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' }),
         clienteNombre:     mudanza.clienteNombre,
         clienteEmail:      mudanza.clienteEmail,
@@ -3465,6 +3529,7 @@ async function notificarCliente(mudanza, cotizacion) {
   try {
     const pdfBase64 = await generarPDFBase64({
       id:                cotizacion.id,
+      validoHasta:       fmtValidezAR(cotizacion, mudanza),
       fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' }),
       clienteNombre:     mudanza.clienteNombre,
       clienteEmail:      mudanza.clienteEmail,
@@ -3657,6 +3722,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
       id:                mudanza.id,
       fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' }),
       clienteNombre:     mudanza.clienteNombre,
+      validoHasta:       fmtValidezAR(cot, mudanza),
       clienteEmail:      mudanza.clienteEmail,
       mudanceroNombre:   cot.mudanceroNombre,
       mudancero_initials:(cot.mudanceroNombre||'MV').slice(0,2).toUpperCase(),
