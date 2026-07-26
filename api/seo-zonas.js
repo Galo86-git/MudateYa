@@ -195,7 +195,7 @@ footer a{color:#22C36A;text-decoration:none}
       </div>
       <div class="faq-item">
         <h3>¿Cuánto tarda en llegar una cotización?</h3>
-        <p>En menos de 24 horas recibís cotizaciones de ${proveedoresStr} disponibles en ${datos.nombre}. Podés elegir entre recibirlas automáticamente o seleccionar vos mismo los ${proveedoresStr} que te interesan.</p>
+        <p>Recibís cotizaciones de ${proveedoresStr} verificados disponibles en ${datos.nombre}. Podés elegir entre recibirlas automáticamente o seleccionar vos mismo los ${proveedoresStr} que te interesan.</p>
       </div>
     </div>
   </div>
@@ -214,7 +214,7 @@ footer a{color:#22C36A;text-decoration:none}
 
   <div class="cta-box">
     <h2>¿Necesitás un ${tipoStr} en ${datos.nombre}?</h2>
-    <p>Publicá gratis y recibí cotizaciones de ${proveedoresStr} verificados en menos de 24hs.</p>
+    <p>Publicá gratis y recibí cotizaciones de ${proveedoresStr} verificados.</p>
     <a href="${siteUrl}">Publicar mi ${tipoStr} gratis →</a>
   </div>
 

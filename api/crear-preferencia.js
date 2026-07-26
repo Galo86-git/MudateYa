@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
 
     const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
     const preference = new Preference(client);
-    const siteUrl = process.env.SITE_URL || 'https://mudateya.vercel.app';
+    const siteUrl = process.env.SITE_URL || 'https://mudateya.ar';
 
     const result = await preference.create({ body: {
       items: [{
