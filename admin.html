@@ -979,7 +979,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <div class="page" id="page-mudafy">
         <div class="page-header">
           <h1 class="page-title">Mudafy · Aliados</h1>
-          <div class="page-subtitle">Asesores de Mudafy y lo que cierran. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva limpieza de destino, sin comisión). <a href="/mudafy-altas.html" target="_blank" style="color:var(--blue);font-weight:600">Ver altas en vivo →</a></div>
+          <div class="page-subtitle">Asesores de Mudafy y lo que cierran. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva regalo al cliente, sin comisión). <a href="/mudafy-altas.html" target="_blank" style="color:var(--blue);font-weight:600">Ver altas en vivo →</a></div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;font-size:13px">
           <span style="color:var(--text2);font-weight:600">Link de registro de asesores:</span>
@@ -1033,7 +1033,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <div class="page" id="page-otros">
         <div class="page-header">
           <h1 class="page-title">Otros Asesores</h1>
-          <div class="page-subtitle">Asesores de inmobiliarias que no son Mudafy ni RE/MAX. Cada uno tiene su link único y cuelga del canal <code style="font-size:11px">independientes</code>. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva limpieza de destino, sin comisión).</div>
+          <div class="page-subtitle">Asesores de inmobiliarias que no son Mudafy ni RE/MAX. Cada uno tiene su link único y cuelga del canal <code style="font-size:11px">independientes</code>. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva regalo al cliente, sin comisión).</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;font-size:13px">
           <span style="color:var(--text2);font-weight:600">Link de registro de asesores:</span>
@@ -5948,15 +5948,15 @@ async function inmoEliminarPermanente(slug, nombre) {
 
 // ── Comisiones por inmobiliaria ──
 // Badge de tipo de operación para la tabla de comisiones.
-// Compraventa lleva el flag de limpieza de destino (parte del régimen: compraventa
-// no paga comisión pero se ofrece limpieza). Alquiler es badge simple. Vacío = "—".
+// Compraventa lleva el flag de regalo al cliente (parte del régimen: compraventa
+// no paga comisión, el cliente recibe un regalo que escala). Alquiler es badge simple. Vacío = "—".
 function _inmoOpBadge(tipo) {
   if (tipo === 'alquiler') {
     return '<span style="font-size:10px;color:#1E40AF;background:#DBEAFE;padding:2px 6px;border-radius:4px;font-weight:700">Alquiler</span>';
   }
   if (tipo === 'compraventa') {
     return '<span style="font-size:10px;color:#065F46;background:#D1FAE5;padding:2px 6px;border-radius:4px;font-weight:700">Compraventa</span>'
-         + '<div style="font-size:9px;color:#78350F;margin-top:3px;white-space:nowrap">🧹 limpieza destino</div>';
+         + '<div style="font-size:9px;color:#78350F;margin-top:3px;white-space:nowrap">🎁 regalo especial</div>';
   }
   return '<span style="color:var(--text3)">—</span>';
 }
