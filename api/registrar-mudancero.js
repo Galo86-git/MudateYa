@@ -283,7 +283,7 @@ module.exports = async function handler(req, res) {
       estadoOnboarding: esPreRegistro ? 'pre-registrado' : 'completo',
       tipoRegistro:    tipoRegistro,
       fechaRegistro:   new Date().toISOString(),
-      fechaFormulario: fecha || new Date().toLocaleString('es-AR'),
+      fechaFormulario: fecha || new Date().toLocaleString('es-AR', { timeZone:'America/Argentina/Buenos_Aires' }),
       calificacion: 0, nroResenas: 0, trabajosCompletados: 0,
       refAliado:       refAliado || null,
     };

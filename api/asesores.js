@@ -160,7 +160,7 @@ async function enviarEmailBienvenida(asesor) {
 async function enviarEmailAdminNuevoAsesor(asesor) {
   try {
     var resend = new Resend(process.env.RESEND_API_KEY);
-    var fecha = new Date().toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    var fecha = new Date().toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false, timeZone:'America/Argentina/Buenos_Aires' });
     var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0F1923">' +
       '<div style="text-align:center;margin-bottom:28px">' +
         '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#003580">MUDATE</span>' +
@@ -196,7 +196,7 @@ async function enviarEmailAdminNuevoAsesor(asesor) {
 async function enviarEmailAdminNuevoPedido(pedido, asesor) {
   try {
     var resend = new Resend(process.env.RESEND_API_KEY);
-    var fecha = new Date().toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    var fecha = new Date().toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false, timeZone:'America/Argentina/Buenos_Aires' });
     var packsRow = '';
     for (var i = 0; i < pedido.packs.length; i++) {
       var p = pedido.packs[i];

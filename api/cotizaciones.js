@@ -122,6 +122,29 @@ function fmtFechaAR(fecha) {
 }
 
 // ════════════════════════════════════════════════════
+// Vencimiento del pedido, formateado para mostrarle al mudancero.
+//
+// Devuelve algo como "lunes 3 de agosto, 15:00 hs".
+//
+// DOS COSAS IMPORTANTES:
+// 1. timeZone explícito. Vercel corre en UTC; sin esto toLocaleString
+//    mostraba la hora tres horas adelantada y, cerca de medianoche,
+//    directamente el día equivocado.
+// 2. Se incluye el día de la semana. Desde que la vigencia se cuenta en
+//    horas hábiles, un pedido del viernes vence el lunes: decir sólo
+//    "3 de agosto" obliga al mudancero a ir a mirar el calendario.
+function fmtVencimientoAR(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('es-AR', {
+    weekday: 'long', day: 'numeric', month: 'long',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+    timeZone: 'America/Argentina/Buenos_Aires'
+  }) + ' hs';
+}
+
+// ════════════════════════════════════════════════════
 // GENERADOR PDF con PDFKit
 // ════════════════════════════════════════════════════
 async function generarPDFBase64(datos) {
@@ -129,7 +152,7 @@ async function generarPDFBase64(datos) {
 
   // ── DATOS ────────────────────────────────────────────────────────
   const nro           = datos.id || 'MYA-0001';
-  const fechaDoc      = datos.fechaEmision || new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' });
+  const fechaDoc      = datos.fechaEmision || new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' });
   const clienteNombre = datos.clienteNombre || '—';
   const clienteEmail  = datos.clienteEmail  || '—';
   const mudNombre     = datos.mudanceroNombre || '—';
@@ -1176,7 +1199,7 @@ module.exports = async function handler(req, res) {
 
       const pdfBase64 = await generarPDFBase64({
         id:                cot.id + (propuestaNivel ? '-' + propuestaNivel : ''),
-        fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' }),
+        fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' }),
         clienteNombre:     mudanza.clienteNombre,
         clienteEmail:      mudanza.clienteEmail,
         mudanceroNombre:   cot.mudanceroNombre,
@@ -2868,6 +2891,21 @@ async function generarPDFDetallesBase64(mudanza) {
          .text(mudanza.id || '—', MARGIN, y + 12);
       y += 45;
 
+      // ── Vencimiento: caja ámbar, bien visible ──
+      // El mudancero necesita saber hasta cuándo puede cotizar sin tener
+      // que volver al email. Se muestra con día de la semana porque la
+      // vigencia corre en horas hábiles y puede caer varios días después.
+      if (mudanza.expira) {
+        const boxH = 42;
+        doc.roundedRect(MARGIN, y, CONTENT_W, boxH, 8)
+           .fillAndStroke('#FFF8EC', '#F59E0B');
+        doc.fillColor('#92400E').font('Helvetica').fontSize(8)
+           .text('PODÉS COTIZAR HASTA', MARGIN + 12, y + 9);
+        doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(12)
+           .text(fmtVencimientoAR(mudanza.expira), MARGIN + 12, y + 21);
+        y += boxH + 16;
+      }
+
       // ── Datos del pedido
       doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
          .text('DATOS DEL PEDIDO', MARGIN, y);
@@ -3042,7 +3080,7 @@ async function notificarMudanceros(mudanza) {
   const adminEmail = process.env.ADMIN_EMAIL;
   if (!process.env.RESEND_API_KEY) return;
 
-  const expira = new Date(mudanza.expira).toLocaleString('es-AR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+  const expira = fmtVencimientoAR(mudanza.expira);
   const esFlete = mudanza.tipo === 'flete';
   const tipoLabel = esFlete ? '📦 Nuevo flete' : '🚛 Nueva mudanza';
   // Pack/nivel que pidió el cliente — el mudancero necesita saberlo para cotizar correctamente
@@ -3267,7 +3305,7 @@ async function notificarClienteNuevoPedido(mudanza) {
 
   const esFlete = mudanza.tipo === 'flete';
   const tipoLabel = esFlete ? 'flete' : 'mudanza';
-  const expira = new Date(mudanza.expira).toLocaleString('es-AR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+  const expira = fmtVencimientoAR(mudanza.expira);
   const nivelMap = { esencial: '📦 Esencial', integral: '🛠️ Integral', llave: '🔑 Llave en mano', flete: '🚚 Flete' };
   const nivelLabel = esFlete ? '' : (nivelMap[mudanza.nivel] || '');
 
@@ -3427,7 +3465,7 @@ async function notificarCliente(mudanza, cotizacion) {
   try {
     const pdfBase64 = await generarPDFBase64({
       id:                cotizacion.id,
-      fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' }),
+      fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' }),
       clienteNombre:     mudanza.clienteNombre,
       clienteEmail:      mudanza.clienteEmail,
       mudanceroNombre:   cotizacion.mudanceroNombre,
@@ -3617,7 +3655,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
   try {
     const pdfBase64 = await generarPDFBase64({
       id:                mudanza.id,
-      fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric' }),
+      fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' }),
       clienteNombre:     mudanza.clienteNombre,
       clienteEmail:      mudanza.clienteEmail,
       mudanceroNombre:   cot.mudanceroNombre,
@@ -3759,6 +3797,7 @@ async function notificarMudanceroInvitado(mudanza, perfil) {
           <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes || '—'}</td></tr>
           <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
           ${mudanza.precio_estimado ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Estimado cliente</td><td style="color:#22C36A;font-weight:700;font-size:14px">$${parseInt(mudanza.precio_estimado).toLocaleString('es-AR')}</td></tr>` : ''}
+          <tr style="background:#FFF8EC"><td style="color:#92400E;padding:7px 6px;font-size:13px">Cotizá hasta</td><td style="color:#B45309;font-weight:700;font-size:13px;padding:7px 0">${fmtVencimientoAR(mudanza.expira)}</td></tr>
         </table>
         <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 16px;margin-bottom:20px">
           <div style="font-size:13px;color:#15803D;line-height:1.6">
