@@ -99,9 +99,18 @@
 
 <script>
 var LINK_BASE = 'https://mudateya.ar/inmobiliaria/c21';
-// Token de admin: mismo patrón que admin.html (localStorage.adminToken o el default).
-// No se pide por pantalla.
-var _token = (function(){ try { return localStorage.getItem('adminToken') || 'mya-admin-2026'; } catch(e){ return 'mya-admin-2026'; } })();
+// Token de admin: se toma de la sesión de /admin si existe; si no, se pide.
+// Nunca hardcodeado.
+var _token = (function(){
+  try {
+    var t = sessionStorage.getItem('adminToken');
+    if (t) return t;
+    // Página suelta, sin login propio: se pide el token una vez y queda en la pestaña.
+    t = prompt('Pegá tu admin token (lo sacás de /admin, o usá el master token):') || '';
+    if (t) sessionStorage.setItem('adminToken', t);
+    return t;
+  } catch(e){ return ''; }
+})();
 var _vistos = {};      // códigos ya vistos (para detectar nuevos)
 var _timer = null;
 var _primeraCarga = true;

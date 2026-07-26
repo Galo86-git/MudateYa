@@ -1200,6 +1200,23 @@ function confirmarAccion(opts) {
   document.head.appendChild(s);
 })();
 
+// ── Token de admin ────────────────────────────────────────────────
+// El token ya NO viaja en el HTML. Lo emite /api/admin-sesion despues de
+// validar el login de Google contra ADMIN_EMAILS, y vive solo en
+// sessionStorage (se borra al cerrar la pestana).
+function ADMTK(){
+  try{
+    var u = JSON.parse(sessionStorage.getItem('adminUser') || 'null');
+    if(u && u._expires && Date.now() > u._expires){
+      sessionStorage.removeItem('adminUser');
+      sessionStorage.removeItem('adminToken');
+      location.reload();
+      return '';
+    }
+  }catch(e){}
+  return sessionStorage.getItem('adminToken') || '';
+}
+
 var currentUser = null;
 var mudancerosData = [];
 var pagosData = [];
@@ -1220,7 +1237,7 @@ window.onload = async function(){
       var parsed = JSON.parse(saved);
       if(parsed._expires && Date.now() > parsed._expires){
         sessionStorage.removeItem('adminUser');
-      } else if(isAuthorized(parsed.email)){
+      } else if(isAuthorized(parsed.email) && sessionStorage.getItem('adminToken')){
         currentUser = parsed;
         showAdmin(); return;
       }
@@ -1233,12 +1250,39 @@ window.onload = async function(){
   }
 };
 
-function handleCredential(response){
-  var payload = JSON.parse(atob(response.credential.split('.')[1]));
-  if(!isAuthorized(payload.email)){ alert('⚠ Tu email (' + payload.email + ') no tiene acceso.'); return; }
-  currentUser = { name: payload.name, email: payload.email, picture: payload.picture };
-  const adminSession = { ...currentUser, _expires: Date.now() + 24*60*60*1000 };
-  sessionStorage.setItem('adminUser', JSON.stringify(adminSession));
+async function handleCredential(response){
+  var payload = {};
+  try{ payload = JSON.parse(atob(response.credential.split('.')[1])); }catch(e){}
+
+  // El chequeo contra ADMIN_EMAILS del lado del cliente es solo UX.
+  // El gate real lo hace /api/admin-sesion, que valida el id_token contra
+  // Google (aud + email_verified) y recien ahi emite el token firmado.
+  var r, d;
+  try{
+    r = await fetch('/api/admin-sesion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ googleIdToken: response.credential })
+    });
+    d = await r.json();
+  }catch(e){
+    alert('No se pudo conectar con el servidor. Probá de nuevo.');
+    return;
+  }
+
+  if(!r.ok || !d || !d.token){
+    alert('⚠ ' + ((d && d.error) || 'No se pudo iniciar sesion.'));
+    return;
+  }
+
+  sessionStorage.setItem('adminToken', d.token);
+  currentUser = { name: payload.name || d.email, email: d.email, picture: payload.picture };
+  sessionStorage.setItem('adminUser', JSON.stringify({
+    name: currentUser.name,
+    email: currentUser.email,
+    picture: currentUser.picture,
+    _expires: Date.now() + (d.expiraEn || 12*60*60*1000)
+  }));
   showAdmin();
 }
 
@@ -1265,6 +1309,7 @@ async function logout(){
   });
   if (!ok) return;
   sessionStorage.removeItem('adminUser');
+  sessionStorage.removeItem('adminToken');
   sessionStorage.removeItem('clienteUser');
   sessionStorage.removeItem('googleUser');
   window.location.href = '/';
@@ -1318,7 +1363,7 @@ async function loadAll(){
 
 async function loadEncuesta(){
   try {
-    var r = await fetch('/api/cotizaciones?action=encuesta-stats&token=mya-admin-2026');
+    var r = await fetch('/api/cotizaciones?action=encuesta-stats&token=' + ADMTK());
     var d = await r.json();
     var si = d.si || 0;
     var no = d.no || 0;
@@ -1333,8 +1378,8 @@ async function loadEncuesta(){
 // ── Aliados (Dashboard card) ──
 async function loadAliadosDash(){
   try {
-    var r = await fetch('/api/aliados?action=admin-list&token=mya-admin-2026', {
-      headers: { 'x-admin-token': 'mya-admin-2026' }
+    var r = await fetch('/api/aliados?action=admin-list&token=' + ADMTK(), {
+      headers: { 'x-admin-token': ADMTK() }
     });
     var d = await r.json();
     if (!d.ok) throw new Error(d.error || 'Error');
@@ -1364,8 +1409,8 @@ async function loadAliadosDash(){
 async function loadAsesoresDash(){
   try {
     // Asesores registrados
-    var rA = await fetch('/api/asesores?action=admin-list&token=mya-admin-2026', {
-      headers: { 'x-admin-token': 'mya-admin-2026' }
+    var rA = await fetch('/api/asesores?action=admin-list&token=' + ADMTK(), {
+      headers: { 'x-admin-token': ADMTK() }
     });
     var dA = await rA.json();
     if (!dA.ok) throw new Error(dA.error || 'Error');
@@ -1373,8 +1418,8 @@ async function loadAsesoresDash(){
     var total = asesores.length;
 
     // Pedidos creados este mes
-    var rP = await fetch('/api/asesores?action=admin-pedidos&token=mya-admin-2026', {
-      headers: { 'x-admin-token': 'mya-admin-2026' }
+    var rP = await fetch('/api/asesores?action=admin-pedidos&token=' + ADMTK(), {
+      headers: { 'x-admin-token': ADMTK() }
     });
     var dP = await rP.json();
     var pedidos = (dP && dP.ok) ? (dP.pedidos || []) : [];
@@ -1396,7 +1441,7 @@ async function loadAsesoresDash(){
 
 async function loadMudanceros(){
   try{
-    var r = await fetch('/api/cotizaciones?action=admin-mudanceros&token=mya-admin-2026');
+    var r = await fetch('/api/cotizaciones?action=admin-mudanceros&token=' + ADMTK());
     var d = await r.json();
     // Convertir objetos Redis a arrays compatibles con el panel
     // Formato: [id, nombre, empresa, telefono, email, zona, zonasExtra, estado_cuil, vehiculo, cant, equipo,
@@ -1450,7 +1495,7 @@ async function loadMudanceros(){
 
 async function loadPagos(){
   try{
-    var r = await fetch('/api/cotizaciones?action=admin-pagos&token=mya-admin-2026');
+    var r = await fetch('/api/cotizaciones?action=admin-pagos&token=' + ADMTK());
     if (!r.ok) { pagosData = []; return; }
     var d = await r.json();
     pagosData = d.rows || [];
@@ -1960,7 +2005,7 @@ async function marcarLiquidado(mudanzaId, tipoPago, btn) {
   if (!ok) return;
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
   try {
-    var r = await fetch('/api/cotizaciones?action=admin-marcar-liquidado&token=mya-admin-2026', {
+    var r = await fetch('/api/cotizaciones?action=admin-marcar-liquidado&token=' + ADMTK(), {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ mudanzaId: mudanzaId, tipoPago: tipoPago })
@@ -2311,7 +2356,7 @@ async function confirmarEstado() {
     var r = await fetch('/api/cotizaciones?action=admin-aprobar-mudancero', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ token:'mya-admin-2026', email:m[4], nuevoEstado:estadoRedis })
+      body: JSON.stringify({ token:ADMTK(), email:m[4], nuevoEstado:estadoRedis })
     });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
@@ -2334,7 +2379,7 @@ async function cargarFotos() {
   var container = document.getElementById('fotosAdminList');
   container.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
-    var r = await fetch('/api/admin-fotos?token=mya-admin-2026');
+    var r = await fetch('/api/admin-fotos?token=' + ADMTK());
     var d = await r.json();
     if (!d.mudanceros || !d.mudanceros.length) {
       container.innerHTML = '<div class="empty"><div class="empty-icon">🖼️</div>No hay mudanceros registrados.</div>';
@@ -2498,7 +2543,7 @@ async function guardarFotosRedis(email) {
   var fotos = _fotosEstado[email].fotosVehiculo.filter(Boolean);
   var r = await fetch('/api/admin-fotos', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-admin-token': 'mya-admin-2026' },
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMTK() },
     body: JSON.stringify({ email: email, foto: _fotosEstado[email].foto || '', fotoCamion: fotos[0] || '', fotosVehiculo: fotos }),
   });
   var d = await r.json();
@@ -2665,7 +2710,7 @@ async function cargarCotizaciones() {
     // el nombre legible, incluso si el admin no pasó antes por la pestaña Inmobiliarias.
     if (!window._inmoNombresCache) {
       try {
-        var rInm = await fetch('/api/inmobiliarias?action=listar&token=mya-admin-2026');
+        var rInm = await fetch('/api/inmobiliarias?action=listar&token=' + ADMTK());
         var dInm = await rInm.json();
         window._inmoNombresCache = {};
         (dInm.inmobiliarias || []).forEach(function(i) {
@@ -2673,7 +2718,7 @@ async function cargarCotizaciones() {
         });
       } catch(e) { window._inmoNombresCache = {}; }
     }
-    var r = await fetch('/api/cotizaciones?action=admin-listar&token=mya-admin-2026');
+    var r = await fetch('/api/cotizaciones?action=admin-listar&token=' + ADMTK());
     var d = await r.json();
     if (!d.ok) throw new Error(d.error || 'Error');
     _cotizacionesData = (d.pedidos || []).sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
@@ -2864,7 +2909,7 @@ var _usuariosData = [];
 async function cargarUsuarios() {
   document.getElementById('usuariosList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
-    var r = await fetch('/api/cotizaciones?action=admin-usuarios&token=mya-admin-2026');
+    var r = await fetch('/api/cotizaciones?action=admin-usuarios&token=' + ADMTK());
     var d = await r.json();
     if (!d.ok) throw new Error(d.error || 'Error');
     _usuariosData = d.clientes || [];
@@ -2940,7 +2985,7 @@ async function abrirPedidoModal(pedidoId, e) {
   document.getElementById('pmBody').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   document.getElementById('pedidoModal').classList.add('open');
   try {
-    var r = await fetch('/api/cotizaciones?action=admin-pedido&id='+encodeURIComponent(pedidoId)+'&token=mya-admin-2026');
+    var r = await fetch('/api/cotizaciones?action=admin-pedido&id='+encodeURIComponent(pedidoId)+'&token=' + ADMTK());
     var d = await r.json();
     if (!d.ok) throw new Error(d.error||'Error');
     renderPedidoModal(d.pedido);
@@ -3502,7 +3547,7 @@ async function guardarEdicion(){
     var r = await fetch('/api/cotizaciones?action=admin-editar-mudancero', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ token:'mya-admin-2026', email: m[4], cambios: cambios })
+      body: JSON.stringify({ token:ADMTK(), email: m[4], cambios: cambios })
     });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
@@ -3567,7 +3612,7 @@ async function guardarEdicion(){
 var _aliados = [];
 var _aliConfig = null;
 
-function ALIT() { return localStorage.getItem('adminToken') || 'mya-admin-2026'; }
+function ALIT() { return ADMTK(); }
 
 async function aliFetch(url, opts) {
   opts = opts || {};
@@ -4193,7 +4238,7 @@ var _asrZonasAsignadas = [];
 var _asrMudancerasZona = []; // mudanceras actualmente asignadas a la zona seleccionada
 var _asrMudancerasAprobadas = []; // todas las mudanceras aprobadas del sistema
 
-function ASRT() { return localStorage.getItem('adminToken') || 'mya-admin-2026'; }
+function ASRT() { return ADMTK(); }
 
 async function asrFetch(url, opts) {
   opts = opts || {};
@@ -4634,7 +4679,6 @@ function renderPedidosAsesores() {
 // INMOBILIARIAS — Gestión de inmobiliarias asociadas con comisión por viaje
 // ════════════════════════════════════════════════════════════════════
 
-var _inmoTokenAdmin = 'mya-admin-2026';
 
 // ── Navegación entre sub-tabs ──
 function inmoTab(tab) {
@@ -4664,7 +4708,7 @@ async function renderInmoSolicitudes() {
   wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando solicitudes…</div>';
 
   try {
-    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + ADMTK());
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Error cargando');
 
@@ -4742,7 +4786,7 @@ window._inmoSolicitudesCache = [];
 async function inmoVerSolicitud(id) {
   // Buscar en el DOM lo que ya tenemos para no re-fetchear
   try {
-    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + ADMTK());
     var d = await r.json();
     var s = (d.solicitudes || []).find(function(x){ return x.id === id; });
     if (!s) { alert('No se encontró la solicitud.'); return; }
@@ -4767,7 +4811,7 @@ async function inmoVerSolicitud(id) {
 // como aprobada después de que se guarde la inmobiliaria.
 async function inmoAprobarSolicitud(id) {
   try {
-    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + ADMTK());
     var d = await r.json();
     var s = (d.solicitudes || []).find(function(x){ return x.id === id; });
     if (!s) { alert('No se encontró la solicitud.'); return; }
@@ -4795,7 +4839,7 @@ async function inmoAprobarSolicitud(id) {
     // Marcar la solicitud como "en proceso" para sacarla de pendientes
     // (Galo todavía puede cancelar antes de guardar, pero limpiamos la cola
     // visual para no procesar dos veces lo mismo).
-    await fetch('/api/inmobiliarias?action=procesar-solicitud&token=' + 'mya-admin-2026', {
+    await fetch('/api/inmobiliarias?action=procesar-solicitud&token=' + ADMTK(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: id, estado: 'aprobada' })
@@ -4811,7 +4855,7 @@ async function inmoAprobarSolicitud(id) {
 async function inmoRechazarSolicitud(id) {
   if (!confirm('¿Rechazar esta solicitud? Va a desaparecer de la lista de pendientes.')) return;
   try {
-    var r = await fetch('/api/inmobiliarias?action=procesar-solicitud&token=' + 'mya-admin-2026', {
+    var r = await fetch('/api/inmobiliarias?action=procesar-solicitud&token=' + ADMTK(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: id, estado: 'rechazada' })
@@ -4828,7 +4872,7 @@ async function inmoRechazarSolicitud(id) {
 // pendientes para que se vea el contador aunque Galo esté en otro tab.
 async function inmoCargarBadgeSolicitudes() {
   try {
-    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + 'mya-admin-2026');
+    var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + ADMTK());
     var d = await r.json();
     var n = (d.solicitudes || []).length;
     var badge = document.getElementById('inmoSolBadge');
@@ -4928,7 +4972,7 @@ async function renderMudafy() {
   if (!wrap) return;
   wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
-    var tok = _inmoTokenAdmin;
+    var tok = ADMTK();
 
     // 1) Asesores dados de alta
     var rA = await fetch('/api/mudafy?action=listar&token=' + encodeURIComponent(tok));
@@ -5013,7 +5057,7 @@ async function renderRemax() {
   if (!wrap) return;
   wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
-    var tok = _inmoTokenAdmin;
+    var tok = ADMTK();
 
     // 1) Asesores dados de alta
     var rA = await fetch('/api/remax?action=listar&token=' + encodeURIComponent(tok));
@@ -5100,7 +5144,7 @@ async function renderC21() {
   if (!wrap) return;
   wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
-    var tok = _inmoTokenAdmin;
+    var tok = ADMTK();
 
     // 1) Asesores dados de alta
     var rA = await fetch('/api/canales?action=listar&canal=c21&token=' + encodeURIComponent(tok));
@@ -5221,7 +5265,7 @@ async function renderOtros() {
   wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
 
   try {
-    var tok = _inmoTokenAdmin;
+    var tok = ADMTK();
 
     // 1) Asesores dados de alta
     var rA = await fetch('/api/independientes?action=listar&token=' + encodeURIComponent(tok));
@@ -5395,7 +5439,7 @@ async function otrosBorrar(codigo, btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Borrando…'; }
 
   try {
-    var r = await fetch('/api/independientes?action=eliminar&token=' + encodeURIComponent(_inmoTokenAdmin), {
+    var r = await fetch('/api/independientes?action=eliminar&token=' + encodeURIComponent(ADMTK()), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ codigo: codigo })
@@ -5497,7 +5541,7 @@ async function renderRedirs() {
   }
 
   try {
-    var r = await fetch('/api/r?action=admin-listar&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var r = await fetch('/api/r?action=admin-listar&token=' + encodeURIComponent(ADMTK()));
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Error al listar');
     _redirData = d.redirects || [];
@@ -5577,7 +5621,7 @@ function redirEditar(slug) {
 }
 
 async function _redirSet(payload) {
-  var r = await fetch('/api/r?action=admin-set&token=' + encodeURIComponent(_inmoTokenAdmin), {
+  var r = await fetch('/api/r?action=admin-set&token=' + encodeURIComponent(ADMTK()), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -5635,7 +5679,7 @@ async function redirToggle(slug) {
 async function redirBorrar(slug) {
   if (!window.confirm('¿Borrar /r/' + slug + '?\n\nLos QR impresos con esa URL dejan de funcionar y mandan al home.\nTambién se pierde el contador de escaneos.\n\nSi solo querés pausarlo, usá Apagar.')) return;
   try {
-    var r = await fetch('/api/r?action=admin-eliminar&token=' + encodeURIComponent(_inmoTokenAdmin), {
+    var r = await fetch('/api/r?action=admin-eliminar&token=' + encodeURIComponent(ADMTK()), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: slug })
@@ -5655,7 +5699,7 @@ async function renderInmoLista() {
   if (!wrap) return;
   wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
-    var r = await fetch('/api/inmobiliarias?action=listar&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var r = await fetch('/api/inmobiliarias?action=listar&token=' + encodeURIComponent(ADMTK()));
     var data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Error');
     var inmos = data.inmobiliarias || [];
@@ -5737,7 +5781,7 @@ function inmoResetForm() {
 async function inmoEditar(slug) {
   inmoTab('nueva');
   try {
-    var r = await fetch('/api/inmobiliarias?action=listar&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var r = await fetch('/api/inmobiliarias?action=listar&token=' + encodeURIComponent(ADMTK()));
     var data = await r.json();
     var inmo = (data.inmobiliarias || []).find(function(i){ return i.slug === slug; });
     if (!inmo) { alert('No se encontró la inmobiliaria'); return; }
@@ -5795,7 +5839,7 @@ async function inmoGuardar(e) {
   btn.textContent = 'Guardando…';
   try {
     var action = modo === 'editar' ? 'actualizar' : 'crear';
-    var r = await fetch('/api/inmobiliarias?action=' + action + '&token=' + encodeURIComponent(_inmoTokenAdmin), {
+    var r = await fetch('/api/inmobiliarias?action=' + action + '&token=' + encodeURIComponent(ADMTK()), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -5830,7 +5874,7 @@ async function inmoToggleActiva(slug, activar) {
   if (!confirm(confirmacion)) return;
   try {
     var action = activar ? 'reactivar' : 'desactivar';
-    var r = await fetch('/api/inmobiliarias?action=' + action + '&token=' + encodeURIComponent(_inmoTokenAdmin), {
+    var r = await fetch('/api/inmobiliarias?action=' + action + '&token=' + encodeURIComponent(ADMTK()), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: slug })
@@ -5864,7 +5908,7 @@ async function inmoEliminarPermanente(slug, nombre) {
   // Chequeo de mudanzas asociadas — preview de impacto
   var totalMudanzas = 0;
   try {
-    var rC = await fetch('/api/inmobiliarias?action=contar-mudanzas&slug=' + encodeURIComponent(slug) + '&token=' + encodeURIComponent(_inmoTokenAdmin));
+    var rC = await fetch('/api/inmobiliarias?action=contar-mudanzas&slug=' + encodeURIComponent(slug) + '&token=' + encodeURIComponent(ADMTK()));
     var dC = await rC.json();
     if (rC.ok) totalMudanzas = dC.mudanzasAsociadas || 0;
   } catch(e) {
@@ -5887,7 +5931,7 @@ async function inmoEliminarPermanente(slug, nombre) {
 
   // Ejecutar la eliminación
   try {
-    var r = await fetch('/api/inmobiliarias?action=eliminar&token=' + encodeURIComponent(_inmoTokenAdmin), {
+    var r = await fetch('/api/inmobiliarias?action=eliminar&token=' + encodeURIComponent(ADMTK()), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: slug, confirmar: true })
@@ -5922,7 +5966,7 @@ async function renderInmoComisiones() {
   wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   var filtro = document.getElementById('inmoComFiltro').value;
   try {
-    var url = '/api/inmobiliarias?action=comisiones&token=' + encodeURIComponent(_inmoTokenAdmin);
+    var url = '/api/inmobiliarias?action=comisiones&token=' + encodeURIComponent(ADMTK());
     if (filtro) url += '&slug=' + encodeURIComponent(filtro);
     var r = await fetch(url);
     var data = await r.json();
@@ -6025,7 +6069,7 @@ async function renderInmoComisiones() {
 async function inmoMarcarLiquidada(mudanzaId) {
   if (!confirm('¿Marcar esta comisión como pagada a la inmobiliaria? Confirmá que ya hiciste la transferencia.')) return;
   try {
-    var r = await fetch('/api/inmobiliarias?action=marcar-liquidada&token=' + encodeURIComponent(_inmoTokenAdmin), {
+    var r = await fetch('/api/inmobiliarias?action=marcar-liquidada&token=' + encodeURIComponent(ADMTK()), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mudanzaId: mudanzaId })
@@ -6042,7 +6086,7 @@ async function inmoMarcarLiquidada(mudanzaId) {
 async function inmoExportComisiones() {
   try {
     var filtro = document.getElementById('inmoComFiltro').value;
-    var url = '/api/inmobiliarias?action=comisiones&token=' + encodeURIComponent(_inmoTokenAdmin);
+    var url = '/api/inmobiliarias?action=comisiones&token=' + encodeURIComponent(ADMTK());
     if (filtro) url += '&slug=' + encodeURIComponent(filtro);
     var r = await fetch(url);
     var data = await r.json();
