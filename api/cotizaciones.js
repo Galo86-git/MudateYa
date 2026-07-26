@@ -1,6 +1,7 @@
 // api/cotizaciones.js — Upstash Redis + PDF con pdfmake
 
 var { esAdmin } = require('./_auth');
+var { vencimientoHabilISO } = require('./_habiles');
 
 const { Resend } = require('resend');
 
@@ -898,6 +899,9 @@ module.exports = async function handler(req, res) {
       // modoCotizacion: 'abierto' (primeros 5) | 'dirigido' (cliente elige mudanceros)
       const modo = modoCotizacion || 'abierto';
       const MAX_COT = 50;
+      // Vigencia del pedido en HORAS HÁBILES (ver api/_habiles.js):
+      // el reloj se pausa los fines de semana y feriados.
+      const HORAS_VIGENCIA = 24;
 
       // km viene calculado desde el frontend (Google Maps lado cliente).
       // Si no llega, queda null — la cotización funciona igual sin el desglose por km.
@@ -1020,7 +1024,7 @@ module.exports = async function handler(req, res) {
         horaOrigenNorm = horaOrigen.trim();
       }
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: new Date(Date.now() + 24*60*60*1000).toISOString(), cotizaciones: [] };
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: vencimientoHabilISO(HORAS_VIGENCIA), cotizaciones: [] };
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -2374,7 +2378,7 @@ module.exports = async function handler(req, res) {
       m.modoCotizacion = 'abierto';
       m.mudancerosInvitados = [];
       // Refrescar fecha de expiración 24hs más (le damos otra ventana)
-      m.expira = new Date(Date.now() + 24*60*60*1000).toISOString();
+      m.expira = vencimientoHabilISO(24);
       m.republicadaEn = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       return res.status(200).json({ ok: true });
