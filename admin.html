@@ -1585,7 +1585,10 @@ function renderDashboard(){
   if (editaron7d > 0) subTexto += (subTexto ? ' · ' : '') + '🟢 ' + editaron7d + ' editaron 7d';
   if (!subTexto) subTexto = aprobados > 0 ? '✓ todos firmaron TyC' : 'todos aprobados';
   document.getElementById('m-pendientes-sub').textContent = subTexto;
-  document.getElementById('m-mudanzas').textContent = totalPagos;
+  // La tarjeta dice "Mudanzas": tiene que contar mudanzas, no cobros.
+  // Mostraba totalPagos, y como anticipo y saldo son dos cobros, una sola
+  // mudanza pagada en dos tramos figuraba como dos.
+  document.getElementById('m-mudanzas').textContent = mudanzasPagas.length;
   document.getElementById('m-gmv').textContent = gmv > 0 ? '$' + Math.round(gmv).toLocaleString('es-AR') : '—';
   document.getElementById('m-revenue').textContent = revenue > 0 ? '$' + Math.round(revenue).toLocaleString('es-AR') : '—';
   document.getElementById('m-revenue-sub').textContent = subFee;
@@ -1632,8 +1635,33 @@ function renderDashboard(){
         }).join('')
       + '</tbody></table>';
 
-  var pagosMP = pagosData.slice(-5).reverse().map(function(p){ return { mudancero:p.mudancero||'—', monto:parseFloat(p.precio||0), fecha:p.fecha||'—', metodo:'Mercado Pago', tipo:p.tipo||'mudanza' }; });
-  var pagosTransfer = transferenciasData.filter(function(t){ return t.estado === 'confirmada'; }).map(function(t){ return { mudancero:t.mudancero||'—', monto:parseInt((t.monto||'0').replace(/\D/g,'')), fecha:t.fecha||'—', metodo:'Transferencia' }; });
+  // Cada fila de pagosData es UN cobro (anticipo o saldo). El monto de la
+  // fila es montoPagado; p.precio es el total de la mudanza y mostrarlo acá
+  // hacía que un anticipo de $500.000 figurara como $1.000.000.
+  //
+  // El método sale de la mudanza: ya no todo es Mercado Pago.
+  var pagosMP = pagosData.slice(-8).reverse().map(function(p){
+    var metodo = (p.tipoPago === 'saldo' ? p.metodoPagoSaldo : p.metodoPagoAnticipo) || p.metodoPago;
+    return {
+      mudancero: p.mudancero || '—',
+      monto: parseFloat(p.montoPagado || 0),
+      fecha: p.fecha || '—',
+      metodo: (metodo === 'transferencia' ? 'Transferencia' : 'Mercado Pago')
+            + (p.tipoPago === 'saldo' ? ' · saldo' : p.tipoPago === 'anticipo' ? ' · anticipo' : ''),
+      tipo: p.tipo || 'mudanza'
+    };
+  });
+  // Las transferencias CONFIRMADAS ya están en pagosData: al confirmarlas se
+  // marca el pago en la mudanza. Sumarlas acá mostraba el mismo cobro dos
+  // veces. Solo se listan las pendientes, que todavía no impactaron.
+  var pagosTransfer = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; }).map(function(t){
+    return {
+      mudancero: t.mudanceroNombre || t.mudancero || '—',
+      monto: parseInt(t.montoDeclarado || 0) || 0,
+      fecha: t.fechaDeclarada || t.fecha || '—',
+      metodo: 'Transferencia · por confirmar'
+    };
+  });
   var todosLosPagos = pagosMP.concat(pagosTransfer).sort(function(a,b){ return b.fecha.localeCompare(a.fecha); }).slice(0,5);
 
   document.getElementById('latestPagos').innerHTML = todosLosPagos.length === 0
