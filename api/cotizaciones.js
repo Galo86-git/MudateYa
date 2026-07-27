@@ -1429,9 +1429,23 @@ module.exports = async function handler(req, res) {
         m.saldoPagado = true;
         // Fecha en que se confirmó el pago del saldo (para calcular liquidación)
         if (!m.fechaPagoSaldo) m.fechaPagoSaldo = new Date().toISOString();
-        // Guardar el monto REAL del saldo cobrado por MP
+        // Guardar el monto REAL del saldo cobrado por MP.
+        //
+        // El fallback NO es el 50% del precio: si hubo un ajuste, el saldo es
+        // el precio final MENOS el anticipo que ya se cobró. Ej: se acepta en
+        // 1.000.000, se paga 500.000 de anticipo, se ajusta a 1.200.000 → el
+        // saldo es 700.000, no 600.000.
+        //
+        // Sin este fallback, los pagos por transferencia (que no traen
+        // montoRealMP) dejaban saldoMonto vacío y la liquidación al mudancero
+        // se calculaba sobre un importe inventado.
         if (montoRealMP) {
           m.saldoMonto = montoRealMP;
+        } else if (!m.saldoMonto) {
+          const cotS = m.cotizacionAceptada || {};
+          const precioS = parseInt(cotS.precio || m.montoTotal || 0) || 0;
+          const antS = parseInt(m.anticipoMonto || 0) || 0;
+          m.saldoMonto = Math.max(0, precioS - antS);
         }
         // Al pagar el saldo, la mudanza queda completada
         m.estado = 'completada';
@@ -1932,7 +1946,11 @@ module.exports = async function handler(req, res) {
             }));
           }
           if (m.saldoPagado) {
-            const montoPagado = parseInt(m.saldoMonto) || Math.round(precioBase * 0.5);
+            // Mismo criterio que registrar-pago: el saldo es el precio final
+            // menos el anticipo cobrado, no la mitad del precio. Con un ajuste
+            // de precio esas dos cosas dejan de coincidir.
+            const antPagado = parseInt(m.anticipoMonto || 0) || 0;
+            const montoPagado = parseInt(m.saldoMonto) || Math.max(0, precioBase - antPagado) || Math.round(precioBase * 0.5);
             const fee = Math.round(montoPagado * feePct);
             const neto = montoPagado - fee;
             rows.push(Object.assign({}, baseRow, {
