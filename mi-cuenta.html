@@ -4248,6 +4248,63 @@ function renderCardCotizacion(m) {
     +'</div>';
 }
 
+// Confirmacion de horas para cotizaciones por hora.
+//
+// El sistema calcula las horas entre el inicio y ahora; el mudancero solo
+// confirma. Puede bajar el numero (si se olvido de marcar "en curso" a tiempo
+// o termino antes), nunca subirlo: el backend rechaza cualquier valor mayor.
+//
+// No es un ajuste de precio: la tarifa ya fue aceptada por el cliente en el
+// presupuesto, asi que esto no se negocia, se liquida.
+function confirmarHoras(m) {
+  return new Promise(function (resolve) {
+    var cot = m.cotizacionAceptada || {};
+    var incluidas = parseInt(cot.horasIncluidas) || 0;
+    var tarifa    = parseInt(cot.valorHoraAdicional) || 0;
+    var ms  = Date.now() - new Date(m.fechaInicio).getTime();
+    var hs  = Math.max(0, Math.round((ms / 3600000) * 2) / 2);
+
+    var prev = document.getElementById('horasModal');
+    if (prev) prev.remove();
+    var mo = document.createElement('div');
+    mo.id = 'horasModal';
+    mo.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:1.2rem';
+    mo.innerHTML =
+      '<div style="background:var(--bg,#fff);border-radius:18px;padding:1.7rem 1.5rem;max-width:430px;width:100%;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+      + '<div style="font-size:1.15rem;font-weight:700;color:var(--text,#0F1923);margin-bottom:6px">Confirmá las horas trabajadas</div>'
+      + '<div style="font-size:13px;color:var(--text2,#64748B);line-height:1.6;margin-bottom:16px">El sistema registró <strong>' + hs + ' horas</strong> desde que marcaste la mudanza en curso. Podés bajarlo si corresponde, pero no subirlo.</div>'
+      + '<label style="font-size:10px;font-weight:600;color:var(--text3,#94A3B8);text-transform:uppercase;letter-spacing:1px">Horas a liquidar</label>'
+      + '<input type="number" id="hrsInput" step="0.5" min="0.5" max="' + hs + '" value="' + hs + '" oninput="recalcHoras(' + incluidas + ',' + tarifa + ')" style="width:100%;padding:11px 14px;border:1px solid var(--border2,#E2E8F0);border-radius:10px;font-size:15px;font-family:Inter,sans-serif;margin:5px 0 14px">'
+      + '<div id="hrsResumen" style="background:var(--bg2,#F8FAFC);border-radius:10px;padding:13px 15px;font-size:13px;line-height:1.9;margin-bottom:16px"></div>'
+      + '<div style="display:flex;gap:8px">'
+      +   '<button id="hrsCancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2,#E2E8F0);background:transparent;color:var(--text2,#64748B);font-size:13px;cursor:pointer">Cancelar</button>'
+      +   '<button id="hrsOk" style="flex:2;padding:11px;border-radius:10px;border:none;background:#22C36A;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Confirmar y completar</button>'
+      + '</div></div>';
+    document.body.appendChild(mo);
+    recalcHoras(incluidas, tarifa);
+    document.getElementById('hrsCancel').onclick = function () { mo.remove(); resolve(null); };
+    document.getElementById('hrsOk').onclick = function () {
+      var v = parseFloat(document.getElementById('hrsInput').value);
+      if (isNaN(v) || v <= 0 || v > hs) { alert('Las horas tienen que estar entre 0,5 y ' + hs + '.'); return; }
+      mo.remove(); resolve(v);
+    };
+  });
+}
+
+function recalcHoras(incluidas, tarifa) {
+  var el = document.getElementById('hrsResumen');
+  if (!el) return;
+  var h = parseFloat((document.getElementById('hrsInput') || {}).value) || 0;
+  var extra = Math.max(0, h - incluidas);
+  var cargo = Math.round(extra * tarifa);
+  el.innerHTML =
+      '<div style="display:flex;justify-content:space-between"><span>Horas incluidas en el presupuesto</span><strong>' + incluidas + '</strong></div>'
+    + '<div style="display:flex;justify-content:space-between"><span>Horas adicionales</span><strong>' + extra + '</strong></div>'
+    + '<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border2,#E2E8F0);padding-top:6px;margin-top:4px">'
+    +   '<span style="font-weight:700">Se suma al saldo</span>'
+    +   '<strong style="color:' + (cargo > 0 ? '#17A356' : 'var(--text2,#64748B)') + ';font-size:15px">$' + cargo.toLocaleString('es-AR') + '</strong></div>';
+}
+
 async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
   // Mensajes específicos por destino
   var cfg;
@@ -4272,6 +4329,25 @@ async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
       textoConfirmar: 'Sí, continuar'
     };
   }
+  // Cotizaciones por hora: antes de completar se liquidan las horas reales.
+  var _lista = (Array.isArray(misCotizaciones) ? misCotizaciones : [])
+    .concat(Array.isArray(mudanzasDisponibles) ? mudanzasDisponibles : []);
+  var _mud = null;
+  for (var _i = 0; _i < _lista.length; _i++) { if (_lista[_i].id === mudanzaId) { _mud = _lista[_i]; break; } }
+  if (nuevoEstado === 'completada' && _mud && (_mud.cotizacionAceptada || {}).modalidad === 'hora'
+      && _mud.fechaInicio && !_mud.horasLiquidadas) {
+    var _hrs = await confirmarHoras(_mud);
+    if (_hrs === null) return;
+    try {
+      var _r = await fetch('/api/cotizaciones?action=liquidar-horas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mudanzaId: mudanzaId, mudanceroEmail: currentUser.email, horasConfirmadas: _hrs })
+      });
+      var _d = await _r.json();
+      if (!_r.ok) { alert(_d.error || 'No se pudieron liquidar las horas'); return; }
+    } catch (e) { alert('Error al liquidar las horas: ' + e.message); return; }
+  }
+
   var ok = await confirmarAccion(cfg);
   if (!ok) return;
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
@@ -4561,6 +4637,21 @@ function abrirCotizacion(mudanza){
     + '</div>'
     +'<div style="margin-top:12px"><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Tiempo estimado (común a todos los packs)</label>'
     +'<input type="text" id="cot-tiempo" placeholder="Ej: 3-4 horas" style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface2);outline:none"/></div>'
+    +'<div id="cot-hora-wrap" style="margin-top:12px;border:1px solid var(--border2);border-radius:10px;padding:12px 14px">'
+    +  '<label style="display:flex;align-items:center;gap:9px;cursor:pointer">'
+    +    '<input type="checkbox" id="cot-por-hora" onchange="toggleCobroHora()" style="width:17px;height:17px;cursor:pointer">'
+    +    '<span style="font-size:13px;font-weight:600;color:var(--text)">Cobro por hora</span>'
+    +  '</label>'
+    +  '<div id="cot-hora-campos" style="display:none;margin-top:11px">'
+    +    '<div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:10px">Queda escrito en el presupuesto que firma el cliente. Si el trabajo se estira, las horas extra ya están pactadas y no hay que renegociar el precio.</div>'
+    +    '<div style="display:flex;gap:8px">'
+    +      '<div style="flex:1"><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Horas incluidas</label>'
+    +        '<input type="number" id="cot-horas-incl" min="1" placeholder="6" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-size:13px;font-family:Inter,sans-serif;margin-top:4px"></div>'
+    +      '<div style="flex:1"><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Hora adicional $</label>'
+    +        '<input type="number" id="cot-valor-hora" min="0" placeholder="80000" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-size:13px;font-family:Inter,sans-serif;margin-top:4px"></div>'
+    +    '</div>'
+    +  '</div>'
+    +'</div>'
     +'<div style="margin-top:10px"><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);display:block;margin-bottom:6px">Nota general (opcional)</label>'
     +'<textarea id="cot-nota" rows="2" placeholder="Algo común a todos los packs: experiencia, condiciones, etc." style="width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface2);outline:none;resize:vertical;line-height:1.5"></textarea></div>'
     +'<div style="display:flex;gap:8px;margin-top:1.2rem;justify-content:flex-end">'
@@ -4628,6 +4719,12 @@ function _recalcularTotalCot() {
   resumenEl.innerHTML = html;
 }
 
+function toggleCobroHora() {
+  var chk = document.getElementById('cot-por-hora');
+  var box = document.getElementById('cot-hora-campos');
+  if (box) box.style.display = (chk && chk.checked) ? 'block' : 'none';
+}
+
 async function enviarCotizacion(mudanzaId){
   // Construir array de propuestas activas
   var packs = window._cotPacksDisponibles || [];
@@ -4635,6 +4732,16 @@ async function enviarCotizacion(mudanzaId){
   var rawKm = kmEl ? (parseInt((kmEl.value || '0').replace(/\./g,'').replace(/[^0-9]/g,'')) || 0) : 0;
   var notaGeneral = document.getElementById('cot-nota').value.trim();
   var tiempo = document.getElementById('cot-tiempo').value.trim();
+  // Cobro por hora: las condiciones quedan pactadas en el presupuesto. Asi el
+  // desvio de horas no obliga a renegociar el precio, que si el cliente rechaza
+  // cancela la mudanza y reembolsa.
+  var porHora   = !!(document.getElementById('cot-por-hora') || {}).checked;
+  var horasIncl = porHora ? (parseInt((document.getElementById('cot-horas-incl') || {}).value) || 0) : 0;
+  var valorHora = porHora ? (parseInt((document.getElementById('cot-valor-hora') || {}).value) || 0) : 0;
+  if (porHora && (horasIncl <= 0 || valorHora <= 0)) {
+    alert('Si cobrás por hora, cargá las horas incluidas y el valor de la hora adicional.');
+    return;
+  }
   var propuestas = [];
   packs.forEach(function(nivel){
     var card = document.getElementById('pp-card-'+nivel);
@@ -4678,6 +4785,9 @@ async function enviarCotizacion(mudanzaId){
         mudanceroNombre: m[1]||currentUser.name,
         mudanceroTel: m[3]||'',
         propuestas: propuestas,
+        modalidad:          porHora ? 'hora' : 'cerrado',
+        horasIncluidas:     horasIncl,
+        valorHoraAdicional: valorHora,
         // Compat: campos planos por si algún flujo viejo los espera
         precio: String(propuestas[0].precio),
         nota: notaGeneral,
