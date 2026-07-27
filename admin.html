@@ -1508,7 +1508,7 @@ async function loadPagos(){
 
 async function loadTransferencias(){
   try{
-    var r = await fetch('/api/transferencias');
+    var r = await fetch('/api/transferencias', { headers:{ 'x-admin-token': ADMTK() } });
     var d = await r.json();
     transferenciasData = d.transferencias || [];
     var pendientes = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; }).length;
@@ -1762,14 +1762,18 @@ function filterMudanceros(){
 function renderTransferencias(){
   document.getElementById('transferList').innerHTML = transferenciasData.length === 0
     ? '<div class="empty"><div class="empty-icon">🏦</div>Sin transferencias pendientes</div>'
-    : '<table><thead><tr><th>Cliente</th><th>Mudancero</th><th>Ruta</th><th>Monto</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'
+    : '<table><thead><tr><th>Cliente</th><th>Pedido</th><th>Tramo</th><th>Monto</th><th>Referencia</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'
       + transferenciasData.map(function(t){
           return '<tr>'
             +'<td class="td-name">'+(t.clienteNombre||'—')+'<br><span class="td-mono" style="font-size:10px">'+(t.clienteEmail||'')+'</span></td>'
-            +'<td>'+(t.mudancero||'—')+'</td>'
-            +'<td style="font-size:11px">'+(t.desde||'—')+' → '+(t.hasta||'—')+'</td>'
-            +'<td class="td-mono" style="color:#F59E0B;font-weight:600">'+(t.monto||'—')+'</td>'
-            +'<td class="td-mono">'+(t.fecha||'—')+'</td>'
+            +'<td class="td-mono" style="font-size:11px">'+(t.mudanzaId||t.mudancero||'—')+'</td>'
+        +'<td>'+(t.tipoPago==='anticipo'?'Anticipo':t.tipoPago==='saldo'?'Saldo final':'—')+'</td>'
+        +'<td class="td-mono" style="font-weight:600;color:'+(t.coincide===false?'#DC2626':'#F59E0B')+'">'
+          +(t.montoDeclarado!=null ? '$'+Number(t.montoDeclarado).toLocaleString('es-AR') : (t.monto||'—'))
+          +(t.coincide===false ? '<br><span style="font-size:10px;color:#DC2626">esperado $'+Number(t.montoEsperado||0).toLocaleString('es-AR')+'</span>' : '')
+        +'</td>'
+        +'<td class="td-mono" style="font-size:11px">'+(t.referencia||'—')+'</td>'
+        +'<td class="td-mono" style="font-size:11px">'+(t.fechaDeclarada? new Date(t.fechaDeclarada).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Argentina/Buenos_Aires'}) : (t.fecha||'—'))+'</td>'
             +'<td><span class="badge '+(t.estado==='confirmada'?'approved':t.estado==='rechazada'?'rejected':'pending')+'">'+(t.estado==='confirmada'?'Confirmada':t.estado==='rechazada'?'Rechazada':'Pendiente')+'</span></td>'
             +'<td>'+(t.estado==='pendiente'?'<div style="display:flex;gap:6px"><button class="btn-sm danger" onclick="accionTransfer(\''+t.id+'\',\'rechazar\')">✗</button><button class="btn-sm primary" onclick="accionTransfer(\''+t.id+'\',\'confirmar\')">✓ Confirmar</button></div>':'—')+'</td>'
             +'</tr>';
@@ -1778,9 +1782,21 @@ function renderTransferencias(){
 }
 
 async function accionTransfer(id, accion){
+  // Confirmar es irreversible: marca el pago, manda los mails al mudancero y
+  // arranca el conteo de 15 dias habiles para liquidarle. Se pide confirmacion
+  // explicita para que no se marque de un click por error.
+  if(accion === 'confirmar'){
+    var t = transferenciasData.filter(function(x){ return x.id === id; })[0] || {};
+    var msg = 'Confirmar que la plata YA ESTA en la cuenta?\n\n'
+            + (t.clienteNombre || t.clienteEmail || '') + '\n'
+            + 'Declarado: $' + Number(t.montoDeclarado||0).toLocaleString('es-AR') + '\n'
+            + (t.coincide === false ? 'ATENCION: el sistema esperaba $' + Number(t.montoEsperado||0).toLocaleString('es-AR') + '\n' : '')
+            + '\nEsto marca el pago y no se puede deshacer.';
+    if(!confirm(msg)) return;
+  }
   var btns = document.querySelectorAll('button');
   try{
-    var r = await fetch('/api/transferencias', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, accion }) });
+    var r = await fetch('/api/transferencias', { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':ADMTK()}, body:JSON.stringify({ id, accion }) });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
     await loadTransferencias();

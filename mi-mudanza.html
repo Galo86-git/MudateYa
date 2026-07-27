@@ -2099,6 +2099,116 @@ async function simularPago(mudanzaId, tipoPago, btn) {
   }
 }
 
+// ── PAGO POR TRANSFERENCIA ────────────────────────────────────────
+// El cliente ve los datos bancarios, transfiere desde su homebanking y avisa.
+// La confirmación la hace MudateYa después de verificar en el banco: declarar
+// no es pagar, y la única fuente de verdad es el extracto bancario.
+function cerrarPagoModal() {
+  var el = document.getElementById('pagoModal');
+  if (el) el.remove();
+}
+
+function cajaModal(html) {
+  return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:22px;padding:2rem 1.6rem;'
+       + 'max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto">' + html + '</div>';
+}
+
+async function mostrarTransferencia(mudanzaId, tipoPago) {
+  cerrarPagoModal();
+  var modal = document.createElement('div');
+  modal.id = 'pagoModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:1.2rem';
+  modal.innerHTML = cajaModal('<div style="text-align:center;color:#64748B;font-size:14px;padding:1.5rem">Cargando datos…</div>');
+  document.body.appendChild(modal);
+
+  var d;
+  try {
+    var r = await fetch('/api/transferencias?action=datos&mudanzaId=' + encodeURIComponent(mudanzaId) + '&tipoPago=' + encodeURIComponent(tipoPago));
+    d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'No disponible');
+  } catch (e) {
+    modal.innerHTML = cajaModal(
+      '<div style="text-align:center">'
+      + '<div style="font-size:2rem;margin-bottom:10px">😕</div>'
+      + '<div style="font-size:14px;color:#0F1923;margin-bottom:14px">No pudimos cargar los datos de transferencia.</div>'
+      + '<div style="font-size:12px;color:#64748B;margin-bottom:16px">' + (e.message || '') + '</div>'
+      + '<button onclick="cerrarPagoModal()" style="width:100%;padding:11px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#64748B;font-size:13px;cursor:pointer">Cerrar</button>'
+      + '</div>');
+    return;
+  }
+
+  var b = d.banco || {};
+  var monto = d.monto || 0;
+  var fila = function (lbl, val, mono) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F5F9">'
+         + '<span style="font-size:12px;color:#64748B;flex-shrink:0">' + lbl + '</span>'
+         + '<span style="font-size:13px;color:#0F1923;font-weight:600;text-align:right;word-break:break-all'
+         + (mono ? ";font-family:'DM Mono',monospace" : '') + '">' + val + '</span></div>';
+  };
+
+  modal.innerHTML = cajaModal(
+      '<div style="font-size:1.8rem;text-align:center;margin-bottom:10px">🏦</div>'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.35rem;letter-spacing:1px;color:#0F1923;text-align:center;margin-bottom:4px">Pagar por transferencia</div>'
+    + '<div style="font-size:13px;color:#64748B;text-align:center;margin-bottom:1.2rem">'
+    + (tipoPago === 'anticipo' ? 'Anticipo del 50%' : 'Saldo final') + '</div>'
+    + '<div style="background:#F0FDF4;border:1px solid rgba(34,195,106,.3);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center">'
+    +   '<div style="font-size:11px;color:#15803D;letter-spacing:.5px;margin-bottom:2px">MONTO A TRANSFERIR</div>'
+    +   '<div style="font-size:1.6rem;font-weight:800;color:#0F1923;font-family:\'DM Mono\',monospace">$' + Number(monto).toLocaleString('es-AR') + '</div>'
+    + '</div>'
+    + '<div style="border:1px solid #E2E8F0;border-radius:12px;padding:4px 14px;margin-bottom:14px">'
+    +   fila('Alias', b.alias || '—', true)
+    +   fila('CBU', b.cbu || '—', true)
+    +   fila('Titular', b.titular || '—', false)
+    +   (b.cuit ? fila('CUIT', b.cuit, true) : '')
+    +   fila('Referencia', d.referencia || '—', true)
+    + '</div>'
+    + (d.automatico
+        ? '<div style="background:#F0F9FF;border-left:3px solid #1A6FFF;border-radius:8px;padding:11px 13px;margin-bottom:16px">'
+          + '<div style="font-size:12px;color:#1E40AF;line-height:1.6">Este CVU es exclusivo para este pago. '
+          + 'Apenas llegue la transferencia se acredita sola, no hace falta que avises.'
+          + (d.expira ? '<br><span style="color:#64748B">Válido hasta el ' + new Date(d.expira).toLocaleDateString('es-AR',{day:'numeric',month:'long',timeZone:'America/Argentina/Buenos_Aires'}) + '.</span>' : '')
+          + '</div></div>'
+        : '<div style="background:#FFF8EC;border-left:3px solid #F59E0B;border-radius:8px;padding:11px 13px;margin-bottom:16px">'
+          + '<div style="font-size:12px;color:#92400E;line-height:1.6">Poné <strong>' + (d.referencia || '') + '</strong> en el concepto. '
+          + 'Cuando confirmemos que la transferencia llegó, te avisamos por mail.</div></div>')
+    + '<button id="btnYaTransferi" style="width:100%;padding:13px;border-radius:10px;border:none;background:#22C36A;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">'
+    + (d.automatico ? 'Listo, ya transferí' : 'Ya transferí') + '</button>'
+    + '<button onclick="cerrarPagoModal()" style="width:100%;padding:10px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#64748B;font-size:13px;cursor:pointer">Cancelar</button>');
+
+  document.getElementById('btnYaTransferi').onclick = async function () {
+    // Con CVU exclusivo la acreditacion la dispara el webhook del proveedor.
+    // El boton es solo para cerrar y refrescar: declarar no aporta nada.
+    if (d.automatico) {
+      cerrarPagoModal();
+      setTimeout(function(){ location.reload(); }, 400);
+      return;
+    }
+    this.disabled = true;
+    this.textContent = 'Enviando…';
+    try {
+      var rr = await fetch('/api/transferencias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'declarar', mudanzaId: mudanzaId, tipoPago: tipoPago, montoDeclarado: monto })
+      });
+      var dd = await rr.json();
+      if (!rr.ok || dd.error) throw new Error(dd.error || 'No se pudo registrar');
+      modal.innerHTML = cajaModal(
+          '<div style="text-align:center">'
+        + '<div style="font-size:2.2rem;margin-bottom:10px">✅</div>'
+        + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;letter-spacing:1px;color:#0F1923;margin-bottom:8px">Aviso recibido</div>'
+        + '<div style="font-size:13px;color:#64748B;line-height:1.6;margin-bottom:18px">Vamos a verificar la transferencia y te confirmamos por mail. '
+        + 'Puede demorar unas horas en días hábiles.</div>'
+        + '<button onclick="cerrarPagoModal();location.reload()" style="width:100%;padding:12px;border-radius:10px;border:none;background:#003580;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Entendido</button>'
+        + '</div>');
+    } catch (e) {
+      this.disabled = false;
+      this.textContent = 'Ya transferí';
+      alert('No pudimos registrar el aviso: ' + e.message);
+    }
+  };
+}
+
 async function pagarAnticipo(m) {
   var cot = m.cotizacionAceptada || {};
   var precio = cot.precio || 0;
@@ -2120,6 +2230,8 @@ async function pagarAnticipo(m) {
     +'</div>'
     +'<button id="btnPagarAnticipo" style="width:100%;padding:13px;border-radius:10px;border:none;background:#009EE3;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Outfit\',sans-serif;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px">'
     +'💳 Pagar $'+anticipo.toLocaleString('es-AR')+' con Mercado Pago</button>'
+    +'<button onclick="mostrarTransferencia(\''+m.id+'\',\'anticipo\')" style="width:100%;padding:13px;border-radius:10px;border:1px solid #22C36A;background:#fff;color:#15803D;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">'
+    +'🏦 Pagar por transferencia</button>'
     +'<button onclick="document.getElementById(\'pagoModal\').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--mono)">Ahora no</button>'
     +'</div>';
   document.body.appendChild(modal);
@@ -2162,7 +2274,32 @@ async function pagarSaldo(mudanzaId) {
     saldo = Math.round((cot.precio||0) * 0.5);
   }
 
-  // Confirmar antes de ir a Mercado Pago
+  // Elegir medio de pago. Antes iba directo a Mercado Pago; ahora se ofrece
+  // tambien transferencia, igual que en el anticipo.
+  var medio = await new Promise(function(resolve){
+    cerrarPagoModal();
+    var mo = document.createElement('div');
+    mo.id = 'pagoModal';
+    mo.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:1.2rem';
+    mo.innerHTML = cajaModal(
+        '<div style="font-size:1.8rem;text-align:center;margin-bottom:10px">💰</div>'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.35rem;letter-spacing:1px;color:#0F1923;text-align:center;margin-bottom:6px">Pagar el saldo final</div>'
+      + '<div style="background:#F0FDF4;border:1px solid rgba(34,195,106,.3);border-radius:12px;padding:14px 16px;margin:14px 0;text-align:center">'
+      +   '<div style="font-size:11px;color:#15803D;letter-spacing:.5px;margin-bottom:2px">A PAGAR AHORA</div>'
+      +   '<div style="font-size:1.6rem;font-weight:800;color:#0F1923;font-family:\'DM Mono\',monospace">$' + saldo.toLocaleString('es-AR') + '</div>'
+      +   '<div style="font-size:11px;color:#64748B;margin-top:4px">Total mudanza: $' + (cot.precio||0).toLocaleString('es-AR') + '</div>'
+      + '</div>'
+      + '<button id="mpSaldo" style="width:100%;padding:13px;border-radius:10px;border:none;background:#009EE3;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">💳 Pagar con Mercado Pago</button>'
+      + '<button id="trSaldo" style="width:100%;padding:13px;border-radius:10px;border:1px solid #22C36A;background:#fff;color:#15803D;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">🏦 Pagar por transferencia</button>'
+      + '<button id="canSaldo" style="width:100%;padding:10px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#64748B;font-size:13px;cursor:pointer">Cancelar</button>');
+    document.body.appendChild(mo);
+    document.getElementById('mpSaldo').onclick  = function(){ cerrarPagoModal(); resolve('mp'); };
+    document.getElementById('trSaldo').onclick  = function(){ resolve('transferencia'); };
+    document.getElementById('canSaldo').onclick = function(){ cerrarPagoModal(); resolve(null); };
+  });
+  if (!medio) return;
+  if (medio === 'transferencia') { mostrarTransferencia(m.id, 'saldo'); return; }
+
   var ok = await confirmarAccion({
     titulo: '¿Pagar el saldo final?',
     mensaje: 'Vas a pagar $'+saldo.toLocaleString('es-AR')+' por Mercado Pago.\nTotal mudanza: $'+(cot.precio||0).toLocaleString('es-AR')+'\n\nUna vez pagado, la mudanza queda cerrada y se libera el cobro al mudancero.',
