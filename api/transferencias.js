@@ -144,6 +144,19 @@ module.exports = async function handler(req, res) {
 
   try {
     // ════════════════════════════════════════════════════════════
+    // GET ?action=disponible — ¿se puede pagar por transferencia?
+    // ════════════════════════════════════════════════════════════
+    // Lo consulta el frontend al cargar para decidir si dibuja el botón.
+    // Sin esto se le ofrecía transferencia a todo el mundo y al tocar el
+    // botón aparecía un error, que es peor que no ofrecerla.
+    if (req.method === 'GET' && action === 'disponible') {
+      return res.status(200).json({
+        disponible: bancoConfigurado() || talo.taloConfigurado(),
+        automatico: talo.taloConfigurado()
+      });
+    }
+
+    // ════════════════════════════════════════════════════════════
     // GET ?action=datos — datos bancarios para pagar (público)
     // ════════════════════════════════════════════════════════════
     if (req.method === 'GET' && action === 'datos') {
