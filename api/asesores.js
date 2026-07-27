@@ -55,6 +55,55 @@ var MAGIC_LINK_TTL = 900;              // 15 min
 var SESSION_TTL    = 60 * 60 * 24 * 30; // 30 días
 var PEDIDO_TTL     = 60 * 60 * 24 * 30; // pedido público vive 30 días
 
+// ── Contador anual de operaciones por asesor ────────────────────────
+//
+// Los pedidos (`pedido-asesor:{id}`) tienen TTL de 30 días, así que no
+// sirven para contar un año. Este contador es PERMANENTE (sin TTL) y es la
+// única fuente para saber quién llegó al premio de las 10 operaciones.
+//
+// CRITERIO: suma una operación cuando el pedido queda COMPLETADO, o sea
+// cuando se cobró el saldo final. Una mudanza que se cancela a mitad de
+// camino nunca llega a contarse, así que no hace falta restar nada.
+//
+// Se guarda el detalle de cada operación además del total: si un asesor
+// reclama el premio, hay con qué responderle.
+var UMBRAL_PREMIO_ASESOR = 10;
+
+function anioDe(iso) {
+  var d = iso ? new Date(iso) : new Date();
+  if (isNaN(d.getTime())) d = new Date();
+  // Año en hora argentina: si no, una operación del 31/12 a las 22:00
+  // cae en el año siguiente y se cuenta en el período equivocado.
+  return new Date(d.getTime() - 180 * 60 * 1000).getUTCFullYear();
+}
+
+function claveOps(email, anio) {
+  return 'asesor:ops:' + String(email || '').toLowerCase().trim() + ':' + anio;
+}
+
+async function sumarOperacion(email, pedido) {
+  if (!email) return null;
+  var anio = anioDe(pedido && pedido.completadoEn);
+  var k = claveOps(email, anio);
+  var reg = await getJSON(k) || { anio: anio, email: email, count: 0, ops: [] };
+
+  // Idempotencia: internal-marcar-pagado puede llegar más de una vez.
+  for (var i = 0; i < reg.ops.length; i++) {
+    if (reg.ops[i].pedidoId === pedido.id) return reg;
+  }
+
+  reg.ops.push({
+    pedidoId:      pedido.id,
+    fecha:         pedido.completadoEn || new Date().toISOString(),
+    cliente:       (pedido.cliente && pedido.cliente.nombre) || '',
+    monto:         parseInt(pedido.montoTotal || 0) || 0,
+    tipoOperacion: pedido.tipoOperacion || ''
+  });
+  reg.count = reg.ops.length;
+  await setJSON(k, reg); // sin TTL: tiene que sobrevivir al año
+  return reg;
+}
+
 // ── Sanitización / validación ───────────────────────────────────────
 function esc(s) {
   if (!s) return '';
@@ -1152,7 +1201,19 @@ module.exports = async function handler(req, res) {
         impPedido.completadoEn = new Date().toISOString();
       }
       await setJSON('pedido-asesor:' + impPedidoId, impPedido, PEDIDO_TTL);
-      return res.status(200).json({ ok: true, estado: impPedido.estado });
+
+      // Acumular en el contador anual solo cuando la operación quedó completada.
+      var impOps = null;
+      if (impPedido.estado === 'completado') {
+        try {
+          impOps = await sumarOperacion(impPedido.asesorEmail, impPedido);
+        } catch (e) { console.warn('Contador ops asesor:', e.message); }
+      }
+      return res.status(200).json({
+        ok: true,
+        estado: impPedido.estado,
+        opsAnio: impOps ? impOps.count : undefined
+      });
     }
 
     // ── INTERNAL: marcar pedido-asesor como cancelado (cliente eliminó la mudanza) ──
@@ -1275,6 +1336,13 @@ module.exports = async function handler(req, res) {
         var asr = await getJSON('asesor:' + emails[a]);
         if (!asr) continue;
         var pedIds = await getJSON('pedidos-asesor:' + emails[a]) || [];
+
+        // Operaciones completadas del año en curso (contador permanente).
+        // cantPedidos cuenta pedidos vivos y se vacía con el TTL de 30 días:
+        // no sirve para el premio.
+        var anioHoy = anioDe(null);
+        var opsReg = await getJSON(claveOps(emails[a], anioHoy)) || { count: 0 };
+
         lista.push({
           email:        asr.email,
           nombre:       asr.nombre,
@@ -1284,11 +1352,35 @@ module.exports = async function handler(req, res) {
           estado:       asr.estado,
           creadoEn:     asr.creadoEn,
           ultimoLogin:  asr.ultimoLogin || null,
-          cantPedidos:  pedIds.length
+          cantPedidos:  pedIds.length,
+          opsAnio:      opsReg.count || 0,
+          anioOps:      anioHoy,
+          umbralPremio: UMBRAL_PREMIO_ASESOR,
+          premioAlcanzado: (opsReg.count || 0) >= UMBRAL_PREMIO_ASESOR
         });
       }
       lista.sort(function(a, b){ return (b.creadoEn || '').localeCompare(a.creadoEn || ''); });
       return res.status(200).json({ ok:true, asesores: lista });
+    }
+
+    // ── ADMIN-OPS: detalle del contador anual de un asesor ────────
+    // Para poder responder cuando alguien reclama el premio.
+    if (action === 'admin-ops' && req.method === 'GET') {
+      var aoToken = req.query.token || req.headers['x-admin-token'];
+      if (!checkAdmin(aoToken)) return res.status(401).json({ error: 'No autorizado' });
+      var aoEmail = String(req.query.email || '').toLowerCase().trim();
+      if (!aoEmail) return res.status(400).json({ error: 'Falta email' });
+      var aoAnio = parseInt(req.query.anio || '') || anioDe(null);
+      var aoReg = await getJSON(claveOps(aoEmail, aoAnio)) || { anio: aoAnio, email: aoEmail, count: 0, ops: [] };
+      return res.status(200).json({
+        ok: true,
+        email: aoEmail,
+        anio: aoAnio,
+        count: aoReg.count || 0,
+        umbral: UMBRAL_PREMIO_ASESOR,
+        alcanzado: (aoReg.count || 0) >= UMBRAL_PREMIO_ASESOR,
+        ops: aoReg.ops || []
+      });
     }
 
     // ── ADMIN-CAMBIAR-ESTADO ──────────────────────────────────────
