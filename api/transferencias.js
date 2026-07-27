@@ -166,6 +166,28 @@ module.exports = async function handler(req, res) {
     }
 
     // ════════════════════════════════════════════════════════════
+    // GET ?action=estado-pago — ¿ya se acreditó este tramo? (público)
+    // ════════════════════════════════════════════════════════════
+    // Lo consulta la pantalla del cliente cada pocos segundos después de
+    // avisar que transfirió. Con CVU único la acreditación llega sola en
+    // segundos, pero sin esto el cliente veía su mudanza como pendiente y
+    // tenía que refrescar a mano para enterarse.
+    //
+    // Devuelve lo mínimo indispensable: no expone datos de la mudanza.
+    if (req.method === 'GET' && action === 'estado-pago') {
+      const q = req.query || {};
+      if (!q.mudanzaId || ['anticipo', 'saldo'].indexOf(q.tipoPago) === -1) {
+        return res.status(400).json({ error: 'Datos inválidos' });
+      }
+      const m = await getJSON(`mudanza:${q.mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      return res.status(200).json({
+        ok: true,
+        pagado: q.tipoPago === 'anticipo' ? !!m.anticipoPagado : !!m.saldoPagado
+      });
+    }
+
+    // ════════════════════════════════════════════════════════════
     // GET ?action=datos — datos bancarios para pagar (público)
     // ════════════════════════════════════════════════════════════
     if (req.method === 'GET' && action === 'datos') {
@@ -330,8 +352,21 @@ module.exports = async function handler(req, res) {
           if (ref.tipoPago === 'saldo')    { m2.metodoPagoSaldo    = 'transferencia'; m2.taloPagoSaldo    = paymentId; }
           await setJSON(`mudanza:${ref.mudanzaId}`, m2);
         }
+        // Si el cliente ya habia declarado, se ACTUALIZA ese registro en vez de
+        // crear otro. Sin esto quedaban dos filas por el mismo cobro: la que
+        // dejo el cliente y la que crea el webhook.
+        const idxPrev = await getJSON('transferencias:pendientes') || [];
+        let idExistente = null;
+        for (let i = 0; i < idxPrev.length; i++) {
+          const p = await getJSON(`transferencia:${idxPrev[i]}`);
+          if (p && p.estado === 'pendiente' &&
+              p.mudanzaId === ref.mudanzaId && p.tipoPago === ref.tipoPago) {
+            idExistente = p.id; break;
+          }
+        }
+
         const reg = {
-          id: 'TRANS-' + Date.now(),
+          id: idExistente || ('TRANS-' + Date.now()),
           mudanzaId: ref.mudanzaId,
           tipoPago: ref.tipoPago,
           estado: 'confirmada',
@@ -347,9 +382,11 @@ module.exports = async function handler(req, res) {
           fechaResolucion: new Date().toISOString()
         };
         await setJSON(`transferencia:${reg.id}`, reg, TTL);
-        const idx = await getJSON('transferencias:pendientes') || [];
-        idx.push(reg.id);
-        await setJSON('transferencias:pendientes', idx, TTL);
+        if (!idExistente) {
+          const idx = await getJSON('transferencias:pendientes') || [];
+          idx.push(reg.id);
+          await setJSON('transferencias:pendientes', idx, TTL);
+        }
       } catch (e) { console.warn('[webhook] registro:', e.message); }
 
       // Si pagó de más, avisar: hay que devolver la diferencia.
