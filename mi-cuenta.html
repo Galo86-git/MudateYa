@@ -4602,6 +4602,12 @@ function abrirCotizacion(mudanza){
       + '</div>';
   }
 
+  // El cliente ya eligio su pack al publicar: se cotiza ESE, no un menu de tres.
+  // Ofrecerle alternativas lo obliga a volver a decidir algo que ya decidio, y
+  // convierte una comparacion de precios entre mudanceros en una de packs.
+  packsDisponibles = packsDisponibles.filter(function(n){ return n === nivelPedido; });
+  if (packsDisponibles.length === 0) packsDisponibles = [nivelPedido];
+
   var packsHTML = packsDisponibles.map(_renderPackCard).join('<div style="height:8px"></div>');
 
   // Bloque distancia (sigue igual)
@@ -4626,8 +4632,8 @@ function abrirCotizacion(mudanza){
     +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:.4rem">Enviar cotización</div>'
     +'<div style="font-size:13px;color:var(--text2);margin-bottom:14px">'+mudanza.desde+' → '+mudanza.hasta+' · '+(mudanza.ambientes||'')+(km>0?' · <span style="color:#1A6FFF;font-weight:600">'+km+' km</span>':'')+'</div>'
     +'<div style="background:#EEF4FF;border:1px solid #C7D7F5;border-radius:10px;padding:10px 12px;margin-bottom:14px">'
-    +  '<div style="font-size:11.5px;color:#003580;font-weight:700;margin-bottom:3px">💡 Podés ofrecer 1 a 3 packs</div>'
-    +  '<div style="font-size:11px;color:#475569;line-height:1.4">El cliente compara y elige uno. Esto cuenta como <b>1 cotización</b> de las 5 disponibles.</div>'
+    +  '<div style="font-size:11.5px;color:#003580;font-weight:700;margin-bottom:3px">💡 El cliente pidió el pack ' + (nivelPedido === 'llave' ? 'Llave en mano' : nivelPedido.charAt(0).toUpperCase() + nivelPedido.slice(1)) + '</div>'
+    +  '<div style="font-size:11px;color:#475569;line-height:1.4">Cotizá para ese pack. Cuenta como <b>1 cotización</b> del pedido.</div>'
     +'</div>'
     +'<div style="display:flex;flex-direction:column;gap:0;margin-bottom:14px">'+packsHTML+'</div>'
     + bloqueDistanciaHTML
@@ -4646,9 +4652,9 @@ function abrirCotizacion(mudanza){
     +    '<div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:10px">Queda escrito en el presupuesto que firma el cliente. Si el trabajo se estira, las horas extra ya están pactadas y no hay que renegociar el precio.</div>'
     +    '<div style="display:flex;gap:8px">'
     +      '<div style="flex:1"><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Horas incluidas</label>'
-    +        '<input type="number" id="cot-horas-incl" min="1" placeholder="6" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-size:13px;font-family:Inter,sans-serif;margin-top:4px"></div>'
+    +        '<input type="number" id="cot-horas-incl" min="1" placeholder="6" oninput="recalcPrecioPorHora()" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-size:13px;font-family:Inter,sans-serif;margin-top:4px"></div>'
     +      '<div style="flex:1"><label style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Hora adicional $</label>'
-    +        '<input type="number" id="cot-valor-hora" min="0" placeholder="80000" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-size:13px;font-family:Inter,sans-serif;margin-top:4px"></div>'
+    +        '<input type="number" id="cot-valor-hora" min="0" placeholder="80000" oninput="recalcPrecioPorHora()" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-size:13px;font-family:Inter,sans-serif;margin-top:4px"></div>'
     +    '</div>'
     +  '</div>'
     +'</div>'
@@ -4722,7 +4728,40 @@ function _recalcularTotalCot() {
 function toggleCobroHora() {
   var chk = document.getElementById('cot-por-hora');
   var box = document.getElementById('cot-hora-campos');
-  if (box) box.style.display = (chk && chk.checked) ? 'block' : 'none';
+  var on  = !!(chk && chk.checked);
+  if (box) box.style.display = on ? 'block' : 'none';
+
+  // Con cobro por hora el precio no se escribe: sale de horas x tarifa. Dejar
+  // los dos campos editables permitia que el precio del pack no coincidiera con
+  // la cuenta impresa en el presupuesto, que es justo lo que hay que evitar.
+  var packs = window._cotPacksDisponibles || [];
+  packs.forEach(function (nivel) {
+    var el = document.getElementById('pp-precio-' + nivel);
+    if (!el) return;
+    el.readOnly = on;
+    el.style.background = on ? 'var(--bg2,#F1F5F9)' : '';
+    el.style.color = on ? 'var(--text2,#64748B)' : '';
+    if (on) el.title = 'Se calcula como horas incluidas x valor de la hora';
+  });
+  recalcPrecioPorHora();
+}
+
+// Precio = horas incluidas x valor hora. Escribe el campo del pack para que
+// todo el resto del flujo (total, resumen, envio) siga funcionando igual.
+function recalcPrecioPorHora() {
+  var chk = document.getElementById('cot-por-hora');
+  if (!chk || !chk.checked) return;
+  var h = parseInt((document.getElementById('cot-horas-incl')  || {}).value) || 0;
+  var v = parseInt((document.getElementById('cot-valor-hora') || {}).value) || 0;
+  var total = h * v;
+  var packs = window._cotPacksDisponibles || [];
+  packs.forEach(function (nivel) {
+    var el = document.getElementById('pp-precio-' + nivel);
+    if (el) {
+      el.value = total ? total.toLocaleString('es-AR') : '';
+    }
+  });
+  if (typeof _recalcularTotalCot === 'function') { try { _recalcularTotalCot(); } catch (e) {} }
 }
 
 async function enviarCotizacion(mudanzaId){
