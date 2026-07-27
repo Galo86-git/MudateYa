@@ -1214,27 +1214,8 @@ module.exports = async function handler(req, res) {
       const cot = mudanza.cotizaciones.find(c => c.id === cotizacionId);
       if (!cot) return res.status(404).json({ error: 'Cotización no encontrada' });
 
-      // ── La mudanza tiene que seguir abierta ──────────────────────────
-      // Sin esto se podía aceptar una segunda cotización sobre una mudanza
-      // ya adjudicada, pisando cotizacionAceptada/montoTotal con un anticipo
-      // del primer mudancero ya cobrado.
-      const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas'];
-      if (mudanza.estado && ESTADOS_ACEPTABLES.indexOf(mudanza.estado) === -1) {
-        return res.status(409).json({
-          error: 'Esta mudanza ya no está abierta para aceptar cotizaciones.',
-          estado: mudanza.estado
-        });
-      }
-
-      // ── El presupuesto tiene que estar vigente ───────────────────────
-      if (cotizacionVencida(cot, mudanza)) {
-        return res.status(410).json({
-          error: 'Este presupuesto venció. Los presupuestos tienen una validez de ' +
-                 DIAS_VALIDEZ_COTIZACION + ' días. Podés volver a publicar el pedido para recibir precios actualizados.',
-          vencida: true,
-          vencioEl: fmtValidezAR(cot, mudanza)
-        });
-      }
+      // El PDF es un comprobante: se puede descargar siempre, en cualquier
+      // estado de la mudanza. No lleva validaciones de vigencia ni de estado.
 
       // Si la cotización tiene propuestas[] múltiples, elegir cuál mostrar en el PDF
       let precioPDF = cot.precio;
@@ -1292,6 +1273,28 @@ module.exports = async function handler(req, res) {
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
       const cot = mudanza.cotizaciones.find(c => c.id === cotizacionId);
       if (!cot) return res.status(404).json({ error: 'Cotización no encontrada' });
+
+      // ── La mudanza tiene que seguir abierta ──────────────────────────
+      // Sin esto se puede aceptar una segunda cotización sobre una mudanza
+      // ya adjudicada, pisando cotizacionAceptada/montoTotal cuando el
+      // anticipo del primer mudancero ya se cobró.
+      const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas'];
+      if (mudanza.estado && ESTADOS_ACEPTABLES.indexOf(mudanza.estado) === -1) {
+        return res.status(409).json({
+          error: 'Esta mudanza ya no está abierta para aceptar cotizaciones.',
+          estado: mudanza.estado
+        });
+      }
+
+      // ── El presupuesto tiene que estar vigente ───────────────────────
+      if (cotizacionVencida(cot, mudanza)) {
+        return res.status(410).json({
+          error: 'Este presupuesto venció. Los presupuestos tienen una validez de ' +
+                 DIAS_VALIDEZ_COTIZACION + ' días. Podés volver a publicar el pedido para recibir precios actualizados.',
+          vencida: true,
+          vencioEl: fmtValidezAR(cot, mudanza)
+        });
+      }
 
       // ── Determinar la propuesta aceptada ─────────────────────────────
       // Si la cotización tiene propuestas[] múltiples y el cliente eligió una específica,
