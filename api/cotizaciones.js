@@ -1604,7 +1604,13 @@ module.exports = async function handler(req, res) {
         // Email al cliente invitándolo a pagar el saldo
         try { await notificarClienteSaldoPendiente(m); } catch(e) { console.warn('Email saldo error:', e.message); }
       }
-      if (estado === 'en_curso') m.fechaInicio = new Date().toISOString();
+      if (estado === 'en_curso') {
+        m.fechaInicio = new Date().toISOString();
+        // El boton del mudancero ya le promete al cliente que se le avisa.
+        // Y en cotizaciones por hora este es el momento en que arranca el reloj:
+        // el cliente tiene que enterarse ahora, no al recibir la liquidacion.
+        try { await notificarClienteMudanzaIniciada(m); } catch(e) { console.warn('Email inicio error:', e.message); }
+      }
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       return res.status(200).json({ ok: true, estado });
     }
@@ -4261,6 +4267,59 @@ async function notificarClienteAnticipoPagado(mudanza) {
       </div>
       <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
     </div>`,
+  });
+}
+
+async function notificarClienteMudanzaIniciada(mudanza) {
+  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  const saldo = calcularSaldo(mudanza);
+  const saldoFmt = '$' + saldo.toLocaleString('es-AR');
+
+  // En cotizaciones por hora el reloj arranca ahora, asi que el cliente tiene
+  // que saberlo en el momento y no enterarse recien en la factura final.
+  const porHora = cot.modalidad === 'hora' && parseInt(cot.valorHoraAdicional) > 0;
+  const horaInicio = new Date().toLocaleString('es-AR', {
+    hour: '2-digit', minute: '2-digit', hour12: false,
+    timeZone: 'America/Argentina/Buenos_Aires'
+  });
+
+  const bloqueHoras = porHora ? `
+        <div style="background:#F0F9FF;border-left:4px solid #1A6FFF;border-radius:10px;padding:16px 18px;margin:20px 0">
+          <div style="font-size:14px;color:#1E40AF;font-weight:700;letter-spacing:1px;margin-bottom:8px">⏱ EMPEZÓ A CONTAR EL TIEMPO</div>
+          <div style="font-size:16px;color:#334155;line-height:1.7">
+            Tu presupuesto incluye <strong>${parseInt(cot.horasIncluidas) || 0} horas</strong> de trabajo, contadas desde las <strong>${horaInicio} hs</strong>.
+            Si la mudanza se extiende, cada hora adicional se cobra <strong>$${(parseInt(cot.valorHoraAdicional) || 0).toLocaleString('es-AR')}</strong>,
+            tal como figura en el presupuesto que aceptaste. Si termina antes, pagás menos.
+          </div>
+        </div>` : '';
+
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
+    to: mudanza.clienteEmail,
+    subject: `🚛 ${cot.mudanceroNombre || 'Tu mudancero'} arrancó con tu mudanza`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:30px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:30px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:19px;color:rgba(255,255,255,.7);margin-left:12px">🚛 Mudanza en curso</span></div>
+      <div style="padding:28px">
+        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+          Hola <strong>${mudanza.clienteNombre || ''}</strong>, <strong>${cot.mudanceroNombre || 'el mudancero'}</strong> marcó tu mudanza como iniciada. Ya está en marcha.
+        </p>
+
+        <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+          <tr><td style="color:#64748B;padding:11px 8px;font-size:16px">Desde</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.desde || '—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Hasta</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.hasta || '—'}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 8px;font-size:16px">Inicio</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${horaInicio} hs</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Saldo a pagar al terminar</td><td style="color:#F59E0B;font-weight:700;font-size:17px;padding:11px 0">${saldoFmt}</td></tr>
+        </table>
+        ${bloqueHoras}
+        <p style="font-size:16px;color:#475569;line-height:1.7;margin:18px 0 0">
+          Cuando termine, te avisamos para que pagues el saldo. Cualquier cosa que necesites, escribinos a
+          <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">hola&#64;mudateya.ar</a>.
+        </p>
+      </div>
+      <div style="background:#F8FAFC;padding:16px 28px;font-size:14px;color:#94A3B8">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+    </div>`
   });
 }
 
