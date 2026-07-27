@@ -1928,6 +1928,10 @@ module.exports = async function handler(req, res) {
             feePctLabel: feePctLabel,
             esPlanReferidos: esPlanReferidos,
             fechaPublicacion: m.fechaPublicacion,
+            // Método real de cada tramo: desde que hay transferencia, no todo
+            // pasa por Mercado Pago y el panel tiene que poder distinguirlo.
+            metodoPagoAnticipo: m.metodoPagoAnticipo || 'mercadopago',
+            metodoPagoSaldo:    m.metodoPagoSaldo    || 'mercadopago',
           };
           // Una fila por cada pago realizado (anticipo y saldo son pagos separados,
           // cada uno tiene su propia fecha y por ende su propia ventana de liquidación)
