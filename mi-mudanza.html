@@ -2123,6 +2123,65 @@ function cajaModal(html) {
        + 'max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto">' + html + '</div>';
 }
 
+// Con CVU exclusivo la acreditacion llega sola en segundos. Se consulta cada
+// 3s durante 45s para actualizar la pantalla sin que el cliente refresque.
+//
+// Si en ese rato no llega no significa que se perdio: el webhook puede tardar
+// mas, o quedar el registro pendiente para confirmacion manual. Por eso el
+// mensaje final no dice que fallo, dice que estamos verificando.
+function esperarAcreditacion(mudanzaId, tipoPago, monto) {
+  var modal = document.getElementById('pagoModal');
+  if (!modal) return;
+  var etiqueta = tipoPago === 'anticipo' ? 'anticipo' : 'saldo final';
+
+  modal.innerHTML = cajaModal(
+      '<div style="text-align:center">'
+    + '<div style="width:46px;height:46px;margin:6px auto 16px;border:4px solid #E2E8F0;border-top-color:#22C36A;border-radius:50%;animation:mzSpin 1s linear infinite"></div>'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;letter-spacing:1px;color:#0F1923;margin-bottom:8px">Confirmando tu pago</div>'
+    + '<div id="espTxt" style="font-size:14px;color:#64748B;line-height:1.6;margin-bottom:18px">Estamos verificando que la transferencia haya llegado. Suele tardar unos segundos.</div>'
+    + '<button onclick="cerrarPagoModal();location.reload()" style="width:100%;padding:11px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#64748B;font-size:13px;cursor:pointer">Cerrar</button>'
+    + '</div>'
+    + '<style>@keyframes mzSpin{to{transform:rotate(360deg)}}</style>');
+
+  var intentos = 0;
+  var timer = setInterval(async function () {
+    intentos++;
+    try {
+      var r = await fetch('/api/transferencias?action=estado-pago&mudanzaId='
+        + encodeURIComponent(mudanzaId) + '&tipoPago=' + encodeURIComponent(tipoPago));
+      var d = await r.json();
+      if (d && d.pagado) {
+        clearInterval(timer);
+        var m2 = document.getElementById('pagoModal');
+        if (m2) m2.innerHTML = cajaModal(
+            '<div style="text-align:center">'
+          + '<div style="font-size:2.4rem;margin-bottom:10px">✅</div>'
+          + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.35rem;letter-spacing:1px;color:#0F1923;margin-bottom:8px">¡Pago acreditado!</div>'
+          + '<div style="font-size:14px;color:#64748B;line-height:1.6;margin-bottom:18px">Recibimos tu ' + etiqueta + ' de <strong>$' + Number(monto).toLocaleString('es-AR') + '</strong>. Te mandamos el comprobante por mail.</div>'
+          + '<button onclick="cerrarPagoModal();location.reload()" style="width:100%;padding:12px;border-radius:10px;border:none;background:#22C36A;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Continuar</button>'
+          + '</div>');
+        return;
+      }
+    } catch (e) { /* se reintenta en el proximo ciclo */ }
+
+    if (intentos === 5) {
+      var t = document.getElementById('espTxt');
+      if (t) t.textContent = 'Todavía no la vemos. A veces el banco tarda un poco más.';
+    }
+    if (intentos >= 15) {          // 45 segundos
+      clearInterval(timer);
+      var m3 = document.getElementById('pagoModal');
+      if (m3) m3.innerHTML = cajaModal(
+          '<div style="text-align:center">'
+        + '<div style="font-size:2.2rem;margin-bottom:10px">⏳</div>'
+        + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;letter-spacing:1px;color:#0F1923;margin-bottom:8px">Estamos verificando</div>'
+        + '<div style="font-size:14px;color:#64748B;line-height:1.6;margin-bottom:18px">Tu aviso quedó registrado. En cuanto confirmemos la transferencia te avisamos por mail. No hace falta que vuelvas a transferir.</div>'
+        + '<button onclick="cerrarPagoModal();location.reload()" style="width:100%;padding:12px;border-radius:10px;border:none;background:#003580;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Entendido</button>'
+        + '</div>');
+    }
+  }, 3000);
+}
+
 async function mostrarTransferencia(mudanzaId, tipoPago) {
   cerrarPagoModal();
   var modal = document.createElement('div');
@@ -2189,8 +2248,16 @@ async function mostrarTransferencia(mudanzaId, tipoPago) {
     // Con CVU exclusivo la acreditacion la dispara el webhook del proveedor.
     // El boton es solo para cerrar y refrescar: declarar no aporta nada.
     if (d.automatico) {
-      cerrarPagoModal();
-      setTimeout(function(){ location.reload(); }, 400);
+      // Rastro por si el webhook falla: sin este registro la plata entra al
+      // CVU y no aparece en ningun lado. No bloquea la UX.
+      try {
+        fetch('/api/transferencias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion:'declarar', mudanzaId: mudanzaId, tipoPago: tipoPago, montoDeclarado: monto })
+        });
+      } catch (e) {}
+      esperarAcreditacion(mudanzaId, tipoPago, monto);
       return;
     }
     this.disabled = true;
