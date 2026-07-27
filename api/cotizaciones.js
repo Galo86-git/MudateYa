@@ -527,35 +527,35 @@ async function enviarEmailAltaMudancero(perfil) {
     from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:      perfil.email,
     subject: '🎉 ¡Fuiste aprobado en MudateYa! Activá tu cuenta',
-    html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
-      '<div style="background:#003580;padding:28px 32px"><div style="font-size:26px;font-weight:900;color:#fff">Mudate<span style="color:#22C36A">Ya</span></div></div>' +
+    html: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
+      '<div style="background:#003580;padding:28px 32px"><div style="font-size:30px;font-weight:900;color:#fff">Mudate<span style="color:#22C36A">Ya</span></div></div>' +
       '<div style="background:#22C36A;padding:4px"></div>' +
       '<div style="padding:32px">' +
         '<div style="font-size:40px;text-align:center;margin-bottom:16px">🎉</div>' +
-        '<h2 style="font-size:22px;color:#003580;margin:0 0 8px;text-align:center">¡Estás aprobado, ' + nombre + '!</h2>' +
-        '<p style="font-size:14px;color:#475569;text-align:center;margin:0 0 28px">Revisamos tu perfil' + empresa + ' y todo está en orden.<br/>Ya podés empezar a recibir pedidos en tu zona.</p>' +
+        '<h2 style="font-size:28px;color:#003580;margin:0 0 8px;text-align:center">¡Estás aprobado, ' + nombre + '!</h2>' +
+        '<p style="font-size:17px;color:#475569;text-align:center;margin:0 0 28px">Revisamos tu perfil' + empresa + ' y todo está en orden.<br/>Ya podés empezar a recibir pedidos en tu zona.</p>' +
         '<div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px 24px;margin-bottom:28px">' +
-          '<div style="font-size:15px;font-weight:700;color:#166534;margin-bottom:8px">Un último paso — Aceptá los Términos y Condiciones</div>' +
-          '<p style="font-size:13px;color:#475569;margin:0 0 16px;line-height:1.6">Para activar tu cuenta y aparecer en el catálogo, aceptá los Términos y Condiciones de MudateYa. Incluyen las comisiones y las reglas de la plataforma.</p>' +
-          '<a href="' + linkTerminos + '" style="display:block;background:#22C36A;color:#fff;text-align:center;padding:14px 24px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:700">✓ Aceptar Términos y Condiciones →</a>' +
-          '<p style="font-size:11px;color:#94A3B8;text-align:center;margin:10px 0 0;font-family:monospace">Link válido por 7 días</p>' +
+          '<div style="font-size:18px;font-weight:700;color:#166534;margin-bottom:8px">Un último paso — Aceptá los Términos y Condiciones</div>' +
+          '<p style="font-size:16px;color:#475569;margin:0 0 16px;line-height:1.7">Para activar tu cuenta y aparecer en el catálogo, aceptá los Términos y Condiciones de MudateYa. Incluyen las comisiones y las reglas de la plataforma.</p>' +
+          '<a href="' + linkTerminos + '" style="display:block;background:#22C36A;color:#fff;text-align:center;padding:14px 24px;border-radius:10px;text-decoration:none;font-size:18px;font-weight:700">✓ Aceptar Términos y Condiciones →</a>' +
+          '<p style="font-size:14px;color:#94A3B8;text-align:center;margin:10px 0 0;font-family:monospace">Link válido por 7 días</p>' +
         '</div>' +
         '<div style="background:#F8FAFC;border-radius:10px;padding:16px 20px;margin-bottom:24px">' +
-          '<div style="font-size:13px;font-weight:700;color:#0F1923;margin-bottom:10px">Comisiones:</div>' +
-          '<table style="width:100%;font-size:13px;color:#475569">' +
+          '<div style="font-size:16px;font-weight:700;color:#0F1923;margin-bottom:10px">Comisiones:</div>' +
+          '<table style="width:100%;font-size:16px;color:#475569">' +
             '<tr><td style="padding:4px 0">🏠 Mudanzas</td><td style="text-align:right;font-weight:700;color:#003580">15% por trabajo completado</td></tr>' +
             '<tr><td style="padding:4px 0">📦 Fletes</td><td style="text-align:right;font-weight:700;color:#003580">20% por trabajo completado</td></tr>' +
             '<tr><td style="padding:4px 0">🏢 Pedidos Plan Referidos</td><td style="text-align:right;font-weight:700;color:#003580">25% por trabajo completado</td></tr>' +
-            '<tr><td colspan="2" style="padding:6px 0 4px;color:#64748B;font-size:11px;font-style:italic">Plan Referidos: pedidos que llegan pre-calificados desde nuestros asesores inmobiliarios aliados.</td></tr>' +
-            '<tr><td colspan="2" style="padding:4px 0;color:#94A3B8;font-size:11px">Solo pagás comisión cuando completás un trabajo. Sin costos fijos.</td></tr>' +
+            '<tr><td colspan="2" style="padding:10px 0 4px;color:#64748B;font-size:14px;font-style:italic">Plan Referidos: pedidos que llegan pre-calificados desde nuestros asesores inmobiliarios aliados.</td></tr>' +
+            '<tr><td colspan="2" style="padding:4px 0;color:#94A3B8;font-size:14px">Solo pagás comisión cuando completás un trabajo. Sin costos fijos.</td></tr>' +
           '</table>' +
-          '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:12px;color:#64748B;line-height:1.6">' +
+          '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:15px;color:#64748B;line-height:1.7">' +
             '💸 <strong>Liquidación:</strong> dentro de los <strong>15 días hábiles</strong> posteriores a la confirmación del pago del cliente.' +
           '</div>' +
         '</div>' +
-        '<div style="text-align:center"><a href="https://mudateya.ar/mi-cuenta" style="color:#1A6FFF;font-size:13px;text-decoration:none">Ver mi cuenta en MudateYa →</a></div>' +
+        '<div style="text-align:center"><a href="https://mudateya.ar/mi-cuenta" style="color:#1A6FFF;font-size:16px;text-decoration:none">Ver mi cuenta en MudateYa →</a></div>' +
       '</div>' +
-      '<div style="background:#F8FAFC;border-top:1px solid #E2E8F0;padding:16px 32px;text-align:center"><p style="font-size:11px;color:#94A3B8;font-family:monospace;margin:0">MudateYa · <a href="https://mudateya.ar" style="color:#94A3B8">mudateya.ar</a></p></div>' +
+      '<div style="background:#F8FAFC;border-top:1px solid #E2E8F0;padding:16px 32px;text-align:center"><p style="font-size:14px;color:#94A3B8;font-family:monospace;margin:0">MudateYa · <a href="https://mudateya.ar" style="color:#94A3B8">mudateya.ar</a></p></div>' +
     '</div>',
   });
 }
@@ -775,22 +775,22 @@ module.exports = async function handler(req, res) {
         from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
         to:      emailNorm,
         subject: '🔑 Tu link de acceso a MudateYa',
-        html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
-          '<div style="background:#003580;padding:28px 32px"><div style="font-size:26px;font-weight:900;color:#fff">Mudate<span style="color:#22C36A">Ya</span></div></div>' +
+        html: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
+          '<div style="background:#003580;padding:28px 32px"><div style="font-size:30px;font-weight:900;color:#fff">Mudate<span style="color:#22C36A">Ya</span></div></div>' +
           '<div style="background:#22C36A;padding:4px"></div>' +
           '<div style="padding:32px">' +
             '<div style="font-size:40px;text-align:center;margin-bottom:12px">🔑</div>' +
-            '<h2 style="font-size:20px;color:#003580;margin:0 0 8px;text-align:center">Hola ' + nombre + ',</h2>' +
-            '<p style="font-size:14px;color:#475569;text-align:center;margin:0 0 24px;line-height:1.5">Hacé click en el botón para entrar a tu cuenta de MudateYa.<br/>Este link es válido por <b>15 minutos</b> y se puede usar una sola vez.</p>' +
+            '<h2 style="font-size:26px;color:#003580;margin:0 0 8px;text-align:center">Hola ' + nombre + ',</h2>' +
+            '<p style="font-size:17px;color:#475569;text-align:center;margin:0 0 24px;line-height:1.5">Hacé click en el botón para entrar a tu cuenta de MudateYa.<br/>Este link es válido por <b>15 minutos</b> y se puede usar una sola vez.</p>' +
             '<div style="text-align:center;margin:24px 0">' +
-              '<a href="' + link + '" style="display:inline-block;background:#22C36A;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none">Ingresar a mi cuenta</a>' +
+              '<a href="' + link + '" style="display:inline-block;background:#22C36A;color:#fff;font-weight:700;font-size:18px;padding:14px 32px;border-radius:10px;text-decoration:none">Ingresar a mi cuenta</a>' +
             '</div>' +
-            '<p style="font-size:12px;color:#64748B;text-align:center;margin:20px 0 0;line-height:1.5">Si el botón no funciona, copiá y pegá este link en tu navegador:<br/><span style="font-family:monospace;font-size:11px;word-break:break-all;color:#475569">' + link + '</span></p>' +
+            '<p style="font-size:15px;color:#64748B;text-align:center;margin:20px 0 0;line-height:1.5">Si el botón no funciona, copiá y pegá este link en tu navegador:<br/><span style="font-family:monospace;font-size:14px;word-break:break-all;color:#475569">' + link + '</span></p>' +
             '<div style="margin-top:28px;padding-top:20px;border-top:1px solid #E2E8F0">' +
-              '<p style="font-size:11px;color:#94A3B8;text-align:center;margin:0;line-height:1.5">Si vos no pediste este link, podés ignorar este email.<br/>Por seguridad, el link expira en 15 minutos.</p>' +
+              '<p style="font-size:14px;color:#94A3B8;text-align:center;margin:0;line-height:1.5">Si vos no pediste este link, podés ignorar este email.<br/>Por seguridad, el link expira en 15 minutos.</p>' +
             '</div>' +
           '</div>' +
-          '<div style="background:#F5F7FA;padding:16px 32px;text-align:center;font-size:11px;color:#94A3B8">© MudateYa · <a href="https://mudateya.ar" style="color:#1A6FFF;text-decoration:none">mudateya.ar</a></div>' +
+          '<div style="background:#F5F7FA;padding:16px 32px;text-align:center;font-size:14px;color:#94A3B8">© MudateYa · <a href="https://mudateya.ar" style="color:#1A6FFF;text-decoration:none">mudateya.ar</a></div>' +
           '</div>'
       });
     } catch(emailErr) {
@@ -846,22 +846,22 @@ module.exports = async function handler(req, res) {
         from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
         to:      emailNorm,
         subject: '🔑 Tu link para publicar tu mudanza en MudateYa',
-        html: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
-          '<div style="background:#003580;padding:28px 32px"><div style="font-size:26px;font-weight:900;color:#fff">Mudate<span style="color:#22C36A">Ya</span></div></div>' +
+        html: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
+          '<div style="background:#003580;padding:28px 32px"><div style="font-size:30px;font-weight:900;color:#fff">Mudate<span style="color:#22C36A">Ya</span></div></div>' +
           '<div style="background:#22C36A;padding:4px"></div>' +
           '<div style="padding:32px">' +
             '<div style="font-size:40px;text-align:center;margin-bottom:12px">📦</div>' +
-            '<h2 style="font-size:20px;color:#003580;margin:0 0 8px;text-align:center">Hola ' + nombreEsc + ',</h2>' +
-            '<p style="font-size:14px;color:#475569;text-align:center;margin:0 0 24px;line-height:1.5">Hacé click para volver a MudateYa y completar tu pedido de mudanza.<br/>El link es válido por <b>15 minutos</b> y se puede usar una sola vez.</p>' +
+            '<h2 style="font-size:26px;color:#003580;margin:0 0 8px;text-align:center">Hola ' + nombreEsc + ',</h2>' +
+            '<p style="font-size:17px;color:#475569;text-align:center;margin:0 0 24px;line-height:1.5">Hacé click para volver a MudateYa y completar tu pedido de mudanza.<br/>El link es válido por <b>15 minutos</b> y se puede usar una sola vez.</p>' +
             '<div style="text-align:center;margin:24px 0">' +
-              '<a href="' + link + '" style="display:inline-block;background:#22C36A;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none">Ingresar y publicar mi mudanza</a>' +
+              '<a href="' + link + '" style="display:inline-block;background:#22C36A;color:#fff;font-weight:700;font-size:18px;padding:14px 32px;border-radius:10px;text-decoration:none">Ingresar y publicar mi mudanza</a>' +
             '</div>' +
-            '<p style="font-size:12px;color:#64748B;text-align:center;margin:20px 0 0;line-height:1.5">Si el botón no funciona, copiá este link:<br/><span style="font-family:monospace;font-size:11px;word-break:break-all;color:#475569">' + link + '</span></p>' +
+            '<p style="font-size:15px;color:#64748B;text-align:center;margin:20px 0 0;line-height:1.5">Si el botón no funciona, copiá este link:<br/><span style="font-family:monospace;font-size:14px;word-break:break-all;color:#475569">' + link + '</span></p>' +
             '<div style="margin-top:28px;padding-top:20px;border-top:1px solid #E2E8F0">' +
-              '<p style="font-size:11px;color:#94A3B8;text-align:center;margin:0;line-height:1.5">Si vos no pediste este link, podés ignorar este email.<br/>Por seguridad, expira en 15 minutos.</p>' +
+              '<p style="font-size:14px;color:#94A3B8;text-align:center;margin:0;line-height:1.5">Si vos no pediste este link, podés ignorar este email.<br/>Por seguridad, expira en 15 minutos.</p>' +
             '</div>' +
           '</div>' +
-          '<div style="background:#F5F7FA;padding:16px 32px;text-align:center;font-size:11px;color:#94A3B8">© MudateYa · <a href="https://mudateya.ar" style="color:#1A6FFF;text-decoration:none">mudateya.ar</a></div>' +
+          '<div style="background:#F5F7FA;padding:16px 32px;text-align:center;font-size:14px;color:#94A3B8">© MudateYa · <a href="https://mudateya.ar" style="color:#1A6FFF;text-decoration:none">mudateya.ar</a></div>' +
           '</div>'
       });
     } catch(emailErr) {
@@ -1776,18 +1776,18 @@ module.exports = async function handler(req, res) {
                   to: emailMud,
                   subject: `❌ Mudanza cancelada — ${rutaTxt}`,
                   html: `
-                    <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#F5F7FA;padding:20px">
+                    <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;background:#F5F7FA;padding:20px">
                       <div style="background:#003580;padding:18px 24px;border-radius:8px 8px 0 0">
                         <span style="font-family:Georgia,serif;font-size:18px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:18px;font-weight:900;color:#22C36A">Ya</span>
                       </div>
                       <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px">
                         <h2 style="color:#0F1923;font-size:18px;margin:0 0 12px">Hola ${nombre},</h2>
-                        <p style="color:#374151;font-size:14px;line-height:1.6">El cliente <b>canceló</b> la siguiente mudanza:</p>
-                        <div style="background:#FEE2E2;border-left:4px solid #DC2626;padding:12px 14px;border-radius:6px;margin:16px 0;font-size:14px;color:#7F1D1D">
+                        <p style="color:#374151;font-size:17px;line-height:1.7">El cliente <b>canceló</b> la siguiente mudanza:</p>
+                        <div style="background:#FEE2E2;border-left:4px solid #DC2626;padding:12px 14px;border-radius:6px;margin:16px 0;font-size:17px;color:#7F1D1D">
                           <b>${rutaTxt}</b>
                         </div>
-                        <p style="color:#374151;font-size:13px;line-height:1.6">Esta mudanza pasó automáticamente a tu sección <b>Expirados</b> en MudateYa. No hace falta que hagas nada.</p>
-                        <p style="color:#64748B;font-size:12px;margin-top:18px">Si tenés dudas, respondé este mail.</p>
+                        <p style="color:#374151;font-size:16px;line-height:1.7">Esta mudanza pasó automáticamente a tu sección <b>Expirados</b> en MudateYa. No hace falta que hagas nada.</p>
+                        <p style="color:#64748B;font-size:15px;margin-top:18px">Si tenés dudas, respondé este mail.</p>
                       </div>
                     </div>
                   `
@@ -2303,32 +2303,32 @@ module.exports = async function handler(req, res) {
             from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
             to: adminEmail,
             subject: `[ADMIN] ✅ TyC firmados — ${perfil.nombre || datos.email}`,
-            html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-              <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">📋 Panel admin</span></div>
-              <div style="background:#F0FDF4;border-bottom:1px solid #BBF7D0;padding:12px 28px;font-size:13px;color:#15803D;font-weight:600">✅ Mudancero activo · TyC firmados</div>
+            html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+              <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">📋 Panel admin</span></div>
+              <div style="background:#F0FDF4;border-bottom:1px solid #BBF7D0;padding:12px 28px;font-size:16px;color:#15803D;font-weight:600">✅ Mudancero activo · TyC firmados</div>
               <div style="padding:28px">
-                <p style="font-size:15px;color:#0F1923;margin:0 0 16px">Hola Admin, un mudancero acaba de aceptar los Términos y Condiciones. Su cuenta ya está activa y aparece en el catálogo.</p>
+                <p style="font-size:18px;color:#0F1923;margin:0 0 16px">Hola Admin, un mudancero acaba de aceptar los Términos y Condiciones. Su cuenta ya está activa y aparece en el catálogo.</p>
 
-                <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:14px 0 8px">DATOS DEL MUDANCERO</div>
+                <div style="font-size:14px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:14px 0 8px">DATOS DEL MUDANCERO</div>
                 <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
-                  <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Nombre</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${perfil.nombre || '—'}</td></tr>
-                  ${perfil.empresa ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Empresa</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${perfil.empresa}</td></tr>` : ''}
-                  <tr${perfil.empresa ? '' : ' style="background:#F5F7FA"'}><td style="color:#64748B;padding:7px ${perfil.empresa ? '0' : '8px'};font-size:13px">Email</td><td style="font-size:13px;color:#0F1923;padding:7px 0"><a href="mailto:${datos.email}" style="color:#003580;text-decoration:none">${datos.email}</a></td></tr>
-                  ${perfil.telefono ? `<tr${perfil.empresa ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:7px ${perfil.empresa ? '8px' : '0'};font-size:13px">WhatsApp</td><td style="font-size:13px;color:#0F1923;padding:7px 0"><a href="https://wa.me/${String(perfil.telefono).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:600">${perfil.telefono}</a></td></tr>` : ''}
-                  ${perfil.zonaBase ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Zona base</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${perfil.zonaBase}</td></tr>` : ''}
+                  <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">Nombre</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${perfil.nombre || '—'}</td></tr>
+                  ${perfil.empresa ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:16px">Empresa</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${perfil.empresa}</td></tr>` : ''}
+                  <tr${perfil.empresa ? '' : ' style="background:#F5F7FA"'}><td style="color:#64748B;padding:7px ${perfil.empresa ? '0' : '8px'};font-size:16px">Email</td><td style="font-size:16px;color:#0F1923;padding:11px 0"><a href="mailto:${datos.email}" style="color:#003580;text-decoration:none">${datos.email}</a></td></tr>
+                  ${perfil.telefono ? `<tr${perfil.empresa ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:7px ${perfil.empresa ? '8px' : '0'};font-size:16px">WhatsApp</td><td style="font-size:16px;color:#0F1923;padding:11px 0"><a href="https://wa.me/${String(perfil.telefono).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:600">${perfil.telefono}</a></td></tr>` : ''}
+                  ${perfil.zonaBase ? `<tr><td style="color:#64748B;padding:11px 0;font-size:16px">Zona base</td><td style="font-size:16px;color:#0F1923;padding:11px 0">${perfil.zonaBase}</td></tr>` : ''}
                 </table>
 
-                <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:14px 0 8px">FIRMA</div>
+                <div style="font-size:14px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:14px 0 8px">FIRMA</div>
                 <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-                  <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Fecha y hora</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${fechaFmt}</td></tr>
-                  <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Versión TyC</td><td style="font-size:13px;color:#0F1923;padding:7px 0">v${perfil.versionTerminos}</td></tr>
+                  <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">Fecha y hora</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${fechaFmt}</td></tr>
+                  <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:16px">Versión TyC</td><td style="font-size:16px;color:#0F1923;padding:11px 0">v${perfil.versionTerminos}</td></tr>
                 </table>
 
                 <div style="margin-top:8px">
-                  <a href="https://mudateya.ar/admin" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en panel admin →</a>
+                  <a href="https://mudateya.ar/admin" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver en panel admin →</a>
                 </div>
               </div>
-              <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ${datos.email}</div>
+              <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ${datos.email}</div>
             </div></body></html>`,
           });
         }
@@ -3226,7 +3226,7 @@ async function notificarMudanceros(mudanza) {
   // Esto es importante: que sepa de antemano que la comisión sobre este pedido será
   // mayor que la normal del 15%. Aplica tanto a Mudafy como a inmobiliarias nuevas.
   const bannerMudafyMudancero = partnerInfo
-    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🤝</span>Cliente de ${partnerInfo.nombre} · Comisión 25%</div>`
+    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:16px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">🤝</span>Cliente de ${partnerInfo.nombre} · Comisión 25%</div>`
     : '';
 
   // Banner detalles adicionales — aparece si el cliente cargó detalles antes de enviar
@@ -3235,38 +3235,38 @@ async function notificarMudanceros(mudanza) {
     !!(mudanza.detallesOrigen || mudanza.detallesDestino) ||
     !!(mudanza.detallesAdicionales && Object.keys(mudanza.detallesAdicionales).length > 0);
   const bannerDetalles = tieneInfoExtra
-    ? `<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:11px 28px;font-size:13px;color:#1A6FFF;font-weight:600;display:flex;align-items:center"><span style="background:#1A6FFF;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">📋</span>Detalles del lugar adjuntos en PDF</div>`
+    ? `<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:11px 28px;font-size:16px;color:#1A6FFF;font-weight:600;display:flex;align-items:center"><span style="background:#1A6FFF;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">📋</span>Detalles del lugar adjuntos en PDF</div>`
     : '';
 
-  const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-    <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
+  const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+    <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
     ${bannerMudafyMudancero}
     ${bannerDetalles}
-    <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${tipoLabel} · ${mudanza.id}</div>
+    <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:16px;color:#1A6FFF;font-weight:600">${tipoLabel} · ${mudanza.id}</div>
     <div style="padding:28px">
-      <p style="font-size:15px;color:#0F1923;margin:0 0 20px">Hola${nombreMudancero ? ' ' + nombreMudancero : ''}, hay un nuevo pedido disponible en tu zona.</p>
+      <p style="font-size:18px;color:#0F1923;margin:0 0 20px">Hola${nombreMudancero ? ' ' + nombreMudancero : ''}, hay un nuevo pedido disponible en tu zona.</p>
       <table style="width:100%;border-collapse:collapse">
-        <tr><td style="color:#64748B;padding:8px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.desde}</td></tr>
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.hasta}</td></tr>
-        <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.ambientes}</td></tr>
-        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${nivelLabel}</td></tr>` : ''}
-        ${mudanza.km ? `<tr><td style="color:#64748B;padding:8px 0;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
-        ${mudanza.horaOrigen ? `<tr><td style="color:#64748B;padding:8px 0;font-size:13px">Hora aprox.</td><td style="font-size:13px;color:#0F1923;font-weight:700;padding:8px 0">⏰ ${mudanza.horaOrigen} hs</td></tr>` : ''}
-        <tr${mudanza.horaOrigen ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:8px${mudanza.horaOrigen ? ' 8px' : ' 0'};font-size:13px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
+        <tr><td style="color:#64748B;padding:12px 0;width:35%;font-size:16px">De</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:12px 0">${mudanza.desde}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:16px">A</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:12px 0">${mudanza.hasta}</td></tr>
+        <tr><td style="color:#64748B;padding:12px 0;font-size:16px">Tamaño</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:12px 0">${mudanza.ambientes}</td></tr>
+        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:16px">Servicio</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:12px 0">${nivelLabel}</td></tr>` : ''}
+        ${mudanza.km ? `<tr><td style="color:#64748B;padding:12px 0;font-size:16px">Distancia</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:12px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:16px">Fecha</td><td style="font-size:16px;color:#0F1923;padding:12px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
+        ${mudanza.horaOrigen ? `<tr><td style="color:#64748B;padding:12px 0;font-size:16px">Hora aprox.</td><td style="font-size:16px;color:#0F1923;font-weight:700;padding:12px 0">⏰ ${mudanza.horaOrigen} hs</td></tr>` : ''}
+        <tr${mudanza.horaOrigen ? ' style="background:#F5F7FA"' : ''}><td style="color:#64748B;padding:8px${mudanza.horaOrigen ? ' 8px' : ' 0'};font-size:16px">Expira</td><td style="color:#F59E0B;font-weight:600;font-size:16px;padding:12px 0">${expira}</td></tr>
       </table>
-      <p style="font-size:12px;color:#64748B;margin:14px 0 0;line-height:1.5;background:#FFF7ED;border-left:3px solid #F59E0B;padding:9px 12px;border-radius:6px">💡 El precio lo cotizás vos según tu tarifa. Entrá a tu cuenta para enviar tu propuesta.</p>
+      <p style="font-size:15px;color:#64748B;margin:14px 0 0;line-height:1.75;background:#FFF7ED;border-left:3px solid #F59E0B;padding:9px 12px;border-radius:6px">💡 El precio lo cotizás vos según tu tarifa. Entrá a tu cuenta para enviar tu propuesta.</p>
       <div style="margin-top:20px">
-        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Cotizar ahora →</a>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Cotizar ahora →</a>
       </div>
     </div>
-    <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
+    <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
   </div></body></html>`;
 
   // Banner para el ADMIN — banner arriba + bloque "Origen del lead" en el cuerpo.
   // Para el admin SÍ mostramos asesor + propiedad (Mudafy) o comisión a liquidar (inmo nueva).
   const bannerMudafyAdmin = partnerInfo
-    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:13px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🏠</span>Lead vino de ${partnerInfo.nombre} · Conversión B2B</div>`
+    ? `<div style="background:#FFF0F0;border-bottom:1px solid rgba(255,107,107,0.3);padding:11px 28px;font-size:16px;color:#E85555;font-weight:700;display:flex;align-items:center"><span style="background:#FF6B6B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">🏠</span>Lead vino de ${partnerInfo.nombre} · Conversión B2B</div>`
     : '';
 
   // Bloque "Origen del lead" en el cuerpo del mail al admin.
@@ -3274,50 +3274,50 @@ async function notificarMudanceros(mudanza) {
   // Inmobiliaria nueva: muestra el % de comisión a liquidar.
   const comisionInmoPct = parseFloat(mudanza.comisionInmobiliariaPct) || 0;
   const bloqueOrigenAdmin = partnerInfo
-    ? `<div style="font-size:11px;color:#E85555;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">🏠 ORIGEN DEL LEAD — ${partnerInfo.nombre.toUpperCase()}</div>
+    ? `<div style="font-size:14px;color:#E85555;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">🏠 ORIGEN DEL LEAD — ${partnerInfo.nombre.toUpperCase()}</div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:18px;background:#FFF5F5;border-radius:8px;overflow:hidden">
-        <tr><td style="color:#64748B;padding:9px 12px;width:35%;font-size:13px">Partner</td><td style="font-weight:700;color:#E85555;font-size:13px;padding:9px 0">🏠 ${partnerInfo.nombre}</td></tr>
-        ${mudanza.partnerAsesor ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:13px;border-top:1px solid rgba(255,107,107,0.15)">Asesor</td><td style="font-family:monospace;color:#0F1923;font-size:13px;padding:9px 0;border-top:1px solid rgba(255,107,107,0.15)">${mudanza.partnerAsesor}</td></tr>` : ''}
-        ${mudanza.partnerPropiedad ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:13px;border-top:1px solid rgba(255,107,107,0.15)">Propiedad</td><td style="font-family:monospace;color:#0F1923;font-size:13px;padding:9px 0;border-top:1px solid rgba(255,107,107,0.15)">${mudanza.partnerPropiedad}</td></tr>` : ''}
-        ${comisionInmoPct > 0 ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:13px;border-top:1px solid rgba(255,107,107,0.15)">Comisión a liquidar</td><td style="font-weight:700;color:#78350F;font-size:13px;padding:9px 0;border-top:1px solid rgba(255,107,107,0.15)">${comisionInmoPct}% del precio final</td></tr>` : ''}
+        <tr><td style="color:#64748B;padding:9px 12px;width:35%;font-size:16px">Partner</td><td style="font-weight:700;color:#E85555;font-size:16px;padding:13px 0">🏠 ${partnerInfo.nombre}</td></tr>
+        ${mudanza.partnerAsesor ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:16px;border-top:1px solid rgba(255,107,107,0.15)">Asesor</td><td style="font-family:monospace;color:#0F1923;font-size:16px;padding:13px 0;border-top:1px solid rgba(255,107,107,0.15)">${mudanza.partnerAsesor}</td></tr>` : ''}
+        ${mudanza.partnerPropiedad ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:16px;border-top:1px solid rgba(255,107,107,0.15)">Propiedad</td><td style="font-family:monospace;color:#0F1923;font-size:16px;padding:13px 0;border-top:1px solid rgba(255,107,107,0.15)">${mudanza.partnerPropiedad}</td></tr>` : ''}
+        ${comisionInmoPct > 0 ? `<tr><td style="color:#64748B;padding:9px 12px;font-size:16px;border-top:1px solid rgba(255,107,107,0.15)">Comisión a liquidar</td><td style="font-weight:700;color:#78350F;font-size:16px;padding:13px 0;border-top:1px solid rgba(255,107,107,0.15)">${comisionInmoPct}% del precio final</td></tr>` : ''}
       </table>`
     : '';
 
   // ── Template SEPARADO para el ADMIN ─────────────────────
   // Se diferencia visualmente con header amarillo, muestra datos del
   // cliente (nombre/email/WA) y el botón apunta al panel admin (no a cotizar).
-  const emailHtmlAdmin = () => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-    <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">📋 Panel admin</span></div>
+  const emailHtmlAdmin = () => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+    <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">📋 Panel admin</span></div>
     ${bannerMudafyAdmin}
-    <div style="background:#FFF7ED;border-bottom:1px solid #FED7AA;padding:12px 28px;font-size:13px;color:#B45309;font-weight:600">⚙️ Notificación admin · ${tipoLabel} · ${mudanza.id}</div>
+    <div style="background:#FFF7ED;border-bottom:1px solid #FED7AA;padding:12px 28px;font-size:16px;color:#B45309;font-weight:600">⚙️ Notificación admin · ${tipoLabel} · ${mudanza.id}</div>
     <div style="padding:28px">
-      <p style="font-size:15px;color:#0F1923;margin:0 0 16px">Hola Admin, se publicó un nuevo pedido en la plataforma.</p>
+      <p style="font-size:18px;color:#0F1923;margin:0 0 16px">Hola Admin, se publicó un nuevo pedido en la plataforma.</p>
 
-      <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">DATOS DEL PEDIDO</div>
+      <div style="font-size:14px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">DATOS DEL PEDIDO</div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
-        <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.desde}</td></tr>
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
-        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${mudanza.ambientes}</td></tr>
-        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Servicio</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${nivelLabel}</td></tr>` : ''}
-        ${mudanza.km ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:7px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
-        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Modo</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.modoCotizacion === 'dirigido' ? '🎯 Dirigido' : '📢 Abierto'}</td></tr>
+        <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">De</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.desde}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:16px">A</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.hasta}</td></tr>
+        <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Tamaño</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:11px 0">${mudanza.ambientes}</td></tr>
+        ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:16px">Servicio</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:11px 0">${nivelLabel}</td></tr>` : ''}
+        ${mudanza.km ? `<tr><td style="color:#64748B;padding:11px 0;font-size:16px">Distancia</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:11px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:16px">Fecha</td><td style="font-size:16px;color:#0F1923;padding:11px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
+        <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Modo</td><td style="font-size:16px;color:#0F1923;padding:11px 0">${mudanza.modoCotizacion === 'dirigido' ? '🎯 Dirigido' : '📢 Abierto'}</td></tr>
       </table>
 
-      <div style="font-size:11px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">DATOS DEL CLIENTE</div>
+      <div style="font-size:14px;color:#64748B;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">DATOS DEL CLIENTE</div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
-        <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Nombre</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.clienteNombre || '—'}</td></tr>
-        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:13px">Email</td><td style="font-size:13px;color:#0F1923;padding:7px 0"><a href="mailto:${mudanza.clienteEmail || ''}" style="color:#003580;text-decoration:none">${mudanza.clienteEmail || '—'}</a></td></tr>
-        <tr><td style="color:#64748B;padding:7px 0;font-size:13px">WhatsApp</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${mudanza.clienteWA ? `<a href="https://wa.me/${String(mudanza.clienteWA).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:600">${mudanza.clienteWA}</a>` : '—'}</td></tr>
+        <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">Nombre</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.clienteNombre || '—'}</td></tr>
+        <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 8px;font-size:16px">Email</td><td style="font-size:16px;color:#0F1923;padding:11px 0"><a href="mailto:${mudanza.clienteEmail || ''}" style="color:#003580;text-decoration:none">${mudanza.clienteEmail || '—'}</a></td></tr>
+        <tr><td style="color:#64748B;padding:11px 0;font-size:16px">WhatsApp</td><td style="font-size:16px;color:#0F1923;padding:11px 0">${mudanza.clienteWA ? `<a href="https://wa.me/${String(mudanza.clienteWA).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:600">${mudanza.clienteWA}</a>` : '—'}</td></tr>
       </table>
 
       ${bloqueOrigenAdmin}
 
       <div style="margin-top:20px">
-        <a href="https://mudateya.ar/admin" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en panel admin →</a>
+        <a href="https://mudateya.ar/admin" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver en panel admin →</a>
       </div>
     </div>
-    <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+    <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
   </div></body></html>`;
 
   // 1. Notificar al admin siempre (con su propio template)
@@ -3437,7 +3437,7 @@ async function notificarClienteNuevoPedido(mudanza) {
 
   // Banner que aclara el origen del pedido al cliente
   const bannerPartner = partnerNombre
-    ? `<div style="background:#FFF7ED;border-bottom:1px solid #FED7AA;padding:11px 28px;font-size:13px;color:#9A3412;font-weight:600;display:flex;align-items:center"><span style="background:#F59E0B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:13px">🏠</span>Pedido enviado vía ${partnerNombre}</div>`
+    ? `<div style="background:#FFF7ED;border-bottom:1px solid #FED7AA;padding:11px 28px;font-size:16px;color:#9A3412;font-weight:600;display:flex;align-items:center"><span style="background:#F59E0B;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">🏠</span>Pedido enviado vía ${partnerNombre}</div>`
     : '';
 
   // Helpers para formatear detalles por lado (origen/destino).
@@ -3476,7 +3476,7 @@ async function notificarClienteNuevoPedido(mudanza) {
       }
     });
     if (!items.length) return '';
-    return '<div style="margin-top:6px;font-size:12px;color:#475569;line-height:1.6">' +
+    return '<div style="margin-top:6px;font-size:15px;color:#475569;line-height:1.7">' +
       items.map(function(it) { return '• ' + it; }).join('<br>') +
       '</div>';
   }
@@ -3485,18 +3485,18 @@ async function notificarClienteNuevoPedido(mudanza) {
   const tieneDetallesLado = !!(mudanza.tipoOrigen || mudanza.tipoDestino || mudanza.detallesOrigen || mudanza.detallesDestino);
   const bloqueDetallesLado = tieneDetallesLado ? `
     <div style="margin-top:18px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:14px 16px">
-      <div style="font-size:11px;color:#92400E;font-weight:700;letter-spacing:1px;margin-bottom:10px">DETALLES DEL LUGAR</div>
+      <div style="font-size:14px;color:#92400E;font-weight:700;letter-spacing:1px;margin-bottom:10px">DETALLES DEL LUGAR</div>
       <table style="width:100%;border-collapse:collapse">
         <tr style="vertical-align:top">
           <td style="width:50%;padding-right:8px">
-            <div style="font-size:11px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Origen</div>
-            <div style="font-size:13px;color:#0F1923;font-weight:600">${formatTipoLado(mudanza.tipoOrigen, mudanza.pisoOrigen, mudanza.deptoOrigen)}</div>
-            ${mudanza.horaOrigen ? `<div style="margin-top:4px;font-size:12px;color:#92400E;font-weight:600">⏰ Inicio aprox: ${mudanza.horaOrigen} hs</div>` : ''}
+            <div style="font-size:14px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Origen</div>
+            <div style="font-size:16px;color:#0F1923;font-weight:600">${formatTipoLado(mudanza.tipoOrigen, mudanza.pisoOrigen, mudanza.deptoOrigen)}</div>
+            ${mudanza.horaOrigen ? `<div style="margin-top:4px;font-size:15px;color:#92400E;font-weight:600">⏰ Inicio aprox: ${mudanza.horaOrigen} hs</div>` : ''}
             ${formatDetallesLado(mudanza.detallesOrigen)}
           </td>
           <td style="width:50%;padding-left:8px;border-left:1px solid #FDE68A">
-            <div style="font-size:11px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;padding-left:8px">Destino</div>
-            <div style="font-size:13px;color:#0F1923;font-weight:600;padding-left:8px">${formatTipoLado(mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino)}</div>
+            <div style="font-size:14px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;padding-left:8px">Destino</div>
+            <div style="font-size:16px;color:#0F1923;font-weight:600;padding-left:8px">${formatTipoLado(mudanza.tipoDestino, mudanza.pisoDestino, mudanza.deptoDestino)}</div>
             <div style="padding-left:8px">${formatDetallesLado(mudanza.detallesDestino)}</div>
           </td>
         </tr>
@@ -3507,36 +3507,36 @@ async function notificarClienteNuevoPedido(mudanza) {
   const comentario = mudanza.detallesAdicionales && mudanza.detallesAdicionales.comentario;
   const bloqueComentario = comentario ? `
     <div style="margin-top:14px;background:#EEF4FF;border:1px solid #C7D9FF;border-radius:10px;padding:12px 14px">
-      <div style="font-size:11px;color:#1A6FFF;font-weight:700;letter-spacing:1px;margin-bottom:6px">TU COMENTARIO</div>
-      <div style="font-size:13px;color:#0F1923;line-height:1.5">${String(comentario).replace(/</g, '&lt;')}</div>
+      <div style="font-size:14px;color:#1A6FFF;font-weight:700;letter-spacing:1px;margin-bottom:6px">TU COMENTARIO</div>
+      <div style="font-size:16px;color:#0F1923;line-height:1.5">${String(comentario).replace(/</g, '&lt;')}</div>
     </div>` : '';
 
   // Cantidad de fotos cargadas (no las adjuntamos al mail, solo lo mencionamos)
   const fotosCount = (mudanza.fotos && mudanza.fotos.length) ||
     (mudanza.detallesAdicionales && mudanza.detallesAdicionales.fotos && mudanza.detallesAdicionales.fotos.length) || 0;
   const bloqueFotos = fotosCount > 0 ? `
-    <div style="margin-top:10px;font-size:12px;color:#64748B;background:#F5F7FA;border-radius:8px;padding:9px 12px">📷 Cargaste ${fotosCount} foto${fotosCount > 1 ? 's' : ''} — los mudanceros las van a ver al cotizar.</div>` : '';
+    <div style="margin-top:10px;font-size:15px;color:#64748B;background:#F5F7FA;border-radius:8px;padding:9px 12px">📷 Cargaste ${fotosCount} foto${fotosCount > 1 ? 's' : ''} — los mudanceros las van a ver al cotizar.</div>` : '';
 
   const primerNombre = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#F5F7FA">
-<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-  <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Tu pedido fue publicado</span></div>
+<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+  <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">Tu pedido fue publicado</span></div>
   ${bannerPartner}
-  <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:13px;color:#1A6FFF;font-weight:600">${esFlete ? '📦 Flete' : '🚛 Mudanza'} · ${mudanza.id}</div>
+  <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:16px;color:#1A6FFF;font-weight:600">${esFlete ? '📦 Flete' : '🚛 Mudanza'} · ${mudanza.id}</div>
   <div style="padding:28px">
-    <p style="font-size:15px;color:#0F1923;margin:0 0 8px"><strong>${primerNombre}</strong>, tu pedido fue publicado correctamente.</p>
-    <p style="font-size:14px;color:#475569;margin:0 0 20px;line-height:1.6">Los mudanceros verificados de tu zona ya recibieron tu solicitud. En las próximas horas vas a empezar a recibir cotizaciones. <strong>Cuando aceptes una y abones el anticipo</strong>, se habilitan los datos de contacto y vas a poder coordinar el detalle con ese mudancero por WhatsApp.</p>
+    <p style="font-size:18px;color:#0F1923;margin:0 0 8px"><strong>${primerNombre}</strong>, tu pedido fue publicado correctamente.</p>
+    <p style="font-size:17px;color:#475569;margin:0 0 20px;line-height:1.7">Los mudanceros verificados de tu zona ya recibieron tu solicitud. En las próximas horas vas a empezar a recibir cotizaciones. <strong>Cuando aceptes una y abones el anticipo</strong>, se habilitan los datos de contacto y vas a poder coordinar el detalle con ese mudancero por WhatsApp.</p>
 
-    <div style="font-size:11px;color:#94A3B8;font-weight:700;letter-spacing:1px;margin-bottom:8px">RESUMEN DEL PEDIDO</div>
+    <div style="font-size:14px;color:#94A3B8;font-weight:700;letter-spacing:1px;margin-bottom:8px">RESUMEN DEL PEDIDO</div>
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
-      <tr><td style="color:#64748B;padding:8px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.desde || '—'}</td></tr>
-      <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:8px 0">${mudanza.hasta || '—'}</td></tr>
-      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${mudanza.ambientes || '—'}</td></tr>
-      ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Pack</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${nivelLabel}</td></tr>` : ''}
-      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:8px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
-      ${mudanza.km ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:13px">Distancia</td><td style="font-size:13px;color:#0F1923;padding:8px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
-      <tr><td style="color:#64748B;padding:8px 0;font-size:13px">Pedido publicado hasta</td><td style="color:#F59E0B;font-weight:600;font-size:13px;padding:8px 0">${expira}</td></tr>
+      <tr><td style="color:#64748B;padding:12px 0;width:35%;font-size:16px">De</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:12px 0">${mudanza.desde || '—'}</td></tr>
+      <tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:16px">A</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:12px 0">${mudanza.hasta || '—'}</td></tr>
+      <tr><td style="color:#64748B;padding:12px 0;font-size:16px">Tamaño</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:12px 0">${mudanza.ambientes || '—'}</td></tr>
+      ${nivelLabel ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:16px">Pack</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:12px 0">${nivelLabel}</td></tr>` : ''}
+      <tr><td style="color:#64748B;padding:12px 0;font-size:16px">Fecha</td><td style="font-size:16px;color:#0F1923;font-weight:600;padding:12px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
+      ${mudanza.km ? `<tr style="background:#F5F7FA"><td style="color:#64748B;padding:8px 8px;font-size:16px">Distancia</td><td style="font-size:16px;color:#0F1923;padding:12px 0">${parseInt(mudanza.km)} km</td></tr>` : ''}
+      <tr><td style="color:#64748B;padding:12px 0;font-size:16px">Pedido publicado hasta</td><td style="color:#F59E0B;font-weight:600;font-size:16px;padding:12px 0">${expira}</td></tr>
     </table>
 
     ${bloqueDetallesLado}
@@ -3544,15 +3544,15 @@ async function notificarClienteNuevoPedido(mudanza) {
     ${bloqueFotos}
 
     <div style="margin-top:22px;text-align:center">
-      <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 28px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mis pedidos →</a>
+      <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 28px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver mis pedidos →</a>
     </div>
 
-    <div style="margin-top:24px;padding:14px 16px;background:#F5F7FA;border-radius:10px;font-size:12px;color:#475569;line-height:1.6">
+    <div style="margin-top:24px;padding:14px 16px;background:#F5F7FA;border-radius:10px;font-size:15px;color:#475569;line-height:1.7">
       <strong style="color:#0F1923">¿Dudas o algún cambio?</strong><br>
-      Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#003580;font-weight:600;text-decoration:none">hola@mudateya.ar</a> mencionando el ID de tu pedido: <code style="background:#fff;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px">${mudanza.id}</code>
+      Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#003580;font-weight:600;text-decoration:none">hola@mudateya.ar</a> mencionando el ID de tu pedido: <code style="background:#fff;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:14px">${mudanza.id}</code>
     </div>
   </div>
-  <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace;text-align:center">MudateYa · Marketplace de mudanzas verificadas · mudateya.ar</div>
+  <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace;text-align:center">MudateYa · Marketplace de mudanzas verificadas · mudateya.ar</div>
 </div>
 </body></html>`;
 
@@ -3602,40 +3602,40 @@ async function notificarCliente(mudanza, cotizacion) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `💰 Cotización de ${cotizacion.mudanceroNombre} — $${String(cotizacion.precio).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`,  
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
       <!-- Header -->
       <div style="background:#003580;padding:20px 28px;display:flex;align-items:center">
-        <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#ffffff;letter-spacing:1px">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A;letter-spacing:1px">Ya</span>
+        <span style="font-family:Georgia,serif;font-size:28px;font-weight:900;color:#ffffff;letter-spacing:1px">Mudate</span><span style="font-family:Georgia,serif;font-size:28px;font-weight:900;color:#22C36A;letter-spacing:1px">Ya</span>
       </div>
       <!-- Badge -->
-      <div style="background:#F0FFF6;border-bottom:1px solid #BBF7D0;padding:12px 28px;font-size:13px;color:#16A34A;font-weight:600">
+      <div style="background:#F0FFF6;border-bottom:1px solid #BBF7D0;padding:12px 28px;font-size:16px;color:#16A34A;font-weight:600">
         💰 Nueva cotización recibida
       </div>
       <!-- Body -->
       <div style="padding:28px">
-        <p style="color:#475569;font-size:15px;margin-bottom:20px;line-height:1.6">
+        <p style="color:#475569;font-size:18px;margin-bottom:20px;line-height:1.7">
           <strong style="color:#0F1923">${cotizacion.mudanceroNombre}</strong> cotizó tu mudanza<br>
           <span style="color:#1A6FFF;font-weight:600">${mudanza.desde} → ${mudanza.hasta}</span>
         </p>
         <!-- Precio destacado -->
         <div style="background:#F5F7FA;border:1px solid #E2E8F0;border-left:4px solid #22C36A;border-radius:10px;padding:18px 22px;margin:0 0 20px">
-          <div style="font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:monospace">Precio cotizado</div>
+          <div style="font-size:14px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:monospace">Precio cotizado</div>
           <div style="font-size:2rem;font-weight:700;color:#003580">$${cotizacion.precio.toLocaleString('es-AR')}</div>
-          ${cotizacion.tiempoEstimado ? `<div style="color:#64748B;font-size:13px;margin-top:6px">⏱ ${cotizacion.tiempoEstimado}</div>` : ''}
-          ${cotizacion.nota ? `<div style="color:#475569;font-size:13px;margin-top:8px;font-style:italic;border-top:1px solid #E2E8F0;padding-top:8px">"${cotizacion.nota}"</div>` : ''}
+          ${cotizacion.tiempoEstimado ? `<div style="color:#64748B;font-size:16px;margin-top:6px">⏱ ${cotizacion.tiempoEstimado}</div>` : ''}
+          ${cotizacion.nota ? `<div style="color:#475569;font-size:16px;margin-top:8px;font-style:italic;border-top:1px solid #E2E8F0;padding-top:8px">"${cotizacion.nota}"</div>` : ''}
         </div>
         <!-- Aviso ajuste de precio -->
         <div style="background:#EFF6FF;border:1px solid #93C5FD;border-left:4px solid #1A6FFF;border-radius:10px;padding:14px 18px;margin:0 0 20px">
-          <div style="font-size:11px;color:#1E40AF;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:6px;font-family:monospace">💡 Precio sujeto a ajuste</div>
+          <div style="font-size:14px;color:#1E40AF;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:6px;font-family:monospace">💡 Precio sujeto a ajuste</div>
           <div style="color:#1E3A8A;font-size:12.5px;line-height:1.55">
             Si al día de la mudanza hubiera condiciones no previstas (más volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidís si lo aceptás; si rechazás, <strong>recuperás tu anticipo completo</strong>.
           </div>
         </div>
-        <p style="color:#64748B;font-size:13px;margin-bottom:20px">El detalle completo está adjunto en PDF.</p>
-        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#1A6FFF;color:#ffffff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mis cotizaciones →</a>
+        <p style="color:#64748B;font-size:16px;margin-bottom:20px">El detalle completo está adjunto en PDF.</p>
+        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#1A6FFF;color:#ffffff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver mis cotizaciones →</a>
       </div>
       <!-- Footer -->
-      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">
         MudateYa · mudateya.ar · hola@mudateya.ar
       </div>
     </div>`,
@@ -3795,44 +3795,44 @@ async function enviarEmailAceptacion(mudanza, cot) {
       from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: mudanza.clienteEmail,
       subject: `✅ Aceptaste la cotización — Pagá ahora con Mercado Pago`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
         <!-- Header -->
         <div style="background:#003580;padding:20px 28px">
-          <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span>
+          <span style="font-family:Georgia,serif;font-size:28px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:28px;font-weight:900;color:#22C36A">Ya</span>
         </div>
         <!-- Badge -->
-        <div style="background:#F0FFF6;border-bottom:1px solid #BBF7D0;padding:12px 28px;font-size:13px;color:#16A34A;font-weight:600">
+        <div style="background:#F0FFF6;border-bottom:1px solid #BBF7D0;padding:12px 28px;font-size:16px;color:#16A34A;font-weight:600">
           ✅ ¡Cotización aceptada!
         </div>
         <!-- Body -->
         <div style="padding:28px">
-          <p style="color:#475569;font-size:15px;margin-bottom:18px;line-height:1.6">
+          <p style="color:#475569;font-size:18px;margin-bottom:18px;line-height:1.7">
             Hola <strong style="color:#0F1923">${mudanza.clienteNombre}</strong>, aceptaste la cotización de <strong style="color:#003580">${cot.mudanceroNombre}</strong>. Para confirmar la mudanza, completá el pago.
           </p>
           <!-- Resumen -->
           <div style="background:#F5F7FA;border:1px solid #E2E8F0;border-radius:10px;padding:16px 20px;margin:0 0 20px">
             <table style="width:100%;border-collapse:collapse">
-              <tr><td style="color:#64748B;padding:6px 0;width:35%;font-size:13px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:13px">${cot.mudanceroNombre}</td></tr>
-              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Contacto</td><td style="font-size:13px;color:#94A3B8">🔒 Se habilita con el anticipo</td></tr>
-              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Ruta</td><td style="font-size:13px;color:#0F1923">${mudanza.desde} → ${mudanza.hasta}</td></tr>
-              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
-              <tr><td style="color:#64748B;padding:6px 0;font-size:13px">Ambientes</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes}</td></tr>
-              ${cot.nota ? `<tr><td style="color:#64748B;padding:6px 0;font-size:13px">Nota</td><td style="font-size:13px;color:#475569;font-style:italic">${cot.nota}</td></tr>` : ''}
+              <tr><td style="color:#64748B;padding:10px 0;width:35%;font-size:16px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:16px">${cot.mudanceroNombre}</td></tr>
+              <tr><td style="color:#64748B;padding:10px 0;font-size:16px">Contacto</td><td style="font-size:16px;color:#94A3B8">🔒 Se habilita con el anticipo</td></tr>
+              <tr><td style="color:#64748B;padding:10px 0;font-size:16px">Ruta</td><td style="font-size:16px;color:#0F1923">${mudanza.desde} → ${mudanza.hasta}</td></tr>
+              <tr><td style="color:#64748B;padding:10px 0;font-size:16px">Fecha</td><td style="font-size:16px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
+              <tr><td style="color:#64748B;padding:10px 0;font-size:16px">Ambientes</td><td style="font-size:16px;color:#0F1923">${mudanza.ambientes}</td></tr>
+              ${cot.nota ? `<tr><td style="color:#64748B;padding:10px 0;font-size:16px">Nota</td><td style="font-size:16px;color:#475569;font-style:italic">${cot.nota}</td></tr>` : ''}
             </table>
           </div>
           <!-- Precio + pago -->
           <div style="background:#EEF4FF;border:2px solid #1A6FFF;border-radius:12px;padding:22px;margin:0 0 20px;text-align:center">
-            <div style="font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:monospace">Anticipo a pagar ahora (50%)</div>
+            <div style="font-size:14px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:monospace">Anticipo a pagar ahora (50%)</div>
             <div style="font-size:2.2rem;font-weight:700;color:#003580;margin-bottom:4px">${anticipoFmt}</div>
-            <div style="font-size:12px;color:#64748B;margin-bottom:18px">de un total de <strong>${precioFmt}</strong> · saldo al completar la mudanza</div>
-            <a href="${linkPago}" style="display:inline-block;background:#009EE3;color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px">💳 Pagar anticipo ${anticipoFmt}</a>
-            <p style="color:#64748B;font-size:11px;margin-top:12px;margin-bottom:0">🔒 Pago 100% seguro · MudateYa protege tu dinero hasta confirmar el servicio</p>
+            <div style="font-size:15px;color:#64748B;margin-bottom:18px">de un total de <strong>${precioFmt}</strong> · saldo al completar la mudanza</div>
+            <a href="${linkPago}" style="display:inline-block;background:#009EE3;color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:18px">💳 Pagar anticipo ${anticipoFmt}</a>
+            <p style="color:#64748B;font-size:14px;margin-top:12px;margin-bottom:0">🔒 Pago 100% seguro · MudateYa protege tu dinero hasta confirmar el servicio</p>
           </div>
-          <p style="color:#64748B;font-size:13px;margin-bottom:8px">También podés acceder desde <a href="${siteUrl}/mi-mudanza" style="color:#1A6FFF;font-weight:600">tu panel de mudanzas</a>.</p>
-          <p style="color:#94A3B8;font-size:12px">Adjuntamos el comprobante en PDF para tus registros.</p>
+          <p style="color:#64748B;font-size:16px;margin-bottom:8px">También podés acceder desde <a href="${siteUrl}/mi-mudanza" style="color:#1A6FFF;font-weight:600">tu panel de mudanzas</a>.</p>
+          <p style="color:#94A3B8;font-size:15px">Adjuntamos el comprobante en PDF para tus registros.</p>
         </div>
         <!-- Footer -->
-        <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">
+        <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">
           MudateYa · mudateya.ar · hola@mudateya.ar
         </div>
       </div>`,
@@ -3846,32 +3846,32 @@ async function enviarEmailAceptacion(mudanza, cot) {
       from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: cot.mudanceroEmail,
       subject: `🎉 ¡Aceptaron tu cotización! — ${mudanza.desde} → ${mudanza.hasta}`,
-      html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
         <div style="background:#003580;padding:20px 28px">
-          <span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span>
-          <span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">🎉 Te eligieron</span>
+          <span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span>
+          <span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">🎉 Te eligieron</span>
         </div>
         <div style="padding:28px">
-          <p style="font-size:15px;color:#0F1923;margin-bottom:20px;line-height:1.6">
+          <p style="font-size:18px;color:#0F1923;margin-bottom:20px;line-height:1.7">
             <strong>${mudanza.clienteNombre}</strong> aceptó tu cotización. Te avisaremos cuando confirme el pago del anticipo.
           </p>
           <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
-            <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">Ruta</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde} → ${mudanza.hasta}</td></tr>
-            <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
-            <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes||'—'}</td></tr>
-            <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Precio acordado</td><td style="color:#22C36A;font-weight:700;font-size:15px;padding:7px 0">${precioFmt}</td></tr>
+            <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">Ruta</td><td style="font-weight:600;color:#0F1923;font-size:16px">${mudanza.desde} → ${mudanza.hasta}</td></tr>
+            <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Fecha</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
+            <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Tamaño</td><td style="font-size:16px;color:#0F1923">${mudanza.ambientes||'—'}</td></tr>
+            <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Precio acordado</td><td style="color:#22C36A;font-weight:700;font-size:18px;padding:11px 0">${precioFmt}</td></tr>
           </table>
           <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 16px;margin-bottom:20px">
-            <div style="font-size:13px;color:#15803D;line-height:1.6">
+            <div style="font-size:16px;color:#15803D;line-height:1.7">
               💡 <strong>¿Cuándo recibís el pago?</strong><br>
               MudateYa procesa las liquidaciones cada <strong>15 días hábiles</strong> una vez confirmada la mudanza.
             </div>
           </div>
-          <a href="${siteUrl}/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">
+          <a href="${siteUrl}/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">
             Ver en mi panel →
           </a>
         </div>
-        <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+        <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
       </div></body></html>`,
       attachments,
     });
@@ -3897,33 +3897,33 @@ async function notificarMudanceroInvitado(mudanza, perfil) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:   perfil.email,
     subject: `⭐ Te eligieron — ${mudanza.desde} → ${mudanza.hasta}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
       <div style="background:#003580;padding:20px 28px">
-        <span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span>
-        <span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">⭐ Un cliente te eligió</span>
+        <span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span>
+        <span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">⭐ Un cliente te eligió</span>
       </div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:20px;line-height:1.6">
+        <p style="font-size:18px;color:#0F1923;margin-bottom:20px;line-height:1.7">
           Hola <strong>${perfil.nombre}</strong>, <strong>${mudanza.clienteNombre || 'un cliente'}</strong> revisó tu perfil y te invitó a cotizar su mudanza.
         </p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
-          <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Tamaño</td><td style="font-size:13px;color:#0F1923">${mudanza.ambientes || '—'}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923;padding:7px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
-          ${mudanza.precio_estimado ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">Estimado cliente</td><td style="color:#22C36A;font-weight:700;font-size:14px">$${parseInt(mudanza.precio_estimado).toLocaleString('es-AR')}</td></tr>` : ''}
-          <tr style="background:#FFF8EC"><td style="color:#92400E;padding:7px 6px;font-size:13px">Cotizá hasta</td><td style="color:#B45309;font-weight:700;font-size:13px;padding:7px 0">${fmtVencimientoAR(mudanza.expira)}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">De</td><td style="font-weight:600;color:#0F1923;font-size:16px">${mudanza.desde}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">A</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.hasta}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Tamaño</td><td style="font-size:16px;color:#0F1923">${mudanza.ambientes || '—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Fecha</td><td style="font-size:16px;color:#0F1923;padding:11px 0">${fmtFechaAR(mudanza.fecha)}</td></tr>
+          ${mudanza.precio_estimado ? `<tr><td style="color:#64748B;padding:11px 0;font-size:16px">Estimado cliente</td><td style="color:#22C36A;font-weight:700;font-size:17px">$${parseInt(mudanza.precio_estimado).toLocaleString('es-AR')}</td></tr>` : ''}
+          <tr style="background:#FFF8EC"><td style="color:#92400E;padding:11px 8px;font-size:16px">Cotizá hasta</td><td style="color:#B45309;font-weight:700;font-size:16px;padding:11px 0">${fmtVencimientoAR(mudanza.expira)}</td></tr>
         </table>
         <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 16px;margin-bottom:20px">
-          <div style="font-size:13px;color:#15803D;line-height:1.6">
+          <div style="font-size:16px;color:#15803D;line-height:1.7">
             💡 Esta es una solicitud <strong>directa</strong> — el cliente te eligió a vos específicamente entre los mudanceros disponibles.
           </div>
         </div>
-        <a href="${siteUrl}/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">
+        <a href="${siteUrl}/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">
           Enviar cotización →
         </a>
       </div>
-      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>
     </div>`,
   });
 }
@@ -4012,6 +4012,19 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   // Así el cálculo es coherente: si pagó $100, le quedan $85 (15% de fee), no un número arbitrario.
   const netoMudancero = Math.round(monto * (1 - comisionPct));
   const netoFmt = '$' + netoMudancero.toLocaleString('es-AR');
+  const comisionFmt = '$' + (monto - netoMudancero).toLocaleString('es-AR');
+  const precioFmt = '$' + (parseInt(precioTotal) || 0).toLocaleString('es-AR');
+  // Fecha estimada de liquidación: 15 días hábiles desde el cobro. Se calcula
+  // con el mismo módulo que usa la vigencia de los pedidos, así que descuenta
+  // fines de semana y feriados igual que el resto del sistema.
+  let fechaLiquidacionFmt = '';
+  try {
+    const iso = vencimientoHabilISO(15 * 24);
+    fechaLiquidacionFmt = new Date(iso).toLocaleDateString('es-AR', {
+      weekday: 'long', day: 'numeric', month: 'long',
+      timeZone: 'America/Argentina/Buenos_Aires'
+    });
+  } catch (e) { fechaLiquidacionFmt = ''; }
   const nombre = (cot.mudanceroNombre || 'Mudancero').split(' ')[0];
 
   // Push notification — paralela al email
@@ -4034,37 +4047,57 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
     : `<strong>${nombre}</strong>, el cliente pagó el saldo final (${montoFmt}). La mudanza está completamente pagada. Procesaremos tu liquidación en los próximos días hábiles.`;
 
   const accion = esAnticipo
-    ? `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en mi cuenta →</a>`
-    : `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver liquidación →</a>`;
+    ? `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver en mi cuenta →</a>`
+    : `<a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver liquidación →</a>`;
 
   await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: cot.mudanceroEmail,
     subject,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
       <div style="background:#003580;padding:20px 28px">
-        <span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span>
-        <span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">${esAnticipo ? '💰 Anticipo recibido' : '✅ Pago completado'}</span>
+        <span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span>
+        <span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">${esAnticipo ? '💰 Anticipo recibido' : '✅ Pago completado'}</span>
       </div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:20px;line-height:1.6">${mensajePrincipal}</p>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:20px;line-height:1.7">${mensajePrincipal}</p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-          <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde || '—'}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta || '—'}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">${esAnticipo ? 'Anticipo recibido' : 'Saldo recibido'}</td><td style="color:#17A356;font-weight:700;font-size:14px;padding:7px 0">${montoFmt}</td></tr>
-          ${!esAnticipo ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">A liquidar (neto)</td><td style="color:#17A356;font-weight:700;font-size:14px">${netoFmt}</td></tr>` : ''}
+          <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">De</td><td style="font-weight:600;color:#0F1923;font-size:16px">${mudanza.desde || '—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">A</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.hasta || '—'}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Fecha</td><td style="font-size:16px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Precio total de la mudanza</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${precioFmt}</td></tr>
         </table>
-        ${esAnticipo ? `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:10px;padding:16px 20px;margin-bottom:20px">
-          <div style="font-size:11px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:10px">🔓 CONTACTO HABILITADO</div>
+
+        <div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:12px;padding:20px 22px;margin-bottom:22px">
+          <div style="font-size:14px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:14px">${esAnticipo ? '💰 DETALLE DE ESTE COBRO' : '💰 DETALLE DEL COBRO FINAL'}</div>
           <table style="width:100%;border-collapse:collapse">
-            <tr><td style="color:#64748B;padding:5px 0;width:35%;font-size:13px">Cliente</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.clienteNombre || '—'}</td></tr>
-            ${mudanza.clienteWA ? `<tr><td style="color:#64748B;padding:5px 0;font-size:13px">WhatsApp</td><td style="font-size:13px"><a href="https://wa.me/54${String(mudanza.clienteWA).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:700">${mudanza.clienteWA}</a></td></tr>` : `<tr><td style="color:#64748B;padding:5px 0;font-size:13px">Email</td><td style="font-size:13px;color:#0F1923">${mudanza.clienteEmail || '—'}</td></tr>`}
+            <tr>
+              <td style="color:#475569;font-size:16px;padding:9px 0">${esAnticipo ? 'Anticipo cobrado al cliente' : 'Saldo cobrado al cliente'}</td>
+              <td style="text-align:right;font-weight:700;color:#0F1923;font-size:18px;padding:9px 0">${montoFmt}</td>
+            </tr>
+            <tr>
+              <td style="color:#475569;font-size:16px;padding:9px 0;border-top:1px solid #BBF7D0">Comisión MudateYa (${(comisionPct*100).toFixed(0)}%)</td>
+              <td style="text-align:right;color:#B45309;font-size:17px;padding:9px 0;border-top:1px solid #BBF7D0">− ${comisionFmt}</td>
+            </tr>
+            <tr>
+              <td style="color:#166534;font-size:17px;font-weight:700;padding:12px 0;border-top:2px solid #17A356">Te transferimos</td>
+              <td style="text-align:right;color:#17A356;font-weight:800;font-size:24px;padding:12px 0;border-top:2px solid #17A356">${netoFmt}</td>
+            </tr>
+          </table>
+          <div style="font-size:15px;color:#475569;margin-top:14px;line-height:1.6">
+            La transferencia sale a los <strong>15 días hábiles</strong> desde hoy${fechaLiquidacionFmt ? `, o sea alrededor del <strong>${fechaLiquidacionFmt}</strong>` : ''}.
+          </div>
+        </div>
+        ${esAnticipo ? `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:10px;padding:16px 20px;margin-bottom:20px">
+          <div style="font-size:14px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:10px">🔓 CONTACTO HABILITADO</div>
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="color:#64748B;padding:5px 0;width:35%;font-size:16px">Cliente</td><td style="font-weight:600;color:#0F1923;font-size:16px">${mudanza.clienteNombre || '—'}</td></tr>
+            ${mudanza.clienteWA ? `<tr><td style="color:#64748B;padding:5px 0;font-size:16px">WhatsApp</td><td style="font-size:16px"><a href="https://wa.me/54${String(mudanza.clienteWA).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:700">${mudanza.clienteWA}</a></td></tr>` : `<tr><td style="color:#64748B;padding:5px 0;font-size:16px">Email</td><td style="font-size:16px;color:#0F1923">${mudanza.clienteEmail || '—'}</td></tr>`}
           </table>
         </div>` : ''}
         ${accion}
       </div>
-      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
     </div>`,
   });
 }
@@ -4092,24 +4125,24 @@ async function notificarClienteAnticipoPagado(mudanza) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `✅ Anticipo confirmado — ${(mudanza.desde||'').split(',')[0]} → ${(mudanza.hasta||'').split(',')[0]}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">✅ Anticipo confirmado</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">✅ Anticipo confirmado</span></div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:20px;line-height:1.6">Tu anticipo fue acreditado. <strong>${cot.mudanceroNombre || 'Tu mudancero'}</strong> fue notificado y te contactará pronto para coordinar los detalles.</p>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:20px;line-height:1.7">Tu anticipo fue acreditado. <strong>${cot.mudanceroNombre || 'Tu mudancero'}</strong> fue notificado y te contactará pronto para coordinar los detalles.</p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-          <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde||'—'}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta||'—'}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Fecha</td><td style="font-size:13px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${cot.mudanceroNombre||'—'}</td></tr>
-          ${cot.mudanceroTel ? `<tr><td style="color:#64748B;padding:7px 0;font-size:13px">WhatsApp</td><td style="font-size:13px;padding:7px 0"><a href="https://wa.me/54${String(cot.mudanceroTel).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:700">${cot.mudanceroTel}</a></td></tr>` : ''}
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:14px;padding:7px 0">${saldoFmt} al completar</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">De</td><td style="font-weight:600;color:#0F1923;font-size:16px">${mudanza.desde||'—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">A</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.hasta||'—'}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Fecha</td><td style="font-size:16px;color:#0F1923">${fmtFechaAR(mudanza.fecha)}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${cot.mudanceroNombre||'—'}</td></tr>
+          ${cot.mudanceroTel ? `<tr><td style="color:#64748B;padding:11px 0;font-size:16px">WhatsApp</td><td style="font-size:16px;padding:11px 0"><a href="https://wa.me/54${String(cot.mudanceroTel).replace(/\D/g,'')}" style="color:#22C36A;text-decoration:none;font-weight:700">${cot.mudanceroTel}</a></td></tr>` : ''}
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:17px;padding:11px 0">${saldoFmt} al completar</td></tr>
         </table>
         ${cot.mudanceroTel ? `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:10px;padding:14px 18px;margin-bottom:20px">
-          <p style="margin:0;font-size:13px;color:#166534;line-height:1.6">🔓 Con el anticipo confirmado ya tenés habilitado el contacto directo de ${cot.mudanceroNombre||'tu mudancero'}.</p>
+          <p style="margin:0;font-size:16px;color:#166534;line-height:1.7">🔓 Con el anticipo confirmado ya tenés habilitado el contacto directo de ${cot.mudanceroNombre||'tu mudancero'}.</p>
         </div>` : ''}
-        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mi mudanza →</a>
+        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver mi mudanza →</a>
       </div>
-      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
     </div>`,
   });
 }
@@ -4124,19 +4157,19 @@ async function notificarClienteSaldoPendiente(mudanza) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `🏁 Mudanza completada — Pagá el saldo final ${saldoFmt}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">🏁 Mudanza completada</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">🏁 Mudanza completada</span></div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:20px;line-height:1.6"><strong>${cot.mudanceroNombre || 'Tu mudancero'}</strong> marcó la mudanza como completada. Para cerrar el servicio, abonás el saldo final.</p>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:20px;line-height:1.7"><strong>${cot.mudanceroNombre || 'Tu mudancero'}</strong> marcó la mudanza como completada. Para cerrar el servicio, abonás el saldo final.</p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-          <tr><td style="color:#64748B;padding:7px 0;width:35%;font-size:13px">De</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.desde||'—'}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">A</td><td style="font-weight:600;color:#0F1923;font-size:13px;padding:7px 0">${mudanza.hasta||'—'}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:13px">${cot.mudanceroNombre||'—'}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Saldo a pagar</td><td style="color:#003580;font-weight:700;font-size:16px;padding:7px 0">${saldoFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;width:35%;font-size:16px">De</td><td style="font-weight:600;color:#0F1923;font-size:16px">${mudanza.desde||'—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">A</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${mudanza.hasta||'—'}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Mudancero</td><td style="font-weight:600;color:#0F1923;font-size:16px">${cot.mudanceroNombre||'—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Saldo a pagar</td><td style="color:#003580;font-weight:700;font-size:19px;padding:11px 0">${saldoFmt}</td></tr>
         </table>
-        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Pagar saldo final →</a>
+        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Pagar saldo final →</a>
       </div>
-      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
     </div>`,
   });
 }
@@ -4162,23 +4195,23 @@ async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: subject,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#F59E0B;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.9);margin-left:12px">⚠️ Ajuste de precio propuesto</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#F59E0B;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.9);margin-left:12px">⚠️ Ajuste de precio propuesto</span></div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6">${esRecordatorio ? 'Este es un recordatorio. ' : ''}<strong>${cot.mudanceroNombre || 'Tu mudancero'}</strong> propuso ajustar el precio de tu mudanza.</p>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7">${esRecordatorio ? 'Este es un recordatorio. ' : ''}<strong>${cot.mudanceroNombre || 'Tu mudancero'}</strong> propuso ajustar el precio de tu mudanza.</p>
         <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:16px;margin-bottom:16px">
-          <div style="font-size:12px;color:#92400E;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:10px">Motivo</div>
-          <div style="font-size:14px;color:#0F1923;line-height:1.5">"${(ajuste.motivo||'').replace(/"/g,'&quot;')}"</div>
+          <div style="font-size:15px;color:#92400E;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:10px">Motivo</div>
+          <div style="font-size:17px;color:#0F1923;line-height:1.5">"${(ajuste.motivo||'').replace(/"/g,'&quot;')}"</div>
         </div>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Precio original</td><td style="text-align:right;font-size:13px;color:#0F1923;text-decoration:line-through">${origFmt}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Diferencia</td><td style="text-align:right;font-size:13px;color:#F59E0B;font-weight:700">${deltaFmt}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#003580;padding:10px 6px;font-size:14px;font-weight:700">Nuevo precio</td><td style="text-align:right;color:#003580;font-weight:700;font-size:17px;padding:10px 6px">${nuevoFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Precio original</td><td style="text-align:right;font-size:16px;color:#0F1923;text-decoration:line-through">${origFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Diferencia</td><td style="text-align:right;font-size:16px;color:#F59E0B;font-weight:700">${deltaFmt}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#003580;padding:10px 6px;font-size:17px;font-weight:700">Nuevo precio</td><td style="text-align:right;color:#003580;font-weight:700;font-size:20px;padding:10px 6px">${nuevoFmt}</td></tr>
         </table>
-        <p style="font-size:13px;color:#64748B;margin-bottom:16px;line-height:1.6">El anticipo que ya pagaste se mantiene. Si aceptás, se ajusta solo el saldo pendiente. Si rechazás, se cancela la mudanza y te devolvemos el anticipo.</p>
-        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver y decidir →</a>
+        <p style="font-size:16px;color:#64748B;margin-bottom:16px;line-height:1.7">El anticipo que ya pagaste se mantiene. Si aceptás, se ajusta solo el saldo pendiente. Si rechazás, se cancela la mudanza y te devolvemos el anticipo.</p>
+        <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver y decidir →</a>
       </div>
-      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
     </div>`,
   });
 }
@@ -4196,16 +4229,16 @@ async function notificarMudanceroAjusteAceptado(mudanza) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: cot.mudanceroEmail,
     subject: `✅ El cliente aceptó el ajuste — ${nuevoFmt}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#22C36A;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#003580">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.9);margin-left:12px">✅ Ajuste aceptado</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#22C36A;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#003580">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.9);margin-left:12px">✅ Ajuste aceptado</span></div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> aceptó el nuevo precio. Ya podés continuar con la mudanza.</p>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> aceptó el nuevo precio. Ya podés continuar con la mudanza.</p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Cliente</td><td style="font-weight:600;color:#0F1923;font-size:13px">${mudanza.clienteNombre||'—'}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Nuevo precio</td><td style="color:#22C36A;font-weight:700;font-size:16px;padding:7px 0">${nuevoFmt}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:14px">${saldoFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Cliente</td><td style="font-weight:600;color:#0F1923;font-size:16px">${mudanza.clienteNombre||'—'}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Nuevo precio</td><td style="color:#22C36A;font-weight:700;font-size:19px;padding:11px 0">${nuevoFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Saldo pendiente</td><td style="color:#F59E0B;font-weight:700;font-size:17px">${saldoFmt}</td></tr>
         </table>
-        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver en mi cuenta →</a>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver en mi cuenta →</a>
       </div>
     </div>`,
   });
@@ -4223,16 +4256,16 @@ async function notificarClienteAjusteAceptado(mudanza) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `✅ Ajuste confirmado — Saldo ajustado a ${saldoFmt}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">✅ Ajuste confirmado</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">✅ Ajuste confirmado</span></div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6">Confirmamos el nuevo precio de tu mudanza con <strong>${cot.mudanceroNombre || 'tu mudancero'}</strong>.</p>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7">Confirmamos el nuevo precio de tu mudanza con <strong>${cot.mudanceroNombre || 'tu mudancero'}</strong>.</p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Nuevo precio total</td><td style="color:#003580;font-weight:700;font-size:16px">${nuevoFmt}</td></tr>
-          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:7px 6px;font-size:13px">Ya abonaste (anticipo)</td><td style="color:#0F1923;font-size:13px;padding:7px 0">$${(mudanza.anticipoMonto||0).toLocaleString('es-AR')}</td></tr>
-          <tr><td style="color:#64748B;padding:7px 0;font-size:13px">Saldo a pagar al completar</td><td style="color:#F59E0B;font-weight:700;font-size:14px">${saldoFmt}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Nuevo precio total</td><td style="color:#003580;font-weight:700;font-size:19px">${nuevoFmt}</td></tr>
+          <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Ya abonaste (anticipo)</td><td style="color:#0F1923;font-size:16px;padding:11px 0">$${(mudanza.anticipoMonto||0).toLocaleString('es-AR')}</td></tr>
+          <tr><td style="color:#64748B;padding:11px 0;font-size:16px">Saldo a pagar al completar</td><td style="color:#F59E0B;font-weight:700;font-size:17px">${saldoFmt}</td></tr>
         </table>
-        <p style="font-size:13px;color:#64748B;line-height:1.6">Cuando tu mudancero marque la mudanza como completada, vas a poder pagar el saldo desde tu panel.</p>
+        <p style="font-size:16px;color:#64748B;line-height:1.7">Cuando tu mudancero marque la mudanza como completada, vas a poder pagar el saldo desde tu panel.</p>
       </div>
     </div>`,
   });
@@ -4248,12 +4281,12 @@ async function notificarMudanceroAjusteRechazado(mudanza) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: cot.mudanceroEmail,
     subject: `❌ El cliente rechazó el ajuste — Mudanza cancelada`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#DC2626;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.9);margin-left:12px">❌ Ajuste rechazado</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#DC2626;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.9);margin-left:12px">❌ Ajuste rechazado</span></div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> rechazó el ajuste de precio que propusiste. La mudanza queda cancelada y le devolvemos el anticipo.</p>
-        <p style="font-size:13px;color:#64748B;margin-bottom:16px;line-height:1.6">No te preocupes, esto no afecta tu calificación. Seguí cotizando otras mudanzas en tu panel.</p>
-        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver panel →</a>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> rechazó el ajuste de precio que propusiste. La mudanza queda cancelada y le devolvemos el anticipo.</p>
+        <p style="font-size:16px;color:#64748B;margin-bottom:16px;line-height:1.7">No te preocupes, esto no afecta tu calificación. Seguí cotizando otras mudanzas en tu panel.</p>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver panel →</a>
       </div>
     </div>`,
   });
@@ -4272,13 +4305,13 @@ async function notificarClienteMudanzaCancelada(mudanza, refundOk) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to: mudanza.clienteEmail,
     subject: `Mudanza cancelada — Reintegro en proceso`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:12px">Mudanza cancelada</span></div>
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">Mudanza cancelada</span></div>
       <div style="padding:28px">
-        <p style="font-size:15px;color:#0F1923;margin-bottom:16px;line-height:1.6">Cancelamos tu mudanza con <strong>${cot.mudanceroNombre || 'el mudancero'}</strong> como solicitaste.</p>
-        <p style="font-size:14px;color:#0F1923;margin-bottom:20px;line-height:1.6">${mensaje}</p>
-        <p style="font-size:13px;color:#64748B;line-height:1.6">Si necesitás ayuda con una nueva mudanza, podés publicar un nuevo pedido cuando quieras.</p>
-        <a href="https://mudateya.ar" style="display:inline-block;margin-top:12px;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Nueva mudanza →</a>
+        <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7">Cancelamos tu mudanza con <strong>${cot.mudanceroNombre || 'el mudancero'}</strong> como solicitaste.</p>
+        <p style="font-size:17px;color:#0F1923;margin-bottom:20px;line-height:1.7">${mensaje}</p>
+        <p style="font-size:16px;color:#64748B;line-height:1.7">Si necesitás ayuda con una nueva mudanza, podés publicar un nuevo pedido cuando quieras.</p>
+        <a href="https://mudateya.ar" style="display:inline-block;margin-top:12px;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Nueva mudanza →</a>
       </div>
     </div>`,
   });
