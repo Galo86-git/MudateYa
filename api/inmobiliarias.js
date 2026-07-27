@@ -268,7 +268,7 @@ module.exports = async function handler(req, res) {
                   </table>
                 </div>
                 <p style="color:#4B5563;line-height:1.6;font-size:14px;margin-top:18px">Mientras tanto podés conocer cómo trabajamos en <a href="https://mudateya.ar" style="color:#1A6FFF;font-weight:700">mudateya.ar</a>.</p>
-                <p style="color:#9CA3AF;font-size:13px;margin-top:18px">Cualquier consulta, respondé a este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF">hola@mudateya.ar</a>.</p>
+                <p style="color:#9CA3AF;font-size:13px;margin-top:18px">Cualquier consulta, escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">hola&#64;mudateya.ar</a></p>
               </div>
               <div style="background:#F5F8FC;padding:14px 28px;font-size:11px;color:#9CA3AF;text-align:center">
                 MudateYa · marketplace de mudanzas verificadas · mudateya.ar

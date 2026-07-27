@@ -491,7 +491,7 @@ async function bienvenidaMudancero(perfil) {
             '</div>' +
           '</div>' +
 
-          '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:0">¿Preguntas? Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF">hola@mudateya.ar</a></p>' +
+          '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:0">¿Preguntas? Escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;font-weight:600">hola&#64;mudateya.ar</a></p>' +
         '</div>' +
       '</div>',
     });
@@ -527,7 +527,7 @@ async function bienvenidaMudancero(perfil) {
           '<div style="font-size:13px;color:#475569">Vehículo: <strong>' + perfil.vehiculo + '</strong></div>' +
         '</div>' +
 
-        '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:0">¿Preguntas? Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF">hola@mudateya.ar</a></p>' +
+        '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:0">¿Preguntas? Escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;font-weight:600">hola&#64;mudateya.ar</a></p>' +
       '</div>' +
     '</div>',
   });

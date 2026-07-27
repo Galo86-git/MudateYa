@@ -1787,7 +1787,7 @@ module.exports = async function handler(req, res) {
                           <b>${rutaTxt}</b>
                         </div>
                         <p style="color:#374151;font-size:16px;line-height:1.7">Esta mudanza pasó automáticamente a tu sección <b>Expirados</b> en MudateYa. No hace falta que hagas nada.</p>
-                        <p style="color:#64748B;font-size:15px;margin-top:18px">Si tenés dudas, respondé este mail.</p>
+                        <p style="color:#64748B;font-size:15px;margin-top:18px">Si tenés dudas, escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">hola&#64;mudateya.ar</a>.</p>
                       </div>
                     </div>
                   `
@@ -3549,7 +3549,7 @@ async function notificarClienteNuevoPedido(mudanza) {
 
     <div style="margin-top:24px;padding:14px 16px;background:#F5F7FA;border-radius:10px;font-size:15px;color:#475569;line-height:1.7">
       <strong style="color:#0F1923">¿Dudas o algún cambio?</strong><br>
-      Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#003580;font-weight:600;text-decoration:none">hola@mudateya.ar</a> mencionando el ID de tu pedido: <code style="background:#fff;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:14px">${mudanza.id}</code>
+      Escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#003580;font-weight:600;text-decoration:none">hola&#64;mudateya.ar</a> mencionando el ID de tu pedido: <code style="background:#fff;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:14px">${mudanza.id}</code>
     </div>
   </div>
   <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace;text-align:center">MudateYa · Marketplace de mudanzas verificadas · mudateya.ar</div>

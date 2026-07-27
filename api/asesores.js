@@ -1221,7 +1221,7 @@ module.exports = async function handler(req, res) {
                   '<div style="text-align:center;margin:24px 0">' +
                     '<a href="https://mudateya.ar/asesor-dashboard" style="display:inline-block;padding:12px 28px;background:#003580;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">Ir al panel →</a>' +
                   '</div>' +
-                  '<p style="color:#64748B;font-size:12px;margin-top:18px">Si tenés dudas, respondé este mail.</p>' +
+                  '<p style="color:#64748B;font-size:12px;margin-top:18px">Si tenés dudas, escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">hola&#64;mudateya.ar</a>.</p>' +
                 '</div>' +
               '</div>'
           }).catch(function(e){ console.warn('Email asesor cancelación error:', e.message); });

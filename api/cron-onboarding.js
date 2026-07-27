@@ -94,7 +94,7 @@ function emailDia1(perfil) {
         'Subir foto del vehículo y de tu DNI',
         'Datos para cobrar (CBU o Mercado Pago)'
       ],
-      cierre: 'Te toma 5 minutos. Si algo te frenó o tenés dudas, respondé este mail y te ayudo personalmente.',
+      cierre: 'Te toma 5 minutos. Si algo te frenó o tenés dudas, escribinos a hola&#64;mudateya.ar y te ayudamos.',
       pd:     null
     })
   };
@@ -113,7 +113,7 @@ function emailDia3(perfil) {
         'Foto del vehículo y DNI',
         'CBU o Mercado Pago'
       ],
-      cierre: 'Te toma 5 minutos. ¿Te trabaste con algo? Respondé este mail y lo resolvemos.',
+      cierre: 'Te toma 5 minutos. ¿Te trabaste con algo? Escribinos a hola&#64;mudateya.ar y lo resolvemos.',
       pd:     '💡 La plataforma es 100% gratis hasta que concretes un trabajo. No tenés nada que perder.'
     })
   };
@@ -132,7 +132,7 @@ function emailDia7(perfil) {
         'Foto del vehículo y DNI (2 min)',
         'CBU o Mercado Pago (1 min)'
       ],
-      cierre: '¿No te interesa más? Sin problema — respondé este mail con "BAJA" y te eliminamos. Sino, esperamos verte activo pronto.',
+      cierre: '¿No te interesa más? Sin problema — escribinos a hola&#64;mudateya.ar con el asunto BAJA y te sacamos de la lista. Sino, esperamos verte activo pronto.',
       pd:     null
     })
   };
@@ -161,7 +161,7 @@ function bodyHtml(p) {
       '</div>' +
       '<p style="color:#475569;font-size:13px;line-height:1.6;margin:0">' + p.cierre + '</p>' +
       pd +
-      '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">¿Dudas? Respondé este mail o escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF;text-decoration:none">hola@mudateya.ar</a></p>' +
+      '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">¿Dudas? Escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">hola&#64;mudateya.ar</a></p>' +
     '</div>' +
   '</div>';
 }
