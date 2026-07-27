@@ -479,7 +479,7 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
             </div>
             <div class="ben" style="grid-column:1/-1">
               <div class="ben-ico">🏆</div>
-              <div class="ben-txt"><strong id="ben-ann-lbl">+10% bono anual</strong><span>Con al menos 10 operaciones en el año. Premios encima del fijo.</span></div>
+              
             </div>
           </div>
         </div>
@@ -994,7 +994,7 @@ async function cargarConfig() {
   var altaLbl = document.getElementById('ben-alta-lbl');
   if (altaLbl) altaLbl.textContent = '$' + formatoAR(_config.fijoAlta || 5500) + ' por activación';
   document.getElementById('ben-tri-lbl').textContent = '+' + Math.round(_config.trimPct*100) + '% bono trimestral';
-  document.getElementById('ben-ann-lbl').textContent = '+' + Math.round(_config.anualPct*100) + '% bono anual';
+  // Bono anual discontinuado: la tarjeta ya no se muestra.
   // Inicializar ejemplo de ganancia
   renderEjemplo();
   // Si programa cerrado
@@ -1038,7 +1038,9 @@ function renderEjemplo(){
   var opsAnio = opsMes * 12;
 
   var bonoTrim  = opsTrim >= trimUmbral   ? Math.round(montoTrim * trimPct)   : 0;
-  var bonoAnual = opsAnio >= anualUmbral  ? Math.round(montoAnio * anualPct)  : 0;
+  // Bono anual discontinuado: siempre 0. Se deja la variable para no tocar
+  // el resto del calculo del simulador.
+  var bonoAnual = 0;
 
   // Totales con bonos
   var totalTrim = montoTrim + bonoTrim;
@@ -1073,12 +1075,10 @@ function renderEjemplo(){
       if (faltanTrim > 0) {
         foot.innerHTML = '⏳ Te faltan <strong>' + faltanTrim + '</strong> ' + (faltanTrim===1?'operación':'operaciones') + ' por trimestre para desbloquear el bono del 20%.';
       } else {
-        foot.innerHTML = '✓ Cumplís el umbral trimestral. Te faltan <strong>' + (anualUmbral - opsAnio) + '</strong> ops al año para el bono anual.';
+        foot.innerHTML = '✓ Cumplís el umbral trimestral. El bono está incluido en el cálculo.';
       }
-    } else if (bonoAnual === 0) {
-      foot.innerHTML = '✓ Cumplís el umbral trimestral (+20%). Te faltan <strong>' + (anualUmbral - opsAnio) + '</strong> ops al año para el bono anual (+10%).';
     } else {
-      foot.innerHTML = '💪 Cumplís los umbrales trimestral (' + trimUmbral + ' ops) y anual (' + anualUmbral + ' ops). Los bonos están incluidos.';
+      foot.innerHTML = '💪 Cumplís el umbral trimestral (' + trimUmbral + ' ops). El bono está incluido.';
     }
   }
 

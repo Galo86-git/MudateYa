@@ -4408,6 +4408,7 @@ function renderAsesoresLista() {
       '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Inmobiliaria</th>' +
       '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Zona</th>' +
       '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Pedidos</th>' +
+      '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Ops del año</th>' +
       '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Alta</th>' +
       '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Estado</th>' +
       '<th style="text-align:left;padding:10px 12px;font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Acciones</th>' +
@@ -4427,6 +4428,13 @@ function renderAsesoresLista() {
       '<td style="padding:10px 12px">' + asrEsc(a.inmobiliaria || '—') + '</td>' +
       '<td style="padding:10px 12px">' + asrEsc(a.zona || '—') + '</td>' +
       '<td style="padding:10px 12px;font-family:var(--mono);font-weight:600">' + (a.cantPedidos || 0) + '</td>' +
+        // Operaciones COMPLETADAS del año. cantPedidos (columna anterior) cuenta
+        // pedidos vivos y se vacia a los 30 dias por TTL: no sirve para el premio.
+        '<td style="padding:10px 12px;font-family:var(--mono);font-weight:700;color:'
+          + (a.premioAlcanzado ? '#15803D' : (a.opsAnio||0) >= (a.umbralPremio||10)-3 ? '#B45309' : 'var(--text2)') + '">'
+          + (a.opsAnio || 0) + ' <span style="color:var(--text3);font-weight:400">de ' + (a.umbralPremio || 10) + '</span>'
+          + (a.premioAlcanzado ? ' 🏆' : '')
+          + '</td>' +
       '<td style="padding:10px 12px;font-family:var(--mono);color:var(--text3);font-size:12px">' + asrFecha(a.creadoEn) + '</td>' +
       '<td style="padding:10px 12px">' + badge + '</td>' +
       '<td style="padding:10px 12px">';
