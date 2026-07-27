@@ -74,7 +74,16 @@ function bancoConfigurado() {
 // que declara el cliente: si no coinciden, el admin lo ve marcado y decide.
 function montoEsperado(m, tipoPago) {
   const cot = m.cotizacionAceptada || {};
-  const total = parseInt(m.montoTotal || cot.precio || 0) || 0;
+  // OJO CON EL ORDEN: cotizacionAceptada.precio primero.
+  //
+  // montoTotal se escribe UNA sola vez, cuando se acepta la cotización, y no
+  // se vuelve a tocar. Cuando el mudancero propone un ajuste y el cliente lo
+  // acepta, lo que se actualiza es cotizacionAceptada.precio; montoTotal queda
+  // con el precio viejo. Si se lee montoTotal primero, después de un ajuste se
+  // le cobra al cliente el importe anterior.
+  //
+  // Es el mismo criterio que usa el frontend para calcular el saldo.
+  const total = parseInt(cot.precio || m.montoTotal || 0) || 0;
   if (!total) return null;
   if (tipoPago === 'anticipo') return Math.round(total * 0.5);
   if (tipoPago === 'saldo') {

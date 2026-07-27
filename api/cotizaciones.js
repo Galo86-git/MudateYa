@@ -1547,6 +1547,30 @@ module.exports = async function handler(req, res) {
       m.ajustePrecio.estado = 'aceptado';
       m.ajustePrecio.aceptadoEn = new Date().toISOString();
       m.cotizacionAceptada.precio = m.ajustePrecio.montoNuevo;
+
+      // montoTotal tiene que seguir al precio aceptado. Antes solo se escribía
+      // al aceptar la cotización y quedaba con el importe viejo después de un
+      // ajuste, así que el saldo a cobrar y los reportes del panel mostraban
+      // el número anterior.
+      m.montoTotal = m.ajustePrecio.montoNuevo;
+
+      // La comisión del asesor se calcula sobre el precio final: si el precio
+      // cambió, el monto a pagarle también. El porcentaje es el snapshot que se
+      // fijó al publicar y no se toca.
+      if (m.partner && parseFloat(m.comisionInmobiliariaPct) > 0 && m.tipoOperacion !== 'compraventa') {
+        m.comisionInmobiliariaPagar = Math.round(
+          (parseFloat(m.ajustePrecio.montoNuevo) || 0) * parseFloat(m.comisionInmobiliariaPct) / 100
+        );
+      }
+
+      // Invalidar el pago de transferencia ya generado: se había creado con el
+      // importe anterior. Al borrarlo, el próximo intento genera un CVU nuevo
+      // por el monto correcto. Sin esto el cliente transfiere de menos y el
+      // pago queda en UNDERPAID, o sea sin acreditar.
+      try {
+        await redisCall('DEL', `talo:pago:${mudanzaId}:anticipo`);
+        await redisCall('DEL', `talo:pago:${mudanzaId}:saldo`);
+      } catch (e) { console.warn('Limpiar pago transferencia:', e.message); }
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
 
       // Email al mudancero avisando que aceptaron
