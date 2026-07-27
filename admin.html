@@ -1525,13 +1525,36 @@ async function loadTransferencias(){
 function renderDashboard(){
   var pendientes = mudancerosData.filter(function(m){ return getEstado(m) === 'Pendiente'; }).length;
   var aprobados  = mudancerosData.filter(function(m){ return getEstado(m) === 'Aprobado'; }).length;
-  var totalPagos = pagosData.length + transferenciasData.filter(function(t){ return t.estado === 'confirmada' || t.estado === 'pendiente'; }).length;
-  var gmv = pagosData.reduce(function(s,p){ return s + (parseFloat(p.precio)||0); }, 0)
-          + transferenciasData.filter(function(t){ return t.estado === 'confirmada' || t.estado === 'pendiente'; })
-              .reduce(function(s,t){ return s + (parseInt((t.monto||'0').replace(/\D/g,''))||0); }, 0);
+  // ── Metricas del dashboard ──────────────────────────────────────
+  //
+  // Dos duplicaciones que habia que sacar:
+  //
+  // 1. admin-pagos devuelve UNA FILA POR COBRO (anticipo y saldo son filas
+  //    distintas) y cada fila trae el precio TOTAL de la mudanza. Sumar
+  //    p.precio fila por fila contaba el precio dos veces por mudanza.
+  //
+  // 2. Las transferencias dejaron de ser un registro paralelo: al confirmarse
+  //    marcan el pago en la mudanza, que entonces ya aparece en pagosData.
+  //    Sumarlas aparte contaba la misma operacion dos veces. Solo se suman
+  //    las pendientes, que son plata declarada que todavia no impacto.
+
+  var pagosPorMudanza = {};
+  pagosData.forEach(function(p){
+    if(!p || !p.mudanzaId) return;
+    if(!pagosPorMudanza[p.mudanzaId]) pagosPorMudanza[p.mudanzaId] = p;
+  });
+  var mudanzasPagas = Object.keys(pagosPorMudanza);
+
+  var transfPendientes = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; });
+  var totalPagos = pagosData.length + transfPendientes.length;
+
+  var gmv = mudanzasPagas.reduce(function(s, id){
+    return s + (parseFloat(pagosPorMudanza[id].precio) || 0);
+  }, 0);
 
   // Fee calculado por operación según tipo (flete=20%, mudanza=15%)
-  var revenue = pagosData.reduce(function(s, p) {
+  var revenue = mudanzasPagas.reduce(function(s, id) {
+    var p = pagosPorMudanza[id];
     var precio = parseFloat(p.precio) || 0;
     var esFlete = (p.tipo || '').toUpperCase() === 'FLETE';
     return s + Math.round(precio * (esFlete ? 0.20 : 0.15));
@@ -1539,8 +1562,8 @@ function renderDashboard(){
 
   // Fee promedio real
   var feePromedio = gmv > 0 ? Math.round((revenue / gmv) * 100) : 0;
-  var subFee = pagosData.length > 0
-    ? feePromedio + '% promedio (' + pagosData.filter(function(p){ return (p.tipo||'').toUpperCase()==='FLETE'; }).length + ' fletes · ' + pagosData.filter(function(p){ return (p.tipo||'').toUpperCase()!=='FLETE'; }).length + ' mudanzas)'
+  var subFee = mudanzasPagas.length > 0
+    ? feePromedio + '% promedio (' + mudanzasPagas.filter(function(id){ return (pagosPorMudanza[id].tipo||'').toUpperCase()==='FLETE'; }).length + ' fletes · ' + pagosData.filter(function(p){ return (p.tipo||'').toUpperCase()!=='FLETE'; }).length + ' mudanzas)'
     : 'sin operaciones aún';
 
   var transferenciasPendientes = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; }).length;
