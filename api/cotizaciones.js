@@ -3999,9 +3999,14 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   const comisionPct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
   // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
+  // El saldo NO es la mitad del precio cuando hubo un ajuste: es el precio
+  // final menos el anticipo ya cobrado. Ej: acepta en 1.000.000, paga 500.000,
+  // se ajusta a 1.200.000 → el saldo es 700.000, no 600.000. Con el fallback
+  // viejo el mail le informaba al mudancero un cobro y un neto menores a los
+  // reales, que además no coincidían con lo que muestra el panel.
   const monto = esAnticipo
     ? (parseInt(mudanza.anticipoMonto) || Math.round(precioTotal * 0.5))
-    : (parseInt(mudanza.saldoMonto)   || Math.round(precioTotal * 0.5));
+    : (parseInt(mudanza.saldoMonto)   || calcularSaldo(mudanza));
   const montoFmt = '$' + monto.toLocaleString('es-AR');
   // Neto al mudancero: descuento la comisión sobre el monto REAL cobrado, no sobre el precio total.
   // Así el cálculo es coherente: si pagó $100, le quedan $85 (15% de fee), no un número arbitrario.
