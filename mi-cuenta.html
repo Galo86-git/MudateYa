@@ -4272,37 +4272,43 @@ function confirmarHoras(m) {
     mo.innerHTML =
       '<div style="background:var(--bg,#fff);border-radius:18px;padding:1.7rem 1.5rem;max-width:430px;width:100%;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
       + '<div style="font-size:1.15rem;font-weight:700;color:var(--text,#0F1923);margin-bottom:6px">Confirmá las horas trabajadas</div>'
-      + '<div style="font-size:13px;color:var(--text2,#64748B);line-height:1.6;margin-bottom:16px">El sistema registró <strong>' + hs + ' horas</strong> desde que marcaste la mudanza en curso. Podés bajarlo si corresponde, pero no subirlo.</div>'
+      + '<div style="font-size:13px;color:var(--text2,#64748B);line-height:1.6;margin-bottom:16px">El sistema registró <strong>' + hs + ' horas</strong> desde que marcaste la mudanza en curso. Si no coincide con lo que trabajaste, corregilo — queda registrado el dato del sistema y el que declarás.</div>'
       + '<label style="font-size:10px;font-weight:600;color:var(--text3,#94A3B8);text-transform:uppercase;letter-spacing:1px">Horas a liquidar</label>'
-      + '<input type="number" id="hrsInput" step="0.5" min="0.5" max="' + hs + '" value="' + hs + '" oninput="recalcHoras(' + incluidas + ',' + tarifa + ')" style="width:100%;padding:11px 14px;border:1px solid var(--border2,#E2E8F0);border-radius:10px;font-size:15px;font-family:Inter,sans-serif;margin:5px 0 14px">'
+      + '<input type="number" id="hrsInput" step="0.5" min="0.5" max="24" value="' + (hs > 0 ? hs : incluidas) + '" oninput="recalcHoras(' + incluidas + ',' + tarifa + ',' + hs + ')" style="width:100%;padding:11px 14px;border:1px solid var(--border2,#E2E8F0);border-radius:10px;font-size:15px;font-family:Inter,sans-serif;margin:5px 0 14px">'
       + '<div id="hrsResumen" style="background:var(--bg2,#F8FAFC);border-radius:10px;padding:13px 15px;font-size:13px;line-height:1.9;margin-bottom:16px"></div>'
       + '<div style="display:flex;gap:8px">'
       +   '<button id="hrsCancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2,#E2E8F0);background:transparent;color:var(--text2,#64748B);font-size:13px;cursor:pointer">Cancelar</button>'
       +   '<button id="hrsOk" style="flex:2;padding:11px;border-radius:10px;border:none;background:#22C36A;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Confirmar y completar</button>'
       + '</div></div>';
     document.body.appendChild(mo);
-    recalcHoras(incluidas, tarifa);
+    recalcHoras(incluidas, tarifa, hs);
     document.getElementById('hrsCancel').onclick = function () { mo.remove(); resolve(null); };
     document.getElementById('hrsOk').onclick = function () {
       var v = parseFloat(document.getElementById('hrsInput').value);
-      if (isNaN(v) || v <= 0 || v > hs) { alert('Las horas tienen que estar entre 0,5 y ' + hs + '.'); return; }
+      if (isNaN(v) || v <= 0 || v > 24) { alert('Las horas tienen que estar entre 0,5 y 24.'); return; }
       mo.remove(); resolve(v);
     };
   });
 }
 
-function recalcHoras(incluidas, tarifa) {
+function recalcHoras(incluidas, tarifa, hsSistema) {
   var el = document.getElementById('hrsResumen');
   if (!el) return;
   var h = parseFloat((document.getElementById('hrsInput') || {}).value) || 0;
   var extra = Math.max(0, h - incluidas);
   var cargo = Math.round(extra * tarifa);
+  // Si declara mas de lo registrado se avisa en pantalla: no bloquea, pero que
+  // sepa que la diferencia queda anotada y la revisa MudateYa.
+  var avisoDif = (hsSistema != null && h > hsSistema + 1)
+    ? '<div style="margin-top:8px;padding:9px 11px;background:#FFF8EC;border-radius:8px;font-size:12px;color:#92400E;line-height:1.5">Estás declarando ' + (Math.round((h - hsSistema)*10)/10) + ' horas más de las que registró el sistema. Queda anotado y lo revisa MudateYa.</div>'
+    : '';
   el.innerHTML =
       '<div style="display:flex;justify-content:space-between"><span>Horas incluidas en el presupuesto</span><strong>' + incluidas + '</strong></div>'
     + '<div style="display:flex;justify-content:space-between"><span>Horas adicionales</span><strong>' + extra + '</strong></div>'
     + '<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border2,#E2E8F0);padding-top:6px;margin-top:4px">'
     +   '<span style="font-weight:700">Se suma al saldo</span>'
-    +   '<strong style="color:' + (cargo > 0 ? '#17A356' : 'var(--text2,#64748B)') + ';font-size:15px">$' + cargo.toLocaleString('es-AR') + '</strong></div>';
+    +   '<strong style="color:' + (cargo > 0 ? '#17A356' : 'var(--text2,#64748B)') + ';font-size:15px">$' + cargo.toLocaleString('es-AR') + '</strong></div>'
+    + avisoDif;
 }
 
 async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
