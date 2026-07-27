@@ -193,6 +193,9 @@ async function generarPDFBase64(datos) {
   // ── DATOS ────────────────────────────────────────────────────────
   const nro           = datos.id || 'MYA-0001';
   const validoHasta   = datos.validoHasta || '';
+  const esPorHora     = datos.modalidad === 'hora' && datos.horasIncluidas > 0;
+  const horasIncl     = parseInt(datos.horasIncluidas) || 0;
+  const valorHoraAd   = parseInt(datos.valorHoraAdicional) || 0;
   const fechaDoc      = datos.fechaEmision || new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' });
   const clienteNombre = datos.clienteNombre || '—';
   const clienteEmail  = datos.clienteEmail  || '—';
@@ -467,6 +470,26 @@ async function generarPDFBase64(datos) {
 
   Y += 68;
 
+  // ── 8-bis. CONDICIONES DE COBRO POR HORA ──────────────────────────
+  // Va antes del aviso de ajuste porque es el marco que evita necesitarlo:
+  // si las horas extra estan pactadas aca, que el trabajo se estire no es un
+  // imprevisto y no hace falta renegociar el precio.
+  if (esPorHora) {
+    const horaH = 58;
+    fillRect(ML, Y, CW, horaH, '#F0F9FF', 5);
+    strokeRect(ML, Y, CW, horaH, '#1A6FFF', 0.5, 5);
+    fillRect(ML, Y, 4, horaH, '#1A6FFF', 0);
+    doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#1E40AF')
+       .text('MODALIDAD: COBRO POR HORA', ML + 12, Y + 8);
+    doc.font('Helvetica').fontSize(7.5).fillColor('#334155')
+       .text(horasIncl + ' horas estimadas x $' + valorHoraAd.toLocaleString('es-AR') + ' por hora = $'
+             + (horasIncl * valorHoraAd).toLocaleString('es-AR') + '.', ML + 12, Y + 20, { width: CW - 24, lineGap: 1.5 })
+       .text('Al terminar se liquidan las horas reales trabajadas a esa misma tarifa. Si se extiende, cada hora'
+             + ' adicional se cobra $' + valorHoraAd.toLocaleString('es-AR') + '; si termina antes, se cobra menos.',
+             ML + 12, Y + 30, { width: CW - 24, lineGap: 1.5 });
+    Y += horaH + 10;
+  }
+
   // ── 8a. AVISO AJUSTE DE PRECIO ────────────────────────────────────
   // Cuadro celeste informando que el mudancero puede proponer ajuste si detecta
   // condiciones no previstas durante el relevamiento.
@@ -476,6 +499,7 @@ async function generarPDFBase64(datos) {
   strokeRect(ML, ajusteY, CW, ajusteH, '#93C5FD', 0.5, 5);
   fillRect(ML, ajusteY, 4, ajusteH, '#1A6FFF', 0);
   doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#1E40AF');
+
   doc.text('PRECIO SUJETO A AJUSTE', ML + 14, ajusteY + 6, { lineBreak: false });
   doc.font('Helvetica').fontSize(7).fillColor('#1E3A8A');
   doc.text('Si al dia de la mudanza hubiera condiciones no previstas (mas volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidis si lo aceptas; si rechazas, recuperas tu anticipo completo.', ML + 14, ajusteY + 18, { width: CW - 28, lineGap: 1 });
@@ -1128,7 +1152,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'cotizar' && req.method === 'POST') {
-      const { mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio, nota, tiempoEstimado, propuestas } = req.body;
+      const { mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio, nota, tiempoEstimado, propuestas,
+              modalidad, horasIncluidas, valorHoraAdicional } = req.body;
       if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
       const mudanza = await getJSON(`mudanza:${mudanzaId}`);
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
@@ -1193,7 +1218,14 @@ module.exports = async function handler(req, res) {
         nota: propMatch.nota,
         tiempoEstimado: propMatch.tiempoEstimado,
         fecha: new Date().toISOString(),
-        estado: 'pendiente'
+        estado: 'pendiente',
+        // Modalidad de cobro. Con 'hora', las condiciones de horas extra quedan
+        // pactadas en el presupuesto que acepta el cliente: si el trabajo se
+        // estira no hace falta un ajuste de precio (que ante rechazo cancela la
+        // mudanza y reembolsa el anticipo).
+        modalidad:          modalidad === 'hora' ? 'hora' : 'cerrado',
+        horasIncluidas:     parseInt(horasIncluidas) || 0,
+        valorHoraAdicional: parseInt(valorHoraAdicional) || 0
       };
       mudanza.cotizaciones.push(cotizacion);
 
@@ -1244,6 +1276,9 @@ module.exports = async function handler(req, res) {
       const pdfBase64 = await generarPDFBase64({
         id:                cot.id + (propuestaNivel ? '-' + propuestaNivel : ''),
         validoHasta:       fmtValidezAR(cot, mudanza),
+        modalidad:         cot.modalidad || 'cerrado',
+        horasIncluidas:    cot.horasIncluidas || 0,
+        valorHoraAdicional: cot.valorHoraAdicional || 0,
         fechaEmision:      new Date().toLocaleDateString('es-AR', { day:'numeric', month:'long', year:'numeric', timeZone:'America/Argentina/Buenos_Aires' }),
         clienteNombre:     mudanza.clienteNombre,
         clienteEmail:      mudanza.clienteEmail,
@@ -1468,6 +1503,88 @@ module.exports = async function handler(req, res) {
       }
       return res.status(200).json({ ok: true });
     }
+    // ── LIQUIDAR HORAS (solo cotizaciones por hora) ─────────────────
+    //
+    // No es un ajuste de precio: es aplicar la tarifa que el cliente ya aceptó
+    // en el presupuesto. Por eso no se rechaza. Lo que sí se hace es evitar que
+    // sea la palabra del mudancero: las horas las calcula el sistema entre
+    // fechaInicio y el momento de completar, y el mudancero solo CONFIRMA.
+    //
+    // Puede bajar el número (si tardó menos, o si se olvidó de marcar "en curso"
+    // a tiempo), nunca subirlo por encima de lo que registró el sistema.
+    if (action === 'liquidar-horas' && req.method === 'POST') {
+      const { mudanzaId, mudanceroEmail, horasConfirmadas } = req.body;
+      if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Datos inválidos' });
+
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      const cot = m.cotizacionAceptada;
+      if (!cot || cot.mudanceroEmail !== mudanceroEmail) return res.status(403).json({ error: 'Sin permiso' });
+      if (cot.modalidad !== 'hora' || !cot.valorHoraAdicional) {
+        return res.status(400).json({ error: 'Esta cotización no es por hora' });
+      }
+      if (!m.anticipoPagado) return res.status(400).json({ error: 'Todavía no está pago el anticipo' });
+      if (m.saldoPagado)     return res.status(400).json({ error: 'La mudanza ya está pagada completamente' });
+      if (m.horasLiquidadas) return res.status(400).json({ error: 'Las horas de esta mudanza ya se liquidaron' });
+      if (!m.fechaInicio)    return res.status(400).json({ error: 'Falta marcar la mudanza como iniciada' });
+
+      // Horas registradas por el sistema, redondeadas a media hora.
+      const ms = Date.now() - new Date(m.fechaInicio).getTime();
+      const horasSistema = Math.max(0, Math.round((ms / 3600000) * 2) / 2);
+
+      let horas = parseFloat(horasConfirmadas);
+      if (isNaN(horas) || horas <= 0) horas = horasSistema;
+      if (horas > horasSistema) {
+        return res.status(400).json({
+          error: 'No podés liquidar más horas de las que registró el sistema (' + horasSistema + ').',
+          horasSistema: horasSistema
+        });
+      }
+
+      const incluidas = parseInt(cot.horasIncluidas) || 0;
+      const tarifa    = parseInt(cot.valorHoraAdicional) || 0;
+      const extra     = Math.max(0, horas - incluidas);
+      const cargo     = Math.round(extra * tarifa);
+
+      const precioBase = parseInt(cot.precio || m.montoTotal || 0) || 0;
+      const precioNuevo = precioBase + cargo;
+
+      m.horasLiquidadas = {
+        horasSistema:  horasSistema,
+        horasCobradas: horas,
+        horasIncluidas: incluidas,
+        horasExtra:    extra,
+        tarifa:        tarifa,
+        cargo:         cargo,
+        precioAnterior: precioBase,
+        precioFinal:   precioNuevo,
+        liquidadoEn:   new Date().toISOString()
+      };
+
+      // Se aplica sobre las MISMAS claves que usa el ajuste de precio, para que
+      // el saldo, la liquidación al mudancero y el panel lean un solo número.
+      if (cargo > 0) {
+        m.cotizacionAceptada.precio = precioNuevo;
+        m.montoTotal = precioNuevo;
+        if (m.partner && parseFloat(m.comisionInmobiliariaPct) > 0 && m.tipoOperacion !== 'compraventa') {
+          m.comisionInmobiliariaPagar = Math.round(precioNuevo * parseFloat(m.comisionInmobiliariaPct) / 100);
+        }
+        try {
+          await redisCall('DEL', `talo:pago:${mudanzaId}:saldo`);
+        } catch (e) { console.warn('Limpiar pago transferencia:', e.message); }
+      }
+
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      return res.status(200).json({
+        ok: true,
+        horasSistema: horasSistema,
+        horasCobradas: horas,
+        horasExtra: extra,
+        cargo: cargo,
+        precioFinal: precioNuevo
+      });
+    }
+
     if (action === 'cambiar-estado' && req.method === 'POST') {
       const { mudanzaId, estado, mudanceroEmail } = req.body;
       const estadosValidos = ['en_curso', 'completada'];
