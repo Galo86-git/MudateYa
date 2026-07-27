@@ -844,6 +844,14 @@ window.onload = async function(){
     GOOGLE_CLIENT_ID = cfg.googleClientId;
   }catch(e){}
 
+  // Solo se ofrece transferencia si hay un medio configurado. Si falla la
+  // consulta queda en false: mejor no ofrecerla que ofrecerla y que falle.
+  try{
+    var rt = await fetch('/api/transferencias?action=disponible');
+    var dt = await rt.json();
+    transferenciaDisponible = !!(dt && dt.disponible);
+  }catch(e){ transferenciaDisponible = false; }
+
   var saved = sessionStorage.getItem('clienteUser');
   if(saved){
     try{
@@ -2103,6 +2111,8 @@ async function simularPago(mudanzaId, tipoPago, btn) {
 // El cliente ve los datos bancarios, transfiere desde su homebanking y avisa.
 // La confirmación la hace MudateYa después de verificar en el banco: declarar
 // no es pagar, y la única fuente de verdad es el extracto bancario.
+var transferenciaDisponible = false;
+
 function cerrarPagoModal() {
   var el = document.getElementById('pagoModal');
   if (el) el.remove();
@@ -2230,8 +2240,9 @@ async function pagarAnticipo(m) {
     +'</div>'
     +'<button id="btnPagarAnticipo" style="width:100%;padding:13px;border-radius:10px;border:none;background:#009EE3;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Outfit\',sans-serif;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px">'
     +'💳 Pagar $'+anticipo.toLocaleString('es-AR')+' con Mercado Pago</button>'
-    +'<button onclick="mostrarTransferencia(\''+m.id+'\',\'anticipo\')" style="width:100%;padding:13px;border-radius:10px;border:1px solid #22C36A;background:#fff;color:#15803D;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">'
-    +'🏦 Pagar por transferencia</button>'
+    +(transferenciaDisponible
+        ? '<button onclick="mostrarTransferencia(\''+m.id+'\',\'anticipo\')" style="width:100%;padding:13px;border-radius:10px;border:1px solid #22C36A;background:#fff;color:#15803D;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">🏦 Pagar por transferencia</button>'
+        : '')
     +'<button onclick="document.getElementById(\'pagoModal\').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--mono)">Ahora no</button>'
     +'</div>';
   document.body.appendChild(modal);
@@ -2290,11 +2301,12 @@ async function pagarSaldo(mudanzaId) {
       +   '<div style="font-size:11px;color:#64748B;margin-top:4px">Total mudanza: $' + (cot.precio||0).toLocaleString('es-AR') + '</div>'
       + '</div>'
       + '<button id="mpSaldo" style="width:100%;padding:13px;border-radius:10px;border:none;background:#009EE3;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">💳 Pagar con Mercado Pago</button>'
-      + '<button id="trSaldo" style="width:100%;padding:13px;border-radius:10px;border:1px solid #22C36A;background:#fff;color:#15803D;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">🏦 Pagar por transferencia</button>'
+      + (transferenciaDisponible ? '<button id="trSaldo" style="width:100%;padding:13px;border-radius:10px;border:1px solid #22C36A;background:#fff;color:#15803D;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">🏦 Pagar por transferencia</button>' : '')
       + '<button id="canSaldo" style="width:100%;padding:10px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#64748B;font-size:13px;cursor:pointer">Cancelar</button>');
     document.body.appendChild(mo);
     document.getElementById('mpSaldo').onclick  = function(){ cerrarPagoModal(); resolve('mp'); };
-    document.getElementById('trSaldo').onclick  = function(){ resolve('transferencia'); };
+    var _tr = document.getElementById('trSaldo');
+    if(_tr) _tr.onclick = function(){ resolve('transferencia'); };
     document.getElementById('canSaldo').onclick = function(){ cerrarPagoModal(); resolve(null); };
   });
   if (!medio) return;
