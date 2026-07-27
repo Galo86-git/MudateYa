@@ -1532,14 +1532,18 @@ module.exports = async function handler(req, res) {
       const ms = Date.now() - new Date(m.fechaInicio).getTime();
       const horasSistema = Math.max(0, Math.round((ms / 3600000) * 2) / 2);
 
+      // El mudancero puede declarar mas o menos que lo que registro el sistema:
+      // puede haber marcado "en curso" tarde, o haber arrancado sin marcar. Se
+      // guardan LAS DOS cifras y la diferencia, que es lo que permite auditar
+      // despues. Bloquear generaba mas friccion que proteccion.
       let horas = parseFloat(horasConfirmadas);
       if (isNaN(horas) || horas <= 0) horas = horasSistema;
-      if (horas > horasSistema) {
-        return res.status(400).json({
-          error: 'No podés liquidar más horas de las que registró el sistema (' + horasSistema + ').',
-          horasSistema: horasSistema
-        });
-      }
+      if (horas > 24) return res.status(400).json({ error: 'Revisá las horas: más de 24 en una mudanza no parece correcto.' });
+
+      const diferencia = Math.round((horas - horasSistema) * 10) / 10;
+      // Umbral de revision: hasta 1 hora de diferencia es normal (se marco tarde
+      // el inicio o el fin). Por encima de eso queda marcado para que lo mires.
+      const requiereRevision = diferencia > 1;
 
       const incluidas = parseInt(cot.horasIncluidas) || 0;
       const tarifa    = parseInt(cot.valorHoraAdicional) || 0;
@@ -1552,6 +1556,8 @@ module.exports = async function handler(req, res) {
       m.horasLiquidadas = {
         horasSistema:  horasSistema,
         horasCobradas: horas,
+        diferencia:      diferencia,
+        requiereRevision: requiereRevision,
         horasIncluidas: incluidas,
         horasExtra:    extra,
         tarifa:        tarifa,
@@ -1575,10 +1581,42 @@ module.exports = async function handler(req, res) {
       }
 
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+
+      // Si declaro mas horas de las registradas, avisar. No se bloquea el cobro,
+      // pero alguien tiene que poder revisarlo antes de liquidarle al mudancero.
+      if (requiereRevision && process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+        try {
+          const resendRev = new Resend(process.env.RESEND_API_KEY);
+          await resendRev.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+            to: process.env.ADMIN_EMAIL,
+            subject: `⚠️ Horas declaradas por encima del registro · ${m.id}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:560px">
+              <h2 style="color:#B45309;margin:0 0 12px">Revisar liquidación de horas</h2>
+              <p style="font-size:16px;line-height:1.7">
+                <strong>${cot.mudanceroNombre || cot.mudanceroEmail}</strong> declaró
+                <strong>${horas} horas</strong> en el pedido ${m.id}, pero el sistema registró
+                <strong>${horasSistema}</strong> entre el inicio y el fin.
+              </p>
+              <p style="font-size:16px;line-height:1.7">
+                Diferencia: <strong>+${diferencia} horas</strong> · Se le cobró de más al cliente:
+                <strong>$${Math.round(diferencia * tarifa).toLocaleString('es-AR')}</strong>
+              </p>
+              <p style="font-size:15px;color:#64748B;line-height:1.6">
+                Puede ser legítimo (marcó el inicio tarde) o no. El cobro ya se aplicó al saldo;
+                si corresponde corregirlo, hay que hacerlo antes de liquidarle.
+              </p>
+            </div>`
+          });
+        } catch (e) { console.warn('Aviso revisión horas:', e.message); }
+      }
+
       return res.status(200).json({
         ok: true,
         horasSistema: horasSistema,
         horasCobradas: horas,
+        diferencia: diferencia,
+        requiereRevision: requiereRevision,
         horasExtra: extra,
         cargo: cargo,
         precioFinal: precioNuevo
