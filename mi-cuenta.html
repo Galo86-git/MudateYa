@@ -2546,6 +2546,56 @@ function _esPlanReferidos(m) {
 // esté cacheado. Mudafy se hardcodea para ahorrar llamadas innecesarias.
 // El resultado se guarda en window._inmoNombresCache, que es lo que los banners
 // (icono origen + banner del panel detalle) leen para mostrar el nombre.
+// En el canal "independientes" el slug es un paraguas: la inmobiliaria real solo
+// se conoce leyendo el codigo del asesor que derivo al cliente. Se resuelve una
+// vez por codigo y se cachea, igual que los nombres de inmobiliaria.
+var _ENDPOINTS_ASESOR = {
+  independientes: '/api/independientes?action=obtener&codigo=',
+  mudafy:         '/api/mudafy?action=obtener&codigo=',
+  remax:          '/api/remax?action=obtener&codigo=',
+  c21:            '/api/c21?action=obtener&codigo='
+};
+
+function _precargarInmoDeAsesores() {
+  if (!window._asesorInmoCache) window._asesorInmoCache = {};
+  var pendientes = {};
+  var todas = (mudanzasDisponibles || []).concat(misCotizaciones || []);
+  todas.forEach(function (m) {
+    if (!m || !m.partnerAsesor) return;
+    var slug = m.partner || m.partnerSlugCrudo || '';
+    if (!_ENDPOINTS_ASESOR[slug]) return;
+    var clave = slug + ':' + m.partnerAsesor;
+    if (window._asesorInmoCache[clave] === undefined) pendientes[clave] = { slug: slug, codigo: m.partnerAsesor };
+  });
+  Object.keys(pendientes).forEach(function (clave) {
+    var p = pendientes[clave];
+    // null mientras resuelve: evita disparar el mismo fetch dos veces.
+    window._asesorInmoCache[clave] = null;
+    fetch(_ENDPOINTS_ASESOR[p.slug] + encodeURIComponent(p.codigo))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (d && d.inmobiliaria) {
+          window._asesorInmoCache[clave] = d.inmobiliaria;
+          if (typeof renderPedidos === 'function') { try { renderPedidos(); } catch (e) {} }
+        }
+      })
+      .catch(function () { /* queda el nombre del canal como fallback */ });
+  });
+}
+
+// Nombre a mostrar: la inmobiliaria del asesor si se pudo resolver; si no, el
+// nombre del canal; si no, el slug crudo.
+function _nombreInmoDe(m) {
+  if (!m) return '';
+  var slug = m.partner || m.partnerSlugCrudo || '';
+  if (!slug) return '';
+  if (m.partnerAsesor && window._asesorInmoCache) {
+    var real = window._asesorInmoCache[slug + ':' + m.partnerAsesor];
+    if (real) return real;
+  }
+  return (window._inmoNombresCache && window._inmoNombresCache[slug]) || slug;
+}
+
 function _precargarNombresInmos() {
   if (!window._inmoNombresCache) window._inmoNombresCache = { mudafy: 'Mudafy' };
   var slugsNuevos = {};
@@ -2712,6 +2762,7 @@ async function loadPedidos(silencioso){
     // Esto pobla window._inmoNombresCache (slug → nombre) para que los banners
     // muestren "Cliente referido por Meyrelles Williams" en lugar del slug crudo.
     _precargarNombresInmos();
+    _precargarInmoDeAsesores();
 
     // En modo silencioso: solo re-render si NO hay un bottom sheet abierto
     // (para no romper la lectura del usuario adentro del detalle)
@@ -3662,9 +3713,7 @@ function renderRowPedido(m, tipo) {
   var esInmobiliaria_l = !!(_slugCanal_l && _slugCanal_l !== 'mudafy');
   var esAsesor = !esMudafy_l && !esInmobiliaria_l && !!(m.refAliado || m.origenAsesor || m.origenCanal || m.partnerAsesor);
   // Nombre legible de la inmobiliaria (de _inmoNombresCache si está cargado, sino slug)
-  var nombreInmoBadge = esInmobiliaria_l
-    ? ((window._inmoNombresCache && window._inmoNombresCache[_slugCanal_l]) || _slugCanal_l)
-    : '';
+  var nombreInmoBadge = esInmobiliaria_l ? _nombreInmoDe(m) : '';
   var iconoOrigen = esMudafy_l
     ? '<span title="Cliente referido por Mudafy · comisión 25%" style="font-size:13px;flex-shrink:0;margin-right:2px">🤝</span>'
     : (esInmobiliaria_l
@@ -3720,9 +3769,7 @@ function seleccionarPedido(mudanzaId, tipo) {
   var esInmobiliaria = !!(_slugCanal && _slugCanal !== 'mudafy');
   var esAsesor = !esMudafy && !esInmobiliaria && !!(m.refAliado || m.origenAsesor || m.origenCanal || m.partnerAsesor);
   // Nombre legible de la inmobiliaria (cache si está cargado, sino slug crudo)
-  var nombreInmo = esInmobiliaria
-    ? ((window._inmoNombresCache && window._inmoNombresCache[_slugCanal]) || _slugCanal)
-    : '';
+  var nombreInmo = esInmobiliaria ? _nombreInmoDe(m) : '';
   // Mostrar referencia: preferir asesorEmail (legible), fallback a refAliado
   var refMostrar = m.asesorEmail || m.refAliado || '';
   var bannerOrigen;
@@ -5109,10 +5156,7 @@ function irAGanancia(mudanzaId){
   var planRef = _esPlanReferidos(m);
   // Nombre de la inmobiliaria que derivo al cliente. Usa el slug efectivo
   // (validado o crudo) y el cache de nombres; si no esta cargado, cae al slug.
-  var _slugRef = m.partner || m.partnerSlugCrudo || '';
-  var nombreInmoRef = _slugRef
-    ? ((window._inmoNombresCache && window._inmoNombresCache[_slugRef]) || _slugRef)
-    : '';
+  var nombreInmoRef = _nombreInmoDe(m);
   var fechaCompleta = m.fechaCompletada || m.fechaPagoSaldo || m.fechaPagoAnticipo;
   var fechaTxt = '—';
   if (fechaCompleta) {
