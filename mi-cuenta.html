@@ -5107,6 +5107,12 @@ function irAGanancia(mudanzaId){
   var clienteWA = m.clienteWA || '';
   var estadoLabel = m.estado === 'completada' ? '✓ Completada' : (m.estado === 'en_curso' ? '🚛 En curso' : '✓ Aceptada');
   var planRef = _esPlanReferidos(m);
+  // Nombre de la inmobiliaria que derivo al cliente. Usa el slug efectivo
+  // (validado o crudo) y el cache de nombres; si no esta cargado, cae al slug.
+  var _slugRef = m.partner || m.partnerSlugCrudo || '';
+  var nombreInmoRef = _slugRef
+    ? ((window._inmoNombresCache && window._inmoNombresCache[_slugRef]) || _slugRef)
+    : '';
   var fechaCompleta = m.fechaCompletada || m.fechaPagoSaldo || m.fechaPagoAnticipo;
   var fechaTxt = '—';
   if (fechaCompleta) {
@@ -5142,7 +5148,16 @@ function irAGanancia(mudanzaId){
     +       (anticipo ? '<div class="gmodal-row"><span>Anticipo cobrado</span><b>$'+anticipo.toLocaleString('es-AR')+'</b></div>' : '')
     +       (saldo ? '<div class="gmodal-row"><span>Saldo cobrado</span><b>$'+saldo.toLocaleString('es-AR')+'</b></div>' : '')
     +       (totalCobrado && totalCobrado !== precio ? '<div class="gmodal-row"><span>Total cobrado a hoy</span><b>$'+totalCobrado.toLocaleString('es-AR')+'</b></div>' : '')
-    +       '<div class="gmodal-row"><span>Fee MudateYa ('+pct+(planRef?' · Plan Referidos':'')+')</span><b style="color:#DC2626">- $'+fee.toLocaleString('es-AR')+'</b></div>'
+    +       '<div class="gmodal-row"><span>Fee MudateYa ('+pct+')</span><b style="color:#DC2626">- $'+fee.toLocaleString('es-AR')+'</b></div>'
+        // Por que se cobra ese %: el mudancero tiene que poder ver de donde vino
+        // el cliente sin salir de la card.
+        +       (planRef
+                  ? '<div class="gmodal-row" style="border-top:none;padding-top:0"><span style="font-size:11px;color:var(--text3)">'
+                    + (nombreInmoRef
+                        ? 'Cliente referido por inmobiliaria: <b style="color:var(--text2)">' + esc(nombreInmoRef) + '</b>'
+                        : 'Cliente referido por asesor inmobiliario')
+                    + '</span><b></b></div>'
+                  : '')
     +       '<div class="gmodal-row gmodal-row-neto"><span>Vos cobrás</span><b>$'+neto.toLocaleString('es-AR')+'</b></div>'
     +     '</div>'
     +   '</div>'
