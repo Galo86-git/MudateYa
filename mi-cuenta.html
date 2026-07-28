@@ -2537,7 +2537,7 @@ function _esPlanReferidos(m) {
   // Tiene que coincidir con la deteccion del backend (api/cotizaciones.js).
   // origenCanal cubre las mudanzas de canal cuyo slug de inmobiliaria no estaba
   // registrado: antes quedaban sin `partner` y se mostraban al 15%.
-  return !!(m && (m.origenCanal === true || m.origenAsesor === true || m.refAliado || m.partner || m.partnerAsesor));
+  return !!(m && (m.origenCanal === true || m.origenAsesor === true || m.refAliado || m.partner || m.partnerAsesor || m.partnerSlugCrudo));
 }
 
 // Pre-carga el nombre legible de cada inmobiliaria que aparece en los pedidos
