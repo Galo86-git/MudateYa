@@ -2124,7 +2124,7 @@ function confirmarAccion(opts) {
             </div>
 
             <div class="leads-banner" style="background:linear-gradient(135deg,#FEF3C7 0%,#FFFBEB 100%);border:1px solid #FDE68A;color:#92400E;margin-top:14px">
-              ⚠️ <b>Comisión MudateYa: 15% en mudanzas / 20% en fletes</b>
+              ⚠️ <b>Comisión MudateYa: 15% en mudanzas / 20% en fletes / 25% en mudanzas derivadas de canales</b>
               <div style="font-size:11px;color:#92400E;margin-top:4px;font-weight:400;line-height:1.5">Las mudanzas que llegan derivadas de inmobiliarias o de <b>Mudafy</b> pagan <b>25% de comisión</b> (incluye fee del partner que las refiere).</div>
             </div>
           </div>
@@ -3651,9 +3651,13 @@ function renderRowPedido(m, tipo) {
     }
   }
   // Ruta compacta + indicador de origen (Mudafy / inmobiliaria / asesor / sitio)
-  var esMudafy_l = m.partner === 'mudafy';
-  var esInmobiliaria_l = !!(m.partner && m.partner !== 'mudafy');
-  var esAsesor = !esMudafy_l && !esInmobiliaria_l && !!(m.refAliado || m.origenAsesor);
+  // El slug crudo cuenta como inmobiliaria: cuando no esta registrada en Redis
+  // m.partner queda null, y sin esto el banner caia en "Cliente directo del
+  // sitio" con 15% hardcodeado para una mudanza que si vino de un canal.
+  var _slugCanal_l = m.partner || m.partnerSlugCrudo || '';
+  var esMudafy_l = _slugCanal_l === 'mudafy';
+  var esInmobiliaria_l = !!(_slugCanal_l && _slugCanal_l !== 'mudafy');
+  var esAsesor = !esMudafy_l && !esInmobiliaria_l && !!(m.refAliado || m.origenAsesor || m.origenCanal || m.partnerAsesor);
   // Nombre legible de la inmobiliaria (de _inmoNombresCache si está cargado, sino slug)
   var nombreInmoBadge = esInmobiliaria_l
     ? ((window._inmoNombresCache && window._inmoNombresCache[m.partner]) || m.partner)
@@ -3705,9 +3709,13 @@ function seleccionarPedido(mudanzaId, tipo) {
   var row = document.getElementById('pd-row-'+mudanzaId);
   if (row) row.classList.add('active');
   // Banner de origen del cliente: Mudafy / inmobiliaria asociada / asesor / directo
-  var esMudafy = m.partner === 'mudafy';
-  var esInmobiliaria = !!(m.partner && m.partner !== 'mudafy');
-  var esAsesor = !esMudafy && !esInmobiliaria && !!(m.refAliado || m.origenAsesor);
+  // El slug crudo cuenta como inmobiliaria: cuando no esta registrada en Redis
+  // m.partner queda null, y sin esto el banner caia en "Cliente directo del
+  // sitio" con 15% hardcodeado para una mudanza que si vino de un canal.
+  var _slugCanal = m.partner || m.partnerSlugCrudo || '';
+  var esMudafy = _slugCanal === 'mudafy';
+  var esInmobiliaria = !!(_slugCanal && _slugCanal !== 'mudafy');
+  var esAsesor = !esMudafy && !esInmobiliaria && !!(m.refAliado || m.origenAsesor || m.origenCanal || m.partnerAsesor);
   // Nombre legible de la inmobiliaria (cache si está cargado, sino slug crudo)
   var nombreInmo = esInmobiliaria
     ? ((window._inmoNombresCache && window._inmoNombresCache[m.partner]) || m.partner)
@@ -3747,7 +3755,7 @@ function seleccionarPedido(mudanzaId, tipo) {
       + '<span style="font-size:18px;flex-shrink:0">🌐</span>'
       + '<div style="flex:1;min-width:0">'
       +   '<div style="font-size:12px;font-weight:700;color:#15803D;line-height:1.3">Cliente directo del sitio</div>'
-      +   '<div style="font-size:11px;color:#166534;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>15%</b></div>'
+      +   '<div style="font-size:11px;color:#166534;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>' + calcFeeLabel(m.ambientes, m) + '</b></div>'
       + '</div>'
       + '</div>';
   }
