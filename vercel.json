@@ -1,47 +1,335 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/mudanceros", "destination": "/mudanceros.html" },
-    { "source": "/mudancero", "destination": "/mudancero-perfil.html" },
-    { "source": "/mudanceros-catalogo", "destination": "/mudanceros-catalogo.html" },
-    { "source": "/mi-cuenta", "destination": "/mi-cuenta.html" },
-    { "source": "/mi-mudanza", "destination": "/mi-mudanza.html" },
-    { "source": "/pago-exitoso", "destination": "/pago-exitoso.html" },
-    { "source": "/terminos", "destination": "/terminos.html" },
-    { "source": "/aceptar-terminos", "destination": "/aceptar-terminos.html" },
-    { "source": "/privacidad", "destination": "/privacidad.html" },
-    { "source": "/contacto", "destination": "/contacto.html" },
-    { "source": "/mya-mobility", "destination": "/mya-mobility.html" },
-    { "source": "/asesores", "destination": "/asesores.html" },
-    { "source": "/mudafy", "destination": "/mudafy.html" },
-    { "source": "/inmobiliaria/:slug", "destination": "/inmobiliaria.html?slug=:slug" },
-    { "source": "/inmobiliarias-registro", "destination": "/inmobiliarias-registro.html" },
-    { "source": "/plan-inmobiliarias", "destination": "/plan-inmobiliarias.html" },
-    { "source": "/research-mudanceros", "destination": "/research-mudanceros.html" },
-    { "source": "/asesor-login", "destination": "/asesor-login.html" },
-    { "source": "/asesor-dashboard", "destination": "/asesor-dashboard.html" },
-    { "source": "/cliente-packs", "destination": "/cliente-packs.html" },
-    { "source": "/aliados", "destination": "/aliados.html" },
-    { "source": "/r/:slug", "destination": "/api/r?slug=:slug" },
-    { "source": "/m/:slug", "destination": "/mudancero-perfil.html?slug=:slug" }
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/mudanceros",
+      "destination": "/mudanceros.html"
+    },
+    {
+      "source": "/mudancero",
+      "destination": "/mudancero-perfil.html"
+    },
+    {
+      "source": "/mudanceros-catalogo",
+      "destination": "/mudanceros-catalogo.html"
+    },
+    {
+      "source": "/mi-cuenta",
+      "destination": "/mi-cuenta.html"
+    },
+    {
+      "source": "/mi-mudanza",
+      "destination": "/mi-mudanza.html"
+    },
+    {
+      "source": "/pago-exitoso",
+      "destination": "/pago-exitoso.html"
+    },
+    {
+      "source": "/terminos",
+      "destination": "/terminos.html"
+    },
+    {
+      "source": "/aceptar-terminos",
+      "destination": "/aceptar-terminos.html"
+    },
+    {
+      "source": "/privacidad",
+      "destination": "/privacidad.html"
+    },
+    {
+      "source": "/contacto",
+      "destination": "/contacto.html"
+    },
+    {
+      "source": "/mya-mobility",
+      "destination": "/mya-mobility.html"
+    },
+    {
+      "source": "/asesores",
+      "destination": "/asesores.html"
+    },
+    {
+      "source": "/mudafy",
+      "destination": "/mudafy.html"
+    },
+    {
+      "source": "/inmobiliaria/:slug",
+      "destination": "/inmobiliaria.html?slug=:slug"
+    },
+    {
+      "source": "/inmobiliarias-registro",
+      "destination": "/inmobiliarias-registro.html"
+    },
+    {
+      "source": "/plan-inmobiliarias",
+      "destination": "/plan-inmobiliarias.html"
+    },
+    {
+      "source": "/research-mudanceros",
+      "destination": "/research-mudanceros.html"
+    },
+    {
+      "source": "/asesor-login",
+      "destination": "/asesor-login.html"
+    },
+    {
+      "source": "/asesor-dashboard",
+      "destination": "/asesor-dashboard.html"
+    },
+    {
+      "source": "/cliente-packs",
+      "destination": "/cliente-packs.html"
+    },
+    {
+      "source": "/aliados",
+      "destination": "/aliados.html"
+    },
+    {
+      "source": "/r/:slug",
+      "destination": "/api/r?slug=:slug"
+    },
+    {
+      "source": "/m/:slug",
+      "destination": "/mudancero-perfil.html?slug=:slug"
+    },
+    {
+      "source": "/mudanzas-en-caba",
+      "destination": "/mudanzas-en-caba.html"
+    },
+    {
+      "source": "/fletes-en-caba",
+      "destination": "/fletes-en-caba.html"
+    },
+    {
+      "source": "/mudanzas-en-palermo",
+      "destination": "/mudanzas-en-palermo.html"
+    },
+    {
+      "source": "/fletes-en-palermo",
+      "destination": "/fletes-en-palermo.html"
+    },
+    {
+      "source": "/mudanzas-en-belgrano",
+      "destination": "/mudanzas-en-belgrano.html"
+    },
+    {
+      "source": "/fletes-en-belgrano",
+      "destination": "/fletes-en-belgrano.html"
+    },
+    {
+      "source": "/mudanzas-en-caballito",
+      "destination": "/mudanzas-en-caballito.html"
+    },
+    {
+      "source": "/fletes-en-caballito",
+      "destination": "/fletes-en-caballito.html"
+    },
+    {
+      "source": "/mudanzas-en-flores",
+      "destination": "/mudanzas-en-flores.html"
+    },
+    {
+      "source": "/mudanzas-en-almagro",
+      "destination": "/mudanzas-en-almagro.html"
+    },
+    {
+      "source": "/mudanzas-en-villa-crespo",
+      "destination": "/mudanzas-en-villa-crespo.html"
+    },
+    {
+      "source": "/mudanzas-en-nunez",
+      "destination": "/mudanzas-en-nunez.html"
+    },
+    {
+      "source": "/mudanzas-en-recoleta",
+      "destination": "/mudanzas-en-recoleta.html"
+    },
+    {
+      "source": "/mudanzas-en-san-telmo",
+      "destination": "/mudanzas-en-san-telmo.html"
+    },
+    {
+      "source": "/mudanzas-en-villa-urquiza",
+      "destination": "/mudanzas-en-villa-urquiza.html"
+    },
+    {
+      "source": "/mudanzas-en-devoto",
+      "destination": "/mudanzas-en-devoto.html"
+    },
+    {
+      "source": "/mudanzas-en-liniers",
+      "destination": "/mudanzas-en-liniers.html"
+    },
+    {
+      "source": "/mudanzas-en-boedo",
+      "destination": "/mudanzas-en-boedo.html"
+    },
+    {
+      "source": "/mudanzas-en-san-isidro",
+      "destination": "/mudanzas-en-san-isidro.html"
+    },
+    {
+      "source": "/fletes-en-san-isidro",
+      "destination": "/fletes-en-san-isidro.html"
+    },
+    {
+      "source": "/mudanzas-en-tigre",
+      "destination": "/mudanzas-en-tigre.html"
+    },
+    {
+      "source": "/mudanzas-en-vicente-lopez",
+      "destination": "/mudanzas-en-vicente-lopez.html"
+    },
+    {
+      "source": "/mudanzas-en-san-martin",
+      "destination": "/mudanzas-en-san-martin.html"
+    },
+    {
+      "source": "/mudanzas-en-moron",
+      "destination": "/mudanzas-en-moron.html"
+    },
+    {
+      "source": "/mudanzas-en-merlo",
+      "destination": "/mudanzas-en-merlo.html"
+    },
+    {
+      "source": "/mudanzas-en-moreno",
+      "destination": "/mudanzas-en-moreno.html"
+    },
+    {
+      "source": "/mudanzas-en-lanus",
+      "destination": "/mudanzas-en-lanus.html"
+    },
+    {
+      "source": "/mudanzas-en-quilmes",
+      "destination": "/mudanzas-en-quilmes.html"
+    },
+    {
+      "source": "/mudanzas-en-avellaneda",
+      "destination": "/mudanzas-en-avellaneda.html"
+    },
+    {
+      "source": "/mudanzas-en-lomas-de-zamora",
+      "destination": "/mudanzas-en-lomas-de-zamora.html"
+    },
+    {
+      "source": "/mudanzas-en-rosario",
+      "destination": "/mudanzas-en-rosario.html"
+    },
+    {
+      "source": "/fletes-en-rosario",
+      "destination": "/fletes-en-rosario.html"
+    },
+    {
+      "source": "/mudanzas-en-cordoba",
+      "destination": "/mudanzas-en-cordoba.html"
+    },
+    {
+      "source": "/fletes-en-cordoba",
+      "destination": "/fletes-en-cordoba.html"
+    },
+    {
+      "source": "/mudanzas-en-mendoza",
+      "destination": "/mudanzas-en-mendoza.html"
+    },
+    {
+      "source": "/mudanza-sin-estres-caba",
+      "destination": "/mudanza-sin-estres-caba.html"
+    },
+    {
+      "source": "/mudanza-sin-estres-palermo",
+      "destination": "/mudanza-sin-estres-palermo.html"
+    },
+    {
+      "source": "/mudanza-sin-estres-belgrano",
+      "destination": "/mudanza-sin-estres-belgrano.html"
+    },
+    {
+      "source": "/mudanza-sin-estres-san-isidro",
+      "destination": "/mudanza-sin-estres-san-isidro.html"
+    },
+    {
+      "source": "/mudanza-completa-caba",
+      "destination": "/mudanza-completa-caba.html"
+    },
+    {
+      "source": "/circulo",
+      "destination": "/circulo.html"
+    },
+    {
+      "source": "/membresia",
+      "destination": "/membresia.html"
+    }
   ],
   "headers": [
     {
-      "source": "/(.*\\.html)",
+      "source": "/(.*\\.(?:css|js|mjs|png|jpg|jpeg|gif|svg|ico|webp|avif|woff|woff2|ttf|otf|mp4|webm))",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
       ]
     },
     {
       "source": "/",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(mudanzas-en-|fletes-en-|mudanza-sin-estres-|mudanza-completa-):rest*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/(mudanceros|asesores|mya-mobility|contacto|circulo|membresia|plan-inmobiliarias|terminos|privacidad)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(admin|admin-circulo|aliados|asesor-dashboard|asesor-login|asesor-registro|c21-altas|c21-registro|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|r|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|cliente-packs|mudancero-perfil)(\\.html)?",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
       ]
     }
   ],
   "crons": [
-    { "path": "/api/cron-onboarding", "schedule": "0 13 * * *" },
-    { "path": "/api/cron-onboarding", "schedule": "0 21 * * *" }
+    {
+      "path": "/api/cron-onboarding",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron-onboarding",
+      "schedule": "0 21 * * *"
+    }
   ]
 }
