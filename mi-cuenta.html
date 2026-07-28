@@ -3770,6 +3770,9 @@ function seleccionarPedido(mudanzaId, tipo) {
   var esAsesor = !esMudafy && !esInmobiliaria && !!(m.refAliado || m.origenAsesor || m.origenCanal || m.partnerAsesor);
   // Nombre legible de la inmobiliaria (cache si está cargado, sino slug crudo)
   var nombreInmo = esInmobiliaria ? _nombreInmoDe(m) : '';
+  // Cuando no hay slug (pedidos viejos, o cargados por el asesor desde su panel)
+  // igual puede haberse resuelto la inmobiliaria por el codigo del asesor.
+  var nombreAsesorInmo = (!esInmobiliaria && esAsesor) ? _nombreInmoDe(m) : '';
   // Mostrar referencia: preferir asesorEmail (legible), fallback a refAliado
   var refMostrar = m.asesorEmail || m.refAliado || '';
   var bannerOrigen;
@@ -3799,6 +3802,7 @@ function seleccionarPedido(mudanzaId, tipo) {
       + '<span style="font-size:18px;flex-shrink:0">🏢</span>'
       + '<div style="flex:1;min-width:0">'
       +   '<div style="font-size:12px;font-weight:700;color:#991B1B;line-height:1.3">Cliente referido por asesor inmobiliario</div>'
+      +   (nombreAsesorInmo ? '<div style="font-size:12px;font-weight:600;color:#B91C1C;line-height:1.3;margin-top:1px">'+esc(nombreAsesorInmo)+'</div>' : '')
       +   '<div style="font-size:11px;color:#7F1D1D;font-family:var(--mono);margin-top:2px">Comisión MudateYa: <b>25%</b>'+(refMostrar?' · '+esc(refMostrar):'')+'</div>'
       + '</div>'
       + '</div>';
