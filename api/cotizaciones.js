@@ -1410,10 +1410,20 @@ module.exports = async function handler(req, res) {
       // RÉGIMEN por tipo de operación: en COMPRAVENTA la inmobiliaria ya cobró su
       // comisión de venta, así que MudateYa NO paga comisión de referido (queda en $0
       // y el cliente recibe un regalo especial aparte). En ALQUILER sí se paga.
-      if (mudanza.partner && parseFloat(mudanza.comisionInmobiliariaPct) > 0 && mudanza.tipoOperacion !== 'compraventa') {
+      // Se paga a TODA operación de canal, no solo a las que tienen la
+      // inmobiliaria cargada en Redis: si el slug no estaba registrado el monto
+      // quedaba en cero y el asesor no aparecía como acreedor en ningún lado.
+      // El % de la config manda si existe; si no, rige el default del canal.
+      const _esCanalAsesor = !!(mudanza.partner || mudanza.partnerSlugCrudo || mudanza.partnerAsesor);
+      if (_esCanalAsesor && mudanza.tipoOperacion !== 'compraventa') {
         const precioFinal = parseFloat(cot.precio) || 0;
-        const pct = parseFloat(mudanza.comisionInmobiliariaPct);
+        const pctCfg = parseFloat(mudanza.comisionInmobiliariaPct);
+        const pct = pctCfg > 0 ? pctCfg : COMISION_ASESOR_DEFAULT;
+        mudanza.comisionInmobiliariaPct = pct;   // snapshot efectivo
         mudanza.comisionInmobiliariaPagar = Math.round(precioFinal * pct / 100);
+      } else if (mudanza.tipoOperacion === 'compraventa') {
+        // En compraventa no hay comisión: el cliente recibe el regalo.
+        mudanza.comisionInmobiliariaPagar = 0;
       }
 
       await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
@@ -1623,8 +1633,10 @@ module.exports = async function handler(req, res) {
       if (cargo > 0) {
         m.cotizacionAceptada.precio = precioNuevo;
         m.montoTotal = precioNuevo;
-        if (m.partner && parseFloat(m.comisionInmobiliariaPct) > 0 && m.tipoOperacion !== 'compraventa') {
-          m.comisionInmobiliariaPagar = Math.round(precioNuevo * parseFloat(m.comisionInmobiliariaPct) / 100);
+        if ((m.partner || m.partnerSlugCrudo || m.partnerAsesor) && m.tipoOperacion !== 'compraventa') {
+          const _pctH = parseFloat(m.comisionInmobiliariaPct) > 0 ? parseFloat(m.comisionInmobiliariaPct) : COMISION_ASESOR_DEFAULT;
+          m.comisionInmobiliariaPct = _pctH;
+          m.comisionInmobiliariaPagar = Math.round(precioNuevo * _pctH / 100);
         }
         try {
           await redisCall('DEL', `talo:pago:${mudanzaId}:saldo`);
@@ -1783,10 +1795,10 @@ module.exports = async function handler(req, res) {
       // La comisión del asesor se calcula sobre el precio final: si el precio
       // cambió, el monto a pagarle también. El porcentaje es el snapshot que se
       // fijó al publicar y no se toca.
-      if (m.partner && parseFloat(m.comisionInmobiliariaPct) > 0 && m.tipoOperacion !== 'compraventa') {
-        m.comisionInmobiliariaPagar = Math.round(
-          (parseFloat(m.ajustePrecio.montoNuevo) || 0) * parseFloat(m.comisionInmobiliariaPct) / 100
-        );
+      if ((m.partner || m.partnerSlugCrudo || m.partnerAsesor) && m.tipoOperacion !== 'compraventa') {
+        const _pctAj = parseFloat(m.comisionInmobiliariaPct) > 0 ? parseFloat(m.comisionInmobiliariaPct) : COMISION_ASESOR_DEFAULT;
+        m.comisionInmobiliariaPct = _pctAj;
+        m.comisionInmobiliariaPagar = Math.round((parseFloat(m.ajustePrecio.montoNuevo) || 0) * _pctAj / 100);
       }
 
       // Invalidar el pago de transferencia ya generado: se había creado con el
@@ -2146,6 +2158,12 @@ module.exports = async function handler(req, res) {
             fechaPublicacion: m.fechaPublicacion,
             // Método real de cada tramo: desde que hay transferencia, no todo
             // pasa por Mercado Pago y el panel tiene que poder distinguirlo.
+            // Lo que MudateYa le debe al asesor por esta operación. Solo
+            // alquiler: en compraventa el beneficio va al cliente.
+            comisionAsesor:     parseInt(m.comisionInmobiliariaPagar) || 0,
+            comisionAsesorPct:  parseFloat(m.comisionInmobiliariaPct) || 0,
+            asesorCodigo:       m.partnerAsesor || '',
+            tipoOperacion:      m.tipoOperacion || '',
             metodoPagoAnticipo: m.metodoPagoAnticipo || 'mercadopago',
             metodoPagoSaldo:    m.metodoPagoSaldo    || 'mercadopago',
           };
