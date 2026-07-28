@@ -3738,9 +3738,21 @@ function renderRowPedido(m, tipo) {
   // Meta inline: ambientes + km
   var metaInline = (m.ambientes||'—') + (m.km ? ' · '+m.km+'km' : '');
 
+  // Nombre de la inmobiliaria VISIBLE en la fila. Antes solo estaba el emoji
+  // con el nombre en el title: en mobile no hay hover, asi que el mudancero
+  // no tenia forma de saber de que inmobiliaria venia sin abrir el detalle.
+  var _nomOrigen = (esMudafy_l || esInmobiliaria_l || esAsesor) ? _nombreInmoDe(m) : '';
+  var badgeOrigen = _nomOrigen
+    ? '<span style="display:inline-block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;'
+      + 'font-size:10.5px;font-weight:600;color:#991B1B;background:#FEF2F2;border:1px solid #FECACA;'
+      + 'border-radius:5px;padding:1px 6px;margin-left:6px" title="Cliente referido por ' + esc(_nomOrigen) + '">'
+      + esc(_nomOrigen) + '</span>'
+    : '';
+
   return '<div class="pd-row-line" id="pd-row-'+m.id+'" data-id="'+m.id+'" data-tipo="'+tipo+'" onclick="seleccionarPedido(\''+m.id+'\',\''+tipo+'\')" tabindex="0">'
     + '<span class="pd-st-pill '+pillCls+'">'+pillTxt+'</span>'
     + '<span class="pd-ruta-line" title="'+ruta.replace(/"/g,'&quot;')+(esAsesor?' · Cliente por asesor':'')+'">'+iconoOrigen+ruta+(fechaCorta?'<span class="pd-fecha-line">📅 '+esc(fechaCorta)+'</span>':'')+'</span>'
+    + badgeOrigen
     + packBadge
     + (precioTxt ? '<span class="pd-precio-line">'+precioTxt+'</span>' : '<span class="pd-precio-line" style="color:var(--text3)">—</span>')
     + '<span class="pd-arrow">›</span>'
