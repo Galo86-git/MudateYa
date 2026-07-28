@@ -2534,7 +2534,10 @@ function showScreen(name){
 //   inmobiliaria asociada): 25%. Se detecta con m.origenAsesor, m.refAliado
 //   o m.partner (truthy → cualquier slug de inmobiliaria, incluyendo 'mudafy').
 function _esPlanReferidos(m) {
-  return !!(m && (m.origenAsesor === true || m.refAliado || m.partner));
+  // Tiene que coincidir con la deteccion del backend (api/cotizaciones.js).
+  // origenCanal cubre las mudanzas de canal cuyo slug de inmobiliaria no estaba
+  // registrado: antes quedaban sin `partner` y se mostraban al 15%.
+  return !!(m && (m.origenCanal === true || m.origenAsesor === true || m.refAliado || m.partner || m.partnerAsesor));
 }
 
 // Pre-carga el nombre legible de cada inmobiliaria que aparece en los pedidos
