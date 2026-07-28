@@ -2562,24 +2562,36 @@ function _precargarInmoDeAsesores() {
   var todas = (mudanzasDisponibles || []).concat(misCotizaciones || []);
   todas.forEach(function (m) {
     if (!m || !m.partnerAsesor) return;
-    var slug = m.partner || m.partnerSlugCrudo || '';
-    if (!_ENDPOINTS_ASESOR[slug]) return;
-    var clave = slug + ':' + m.partnerAsesor;
-    if (window._asesorInmoCache[clave] === undefined) pendientes[clave] = { slug: slug, codigo: m.partnerAsesor };
+    var cod = String(m.partnerAsesor).trim();
+    if (!cod) return;
+    if (window._asesorInmoCache[cod] === undefined) {
+      pendientes[cod] = m.partner || m.partnerSlugCrudo || '';
+    }
   });
-  Object.keys(pendientes).forEach(function (clave) {
-    var p = pendientes[clave];
-    // null mientras resuelve: evita disparar el mismo fetch dos veces.
-    window._asesorInmoCache[clave] = null;
-    fetch(_ENDPOINTS_ASESOR[p.slug] + encodeURIComponent(p.codigo))
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (d && d.inmobiliaria) {
-          window._asesorInmoCache[clave] = d.inmobiliaria;
-          if (typeof renderPedidos === 'function') { try { renderPedidos(); } catch (e) {} }
-        }
-      })
-      .catch(function () { /* queda el nombre del canal como fallback */ });
+
+  Object.keys(pendientes).forEach(function (cod) {
+    window._asesorInmoCache[cod] = null; // en curso: evita fetches duplicados
+    var slug = pendientes[cod];
+    // Si se conoce el canal se prueba primero; si no, se prueban todos hasta
+    // que uno responda. Solo el canal correcto tiene ese codigo.
+    var orden = (slug && _ENDPOINTS_ASESOR[slug])
+      ? [slug].concat(Object.keys(_ENDPOINTS_ASESOR).filter(function (k) { return k !== slug; }))
+      : Object.keys(_ENDPOINTS_ASESOR);
+
+    (function probar(i) {
+      if (i >= orden.length) return;
+      fetch(_ENDPOINTS_ASESOR[orden[i]] + encodeURIComponent(cod))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (d && d.inmobiliaria) {
+            window._asesorInmoCache[cod] = d.inmobiliaria;
+            if (typeof renderPedidos === 'function') { try { renderPedidos(); } catch (e) {} }
+          } else {
+            probar(i + 1);
+          }
+        })
+        .catch(function () { probar(i + 1); });
+    })(0);
   });
 }
 
@@ -2587,12 +2599,16 @@ function _precargarInmoDeAsesores() {
 // nombre del canal; si no, el slug crudo.
 function _nombreInmoDe(m) {
   if (!m) return '';
-  var slug = m.partner || m.partnerSlugCrudo || '';
-  if (!slug) return '';
+  // 1. La inmobiliaria del asesor que derivo al cliente. Se cachea por CODIGO
+  //    y no por canal+codigo: los pedidos viejos no tienen el slug guardado y
+  //    aun asi hay que poder resolver de que inmobiliaria vinieron.
   if (m.partnerAsesor && window._asesorInmoCache) {
-    var real = window._asesorInmoCache[slug + ':' + m.partnerAsesor];
+    var real = window._asesorInmoCache[String(m.partnerAsesor).trim()];
     if (real) return real;
   }
+  // 2. El nombre del canal; 3. el slug crudo.
+  var slug = m.partner || m.partnerSlugCrudo || '';
+  if (!slug) return '';
   return (window._inmoNombresCache && window._inmoNombresCache[slug]) || slug;
 }
 
