@@ -1018,12 +1018,32 @@ module.exports = async function handler(req, res) {
             if (inmoCfg && inmoCfg.activa !== false) {
               partnerNorm = partnerLower;
               comisionInmobiliariaPct = parseFloat(inmoCfg.comisionInmobiliaria) || 0;
+            } else {
+              // El slug llegó pero no está configurado. La mudanza IGUAL es de
+              // canal (ver origenCanal abajo); lo único que no se puede calcular
+              // es cuánto pagarle a la inmobiliaria, porque ese % no existe.
+              console.warn('[partner] slug no registrado o inactivo:', partnerLower,
+                           '— la mudanza se marca como de canal igual, pero sin comisión a la inmobiliaria');
             }
           } catch(e) {
             console.warn('No se pudo verificar inmobiliaria:', partnerLower, e.message);
           }
         }
       }
+
+      // ── Origen de canal ────────────────────────────────────────────────
+      // La comisión de MudateYa es 25% para TODA mudanza que llega por un canal
+      // (inmobiliaria, asesor, aliado) y 15%/20% solo para las orgánicas.
+      //
+      // Este flag NO depende de que el slug esté registrado en Redis. Antes el
+      // 25% se deducía de `partner`, que se descartaba si la inmobiliaria no
+      // estaba cargada: una mudanza de RE/MAX con el slug mal escrito se
+      // facturaba al 15% sin que nadie se enterara.
+      const origenCanal = !!(
+        (typeof partner === 'string' && partner.trim()) ||
+        (typeof partnerAsesor === 'string' && partnerAsesor.trim()) ||
+        refAliado || origenAsesor === true
+      );
       const partnerAsesorNorm    = (typeof partnerAsesor === 'string' && partnerAsesor.length < 100) ? partnerAsesor : '';
       const partnerPropiedadNorm = (typeof partnerPropiedad === 'string' && partnerPropiedad.length < 100) ? partnerPropiedad : '';
       // Tipo de operación inmobiliaria que originó la mudanza. Solo interno (NO va al PDF).
@@ -1113,6 +1133,7 @@ module.exports = async function handler(req, res) {
       }
 
       const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: vencimientoHabilISO(HORAS_VIGENCIA), cotizaciones: [] };
+      mudanza.origenCanal = origenCanal;
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -2068,7 +2089,11 @@ module.exports = async function handler(req, res) {
           // "Plan Referidos" se activa para: asesores inmobiliarios, refAliado, Mudafy
           // y cualquier inmobiliaria asociada (partner truthy → vino de un canal pago).
           const esFlete = (m.tipo || '').toLowerCase() === 'flete';
-          const esPlanReferidos = !!(m.origenAsesor === true || m.refAliado || m.partner);
+          // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
+          // origenCanal cubre los casos donde el slug de la inmobiliaria no
+          // estaba registrado y `partner` quedaba vacío: la mudanza venía de un
+          // canal igual. Se mantienen los campos viejos para pedidos anteriores.
+          const esPlanReferidos = !!(m.origenCanal === true || m.origenAsesor === true || m.refAliado || m.partner || m.partnerAsesor);
           const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
           const feePctLabel = (feePct * 100).toFixed(0) + '%';
           const cot = m.cotizacionAceptada || {};
@@ -4100,7 +4125,8 @@ async function logPedidoSheets(mudanza) {
   const esFlete = mudanza.tipo === 'flete' || mudanza.ambientes === 'Flete';
   // Plan Referidos (leads de asesores inmobiliarios, partner Mudafy o cualquier
   // inmobiliaria asociada): 25% flat. Mudanzas normales: 15% · Fletes normales: 20%
-  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner);
+  // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
+  const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor);
   const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   const precio = parseInt(cot.precio || 0);
   const fee = Math.round(precio * feePct);
@@ -4156,7 +4182,8 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   // Plan Referidos: 25% si vino por asesor (origenAsesor), por link de aliado (refAliado),
   // por partner Mudafy, o por cualquier inmobiliaria asociada (partner truthy).
   // Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
-  const esPlanReferidos = !!(mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner);
+  // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
+  const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor);
   const comisionPct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
   // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
