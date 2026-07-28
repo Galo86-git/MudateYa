@@ -1039,10 +1039,14 @@ module.exports = async function handler(req, res) {
       // 25% se deducía de `partner`, que se descartaba si la inmobiliaria no
       // estaba cargada: una mudanza de RE/MAX con el slug mal escrito se
       // facturaba al 15% sin que nadie se enterara.
+      // OJO: origenAsesor NO se destructura arriba (no lo manda el cliente, lo
+      // setea asesores.js en su propio flujo). Se lee de req.body directamente:
+      // referenciarlo como variable suelta tira ReferenceError y rompe TODA la
+      // publicación desde canal.
       const origenCanal = !!(
         (typeof partner === 'string' && partner.trim()) ||
         (typeof partnerAsesor === 'string' && partnerAsesor.trim()) ||
-        refAliado || origenAsesor === true
+        refAliado || req.body.origenAsesor === true
       );
       const partnerAsesorNorm    = (typeof partnerAsesor === 'string' && partnerAsesor.length < 100) ? partnerAsesor : '';
       const partnerPropiedadNorm = (typeof partnerPropiedad === 'string' && partnerPropiedad.length < 100) ? partnerPropiedad : '';
