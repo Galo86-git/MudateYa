@@ -1006,6 +1006,12 @@ module.exports = async function handler(req, res) {
       // Estos campos los lee el admin (badge "Vía Mudafy") y los templates de mail.
       let partnerNorm = null;
       let comisionInmobiliariaPct = 0;
+      // Slug tal como llegó, SIN validar contra Redis. partnerNorm se descarta
+      // cuando la inmobiliaria no está registrada, y con él se perdía la única
+      // evidencia de que la mudanza vino de un canal: quedaba indistinguible de
+      // una orgánica y se facturaba al 15%. Este campo es solo trazabilidad.
+      const partnerSlugCrudo = (typeof partner === 'string' && partner.trim())
+        ? partner.trim().toLowerCase().slice(0, 60) : '';
       if (typeof partner === 'string' && partner.length > 0 && partner.length < 60) {
         const partnerLower = partner.toLowerCase();
         // Whitelist legacy: mudafy queda hardcoded para no romper su flujo actual.
@@ -1138,6 +1144,11 @@ module.exports = async function handler(req, res) {
 
       const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: vencimientoHabilISO(HORAS_VIGENCIA), cotizaciones: [] };
       mudanza.origenCanal = origenCanal;
+      // Se guarda solo si difiere del validado: si partnerNorm quedó null pero
+      // el cliente llegó por /inmobiliaria/{slug}, acá queda cuál era.
+      if (partnerSlugCrudo && partnerSlugCrudo !== partnerNorm) {
+        mudanza.partnerSlugCrudo = partnerSlugCrudo;
+      }
       await setJSON(`mudanza:${id}`, mudanza, 604800);
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
@@ -2097,7 +2108,7 @@ module.exports = async function handler(req, res) {
           // origenCanal cubre los casos donde el slug de la inmobiliaria no
           // estaba registrado y `partner` quedaba vacío: la mudanza venía de un
           // canal igual. Se mantienen los campos viejos para pedidos anteriores.
-          const esPlanReferidos = !!(m.origenCanal === true || m.origenAsesor === true || m.refAliado || m.partner || m.partnerAsesor);
+          const esPlanReferidos = !!(m.origenCanal === true || m.origenAsesor === true || m.refAliado || m.partner || m.partnerAsesor || m.partnerSlugCrudo);
           const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
           const feePctLabel = (feePct * 100).toFixed(0) + '%';
           const cot = m.cotizacionAceptada || {};
@@ -4130,7 +4141,7 @@ async function logPedidoSheets(mudanza) {
   // Plan Referidos (leads de asesores inmobiliarios, partner Mudafy o cualquier
   // inmobiliaria asociada): 25% flat. Mudanzas normales: 15% · Fletes normales: 20%
   // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
-  const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor);
+  const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor || mudanza.partnerSlugCrudo);
   const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   const precio = parseInt(cot.precio || 0);
   const fee = Math.round(precio * feePct);
@@ -4187,7 +4198,7 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   // por partner Mudafy, o por cualquier inmobiliaria asociada (partner truthy).
   // Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
   // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
-  const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor);
+  const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor || mudanza.partnerSlugCrudo);
   const comisionPct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
   // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
   // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
