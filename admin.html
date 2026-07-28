@@ -1011,7 +1011,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <div class="page" id="page-c21">
         <div class="page-header">
           <h1 class="page-title">CENTURY 21 · Aliados</h1>
-          <div class="page-subtitle">Asesores de CENTURY 21 y lo que cierran. La comisión del canal es la cargada en <a href="#" onclick="showPage('inmobiliarias',event);return false" style="color:var(--blue);font-weight:600">Inmobiliarias → c21</a> (alquiler paga comisión; compraventa lleva su beneficio, sin comisión).</div>
+          <div class="page-subtitle">Asesores de CENTURY 21 y lo que cierran. La comisión del canal es la cargada en <a href="#" onclick="showPage('inmobiliarias',event);return false" style="color:var(--blue);font-weight:600">Inmobiliarias → c21</a> (alquiler paga comisión; compraventa lleva su beneficio, sin comisión). <a href="/c21-altas.html" target="_blank" style="color:var(--blue);font-weight:600">Ver altas en vivo →</a></div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;font-size:13px">
           <span style="color:var(--text2);font-weight:600">Link de registro de asesores:</span>
@@ -1029,7 +1029,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
       <div class="page" id="page-otros">
         <div class="page-header">
           <h1 class="page-title">Otros Asesores</h1>
-          <div class="page-subtitle">Asesores de inmobiliarias que no son Mudafy ni RE/MAX. Cada uno tiene su link único y cuelga del canal <code style="font-size:11px">independientes</code>. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva regalo al cliente, sin comisión).</div>
+          <div class="page-subtitle">Asesores de inmobiliarias que no son Mudafy, RE/MAX ni Century 21. Cada uno tiene su link único y cuelga del canal <code style="font-size:11px">independientes</code>. Comisión del canal: <strong>5%</strong> por operación cerrada (alquiler paga comisión; compraventa lleva regalo al cliente, sin comisión).</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;font-size:13px">
           <span style="color:var(--text2);font-weight:600">Link de registro de asesores:</span>
@@ -1510,12 +1510,21 @@ function renderDashboard(){
     return s + (parseFloat(pagosPorMudanza[id].precio) || 0);
   }, 0);
 
-  // Fee calculado por operación según tipo (flete=20%, mudanza=15%)
+  // Fee real de cada operacion. admin-pagos ya devuelve feePct calculado con la
+  // misma logica que el resto del sistema (25% canal / 20% flete / 15% organica),
+  // asi que se usa ese valor en vez de recalcularlo aca.
+  //
+  // Antes esta cuenta solo contemplaba flete y mudanza: todas las operaciones de
+  // canal se computaban al 15% y el revenue del dashboard quedaba corto.
   var revenue = mudanzasPagas.reduce(function(s, id) {
     var p = pagosPorMudanza[id];
     var precio = parseFloat(p.precio) || 0;
-    var esFlete = (p.tipo || '').toUpperCase() === 'FLETE';
-    return s + Math.round(precio * (esFlete ? 0.20 : 0.15));
+    var pct = parseFloat(p.feePct);
+    if (isNaN(pct) || pct <= 0) {
+      var esFlete = (p.tipo || '').toUpperCase() === 'FLETE';
+      pct = esFlete ? 0.20 : 0.15;
+    }
+    return s + Math.round(precio * pct);
   }, 0);
 
   // Fee promedio real
@@ -1952,7 +1961,10 @@ function renderLiquidaciones(){
             +'<td>'+tipoPagoBadge(p.tipoPago)+'</td>'
             +'<td style="font-size:11px;color:var(--text2)">'+esc(p.ruta)+'</td>'
             +'<td class="td-mono">$'+Math.round(p.bruto).toLocaleString('es-AR')+'</td>'
-            +'<td class="td-mono" style="color:var(--red);font-size:11px">-$'+Math.round(p.fee).toLocaleString('es-AR')+' ('+p.feePct+'%)</td>'
+            +'<td class="td-mono" style="color:var(--red);font-size:11px">-$'+Math.round(p.fee).toLocaleString('es-AR')
+              // feePct viene como fraccion (0.25), no como porcentaje: sin el x100
+              // la tabla mostraba "0.25%" en vez de "25%".
+              +' ('+Math.round((parseFloat(p.feePct)||0)*100)+'%)</td>'
             +'<td class="td-mono" style="color:#1A6FFF;font-weight:700;font-size:14px">$'+Math.round(p.neto).toLocaleString('es-AR')+'</td>'
             +'<td class="td-mono" style="font-size:11px">'+fmtFechaCorta(p.fechaPago)+'</td>'
             +'<td class="td-mono" style="font-size:11px;color:#15803D;font-weight:600">desde '+fmtFechaCorta(p.fechaLiberacion)+'</td>'
