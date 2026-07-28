@@ -1150,6 +1150,12 @@ module.exports = async function handler(req, res) {
         mudanza.partnerSlugCrudo = partnerSlugCrudo;
       }
       await setJSON(`mudanza:${id}`, mudanza, 604800);
+      // Aviso al asesor que derivo al cliente. Va despues de guardar: si el
+      // mail falla, el pedido ya quedo publicado igual.
+      if (mudanza.partnerAsesor) {
+        try { await notificarAsesorPedidoPublicado(mudanza); }
+        catch(e) { console.warn('Email asesor publicado:', e.message); }
+      }
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
       await setJSON(`cliente:${clienteEmail}`, clienteIdx, 2592000);
@@ -1534,8 +1540,17 @@ module.exports = async function handler(req, res) {
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       // ── Enviar emails ─────────────────────────────────────────────────
       try { await notificarMudanceroPago(m, tipoPago); } catch(e) { console.warn('Email mudancero pago error:', e.message); }
+      // Cierre para el asesor: comision si fue alquiler, regalo si compraventa.
+      if (tipoPago === 'saldo' && m.partnerAsesor) {
+        try { await notificarAsesorMudanzaCompletada(m); }
+        catch(e) { console.warn('Email asesor completada:', e.message); }
+      }
       if (tipoPago === 'anticipo') {
         try { await notificarClienteAnticipoPagado(m); } catch(e) { console.warn('Email cliente anticipo error:', e.message); }
+        if (m.partnerAsesor) {
+          try { await notificarAsesorAnticipoPagado(m); }
+          catch(e) { console.warn('Email asesor anticipo:', e.message); }
+        }
       }
       return res.status(200).json({ ok: true });
     }
@@ -4399,6 +4414,185 @@ async function notificarClienteMudanzaIniciada(mudanza) {
         </p>
       </div>
       <div style="background:#F8FAFC;padding:16px 28px;font-size:14px;color:#94A3B8">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+    </div>`
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AVISOS AL ASESOR QUE DERIVÓ AL CLIENTE
+// ═══════════════════════════════════════════════════════════════════
+//
+// Cuando el cliente llega por el link de un asesor, la mudanza guarda su código
+// en partnerAsesor. El email del asesor NO viaja en la mudanza: se resuelve acá
+// leyendo su ficha en Redis.
+//
+// RÉGIMEN (definido en las páginas de beneficios):
+//   ALQUILER    → el asesor cobra comisión sobre el precio final.
+//   COMPRAVENTA → no cobra comisión; su cliente recibe un regalo que escala
+//                 con el valor de la mudanza.
+// Por eso el mail de cierre es distinto según el tipo de operación: mandarle
+// "tu comisión es $0" a alguien de compraventa sería un error.
+
+// Comisión por defecto del canal. La config de cada inmobiliaria en Redis puede
+// pisarla (mudanza.comisionInmobiliariaPct), pero si no está cargada el asesor
+// cobra igual: antes quedaba en 0 y no se le liquidaba nada.
+const COMISION_ASESOR_DEFAULT = 5;
+
+const CLAVES_ASESOR = {
+  independientes: 'indep:asesor:',
+  mudafy:         'mudafy:asesor:',
+  remax:          'remax:asesor:',
+  c21:            'c21:asesor:'
+};
+
+async function resolverAsesor(mudanza) {
+  const cod = String((mudanza && mudanza.partnerAsesor) || '').trim();
+  if (!cod) return null;
+  const slug = mudanza.partner || mudanza.partnerSlugCrudo || '';
+  // Si se conoce el canal se prueba primero; si no, se prueban todos.
+  const orden = CLAVES_ASESOR[slug]
+    ? [slug].concat(Object.keys(CLAVES_ASESOR).filter(k => k !== slug))
+    : Object.keys(CLAVES_ASESOR);
+  for (const canal of orden) {
+    try {
+      const a = await getJSON(CLAVES_ASESOR[canal] + cod);
+      if (a && a.email && a.activo !== false) {
+        return { email: a.email, nombre: a.nombre || '', inmobiliaria: a.inmobiliaria || '', canal: canal };
+      }
+    } catch (e) { /* sigue con el próximo canal */ }
+  }
+  return null;
+}
+
+// Tramos del regalo de compraventa. Tiene que coincidir con lo publicado en
+// beneficios-*.html: si cambian ahí, cambian acá.
+function regaloCompraventa(precio) {
+  const p = parseInt(precio) || 0;
+  if (p >= 4000000) return 'Limpieza en ambos hogares + Big Box';
+  if (p >= 3000000) return 'Limpieza en ambos hogares';
+  if (p >= 2000000) return 'Limpieza en origen o destino';
+  if (p >= 1000000) return 'Big Box';
+  return null;
+}
+
+function _asesorHead(sub) {
+  return `<div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:30px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:30px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:19px;color:rgba(255,255,255,.7);margin-left:12px">${sub}</span></div>`;
+}
+function _asesorPie(m) {
+  return `<div style="background:#F8FAFC;padding:16px 28px;font-size:14px;color:#94A3B8">MudateYa · mudateya.ar · Pedido ${m.id}</div>`;
+}
+function _asesorRuta(m) {
+  return `<table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+      <tr><td style="color:#64748B;padding:11px 8px;font-size:16px">Cliente</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${m.clienteNombre || '—'}</td></tr>
+      <tr style="background:#F5F7FA"><td style="color:#64748B;padding:11px 8px;font-size:16px">Desde</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${m.desde || '—'}</td></tr>
+      <tr><td style="color:#64748B;padding:11px 8px;font-size:16px">Hasta</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${m.hasta || '—'}</td></tr>
+    </table>`;
+}
+
+// ── 1. El cliente publicó el pedido ────────────────────────────────
+async function notificarAsesorPedidoPublicado(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const a = await resolverAsesor(mudanza);
+  if (!a) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: a.email,
+    subject: `📦 ${mudanza.clienteNombre || 'Tu cliente'} publicó su mudanza`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      ${_asesorHead('📦 Pedido publicado')}
+      <div style="padding:28px">
+        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+          Hola <strong>${a.nombre || ''}</strong>, el cliente que derivaste ya publicó su mudanza. Los mudanceros verificados de la zona están cotizando.
+        </p>
+        ${_asesorRuta(mudanza)}
+        <p style="font-size:16px;color:#475569;line-height:1.7;margin:18px 0 0">
+          Te avisamos en cada paso: cuando reserve, y cuando la mudanza esté terminada.
+        </p>
+      </div>
+      ${_asesorPie(mudanza)}
+    </div>`
+  });
+}
+
+// ── 2. Pagó la seña ────────────────────────────────────────────────
+async function notificarAsesorAnticipoPagado(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const a = await resolverAsesor(mudanza);
+  if (!a) return;
+  const cot = mudanza.cotizacionAceptada || {};
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: a.email,
+    subject: `✅ ${mudanza.clienteNombre || 'Tu cliente'} reservó su mudanza`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      ${_asesorHead('✅ Mudanza reservada')}
+      <div style="padding:28px">
+        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+          Hola <strong>${a.nombre || ''}</strong>, tu cliente pagó la seña y la mudanza quedó confirmada con <strong>${cot.mudanceroNombre || 'el mudancero'}</strong>.
+        </p>
+        ${_asesorRuta(mudanza)}
+        <p style="font-size:16px;color:#475569;line-height:1.7;margin:18px 0 0">
+          Cuando la mudanza esté terminada te escribimos de nuevo.
+        </p>
+      </div>
+      ${_asesorPie(mudanza)}
+    </div>`
+  });
+}
+
+// ── 3. Mudanza completada: comisión o regalo ───────────────────────
+async function notificarAsesorMudanzaCompletada(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const a = await resolverAsesor(mudanza);
+  if (!a) return;
+  const cot = mudanza.cotizacionAceptada || {};
+  const precio = parseInt(cot.precio || mudanza.montoTotal || 0) || 0;
+  const esCompraventa = mudanza.tipoOperacion === 'compraventa';
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  let bloque;
+  if (esCompraventa) {
+    const regalo = regaloCompraventa(precio);
+    bloque = `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:12px;padding:20px 22px;margin:20px 0">
+        <div style="font-size:14px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:10px">🎁 EL REGALO DE TU CLIENTE</div>
+        ${regalo
+          ? `<div style="font-size:22px;font-weight:800;color:#0F1923;margin-bottom:8px">${regalo}</div>
+             <div style="font-size:16px;color:#475569;line-height:1.7">Por ser una operación de compraventa, tu cliente recibe este beneficio sin costo. Nos contactamos con él para coordinarlo.</div>`
+          : `<div style="font-size:16px;color:#475569;line-height:1.7">Esta operación no alcanza el monto mínimo para el regalo. Nos ponemos en contacto con tu cliente si corresponde algún beneficio.</div>`}
+      </div>`;
+  } else {
+    const pct = parseFloat(mudanza.comisionInmobiliariaPct) > 0
+      ? parseFloat(mudanza.comisionInmobiliariaPct)
+      : COMISION_ASESOR_DEFAULT;
+    const monto = Math.round(precio * pct / 100);
+    bloque = `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:12px;padding:20px 22px;margin:20px 0">
+        <div style="font-size:14px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:14px">💰 TU COMISIÓN</div>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="color:#475569;font-size:16px;padding:9px 0">Valor de la mudanza</td><td style="text-align:right;font-weight:600;color:#0F1923;font-size:16px;padding:9px 0">$${precio.toLocaleString('es-AR')}</td></tr>
+          <tr><td style="color:#166534;font-size:17px;font-weight:700;padding:12px 0;border-top:2px solid #17A356">Tu comisión (${pct}%)</td><td style="text-align:right;color:#17A356;font-weight:800;font-size:24px;padding:12px 0;border-top:2px solid #17A356">$${monto.toLocaleString('es-AR')}</td></tr>
+        </table>
+        <div style="font-size:15px;color:#475569;margin-top:14px;line-height:1.6">Nos contactamos con vos para coordinar el pago.</div>
+      </div>`;
+  }
+
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: a.email,
+    subject: esCompraventa
+      ? `🎁 Mudanza terminada — el regalo para ${mudanza.clienteNombre || 'tu cliente'}`
+      : `💰 Mudanza terminada — tu comisión`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      ${_asesorHead('🏁 Mudanza completada')}
+      <div style="padding:28px">
+        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+          Hola <strong>${a.nombre || ''}</strong>, la mudanza de <strong>${mudanza.clienteNombre || 'tu cliente'}</strong> se completó. Gracias por la derivación.
+        </p>
+        ${_asesorRuta(mudanza)}
+        ${bloque}
+      </div>
+      ${_asesorPie(mudanza)}
     </div>`
   });
 }
