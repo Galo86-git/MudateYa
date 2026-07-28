@@ -405,7 +405,7 @@ async function generarPDFBase64(datos) {
   if (fraseAvailWidth >= 100) {
     // Si entra con tamaño normal, dos líneas
     doc.font('Helvetica').fontSize(8).fillColor(C_TEXT2);
-    doc.text('Pago 100% por Mercado Pago.\nSeguro y protegido.', fraseStartX, Y + 22, { width: fraseAvailWidth, align: 'left' });
+    doc.text('Pago por Mercado Pago o transferencia.\nSeguro y protegido.', fraseStartX, Y + 22, { width: fraseAvailWidth, align: 'left' });
   } else if (fraseAvailWidth >= 60) {
     // Espacio justo: tipografía más chica
     doc.font('Helvetica').fontSize(7).fillColor(C_TEXT2);
