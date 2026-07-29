@@ -264,6 +264,14 @@
     {
       "source": "/membresia",
       "destination": "/membresia.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/blog.html"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/blog/:slug.html"
     }
   ],
   "headers": [
