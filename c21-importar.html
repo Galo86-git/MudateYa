@@ -50,6 +50,28 @@
   .file{display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px dashed #CBD5E1; border-radius:10px; font-size:12.5px; font-weight:700; color:var(--navy); cursor:pointer; background:#fff}
   .file input{display:none}
 
+  /* ── Zona de arrastre ── */
+  .drop{border:2px dashed #CBD5E1; border-radius:14px; padding:30px 20px; text-align:center; background:#FCFDFE; cursor:pointer; transition:border-color .15s, background .15s}
+  .drop:hover{border-color:var(--navy); background:#F8FBFF}
+  .drop:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(0,53,128,.12)}
+  .drop.activa{border-color:var(--green); background:#F2FCF6}
+  .drop input{display:none}
+  .drop-ic{font-size:30px; line-height:1; margin-bottom:8px}
+  .drop-t{font-size:15px; font-weight:800; color:var(--ink)}
+  .drop-s{font-size:12.5px; color:var(--t2); margin-top:4px}
+  .archivo-info{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:11px; padding:10px 13px; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:12.5px; color:var(--t2)}
+  .archivo-info .nom{font-weight:700; color:var(--ink)}
+  .archivo-info .x{margin-left:auto; border:none; background:none; color:var(--t3); font-size:16px; cursor:pointer; padding:0 4px; line-height:1}
+  .archivo-info .x:hover{color:var(--err)}
+
+  /* Cortina que aparece al arrastrar sobre cualquier parte de la ventana */
+  #cortina{position:fixed; inset:0; z-index:99; background:rgba(15,25,35,.55); display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px)}
+  #cortina.on{display:flex}
+  #cortina .caja{background:#fff; border:3px dashed var(--green); border-radius:20px; padding:44px 60px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  #cortina .caja .i{font-size:44px; line-height:1; margin-bottom:10px}
+  #cortina .caja .t{font-size:19px; font-weight:800; color:var(--ink)}
+  #cortina .caja .s{font-size:13px; color:var(--t2); margin-top:5px}
+
   .stats{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0}
   .stat{flex:1; min-width:110px; border:1px solid var(--line); border-radius:12px; padding:11px 13px; background:#FCFDFE}
   .stat .v{font-family:'Bebas Neue',sans-serif; font-size:30px; line-height:1; letter-spacing:.5px}
@@ -98,6 +120,8 @@
 </head>
 <body>
 
+<div id="cortina"><div class="caja"><div class="i">📥</div><div class="t">Soltá el archivo</div><div class="s">Excel, CSV o TXT</div></div></div>
+
 <div id="wrap">
 
   <div class="top">
@@ -111,17 +135,27 @@
 
   <!-- ── PASO 1 ─────────────────────────────────────────────────────────── -->
   <div class="card">
-    <div class="step"><span class="n">1</span><h2>Pegá el listado o subí el archivo</h2></div>
-    <div class="hint">
-      Funciona con lo que copies de Excel o Google Sheets (Ctrl+C → Ctrl+V acá), con un CSV separado por coma o punto y coma, o con un .txt.
-      Si el archivo tiene encabezados (<code>nombre</code>, <code>email</code>, <code>celular</code>, <code>oficina</code>) los detecto solo; si no, lo deduzco por el contenido y después lo podés corregir a mano.
+    <div class="step"><span class="n">1</span><h2>Soltá el archivo o pegá el listado</h2></div>
+
+    <!-- Zona de arrastre. También sirve como botón: un clic abre el explorador. -->
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Soltá el archivo acá o hacé clic para elegirlo">
+      <div class="drop-ic">📥</div>
+      <div class="drop-t">Arrastrá el archivo acá</div>
+      <div class="drop-s">Excel (.xlsx, .xls), CSV o TXT · o hacé clic para elegirlo</div>
+      <input type="file" id="archivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.xlsm,.ods,text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
     </div>
-    <textarea id="pegado" placeholder="Nombre	Email	Celular	Oficina&#10;Juan Pérez	juan@c21.com.ar	11 5555 4444	C21 Palermo&#10;María Gómez	maria@c21.com.ar	11 6666 3333	C21 Belgrano"></textarea>
+    <div id="infoArchivo" class="archivo-info oculto"></div>
+
+    <div class="hint" style="margin-top:14px">
+      También podés pegar acá abajo lo que copies de Excel o Google Sheets (Ctrl+C → Ctrl+V).
+      Si el archivo trae encabezados (<code>nombre</code>, <code>email</code>, <code>celular</code>) los detecto solo;
+      si no, los deduzco por el contenido y después los corregís a mano.
+    </div>
+    <textarea id="pegado" placeholder="Nombre	Email	Celular&#10;Juan Pérez	juan@c21.com.ar	11 5555 4444&#10;María Gómez	maria@c21.com.ar	11 6666 3333"></textarea>
     <div class="row" style="margin-top:12px">
       <button class="btn" id="btnAnalizar">Analizar listado</button>
-      <label class="file">📄 Subir CSV / TXT<input type="file" id="archivo" accept=".csv,.txt,.tsv,text/csv,text/plain"/></label>
       <button class="btn sec sm" id="btnPlantilla">⬇ Descargar plantilla</button>
-      <span id="nombreArchivo" class="hint" style="margin:0"></span>
+      <button class="btn sec sm" id="btnLimpiar">Limpiar</button>
     </div>
   </div>
 
@@ -743,9 +777,9 @@ function copiarLinks() {
 }
 
 function plantilla() {
-  var csv = 'nombre,email,celular,oficina\n'
-    + 'Juan Pérez,juan.perez@century21.com.ar,11 5555 4444,C21 Palermo\n'
-    + 'María Gómez,maria.gomez@century21.com.ar,11 6666 3333,C21 Belgrano\n';
+  var csv = 'nombre,email,celular\n'
+    + 'Juan Pérez,juan.perez@century21.com.ar,11 5555 4444\n'
+    + 'María Gómez,maria.gomez@century21.com.ar,11 6666 3333\n';
   descargar('plantilla-asesores-c21.csv', '\uFEFF' + csv, 'text/csv;charset=utf-8');
 }
 
@@ -765,17 +799,200 @@ document.getElementById('btnCsvRes').onclick = exportarResultados;
 document.getElementById('btnCopiarLinks').onclick = copiarLinks;
 document.getElementById('btnPlantilla').onclick = plantilla;
 
-document.getElementById('archivo').onchange = function(e) {
-  var f = e.target.files && e.target.files[0];
-  if (!f) return;
-  var lector = new FileReader();
-  lector.onload = function(){
-    document.getElementById('pegado').value = String(lector.result || '');
-    document.getElementById('nombreArchivo').textContent = '📎 ' + f.name;
+/* ═══ ARCHIVOS: arrastrar y soltar, o elegir ══════════════════════════════ */
+
+var MAX_MB = 10;
+
+/* Excel se lee con SheetJS, que se baja del CDN recién cuando hace falta.
+   Si el CDN no responde, avisamos y queda la opción de guardar como CSV. */
+function cargarSheetJS() {
+  if (window.XLSX) return Promise.resolve(true);
+  return new Promise(function(resolver){
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload  = function(){ resolver(!!window.XLSX); };
+    s.onerror = function(){ resolver(false); };
+    document.head.appendChild(s);
+  });
+}
+
+function infoArchivo(html, error) {
+  var el = document.getElementById('infoArchivo');
+  el.classList.remove('oculto');
+  el.innerHTML = html + '<button class="x" title="Quitar" onclick="limpiarTodo()">✕</button>';
+  el.style.borderColor = error ? '#FECACA' : 'var(--line)';
+  el.style.background  = error ? 'var(--errbg)' : '#fff';
+}
+
+function pesoLegible(b) {
+  return b < 1024 ? b + ' B' : (b < 1048576 ? (b/1024).toFixed(0) + ' KB' : (b/1048576).toFixed(1) + ' MB');
+}
+
+/* Lee un archivo de texto probando UTF-8 y, si aparecen caracteres rotos,
+   reintentando en windows-1252 (los "CSV" que exporta el Excel viejo). */
+function leerTexto(file) {
+  return new Promise(function(resolver, rechazar){
+    var fr = new FileReader();
+    fr.onerror = function(){ rechazar(new Error('No se pudo leer el archivo.')); };
+    fr.onload = function(){
+      var t = String(fr.result || '');
+      if (t.indexOf('\uFFFD') === -1) return resolver({ texto: t, codificacion: 'UTF-8' });
+      var fr2 = new FileReader();
+      fr2.onerror = function(){ resolver({ texto: t, codificacion: 'UTF-8' }); };
+      fr2.onload  = function(){ resolver({ texto: String(fr2.result || ''), codificacion: 'Windows-1252' }); };
+      fr2.readAsText(file, 'windows-1252');
+    };
+    fr.readAsText(file, 'utf-8');
+  });
+}
+
+function leerExcel(file) {
+  return new Promise(function(resolver, rechazar){
+    var fr = new FileReader();
+    fr.onerror = function(){ rechazar(new Error('No se pudo leer el archivo.')); };
+    fr.onload = function(){
+      try {
+        var wb = window.XLSX.read(new Uint8Array(fr.result), { type: 'array' });
+        /* Nos quedamos con la primera hoja que tenga algo. */
+        var hojaUsada = null, filas = null;
+        for (var i = 0; i < wb.SheetNames.length; i++) {
+          /* raw:false → los números salen como los ve el usuario en Excel, así
+             un celular no se convierte en 1.15556E+10. */
+          var f = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]], { header: 1, raw: false, blankrows: false, defval: '' });
+          if (f && f.length) { hojaUsada = wb.SheetNames[i]; filas = f; break; }
+        }
+        if (!filas) return rechazar(new Error('El archivo no tiene ninguna hoja con datos.'));
+        /* Pasamos a texto separado por tabs y reusamos el mismo parser de siempre. */
+        var texto = filas.map(function(f){
+          return f.map(function(c){ return String(c == null ? '' : c).replace(/[\t\r\n]+/g, ' ').trim(); }).join('\t');
+        }).join('\n');
+        resolver({ texto: texto, hoja: hojaUsada, hojas: wb.SheetNames.length });
+      } catch (e) {
+        rechazar(new Error('No pude abrir el Excel: ' + (e.message || 'archivo dañado')));
+      }
+    };
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+async function manejarArchivo(file) {
+  if (!file) return;
+  if (file.size > MAX_MB * 1048576) {
+    infoArchivo('<span class="nom">' + esc(file.name) + '</span> pesa ' + pesoLegible(file.size)
+      + ' — el tope es ' + MAX_MB + ' MB. Partilo en dos.', true);
+    return;
+  }
+
+  var ext = (file.name.split('.').pop() || '').toLowerCase();
+  var esExcel = ['xlsx','xls','xlsm','xlsb','ods'].indexOf(ext) !== -1;
+  infoArchivo('<span class="nom">' + esc(file.name) + '</span> · ' + pesoLegible(file.size) + ' · <span class="spin" style="border-color:var(--line);border-top-color:var(--navy)"></span> leyendo…');
+
+  try {
+    var detalle = '';
+    var texto = '';
+
+    if (esExcel) {
+      var listo = await cargarSheetJS();
+      if (!listo) {
+        infoArchivo('<span class="nom">' + esc(file.name) + '</span> — no pude cargar el lector de Excel'
+          + ' (¿sin internet o CDN bloqueado?). Abrilo en Excel y guardalo como <strong>CSV UTF-8</strong>, o copiá y pegá las filas acá abajo.', true);
+        return;
+      }
+      var r = await leerExcel(file);
+      texto = r.texto;
+      detalle = 'hoja "' + esc(r.hoja) + '"' + (r.hojas > 1 ? ' (de ' + r.hojas + '; se usa la primera con datos)' : '');
+    } else {
+      var t = await leerTexto(file);
+      texto = t.texto.replace(/^\uFEFF/, '');   // BOM que mete Excel
+      detalle = t.codificacion;
+    }
+
+    if (!texto.trim()) {
+      infoArchivo('<span class="nom">' + esc(file.name) + '</span> — está vacío.', true);
+      return;
+    }
+
+    document.getElementById('pegado').value = texto;
+    infoArchivo('📎 <span class="nom">' + esc(file.name) + '</span> · ' + pesoLegible(file.size) + ' · ' + detalle);
     analizar();
-  };
-  lector.readAsText(f, 'utf-8');
-};
+  } catch (e) {
+    infoArchivo('<span class="nom">' + esc(file.name) + '</span> — ' + esc(e.message), true);
+  }
+}
+
+function limpiarTodo() {
+  document.getElementById('pegado').value = '';
+  document.getElementById('archivo').value = '';
+  document.getElementById('infoArchivo').classList.add('oculto');
+  _filas = []; _filasCrudas = []; _cols = []; _mapa = {}; _resultados = [];
+  document.getElementById('card2').classList.add('off');
+  document.getElementById('card3').classList.add('off');
+  document.getElementById('card4').classList.add('off');
+  document.getElementById('cardRes').classList.add('oculto');
+  document.getElementById('progreso').classList.add('oculto');
+  document.querySelector('#tablaPrev tbody').innerHTML = '';
+  ['sOk','sErr','sDup','sTot'].forEach(function(id){ document.getElementById(id).textContent = '0'; });
+}
+
+/* ── Clic en la zona (y Enter/Espacio si llegó por teclado) ── */
+var zona = document.getElementById('drop');
+var inputArchivo = document.getElementById('archivo');
+zona.addEventListener('click', function(){ inputArchivo.click(); });
+zona.addEventListener('keydown', function(e){
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputArchivo.click(); }
+});
+inputArchivo.addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if (f) manejarArchivo(f);
+});
+
+/* ── Arrastrar sobre cualquier parte de la ventana ──
+   Usamos un contador porque dragleave también salta al pasar de un elemento
+   hijo a otro, y si no la cortina parpadea. */
+var arrastres = 0;
+var cortina = document.getElementById('cortina');
+
+function traeArchivos(e) {
+  var dt = e.dataTransfer;
+  if (!dt) return false;
+  if (dt.types) {
+    for (var i = 0; i < dt.types.length; i++) if (dt.types[i] === 'Files') return true;
+    return false;
+  }
+  return true;
+}
+
+window.addEventListener('dragenter', function(e){
+  if (!traeArchivos(e)) return;
+  e.preventDefault();
+  arrastres++;
+  cortina.classList.add('on');
+  zona.classList.add('activa');
+});
+window.addEventListener('dragover', function(e){
+  if (!traeArchivos(e)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+});
+window.addEventListener('dragleave', function(e){
+  if (!traeArchivos(e)) return;
+  arrastres = Math.max(0, arrastres - 1);
+  if (!arrastres) { cortina.classList.remove('on'); zona.classList.remove('activa'); }
+});
+window.addEventListener('drop', function(e){
+  if (!traeArchivos(e)) return;
+  e.preventDefault();
+  arrastres = 0;
+  cortina.classList.remove('on');
+  zona.classList.remove('activa');
+  var f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 1) {
+    infoArchivo('Soltaste ' + e.dataTransfer.files.length + ' archivos: se toma solo el primero.', true);
+  }
+  if (f) manejarArchivo(f);
+});
+
+document.getElementById('btnLimpiar').onclick = limpiarTodo;
 
 /* Aviso antes de cerrar la pestaña si hay una importación a medias. */
 window.addEventListener('beforeunload', function(e){
