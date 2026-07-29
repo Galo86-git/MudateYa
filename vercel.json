@@ -332,7 +332,7 @@
       ]
     },
     {
-      "source": "/(admin|admin-circulo|aliados|asesor-dashboard|asesor-login|asesor-registro|c21-altas|c21-registro|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|r|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|cliente-packs|mudancero-perfil)(\\.html)?",
+      "source": "/(admin|admin-circulo|aliados|asesor-dashboard|asesor-login|asesor-registro|c21-altas|c21-importar|c21-registro|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|r|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|cliente-packs|mudancero-perfil)(\\.html)?",
       "headers": [
         {
           "key": "Cache-Control",
