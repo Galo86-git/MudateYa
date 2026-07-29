@@ -150,25 +150,44 @@ async function enviarBienvenida(opts) {
   // así que el botón "Descargar mi QR" devolvía 404. Va a /api/c21.
   var qrUrl = SITE_BASE + '/api/c21?action=qr&codigo=' + encodeURIComponent(codigo);
 
-  // QR embebido en el propio mail (attachment inline por CID). Más robusto que
-  // un <img> a un endpoint externo, que Gmail puede no cargar. Si la generación
-  // falla, el mail igual sale con el link y sin QR inline.
+  // ── QR ────────────────────────────────────────────────────────────────
+  // ANTES: se adjuntaba con content_type + content_id para incrustarlo por CID
+  // (<img src="cid:qrasesor">). El SDK de Resend 3.x NO soporta esos campos:
+  // su tipo Attachment es solo { filename, content, path }. Los campos de más
+  // viajaban igual en el JSON y la API respondía 422 — el mail no salía nunca.
+  //
+  // AHORA: el <img> apunta al endpoint público /api/c21?action=qr (Gmail lo
+  // carga por su proxy sin problema, y ya devuelve Cache-Control) y el PNG va
+  // además como adjunto común, con los campos que el SDK sí acepta.
   var qrAttachments = [];
+  var qrUrlHtml = qrUrl.replace(/&/g, '&amp;');   // & válido dentro de un atributo
   var qrBloqueHtml =
     '<div style="text-align:center;margin:0 0 22px">'
     + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
-    + '<a href="' + qrUrl + '" style="display:inline-block;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
+    + '<a href="' + qrUrlHtml + '" style="display:inline-block;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
     + '</div>';
   try {
     const QRCode = require('qrcode');
     var qrBuf = await QRCode.toBuffer(link, { type: 'png', width: 600, margin: 1, color: { dark: '#252526', light: '#FFFFFF' } });
-    qrAttachments = [{ filename: 'mudateya-qr-' + codigo + '.png', content: qrBuf.toString('base64'), content_type: 'image/png', content_id: 'qrasesor' }];
-    qrBloqueHtml =
-      '<div style="text-align:center;margin:0 0 22px">'
-      + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
-      + '<img src="cid:qrasesor" alt="QR de tu link" width="180" height="180" style="display:block;margin:0 auto;border:1px solid #E5E7EB;border-radius:12px;padding:8px;background:#fff"/>'
-      + '<a href="' + qrUrl + '" style="display:inline-block;margin-top:10px;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
-      + '</div>';
+    qrAttachments = [{ filename: 'mudateya-qr-' + codigo + '.png', content: qrBuf.toString('base64') }];
+
+    if (opts.prueba) {
+      // En modo prueba el código es ficticio: el endpoint del QR devolvería 404,
+      // así que no ponemos el <img> roto. El PNG va igual como adjunto.
+      qrBloqueHtml =
+        '<div style="text-align:center;margin:0 0 22px">'
+        + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
+        + '<div style="border:1px dashed #CBD5E1;border-radius:12px;padding:18px;color:#64748B;font-size:12.5px;line-height:1.6">'
+        + 'Acá va el QR del asesor.<br>En esta prueba el código es de mentira, así que lo mandamos <strong>adjunto</strong> en vez de incrustado.'
+        + '</div></div>';
+    } else {
+      qrBloqueHtml =
+        '<div style="text-align:center;margin:0 0 22px">'
+        + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
+        + '<img src="' + qrUrlHtml + '" alt="QR de tu link" width="180" height="180" style="display:block;margin:0 auto;border:1px solid #E5E7EB;border-radius:12px;padding:8px;background:#fff"/>'
+        + '<a href="' + qrUrlHtml + '" style="display:inline-block;margin-top:10px;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
+        + '</div>';
+    }
   } catch (qrErr) {
     console.warn('No se pudo generar el QR para el mail:', qrErr.message);
   }
@@ -191,7 +210,7 @@ async function enviarBienvenida(opts) {
     ? '<div style="margin-top:18px;text-align:center"><span style="font-size:12px;color:#94A3B8;line-height:1.6">¿No querés participar? Respondé este mail y te damos de baja.</span></div>'
     : '';
 
-  await resend.emails.send({
+  var envio = await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
     to: destino,
     subject: asunto,
@@ -240,6 +259,20 @@ async function enviarBienvenida(opts) {
       </div>
     </body></html>`
   });
+
+  // ── ESTO ES CLAVE ────────────────────────────────────────────────────────
+  // El SDK de Resend NO tira excepción cuando la API rechaza el mail: devuelve
+  // { data: null, error: {...} }. Sin este chequeo, un 422 (payload inválido),
+  // un 403 (dominio sin verificar) o un 429 (rate limit) pasaban por el try/catch
+  // sin hacer ruido y el alta se reportaba como "mail enviado" igual.
+  if (envio && envio.error) {
+    var er = envio.error;
+    throw new Error(
+      (er.name ? er.name + ' — ' : '') +
+      (er.message || JSON.stringify(er))
+    );
+  }
+  return (envio && envio.data && envio.data.id) || null;
 }
 
 // ── Pausa entre envíos: Resend limita a ~2 req/s. Sin esto, un lote grande
