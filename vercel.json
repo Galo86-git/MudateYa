@@ -270,8 +270,28 @@
       "destination": "/blog.html"
     },
     {
-      "source": "/blog/:slug",
-      "destination": "/blog/:slug.html"
+      "source": "/blog/cuanto-cuesta-una-mudanza",
+      "destination": "/blog-cuanto-cuesta-una-mudanza.html"
+    },
+    {
+      "source": "/blog/checklist-mudanza",
+      "destination": "/blog-checklist-mudanza.html"
+    },
+    {
+      "source": "/blog/como-embalar-para-mudanza",
+      "destination": "/blog-como-embalar-para-mudanza.html"
+    },
+    {
+      "source": "/blog/mudanza-con-mascotas-y-plantas",
+      "destination": "/blog-mudanza-con-mascotas-y-plantas.html"
+    },
+    {
+      "source": "/blog/que-preguntar-empresa-de-mudanzas",
+      "destination": "/blog-que-preguntar-empresa-de-mudanzas.html"
+    },
+    {
+      "source": "/blog/tipos-de-mudanza",
+      "destination": "/blog-tipos-de-mudanza.html"
     }
   ],
   "headers": [
