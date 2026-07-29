@@ -6,6 +6,14 @@
       "destination": "/admin.html"
     },
     {
+      "source": "/c21-importar",
+      "destination": "/c21-importar.html"
+    },
+    {
+      "source": "/c21-altas",
+      "destination": "/c21-altas.html"
+    },
+    {
       "source": "/mudanceros",
       "destination": "/mudanceros.html"
     },
