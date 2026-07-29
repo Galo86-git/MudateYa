@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Importar asesores · Mudafy · MudateYa</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --navy:#003580; --green:#22C36A; --mudafy:#FF5A5F; --mudafydark:#003580;
+    --ink:#0F1923; --t2:#475569; --t3:#94A3B8;
+    --line:#E5E9F0; --bg:#F5F7FA; --card:#FFFFFF;
+    --ok:#16A34A; --okbg:#F0FDF4; --warn:#B45309; --warnbg:#FFFBEB; --err:#B91C1C; --errbg:#FEF2F2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  #wrap{max-width:1040px; margin:0 auto; padding:20px 16px 80px}
+
+  .top{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px}
+  .brand{display:flex; align-items:center; gap:8px}
+  .brand .mya{font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:1px; color:var(--navy)}
+  .brand .mya span{color:var(--green)}
+  .brand .tag{font-size:12px; font-weight:700; color:var(--mudafy); background:#FFF1F1; border:1px solid #FFD9DA; padding:3px 9px; border-radius:999px}
+  .top a{font-size:12px; font-weight:700; color:var(--navy); text-decoration:none}
+  .sub{font-size:13px; color:var(--t2); margin-bottom:18px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:16px}
+  .card.off{opacity:.45; pointer-events:none}
+  .step{display:flex; align-items:center; gap:9px; margin-bottom:12px}
+  .step .n{width:24px; height:24px; border-radius:50%; background:var(--mudafy); color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none}
+  .step h2{font-size:15px; font-weight:800}
+  .hint{font-size:12.5px; color:var(--t2); line-height:1.6; margin-bottom:12px}
+  .hint code{background:#F1F5F9; padding:1px 5px; border-radius:4px; font-size:11.5px}
+
+  textarea{width:100%; min-height:150px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.6; resize:vertical; color:var(--ink); background:#FCFDFE}
+  textarea:focus{outline:none; border-color:var(--navy); background:#fff}
+
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .btn{padding:11px 18px; border:none; border-radius:10px; background:var(--mudafy); color:#fff; font-size:13.5px; font-weight:800; font-family:inherit; cursor:pointer}
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+  .btn.sec{background:#fff; color:var(--navy); border:1px solid var(--line)}
+  .btn.go{background:var(--green); color:#fff}
+  .btn.warn{background:#fff; color:var(--warn); border:1px solid #FDE68A}
+  .btn.sm{padding:7px 12px; font-size:12px; border-radius:8px}
+  .file{display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px dashed #CBD5E1; border-radius:10px; font-size:12.5px; font-weight:700; color:var(--navy); cursor:pointer; background:#fff}
+  .file input{display:none}
+
+  /* ── Zona de arrastre ── */
+  .drop{border:2px dashed #CBD5E1; border-radius:14px; padding:30px 20px; text-align:center; background:#FCFDFE; cursor:pointer; transition:border-color .15s, background .15s}
+  .drop:hover{border-color:var(--navy); background:#F8FBFF}
+  .drop:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(0,53,128,.12)}
+  .drop.activa{border-color:var(--green); background:#F2FCF6}
+  .drop input{display:none}
+  .drop-ic{font-size:30px; line-height:1; margin-bottom:8px}
+  .drop-t{font-size:15px; font-weight:800; color:var(--ink)}
+  .drop-s{font-size:12.5px; color:var(--t2); margin-top:4px}
+  .archivo-info{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:11px; padding:10px 13px; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:12.5px; color:var(--t2)}
+  .archivo-info .nom{font-weight:700; color:var(--ink)}
+  .archivo-info .x{margin-left:auto; border:none; background:none; color:var(--t3); font-size:16px; cursor:pointer; padding:0 4px; line-height:1}
+  .archivo-info .x:hover{color:var(--err)}
+
+  /* Cortina que aparece al arrastrar sobre cualquier parte de la ventana */
+  #cortina{position:fixed; inset:0; z-index:99; background:rgba(15,25,35,.55); display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px)}
+  #cortina.on{display:flex}
+  #cortina .caja{background:#fff; border:3px dashed var(--green); border-radius:20px; padding:44px 60px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  #cortina .caja .i{font-size:44px; line-height:1; margin-bottom:10px}
+  #cortina .caja .t{font-size:19px; font-weight:800; color:var(--ink)}
+  #cortina .caja .s{font-size:13px; color:var(--t2); margin-top:5px}
+
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0}
+  .stat{flex:1; min-width:110px; border:1px solid var(--line); border-radius:12px; padding:11px 13px; background:#FCFDFE}
+  .stat .v{font-family:'Bebas Neue',sans-serif; font-size:30px; line-height:1; letter-spacing:.5px}
+  .stat .l{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--t3); margin-top:3px}
+  .stat.ok .v{color:var(--ok)} .stat.warn .v{color:var(--warn)} .stat.err .v{color:var(--err)}
+
+  .mapa{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; padding:12px 14px; background:#FAFBFC; border:1px solid var(--line); border-radius:12px}
+  .mapa .f{flex:1; min-width:150px}
+  .mapa label{display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--t3); margin-bottom:5px}
+  select{width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:12.5px; background:#fff; color:var(--ink)}
+
+  .scroll{overflow-x:auto; border:1px solid var(--line); border-radius:12px; max-height:440px; overflow-y:auto}
+  table{width:100%; border-collapse:collapse; min-width:720px; font-size:13px}
+  th{position:sticky; top:0; text-align:left; padding:9px 12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--t3); background:#FAFBFC; border-bottom:1px solid var(--line); z-index:2}
+  td{padding:7px 12px; border-bottom:1px solid #F1F5F9; vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr.mal td{background:var(--errbg)}
+  tr.dup td{background:var(--warnbg)}
+  td input{width:100%; padding:6px 8px; border:1px solid transparent; border-radius:6px; font-family:inherit; font-size:12.5px; background:transparent; color:var(--ink)}
+  td input:hover{border-color:var(--line); background:#fff}
+  td input:focus{outline:none; border-color:var(--navy); background:#fff}
+  .nrofila{font-size:11px; color:var(--t3); font-variant-numeric:tabular-nums}
+  .pill{display:inline-block; font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:6px; white-space:nowrap}
+  .p-ok{background:var(--okbg); color:var(--ok)} .p-warn{background:var(--warnbg); color:var(--warn)} .p-err{background:var(--errbg); color:var(--err)} .p-info{background:#EFF6FF; color:var(--navy)}
+  .msg-err{font-size:11.5px; color:var(--err); font-weight:600}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; color:var(--t2); word-break:break-all}
+
+  .opt{display:flex; align-items:flex-start; gap:9px; padding:9px 0; font-size:13px; color:var(--ink); cursor:pointer}
+  .opt input{margin-top:2px; width:16px; height:16px; accent-color:var(--navy); flex:none; cursor:pointer}
+  .opt .d{font-size:11.5px; color:var(--t2); display:block; margin-top:1px}
+  .inp{padding:10px 12px; border:1px solid var(--line); border-radius:9px; font-family:inherit; font-size:13px; min-width:230px; color:var(--ink)}
+  .inp:focus{outline:none; border-color:var(--navy)}
+
+  .aviso{border-left:3px solid var(--mudafy); background:#FFF5F5; border-radius:8px; padding:11px 14px; font-size:12.5px; color:var(--ink); line-height:1.6; margin:12px 0}
+  .aviso.rojo{border-left-color:#DC2626; background:var(--errbg)}
+
+  .barra{height:9px; background:#E9EEF5; border-radius:99px; overflow:hidden; margin:10px 0 6px}
+  .barra i{display:block; height:100%; width:0; background:var(--green); border-radius:99px; transition:width .25s ease}
+  .prog-t{font-size:12.5px; color:var(--t2); font-weight:600}
+
+  .spin{display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; margin-right:6px}
+  .btn.sec .spin, .btn.warn .spin{border-color:var(--line); border-top-color:var(--navy)}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .oculto{display:none !important}
+</style>
+</head>
+<body>
+
+<div id="cortina"><div class="caja"><div class="i">📥</div><div class="t">Soltá el archivo</div><div class="s">Excel, CSV o TXT</div></div></div>
+
+<div id="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <span class="mya">Mudate<span>Ya</span></span>
+      <span class="tag">Importar asesores Mudafy</span>
+    </div>
+    <a href="/mudafy-altas.html">Ver altas en vivo →</a>
+  </div>
+  <div class="sub">Cargá el listado que manda Mudafy y a cada asesor le llega su mail de bienvenida con su link único y su QR.</div>
+
+  <!-- ── PASO 1 ─────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="step"><span class="n">1</span><h2>Soltá el archivo o pegá el listado</h2></div>
+
+    <!-- Zona de arrastre. También sirve como botón: un clic abre el explorador. -->
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Soltá el archivo acá o hacé clic para elegirlo">
+      <div class="drop-ic">📥</div>
+      <div class="drop-t">Arrastrá el archivo acá</div>
+      <div class="drop-s">Excel (.xlsx, .xls), CSV o TXT · o hacé clic para elegirlo</div>
+      <input type="file" id="archivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.xlsm,.ods,text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+    </div>
+    <div id="infoArchivo" class="archivo-info oculto"></div>
+
+    <div class="hint" style="margin-top:14px">
+      También podés pegar acá abajo lo que copies de Excel o Google Sheets (Ctrl+C → Ctrl+V).
+      Si el archivo trae encabezados (<code>nombre</code>, <code>email</code>, <code>celular</code>) los detecto solo;
+      si no, los deduzco por el contenido y después los corregís a mano.
+    </div>
+    <textarea id="pegado" placeholder="Nombre	Email	Celular&#10;Juan Pérez	juan@mudafy.com.ar	11 5555 4444&#10;María Gómez	maria@mudafy.com.ar	11 6666 3333"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="btnAnalizar">Analizar listado</button>
+      <button class="btn sec sm" id="btnPlantilla">⬇ Descargar plantilla</button>
+      <button class="btn sec sm" id="btnLimpiar">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- ── PASO 2 ─────────────────────────────────────────────────────────── -->
+  <div class="card off" id="card2">
+    <div class="step"><span class="n">2</span><h2>Revisá y corregí</h2></div>
+    <div class="hint" id="deteccion">—</div>
+
+    <div class="mapa" id="mapa">
+      <div class="f"><label>Columna nombre</label><select id="mapNombre"></select></div>
+      <div class="f"><label>Columna email</label><select id="mapEmail"></select></div>
+      <div class="f"><label>Columna celular</label><select id="mapWhatsapp"></select></div>
+      <div class="f"><label>Columna zona (opcional)</label><select id="mapZona"></select></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat ok"><div class="v" id="sOk">0</div><div class="l">listos</div></div>
+      <div class="stat err"><div class="v" id="sErr">0</div><div class="l">con problemas</div></div>
+      <div class="stat warn"><div class="v" id="sDup">0</div><div class="l">repetidos</div></div>
+      <div class="stat"><div class="v" id="sTot">0</div><div class="l">filas totales</div></div>
+    </div>
+
+    <div class="hint">Las filas con problema están en rojo: podés editarlas acá mismo y se revalidan solas. Las que queden mal no se importan.</div>
+    <div class="scroll">
+      <table id="tablaPrev">
+        <thead><tr><th style="width:44px">#</th><th>Nombre</th><th>Email</th><th>Celular</th><th>Zona</th><th style="width:150px">Estado</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PASO 3 ─────────────────────────────────────────────────────────── -->
+  <div class="card off" id="card3">
+    <div class="step"><span class="n">3</span><h2>Probá con tu mail</h2></div>
+    <div class="hint">Manda el mail de bienvenida <strong>exactamente como le va a llegar al asesor</strong>, pero a la dirección que pongas acá. No crea ningún alta ni toca la base: el código y el link son de mentira, sirven para ver cómo queda.</div>
+    <div class="row">
+      <input class="inp" type="email" id="mailPrueba" placeholder="tu@mail.com"/>
+      <button class="btn sec" id="btnPrueba">Enviar prueba</button>
+      <span id="estadoPrueba" class="hint" style="margin:0"></span>
+    </div>
+  </div>
+
+  <!-- ── PASO 4 ─────────────────────────────────────────────────────────── -->
+  <div class="card off" id="card4">
+    <div class="step"><span class="n">4</span><h2>Importar de verdad</h2></div>
+
+    <label class="opt"><input type="checkbox" id="optMail" checked/><span><strong>Mandar el mail de bienvenida</strong><span class="d">Cada asesor recibe su link único y su QR. Si lo destildás, se dan de alta en silencio y podés mandar los mails después.</span></span></label>
+    <label class="opt"><input type="checkbox" id="optReenviar"/><span><strong>Reenviar a los que ya estaban dados de alta</strong><span class="d">Por defecto, a los que ya existen no se les manda nada de nuevo. Tildalo solo si querés que les vuelva a llegar.</span></span></label>
+
+    <div class="aviso" id="avisoResumen">—</div>
+
+    <div class="row">
+      <button class="btn go" id="btnImportar">Importar y enviar mails</button>
+      <button class="btn sec oculto" id="btnCancelar">Cancelar</button>
+    </div>
+
+    <div id="progreso" class="oculto">
+      <div class="barra"><i id="barraFill"></i></div>
+      <div class="prog-t" id="progTxt">—</div>
+    </div>
+  </div>
+
+  <!-- ── RESULTADOS ─────────────────────────────────────────────────────── -->
+  <div class="card oculto" id="cardRes">
+    <div class="step"><span class="n">✓</span><h2>Resultado</h2></div>
+    <div class="stats">
+      <div class="stat ok"><div class="v" id="rCre">0</div><div class="l">altas nuevas</div></div>
+      <div class="stat"><div class="v" id="rYa">0</div><div class="l">ya existían</div></div>
+      <div class="stat ok"><div class="v" id="rMail">0</div><div class="l">mails enviados</div></div>
+      <div class="stat err"><div class="v" id="rErr">0</div><div class="l">con error</div></div>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn sec sm" id="btnCsvRes">⬇ Descargar resultados (CSV)</button>
+      <button class="btn sec sm" id="btnCopiarLinks">Copiar todos los links</button>
+      <a class="btn sec sm" href="/mudafy-altas.html" style="text-decoration:none; display:inline-block">Ver altas en vivo</a>
+    </div>
+    <div class="scroll">
+      <table id="tablaRes">
+        <thead><tr><th style="width:44px">#</th><th>Nombre</th><th>Email</th><th>Estado</th><th>Mail</th><th>Link</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   IMPORTACIÓN MASIVA DE ASESORES MUDAFY
+   Todo el parseo pasa acá en el navegador; al servidor solo le llegan filas
+   ya normalizadas ({nombre,email,whatsapp,zona}), de a lotes de 5, para no
+   acercarse al timeout de la función serverless (cada alta = varias escrituras
+   en Redis + un mail con el QR adjunto).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var LOTE = 5;   // filas por request
+
+/* ── Token de admin: sale de la sesión de /admin si existe; si no, se pide
+      una vez y queda en la pestaña. Nunca hardcodeado. ── */
+var _token = (function(){
+  try {
+    var t = sessionStorage.getItem('adminToken');
+    if (t) return t;
+    t = prompt('Pegá tu admin token (lo sacás de /admin, o usá el master token):') || '';
+    if (t) sessionStorage.setItem('adminToken', t);
+    return t;
+  } catch(e){ return ''; }
+})();
+
+var _cols = [];       // encabezados detectados (o "Columna 1", "Columna 2"…)
+var _filasCrudas = [];// filas de datos, ya sin el encabezado
+var _mapa = {};       // { nombre: idx, email: idx, whatsapp: idx, zona: idx }
+var _filas = [];      // filas normalizadas y validadas para la tabla editable
+var _resultados = []; // respuesta acumulada del servidor
+var _cancelar = false;
+
+/* ═══ PARSEO ══════════════════════════════════════════════════════════════ */
+
+/* Parser CSV/TSV completo: respeta comillas dobles y saltos de línea dentro
+   de un campo entrecomillado (Excel los genera cuando hay direcciones). */
+function parsearTexto(texto, d) {
+  var filas = [], fila = [], cur = '', enQ = false;
+  for (var i = 0; i < texto.length; i++) {
+    var c = texto.charAt(i);
+    if (enQ) {
+      if (c === '"') {
+        if (texto.charAt(i+1) === '"') { cur += '"'; i++; }
+        else enQ = false;
+      } else cur += c;
+    } else if (c === '"') {
+      enQ = true;
+    } else if (c === d) {
+      fila.push(cur); cur = '';
+    } else if (c === '\n') {
+      fila.push(cur); cur = ''; filas.push(fila); fila = [];
+    } else if (c === '\r') {
+      /* ignorado: los \r\n de Windows */
+    } else cur += c;
+  }
+  fila.push(cur); filas.push(fila);
+  return filas
+    .map(function(f){ return f.map(function(x){ return String(x).trim(); }); })
+    .filter(function(f){ return f.some(function(x){ return x !== ''; }); });
+}
+
+/* Elige el separador probando los cuatro habituales y quedándose con el que
+   dé más columnas de forma consistente en todas las filas. */
+function elegirDelimitador(texto) {
+  var cands = [{d:'\t',n:'tabulación'}, {d:';',n:'punto y coma'}, {d:',',n:'coma'}, {d:'|',n:'barra'}];
+  var mejor = null;
+  for (var k = 0; k < cands.length; k++) {
+    var filas = parsearTexto(texto, cands[k].d);
+    if (!filas.length) continue;
+    var counts = filas.map(function(f){ return f.length; });
+    var moda = modaDe(counts);
+    var consistencia = counts.filter(function(c){ return c === moda; }).length / counts.length;
+    var score = (moda > 1 ? moda : 0) * consistencia;
+    if (!mejor || score > mejor.score) mejor = { d: cands[k].d, nombre: cands[k].n, score: score, filas: filas, cols: moda };
+  }
+  /* Sin separador claro (una sola columna, p. ej. solo mails): tratamos cada
+     línea como una única celda. */
+  if (!mejor || mejor.score === 0) {
+    /* Separador imposible: cada línea queda como una sola celda. */
+    var f1 = parsearTexto(texto, '\u0000');
+    return { d: null, nombre: 'una sola columna', score: 0, filas: f1, cols: 1 };
+  }
+  return mejor;
+}
+
+function modaDe(arr) {
+  var m = {}, mejor = 0, val = 0;
+  arr.forEach(function(v){ m[v] = (m[v]||0)+1; if (m[v] > mejor) { mejor = m[v]; val = v; } });
+  return val;
+}
+
+/* Normaliza un encabezado para compararlo: minúsculas, sin acentos, sin
+   signos. "Teléfono / Cel." → "telefono cel" */
+function normHead(s) {
+  var t = String(s == null ? '' : s).toLowerCase();
+  if (t.normalize) t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return t.replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+var ALIAS = {
+  nombre:   ['nombre','nombres','nombre completo','nombre y apellido','nombre apellido','name','full name','first name','firstname','asesor','asesora','agente','agent','contacto','razon social'],
+  apellido: ['apellido','apellidos','last name','lastname','surname','apellido nombre'],
+  email:    ['email','e mail','mail','correo','correo electronico','mail asesor','email asesor','direccion de correo','e mail address','email address'],
+  whatsapp: ['whatsapp','whats app','wsp','wpp','celular','cel','cel asesor','telefono','telefono celular','tel','telefono movil','movil','mobile','phone','numero','numero de telefono','contacto telefonico'],
+  zona:     ['zona','zonas','zona de trabajo','area','area de trabajo','region','barrio','localidad','partido','sucursal','oficina','office','branch','equipo','team','sede']
+};
+
+function campoDeHeader(h) {
+  var n = normHead(h);
+  if (!n) return null;
+  for (var campo in ALIAS) {
+    if (ALIAS[campo].indexOf(n) !== -1) return campo;
+  }
+  /* Coincidencia parcial: "cel. del asesor" → whatsapp */
+  for (var campo2 in ALIAS) {
+    for (var i = 0; i < ALIAS[campo2].length; i++) {
+      var a = ALIAS[campo2][i];
+      if (a.length >= 3 && (n === a || n.indexOf(a + ' ') === 0 || n.indexOf(' ' + a) !== -1 || n.indexOf(a) === 0)) return campo2;
+    }
+  }
+  return null;
+}
+
+function pareceEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim()); }
+function digitos(v){ return String(v||'').replace(/\D/g,''); }
+function pareceTel(v){ var d = digitos(v); return d.length >= 8 && d.length <= 15 && !pareceEmail(v); }
+function pareceCientifica(v){ return /^\d(\.\d+)?e\+?\d+$/i.test(String(v).trim().replace(/\s/g,'')); }
+
+/* Si no hay encabezados, deduce qué es cada columna mirando el contenido. */
+function inferirPorContenido(filas, nCols) {
+  var mapa = {};
+  var muestras = filas.slice(0, 25);
+  var usadas = {};
+
+  function tasa(idx, test) {
+    var vals = muestras.map(function(f){ return f[idx] || ''; }).filter(function(v){ return v !== ''; });
+    if (!vals.length) return 0;
+    return vals.filter(test).length / vals.length;
+  }
+
+  var mejorEmail = -1, mejorEmailT = 0, mejorTel = -1, mejorTelT = 0;
+  for (var c = 0; c < nCols; c++) {
+    var te = tasa(c, pareceEmail);
+    if (te > mejorEmailT) { mejorEmailT = te; mejorEmail = c; }
+    var tt = tasa(c, pareceTel);
+    if (tt > mejorTelT) { mejorTelT = tt; mejorTel = c; }
+  }
+  if (mejorEmailT >= 0.5) { mapa.email = mejorEmail; usadas[mejorEmail] = 1; }
+  if (mejorTelT >= 0.5 && mejorTel !== mapa.email) { mapa.whatsapp = mejorTel; usadas[mejorTel] = 1; }
+
+  /* De las que quedan: la primera con texto es el nombre, la siguiente la zona. */
+  var libres = [];
+  for (var c2 = 0; c2 < nCols; c2++) if (!usadas[c2]) libres.push(c2);
+  if (libres.length) { mapa.nombre = libres[0]; }
+  if (libres.length > 1) { mapa.zona = libres[1]; }
+  return mapa;
+}
+
+/* ═══ ANALIZAR ════════════════════════════════════════════════════════════ */
+
+function analizar() {
+  var texto = document.getElementById('pegado').value;
+  if (!texto.trim()) { alert('Pegá el listado o subí el archivo primero.'); return; }
+
+  var det = elegirDelimitador(texto);
+  var filas = det.filas;
+  if (!filas.length) { alert('No encontré ninguna fila con datos.'); return; }
+
+  var nCols = 0;
+  filas.forEach(function(f){ if (f.length > nCols) nCols = f.length; });
+
+  /* ¿La primera fila es encabezado? Lo es si al menos dos celdas coinciden con
+     un alias conocido y ninguna parece un dato real (mail o teléfono). */
+  var prim = filas[0];
+  var matches = 0, pareceDato = false;
+  for (var i = 0; i < prim.length; i++) {
+    if (campoDeHeader(prim[i])) matches++;
+    if (pareceEmail(prim[i])) pareceDato = true;
+  }
+  var hayHeader = matches >= 2 && !pareceDato;
+
+  var mapaDetectado = {};
+  if (hayHeader) {
+    _cols = prim.slice();
+    _filasCrudas = filas.slice(1);
+    var apellidoIdx = -1;
+    for (var j = 0; j < prim.length; j++) {
+      var campo = campoDeHeader(prim[j]);
+      if (!campo) continue;
+      if (campo === 'apellido') { apellidoIdx = j; continue; }
+      if (mapaDetectado[campo] === undefined) mapaDetectado[campo] = j;
+    }
+    if (apellidoIdx !== -1) mapaDetectado.apellido = apellidoIdx;
+    /* Si el header existía pero no se entendió nada, caemos al contenido. */
+    if (mapaDetectado.email === undefined) {
+      var porCont = inferirPorContenido(_filasCrudas, nCols);
+      for (var kk in porCont) if (mapaDetectado[kk] === undefined) mapaDetectado[kk] = porCont[kk];
+    }
+  } else {
+    _cols = [];
+    for (var c = 0; c < nCols; c++) _cols.push('Columna ' + (c+1));
+    _filasCrudas = filas.slice();
+    mapaDetectado = inferirPorContenido(_filasCrudas, nCols);
+  }
+
+  _mapa = mapaDetectado;
+
+  var partes = [];
+  partes.push('<strong>' + _filasCrudas.length + '</strong> fila' + (_filasCrudas.length === 1 ? '' : 's') + ' con datos');
+  partes.push('separador: <strong>' + det.nombre + '</strong>');
+  partes.push(hayHeader ? 'encabezados detectados' : 'sin encabezados (deducido por contenido)');
+  document.getElementById('deteccion').innerHTML = '✅ ' + partes.join(' · ') + '. Si alguna columna quedó mal asignada, cambiala acá abajo.';
+
+  llenarSelects();
+  reconstruirFilas();
+  document.getElementById('card2').classList.remove('off');
+  document.getElementById('card3').classList.remove('off');
+  document.getElementById('card4').classList.remove('off');
+  document.getElementById('card2').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function llenarSelects() {
+  ['nombre','email','whatsapp','zona'].forEach(function(campo){
+    var sel = document.getElementById('map' + campo.charAt(0).toUpperCase() + campo.slice(1));
+    var h = '<option value="-1">— ninguna —</option>';
+    for (var i = 0; i < _cols.length; i++) {
+      h += '<option value="' + i + '"' + (_mapa[campo] === i ? ' selected' : '') + '>' + esc(_cols[i] || ('Columna ' + (i+1))) + '</option>';
+    }
+    sel.innerHTML = h;
+    sel.onchange = function(){
+      var v = parseInt(sel.value, 10);
+      if (v < 0) delete _mapa[campo]; else _mapa[campo] = v;
+      reconstruirFilas();
+    };
+  });
+}
+
+/* Arma _filas a partir del mapeo actual y valida cada una. */
+function reconstruirFilas() {
+  _filas = [];
+  for (var i = 0; i < _filasCrudas.length; i++) {
+    var f = _filasCrudas[i];
+    var nombre = celda(f, _mapa.nombre);
+    if (_mapa.apellido !== undefined) {
+      var ape = celda(f, _mapa.apellido);
+      if (ape) nombre = (nombre + ' ' + ape).trim();
+    }
+    _filas.push({
+      fila: i + 1,
+      nombre: nombre,
+      email: celda(f, _mapa.email).toLowerCase(),
+      whatsapp: celda(f, _mapa.whatsapp),
+      zona: celda(f, _mapa.zona)
+    });
+  }
+  validarTodo();
+  pintarTabla();
+}
+
+function celda(f, idx) {
+  if (idx === undefined || idx === null || idx < 0) return '';
+  return String(f[idx] === undefined ? '' : f[idx]).replace(/\s+/g, ' ').trim();
+}
+
+/* Valida y marca duplicados dentro del propio archivo (gana la primera). */
+function validarTodo() {
+  var vistos = {};
+  for (var i = 0; i < _filas.length; i++) {
+    var r = _filas[i];
+    r.error = '';
+    r.dup = false;
+
+    if (!r.nombre) r.error = 'Falta el nombre';
+    else if (!r.email) r.error = 'Falta el email';
+    else if (!pareceEmail(r.email)) r.error = 'Email inválido';
+    else if (!r.whatsapp) r.error = 'Falta el celular';
+    else if (pareceCientifica(r.whatsapp)) r.error = 'El celular vino en notación científica (revisá el Excel)';
+    else if (digitos(r.whatsapp).length < 8) r.error = 'Celular con menos de 8 dígitos';
+
+    if (!r.error) {
+      var k = r.email;
+      if (vistos[k]) { r.dup = true; r.error = 'Repetido (fila ' + vistos[k] + ')'; }
+      else vistos[k] = r.fila;
+    }
+  }
+  actualizarContadores();
+}
+
+function actualizarContadores() {
+  var ok = _filas.filter(function(r){ return !r.error; }).length;
+  var dup = _filas.filter(function(r){ return r.dup; }).length;
+  var err = _filas.filter(function(r){ return r.error && !r.dup; }).length;
+  document.getElementById('sOk').textContent = ok;
+  document.getElementById('sErr').textContent = err;
+  document.getElementById('sDup').textContent = dup;
+  document.getElementById('sTot').textContent = _filas.length;
+
+  var av = document.getElementById('avisoResumen');
+  if (!ok) {
+    av.className = 'aviso rojo';
+    av.innerHTML = 'No hay ninguna fila lista para importar. Corregí los errores del paso 2.';
+  } else {
+    av.className = 'aviso';
+    av.innerHTML = 'Se van a dar de alta <strong>' + ok + ' asesor' + (ok === 1 ? '' : 'es') + '</strong>'
+      + (err + dup ? ' y se saltean ' + (err + dup) + ' fila' + (err+dup === 1 ? '' : 's') + ' con problemas' : '')
+      + '. A cada uno le va a llegar el mail de bienvenida con su link y su QR. '
+      + '<strong>Los que ya estén dados de alta no se duplican</strong>: se reconoce por el email.';
+  }
+  document.getElementById('btnImportar').disabled = !ok;
+}
+
+function pintarTabla() {
+  var tb = document.querySelector('#tablaPrev tbody');
+  var h = '';
+  for (var i = 0; i < _filas.length; i++) {
+    var r = _filas[i];
+    var cls = r.dup ? 'dup' : (r.error ? 'mal' : '');
+    h += '<tr class="' + cls + '">'
+      + '<td class="nrofila">' + r.fila + '</td>'
+      + campoInput(i, 'nombre', r.nombre)
+      + campoInput(i, 'email', r.email)
+      + campoInput(i, 'whatsapp', r.whatsapp)
+      + campoInput(i, 'zona', r.zona)
+      + '<td>' + (r.error
+          ? '<span class="msg-err">' + esc(r.error) + '</span>'
+          : '<span class="pill p-ok">listo</span>') + '</td>'
+      + '</tr>';
+  }
+  tb.innerHTML = h || '<tr><td colspan="6" style="padding:26px;text-align:center;color:#94A3B8">Sin filas.</td></tr>';
+
+  /* Edición en vivo: al salir del campo se revalida todo. */
+  var inputs = tb.querySelectorAll('input[data-i]');
+  for (var k = 0; k < inputs.length; k++) {
+    inputs[k].addEventListener('change', function(){
+      var i = parseInt(this.getAttribute('data-i'), 10);
+      var campo = this.getAttribute('data-c');
+      _filas[i][campo] = this.value.replace(/\s+/g,' ').trim();
+      if (campo === 'email') _filas[i][campo] = _filas[i][campo].toLowerCase();
+      validarTodo();
+      pintarTabla();
+    });
+  }
+}
+
+function campoInput(i, campo, valor) {
+  return '<td><input data-i="' + i + '" data-c="' + campo + '" value="' + esc(valor) + '"/></td>';
+}
+
+/* ═══ ENVÍO ═══════════════════════════════════════════════════════════════ */
+
+async function llamar(payload) {
+  var r = await fetch('/api/mudafy?action=importar&token=' + encodeURIComponent(_token), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  var txt = await r.text();
+  var d;
+  try { d = txt ? JSON.parse(txt) : {}; } catch(e) { throw new Error('Respuesta inesperada del servidor (' + r.status + ')'); }
+  if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+  return d;
+}
+
+/* Prueba: manda el mail tal cual, pero a una sola dirección y sin crear nada. */
+async function enviarPrueba() {
+  var mail = document.getElementById('mailPrueba').value.trim();
+  var est = document.getElementById('estadoPrueba');
+  if (!pareceEmail(mail)) { est.innerHTML = '<span class="msg-err">Poné un mail válido.</span>'; return; }
+
+  var validas = _filas.filter(function(r){ return !r.error; });
+  var base = validas.length ? validas[0] : { nombre:'Asesor de Prueba', email:mail, whatsapp:'1150000000', zona:'Zona Norte' };
+
+  var btn = document.getElementById('btnPrueba');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Enviando…';
+  est.textContent = '';
+  try {
+    var d = await llamar({
+      prueba: true, mailA: mail, enviarMail: true,
+      asesores: [{ fila: base.fila || 1, nombre: base.nombre, email: base.email, whatsapp: base.whatsapp, zona: base.zona }]
+    });
+    var r0 = (d.resultados && d.resultados[0]) || {};
+    if (r0.mail === 'enviado') {
+      est.innerHTML = '<span class="pill p-ok">enviado a ' + esc(mail) + '</span> revisá tu bandeja (y spam la primera vez)';
+    } else {
+      est.innerHTML = '<span class="msg-err">No salió: ' + esc(r0.error || 'error desconocido') + '</span>';
+    }
+  } catch (e) {
+    est.innerHTML = '<span class="msg-err">' + esc(e.message) + '</span>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar prueba';
+  }
+}
+
+/* Importación real, de a lotes, con barra de progreso y cancelación. */
+async function importar() {
+  var validas = _filas.filter(function(r){ return !r.error; });
+  if (!validas.length) return;
+
+  var enviarMail = document.getElementById('optMail').checked;
+  var reenviar   = document.getElementById('optReenviar').checked;
+
+  var txtConf = 'Vas a dar de alta ' + validas.length + ' asesor' + (validas.length === 1 ? '' : 'es') + '.\n'
+    + (enviarMail ? 'A cada uno le va a llegar el mail de bienvenida.' : 'NO se va a mandar ningún mail.') + '\n\n¿Confirmás?';
+  if (!confirm(txtConf)) return;
+
+  _cancelar = false;
+  _resultados = [];
+  var btn = document.getElementById('btnImportar');
+  var btnC = document.getElementById('btnCancelar');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Importando…';
+  btnC.classList.remove('oculto');
+  document.getElementById('progreso').classList.remove('oculto');
+  document.getElementById('cardRes').classList.add('oculto');
+
+  var hechas = 0;
+  try {
+    for (var i = 0; i < validas.length; i += LOTE) {
+      if (_cancelar) break;
+      var lote = validas.slice(i, i + LOTE).map(function(r){
+        return { fila: r.fila, nombre: r.nombre, email: r.email, whatsapp: r.whatsapp, zona: r.zona };
+      });
+      var d = await llamar({ asesores: lote, enviarMail: enviarMail, reenviarMail: reenviar });
+      _resultados = _resultados.concat(d.resultados || []);
+      hechas += lote.length;
+      progreso(hechas, validas.length);
+      pintarResultados();
+    }
+  } catch (e) {
+    alert('Se cortó la importación: ' + e.message + '\n\nLo que ya se procesó quedó guardado. Podés volver a correr el mismo listado: los que ya están no se duplican.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Importar y enviar mails';
+    btnC.classList.add('oculto');
+    document.getElementById('progTxt').textContent = _cancelar
+      ? 'Cancelado en ' + hechas + ' de ' + validas.length + '.'
+      : 'Listo: ' + hechas + ' de ' + validas.length + ' procesados.';
+    pintarResultados();
+    document.getElementById('cardRes').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+
+function progreso(hechas, total) {
+  var pct = total ? Math.round(hechas * 100 / total) : 0;
+  document.getElementById('barraFill').style.width = pct + '%';
+  document.getElementById('progTxt').textContent = hechas + ' de ' + total + ' (' + pct + '%)';
+}
+
+function pintarResultados() {
+  document.getElementById('cardRes').classList.remove('oculto');
+  var cre = 0, ya = 0, mails = 0, err = 0;
+  var h = '';
+  for (var i = 0; i < _resultados.length; i++) {
+    var r = _resultados[i];
+    if (r.estado === 'creado') cre++;
+    else if (r.estado === 'ya-existia') ya++;
+    else if (r.estado === 'error') err++;
+    if (r.mail === 'enviado') mails++;
+
+    var pillEstado = r.estado === 'creado' ? '<span class="pill p-ok">alta nueva</span>'
+      : r.estado === 'ya-existia' ? '<span class="pill p-info">ya existía</span>'
+      : r.estado === 'prueba' ? '<span class="pill p-info">prueba</span>'
+      : '<span class="pill p-err">error</span>';
+
+    var pillMail = r.mail === 'enviado' ? '<span class="pill p-ok">enviado</span>'
+      : r.mail === 'falló' ? '<span class="pill p-err">falló</span>'
+      : '<span class="pill p-warn">—</span>';
+
+    h += '<tr>'
+      + '<td class="nrofila">' + esc(r.fila) + '</td>'
+      + '<td>' + esc(r.nombre || '—') + '</td>'
+      + '<td class="mono">' + esc(r.email || '—') + '</td>'
+      + '<td>' + pillEstado + (r.error ? '<div class="msg-err">' + esc(r.error) + '</div>' : '') + '</td>'
+      + '<td>' + pillMail + (r.mail === 'falló' && r.codigo ? '<button class="btn sec sm" style="margin-left:6px" onclick="reenviar(\'' + esc(r.codigo) + '\', this)">Reintentar</button>' : '') + '</td>'
+      + '<td class="mono">' + (r.link ? esc(r.link.replace(/^https?:\/\//,'')) : '—') + '</td>'
+      + '</tr>';
+  }
+  document.querySelector('#tablaRes tbody').innerHTML = h;
+  document.getElementById('rCre').textContent = cre;
+  document.getElementById('rYa').textContent = ya;
+  document.getElementById('rMail').textContent = mails;
+  document.getElementById('rErr').textContent = err;
+}
+
+/* Reintento puntual del mail para un alta que sí quedó creada. */
+async function reenviar(codigo, btn) {
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    var r = await fetch('/api/mudafy?action=reenviar&token=' + encodeURIComponent(_token), {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ codigo: codigo })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    btn.textContent = '✓ enviado';
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Reintentar';
+    alert('No se pudo: ' + e.message);
+  }
+}
+
+/* ═══ EXPORTAR / VARIOS ═══════════════════════════════════════════════════ */
+
+function csvEsc(v) {
+  var s = String(v == null ? '' : v);
+  return /[",;\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+
+function descargar(nombre, contenido, tipo) {
+  var blob = new Blob([contenido], { type: tipo || 'text/plain;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nombre;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 200);
+}
+
+function exportarResultados() {
+  var lineas = ['fila,nombre,email,whatsapp,estado,mail,codigo,link'];
+  _resultados.forEach(function(r){
+    lineas.push([r.fila, r.nombre, r.email, r.whatsapp || '', r.estado, r.mail || '', r.codigo || '', r.link || ''].map(csvEsc).join(','));
+  });
+  /* BOM para que Excel respete los acentos */
+  descargar('mudafy-importacion-' + new Date().toISOString().slice(0,10) + '.csv', '\uFEFF' + lineas.join('\n'), 'text/csv;charset=utf-8');
+}
+
+function copiarLinks() {
+  var txt = _resultados.filter(function(r){ return r.link; })
+    .map(function(r){ return r.nombre + '\t' + r.email + '\t' + r.link; }).join('\n');
+  if (!txt) { alert('Todavía no hay links para copiar.'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt);
+  else {
+    var ta = document.createElement('textarea'); ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta);
+  }
+  var b = document.getElementById('btnCopiarLinks');
+  var t = b.textContent; b.textContent = '¡Copiado!'; setTimeout(function(){ b.textContent = t; }, 1500);
+}
+
+function plantilla() {
+  var csv = 'nombre,email,celular\n'
+    + 'Juan Pérez,juan.perez@mudafy.com.ar,11 5555 4444\n'
+    + 'María Gómez,maria.gomez@mudafy.com.ar,11 6666 3333\n';
+  descargar('plantilla-asesores-mudafy.csv', '\uFEFF' + csv, 'text/csv;charset=utf-8');
+}
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ═══ EVENTOS ═════════════════════════════════════════════════════════════ */
+
+document.getElementById('btnAnalizar').onclick = analizar;
+document.getElementById('btnPrueba').onclick = enviarPrueba;
+document.getElementById('btnImportar').onclick = importar;
+document.getElementById('btnCancelar').onclick = function(){ _cancelar = true; this.disabled = true; this.textContent = 'Cancelando…'; };
+document.getElementById('btnCsvRes').onclick = exportarResultados;
+document.getElementById('btnCopiarLinks').onclick = copiarLinks;
+document.getElementById('btnPlantilla').onclick = plantilla;
+
+/* ═══ ARCHIVOS: arrastrar y soltar, o elegir ══════════════════════════════ */
+
+var MAX_MB = 10;
+
+/* Excel se lee con SheetJS, que se baja del CDN recién cuando hace falta.
+   Si el CDN no responde, avisamos y queda la opción de guardar como CSV. */
+function cargarSheetJS() {
+  if (window.XLSX) return Promise.resolve(true);
+  return new Promise(function(resolver){
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload  = function(){ resolver(!!window.XLSX); };
+    s.onerror = function(){ resolver(false); };
+    document.head.appendChild(s);
+  });
+}
+
+function infoArchivo(html, error) {
+  var el = document.getElementById('infoArchivo');
+  el.classList.remove('oculto');
+  el.innerHTML = html + '<button class="x" title="Quitar" onclick="limpiarTodo()">✕</button>';
+  el.style.borderColor = error ? '#FECACA' : 'var(--line)';
+  el.style.background  = error ? 'var(--errbg)' : '#fff';
+}
+
+function pesoLegible(b) {
+  return b < 1024 ? b + ' B' : (b < 1048576 ? (b/1024).toFixed(0) + ' KB' : (b/1048576).toFixed(1) + ' MB');
+}
+
+/* Lee un archivo de texto probando UTF-8 y, si aparecen caracteres rotos,
+   reintentando en windows-1252 (los "CSV" que exporta el Excel viejo). */
+function leerTexto(file) {
+  return new Promise(function(resolver, rechazar){
+    var fr = new FileReader();
+    fr.onerror = function(){ rechazar(new Error('No se pudo leer el archivo.')); };
+    fr.onload = function(){
+      var t = String(fr.result || '');
+      if (t.indexOf('\uFFFD') === -1) return resolver({ texto: t, codificacion: 'UTF-8' });
+      var fr2 = new FileReader();
+      fr2.onerror = function(){ resolver({ texto: t, codificacion: 'UTF-8' }); };
+      fr2.onload  = function(){ resolver({ texto: String(fr2.result || ''), codificacion: 'Windows-1252' }); };
+      fr2.readAsText(file, 'windows-1252');
+    };
+    fr.readAsText(file, 'utf-8');
+  });
+}
+
+function leerExcel(file) {
+  return new Promise(function(resolver, rechazar){
+    var fr = new FileReader();
+    fr.onerror = function(){ rechazar(new Error('No se pudo leer el archivo.')); };
+    fr.onload = function(){
+      try {
+        var wb = window.XLSX.read(new Uint8Array(fr.result), { type: 'array' });
+        /* Nos quedamos con la primera hoja que tenga algo. */
+        var hojaUsada = null, filas = null;
+        for (var i = 0; i < wb.SheetNames.length; i++) {
+          /* raw:false → los números salen como los ve el usuario en Excel, así
+             un celular no se convierte en 1.15556E+10. */
+          var f = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]], { header: 1, raw: false, blankrows: false, defval: '' });
+          if (f && f.length) { hojaUsada = wb.SheetNames[i]; filas = f; break; }
+        }
+        if (!filas) return rechazar(new Error('El archivo no tiene ninguna hoja con datos.'));
+        /* Pasamos a texto separado por tabs y reusamos el mismo parser de siempre. */
+        var texto = filas.map(function(f){
+          return f.map(function(c){ return String(c == null ? '' : c).replace(/[\t\r\n]+/g, ' ').trim(); }).join('\t');
+        }).join('\n');
+        resolver({ texto: texto, hoja: hojaUsada, hojas: wb.SheetNames.length });
+      } catch (e) {
+        rechazar(new Error('No pude abrir el Excel: ' + (e.message || 'archivo dañado')));
+      }
+    };
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+async function manejarArchivo(file) {
+  if (!file) return;
+  if (file.size > MAX_MB * 1048576) {
+    infoArchivo('<span class="nom">' + esc(file.name) + '</span> pesa ' + pesoLegible(file.size)
+      + ' — el tope es ' + MAX_MB + ' MB. Partilo en dos.', true);
+    return;
+  }
+
+  var ext = (file.name.split('.').pop() || '').toLowerCase();
+  var esExcel = ['xlsx','xls','xlsm','xlsb','ods'].indexOf(ext) !== -1;
+  infoArchivo('<span class="nom">' + esc(file.name) + '</span> · ' + pesoLegible(file.size) + ' · <span class="spin" style="border-color:var(--line);border-top-color:var(--navy)"></span> leyendo…');
+
+  try {
+    var detalle = '';
+    var texto = '';
+
+    if (esExcel) {
+      var listo = await cargarSheetJS();
+      if (!listo) {
+        infoArchivo('<span class="nom">' + esc(file.name) + '</span> — no pude cargar el lector de Excel'
+          + ' (¿sin internet o CDN bloqueado?). Abrilo en Excel y guardalo como <strong>CSV UTF-8</strong>, o copiá y pegá las filas acá abajo.', true);
+        return;
+      }
+      var r = await leerExcel(file);
+      texto = r.texto;
+      detalle = 'hoja "' + esc(r.hoja) + '"' + (r.hojas > 1 ? ' (de ' + r.hojas + '; se usa la primera con datos)' : '');
+    } else {
+      var t = await leerTexto(file);
+      texto = t.texto.replace(/^\uFEFF/, '');   // BOM que mete Excel
+      detalle = t.codificacion;
+    }
+
+    if (!texto.trim()) {
+      infoArchivo('<span class="nom">' + esc(file.name) + '</span> — está vacío.', true);
+      return;
+    }
+
+    document.getElementById('pegado').value = texto;
+    infoArchivo('📎 <span class="nom">' + esc(file.name) + '</span> · ' + pesoLegible(file.size) + ' · ' + detalle);
+    analizar();
+  } catch (e) {
+    infoArchivo('<span class="nom">' + esc(file.name) + '</span> — ' + esc(e.message), true);
+  }
+}
+
+function limpiarTodo() {
+  document.getElementById('pegado').value = '';
+  document.getElementById('archivo').value = '';
+  document.getElementById('infoArchivo').classList.add('oculto');
+  _filas = []; _filasCrudas = []; _cols = []; _mapa = {}; _resultados = [];
+  document.getElementById('card2').classList.add('off');
+  document.getElementById('card3').classList.add('off');
+  document.getElementById('card4').classList.add('off');
+  document.getElementById('cardRes').classList.add('oculto');
+  document.getElementById('progreso').classList.add('oculto');
+  document.querySelector('#tablaPrev tbody').innerHTML = '';
+  ['sOk','sErr','sDup','sTot'].forEach(function(id){ document.getElementById(id).textContent = '0'; });
+}
+
+/* ── Clic en la zona (y Enter/Espacio si llegó por teclado) ── */
+var zona = document.getElementById('drop');
+var inputArchivo = document.getElementById('archivo');
+zona.addEventListener('click', function(){ inputArchivo.click(); });
+zona.addEventListener('keydown', function(e){
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputArchivo.click(); }
+});
+inputArchivo.addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if (f) manejarArchivo(f);
+});
+
+/* ── Arrastrar sobre cualquier parte de la ventana ──
+   Usamos un contador porque dragleave también salta al pasar de un elemento
+   hijo a otro, y si no la cortina parpadea. */
+var arrastres = 0;
+var cortina = document.getElementById('cortina');
+
+function traeArchivos(e) {
+  var dt = e.dataTransfer;
+  if (!dt) return false;
+  if (dt.types) {
+    for (var i = 0; i < dt.types.length; i++) if (dt.types[i] === 'Files') return true;
+    return false;
+  }
+  return true;
+}
+
+window.addEventListener('dragenter', function(e){
+  if (!traeArchivos(e)) return;
+  e.preventDefault();
+  arrastres++;
+  cortina.classList.add('on');
+  zona.classList.add('activa');
+});
+window.addEventListener('dragover', function(e){
+  if (!traeArchivos(e)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+});
+window.addEventListener('dragleave', function(e){
+  if (!traeArchivos(e)) return;
+  arrastres = Math.max(0, arrastres - 1);
+  if (!arrastres) { cortina.classList.remove('on'); zona.classList.remove('activa'); }
+});
+window.addEventListener('drop', function(e){
+  if (!traeArchivos(e)) return;
+  e.preventDefault();
+  arrastres = 0;
+  cortina.classList.remove('on');
+  zona.classList.remove('activa');
+  var f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 1) {
+    infoArchivo('Soltaste ' + e.dataTransfer.files.length + ' archivos: se toma solo el primero.', true);
+  }
+  if (f) manejarArchivo(f);
+});
+
+document.getElementById('btnLimpiar').onclick = limpiarTodo;
+
+/* Aviso antes de cerrar la pestaña si hay una importación a medias. */
+window.addEventListener('beforeunload', function(e){
+  if (document.getElementById('btnImportar').disabled && !document.getElementById('progreso').classList.contains('oculto')) {
+    e.preventDefault(); e.returnValue = '';
+  }
+});
+</script>
+</body>
+</html>
