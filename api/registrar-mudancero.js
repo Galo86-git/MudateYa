@@ -280,8 +280,9 @@ module.exports = async function handler(req, res) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Email inválido' });
     }
-    if (!dniFrente && !esPreRegistro) {
-      return res.status(400).json({ error: "Falta la foto del DNI" });
+    // DNI obligatorio en el alta completa: frente Y dorso (no una sola foto).
+    if (!esPreRegistro && (!dniFrente || !dniDorso)) {
+      return res.status(400).json({ error: "Necesitamos las dos fotos del DNI: frente y dorso." });
     }
 
     // ── VERIFICACIÓN DE IDENTIDAD (semáforo para revisión humana) ────
