@@ -652,6 +652,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
             <option value="estado">Estado</option>
           </select>
           <button class="btn-sm" onclick="exportarExcel()" style="background:#22C36A;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⬇ Exportar Excel</button>
+          <button class="btn-sm" onclick="recordarDniFaltante()" title="Manda un mail a los mudanceros que subieron una sola foto del DNI" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">🪪 Recordar DNI faltante</button>
         </div>
         <div class="table-card">
           <div id="mudancerosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -1642,6 +1643,35 @@ function renderDashboard(){
 
 // ── MUDANCEROS PAGE ────────────────────────────────────────────────────────
 function renderMudancerosFull(){ filterMudanceros(); }
+
+// Recordar DNI faltante: busca mudanceros con 1 sola foto y les manda un mail.
+// Primero muestra cuántos son (vista previa) y pide confirmación antes de enviar.
+async function recordarDniFaltante(){
+  try {
+    var r = await fetch('/api/recordar-dni', { headers: { 'x-admin-token': ADMTK() } });
+    var d = await r.json();
+    if (!r.ok) { alert('Error: ' + (d.error || r.status)); return; }
+    if (!d.total) { alert('✅ No hay mudanceros con una sola foto de DNI.'); return; }
+    if (!d.pendientesDeMail) {
+      alert('Los ' + d.total + ' mudanceros con 1 sola foto ya recibieron el recordatorio.');
+      return;
+    }
+    var msg = 'Mudanceros con 1 sola foto de DNI: ' + d.total + '\n'
+            + 'Sin recordatorio enviado todavía: ' + d.pendientesDeMail + '\n\n'
+            + '¿Enviar el mail a los ' + d.pendientesDeMail + ' pendientes?';
+    if (!confirm(msg)) return;
+    var r2 = await fetch('/api/recordar-dni', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMTK() },
+      body: JSON.stringify({})
+    });
+    var d2 = await r2.json();
+    if (!r2.ok) { alert('Error al enviar: ' + (d2.error || r2.status)); return; }
+    alert('📧 Recordatorios enviados: ' + d2.enviados + (d2.fallidos ? (' · fallidos: ' + d2.fallidos) : ''));
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
 
 function filterMudanceros(){
   var q = (document.getElementById('searchMudanceros').value || '').toLowerCase();
