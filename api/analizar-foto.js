@@ -29,6 +29,12 @@ module.exports = async function handler(req, res) {
 
     const promptFinal = prompt || PROMPT_OBJETO;
 
+    // ── ELEGIR MODELO SEGÚN EL CASO ──────────────────────────────────────
+    // DNI: precisión legal → Sonnet 5 (más exacto leyendo documentos).
+    // Objeto/flete: estimación simple → Haiku 4.5 (rápido y ~5x más barato).
+    // Antes usábamos Opus 4.5 para todo, que era caro y sobredimensionado.
+    const modelo = esDNI ? 'claude-sonnet-5' : 'claude-haiku-4-5';
+
     // ── ARMAR CONTENIDO PARA CLAUDE ──────────────────────────────────────
     const content = [
       ...images.slice(0, 2).map(img => ({
@@ -54,7 +60,7 @@ module.exports = async function handler(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: modelo,
         max_tokens: esDNI ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
