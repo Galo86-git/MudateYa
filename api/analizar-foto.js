@@ -67,6 +67,14 @@ module.exports = async function handler(req, res) {
         model: modelo,
         max_tokens: esDNI ? 600 : 400,
         messages: [{ role: 'user', content }],
+        // Salida estructurada: la API GARANTIZA un JSON válido con este schema,
+        // así se terminan los errores de "no se pudo analizar la imagen".
+        output_config: {
+          format: {
+            type: 'json_schema',
+            schema: esDNI ? SCHEMA_DNI : SCHEMA_OBJETO,
+          },
+        },
       }),
     });
 
@@ -79,12 +87,14 @@ module.exports = async function handler(req, res) {
     const data = await response.json();
     const text = (data.content || []).map(b => b.text || '').join('');
 
-    // ── PARSEAR JSON DE LA RESPUESTA ─────────────────────────────────────
+    // ── PARSEAR JSON ─────────────────────────────────────────────────────
+    // Con output_config el texto ya es JSON válido garantizado. El try/catch
+    // queda solo como red de seguridad (ej: si el modelo se rehúsa o se corta).
     let analisis;
     try {
-      analisis = JSON.parse(text.replace(/```json|```/g, '').trim());
+      analisis = JSON.parse(text.trim());
     } catch(e) {
-      console.error('Error parseando respuesta IA:', text);
+      console.error('Error parseando respuesta IA:', data.stop_reason, text);
       return res.status(200).json({
         analisis: null,
         error: 'No se pudo analizar la imagen automáticamente'
@@ -114,19 +124,43 @@ Respondé SOLO con JSON válido (sin markdown, sin explicaciones) con exactament
   "notas": "observación breve sobre el objeto o su manipulación"
 }`;
 
-// Nota: el prompt de DNI lo manda el frontend directamente en req.body.prompt
-// Ver mudanceros.html → función analizarDNI()
-// Schema esperado para DNI:
-// {
-//   "tipo_documento": "DNI",
-//   "numero_dni": "...",
-//   "apellido": "...",
-//   "nombres": "...",
-//   "fecha_nacimiento": "DD/MM/AAAA",
-//   "fecha_vencimiento": "DD/MM/AAAA",
-//   "cuil": "...",
-//   "sexo": "M o F",
-//   "nacionalidad": "...",
-//   "legible": true | false,
-//   "advertencias": []
-// }
+// ── SCHEMAS DE SALIDA ESTRUCTURADA ────────────────────────────────────────
+// La API valida la respuesta contra estos schemas y garantiza JSON válido.
+// Requisito de la API: additionalProperties:false y todos los campos en required.
+
+const SCHEMA_OBJETO = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['tipo','peso_kg','dimensiones','dificultad','fragil','requiere_desmontaje','personas_necesarias','notas'],
+  properties: {
+    tipo:                { type: 'string' },
+    peso_kg:             { type: 'number' },
+    dimensiones:         { type: 'string' },
+    dificultad:          { type: 'string', enum: ['baja','media','alta'] },
+    fragil:              { type: 'boolean' },
+    requiere_desmontaje: { type: 'boolean' },
+    personas_necesarias: { type: 'integer', enum: [1, 2] },
+    notas:               { type: 'string' },
+  },
+};
+
+// El prompt de DNI lo manda el frontend (mudanceros.html → analizarDNI()),
+// pero el schema de salida lo fijamos acá para garantizar JSON válido.
+const SCHEMA_DNI = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['tipo_documento','numero_dni','apellido','nombres','fecha_nacimiento','fecha_vencimiento','cuil','sexo','nacionalidad','legible','advertencias'],
+  properties: {
+    tipo_documento:    { type: 'string' },
+    numero_dni:        { type: 'string' },
+    apellido:          { type: 'string' },
+    nombres:           { type: 'string' },
+    fecha_nacimiento:  { type: 'string' },
+    fecha_vencimiento: { type: 'string' },
+    cuil:              { type: 'string' },
+    sexo:              { type: 'string' },
+    nacionalidad:      { type: 'string' },
+    legible:           { type: 'boolean' },
+    advertencias:      { type: 'array', items: { type: 'string' } },
+  },
+};
