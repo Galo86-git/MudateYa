@@ -17,17 +17,21 @@
 //   historial.push({ role: 'assistant', content: data.reply });
 // ─────────────────────────────────────────────────────────────────────────────
 
+const { cors, limitarPorIP } = require('./_seguridad');
+
 const MODEL = 'claude-haiku-4-5';   // Chat de ruteo: priorizamos velocidad y costo.
                                     // Si te diera error de modelo, usá el que ya tenés ('claude-opus-4-5').
 const MAX_HISTORIAL = 20;           // Tope de turnos que se reenvían (controla el costo por mensaje).
 const MAX_TOKENS = 500;             // Respuestas cortas: es un asistente de ruteo, no un ensayista.
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (cors(req, res)) return;  // CORS + responde el preflight OPTIONS
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+
+  // Rate limit: máximo 15 mensajes por minuto por IP.
+  if (await limitarPorIP(req, 'chat', 15)) {
+    return res.status(429).json({ error: 'Demasiados mensajes. Esperá un momento.' });
+  }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: 'API key no configurada' });

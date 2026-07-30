@@ -3,12 +3,16 @@
 // Detecta automáticamente si las imágenes son un DNI o un objeto de flete/mudanza
 // y responde con el schema correspondiente
 
+const { cors, limitarPorIP } = require('./_seguridad');
+
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (cors(req, res)) return;  // CORS + responde el preflight OPTIONS
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+
+  // Rate limit: máximo 5 análisis de foto por minuto por IP.
+  if (await limitarPorIP(req, 'analizar-foto', 5)) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Esperá un momento.' });
+  }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: 'API key no configurada' });
