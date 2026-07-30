@@ -2242,6 +2242,32 @@ async function openModal(idx){
       html += '</div>';
     }
 
+    // 🚦 Semáforo de verificación de identidad (CUIL + cruce con el DNI)
+    // Es una ayuda automática — el OK final lo da la persona que revisa.
+    var v = perfil.verificacion;
+    if (v && v.semaforo) {
+      var colores = {
+        verde:    { bg:'#F0FFF4', bd:'#BBF7D0', tx:'#166534', ico:'🟢', titulo:'Todo consistente' },
+        amarillo: { bg:'#FFFBEB', bd:'#FDE68A', tx:'#92400E', ico:'🟡', titulo:'Revisar antes de aprobar' },
+        rojo:     { bg:'#FEF2F2', bd:'#FECACA', tx:'#991B1B', ico:'🔴', titulo:'Atención — revisar con cuidado' }
+      };
+      var c = colores[v.semaforo] || colores.amarillo;
+      var iconoNivel = { verde:'✓', amarillo:'⚠', rojo:'✕' };
+      html += '<div class="modal-section">🚦 Verificación de identidad</div>';
+      html += '<div style="background:'+c.bg+';border:1px solid '+c.bd+';border-radius:10px;padding:12px 14px">';
+      html += '<div style="font-size:14px;font-weight:700;color:'+c.tx+'">'+c.ico+' '+c.titulo+'</div>';
+      if (v.motivos && v.motivos.length) {
+        html += '<ul style="margin:8px 0 0;padding-left:2px;list-style:none;font-size:12px;line-height:1.6;color:#475569">';
+        v.motivos.forEach(function(mo) {
+          var safe = String(mo.texto).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          html += '<li>'+(iconoNivel[mo.nivel]||'•')+' '+safe+'</li>';
+        });
+        html += '</ul>';
+      }
+      html += '<div style="font-size:10px;color:#94A3B8;margin-top:8px">Chequeo automático (formato del CUIL + cruce con el DNI de la foto). El OK final lo das vos.</div>';
+      html += '</div>';
+    }
+
     // Fotos del DNI
     if (perfil.dniFrente || perfil.dniDorso) {
       html += '<div class="modal-section">🪪 Fotos del DNI</div><div class="modal-fotos">';

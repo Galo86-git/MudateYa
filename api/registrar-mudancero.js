@@ -83,6 +83,121 @@ function validarCuilLocal(cuil) {
   };
 }
 
+// ── PARSE FECHA DD/MM/AAAA → Date (para chequear vencimiento del DNI) ──
+function parseFechaAR(str) {
+  if (!str) return null;
+  var m = String(str).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (!m) return null;
+  var d = parseInt(m[1], 10), mo = parseInt(m[2], 10), y = parseInt(m[3], 10);
+  if (y < 100) y += 2000;
+  var dt = new Date(y, mo - 1, d);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+// Normaliza un nombre a palabras sin acentos ni símbolos, en minúsculas.
+function palabrasNombre(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/).filter(Boolean);
+}
+
+// ¿El nombre del formulario y el del DNI se parecen? Tolerante a propósito:
+// si falta info devuelve true (no marca), porque todo pasa por revisión humana.
+function nombresParecidos(a, b) {
+  var pa = palabrasNombre(a), pb = palabrasNombre(b);
+  if (!pa.length || !pb.length) return true;
+  var setB = {}; pb.forEach(function(w) { setB[w] = true; });
+  var comunes = pa.filter(function(w) { return setB[w]; }).length;
+  return comunes >= Math.min(2, pa.length) || comunes / pa.length >= 0.5;
+}
+
+// ── EVALUAR IDENTIDAD → semáforo verde/amarillo/rojo + motivos ────
+// Combina la validación del CUIL con el análisis del DNI. Es una AYUDA
+// para la revisión humana, NO una aprobación automática.
+//   🔴 rojo     → algo no cierra fuerte (revisar con lupa / rechazar)
+//   🟡 amarillo → dudas menores (mirar antes de aprobar)
+//   🟢 verde    → todo consistente
+// El DNI está ADENTRO del CUIL (los 8 dígitos del medio), así que cruzamos
+// el número del CUIL contra el numero_dni que la IA leyó de la foto.
+function evaluarIdentidad(cuil, dniAnalisis, nombreFormulario) {
+  var motivos = [];
+  var rojo = false, amarillo = false;
+  var a = dniAnalisis || {};
+
+  // 1) CUIL válido (formato + prefijo + dígito verificador)
+  var cuilRes = validarCuilLocal(cuil);
+  if (!cuilRes.valido) {
+    rojo = true;
+    motivos.push({ nivel: 'rojo', texto: 'CUIL/CUIT inválido: ' + cuilRes.error });
+  }
+
+  // 2) La foto del DNI es legible
+  if (a.legible === false) {
+    rojo = true;
+    motivos.push({ nivel: 'rojo', texto: 'La foto del DNI no es legible.' });
+  }
+
+  // 3) CRUCE DNI ↔ CUIL: el DNI son los 8 dígitos del medio del CUIL
+  if (cuilRes.valido && a.numero_dni) {
+    var dniEnCuil = String(cuilRes.cuil).slice(2, 10).replace(/^0+/, '');
+    var dniFoto   = String(a.numero_dni).replace(/\D/g, '').replace(/^0+/, '');
+    if (dniEnCuil && dniFoto) {
+      if (dniEnCuil === dniFoto) {
+        motivos.push({ nivel: 'verde', texto: 'El DNI de la foto coincide con el del CUIL.' });
+      } else {
+        rojo = true;
+        motivos.push({ nivel: 'rojo', texto: 'El DNI de la foto (' + dniFoto + ') no coincide con el del CUIL (' + dniEnCuil + ').' });
+      }
+    }
+  }
+
+  // 4) DNI vencido
+  var venc = parseFechaAR(a.fecha_vencimiento);
+  if (venc && venc.getTime() < Date.now()) {
+    rojo = true;
+    motivos.push({ nivel: 'rojo', texto: 'El DNI está vencido (' + a.fecha_vencimiento + ').' });
+  } else if (!venc && a.numero_dni) {
+    amarillo = true;
+    motivos.push({ nivel: 'amarillo', texto: 'No se pudo leer la fecha de vencimiento del DNI.' });
+  }
+
+  // 5) Prefijo del CUIL vs sexo del DNI (20=M, 27=F; 23/24 son ambiguos)
+  if (cuilRes.valido && a.sexo) {
+    var pref = parseInt(String(cuilRes.cuil).slice(0, 2), 10);
+    var sexo = String(a.sexo).toUpperCase().charAt(0);
+    if ((pref === 20 && sexo === 'F') || (pref === 27 && sexo === 'M')) {
+      amarillo = true;
+      motivos.push({ nivel: 'amarillo', texto: 'El prefijo del CUIL (' + pref + ') no coincide con el sexo del DNI (' + sexo + ').' });
+    }
+  }
+
+  // 6) Nombre del formulario vs nombre del DNI
+  if (nombreFormulario && (a.nombres || a.apellido)) {
+    var nombreDni = ((a.nombres || '') + ' ' + (a.apellido || '')).trim();
+    if (!nombresParecidos(nombreFormulario, nombreDni)) {
+      amarillo = true;
+      motivos.push({ nivel: 'amarillo', texto: 'El nombre del formulario ("' + nombreFormulario + '") no coincide claramente con el del DNI ("' + nombreDni + '").' });
+    }
+  }
+
+  // 7) Avisos que ya trae el análisis de la IA
+  if (Array.isArray(a.advertencias)) {
+    a.advertencias.forEach(function(adv) {
+      if (!adv) return;
+      amarillo = true;
+      motivos.push({ nivel: 'amarillo', texto: 'Aviso de la IA: ' + adv });
+    });
+  }
+
+  return {
+    semaforo:   rojo ? 'rojo' : (amarillo ? 'amarillo' : 'verde'),
+    motivos:    motivos,
+    cuil:       cuilRes,
+    evaluadoEn: new Date().toISOString(),
+  };
+}
+
 // ── HANDLER ──────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -169,8 +284,12 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "Falta la foto del DNI" });
     }
 
-    // ── CUIL — se guarda pero no se valida contra AFIP (verificación manual) ──
-    var cuilResultado = null;
+    // ── VERIFICACIÓN DE IDENTIDAD (semáforo para revisión humana) ────
+    // Cruza el CUIL con el análisis del DNI (el DNI está adentro del CUIL).
+    // NO aprueba solo: es una AYUDA para que el admin decida. El OK final
+    // siempre lo da una persona (el estado queda 'pendiente_revision').
+    var verificacion  = esPreRegistro ? null : evaluarIdentidad(cuil, dniAnalisis, nombre);
+    var cuilResultado = verificacion ? verificacion.cuil : null;
 
     // ── VERIFICAR DUPLICADO ─────────────────────────────────────
     var existente = await getJSON('mudancero:perfil:' + email);
@@ -269,6 +388,8 @@ module.exports = async function handler(req, res) {
       verificadoSeguro:    false,
       cuilVerificado:      cuilResultado ? cuilResultado.valido === true  : false,
       cuilAdvertencia:     cuilResultado ? cuilResultado.advertencia === true : false,
+      // Semáforo de identidad (verde/amarillo/rojo + motivos) — ayuda para el admin.
+      verificacion:        verificacion,
 
       estadoVerificacion: 'pendiente_revision',
       metodoCobro:    metodoCobro    || 'cbu',
