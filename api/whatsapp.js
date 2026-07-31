@@ -40,6 +40,30 @@ function quienEscribe(waId) {
 }
 
 // ------------------------------------------------------------------
+// Descarga de imágenes que manda el cliente por WhatsApp.
+// Twilio entrega la media en una URL protegida (auth básica con las
+// credenciales de la cuenta). Claude entiende imágenes, así que la bajamos y
+// la pasamos en base64. (Audio NO: Claude no transcribe audio.)
+// ------------------------------------------------------------------
+const TIPOS_IMG = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+async function descargarMediaBase64(url) {
+  try {
+    const sid = process.env.TWILIO_ACCOUNT_SID;
+    const token = process.env.TWILIO_AUTH_TOKEN;
+    const auth = 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64');
+    const r = await fetch(url, { headers: { Authorization: auth } });
+    if (!r.ok) { console.error('Descarga de media falló:', r.status); return null; }
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > 5 * 1024 * 1024) { console.warn('Imagen > 5MB, se ignora'); return null; }
+    return buf.toString('base64');
+  } catch (e) {
+    console.error('Error bajando media:', e);
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path — mismo patrón que _talo.js)
 // ------------------------------------------------------------------
 async function redisCall(method, ...args) {
@@ -109,7 +133,7 @@ CÓMO TRABAJÁS:
    - origen: dirección o zona de donde sale
    - destino: dirección o zona a donde va
    - fecha aproximada
-   - detalles: qué mover (ambientes, muebles grandes, electrodomésticos), piso y si hay ascensor
+   - detalles: qué mover (ambientes, muebles grandes, electrodomésticos), piso y si hay ascensor. Si te ayuda a estimar, podés pedirle una foto de lo que hay que mover.
    - contacto: nombre del cliente
 3. Cuando tengas los datos, llamá a la herramienta crear_pedido.
 4. Explicá el modelo cuando venga al caso: MudateYa le consigue hasta 5 presupuestos de mudanceros cercanos, el pedido vale 24hs, y el pago es 50% al reservar + 50% al completar.
@@ -199,11 +223,35 @@ async function iniciarBarridoMudanceros(pedido) {
 // ------------------------------------------------------------------
 // Genera la respuesta del agente (texto) para un mensaje entrante
 // ------------------------------------------------------------------
-async function generarRespuesta(waId, texto) {
+async function generarRespuesta(waId, texto, imagenes) {
   const key = `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
-  conv.messages.push({ role: 'user', content: texto });
-  if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
+
+  // Turno actual del cliente. Si mandó fotos, van como bloques (imagen + texto)
+  // SOLO para esta llamada a Claude; en el historial guardamos un placeholder de
+  // texto para no persistir el base64 (pesa y re-enviarlo cada turno cuesta tokens).
+  let contenidoActual;
+  let contenidoHistorial;
+  if (imagenes && imagenes.length) {
+    const bloques = [];
+    for (const img of imagenes) {
+      const data = await descargarMediaBase64(img.url);
+      if (data) bloques.push({ type: 'image', source: { type: 'base64', media_type: img.tipo, data } });
+    }
+    bloques.push({
+      type: 'text',
+      text: texto || 'El cliente te mandó esta foto para cotizar su mudanza o flete. Mirala, comentá brevemente qué ves (muebles, cantidad, tamaño) y usalo para armar el pedido.',
+    });
+    contenidoActual = bloques;
+    contenidoHistorial = (texto ? texto + ' ' : '') + `[📷 foto${imagenes.length > 1 ? ' x' + imagenes.length : ''} enviada]`;
+  } else {
+    contenidoActual = texto;
+    contenidoHistorial = texto;
+  }
+
+  // Mensajes para Claude: historial (solo texto) recortado + turno actual.
+  const historial = conv.messages.slice(-20);
+  const messages = historial.concat([{ role: 'user', content: contenidoActual }]);
 
   // Si quien escribe es del equipo fundador, se lo decimos al agente.
   const persona = quienEscribe(waId);
@@ -211,7 +259,7 @@ async function generarRespuesta(waId, texto) {
     ? `${SYSTEM_PROMPT}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
     : SYSTEM_PROMPT;
 
-  const resp = await askClaude(conv.messages, system);
+  const resp = await askClaude(messages, system);
 
   const toolUse = (resp.content || []).find((c) => c.type === 'tool_use' && c.name === 'crear_pedido');
   let salida;
@@ -229,7 +277,10 @@ async function generarRespuesta(waId, texto) {
         .trim() || 'Perdón, no te entendí bien. ¿Me lo repetís?';
   }
 
+  // Persistimos historial en texto (turno del cliente + respuesta del bot).
+  conv.messages.push({ role: 'user', content: contenidoHistorial });
   conv.messages.push({ role: 'assistant', content: salida });
+  if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
   await setJSON(key, conv, 60 * 60 * 24 * 30);
   return salida;
 }
@@ -268,9 +319,27 @@ module.exports = async function handler(req, res) {
     const texto = (body.Body || '').trim();
     const waId = from.replace('whatsapp:', '');
 
-    if (!texto) return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
+    // Recolectar imágenes adjuntas (Twilio manda NumMedia + MediaUrlN / MediaContentTypeN).
+    const numMedia = parseInt(body.NumMedia || '0', 10) || 0;
+    const imagenes = [];
+    let hayNoImagen = false;
+    for (let i = 0; i < numMedia; i++) {
+      const url = body[`MediaUrl${i}`];
+      const tipo = body[`MediaContentType${i}`] || '';
+      if (url && TIPOS_IMG.includes(tipo)) imagenes.push({ url, tipo });
+      else if (url) hayNoImagen = true; // audio, video, etc.
+    }
 
-    const respuesta = await generarRespuesta(waId, texto);
+    if (!texto && imagenes.length === 0) {
+      if (numMedia > 0 || hayNoImagen) {
+        return res
+          .status(200)
+          .send(twiml('Por ahora puedo leer texto y fotos 📷. ¿Me lo contás por escrito o me mandás una foto de lo que hay que mover?'));
+      }
+      return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
+    }
+
+    const respuesta = await generarRespuesta(waId, texto, imagenes);
     return res.status(200).send(twiml(respuesta));
   } catch (e) {
     console.error('Error webhook Twilio WhatsApp:', e);
