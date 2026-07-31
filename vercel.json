@@ -378,6 +378,10 @@
     {
       "path": "/api/cron-onboarding",
       "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron-asesores-semanal",
+      "schedule": "0 12 * * 1"
     }
   ]
 }
