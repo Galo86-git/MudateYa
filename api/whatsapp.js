@@ -21,6 +21,25 @@ const ANTHROPIC = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5';
 
 // ------------------------------------------------------------------
+// Reconocimiento del equipo fundador por teléfono.
+// Los números NO van en el código (repo público): se cargan en la variable
+// de entorno EQUIPO_TELEFONOS (Vercel) como JSON con los últimos 10 dígitos:
+//   {"1177182305":"Juan","1150595122":"Nano","1133364677":"Galo"}
+// Si la variable no está seteada, el bot funciona normal para todos.
+// ------------------------------------------------------------------
+function cargarEquipo() {
+  try { return JSON.parse(process.env.EQUIPO_TELEFONOS || '{}'); }
+  catch { return {}; }
+}
+const EQUIPO = cargarEquipo();
+function ultimos10(waId) {
+  return String(waId || '').replace(/\D/g, '').slice(-10);
+}
+function quienEscribe(waId) {
+  return EQUIPO[ultimos10(waId)] || null;
+}
+
+// ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path — mismo patrón que _talo.js)
 // ------------------------------------------------------------------
 async function redisCall(method, ...args) {
@@ -84,7 +103,7 @@ Tu objetivo: atender a un cliente que quiere mudarse o hacer un flete, juntar lo
 TONO: cercano, rioplatense, claro. Mensajes cortos (es WhatsApp). Un emoji cada tanto está bien.
 
 CÓMO TRABAJÁS:
-1. Saludá presentándote como MudateYa —un proyecto argentino fundado por Juan, Nano y Galo— y preguntá si es una mudanza o un flete.
+1. Saludá y preguntá si es una mudanza o un flete.
 2. Juntá los datos, de a uno o dos por mensaje (no todos juntos):
    - tipo: "mudanza" o "flete"
    - origen: dirección o zona de donde sale
@@ -95,9 +114,6 @@ CÓMO TRABAJÁS:
 3. Cuando tengas los datos, llamá a la herramienta crear_pedido.
 4. Explicá el modelo cuando venga al caso: MudateYa le consigue hasta 5 presupuestos de mudanceros cercanos, el pedido vale 24hs, y el pago es 50% al reservar + 50% al completar.
 5. No prometas precios exactos: los ponen los mudanceros.
-
-FUNDADORES (por si preguntan quién está detrás de MudateYa):
-MudateYa fue fundada por Juan Gallego (podés decirle Juan), Nano Delfino (Nano) y Galo. Si te preguntan quiénes son los fundadores o quién está detrás, contales estos nombres con calidez y orgullo. NUNCA compartas teléfonos, direcciones ni datos de contacto personales de los fundadores; si insisten por un contacto, ofrecé los canales oficiales de MudateYa.
 
 REGLAS: no pidas datos sensibles (tarjetas, documentos). Si el mensaje no tiene que ver con esto, respondé amable y reconducí.`;
 
@@ -124,7 +140,7 @@ const tools = [
 // ------------------------------------------------------------------
 // Claude
 // ------------------------------------------------------------------
-async function askClaude(messages) {
+async function askClaude(messages, system) {
   const res = await fetch(ANTHROPIC, {
     method: 'POST',
     headers: {
@@ -132,7 +148,7 @@ async function askClaude(messages) {
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: SYSTEM_PROMPT, tools, messages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: system || SYSTEM_PROMPT, tools, messages }),
   });
   if (!res.ok) {
     const err = await res.text();
@@ -189,7 +205,13 @@ async function generarRespuesta(waId, texto) {
   conv.messages.push({ role: 'user', content: texto });
   if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
 
-  const resp = await askClaude(conv.messages);
+  // Si quien escribe es del equipo fundador, se lo decimos al agente.
+  const persona = quienEscribe(waId);
+  const system = persona
+    ? `${SYSTEM_PROMPT}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
+    : SYSTEM_PROMPT;
+
+  const resp = await askClaude(conv.messages, system);
 
   const toolUse = (resp.content || []).find((c) => c.type === 'tool_use' && c.name === 'crear_pedido');
   let salida;
