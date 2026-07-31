@@ -146,34 +146,56 @@ async function superaLimite(waId, maxPorMinuto) {
 // que se autoconstruye y refresca cada 6h (así no tocamos el alta/edición).
 // Los mudanceros nuevos quedan reconocidos dentro de ~6h.
 // ------------------------------------------------------------------
-async function indiceMudanceros() {
-  let idx = await getJSON('mudanceros:tel-index');
-  if (idx) return idx;
-  idx = {};
+// Pipeline de Upstash: varios comandos en UNA sola llamada REST.
+async function redisPipeline(commands) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const r = await fetch(`${url}/pipeline`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(commands),
+  });
+  const data = await r.json();
+  return Array.isArray(data) ? data.map((d) => d.result) : [];
+}
+
+// Backfill del índice teléfono→email (hash Redis `mudanceros:tel-idx`).
+// Corre una vez y se rearma cada 24h (para tomar mudanceros nuevos). Con muchos
+// mudanceros usa pipelines por lotes de 100 (una llamada por lote), no N GET.
+async function asegurarIndiceMudanceros() {
   try {
+    if (await redisCall('GET', 'mudanceros:tel-idx:built')) return;
     const emails = (await getJSON('mudanceros:todos')) || [];
-    for (const email of emails) {
-      const p = await getJSON(`mudancero:perfil:${email}`);
-      if (p && p.telefono && p.estado !== 'rechazado') {
-        const t = ultimos10(p.telefono);
-        if (t) idx[t] = email;
-      }
+    for (let off = 0; off < emails.length; off += 100) {
+      const lote = emails.slice(off, off + 100);
+      const perfiles = await redisPipeline(lote.map((e) => ['GET', `mudancero:perfil:${e}`]));
+      const hset = [];
+      perfiles.forEach((val, i) => {
+        if (!val) return;
+        try {
+          const p = JSON.parse(val);
+          if (p && p.telefono && p.estado !== 'rechazado') {
+            const t = ultimos10(p.telefono);
+            if (t) hset.push(['HSET', 'mudanceros:tel-idx', t, lote[i]]);
+          }
+        } catch (_) {}
+      });
+      if (hset.length) await redisPipeline(hset);
     }
-    await setJSON('mudanceros:tel-index', idx, 6 * 60 * 60);
+    await redisCall('SET', 'mudanceros:tel-idx:built', '1', 'EX', String(24 * 60 * 60));
   } catch (e) {
-    console.error('build tel-index:', e.message);
+    console.error('asegurarIndiceMudanceros:', e.message);
   }
-  return idx;
 }
 async function buscarMudancero(waId) {
   try {
-    const idx = await indiceMudanceros();
-    const email = idx[ultimos10(waId)];
+    await asegurarIndiceMudanceros();
+    const email = await redisCall('HGET', 'mudanceros:tel-idx', ultimos10(waId));
     if (!email) return null;
     return await getJSON(`mudancero:perfil:${email}`);
   } catch (e) {
     console.error('buscarMudancero:', e.message);
-    return null; // ante cualquier error, se trata como cliente (comportamiento seguro)
+    return null; // ante error, se trata como cliente (seguro)
   }
 }
 
