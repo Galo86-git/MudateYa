@@ -1,24 +1,45 @@
 // api/cron-asesores-semanal.js
 //
-// Recordatorio SEMANAL a todos los asesores dados de alta.
-// Corre todos los lunes 09:00 hora Argentina (12:00 UTC) — schedule "0 12 * * 1"
-// en vercel.json. Recorre el índice global `asesores:todos`, y a cada asesor
-// activo le manda un mail de activación: "convertí cada cliente que se muda en
-// un servicio premium (y gratis) para vos".
+// Recordatorio SEMANAL a los asesores de CANAL (Remax, C21, Mudafy,
+// Independientes). Corre todos los lunes 09:00 hora Argentina (12:00 UTC) —
+// schedule "0 12 * * 1" en vercel.json.
+//
+// A cada asesor le manda su LINK EXCLUSIVO de cotización ya existente:
+//   https://mudateya.ar/inmobiliaria/{canal}?asesor={codigo}
+// No se inventa ningún link: se usa el codigo propio de cada asesor.
+//
+// QUIÉN NO RECIBE (por decisión de producto):
+//   - Asesores del registro genérico (indice asesores:todos): no tienen link
+//     de cotización, así que quedan afuera.
+//   - Aliados (programa de referidos de edificios): otro circuito.
 //
 // IDEMPOTENCIA: al arrancar setea una marca en Redis por semana (SET ... NX).
 // Si el cron corre dos veces el mismo lunes (reintento de Vercel), la segunda
 // vez ve la marca y no manda nada. La marca expira sola a los 15 días.
+// Además se deduplica por email (si un asesor está en dos canales, un solo mail).
 //
 // SEGURIDAD: el endpoint solo se ejecuta si:
 //   1. Llega del Vercel Cron (header x-vercel-cron === '1'), o
 //   2. Se llama manualmente con ?token=ADMIN_TOKEN (para probar).
 //
 // MODOS DE PRUEBA (solo con ?token=ADMIN_TOKEN):
-//   ?dry=1            → NO envía nada; devuelve a cuántos y a quiénes les llegaría.
+//   ?dry=1            → NO envía nada; devuelve a cuántos y a quiénes les llegaría
+//                       (con el canal y el link de cada uno).
 //   ?test=mail@x.com  → envía UN solo mail de muestra a esa dirección y corta.
+//                       Si ese mail es un asesor de canal, usa su link REAL.
 
 const { Resend } = require('resend');
+
+// ── Canales con link exclusivo de cotización (?asesor={codigo}) ──
+// prefijo = prefijo de las claves en Redis · slug = canal en la URL pública.
+// Ojo: independientes guarda con prefijo "indep" pero la URL dice "independientes".
+var CANALES = [
+  { prefijo: 'remax',  slug: 'remax' },
+  { prefijo: 'c21',    slug: 'c21' },
+  { prefijo: 'mudafy', slug: 'mudafy' },
+  { prefijo: 'indep',  slug: 'independientes' }
+];
+var SITE = 'https://mudateya.ar';
 
 // ── Wrappers Redis (mismo patrón que cron-onboarding.js) ──
 async function redisCall(method, args) {
@@ -53,21 +74,42 @@ function validEmail(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim());
 }
 
-// ── HELPER: link de acceso EXCLUSIVO por asesor ──
-// Genera un magic link propio de cada asesor. Al abrirlo, asesor-login.html lo
-// valida (action=verify-magiclink) y lo deja logueado directo en SU panel, listo
-// para armar el presupuesto — no en un login genérico.
-// TTL de 9 días: el link sigue sirviendo hasta después del próximo lunes.
-var LOGIN_LINK_TTL = 9 * 24 * 60 * 60; // 9 días en segundos
-async function crearLinkAcceso(email) {
-  var token = Math.random().toString(36).substring(2) + Date.now().toString(36) + Math.random().toString(36).substring(2);
-  await redisCall('set', ['asesor:magiclink:' + token, JSON.stringify({ email: email }), 'EX', String(LOGIN_LINK_TTL)]);
-  return 'https://mudateya.ar/asesor-login?token=' + token;
+// ── HELPER: link exclusivo de cotización de un asesor ──
+// Es EXACTAMENTE el mismo que arma cada canal (remax.js/c21.js/mudafy.js/
+// independientes.js): SITE + /inmobiliaria/{slug}?asesor={codigo}.
+function linkCotizacion(slug, codigo) {
+  return SITE + '/inmobiliaria/' + slug + '?asesor=' + encodeURIComponent(codigo);
+}
+
+// ── Recolecta los destinatarios: recorre el índice de cada canal, arma el link
+//    real de cada asesor y deduplica por email. Devuelve [{email,nombre,canal,link}]. ──
+async function recolectarDestinatarios() {
+  var out = [];
+  var vistos = {};
+  for (var c = 0; c < CANALES.length; c++) {
+    var canal = CANALES[c];
+    var ids = await getJSON(canal.prefijo + ':asesores') || [];
+    for (var i = 0; i < ids.length; i++) {
+      var a = await getJSON(canal.prefijo + ':asesor:' + ids[i]);
+      if (!a || !validEmail(a.email)) continue;
+      if (a.activo === false) continue; // asesor dado de baja
+      var k = String(a.email).toLowerCase().trim();
+      if (vistos[k]) continue;          // ya listado por otro canal
+      vistos[k] = true;
+      out.push({
+        email:  a.email,
+        nombre: a.nombre || '',
+        canal:  canal.slug,
+        link:   linkCotizacion(canal.slug, a.codigo || ids[i])
+      });
+    }
+  }
+  return out;
 }
 
 // ── PLANTILLA DEL EMAIL ──
-function emailRecordatorio(asesor, ctaHref) {
-  var primerNombre = ((asesor.nombre || '').trim().split(' ')[0]) || 'Hola';
+function emailRecordatorio(nombre, ctaHref) {
+  var primerNombre = ((nombre || '').trim().split(' ')[0]) || 'Hola';
   return {
     subject: primerNombre + ', ¿algún cliente que se muda esta semana?',
     html: bodyHtml({
@@ -79,7 +121,7 @@ function emailRecordatorio(asesor, ctaHref) {
         'Se los enviás por mail y WhatsApp, a tu nombre'
       ],
       cta:     'Armar un presupuesto →',
-      ctaHref: ctaHref || 'https://mudateya.ar/asesor-dashboard',
+      ctaHref: ctaHref || (SITE + '/asesores'),
       cierre:  'Es gratis para vos y para tu cliente. Cuantos más mandás, más te recuerdan cuando llega la hora de mudarse.'
     })
   };
@@ -122,7 +164,6 @@ module.exports = async function handler(req, res) {
 
   // Seguridad: solo Vercel Cron o admin con token
   var esVercelCron = req.headers['x-vercel-cron'] === '1';
-  var token        = (req.query && req.query.token) || (req.url && new URL(req.url, 'http://x').searchParams.get('token'));
   var esAdmin      = require('./_auth').esAdmin(req);
   if (!esVercelCron && !esAdmin) {
     return res.status(401).json({ error: 'No autorizado' });
@@ -140,18 +181,24 @@ module.exports = async function handler(req, res) {
     // ── MODO TEST: mandar una sola muestra y cortar ──
     if (testTo) {
       if (!validEmail(testTo)) return res.status(400).json({ error: 'Email de test inválido' });
-      // Si el email de test es un asesor real, usamos su link exclusivo real;
-      // si no, el botón apunta al panel genérico (es solo una muestra visual).
-      var asesorTest = await getJSON('asesor:' + String(testTo).toLowerCase().trim());
-      var hrefTest   = asesorTest ? await crearLinkAcceso(asesorTest.email) : null;
-      var nombreTest = (asesorTest && asesorTest.nombre) || 'Asesor de prueba';
-      var muestra = emailRecordatorio({ nombre: nombreTest }, hrefTest);
+      // Si el mail de test es un asesor de canal, usamos su link REAL de cotización.
+      var lista0 = await recolectarDestinatarios();
+      var match = null;
+      for (var m = 0; m < lista0.length; m++) {
+        if (lista0[m].email.toLowerCase() === testTo.toLowerCase()) { match = lista0[m]; break; }
+      }
+      var muestra = emailRecordatorio(match ? match.nombre : 'Asesor de prueba', match ? match.link : null);
       var rt = await resend.emails.send({
         from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
         to: testTo, subject: muestra.subject, html: muestra.html
       });
       if (rt && rt.error) return res.status(502).json({ error: rt.error });
-      return res.status(200).json({ ok: true, test: true, enviadoA: testTo });
+      return res.status(200).json({
+        ok: true, test: true, enviadoA: testTo,
+        esAsesorDeCanal: !!match,
+        canal: match ? match.canal : null,
+        link:  match ? match.link : null
+      });
     }
 
     // ── IDEMPOTENCIA: marca por semana (clave = lunes en hora AR) ──
@@ -164,33 +211,32 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // ── Recorrer el índice global de asesores ──
-    var emails = await getJSON('asesores:todos') || [];
-    var resumen = { total: emails.length, enviados: 0, salteados: 0, errores: 0, destinatarios: [], fallidos: [] };
+    // ── Recolectar destinatarios (canales) y enviar ──
+    var lista = await recolectarDestinatarios();
+    var resumen = { total: lista.length, enviados: 0, errores: 0, destinatarios: [], fallidos: [] };
 
-    for (var i = 0; i < emails.length; i++) {
-      var asesor = await getJSON('asesor:' + emails[i]);
-      if (!asesor || !validEmail(asesor.email)) { resumen.salteados++; continue; }
-      // Respetar bajas / inactivos
-      if (asesor.estado && asesor.estado !== 'activo') { resumen.salteados++; continue; }
+    for (var i = 0; i < lista.length; i++) {
+      var d = lista[i];
 
-      if (esDry) { resumen.destinatarios.push(asesor.email); resumen.enviados++; continue; }
+      if (esDry) {
+        resumen.destinatarios.push({ email: d.email, canal: d.canal, link: d.link });
+        resumen.enviados++;
+        continue;
+      }
 
-      // Link de acceso exclusivo → lo deja logueado en su panel
-      var loginUrl = await crearLinkAcceso(asesor.email);
-      var mail = emailRecordatorio(asesor, loginUrl);
+      var mail = emailRecordatorio(d.nombre, d.link);
       try {
         var r = await resend.emails.send({
           from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-          to: asesor.email, subject: mail.subject, html: mail.html
+          to: d.email, subject: mail.subject, html: mail.html
         });
         if (r && r.error) throw new Error(typeof r.error === 'string' ? r.error : JSON.stringify(r.error));
         resumen.enviados++;
-        resumen.destinatarios.push(asesor.email);
+        resumen.destinatarios.push({ email: d.email, canal: d.canal });
       } catch (e) {
         resumen.errores++;
-        resumen.fallidos.push({ email: asesor.email, error: e.message });
-        console.warn('Error enviando recordatorio semanal a ' + asesor.email + ':', e.message);
+        resumen.fallidos.push({ email: d.email, error: e.message });
+        console.warn('Error enviando recordatorio semanal a ' + d.email + ':', e.message);
       }
       // Respiro para no pegarle al rate limit de Resend
       await new Promise(function(ok){ setTimeout(ok, 120); });
