@@ -64,6 +64,44 @@ async function descargarMediaBase64(url) {
 }
 
 // ------------------------------------------------------------------
+// Transcripción de audios (notas de voz) con OpenAI Whisper.
+// Claude no transcribe audio, así que se usa un servicio aparte. Se activa solo
+// si está seteada OPENAI_API_KEY (Vercel). Si no, devuelve null y el bot le pide
+// al cliente que escriba o mande una foto.
+// ------------------------------------------------------------------
+async function transcribirAudio(url, tipo) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null; // sin servicio de transcripción configurado
+  try {
+    const sid = process.env.TWILIO_ACCOUNT_SID;
+    const token = process.env.TWILIO_AUTH_TOKEN;
+    const auth = 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64');
+    const r = await fetch(url, { headers: { Authorization: auth } });
+    if (!r.ok) { console.error('Descarga de audio falló:', r.status); return null; }
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > 20 * 1024 * 1024) { console.warn('Audio > 20MB, se ignora'); return null; }
+
+    const ext = (tipo || '').includes('mpeg') ? 'mp3' : (tipo || '').includes('mp4') ? 'm4a' : 'ogg';
+    const form = new FormData();
+    form.append('file', new Blob([buf], { type: tipo || 'audio/ogg' }), `audio.${ext}`);
+    form.append('model', 'whisper-1');
+    form.append('language', 'es');
+
+    const or = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+    if (!or.ok) { console.error('OpenAI transcripción falló:', or.status, await or.text()); return null; }
+    const d = await or.json();
+    return (d.text || '').trim() || null;
+  } catch (e) {
+    console.error('Error transcribiendo audio:', e);
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path — mismo patrón que _talo.js)
 // ------------------------------------------------------------------
 async function redisCall(method, ...args) {
@@ -321,19 +359,38 @@ module.exports = async function handler(req, res) {
     const texto = (body.Body || '').trim();
     const waId = from.replace('whatsapp:', '');
 
-    // Recolectar imágenes adjuntas (Twilio manda NumMedia + MediaUrlN / MediaContentTypeN).
+    // Recolectar adjuntos (Twilio manda NumMedia + MediaUrlN / MediaContentTypeN).
     const numMedia = parseInt(body.NumMedia || '0', 10) || 0;
     const imagenes = [];
-    let hayNoImagen = false;
+    const audios = [];
+    let hayOtro = false; // video u otro adjunto no soportado
     for (let i = 0; i < numMedia; i++) {
       const url = body[`MediaUrl${i}`];
       const tipo = body[`MediaContentType${i}`] || '';
       if (url && TIPOS_IMG.includes(tipo)) imagenes.push({ url, tipo });
-      else if (url) hayNoImagen = true; // audio, video, etc.
+      else if (url && tipo.startsWith('audio/')) audios.push({ url, tipo });
+      else if (url) hayOtro = true;
     }
 
-    if (!texto && imagenes.length === 0) {
-      if (numMedia > 0 || hayNoImagen) {
+    // Transcribir audios (si hay servicio configurado) y sumarlos al texto.
+    let textoFinal = texto;
+    if (audios.length) {
+      const partes = [];
+      for (const a of audios) {
+        const t = await transcribirAudio(a.url, a.tipo);
+        if (t) partes.push(t);
+      }
+      if (partes.length) textoFinal = (textoFinal ? textoFinal + ' ' : '') + partes.join(' ');
+    }
+
+    if (!textoFinal && imagenes.length === 0) {
+      if (audios.length) {
+        // Había audio pero no se pudo transcribir (sin key o falló)
+        return res
+          .status(200)
+          .send(twiml('Recibí tu audio 🎧, pero por ahora se me hace más fácil por escrito. ¿Me lo escribís, o me mandás una foto de lo que hay que mudar?'));
+      }
+      if (numMedia > 0 || hayOtro) {
         return res
           .status(200)
           .send(twiml('Por ahora puedo leer texto y fotos 📷. ¿Me lo contás por escrito o me mandás una foto de lo que hay que mover?'));
@@ -341,7 +398,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
     }
 
-    const respuesta = await generarRespuesta(waId, texto, imagenes);
+    const respuesta = await generarRespuesta(waId, textoFinal, imagenes);
     return res.status(200).send(twiml(respuesta));
   } catch (e) {
     console.error('Error webhook Twilio WhatsApp:', e);
