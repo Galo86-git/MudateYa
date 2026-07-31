@@ -125,6 +125,20 @@ async function setJSON(key, value, ttlSeconds) {
   return redisCall(...args);
 }
 
+// Anti-abuso: tope de mensajes por número por minuto (mismo patrón INCR+EXPIRE
+// que _seguridad.js). Fail-open: si Redis falla, no bloquea el servicio.
+async function superaLimite(waId, maxPorMinuto) {
+  try {
+    const k = `wa:rl:${waId}`;
+    const n = parseInt(await redisCall('INCR', k), 10);
+    if (n === 1) await redisCall('EXPIRE', k, '60');
+    return n > maxPorMinuto;
+  } catch (e) {
+    console.warn('Rate limit falló (fail-open):', e.message);
+    return false;
+  }
+}
+
 // ------------------------------------------------------------------
 // Validación de firma de Twilio (X-Twilio-Signature)
 // Sin esto, cualquiera que conozca la URL podría crear pedidos falsos y
@@ -226,7 +240,7 @@ async function askClaude(messages, system) {
 function nuevoId() {
   return `${Date.now().toString(36)}${crypto.randomBytes(3).toString('hex')}`;
 }
-async function crearPedido(input, waId) {
+async function crearPedido(input, waId, ubicaciones) {
   const id = nuevoId();
   const ahora = new Date();
   const pedido = {
@@ -237,6 +251,7 @@ async function crearPedido(input, waId) {
     fecha: input.fecha,
     detalles: input.detalles,
     cliente: { nombre: input.nombre || '', whatsapp: waId },
+    ubicaciones: Array.isArray(ubicaciones) ? ubicaciones : [], // coords compartidas (geo-match)
     canal: 'whatsapp',
     estado: 'buscando_presupuestos',
     cotizaciones: [],
@@ -261,9 +276,19 @@ async function iniciarBarridoMudanceros(pedido) {
 // ------------------------------------------------------------------
 // Genera la respuesta del agente (texto) para un mensaje entrante
 // ------------------------------------------------------------------
-async function generarRespuesta(waId, texto, imagenes) {
+async function generarRespuesta(waId, texto, imagenes, ubicacion) {
   const key = `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
+
+  // Ubicación compartida por WhatsApp: se la contamos al agente (como texto) y
+  // guardamos las coordenadas para poder hacer geo-match de mudanceros después.
+  let texto2 = texto;
+  if (ubicacion) {
+    conv.ubicaciones = conv.ubicaciones || [];
+    conv.ubicaciones.push({ ...ubicacion, cuando: new Date().toISOString() });
+    const nota = `[📍 El cliente compartió una ubicación${ubicacion.direccion ? ' ("' + ubicacion.direccion + '")' : ''}: ${ubicacion.lat},${ubicacion.lng} — https://maps.google.com/?q=${ubicacion.lat},${ubicacion.lng}. Usala como origen o destino según lo que estén conversando; si no está claro cuál es, preguntale.]`;
+    texto2 = (texto2 ? texto2 + ' ' : '') + nota;
+  }
 
   // Turno actual del cliente. Si mandó fotos, van como bloques (imagen + texto)
   // SOLO para esta llamada a Claude; en el historial guardamos un placeholder de
@@ -279,14 +304,14 @@ async function generarRespuesta(waId, texto, imagenes) {
     bloques.push({
       type: 'text',
       text:
-        texto ||
+        texto2 ||
         'El cliente te mandó una foto (sin texto). Describí SOLO lo que realmente ves en la imagen; NO inventes objetos que no estén. Si son cosas para mudar (muebles, cajas, electrodomésticos, un ambiente), usalo para entender el pedido. Si la foto no tiene que ver con una mudanza o flete, decíselo con amabilidad y pedile una foto de lo que hay que mover.',
     });
     contenidoActual = bloques;
-    contenidoHistorial = (texto ? texto + ' ' : '') + `[📷 foto${imagenes.length > 1 ? ' x' + imagenes.length : ''} enviada]`;
+    contenidoHistorial = (texto2 ? texto2 + ' ' : '') + `[📷 foto${imagenes.length > 1 ? ' x' + imagenes.length : ''} enviada]`;
   } else {
-    contenidoActual = texto;
-    contenidoHistorial = texto;
+    contenidoActual = texto2;
+    contenidoHistorial = texto2;
   }
 
   // Mensajes para Claude: historial (solo texto) recortado + turno actual.
@@ -304,7 +329,7 @@ async function generarRespuesta(waId, texto, imagenes) {
   const toolUse = (resp.content || []).find((c) => c.type === 'tool_use' && c.name === 'crear_pedido');
   let salida;
   if (toolUse) {
-    const pedido = await crearPedido(toolUse.input, waId);
+    const pedido = await crearPedido(toolUse.input, waId, conv.ubicaciones);
     salida =
       `¡Listo${pedido.cliente.nombre ? ', ' + pedido.cliente.nombre : ''}! Ya cargué tu ${pedido.tipo} 🚚\n` +
       `Salgo a buscarte presupuestos de mudanceros cercanos. Te van a llegar acá, hasta 5, y el pedido vale por 24hs.`;
@@ -359,6 +384,18 @@ module.exports = async function handler(req, res) {
     const texto = (body.Body || '').trim();
     const waId = from.replace('whatsapp:', '');
 
+    // Anti-abuso: tope de 12 mensajes por número por minuto.
+    if (waId && (await superaLimite(waId, 12))) {
+      return res
+        .status(200)
+        .send(twiml('¡Pará un toque! 😅 Estás mandando muchos mensajes muy seguido. Esperá un minuto y seguimos.'));
+    }
+
+    // Ubicación compartida (Twilio manda Latitude/Longitude, y a veces Address/Label).
+    const lat = body.Latitude;
+    const lng = body.Longitude;
+    const ubicacion = lat && lng ? { lat, lng, direccion: body.Address || body.Label || '' } : null;
+
     // Recolectar adjuntos (Twilio manda NumMedia + MediaUrlN / MediaContentTypeN).
     const numMedia = parseInt(body.NumMedia || '0', 10) || 0;
     const imagenes = [];
@@ -383,7 +420,7 @@ module.exports = async function handler(req, res) {
       if (partes.length) textoFinal = (textoFinal ? textoFinal + ' ' : '') + partes.join(' ');
     }
 
-    if (!textoFinal && imagenes.length === 0) {
+    if (!textoFinal && imagenes.length === 0 && !ubicacion) {
       if (audios.length) {
         // Había audio pero no se pudo transcribir (sin key o falló)
         return res
@@ -398,7 +435,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
     }
 
-    const respuesta = await generarRespuesta(waId, textoFinal, imagenes);
+    const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion);
     return res.status(200).send(twiml(respuesta));
   } catch (e) {
     console.error('Error webhook Twilio WhatsApp:', e);
