@@ -53,8 +53,20 @@ function validEmail(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim());
 }
 
+// ── HELPER: link de acceso EXCLUSIVO por asesor ──
+// Genera un magic link propio de cada asesor. Al abrirlo, asesor-login.html lo
+// valida (action=verify-magiclink) y lo deja logueado directo en SU panel, listo
+// para armar el presupuesto — no en un login genérico.
+// TTL de 9 días: el link sigue sirviendo hasta después del próximo lunes.
+var LOGIN_LINK_TTL = 9 * 24 * 60 * 60; // 9 días en segundos
+async function crearLinkAcceso(email) {
+  var token = Math.random().toString(36).substring(2) + Date.now().toString(36) + Math.random().toString(36).substring(2);
+  await redisCall('set', ['asesor:magiclink:' + token, JSON.stringify({ email: email }), 'EX', String(LOGIN_LINK_TTL)]);
+  return 'https://mudateya.ar/asesor-login?token=' + token;
+}
+
 // ── PLANTILLA DEL EMAIL ──
-function emailRecordatorio(asesor) {
+function emailRecordatorio(asesor, ctaHref) {
   var primerNombre = ((asesor.nombre || '').trim().split(' ')[0]) || 'Hola';
   return {
     subject: primerNombre + ', ¿algún cliente que se muda esta semana?',
@@ -63,11 +75,12 @@ function emailRecordatorio(asesor) {
       lead:   'Te lo recordamos todos los lunes porque funciona: cada cliente que alquila o compra con vos se va a mudar. Convertí ese momento en un servicio premium — y gratis — que te posiciona frente a tu cliente.',
       bullets: [
         'Cargás los datos del cliente y de la mudanza',
-        'Elegís 3 presupuestos de mudanceras verificadas',
+        'Elegís presupuestos de mudanceras verificadas',
         'Se los enviás por mail y WhatsApp, a tu nombre'
       ],
-      cta:    'Armar un presupuesto →',
-      cierre: 'Es gratis para vos y para tu cliente. Cuantos más mandás, más te recuerdan cuando llega la hora de mudarse.'
+      cta:     'Armar un presupuesto →',
+      ctaHref: ctaHref || 'https://mudateya.ar/asesor-dashboard',
+      cierre:  'Es gratis para vos y para tu cliente. Cuantos más mandás, más te recuerdan cuando llega la hora de mudarse.'
     })
   };
 }
@@ -89,7 +102,7 @@ function bodyHtml(p) {
         '<ul style="margin:0;padding-left:20px;color:#0F1923;font-size:13px;line-height:1.5">' + bullets + '</ul>' +
       '</div>' +
       '<div style="text-align:center;margin:24px 0">' +
-        '<a href="https://mudateya.ar/asesor-dashboard" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">' + p.cta + '</a>' +
+        '<a href="' + p.ctaHref + '" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">' + p.cta + '</a>' +
       '</div>' +
       '<p style="color:#475569;font-size:13px;line-height:1.6;margin:0">' + p.cierre + '</p>' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">' +
@@ -127,7 +140,12 @@ module.exports = async function handler(req, res) {
     // ── MODO TEST: mandar una sola muestra y cortar ──
     if (testTo) {
       if (!validEmail(testTo)) return res.status(400).json({ error: 'Email de test inválido' });
-      var muestra = emailRecordatorio({ nombre: 'Asesor de prueba' });
+      // Si el email de test es un asesor real, usamos su link exclusivo real;
+      // si no, el botón apunta al panel genérico (es solo una muestra visual).
+      var asesorTest = await getJSON('asesor:' + String(testTo).toLowerCase().trim());
+      var hrefTest   = asesorTest ? await crearLinkAcceso(asesorTest.email) : null;
+      var nombreTest = (asesorTest && asesorTest.nombre) || 'Asesor de prueba';
+      var muestra = emailRecordatorio({ nombre: nombreTest }, hrefTest);
       var rt = await resend.emails.send({
         from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
         to: testTo, subject: muestra.subject, html: muestra.html
@@ -158,7 +176,9 @@ module.exports = async function handler(req, res) {
 
       if (esDry) { resumen.destinatarios.push(asesor.email); resumen.enviados++; continue; }
 
-      var mail = emailRecordatorio(asesor);
+      // Link de acceso exclusivo → lo deja logueado en su panel
+      var loginUrl = await crearLinkAcceso(asesor.email);
+      var mail = emailRecordatorio(asesor, loginUrl);
       try {
         var r = await resend.emails.send({
           from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
