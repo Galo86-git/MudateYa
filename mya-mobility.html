@@ -227,6 +227,22 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
 .rev{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
 .rev.in{opacity:1;transform:none}
 
+/* ══ IMPACTO: entrada cinematográfica, fondo vivo, brillo ══ */
+@keyframes heroUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+.hero .eyebrow,.hero .display,.hero-lede,.hero-stats{opacity:0;animation:heroUp .85s cubic-bezier(.22,.61,.36,1) both}
+.hero .eyebrow{animation-delay:.10s}
+.hero .display{animation-delay:.26s}
+.hero-lede{animation-delay:.46s}
+.hero-stats{animation-delay:.64s}
+
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.rings span{animation:breathe 10s ease-in-out infinite;will-change:transform}
+.rings span:nth-child(2){animation-duration:12.5s;animation-delay:-3s}
+.rings span:nth-child(3){animation-duration:15s;animation-delay:-6s}
+
+.cta-card::before{content:'';position:absolute;top:0;left:-70%;width:55%;height:100%;pointer-events:none;z-index:1;background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);transform:skewX(-16deg);animation:shine 6s ease-in-out infinite}
+@keyframes shine{0%{left:-70%}16%{left:135%}100%{left:135%}}
+
 /* ══ responsive ══ */
 @media(max-width:760px){
   .wrap{padding:0 20px}
@@ -275,6 +291,9 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
   html{scroll-behavior:auto}
   .rev{opacity:1;transform:none;transition:none}
   .chan,.feat,.subcard,.arw,.nav-back{transition:none}
+  .hero .eyebrow,.hero .display,.hero-lede,.hero-stats{opacity:1;animation:none}
+  .rings span{animation:none}
+  .cta-card::before{display:none}
 }
 </style>
 <link rel="canonical" href="https://mudateya.ar/mya-mobility"/>
@@ -311,7 +330,7 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
     <h1 class="display">No es una mudanza.<br/><span class="gold">Es una llegada.</span></h1>
     <p class="hero-lede">MudateYa Mobility es la capa <b>B2B de relocation</b>: un solo responsable coordina mudanza, vivienda y adaptación para que el talento y su familia lleguen enfocados solo en lo suyo.</p>
     <div class="hero-stats">
-      <div><div class="n">6 canales</div><div class="l">activos en el AMBA + Córdoba + Rosario</div></div>
+      <div><div class="n"><span class="count" data-to="6">6</span> canales</div><div class="l">activos en el AMBA + Córdoba + Rosario</div></div>
       <div><div class="n">Vaca Muerta</div><div class="l"><b>alianza</b> con C·HOST</div></div>
       <div><div class="n">1 responsable</div><div class="l">de origen a destino</div></div>
     </div>
@@ -402,7 +421,7 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
     <h2 class="rev">El talento llega. <span class="gold">La institución delega.</span></h2>
     <p class="vert-intro rev">Clubes y colegios suman cada temporada talento y familias de otras provincias y del exterior. Instalamos con <b>un solo responsable</b> para que la institución se enfoque en lo suyo y la familia se adapte desde el día uno.</p>
     <div class="pillars rev">
-      <div><div class="n">48 hs</div><div class="l">y el refuerzo tiene que entrenar</div></div>
+      <div><div class="n"><span class="count" data-to="48">48</span> hs</div><div class="l">y el refuerzo tiene que entrenar</div></div>
       <div><div class="n">Nacionales y Extranjeros</div><div class="l">de dónde llegan las familias</div></div>
       <div><div class="n">1 interlocutor</div><div class="l">para toda la operación</div></div>
     </div>
@@ -444,7 +463,7 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
     <h2 class="rev">Que la misión <span class="gold">sea la misión.</span></h2>
     <p class="vert-intro rev">El cuerpo diplomático rota sin parar: llegan las misiones extranjeras y regresan las argentinas. Instalamos y reinstalamos de punta a punta, con <b>discreción total</b>, para que la logística no le reste tiempo a la función.</p>
     <div class="pillars rev">
-      <div><div class="n">+70</div><div class="l">embajadas con sede en la Argentina</div></div>
+      <div><div class="n">+<span class="count" data-to="70">70</span></div><div class="l">embajadas con sede en la Argentina</div></div>
       <div><div class="n">2 vías</div><div class="l">llegada y regreso</div></div>
       <div><div class="n">Absoluta</div><div class="l">discreción en cada operación</div></div>
     </div>
@@ -565,6 +584,29 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
     }
   }, { threshold:0.12, rootMargin:'0px 0px -40px 0px' });
   for (var k=0;k<els.length;k++){ obs.observe(els[k]); }
+})();
+
+// Números que cuentan (0 → valor) al entrar en pantalla
+(function(){
+  var counters = document.querySelectorAll('.count');
+  if (!counters.length) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)){
+    for (var i=0;i<counters.length;i++){ counters[i].textContent = counters[i].getAttribute('data-to'); }
+    return;
+  }
+  var cobs = new IntersectionObserver(function(entries){
+    for (var j=0;j<entries.length;j++){
+      if (!entries[j].isIntersecting) continue;
+      (function(el){
+        var to = parseInt(el.getAttribute('data-to'),10) || 0, dur = 1200, start = null;
+        function step(ts){ if(!start) start=ts; var p=Math.min((ts-start)/dur,1); el.textContent = Math.round(p*to); if(p<1){ requestAnimationFrame(step); } }
+        requestAnimationFrame(step);
+      })(entries[j].target);
+      cobs.unobserve(entries[j].target);
+    }
+  }, { threshold:0.6 });
+  for (var k=0;k<counters.length;k++){ cobs.observe(counters[k]); }
 })();
 </script>
 
