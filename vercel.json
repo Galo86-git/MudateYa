@@ -278,6 +278,10 @@
       "destination": "/circulo.html"
     },
     {
+      "source": "/mudanza-urgente",
+      "destination": "/mudanza-urgente.html"
+    },
+    {
       "source": "/membresia",
       "destination": "/membresia.html"
     },
