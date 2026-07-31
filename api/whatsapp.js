@@ -240,7 +240,9 @@ async function generarRespuesta(waId, texto, imagenes) {
     }
     bloques.push({
       type: 'text',
-      text: texto || 'El cliente te mandó esta foto para cotizar su mudanza o flete. Mirala, comentá brevemente qué ves (muebles, cantidad, tamaño) y usalo para armar el pedido.',
+      text:
+        texto ||
+        'El cliente te mandó una foto (sin texto). Describí SOLO lo que realmente ves en la imagen; NO inventes objetos que no estén. Si son cosas para mudar (muebles, cajas, electrodomésticos, un ambiente), usalo para entender el pedido. Si la foto no tiene que ver con una mudanza o flete, decíselo con amabilidad y pedile una foto de lo que hay que mover.',
     });
     contenidoActual = bloques;
     contenidoHistorial = (texto ? texto + ' ' : '') + `[📷 foto${imagenes.length > 1 ? ' x' + imagenes.length : ''} enviada]`;
