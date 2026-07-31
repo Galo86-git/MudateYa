@@ -140,6 +140,44 @@ async function superaLimite(waId, maxPorMinuto) {
 }
 
 // ------------------------------------------------------------------
+// Reconocimiento de MUDANCEROS por teléfono.
+// Los perfiles están en mudancero:perfil:{email} (indexados por email, no por
+// teléfono). Construimos un índice teléfono→email en `mudanceros:tel-index`
+// que se autoconstruye y refresca cada 6h (así no tocamos el alta/edición).
+// Los mudanceros nuevos quedan reconocidos dentro de ~6h.
+// ------------------------------------------------------------------
+async function indiceMudanceros() {
+  let idx = await getJSON('mudanceros:tel-index');
+  if (idx) return idx;
+  idx = {};
+  try {
+    const emails = (await getJSON('mudanceros:todos')) || [];
+    for (const email of emails) {
+      const p = await getJSON(`mudancero:perfil:${email}`);
+      if (p && p.telefono && p.estado !== 'rechazado') {
+        const t = ultimos10(p.telefono);
+        if (t) idx[t] = email;
+      }
+    }
+    await setJSON('mudanceros:tel-index', idx, 6 * 60 * 60);
+  } catch (e) {
+    console.error('build tel-index:', e.message);
+  }
+  return idx;
+}
+async function buscarMudancero(waId) {
+  try {
+    const idx = await indiceMudanceros();
+    const email = idx[ultimos10(waId)];
+    if (!email) return null;
+    return await getJSON(`mudancero:perfil:${email}`);
+  } catch (e) {
+    console.error('buscarMudancero:', e.message);
+    return null; // ante cualquier error, se trata como cliente (comportamiento seguro)
+  }
+}
+
+// ------------------------------------------------------------------
 // Validación de firma de Twilio (X-Twilio-Signature)
 // Sin esto, cualquiera que conozca la URL podría crear pedidos falsos y
 // gastar tokens de Claude. Mismo criterio que usa _talo.js con sus webhooks.
@@ -193,6 +231,25 @@ CÓMO TRABAJÁS:
 
 REGLAS: no pidas datos sensibles (tarjetas, documentos). Si el mensaje no tiene que ver con esto, respondé amable y reconducí.`;
 
+// System prompt del asistente para MUDANCEROS (distinto del de clientes).
+const SYSTEM_PROMPT_MUDANCERO = `Sos el asistente de MudateYa para MUDANCEROS/FLETEROS por WhatsApp. Estás hablando con {NOMBRE}, un mudancero registrado en la plataforma.
+
+MudateYa es un marketplace argentino de mudanzas y fletes: los clientes piden presupuesto y vos (junto con otros mudanceros de la zona) cotizan. El cliente elige, paga una seña, y coordinan.
+
+TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
+
+QUÉ PODÉS HACER HOY:
+- Responder dudas sobre cómo funciona MudateYa para mudanceros (cómo llegan los pedidos, cómo cotizar, cómo se cobra).
+- Explicar el modelo: cuando entra un pedido en tu zona te vamos a avisar por acá; respondés con tu precio para cotizar; si el cliente te elige y paga la seña, te pasamos su contacto para coordinar. El pago es 50% seña + 50% al completar, protegido.
+- Orientarlo y contenerlo con buena onda.
+
+QUÉ TODAVÍA NO:
+- Todavía NO estás recibiendo pedidos para cotizar por acá (lo estamos activando). Si te pregunta por un pedido puntual o quiere cotizar ahora, decile que en breve va a poder cotizar directo por WhatsApp, y que por ahora gestione desde su cuenta en mudateya.ar/mi-cuenta.
+
+REGLAS:
+- No inventes datos de su cuenta, pagos ni pedidos concretos. Si pregunta algo específico de su perfil, cobros o estado, derivalo a mudateya.ar/mi-cuenta o a hola@mudateya.ar.
+- No pidas ni manejes datos sensibles (tarjetas, contraseñas).`;
+
 const tools = [
   {
     name: 'crear_pedido',
@@ -216,7 +273,7 @@ const tools = [
 // ------------------------------------------------------------------
 // Claude
 // ------------------------------------------------------------------
-async function askClaude(messages, system) {
+async function askClaude(messages, system, toolsArg) {
   const res = await fetch(ANTHROPIC, {
     method: 'POST',
     headers: {
@@ -224,7 +281,7 @@ async function askClaude(messages, system) {
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: system || SYSTEM_PROMPT, tools, messages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: system || SYSTEM_PROMPT, tools: toolsArg || tools, messages }),
   });
   if (!res.ok) {
     const err = await res.text();
@@ -276,8 +333,8 @@ async function iniciarBarridoMudanceros(pedido) {
 // ------------------------------------------------------------------
 // Genera la respuesta del agente (texto) para un mensaje entrante
 // ------------------------------------------------------------------
-async function generarRespuesta(waId, texto, imagenes, ubicacion) {
-  const key = `wa:conv:${waId}`;
+async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
+  const key = mudancero ? `wa:conv:mud:${waId}` : `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
 
   // Ubicación compartida por WhatsApp: se la contamos al agente (como texto) y
@@ -319,12 +376,20 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion) {
   const messages = historial.concat([{ role: 'user', content: contenidoActual }]);
 
   // Si quien escribe es del equipo fundador, se lo decimos al agente.
-  const persona = quienEscribe(waId);
-  const system = persona
-    ? `${SYSTEM_PROMPT}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
-    : SYSTEM_PROMPT;
+  let system, toolsUsados;
+  if (mudancero) {
+    const nombre = (mudancero.nombre || '').split(' ')[0] || 'colega';
+    system = SYSTEM_PROMPT_MUDANCERO.replace('{NOMBRE}', nombre);
+    toolsUsados = []; // el mudancero NO crea pedidos de cliente
+  } else {
+    const persona = quienEscribe(waId);
+    system = persona
+      ? `${SYSTEM_PROMPT}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
+      : SYSTEM_PROMPT;
+    toolsUsados = tools;
+  }
 
-  const resp = await askClaude(messages, system);
+  const resp = await askClaude(messages, system, toolsUsados);
 
   const toolUse = (resp.content || []).find((c) => c.type === 'tool_use' && c.name === 'crear_pedido');
   let salida;
@@ -391,6 +456,9 @@ module.exports = async function handler(req, res) {
         .send(twiml('¡Pará un toque! 😅 Estás mandando muchos mensajes muy seguido. Esperá un minuto y seguimos.'));
     }
 
+    // ¿Quien escribe es un mudancero registrado? (por teléfono) → asistente aparte.
+    const mud = await buscarMudancero(waId);
+
     // Ubicación compartida (Twilio manda Latitude/Longitude, y a veces Address/Label).
     const lat = body.Latitude;
     const lng = body.Longitude;
@@ -435,7 +503,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
     }
 
-    const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion);
+    const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion, mud);
     return res.status(200).send(twiml(respuesta));
   } catch (e) {
     console.error('Error webhook Twilio WhatsApp:', e);
