@@ -1470,11 +1470,30 @@ module.exports = async function handler(req, res) {
 
       await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
       try { await enviarEmailAceptacion(mudanza, cot); } catch(e) { console.error('Error email:', e.message); }
+      // Avisar a los OTROS mudanceros que cotizaron que el cliente eligió a otro.
+      try { await notificarMudancerosNoElegidos(mudanza, cot.mudanceroEmail); } catch(e) { console.warn('Aviso no-elegidos:', e.message); }
       // Gate de contacto: al aceptar todavía no hay anticipo pagado, así que
       // la respuesta sale sin el teléfono del mudancero.
       const mudanzaSegura = sanitizarParaCliente(mudanza);
       const cotSegura = (mudanzaSegura.cotizaciones || []).find(c => c.id === cot.id) || mudanzaSegura.cotizacionAceptada;
       return res.status(200).json({ ok: true, mudanza: mudanzaSegura, cotizacion: cotSegura });
+    }
+
+    // Avisa a los mudanceros NO elegidos. Idempotente y solo sobre un pedido ya
+    // adjudicado (no se puede abusar para spamear). Lo usa el bot cuando el
+    // cliente acepta por WhatsApp (el aceptar del web ya lo hace inline).
+    if (action === 'avisar-no-elegidos' && req.method === 'POST') {
+      const { mudanzaId } = req.body || {};
+      if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'No encontrada' });
+      if (m.estado !== 'cotizacion_aceptada') return res.status(200).json({ ok: false, motivo: 'no_adjudicada' });
+      if (m.avisoNoElegidosEnviado) return res.status(200).json({ ok: true, yaEnviado: true });
+      const ganador = m.mudanceroAceptado || (m.cotizacionAceptada && m.cotizacionAceptada.mudanceroEmail);
+      await notificarMudancerosNoElegidos(m, ganador);
+      m.avisoNoElegidosEnviado = true;
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      return res.status(200).json({ ok: true });
     }
 
     if (action === 'mis-mudanzas' && req.method === 'GET') {
@@ -4125,6 +4144,58 @@ async function obtenerPrecioPerfil(mudanceroEmail, mudanza) {
     console.error('obtenerPrecioPerfil error:', e && e.message);
     return null;
   }
+}
+
+// Avisa a los mudanceros que cotizaron (MENOS el ganador) que el cliente eligió
+// otra propuesta, para que no sigan esperando. Push + email. No bloquea (fail-soft).
+async function notificarMudancerosNoElegidos(mudanza, emailGanador) {
+  try {
+    const ganador = String(emailGanador || '').toLowerCase();
+    const cotizadores = (mudanza.cotizaciones || []).map(c => c.mudanceroEmail).filter(Boolean);
+    const invitados = (mudanza.mudancerosInvitados || []).filter(Boolean);
+    const perdedores = Array.from(new Set([...cotizadores, ...invitados]))
+      .filter(e => String(e).toLowerCase() !== ganador);
+    if (!perdedores.length) return;
+    const rutaTxt = `${(mudanza.desde||'').split(',')[0]} → ${(mudanza.hasta||'').split(',')[0]}`;
+    // Push (no bloquea)
+    Promise.all(perdedores.map(emailMud =>
+      enviarPush(emailMud, {
+        titulo: 'Pedido adjudicado a otro mudancero',
+        cuerpo: `El cliente eligió otra propuesta: ${rutaTxt}`,
+        link: '/mi-cuenta'
+      }).catch(()=>{})
+    )).catch(()=>{});
+    // Email a cada uno
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      for (const emailMud of perdedores) {
+        try {
+          const perfil = await getJSON(`mudancero:perfil:${emailMud}`);
+          const nombre = (perfil && perfil.nombre) ? perfil.nombre.split(' ')[0] : 'Mudancero';
+          resend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
+            to: emailMud,
+            subject: `Pedido ya adjudicado — ${rutaTxt}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;background:#F5F7FA;padding:20px">
+                <div style="background:#003580;padding:18px 24px;border-radius:8px 8px 0 0">
+                  <span style="font-family:Georgia,serif;font-size:18px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:18px;font-weight:900;color:#22C36A">Ya</span>
+                </div>
+                <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px">
+                  <h2 style="color:#0F1923;font-size:18px;margin:0 0 12px">Hola ${nombre},</h2>
+                  <p style="color:#374151;font-size:17px;line-height:1.7">El cliente ya <b>eligió otra propuesta</b> para este pedido:</p>
+                  <div style="background:#EEF2F7;border-left:4px solid #64748B;padding:12px 14px;border-radius:6px;margin:16px 0;font-size:17px;color:#334155">
+                    <b>${rutaTxt}</b>
+                  </div>
+                  <p style="color:#374151;font-size:16px;line-height:1.7">Gracias por cotizar. Este pedido pasó a tu sección <b>Expirados</b>. ¡Seguí atento que vienen más!</p>
+                </div>
+              </div>
+            `
+          }).catch(e => console.warn('Email no-elegido:', emailMud, e.message));
+        } catch(e) { console.warn('Email no-elegido loop:', emailMud, e.message); }
+      }
+    }
+  } catch(e) { console.warn('notificarMudancerosNoElegidos:', e.message); }
 }
 
 async function enviarEmailAceptacion(mudanza, cot) {

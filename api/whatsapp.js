@@ -825,6 +825,14 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
   cot.estado = 'aceptada';
   await setJSON(`mudanza:${pedido.id}`, pedido, 60 * 60 * 24 * 7);
 
+  // Avisar a los OTROS mudanceros que cotizaron que el cliente eligió a otro (best-effort).
+  try {
+    await fetch(`${SITE_URL}/api/cotizaciones?action=avisar-no-elegidos`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: pedido.id }),
+    });
+  } catch (_) {}
+
   const sena = Math.round(Number(cot.precio || 0) * 0.5);
   const link = await generarLinkMP({
     mudanceroNombre: cot.mudanceroNombre,
