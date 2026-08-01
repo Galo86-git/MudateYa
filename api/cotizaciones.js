@@ -38,6 +38,13 @@ async function setJSON(key, value, exSeconds) {
   if (exSeconds) await redisCall('SET', key, str, 'EX', String(exSeconds));
   else await redisCall('SET', key, str);
 }
+// Lock atómico (SET NX EX): evita que dos requests concurrentes procesen la misma
+// acción crítica (aceptar cotización, registrar pago). TTL corto: se libera solo
+// si algo falla. Fail-open ante error de Redis.
+async function adquirirLock(key, ttl) {
+  try { return (await redisCall('SET', key, '1', 'EX', String(ttl || 25), 'NX')) === 'OK'; }
+  catch (e) { return true; }
+}
 
 // ════════════════════════════════════════════════════
 // GATE DE CONTACTO — los celulares se liberan con el anticipo
@@ -1357,6 +1364,10 @@ module.exports = async function handler(req, res) {
 
     if (action === 'aceptar' && req.method === 'POST') {
       const { mudanzaId, cotizacionId, propuestaNivel } = req.body;
+      // Lock: evita doble aceptación concurrente (doble email + doble link de pago).
+      if (mudanzaId && !(await adquirirLock(`lock:aceptar:${mudanzaId}`, 25))) {
+        return res.status(409).json({ error: 'Se está procesando una aceptación para este pedido. Probá de nuevo en unos segundos.' });
+      }
       const mudanza = await getJSON(`mudanza:${mudanzaId}`);
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
       const cot = mudanza.cotizaciones.find(c => c.id === cotizacionId);
@@ -1475,6 +1486,11 @@ module.exports = async function handler(req, res) {
     if (action === 'registrar-pago' && req.method === 'POST') {
       const { mudanzaId, tipoPago, mpPaymentId } = req.body;
       if (!mudanzaId || !tipoPago) return res.status(400).json({ error: 'Faltan datos' });
+      // Lock: mismo key que el webhook de MP → no se acredita el mismo pago dos veces
+      // aunque el webhook y la página de éxito lleguen a la vez.
+      if (!(await adquirirLock(`lock:pago:${mudanzaId}:${tipoPago}`, 25))) {
+        return res.status(200).json({ status: 'en_proceso' });
+      }
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
 

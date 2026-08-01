@@ -24,6 +24,14 @@ async function setJSON(key, value, exSeconds) {
   if (exSeconds) await redisCall('SET', key, str, 'EX', String(exSeconds));
   else           await redisCall('SET', key, str);
 }
+// Lock atómico (SET NX EX): evita procesar el mismo pago dos veces en paralelo
+// (reintentos de MP, o webhook + página de éxito a la vez). TTL corto: si algo
+// falla, se libera solo. Fail-open ante error de Redis (el flag de pagado igual
+// da idempotencia durable).
+async function adquirirLock(key, ttl) {
+  try { return (await redisCall('SET', key, '1', 'EX', String(ttl || 25), 'NX')) === 'OK'; }
+  catch (e) { return true; }
+}
 
 // Monto que el sistema espera para este tramo (misma lógica que transferencias.js).
 // Sirve para rechazar pagos por menos de lo debido.
@@ -83,6 +91,11 @@ module.exports = async function handler(req, res) {
     if (!mudanzaId || !tipoPago) {
       console.warn('[Webhook MP] Sin mudanzaId o tipoPago en metadata');
       return res.status(200).json({ status: 'sin_metadata' });
+    }
+
+    // Lock: solo un proceso a la vez para este pago (evita doble acreditación).
+    if (!(await adquirirLock(`lock:pago:${mudanzaId}:${tipoPago}`, 25))) {
+      return res.status(200).json({ status: 'en_proceso' });
     }
 
     // Evitar doble procesamiento — verificar si ya fue registrado
