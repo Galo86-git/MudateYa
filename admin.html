@@ -62,78 +62,91 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   --red:#EF4444;--red-light:rgba(239,68,68,.08);
   --amber:#F59E0B;--amber-light:rgba(245,158,11,.08);
   --text:#0F1923;--text2:#475569;--text3:#64748B;
+  --navy:#003580;
   --mono:'DM Mono',monospace;
+  --font:'Inter',sans-serif;
 }
 html{scroll-behavior:smooth}
 body{font-family:'Inter',sans-serif;background:#fff;color:#0F1923;min-height:100vh;-webkit-font-smoothing:antialiased}
 
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;flex-direction:column;gap:2rem;background:#F5F7FA}
-.login-card{background:#fff;border:1px solid #E2E8F0;border-radius:24px;padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.1)}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;flex-direction:column;gap:2rem;background:radial-gradient(120% 120% at 50% 0%,#EAF1FF 0%,#F5F7FA 45%,#EEF6F0 100%)}
+.login-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:2.6rem 2.2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,53,128,.12),0 2px 8px rgba(15,25,35,.06)}
 .login-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;margin-bottom:.3rem}
 .login-logo span{color:#22C36A}
 .login-sub{font-size:12px;color:#64748B;font-family:var(--mono);margin-bottom:1.8rem}
 .login-note{font-size:11px;color:#64748B;font-family:var(--mono);margin-top:1rem}
 
 #adminApp{display:none;min-height:100vh}
-.admin-nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20px);border-bottom:2px solid #22C36A;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:58px}
-.admin-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#fff}
+.admin-nav{position:sticky;top:0;z-index:200;background:#003580;border-bottom:1px solid rgba(0,0,0,.15);box-shadow:0 1px 0 rgba(34,195,106,.9),0 2px 12px rgba(0,20,60,.18);display:flex;align-items:center;justify-content:space-between;padding:0 1.6rem;height:58px}
+.admin-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#fff;line-height:1}
 .admin-logo span{color:#22C36A}
-.admin-logo small{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.7);display:block;letter-spacing:.5px;margin-top:-4px}
+.admin-logo-sub{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.6);display:block;letter-spacing:1.5px;text-transform:uppercase;margin-top:1px}
 .nav-user{display:flex;align-items:center;gap:10px}
 .nav-avatar{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.3)}
-.nav-name{font-size:12px;color:rgba(255,255,255,.85)}
-.btn-logout{font-size:11px;color:rgba(255,255,255,.8);background:none;border:1px solid rgba(255,255,255,.3);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:all .2s}
-.btn-logout:hover{color:#fff;border-color:#fff}
+.nav-name{font-size:12px;color:rgba(255,255,255,.85);font-weight:500}
+.btn-logout{font-size:11px;color:rgba(255,255,255,.75);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);padding:6px 12px;border-radius:7px;cursor:pointer;font-family:var(--mono);transition:all .2s}
+.btn-logout:hover{color:#fff;border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.12)}
 
 .admin-body{display:flex;min-height:calc(100vh - 58px)}
 
-.sidebar{width:200px;flex-shrink:0;background:#F5F7FA;border-right:1px solid #E2E8F0;padding:1.2rem 0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
-.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 1.2rem;font-size:13px;color:#475569;cursor:pointer;transition:all .2s;border-left:2px solid transparent;text-decoration:none}
-.sidebar-item:hover{background:#fff;color:#0F1923}
-.sidebar-item.active{background:#EEF4FF;color:#1A6FFF;border-left-color:#1A6FFF}
-.sidebar-icon{font-size:14px;width:18px;text-align:center}
-.sidebar-badge{margin-left:auto;background:#EF4444;color:white;font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:10px;font-weight:700}
+.sidebar{width:212px;flex-shrink:0;background:#fff;border-right:1px solid var(--border);padding:.9rem .6rem;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.sidebar-item{display:flex;align-items:center;gap:11px;padding:9px 12px;font-size:13px;font-weight:500;color:#475569;cursor:pointer;transition:background .15s,color .15s;border-radius:9px;text-decoration:none;position:relative}
+.sidebar-item:hover{background:#F5F7FA;color:#0F1923}
+.sidebar-item.active{background:var(--blue-light);color:var(--blue-dark);font-weight:600}
+.sidebar-item.active .sidebar-icon{color:var(--blue)}
+.sidebar-icon{width:18px;height:18px;flex-shrink:0;color:#94A3B8;display:flex;align-items:center;justify-content:center;transition:color .15s}
+.sidebar-item:hover .sidebar-icon{color:#475569}
+.sidebar-icon svg{width:18px;height:18px;stroke-width:1.7;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+.sidebar-badge{margin-left:auto;background:#EF4444;color:white;font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:10px;font-weight:700;line-height:1.4}
 
 .admin-main{flex:1;padding:2rem;overflow-x:hidden;min-width:0}
 .page{display:none}
 .page.active{display:block;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;margin-bottom:1.5rem;color:#0F1923}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:.5px;margin-bottom:1.5rem;color:#0F1923;position:relative;padding-bottom:.6rem}
+.page-title::after{content:'';position:absolute;left:0;bottom:0;width:40px;height:3px;border-radius:3px;background:#22C36A}
 
-.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;margin-bottom:2rem}
-.metric-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:1.2rem}
-.metric-label{font-size:10px;color:#64748B;font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
-.metric-val{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;letter-spacing:1px}
-.metric-sub{font-size:11px;color:#64748B;margin-top:4px;font-family:var(--mono)}
-.metric-card.green .metric-val{color:#1A6FFF}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));gap:14px;margin-bottom:2rem}
+.metric-card{position:relative;background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.3rem 1.3rem 1.2rem;overflow:hidden;box-shadow:0 1px 2px rgba(15,25,35,.04),0 1px 3px rgba(15,25,35,.03);transition:box-shadow .18s,transform .18s,border-color .18s}
+.metric-card:hover{box-shadow:0 6px 20px rgba(15,25,35,.08);transform:translateY(-1px);border-color:var(--border2)}
+.metric-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--blue)}
+.metric-card.green::before{background:#22C36A}
+.metric-card.amber::before{background:#F59E0B}
+.metric-card.red::before{background:#EF4444}
+.metric-label{font-size:10px;color:#64748B;font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
+.metric-val{font-family:'Bebas Neue',sans-serif;font-size:2.3rem;line-height:1;letter-spacing:.5px;color:#0F1923}
+.metric-sub{font-size:11px;color:#64748B;margin-top:6px;font-family:var(--mono)}
+.metric-card.green .metric-val{color:#16A34A}
 .metric-card.blue .metric-val{color:#1A6FFF}
 .metric-card.amber .metric-val{color:#F59E0B}
 .metric-card.red .metric-val{color:#EF4444}
 
-.table-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:1.5rem}
-.table-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;border-bottom:2px solid #22C36A}
-.table-title{font-size:13px;font-weight:600;color:#0F1923}
+.table-card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(15,25,35,.04),0 1px 3px rgba(15,25,35,.03)}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;border-bottom:1px solid var(--border);background:#FCFDFE}
+.table-title{font-size:13px;font-weight:600;color:#0F1923;letter-spacing:-.01em}
 .table-actions{display:flex;gap:8px}
-.btn-sm{font-size:11px;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:var(--mono);border:1px solid #CBD5E1;background:#F5F7FA;color:#475569;transition:all .2s}
-.btn-sm:hover{border-color:#1A6FFF;color:#1A6FFF}
-.btn-sm.primary{background:#1A6FFF;color:#fff;border-color:#1A6FFF;font-weight:700}
-.btn-sm.primary:hover{background:#0F52CC}
-.btn-sm.danger{border-color:#EF4444;color:#EF4444}
-.btn-sm.danger:hover{background:rgba(239,68,68,.08)}
+.btn-sm{font-size:11px;padding:6px 13px;border-radius:7px;cursor:pointer;font-family:var(--mono);border:1px solid var(--border2);background:#fff;color:#475569;transition:all .15s}
+.btn-sm:hover{border-color:#1A6FFF;color:#1A6FFF;background:var(--blue-light)}
+.btn-sm.primary{background:#1A6FFF;color:#fff;border-color:#1A6FFF;font-weight:700;box-shadow:0 1px 2px rgba(26,111,255,.25)}
+.btn-sm.primary:hover{background:#0F52CC;border-color:#0F52CC}
+.btn-sm.danger{border-color:rgba(239,68,68,.4);color:#EF4444;background:#fff}
+.btn-sm.danger:hover{background:var(--red-light);border-color:#EF4444}
 
 table{width:100%;border-collapse:collapse}
-th{font-size:10px;font-family:var(--mono);color:#64748B;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:2px solid #22C36A;background:#F5F7FA}
-td{font-size:12px;color:#475569;padding:11px 14px;border-bottom:2px solid #22C36A}
+th{font-size:10px;font-family:var(--mono);color:#64748B;text-transform:uppercase;letter-spacing:.5px;padding:11px 14px;text-align:left;border-bottom:1px solid var(--border);background:#FAFBFC;font-weight:500}
+td{font-size:12px;color:#475569;padding:12px 14px;border-bottom:1px solid #EEF1F5}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(34,195,106,.03)}
+tbody tr{transition:background .12s}
+tr:hover td{background:#F8FAFC}
 .td-name{font-weight:500;color:#0F1923}
 .td-mono{font-family:var(--mono);font-size:11px}
 
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10px;font-family:var(--mono);font-weight:600;letter-spacing:.3px}
-.badge.pending{background:rgba(245,158,11,.08);color:#F59E0B;border:1px solid rgba(255,179,0,.2)}
-.badge.approved{background:#EEF4FF;color:#1A6FFF;border:1px solid rgba(26,111,255,.2)}
-.badge.rejected{background:rgba(239,68,68,.08);color:#EF4444;border:1px solid rgba(239,68,68,.2)}
-.badge.paid{background:rgba(34,195,106,.1);color:#1A6FFF;border:1px solid rgba(41,182,246,.2)}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10px;font-family:var(--mono);font-weight:600;letter-spacing:.3px;border:1px solid transparent}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.badge.pending{background:var(--amber-light);color:#B45309;border-color:rgba(245,158,11,.25)}
+.badge.approved{background:var(--blue-light);color:#1A6FFF;border-color:rgba(26,111,255,.22)}
+.badge.rejected{background:var(--red-light);color:#DC2626;border-color:rgba(239,68,68,.22)}
+.badge.paid{background:var(--green-light);color:#15803D;border-color:rgba(34,195,106,.28)}
 
 .loading{text-align:center;padding:3rem;color:#64748B;font-family:var(--mono);font-size:12px}
 .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border2);border-top-color:#1A6FFF;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
@@ -490,7 +503,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
   <nav class="admin-nav">
     <div>
       <div class="admin-logo">Mudate<span>Ya</span></div>
-      <small class="admin-logo">Admin Panel</small>
+      <span class="admin-logo-sub">Admin Panel</span>
     </div>
     <div class="nav-user">
       <img id="navAvatar" class="nav-avatar" src="" alt=""/>
@@ -502,45 +515,45 @@ tr:hover td{background:rgba(34,195,106,.03)}
   <div class="admin-body">
     <div class="sidebar">
       <a class="sidebar-item active" onclick="showPage('dashboard',event)" href="#">
-        <span class="sidebar-icon">📊</span> Dashboard
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span> Dashboard
       </a>
       <a class="sidebar-item" onclick="showPage('mudanceros',event)" href="#">
-        <span class="sidebar-icon">🚛</span> Mudanceros
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="14" height="12" rx="1.5"/><path d="M15 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="17.5" cy="18.5" r="2"/></svg></span> Mudanceros
         <span class="sidebar-badge" id="badgePendientes">0</span>
       </a>
       <a class="sidebar-item" onclick="showPage('pagos',event)" href="#">
-        <span class="sidebar-icon">💳</span> Pagos
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Pagos
       </a>
       <a class="sidebar-item" onclick="showPage('transferencias',event)" href="#">
-        <span class="sidebar-icon">🏦</span> Transferencias
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6"/><path d="M4 9v11h16V9"/><line x1="9" y1="20" x2="9" y2="13"/><line x1="15" y1="20" x2="15" y2="13"/></svg></span> Transferencias
         <span class="sidebar-badge" id="badgeTransfer" style="display:none">0</span>
       </a>
       <a class="sidebar-item" onclick="showPage('usuarios',event)" href="#">
-        <span class="sidebar-icon">👥</span> Usuarios
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Usuarios
       </a>
       <a class="sidebar-item" onclick="showPage('zonas',event)" href="#">
-        <span class="sidebar-icon">🗺️</span> Zonas
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><polygon points="1 6 8 3 16 6 23 3 23 18 16 21 8 18 1 21 1 6"/><line x1="8" y1="3" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="21"/></svg></span> Zonas
       </a>
       <a class="sidebar-item" onclick="showPage('fotos',event)" href="#">
-        <span class="sidebar-icon">🖼️</span> Fotos
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span> Fotos
       </a>
       <a class="sidebar-item" onclick="showPage('cotizaciones',event)" href="#">
-        <span class="sidebar-icon">📋</span> Cotizaciones
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span> Cotizaciones
       </a>
       <a class="sidebar-item" onclick="showPage('inmobiliarias',event)" href="#">
-        <span class="sidebar-icon">🏠</span> Inmobiliarias
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span> Inmobiliarias
       </a>
       <a class="sidebar-item" onclick="showPage('mudafy',event)" href="#">
-        <span class="sidebar-icon">🤝</span> Mudafy
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M12 20.5C12 20.5 3 15 3 8.5A4.5 4.5 0 0 1 12 6a4.5 4.5 0 0 1 9 2.5c0 6.5-9 12-9 12z"/></svg></span> Mudafy
       </a>
       <a class="sidebar-item" onclick="showPage('remax',event)" href="#">
-        <span class="sidebar-icon">🎈</span> RE/MAX
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.9 6 6.6.6-5 4.3 1.5 6.5L12 16.5 5.9 19.4 7.5 12.9 2.5 8.6 9.1 8z"/></svg></span> RE/MAX
       </a>
       <a class="sidebar-item" onclick="showPage('c21',event)" href="#">
-        <span class="sidebar-icon">🏅</span> CENTURY 21
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.5L7 22l5-3 5 3-1.2-8.5"/></svg></span> CENTURY 21
       </a>
       <a class="sidebar-item" onclick="showPage('otros',event)" href="#">
-        <span class="sidebar-icon">🏢</span> Otros Asesores
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 21V7l8-4v18"/><path d="M11 21V10l7 3v8"/><line x1="6" y1="9" x2="6" y2="9"/><line x1="6" y1="13" x2="6" y2="13"/><line x1="6" y1="17" x2="6" y2="17"/></svg></span> Otros Asesores
       </a>
     </div>
 
@@ -597,20 +610,20 @@ tr:hover td{background:rgba(34,195,106,.03)}
         </div>
         <div class="table-card" id="dash-transfer-section" style="display:none">
           <div class="table-header">
-            <span class="table-title">💸 Transferencias pendientes de validación</span>
+            <span class="table-title">Transferencias pendientes de validación</span>
             <button class="btn-sm primary" onclick="showPage('transferencias',event)">Ver todas →</button>
           </div>
           <div id="dashTransferList"></div>
         </div>
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">🔔 Mudanceros pendientes de aprobación</span>
+            <span class="table-title">Mudanceros pendientes de aprobación</span>
             <button class="btn-sm" onclick="loadMudanceros()">↻ Actualizar</button>
           </div>
           <div id="pendingList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
         <div class="table-card">
-          <div class="table-header"><span class="table-title">💳 Últimos pagos</span></div>
+          <div class="table-header"><span class="table-title">Últimos pagos</span></div>
           <div id="latestPagos"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
       </div>
@@ -653,6 +666,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
           </select>
           <button class="btn-sm" onclick="exportarExcel()" style="background:#22C36A;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⬇ Exportar Excel</button>
           <button class="btn-sm" onclick="recordarDniFaltante()" title="Manda un mail a los mudanceros que subieron una sola foto del DNI" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">🪪 Recordar DNI faltante</button>
+          <button class="btn-sm" onclick="recordarCobroFaltante()" title="Manda un mail a los mudanceros que no cargaron su forma de cobro (CBU/Alias o Mercado Pago)" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">💸 Recordar cobro faltante</button>
         </div>
         <div class="table-card">
           <div id="mudancerosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -664,7 +678,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="page-title">Transferencias</div>
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">💸 Transferencias pendientes de validación</span>
+            <span class="table-title">Transferencias pendientes de validación</span>
             <button class="btn-sm" onclick="loadTransferencias()">↻ Actualizar</button>
           </div>
           <div id="transferList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -676,20 +690,20 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="page-title">Pagos</div>
         <div class="table-card" style="margin-bottom:1.2rem">
           <div class="table-header">
-            <span class="table-title">💰 Liquidables ya</span>
+            <span class="table-title">Liquidables ya</span>
             <span style="font-size:11px;color:#64748B;font-family:var(--mono)" id="liqResumen">—</span>
           </div>
           <div id="liquidacionesList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
         <div class="table-card" style="margin-bottom:1.2rem">
           <div class="table-header">
-            <span class="table-title">⏳ En retención</span>
+            <span class="table-title">En retención</span>
             <span style="font-size:11px;color:#64748B;font-family:var(--mono)" id="retResumen">14 días hábiles desde el pago del cliente</span>
           </div>
           <div id="retencionList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
         <div class="table-card">
-          <div class="table-header"><span class="table-title">📜 Historial de pagos</span></div>
+          <div class="table-header"><span class="table-title">Historial de pagos</span></div>
           <div id="pagosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
       </div>
@@ -725,7 +739,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <!-- TABLA -->
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">👥 Clientes registrados</span>
+            <span class="table-title">Clientes registrados</span>
             <span id="usrCount" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
           </div>
           <div id="usuariosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -749,7 +763,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <div class="page-title">Fotos de mudanceros</div>
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">🖼️ Gestión de fotos</span>
+            <span class="table-title">Gestión de fotos</span>
             <button class="btn-sm" onclick="cargarFotos()">↻ Actualizar</button>
           </div>
           <div id="fotosAdminList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -818,7 +832,7 @@ tr:hover td{background:rgba(34,195,106,.03)}
         <!-- TABLA -->
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">📋 Solicitudes</span>
+            <span class="table-title">Solicitudes</span>
             <span id="cotCount" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
           </div>
           <div id="cotizacionesList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -1668,6 +1682,35 @@ async function recordarDniFaltante(){
     var d2 = await r2.json();
     if (!r2.ok) { alert('Error al enviar: ' + (d2.error || r2.status)); return; }
     alert('📧 Recordatorios enviados: ' + d2.enviados + (d2.fallidos ? (' · fallidos: ' + d2.fallidos) : ''));
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Recordar forma de cobro faltante: mudanceros sin CBU/Alias ni Mercado Pago.
+// Vista previa + confirmación antes de enviar (no manda nada sin confirmar).
+async function recordarCobroFaltante(){
+  try {
+    var r = await fetch('/api/recordar-cobro', { headers: { 'x-admin-token': ADMTK() } });
+    var d = await r.json();
+    if (!r.ok) { alert('Error: ' + (d.error || r.status)); return; }
+    if (!d.total) { alert('✅ Todos los mudanceros tienen forma de cobro cargada.'); return; }
+    if (!d.pendientesDeMail) {
+      alert('Los ' + d.total + ' mudanceros sin forma de cobro ya recibieron el recordatorio.');
+      return;
+    }
+    var msg = 'Mudanceros SIN forma de cobro (ni CBU/Alias ni MP): ' + d.total + '\n'
+            + 'Sin recordatorio enviado todavía: ' + d.pendientesDeMail + '\n\n'
+            + '¿Enviar el mail a los ' + d.pendientesDeMail + ' pendientes?';
+    if (!confirm(msg)) return;
+    var r2 = await fetch('/api/recordar-cobro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMTK() },
+      body: JSON.stringify({})
+    });
+    var d2 = await r2.json();
+    if (!r2.ok) { alert('Error al enviar: ' + (d2.error || r2.status)); return; }
+    alert('📧 Recordatorios de cobro enviados: ' + d2.enviados + (d2.fallidos ? (' · fallidos: ' + d2.fallidos) : ''));
   } catch(e) {
     alert('Error: ' + e.message);
   }
