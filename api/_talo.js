@@ -157,7 +157,8 @@ async function consultarPago(paymentId) {
     acreditado:  Number(tf.credited_amount || 0),
     cvu:         q.address || q.cvu || '',
     alias:       q.alias || '',
-    expira:      data.expiration_timestamp || (data.user_info || {}).expiration_timestamp || ''
+    expira:      data.expiration_timestamp || (data.user_info || {}).expiration_timestamp || '',
+    paymentUrl:  data.payment_url || '' // checkout con el monto ya cargado (QR/link)
   };
 }
 

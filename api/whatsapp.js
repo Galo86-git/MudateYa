@@ -648,6 +648,7 @@ async function obtenerDatosTransferencia(mudanzaId) {
       expira: d.expira || '',
       referencia: d.referencia || '',
       automatico: !!d.automatico, // true = CVU único de Talo (confirmación automática)
+      checkoutUrl: d.checkoutUrl || '', // link/QR de Talo con el monto YA cargado
     };
   } catch (e) { console.warn('obtenerDatosTransferencia:', e.message); return null; }
 }
@@ -729,7 +730,7 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
     sena,
     link_pago_mp: link,
     transferencia: transf,
-    nota: 'Cotización aceptada. Pasale al cliente el monto de la SEÑA (50%), el link de Mercado Pago (si vino) y los datos de transferencia (CBU/alias, si vinieron). Si transferencia.automatico es true, ese alias/CVU es ÚNICO para esta seña y se acredita solo cuando transfiere (no lo compartas para otra cosa). Aclarale que el 50% restante se paga al completar la mudanza y que la seña queda protegida. Si no vino ni link ni transferencia, decile que en un momento le pasás cómo pagar y usá derivar_a_humano.',
+    nota: 'Cotización aceptada. Pasale al cliente el monto de la SEÑA (50%) y las formas de pago. Para transferencia, si transferencia.checkoutUrl viene, ese es un link de Talo con el MONTO YA CARGADO: ofrecelo como la mejor opción ("así no te equivocás con el importe"). Si no hay checkoutUrl, pasale el CBU/alias y decile que transfiera EXACTAMENTE ese monto. También está el link de Mercado Pago (monto fijo). Aclarale que el 50% restante se paga al completar y que la seña queda protegida. Si no vino ninguna forma de pago, decile que en un momento le pasás cómo pagar y usá derivar_a_humano.',
   };
 }
 

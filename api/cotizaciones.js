@@ -1799,7 +1799,7 @@ module.exports = async function handler(req, res) {
             let transf = null;
             try {
               const rT = await fetch(`${base}/api/transferencias?action=datos&mudanzaId=${encodeURIComponent(m.id)}&tipoPago=saldo`);
-              if (rT.ok) { const dT = await rT.json(); if (dT && dT.ok && dT.banco) transf = Object.assign({}, dT.banco, { automatico: !!dT.automatico }); }
+              if (rT.ok) { const dT = await rT.json(); if (dT && dT.ok && dT.banco) transf = Object.assign({}, dT.banco, { automatico: !!dT.automatico, checkoutUrl: dT.checkoutUrl || '' }); }
             } catch (_) {}
             const { avisarSaldoPendiente } = require('./_whatsapp');
             await avisarSaldoPendiente(m, saldo, linkMP, transf);

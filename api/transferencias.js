@@ -273,7 +273,7 @@ module.exports = async function handler(req, res) {
               const vigente = p.estado === 'PENDING' &&
                               (!p.expira || new Date(p.expira).getTime() > Date.now() + 60000) &&
                               Number(p.montoPedido) === Number(monto);
-              if (vigente) pago = { paymentId: p.paymentId, cvu: p.cvu, alias: p.alias, expira: p.expira };
+              if (vigente) pago = { paymentId: p.paymentId, cvu: p.cvu, alias: p.alias, expira: p.expira, paymentUrl: p.paymentUrl };
             } catch (e) { /* si no se puede consultar, se crea uno nuevo */ }
           }
 
@@ -293,6 +293,7 @@ module.exports = async function handler(req, res) {
             ok: true,
             automatico: true,
             banco: { cbu: pago.cvu, alias: pago.alias, titular: datosBancarios().titular, cuit: datosBancarios().cuit },
+            checkoutUrl: pago.paymentUrl || '', // link/QR de Talo con el monto YA cargado (no se puede tipear mal)
             monto: monto,
             expira: pago.expira,
             referencia: codigoReferencia(mudanzaId, tipoPago)
