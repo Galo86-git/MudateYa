@@ -324,6 +324,14 @@
     {
       "source": "/blog/tipos-de-mudanza",
       "destination": "/blog-tipos-de-mudanza.html"
+    },
+    {
+      "source": "/blog-sitemap.xml",
+      "destination": "/api/sitemap-blog"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/api/blog-post?slug=:slug"
     }
   ],
   "headers": [
@@ -434,6 +442,10 @@
     {
       "path": "/api/cron-revisar-mudanceros",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron-blog",
+      "schedule": "0 14 1 * *"
     }
   ]
 }

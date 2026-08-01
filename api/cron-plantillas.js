@@ -27,6 +27,16 @@ module.exports = async function handler(req, res) {
   if (!sid || !token) return res.status(200).json({ error: 'Twilio no configurado' });
 
   try {
+    // 0) Auto-crear las plantillas nuevas que todavía no existan (idempotente).
+    //    Así, cuando agregamos una plantilla al código, se crea sola y se manda a
+    //    Meta sin tener que tocar ningún botón del admin.
+    let creadas = [];
+    try {
+      const r = await require('./plantillas-emi').crearFaltantes();
+      creadas = (r && r.creadas) || [];
+      if (creadas.length) console.log('[cron-plantillas] creadas:', creadas.map((c) => c.name).join(', '));
+    } catch (e) { console.warn('[cron-plantillas] crearFaltantes:', e.message); }
+
     const auth = 'Basic ' + Buffer.from(sid + ':' + token).toString('base64');
     const r = await fetch('https://content.twilio.com/v1/ContentAndApprovals?PageSize=100', {
       headers: { Authorization: auth },
@@ -79,7 +89,7 @@ module.exports = async function handler(req, res) {
       } catch (e) { console.warn('cron-plantillas email:', e.message); }
     }
 
-    return res.status(200).json({ ok: true, primeraVez, cambios, avisado, actual });
+    return res.status(200).json({ ok: true, primeraVez, creadas: creadas.map((c) => c.name), cambios, avisado, actual });
   } catch (e) {
     console.error('cron-plantillas:', e.message);
     return res.status(200).json({ error: e.message });

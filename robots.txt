@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://mudateya.ar/sitemap.xml
+Sitemap: https://mudateya.ar/blog-sitemap.xml

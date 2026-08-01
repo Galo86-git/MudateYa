@@ -91,8 +91,24 @@ footer a{color:#cfe0ff;text-decoration:none}
 <p>Guías prácticas para mudarte sin estrés: precios, organización, embalaje y todo lo que necesitás saber antes de tu próxima mudanza.</p>
 </div></section>
 <section class="section" style="border-top:none;padding-top:40px"><div class="wrap-wide">
-<div class="cards"><a class="pcard" href="/blog/cuanto-cuesta-una-mudanza"><span class="tag">Precios</span><h3>¿Cuánto cuesta una mudanza en 2026?</h3><p>Los factores que definen el precio de tu mudanza y 5 formas concretas de pagar menos.</p></a><a class="pcard" href="/blog/checklist-mudanza"><span class="tag">Organización</span><h3>Checklist de mudanza: el plan día por día</h3><p>Qué hacer 30, 15 y 7 días antes y el día de la mudanza para llegar sin estrés.</p></a><a class="pcard" href="/blog/como-embalar-para-mudanza"><span class="tag">Embalaje</span><h3>Cómo embalar sin romper nada</h3><p>Materiales, técnicas y trucos para que platos, vasos, ropa y electrónica lleguen intactos.</p></a><a class="pcard" href="/blog/mudanza-con-mascotas-y-plantas"><span class="tag">Mascotas</span><h3>Mudanza con mascotas y plantas</h3><p>Cómo trasladar a tu perro, gato y plantas sin que sufran el cambio.</p></a><a class="pcard" href="/blog/que-preguntar-empresa-de-mudanzas"><span class="tag">Contratar</span><h3>Qué preguntar antes de contratar</h3><p>Las preguntas clave para saber qué estás contratando y evitar sorpresas.</p></a><a class="pcard" href="/blog/tipos-de-mudanza"><span class="tag">Servicios</span><h3>Económica, integral o llave en mano</h3><p>Las 3 opciones de mudanza, qué incluye cada una y cuál te conviene.</p></a></div>
+<div class="cards" id="cards"><a class="pcard" href="/blog/cuanto-cuesta-una-mudanza"><span class="tag">Precios</span><h3>¿Cuánto cuesta una mudanza en 2026?</h3><p>Los factores que definen el precio de tu mudanza y 5 formas concretas de pagar menos.</p></a><a class="pcard" href="/blog/checklist-mudanza"><span class="tag">Organización</span><h3>Checklist de mudanza: el plan día por día</h3><p>Qué hacer 30, 15 y 7 días antes y el día de la mudanza para llegar sin estrés.</p></a><a class="pcard" href="/blog/como-embalar-para-mudanza"><span class="tag">Embalaje</span><h3>Cómo embalar sin romper nada</h3><p>Materiales, técnicas y trucos para que platos, vasos, ropa y electrónica lleguen intactos.</p></a><a class="pcard" href="/blog/mudanza-con-mascotas-y-plantas"><span class="tag">Mascotas</span><h3>Mudanza con mascotas y plantas</h3><p>Cómo trasladar a tu perro, gato y plantas sin que sufran el cambio.</p></a><a class="pcard" href="/blog/que-preguntar-empresa-de-mudanzas"><span class="tag">Contratar</span><h3>Qué preguntar antes de contratar</h3><p>Las preguntas clave para saber qué estás contratando y evitar sorpresas.</p></a><a class="pcard" href="/blog/tipos-de-mudanza"><span class="tag">Servicios</span><h3>Económica, integral o llave en mano</h3><p>Las 3 opciones de mudanza, qué incluye cada una y cuál te conviene.</p></a></div>
 </div></section>
+<script>
+// Notas generadas automáticamente (cron-blog.js): se cargan y se muestran primero.
+(function(){
+  fetch('/api/blog-lista').then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.posts||!d.posts.length)return;
+    var cards=document.getElementById('cards');if(!cards)return;
+    var frag=document.createDocumentFragment();
+    d.posts.forEach(function(p){
+      var a=document.createElement('a');a.className='pcard';a.href='/blog/'+p.slug;
+      a.innerHTML='<span class="tag">'+(p.tag||'Guía')+'</span><h3>'+p.titulo+'</h3><p>'+(p.resumen||'')+'</p>';
+      frag.appendChild(a);
+    });
+    cards.insertBefore(frag,cards.firstChild);
+  }).catch(function(){});
+})();
+</script>
 <section class="cta"><div class="wrap">
 <h2>¿Listo para mudarte?</h2>
 <p>Compará precios de mudanceros verificados y pagá seguro con Mercado Pago.</p>

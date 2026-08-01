@@ -80,6 +80,23 @@ const CREAR = [
       actions: [{ type: 'URL', title: 'Pagar ahora', url: 'https://mudateya.ar/pagar/{{5}}' }],
     } },
     variables: { '1': 'Juan', '2': 'tu mudanza', '3': 'Cristian', '4': 'la seña ($25.000)', '5': 'MYA-123' } },
+
+  // ── Tanda de automatizaciones (nurturing, cierre, onboarding) ──
+  { name: 'presupuestos_esperando', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! Tenés {{2}} presupuesto(s) para {{3}} desde {{4}} esperando que elijas.\n\n¿Te ayudo a decidir? Respondé este mensaje y lo vemos juntos. 😊' } },
+    variables: { '1': 'Juan', '2': '3', '3': 'tu mudanza', '4': '$80.000' } },
+  { name: 'pedido_vencido_con_presupuestos', category: 'MARKETING',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! Recibiste {{2}} presupuesto(s) para {{3}}, pero venció el plazo para elegir. ¿Querés que lo reactivemos? Respondé este mensaje y seguimos. 🚚' } },
+    variables: { '1': 'Juan', '2': '3', '3': 'tu mudanza' } },
+  { name: 'pedido_vencido_sin_presupuestos', category: 'MARKETING',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! No llegamos a conseguirte un mudancero para {{2}} a tiempo. ¿Reintentamos con un poco más de anticipación? Respondé este mensaje y lo republicamos. 🙌' } },
+    variables: { '1': 'Juan', '2': 'tu mudanza' } },
+  { name: 'onboarding_mudancero', category: 'MARKETING',
+    types: { 'twilio/call-to-action': {
+      body: '¡Hola {{1}}! Soy Emi de MudateYa. {{2}}.\n\nCompletá tu perfil (vehículo, precios, fotos y datos de cobro) desde el botón y empezá a recibir pedidos. 🚚',
+      actions: [{ type: 'URL', title: 'Completar mi perfil', url: 'https://mudateya.ar/mi-cuenta' }],
+    } },
+    variables: { '1': 'Cristian', '2': 'te falta un pasito para activar tu cuenta' } },
 ];
 
 module.exports = async function handler(req, res) {
@@ -150,3 +167,27 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json(reporte);
 };
+
+// ── Reutilizable por el cron (cron-plantillas.js): crea las plantillas del array
+// CREAR que todavía no existan en la cuenta y las manda a aprobación de Meta.
+// Idempotente: las que ya existen se saltean. Así las plantillas nuevas se crean
+// solas, sin tener que tocar el botón del admin.
+async function crearFaltantes() {
+  const AUTH = auth();
+  if (!AUTH) return { error: 'sin credenciales Twilio', creadas: [] };
+  const existentes = new Set();
+  try {
+    const all = await tw('GET', 'https://content.twilio.com/v1/ContentAndApprovals?PageSize=100', null, AUTH);
+    ((all.d && all.d.contents) || []).forEach((c) => existentes.add(c.friendly_name));
+  } catch (_) {}
+  const creadas = [];
+  for (const t of CREAR) {
+    if (existentes.has(t.name)) continue;
+    const created = await tw('POST', BASE, { friendly_name: t.name, language: 'es', variables: t.variables, types: t.types }, AUTH);
+    if (!created.ok) { creadas.push({ name: t.name, accion: 'ERROR_crear', detalle: created.d }); continue; }
+    const appr = await tw('POST', `${BASE}/${created.d.sid}/ApprovalRequests/whatsapp`, { name: t.name, category: t.category }, AUTH);
+    creadas.push({ name: t.name, sid: created.d.sid, accion: appr.ok ? 'creada_y_enviada' : 'creada_pero_no_enviada' });
+  }
+  return { creadas };
+}
+module.exports.crearFaltantes = crearFaltantes;
