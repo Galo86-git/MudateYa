@@ -41,6 +41,9 @@ header.nav{position:sticky;top:0;background:#fff;border-bottom:1px solid #e7ecf3
 .brand span{color:var(--green)}
 .btn{display:inline-block;background:var(--green);color:#04231a;font-weight:700;padding:12px 22px;border-radius:10px;text-decoration:none}
 .btn.nav-cta{padding:9px 16px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn.ghost{background:transparent;border:2px solid rgba(255,255,255,.6);color:#fff}
+.btn.ghost:hover{border-color:#fff}
 .hero{background:linear-gradient(160deg,#003580,#00224f);color:#fff;padding:64px 0 56px}
 .hero h1{font-size:clamp(30px,5vw,46px);margin:0 0 14px;line-height:1.12}
 .hero p{font-size:19px;color:#cfe0ff;max-width:680px;margin:0 0 26px}
@@ -72,7 +75,10 @@ footer a{color:#cfe0ff;text-decoration:none}
 <span class="badge">⚡ Disponibilidad inmediata</span>
 <h1>Mudanza urgente</h1>
 <p>¿Necesitás mudarte hoy o mañana? Compará mudanceros verificados con disponibilidad inmediata, elegí sin compromiso y pagá seguro con Mercado Pago. Es gratis para vos y cotizás en 2 minutos.</p>
-<a class="btn" href="/#cotizar">Cotizá tu mudanza urgente →</a>
+<div class="cta-row">
+<a class="btn wa" href="https://wa.me/12399462954?text=Hola%21%20Necesito%20una%20mudanza%20urgente">💬 WhatsApp ahora — te atendemos al toque</a>
+<a class="btn ghost" href="/#cotizar">Cotizar online →</a>
+</div>
 </div></section>
 
 <section class="section"><div class="wrap">
@@ -130,8 +136,11 @@ footer a{color:#cfe0ff;text-decoration:none}
 
 <section class="cta"><div class="wrap">
 <h2>¿Tu mudanza no puede esperar?</h2>
-<p>Cotizá gratis en 2 minutos y compará mudanceros disponibles para hoy o mañana.</p>
-<a class="btn" href="/#cotizar">Cotizar mi mudanza urgente →</a>
+<p>Escribinos por WhatsApp y te atendemos al toque, o cotizá online en 2 minutos.</p>
+<div class="cta-row" style="justify-content:center">
+<a class="btn wa" href="https://wa.me/12399462954?text=Hola%21%20Necesito%20una%20mudanza%20urgente">💬 WhatsApp ahora</a>
+<a class="btn ghost" href="/#cotizar">Cotizar online →</a>
+</div>
 </div></section>
 
 <footer><div class="wrap">© MudateYa — Marketplace de mudanzas y fletes de Argentina · <a href="/">Inicio</a> · <a href="/blog">Blog</a> · <a href="/contacto">Contacto</a> · <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></div></footer>

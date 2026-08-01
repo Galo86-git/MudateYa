@@ -267,6 +267,13 @@ si es mudanza o flete, de dónde sale, a dónde va, más o menos cuándo, y qué
 
 No prometas precios: los ponen los mudanceros. Contá cómo funciona MudateYa solo cuando venga a cuento, no lo recites de entrada.
 
+MUDANZA URGENTE (es hoy, mañana, o una emergencia): NO la hagas esperar el flujo normal de presupuestos. Hacé esto:
+1. Bajale la ansiedad y decile que esto lo toma el equipo de MudateYa en persona para resolverlo rápido.
+2. Juntá al toque solo lo mínimo: qué hay que mover, de dónde a dónde, y para cuándo exacto.
+3. Cargá el pedido con crear_pedido y urgente: true.
+4. Después derivá con derivar_a_humano, con el motivo empezando en "URGENTE:" y un resumen de una línea (ej: "URGENTE: mudanza hoy 18hs, Palermo→Caballito, 2 amb con heladera").
+5. Cerrá avisando que alguien del equipo lo contacta a la brevedad por acá. No prometas horario ni precio.
+
 EJEMPLOS DE TONO (son guía, NO los copies literal):
 Cliente: "hola necesito mudarme"
 Vos: "¡Hola! Dale, te doy una mano con eso 🙂 ¿De dónde a dónde sería?"
@@ -339,7 +346,7 @@ const tools = [
   {
     name: 'crear_pedido',
     description:
-      'Crea el pedido de mudanza/flete cuando ya tenés los datos: tipo, origen, destino, fecha y detalles.',
+      'Crea el pedido de mudanza/flete cuando ya tenés los datos: tipo, origen, destino, fecha y detalles. Marcá urgente=true si el cliente necesita mudarse hoy/mañana o es una emergencia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -349,6 +356,7 @@ const tools = [
         fecha: { type: 'string' },
         detalles: { type: 'string' },
         nombre: { type: 'string' },
+        urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
     },
@@ -425,6 +433,7 @@ async function crearPedido(input, waId, ubicaciones) {
     cliente: { nombre: input.nombre || '', whatsapp: waId },
     ubicaciones: Array.isArray(ubicaciones) ? ubicaciones : [], // coords compartidas (geo-match)
     canal: 'whatsapp',
+    urgente: !!input.urgente, // mudanza urgente → la toma el equipo a mano
     estado: 'buscando_presupuestos',
     cotizaciones: [],
     creado: ahora.toISOString(),
@@ -487,13 +496,14 @@ async function derivarHumano(waId, motivo, conv) {
         .slice(-6)
         .map((m) => `${m.role}: ${typeof m.content === 'string' ? m.content : '[media]'}`)
         .join('\n');
+      const esUrgente = /urgente/i.test(motivo || '');
       await resend.emails.send({
         from: 'MudateYa <noreply@mudateya.ar>',
         reply_to: 'hola@mudateya.ar',
         to: adminMail,
-        subject: `🙋 Cliente pide atención humana — ${waId}`,
+        subject: esUrgente ? `🚨 MUDANZA URGENTE — ${waId}` : `🙋 Cliente pide atención humana — ${waId}`,
         html:
-          `<p>El cliente <b>${escapeXml(waId)}</b> pidió hablar con una persona por WhatsApp.</p>` +
+          `<p>El cliente <b>${escapeXml(waId)}</b> ${esUrgente ? 'tiene una <b>mudanza URGENTE</b> y necesita que el equipo lo tome ya' : 'pidió hablar con una persona'} por WhatsApp.</p>` +
           `<p><b>Motivo:</b> ${escapeXml(motivo || '-')}</p>` +
           `<pre style="background:#f5f5f5;padding:10px;border-radius:8px;white-space:pre-wrap">${escapeXml(ultimos)}</pre>` +
           `<p><a href="https://wa.me/${String(waId).replace(/\D/g, '')}">Abrir WhatsApp del cliente →</a></p>`,
@@ -510,7 +520,10 @@ async function ejecutarTool(name, input, waId, conv) {
   try {
     if (name === 'crear_pedido') {
       const pedido = await crearPedido(input, waId, conv.ubicaciones);
-      return JSON.stringify({ ok: true, id: pedido.id, tipo: pedido.tipo, estado: pedido.estado, nota: 'Pedido creado; salimos a buscar hasta 5 presupuestos de mudanceros cercanos. Vale 24hs.' });
+      const nota = pedido.urgente
+        ? 'Pedido URGENTE creado. Ahora derivá al equipo con derivar_a_humano (motivo que empiece con "URGENTE:") para que lo tomen a mano ya. No prometas horario ni precio.'
+        : 'Pedido creado; salimos a buscar hasta 5 presupuestos de mudanceros cercanos. Vale 24hs.';
+      return JSON.stringify({ ok: true, id: pedido.id, tipo: pedido.tipo, estado: pedido.estado, urgente: pedido.urgente, nota });
     }
     if (name === 'consultar_estado_pedido') {
       const pedidos = await pedidosDelCliente(waId);
