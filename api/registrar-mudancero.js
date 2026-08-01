@@ -413,6 +413,13 @@ module.exports = async function handler(req, res) {
     // ── GUARDAR EN REDIS ────────────────────────────────────────
     await setJSON('mudancero:perfil:' + email, perfil);
 
+    // Índice teléfono→mudancero (últimos 8 dígitos) para que el bot de WhatsApp
+    // reconozca al mudancero al instante. En try/catch: si falla, no afecta el alta.
+    try {
+      var _tel8 = String(telefono || '').replace(/\D/g, '').slice(-8);
+      if (_tel8.length === 8) await redisCall('HSET', 'mudanceros:tel8-idx', _tel8, email);
+    } catch (e) { console.warn('idx tel8:', e.message); }
+
     var pendientes = await getJSON('mudanceros:pendientes') || [];
     if (!pendientes.includes(email)) pendientes.push(email);
     await setJSON('mudanceros:pendientes', pendientes);

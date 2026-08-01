@@ -225,6 +225,12 @@ module.exports = async function handler(req, res) {
 
     await setJSON(`mudancero:perfil:${data.email}`, actualizado);
 
+    // Índice teléfono→mudancero para reconocimiento instantáneo en el bot de WhatsApp.
+    try {
+      const _tel8 = String(actualizado.telefono || '').replace(/\D/g, '').slice(-8);
+      if (_tel8.length === 8) await redisCall('HSET', 'mudanceros:tel8-idx', _tel8, data.email);
+    } catch (e) { console.warn('idx tel8:', e.message); }
+
     return res.status(200).json({ ok: true });
   } catch(e) {
     console.error('Error actualizando perfil:', e.message);
