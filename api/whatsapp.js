@@ -270,7 +270,7 @@ CÓMO HABLÁS (esto es lo más importante):
 - Seguile la energía: si está apurado o cortante, al grano; si está perdido, guialo con paciencia; si está estresado, bajale un cambio ("tranqui, lo vemos juntos y en un rato lo dejás resuelto").
 
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
-la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
+la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
 FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
 
@@ -390,6 +390,18 @@ const tools = [
         id: { type: 'string', description: 'ID del pedido a cancelar. Si no lo sabés, dejalo vacío y se cancela el más reciente activo.' },
       },
       required: [],
+    },
+  },
+  {
+    name: 'validar_direccion',
+    description:
+      'Valida una dirección contra Google Maps: confirma si EXISTE, la normaliza y da coordenadas. Usala para el origen y el destino cuando el cliente te los da, ANTES de crear el pedido. Si devuelve existe:false, la dirección no existe (repreguntá). Si completa:false, le falta la calle o el número (pedíselos).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        direccion: { type: 'string', description: 'Dirección a validar (calle, número, localidad)' },
+      },
+      required: ['direccion'],
     },
   },
   {
@@ -538,6 +550,18 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
   const ahora = new Date();
   const nombre = input.nombre || '';
 
+  // Geocodificar origen/destino con Google (best-effort): coords para geo-match y
+  // km por ruta para mostrar en el PDF. Si falta la key o falla, sigue sin ello.
+  let origenCoords = null, destinoCoords = null, kmCalc = 0;
+  try {
+    const { geocodificar, distanciaKm, haversineKm } = require('./_geo');
+    const [go, gd] = await Promise.all([geocodificar(input.origen), geocodificar(input.destino)]);
+    if (go && go.ok) origenCoords = { lat: go.lat, lng: go.lng };
+    if (gd && gd.ok) destinoCoords = { lat: gd.lat, lng: gd.lng };
+    kmCalc = (await distanciaKm(input.origen, input.destino))
+             || haversineKm(origenCoords, destinoCoords) || 0;
+  } catch (_) {}
+
   // Pedido UNIFICADO: un solo objeto que sirve a los dos sistemas.
   //   - Bot (WhatsApp): origen/destino/vence/detalles → consultar_estado y cancelar.
   //   - Marketplace web: desde/hasta/expira/zonaBase/estado 'buscando' + índice
@@ -566,6 +590,9 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     hasta: input.destino,
     zonaBase: input.origen,
     ambientes: parseAmbientes(input.detalles),
+    km: kmCalc || 0, // distancia por ruta (Google) — se muestra en el PDF
+    origenCoords: origenCoords,
+    destinoCoords: destinoCoords,
     nivel: input.tipo === 'flete' ? 'flete' : null,
     servicios: [],
     extras: [],
@@ -865,6 +892,24 @@ async function ejecutarTool(name, input, waId, conv) {
     }
     if (name === 'cancelar_pedido') {
       return JSON.stringify(await cancelarPedidoCliente(waId, input && input.id));
+    }
+    if (name === 'validar_direccion') {
+      const { geocodificar } = require('./_geo');
+      const g = await geocodificar(input && input.direccion);
+      if (g.ok) {
+        return JSON.stringify({
+          existe: true, completa: g.completa, normalizada: g.formatted,
+          calle: g.calle, numero: g.numero, localidad: g.localidad,
+          nota: g.completa
+            ? 'Dirección válida y completa. Podés usar la versión normalizada.'
+            : 'La dirección existe pero le falta la calle o el número exacto: pedíselo al cliente.',
+        });
+      }
+      if (g.existe === false) {
+        return JSON.stringify({ existe: false, nota: 'No encontré esa dirección en el mapa. Pedile al cliente que la confirme (calle y número).' });
+      }
+      // Sin key de Google o error → no bloquear: seguir con lo que dio el cliente.
+      return JSON.stringify({ existe: null, nota: 'No pude validar la dirección ahora; seguí con la que dio el cliente.' });
     }
     if (name === 'aceptar_cotizacion') {
       return JSON.stringify(await aceptarCotizacionCliente(waId, input && input.mudancero, input && input.pedidoId));

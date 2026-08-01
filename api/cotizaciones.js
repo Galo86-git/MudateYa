@@ -375,13 +375,15 @@ async function generarPDFBase64(datos) {
   hLine(ML, PW - MR, Y, C_BORDER, 0.5);
   Y += 6;
 
+  const kmPdf = parseInt(datos.km) || 0;
   const filas = [
     ['DESDE',      desde    ],
     ['HASTA',      hasta    ],
-    ['FECHA',      fechaMud ],
-    ['AMBIENTES',  ambientes],
-    ['OBJETOS',    objetos  ],
   ];
+  if (kmPdf > 0) filas.push(['DISTANCIA', kmPdf + ' km aprox.']);
+  filas.push(['FECHA',      fechaMud ]);
+  filas.push(['AMBIENTES',  ambientes]);
+  filas.push(['OBJETOS',    objetos  ]);
   if (extras) filas.push(['SERVICIOS', extras]);
   if (nota)   filas.push(['NOTA', nota]);
   if (tiempo) filas.push(['TIEMPO EST.', tiempo]);
@@ -1346,6 +1348,7 @@ module.exports = async function handler(req, res) {
         mudancero_initials:(cot.mudanceroNombre||'MV').slice(0,2).toUpperCase(),
         desde:             mudanza.desde,
         hasta:             mudanza.hasta,
+        km:                mudanza.km,
         fecha:             mudanza.fecha,
         ambientes:         mudanza.ambientes,
         objetos:           mudanza.servicios,
@@ -3972,6 +3975,7 @@ async function notificarCliente(mudanza, cotizacion) {
       mudancero_initials:(cotizacion.mudanceroNombre||'MV').slice(0,2).toUpperCase(),
       desde:             mudanza.desde,
       hasta:             mudanza.hasta,
+      km:                mudanza.km,
       fecha:             mudanza.fecha,
       ambientes:         mudanza.ambientes,
       objetos:           mudanza.servicios,
@@ -4163,6 +4167,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
       mudancero_initials:(cot.mudanceroNombre||'MV').slice(0,2).toUpperCase(),
       desde:             mudanza.desde,
       hasta:             mudanza.hasta,
+      km:                mudanza.km,
       fecha:             mudanza.fecha,
       ambientes:         mudanza.ambientes,
       objetos:           mudanza.servicios,
