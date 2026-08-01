@@ -1594,6 +1594,10 @@ module.exports = async function handler(req, res) {
       }
       if (tipoPago === 'anticipo') {
         try { await notificarClienteAnticipoPagado(m); } catch(e) { console.warn('Email cliente anticipo error:', e.message); }
+        // Aviso por WhatsApp: cliente (reservada) + mudancero elegido (ganó). Solo
+        // avisa al cliente si el pedido vino por WhatsApp; al mudancero por su tel.
+        try { const { avisarSenaConfirmada } = require('./_whatsapp'); await avisarSenaConfirmada(m); }
+        catch(e) { console.warn('WhatsApp seña error:', e.message); }
         if (m.partnerAsesor) {
           try { await notificarAsesorAnticipoPagado(m); }
           catch(e) { console.warn('Email asesor anticipo:', e.message); }
@@ -1601,6 +1605,39 @@ module.exports = async function handler(req, res) {
       }
       return res.status(200).json({ ok: true });
     }
+
+    // ── REENVIAR AVISO DE SEÑA POR WHATSAPP (admin) ─────────────────
+    // Dispara a mano avisarSenaConfirmada para una mudanza (o para el último
+    // pedido pagado de un WhatsApp). Útil si la seña se confirmó pero el aviso
+    // no salió. Devuelve diagnóstico (canal, clienteWA, mudanceroTel).
+    if (action === 'reenviar-aviso-sena' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+      let { mudanzaId, waId } = req.body || {};
+      let m = null;
+      if (mudanzaId) {
+        m = await getJSON(`mudanza:${mudanzaId}`);
+      } else if (waId) {
+        const ids = (await getJSON(`cliente:pedidos:${waId}`)) || [];
+        for (const id of ids.slice().reverse()) {
+          const p = await getJSON(`mudanza:${id}`);
+          if (p && p.anticipoPagado) { m = p; break; }
+        }
+      }
+      if (!m) return res.status(404).json({ error: 'No encontré la mudanza (pasá mudanzaId o waId)' });
+      const cot = m.cotizacionAceptada || {};
+      const diag = {
+        mudanzaId: m.id, canal: m.canal || null, clienteWA: m.clienteWA || null,
+        mudanceroTel: cot.mudanceroTel || null, anticipoPagado: !!m.anticipoPagado,
+      };
+      try {
+        const { avisarSenaConfirmada } = require('./_whatsapp');
+        await avisarSenaConfirmada(m);
+      } catch (e) {
+        return res.status(200).json({ ok: false, error: e.message, diag });
+      }
+      return res.status(200).json({ ok: true, enviado: true, diag });
+    }
+
     // ── LIQUIDAR HORAS (solo cotizaciones por hora) ─────────────────
     //
     // No es un ajuste de precio: es aplicar la tarifa que el cliente ya aceptó
