@@ -1778,6 +1778,33 @@ module.exports = async function handler(req, res) {
         try { await logPedidoSheets(m); } catch(e) { console.warn('Sheets log error:', e.message); }
         // Email al cliente invitándolo a pagar el saldo
         try { await notificarClienteSaldoPendiente(m); } catch(e) { console.warn('Email saldo error:', e.message); }
+        // WhatsApp: si el pedido vino por WhatsApp, avisar el saldo con MP + transferencia.
+        if (m.canal === 'whatsapp' && m.clienteWA && !m.saldoPagado) {
+          try {
+            const base = process.env.SITE_URL || 'https://mudateya.ar';
+            const cotA = m.cotizacionAceptada || {};
+            const total = parseInt(cotA.precio || m.montoTotal || 0) || 0;
+            const ant   = parseInt(m.anticipoMonto || Math.round(total * 0.5)) || 0;
+            const saldo = Math.max(0, total - ant);
+            // Link de Mercado Pago para el saldo.
+            let linkMP = null;
+            try {
+              const rMP = await fetch(`${base}/api/crear-preferencia`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mudanceroNombre: cotA.mudanceroNombre, monto: saldo, desde: m.desde, hasta: m.hasta, ambientes: m.ambientes, mudanzaId: m.id, cotizacionId: cotA.id, tipoPago: 'saldo' }),
+              });
+              if (rMP.ok) { const dMP = await rMP.json(); linkMP = dMP.init_point || dMP.sandbox_url || null; }
+            } catch (_) {}
+            // Datos de transferencia (Talo: CVU único para el saldo).
+            let transf = null;
+            try {
+              const rT = await fetch(`${base}/api/transferencias?action=datos&mudanzaId=${encodeURIComponent(m.id)}&tipoPago=saldo`);
+              if (rT.ok) { const dT = await rT.json(); if (dT && dT.ok && dT.banco) transf = Object.assign({}, dT.banco, { automatico: !!dT.automatico }); }
+            } catch (_) {}
+            const { avisarSaldoPendiente } = require('./_whatsapp');
+            await avisarSaldoPendiente(m, saldo, linkMP, transf);
+          } catch (e) { console.warn('WhatsApp saldo error:', e.message); }
+        }
       }
       if (estado === 'en_curso') {
         m.fechaInicio = new Date().toISOString();
@@ -1785,6 +1812,11 @@ module.exports = async function handler(req, res) {
         // Y en cotizaciones por hora este es el momento en que arranca el reloj:
         // el cliente tiene que enterarse ahora, no al recibir la liquidacion.
         try { await notificarClienteMudanzaIniciada(m); } catch(e) { console.warn('Email inicio error:', e.message); }
+        // WhatsApp: avisar el inicio si el pedido vino por WhatsApp.
+        if (m.canal === 'whatsapp' && m.clienteWA) {
+          try { const { avisarMudanzaIniciada } = require('./_whatsapp'); await avisarMudanzaIniciada(m); }
+          catch(e) { console.warn('WhatsApp inicio error:', e.message); }
+        }
       }
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
       return res.status(200).json({ ok: true, estado });

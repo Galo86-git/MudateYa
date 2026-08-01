@@ -137,4 +137,40 @@ async function avisarSenaConfirmada(mudanza) {
   }
 }
 
-module.exports = { enviarWhatsApp, enviarWhatsAppTexto, avisarSenaConfirmada };
+// avisarMudanzaIniciada: le avisa al cliente (por WhatsApp) que la mudanza arrancó.
+async function avisarMudanzaIniciada(mudanza) {
+  if (!mudanza || mudanza.canal !== 'whatsapp' || !mudanza.clienteWA) return;
+  const cot   = mudanza.cotizacionAceptada || {};
+  const desde = mudanza.desde || mudanza.origen || '';
+  const hasta = mudanza.hasta || mudanza.destino || '';
+  try {
+    await enviarWhatsAppTexto(
+      mudanza.clienteWA,
+      `🚚 ¡Tu ${mudanza.tipo || 'mudanza'} arrancó! ${cot.mudanceroNombre || 'El mudancero'} ya está en marcha.\n` +
+      `${desde} → ${hasta}\n` +
+      `Cualquier cosa, escribime por acá. ¡Que salga todo bien! 🙌`
+    );
+  } catch (e) { console.warn('avisarMudanzaIniciada:', e.message); }
+}
+
+// avisarSaldoPendiente: al completarse la mudanza, le avisa al cliente que pague
+// el SALDO (50% restante) con el link de MP y/o los datos de transferencia.
+async function avisarSaldoPendiente(mudanza, saldo, linkMP, transferencia) {
+  if (!mudanza || mudanza.canal !== 'whatsapp' || !mudanza.clienteWA) return;
+  const montoFmt = '$' + Number(saldo || 0).toLocaleString('es-AR');
+  let msg =
+    `✅ ¡Tu ${mudanza.tipo || 'mudanza'} se completó! 🎉\n` +
+    `Queda el saldo final (50%): ${montoFmt}.\n`;
+  if (linkMP) msg += `\n💳 Mercado Pago:\n${linkMP}\n`;
+  if (transferencia && (transferencia.cbu || transferencia.alias)) {
+    msg += `\n🏦 O por transferencia:\n` +
+      (transferencia.alias ? `Alias: ${transferencia.alias}\n` : '') +
+      (transferencia.cbu ? `CBU: ${transferencia.cbu}\n` : '') +
+      (transferencia.titular ? `Titular: ${transferencia.titular}\n` : '');
+  }
+  msg += `\n¡Gracias por elegir MudateYa! 🙌`;
+  try { await enviarWhatsAppTexto(mudanza.clienteWA, msg); }
+  catch (e) { console.warn('avisarSaldoPendiente:', e.message); }
+}
+
+module.exports = { enviarWhatsApp, enviarWhatsAppTexto, avisarSenaConfirmada, avisarMudanzaIniciada, avisarSaldoPendiente };
