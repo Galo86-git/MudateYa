@@ -665,10 +665,9 @@ tr:hover td{background:#F8FAFC}
             <option value="estado">Estado</option>
           </select>
           <button class="btn-sm" onclick="exportarExcel()" style="background:#22C36A;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⬇ Exportar Excel</button>
-          <button class="btn-sm" onclick="recordarDniFaltante()" title="Manda un mail a los mudanceros que subieron una sola foto del DNI" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">🪪 Recordar DNI faltante</button>
-          <button class="btn-sm" onclick="recordarCobroFaltante()" title="Manda un mail a los mudanceros que no cargaron su forma de cobro (CBU/Alias o Mercado Pago)" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">💸 Recordar cobro faltante</button>
-          <button class="btn-sm" onclick="gestionarPlantillas()" title="Actualiza las plantillas de WhatsApp a la voz de Emi y crea las nuevas (las manda a revisión de Meta)" style="background:#7C3AED;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📤 Plantillas WhatsApp (Emi)</button>
-          <button class="btn-sm" onclick="generarNotaBlog()" title="Genera y publica una nota de blog SEO ahora (IA con datos reales + revisión automática). Normalmente corre solo 1 vez al mes." style="background:#0EA5E9;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📝 Generar nota de blog</button>
+          <!-- Botones de recordatorios/plantillas/blog removidos: ahora corren en automático por cron.
+               DNI faltante → cron martes · Cobro faltante → cron viernes · Plantillas → cron-plantillas 3x/día
+               · Nota de blog → cron-blog semanal. -->
         </div>
         <div class="table-card">
           <div id="mudancerosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>

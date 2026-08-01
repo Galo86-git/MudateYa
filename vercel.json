@@ -446,6 +446,14 @@
     {
       "path": "/api/cron-blog",
       "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/recordar-dni",
+      "schedule": "0 13 * * 2"
+    },
+    {
+      "path": "/api/recordar-cobro",
+      "schedule": "0 13 * * 5"
     }
   ]
 }

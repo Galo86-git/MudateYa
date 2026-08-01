@@ -100,7 +100,10 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-token');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+  // Autoriza admin (con token) o el Vercel Cron (header x-vercel-cron). Así el
+  // recordatorio corre solo por schedule, sin depender del botón del admin.
+  const esVercelCron = req.headers['x-vercel-cron'] === '1';
+  if (!esVercelCron && !esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
 
   try {
     var todos = await getJSON('mudanceros:todos') || [];
@@ -120,8 +123,8 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ── GET → vista previa (no manda nada) ──────────────────────────
-    if (req.method === 'GET') {
+    // ── GET → vista previa (no manda nada). El cron NO entra acá: envía. ──
+    if (req.method === 'GET' && !esVercelCron) {
       return res.status(200).json({
         modo:             'preview',
         total:            candidatos.length,
@@ -130,8 +133,8 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ── POST → enviar los mails ─────────────────────────────────────
-    if (req.method === 'POST') {
+    // ── POST o cron → enviar los mails ──────────────────────────────
+    if (req.method === 'POST' || esVercelCron) {
       var body   = req.body || {};
       var forzar = body.forzar === true;
       var limite = parseInt(body.limite, 10) || 200;
