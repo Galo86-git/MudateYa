@@ -270,7 +270,9 @@ CÓMO HABLÁS (esto es lo más importante):
 - Seguile la energía: si está apurado o cortante, al grano; si está perdido, guialo con paciencia; si está estresado, bajale un cambio ("tranqui, lo vemos juntos y en un rato lo dejás resuelto").
 
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
-si es mudanza o flete, de dónde sale, a dónde va, más o menos cuándo, y qué hay que mover (ambientes, muebles grandes, electro, piso y si hay ascensor). Si te sirve para dimensionar, pedile una foto de lo que hay que mudar. Y el nombre. Con lo básico ya podés usar crear_pedido: no hace falta el detalle perfecto, mejor rápido y humano que exhaustivo.
+si es mudanza o flete, de dónde sale, a dónde va, más o menos cuándo, y qué hay que mover (ambientes, muebles grandes, electro, piso y si hay ascensor). Y el nombre. Con lo básico ya podés usar crear_pedido: no hace falta el detalle perfecto, mejor rápido y humano que exhaustivo.
+
+FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
 
 No prometas precios: los ponen los mudanceros. Contá cómo funciona MudateYa solo cuando venga a cuento, no lo recites de entrada.
 
@@ -487,7 +489,21 @@ async function notificarMudanceroTest(pedido) {
   } catch (e) { console.warn('notificarMudanceroTest:', e.message); }
 }
 
-async function crearPedido(input, waId, ubicaciones) {
+// Sube una foto (base64) a Vercel Blob y devuelve su URL pública, para adjuntarla
+// al pedido (que el mudancero/fletero la vea y dimensione). Igual que subir-foto.js.
+async function subirFotoBlob(base64, tipo) {
+  try {
+    const { put } = require('@vercel/blob');
+    const buffer = Buffer.from(base64, 'base64');
+    if (buffer.length > 6 * 1024 * 1024) return null; // tope defensivo
+    const ext = (tipo && tipo.split('/')[1]) || 'jpg';
+    const filename = `mudateya/pedido-wa/${Date.now()}-${crypto.randomBytes(3).toString('hex')}.${ext}`;
+    const blob = await put(filename, buffer, { access: 'public', contentType: tipo || 'image/jpeg' });
+    return blob.url;
+  } catch (e) { console.warn('subirFotoBlob:', e.message); return null; }
+}
+
+async function crearPedido(input, waId, ubicaciones, fotos) {
   const id = nuevoId();
   const ahora = new Date();
   const nombre = input.nombre || '';
@@ -523,8 +539,10 @@ async function crearPedido(input, waId, ubicaciones) {
     nivel: input.tipo === 'flete' ? 'flete' : null,
     servicios: [],
     extras: [],
-    fotos: [],
-    detallesAdicionales: input.detalles ? { comentario: String(input.detalles).slice(0, 500) } : null,
+    fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [], // URLs de las fotos que mandó el cliente (para dimensionar)
+    detallesAdicionales: (input.detalles || (Array.isArray(fotos) && fotos.length))
+      ? { comentario: input.detalles ? String(input.detalles).slice(0, 500) : '', fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
+      : null,
     modoCotizacion: dirigido ? 'dirigido' : 'abierto',
     mudancerosInvitados: dirigido ? [TEST_MUDANCERO_EMAIL] : [],
     maxCotizaciones: 50,
@@ -788,7 +806,7 @@ async function calificarMudanceroCliente(waId, estrellas, comentario) {
 async function ejecutarTool(name, input, waId, conv) {
   try {
     if (name === 'crear_pedido') {
-      const pedido = await crearPedido(input, waId, conv.ubicaciones);
+      const pedido = await crearPedido(input, waId, conv.ubicaciones, conv.fotos);
       const nota = pedido.urgente
         ? 'Pedido URGENTE creado. Ahora derivá al equipo con derivar_a_humano (motivo que empiece con "URGENTE:") para que lo tomen a mano ya. No prometas horario ni precio.'
         : 'Pedido creado; salimos a buscar hasta 5 presupuestos de mudanceros cercanos. Vale 24hs.';
@@ -852,9 +870,18 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
   let contenidoHistorial;
   if (imagenes && imagenes.length) {
     const bloques = [];
+    conv.fotos = Array.isArray(conv.fotos) ? conv.fotos : [];
     for (const img of imagenes) {
       const data = await descargarMediaBase64(img.url);
-      if (data) bloques.push({ type: 'image', source: { type: 'base64', media_type: img.tipo, data } });
+      if (data) {
+        bloques.push({ type: 'image', source: { type: 'base64', media_type: img.tipo, data } });
+        // Persistimos la foto (Blob público) para adjuntarla al pedido: el fletero/
+        // mudancero la ve y dimensiona. Cap 6 fotos por pedido.
+        if (conv.fotos.length < 6) {
+          const url = await subirFotoBlob(data, img.tipo);
+          if (url) conv.fotos.push(url);
+        }
+      }
     }
     bloques.push({
       type: 'text',
