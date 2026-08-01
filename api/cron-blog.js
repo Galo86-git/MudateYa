@@ -142,6 +142,26 @@ async function revisar(nota, datos) {
   return parseJSON(txt);
 }
 
+// Cuando la lista fija de TEMAS se agota, Claude propone un tema NUEVO para no
+// frenarse nunca. Devuelve {slug, tag, titulo} o null si no pudo.
+async function proponerTemaNuevo(usados) {
+  try {
+    const previos = Array.from(usados).join(', ') || '(ninguno)';
+    const txt = await claude(
+      'Proponés temas de blog SEO para MudateYa (marketplace argentino de mudanzas y fletes). Español rioplatense.',
+      'Proponé UN tema NUEVO de blog sobre mudanzas o fletes en Argentina, útil y con búsqueda en Google, que NO se solape con estos slugs ya usados: ' + previos + '.\n' +
+      'Devolvé SOLO un JSON: {"titulo":"...", "slug":"kebab-sin-acentos", "tag":"1-2 palabras"}',
+      400
+    );
+    const t = parseJSON(txt);
+    if (!t || !t.titulo || !t.slug) return null;
+    t.slug = String(t.slug).normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+    if (!t.slug || usados.has(t.slug)) return null;
+    return { slug: t.slug, tag: t.tag || 'Guía', titulo: t.titulo };
+  } catch (e) { return null; }
+}
+
 async function avisarAdmin(asunto, html) {
   if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) return;
   try {
@@ -172,8 +192,9 @@ module.exports = async function handler(req, res) {
 
   try {
     const usados = new Set((await getJSON('blog:generados')) || []);
-    const tema = TEMAS.find((t) => !usados.has(t.slug));
-    if (!tema) return res.status(200).json({ ok: true, info: 'todos los temas ya fueron generados' });
+    let tema = TEMAS.find((t) => !usados.has(t.slug));
+    if (!tema) tema = await proponerTemaNuevo(usados);  // cola fija agotada → tema fresco (nunca se frena)
+    if (!tema) return res.status(200).json({ ok: true, info: 'sin tema disponible esta vez' });
 
     const datos = await datosReales();
     const nota = await generar(tema, datos);
