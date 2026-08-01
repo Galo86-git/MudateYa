@@ -619,7 +619,7 @@ async function derivarHumano(waId, motivo, conv) {
   return { ok: true, mensaje: 'Avisé al equipo. Alguien te va a contactar a la brevedad.' };
 }
 
-// Datos bancarios para la seña por transferencia (mismos env que transferencias.js).
+// Datos bancarios FIJOS (fallback si el endpoint de transferencias no responde).
 function datosTransferencia() {
   return {
     cbu: process.env.TRANSFER_CBU || '',
@@ -627,6 +627,29 @@ function datosTransferencia() {
     titular: process.env.TRANSFER_TITULAR || 'MudateYa',
     cuit: process.env.TRANSFER_CUIT || '',
   };
+}
+
+// Datos de transferencia para la seña, reusando /api/transferencias?action=datos.
+// Con Talo configurado devuelve un CVU/alias ÚNICO para esta operación (se
+// concilia solo por webhook). Si Talo no está, ese endpoint cae al CBU fijo.
+async function obtenerDatosTransferencia(mudanzaId) {
+  try {
+    const url = `${SITE_URL}/api/transferencias?action=datos&mudanzaId=${encodeURIComponent(mudanzaId)}&tipoPago=anticipo`;
+    const r = await fetch(url);
+    if (!r.ok) { console.warn('transferencias?datos', r.status); return null; }
+    const d = await r.json();
+    if (!d || !d.ok || !d.banco) return null;
+    return {
+      cbu: d.banco.cbu || '',
+      alias: d.banco.alias || '',
+      titular: d.banco.titular || 'MudateYa',
+      cuit: d.banco.cuit || '',
+      monto: d.monto,
+      expira: d.expira || '',
+      referencia: d.referencia || '',
+      automatico: !!d.automatico, // true = CVU único de Talo (confirmación automática)
+    };
+  } catch (e) { console.warn('obtenerDatosTransferencia:', e.message); return null; }
 }
 
 // Genera el link de pago de Mercado Pago reusando el endpoint crear-preferencia.
@@ -692,7 +715,12 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
     mudanzaId: pedido.id,
     cotizacionId: cot.id,
   });
-  const transf = datosTransferencia();
+  // Transferencia: con Talo, CVU/alias ÚNICO para esta seña (se concilia solo).
+  let transf = await obtenerDatosTransferencia(pedido.id);
+  if (!transf) {
+    const b = datosTransferencia();
+    if (b.cbu || b.alias) transf = { ...b, automatico: false };
+  }
 
   return {
     ok: true,
@@ -700,8 +728,8 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
     precio_total: cot.precio,
     sena,
     link_pago_mp: link,
-    transferencia: (transf.cbu || transf.alias) ? transf : null,
-    nota: 'Cotización aceptada. Mostrale al cliente: el monto de la SEÑA (50%), el link de Mercado Pago (si vino) y los datos de transferencia (si vinieron). Aclarale que el 50% restante se paga al completar la mudanza y que la seña queda protegida. Si no vino ni link ni transferencia, decile que en un momento le pasás cómo pagar y derivá.',
+    transferencia: transf,
+    nota: 'Cotización aceptada. Pasale al cliente el monto de la SEÑA (50%), el link de Mercado Pago (si vino) y los datos de transferencia (CBU/alias, si vinieron). Si transferencia.automatico es true, ese alias/CVU es ÚNICO para esta seña y se acredita solo cuando transfiere (no lo compartas para otra cosa). Aclarale que el 50% restante se paga al completar la mudanza y que la seña queda protegida. Si no vino ni link ni transferencia, decile que en un momento le pasás cómo pagar y usá derivar_a_humano.',
   };
 }
 
