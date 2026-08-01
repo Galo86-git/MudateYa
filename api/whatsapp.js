@@ -434,6 +434,28 @@ function parseAmbientes(detalles) {
   return m ? m[1] : '';
 }
 
+// MODO PRUEBA: avisar por mail SOLO al mudancero de test (nunca a reales).
+// Solo corre si TEST_MUDANCERO_EMAIL está seteada. Fail-soft.
+async function notificarMudanceroTest(pedido) {
+  if (!TEST_MUDANCERO_EMAIL || !process.env.RESEND_API_KEY) return;
+  try {
+    const { Resend } = require('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: 'MudateYa <noreply@mudateya.ar>',
+      reply_to: 'hola@mudateya.ar',
+      to: TEST_MUDANCERO_EMAIL,
+      subject: `🧪 Pedido para cotizar — ${pedido.origen} → ${pedido.destino}`,
+      html:
+        `<p>Entró un pedido para cotizar (modo prueba).</p>` +
+        `<p><b>${escapeXml(pedido.tipo)}</b>: ${escapeXml(pedido.origen)} → ${escapeXml(pedido.destino)}<br>` +
+        `Fecha: ${escapeXml(pedido.fecha || '—')}<br>` +
+        `Detalles: ${escapeXml(pedido.detalles || '—')}</p>` +
+        `<p><a href="https://mudateya.ar/mi-cuenta">Entrá a tu cuenta para cotizar →</a></p>`,
+    });
+  } catch (e) { console.warn('notificarMudanceroTest:', e.message); }
+}
+
 async function crearPedido(input, waId, ubicaciones) {
   const id = nuevoId();
   const ahora = new Date();
@@ -501,9 +523,10 @@ async function crearPedido(input, waId, ubicaciones) {
     await setJSON('mudanzas:todos', todos);
   } catch (e) { console.warn('índice marketplace:', e.message); }
 
-  // MODO PRUEBA: NO se notifica a ningún mudancero (ni WhatsApp ni email). El
-  // pedido queda visible en la cuenta web (dirigido a TEST_MUDANCERO_EMAIL si está).
+  // Barrido a mudanceros reales: sigue APAGADO (no manda nada a nadie real).
   await iniciarBarridoMudanceros(pedido);
+  // Solo en modo prueba: aviso por mail al mudancero de test (mudatest).
+  await notificarMudanceroTest(pedido);
   return pedido;
 }
 
