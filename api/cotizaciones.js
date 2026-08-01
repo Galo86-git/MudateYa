@@ -3770,6 +3770,9 @@ async function notificarMudanceros(mudanza) {
 // Se exporta para reusarla desde el bot de WhatsApp (whatsapp.js): mismo email al
 // mudancero + PDF de detalles del pedido adjunto, respetando el modo 'dirigido'.
 module.exports.notificarMudanceros = notificarMudanceros;
+// El bot también usa el generador de PDF de detalles directamente (para su aviso
+// de prueba a mudatest, que no exige que el perfil esté 'aprobado').
+module.exports.generarPDFDetallesBase64 = generarPDFDetallesBase64;
 
 // ════════════════════════════════════════════════════════════════════
 // Mail de confirmación al cliente cuando publica un pedido nuevo.

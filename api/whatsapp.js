@@ -492,7 +492,14 @@ async function notificarMudanceroTest(pedido) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const fotosHtml = (Array.isArray(pedido.fotos) ? pedido.fotos.slice(0, 6) : [])
         .map((u) => `<img src="${u}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;margin:4px">`).join('');
-      await resend.emails.send({
+      // PDF de detalles del pedido — MISMA función que la web (Detalles-{id}.pdf).
+      // Si el pedido no tiene detalles suficientes puede devolver null: va sin adjunto.
+      let pdfBase64 = null;
+      try {
+        const { generarPDFDetallesBase64 } = require('./cotizaciones');
+        if (typeof generarPDFDetallesBase64 === 'function') pdfBase64 = await generarPDFDetallesBase64(pedido);
+      } catch (e) { console.warn('PDF detalles (bot):', e.message); }
+      const params = {
         from: 'MudateYa <noreply@mudateya.ar>',
         reply_to: 'hola@mudateya.ar',
         to: TEST_MUDANCERO_EMAIL,
@@ -503,8 +510,13 @@ async function notificarMudanceroTest(pedido) {
           `Fecha: ${escapeXml(pedido.fecha || '—')}<br>` +
           `Detalles: ${escapeXml(pedido.detalles || '—')}</p>` +
           (fotosHtml ? `<p>${fotosHtml}</p>` : '') +
+          (pdfBase64 ? `<p>📎 Detalles completos en el PDF adjunto.</p>` : '') +
           `<p><a href="https://mudateya.ar/mi-cuenta">Entrá a tu cuenta para cotizar →</a></p>`,
-      });
+      };
+      if (pdfBase64) {
+        params.attachments = [{ filename: `Detalles-${pedido.id || 'pedido'}.pdf`, content: pdfBase64 }];
+      }
+      await resend.emails.send(params);
     } catch (e) { console.warn('notificarMudanceroTest email:', e.message); }
   }
 
@@ -635,21 +647,11 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
 
   // Barrido a mudanceros reales: sigue APAGADO (no manda nada a nadie real).
   await iniciarBarridoMudanceros(pedido);
-  // Aviso al mudancero con el PDF de detalles del pedido — MISMA función que la web
-  // (mismo mail + PDF adjunto "Detalles-{id}.pdf" + push). notificarMudanceros respeta
-  // el modo 'dirigido', así que en prueba solo le llega al mudancero de test.
-  // Guardado a modo prueba a propósito: en producción avisaría a TODOS los mudanceros
-  // (barrido real) — se prende sacando este guard cuando quieras ir a vivo.
-  if (TEST_MUDANCERO_EMAIL) {
-    try {
-      const { notificarMudanceros } = require('./cotizaciones');
-      if (typeof notificarMudanceros === 'function') await notificarMudanceros(pedido);
-      else await notificarMudanceroTest(pedido); // fallback al aviso simple
-    } catch (e) {
-      console.warn('notificarMudanceros (bot):', e.message);
-      try { await notificarMudanceroTest(pedido); } catch (_) {}
-    }
-  }
+  // Aviso al mudancero de test (mail con PDF adjunto + WhatsApp con fotos). Sale
+  // directo a mudatest, SIN exigir que el perfil esté 'aprobado'. El barrido real a
+  // TODOS los mudanceros (con notificarMudanceros de la web, que sí exige aprobado)
+  // se prende aparte cuando vayas a vivo.
+  await notificarMudanceroTest(pedido);
   return pedido;
 }
 
