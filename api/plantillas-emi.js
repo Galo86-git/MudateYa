@@ -74,6 +74,12 @@ const CREAR = [
   { name: 'transferencia_diferencia', category: 'UTILITY',
     types: { 'twilio/text': { body: 'Hola {{1}}, recibimos tu transferencia para {{2}}, pero fue por un monto menor al indicado (faltan ${{3}}).\n\nTransferí la diferencia al mismo alias/CVU, o respondé este mensaje y lo resolvemos juntos. 🙏' } },
     variables: { '1': 'Juan', '2': 'la seña', '3': '5.000' } },
+  { name: 'recordatorio_pago_pendiente', category: 'UTILITY',
+    types: { 'twilio/call-to-action': {
+      body: '¡Hola {{1}}! Reservaste {{2}} con {{3}}, pero todavía queda pendiente el pago de {{4}}.\n\nPagalo desde el botón para confirmar. ¡Te esperamos!',
+      actions: [{ type: 'URL', title: 'Pagar ahora', url: 'https://mudateya.ar/pagar/{{5}}' }],
+    } },
+    variables: { '1': 'Juan', '2': 'tu mudanza', '3': 'Cristian', '4': 'la seña ($25.000)', '5': 'MYA-123' } },
 ];
 
 module.exports = async function handler(req, res) {

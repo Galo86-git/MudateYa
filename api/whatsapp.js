@@ -329,6 +329,7 @@ HERRAMIENTAS QUE TENÉS:
 - consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio).
 - aceptar_cotizacion: cuando el cliente ELIGE una cotización. Devuelve la SEÑA (50%), el link de Mercado Pago y los datos de transferencia: pasáselos y explicale que el 50% restante lo paga al terminar y que la seña queda protegida. Si hay varias cotizaciones, confirmá cuál elige antes de aceptar.
 - cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
+- responder_ajuste: si el mudancero propuso un ajuste de precio y el cliente acepta o rechaza (decision "aceptar" o "rechazar"). Aclarale que si rechaza se cancela la mudanza y se le devuelve la seña.
 - calificar_mudancero: cuando el cliente puntúa al mudancero tras una mudanza completada (ej: "5 estrellas", "le pongo un 4, muy bueno"). Pasá las estrellas (1-5) y el comentario si lo hay. Agradecé y contale que suma a la reputación del mudancero.
 - derivar_a_humano: si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar.
 
@@ -421,6 +422,16 @@ const tools = [
         pedidoId: { type: 'string', description: 'ID del pedido; si no lo sabés, se usa el más reciente con cotizaciones.' },
       },
       required: [],
+    },
+  },
+  {
+    name: 'responder_ajuste',
+    description:
+      'El cliente responde a un AJUSTE DE PRECIO que propuso el mudancero: lo acepta o lo rechaza. Si rechaza, la mudanza se cancela y se le devuelve la seña. Usalo cuando el cliente diga que acepta o rechaza el nuevo precio.',
+    input_schema: {
+      type: 'object',
+      properties: { decision: { type: 'string', enum: ['aceptar', 'rechazar'] } },
+      required: ['decision'],
     },
   },
   {
@@ -993,6 +1004,33 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
   };
 }
 
+// El cliente acepta/rechaza el ajuste de precio propuesto por el mudancero.
+// Reusa aceptar-ajuste / rechazar-ajuste del web.
+async function responderAjusteCliente(waId, decision) {
+  const dec = decision === 'rechazar' ? 'rechazar' : (decision === 'aceptar' ? 'aceptar' : null);
+  if (!dec) return { ok: false, mensaje: 'Decime si aceptás o rechazás el nuevo precio.' };
+  const pedidos = await pedidosDelCliente(waId);
+  const m = pedidos.slice().reverse().find((p) => p.ajustePrecio && p.ajustePrecio.estado === 'pendiente_aprobacion');
+  if (!m) return { ok: false, mensaje: 'No tenés ningún ajuste de precio pendiente para responder.' };
+  try {
+    const action = dec === 'aceptar' ? 'aceptar-ajuste' : 'rechazar-ajuste';
+    const r = await fetch(`${SITE_URL}/api/cotizaciones?action=${action}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: m.id, clienteEmail: m.clienteEmail }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false) return { ok: false, mensaje: (d && d.error) || 'No pude registrar tu respuesta.' };
+    if (dec === 'aceptar') {
+      const nuevo = m.ajustePrecio.montoNuevo || 0;
+      return { ok: true, mensaje: `¡Listo! Aceptaste el nuevo precio ($${Number(nuevo).toLocaleString('es-AR')}). El mudancero sigue adelante con tu ${m.tipo || 'mudanza'}.` };
+    }
+    return { ok: true, mensaje: 'Listo, rechazaste el ajuste. La mudanza se cancela y te devolvemos la seña. Lamentamos que no haya salido.' };
+  } catch (e) {
+    console.warn('responderAjusteCliente:', e.message);
+    return { ok: false, mensaje: 'Tuve un problema registrando tu respuesta, probá de nuevo.' };
+  }
+}
+
 // El cliente califica al mudancero tras una mudanza completada+pagada. Reusa el
 // endpoint 'calificar', que guarda la reseña en el perfil del mudancero y
 // recalcula su reputación (promedioEstrellas / calificacion / nroResenas).
@@ -1063,6 +1101,9 @@ async function ejecutarTool(name, input, waId, conv) {
     }
     if (name === 'aceptar_cotizacion') {
       return JSON.stringify(await aceptarCotizacionCliente(waId, input && input.mudancero, input && input.pedidoId));
+    }
+    if (name === 'responder_ajuste') {
+      return JSON.stringify(await responderAjusteCliente(waId, input && input.decision));
     }
     if (name === 'calificar_mudancero') {
       return JSON.stringify(await calificarMudanceroCliente(waId, input && input.estrellas, input && input.comentario));

@@ -4897,6 +4897,22 @@ async function notificarClienteSaldoPendiente(mudanza) {
 
 // Email al cliente cuando el mudancero propone un nuevo precio (inicial o recordatorio)
 async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {
+  // Pedido por WhatsApp: avisar por WhatsApp (el cliente responde "acepto"/"rechazo").
+  if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+    try {
+      const _cot = mudanza.cotizacionAceptada || {};
+      const _aj = mudanza.ajustePrecio || {};
+      const _nuevo = '$' + (_aj.montoNuevo || 0).toLocaleString('es-AR');
+      const { enviarWhatsAppTexto } = require('./_whatsapp');
+      await enviarWhatsAppTexto(
+        mudanza.clienteWA,
+        `${esRecordatorio ? '⏰ Recordatorio: ' : '⚠️ '}${_cot.mudanceroNombre || 'Tu mudancero'} propuso ajustar el precio de tu ${mudanza.tipo || 'mudanza'} a ${_nuevo}.\n` +
+        (_aj.motivo ? `Motivo: ${_aj.motivo}\n` : '') +
+        `Respondeme "acepto" o "rechazo". Si rechazás, se cancela y te devolvemos la seña.`
+      );
+    } catch (e) { console.warn('ajuste WhatsApp:', e.message); }
+    return;
+  }
   if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const cot = mudanza.cotizacionAceptada || {};

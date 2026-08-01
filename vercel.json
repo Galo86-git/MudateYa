@@ -406,6 +406,14 @@
     {
       "path": "/api/cron-plantillas",
       "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron-recordar-pago",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron-recordar-pago",
+      "schedule": "0 20 * * *"
     }
   ]
 }
