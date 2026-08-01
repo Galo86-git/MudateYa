@@ -74,6 +74,48 @@ async function descargarMediaBase64(url) {
 // si está seteada OPENAI_API_KEY (Vercel). Si no, devuelve null y el bot le pide
 // al cliente que escriba o mande una foto.
 // ------------------------------------------------------------------
+function extAudio(tipo) {
+  const t = (tipo || '').toLowerCase();
+  if (t.includes('ogg') || t.includes('opus')) return 'ogg';
+  if (t.includes('mpeg') || t.includes('mp3')) return 'mp3';
+  if (t.includes('mp4') || t.includes('m4a') || t.includes('aac')) return 'm4a';
+  if (t.includes('wav')) return 'wav';
+  if (t.includes('webm')) return 'webm';
+  return 'ogg';
+}
+
+// Diagnóstico temporal: corre el circuito de transcripción y devuelve texto
+// legible con lo que pasó (descarga + respuesta de OpenAI). Para debug puntual.
+async function diagTranscribir(url, tipo) {
+  const out = [];
+  const apiKey = process.env.OPENAI_API_KEY;
+  out.push('OPENAI_API_KEY: ' + (apiKey ? ('presente, largo ' + apiKey.length) : 'AUSENTE'));
+  out.push('TWILIO_ACCOUNT_SID: ' + (process.env.TWILIO_ACCOUNT_SID ? 'presente' : 'AUSENTE'));
+  if (!url) { out.push('Sin MediaUrl0'); return out.join('\n'); }
+  try {
+    const auth = 'Basic ' + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64');
+    const r = await fetch(url, { headers: { Authorization: auth } });
+    out.push('Descarga: HTTP ' + r.status + ' | ' + (r.headers.get('content-type') || ''));
+    if (!r.ok) return out.join('\n');
+    const buf = Buffer.from(await r.arrayBuffer());
+    out.push('Bytes: ' + buf.length + ' | ext: ' + extAudio(tipo));
+    if (!apiKey) return out.join('\n');
+    const form = new FormData();
+    form.append('file', new Blob([buf], { type: tipo || 'audio/ogg' }), `audio.${extAudio(tipo)}`);
+    form.append('model', 'whisper-1');
+    form.append('language', 'es');
+    const or = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form,
+    });
+    const otext = await or.text();
+    out.push('OpenAI: HTTP ' + or.status);
+    out.push('OpenAI body: ' + otext.slice(0, 500));
+  } catch (e) {
+    out.push('EXCEPCION: ' + (e && e.message ? e.message : String(e)));
+  }
+  return out.join('\n');
+}
+
 async function transcribirAudio(url, tipo) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null; // sin servicio de transcripción configurado
@@ -86,7 +128,7 @@ async function transcribirAudio(url, tipo) {
     const buf = Buffer.from(await r.arrayBuffer());
     if (buf.length > 20 * 1024 * 1024) { console.warn('Audio > 20MB, se ignora'); return null; }
 
-    const ext = (tipo || '').includes('mpeg') ? 'mp3' : (tipo || '').includes('mp4') ? 'm4a' : 'ogg';
+    const ext = extAudio(tipo);
     const form = new FormData();
     form.append('file', new Blob([buf], { type: tipo || 'audio/ogg' }), `audio.${ext}`);
     form.append('model', 'whisper-1');
@@ -477,6 +519,13 @@ module.exports = async function handler(req, res) {
     const from = body.From || ''; // ej: "whatsapp:+5491179038453"
     const texto = (body.Body || '').trim();
     const waId = from.replace('whatsapp:', '');
+
+    // Diagnóstico temporal de transcripción (protegido por la firma de Twilio).
+    if (texto === 'DIAGSTT') {
+      const salida = await diagTranscribir(body.MediaUrl0, body.MediaContentType0 || 'audio/ogg');
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return res.status(200).send(salida);
+    }
 
     // Anti-abuso: tope de 12 mensajes por número por minuto.
     if (waId && (await superaLimite(waId, 12))) {
