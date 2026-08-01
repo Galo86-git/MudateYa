@@ -290,6 +290,10 @@
       "destination": "/flete-en-el-dia.html"
     },
     {
+      "source": "/pagar/:token",
+      "destination": "/api/pagar?token=:token"
+    },
+    {
       "source": "/membresia",
       "destination": "/membresia.html"
     },
