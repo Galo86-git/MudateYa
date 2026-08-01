@@ -568,6 +568,10 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
   //     mudanzas:activas → el mudancero lo ve y cotiza desde su cuenta (por-zona).
   // Con TEST_MUDANCERO_EMAIL el pedido va en modo "dirigido" solo a ese mudancero,
   // así ningún mudancero real lo ve mientras se prueba.
+  // Ventana para cotizar: si es URGENTE, corta (3hs, lo necesitan ya); si no, 24hs hábiles.
+  const expiraISO = input.urgente
+    ? new Date(ahora.getTime() + 3 * 60 * 60 * 1000).toISOString()
+    : vencimientoHabilISO(24);
   const dirigido = !!TEST_MUDANCERO_EMAIL;
   const pedido = {
     id,
@@ -581,7 +585,7 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     ubicaciones: Array.isArray(ubicaciones) ? ubicaciones : [], // coords compartidas (geo-match)
     canal: 'whatsapp',
     urgente: !!input.urgente, // mudanza urgente → la toma el equipo a mano
-    vence: new Date(ahora.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    vence: expiraISO,
     // — vista web (marketplace / cotización del mudancero) —
     clienteNombre: nombre,
     clienteWA: waId,
@@ -604,7 +608,7 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     mudancerosInvitados: dirigido ? [TEST_MUDANCERO_EMAIL] : [],
     maxCotizaciones: 50,
     fechaPublicacion: ahora.toISOString(),
-    expira: vencimientoHabilISO(24),
+    expira: expiraISO,
     // — común —
     estado: 'buscando', // estado del marketplace web (lo que muestra por-zona)
     cotizaciones: [],
@@ -880,6 +884,9 @@ async function ejecutarTool(name, input, waId, conv) {
   try {
     if (name === 'crear_pedido') {
       const pedido = await crearPedido(input, waId, conv.ubicaciones, conv.fotos);
+      // Limpiar fotos/ubicaciones para que el PRÓXIMO pedido no arrastre las de este.
+      conv.fotos = [];
+      conv.ubicaciones = [];
       const nota = pedido.urgente
         ? 'Pedido URGENTE creado. Ahora derivá al equipo con derivar_a_humano (motivo que empiece con "URGENTE:") para que lo tomen a mano ya. No prometas horario ni precio.'
         : 'Pedido creado; salimos a buscar hasta 5 presupuestos de mudanceros cercanos. Vale 24hs.';
