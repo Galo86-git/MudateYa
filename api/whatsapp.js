@@ -268,6 +268,19 @@ CÓMO TRABAJÁS:
 4. Explicá el modelo cuando venga al caso: MudateYa le consigue hasta 5 presupuestos de mudanceros cercanos, el pedido vale 24hs, y el pago es 50% al reservar + 50% al completar.
 5. No prometas precios exactos: los ponen los mudanceros.
 
+QUÉ OFRECE MUDATEYA (para responder dudas, sin inventar):
+- Mudanzas y fletes para particulares. Tres niveles: Esencial (solo traslado), Integral (embalaje + traslado) y Llave en Mano (nos encargamos de todo).
+- Cómo funciona: publicás el pedido y recibís hasta 5 presupuestos de mudanceros verificados de tu zona. Elegís, y el pago va protegido por Mercado Pago hasta que la mudanza esté hecha.
+- Cada presupuesto tiene una validez de 7 días. El pago es 50% de seña al reservar + 50% al completar.
+- Zonas: CABA y Gran Buenos Aires (interior con recargo/según disponibilidad).
+- NUNCA inventes precios, montos ni plazos exactos: el precio siempre sale de la cotización del mudancero. Tampoco confirmes condiciones legales o de seguro; para eso derivá a una persona.
+
+HERRAMIENTAS QUE TENÉS:
+- crear_pedido: cuando ya juntaste los datos del pedido.
+- consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos.
+- cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
+- derivar_a_humano: si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar.
+
 REGLAS: no pidas datos sensibles (tarjetas, documentos). Si el mensaje no tiene que ver con esto, respondé amable y reconducí.`;
 
 // System prompt del asistente para MUDANCEROS (distinto del de clientes).
@@ -305,6 +318,36 @@ const tools = [
         nombre: { type: 'string' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
+    },
+  },
+  {
+    name: 'consultar_estado_pedido',
+    description:
+      'Consultá el estado de los pedidos del cliente. Usala cuando pregunta cómo va su mudanza/flete, si llegaron presupuestos, o por un pedido anterior.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'cancelar_pedido',
+    description:
+      'Cancelá el pedido activo del cliente. IMPORTANTE: confirmá con el cliente ANTES de llamar a esta herramienta.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'ID del pedido a cancelar. Si no lo sabés, dejalo vacío y se cancela el más reciente activo.' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'derivar_a_humano',
+    description:
+      'Derivá la conversación a una persona del equipo cuando el cliente lo pide, está frustrado/enojado, o hay algo que no podés resolver. Avisa al equipo.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        motivo: { type: 'string', description: 'Motivo breve de la derivación' },
+      },
+      required: ['motivo'],
     },
   },
 ];
@@ -355,8 +398,103 @@ async function crearPedido(input, waId, ubicaciones) {
     vence: new Date(ahora.getTime() + 24 * 60 * 60 * 1000).toISOString(),
   };
   await setJSON(`mudanza:${id}`, pedido, 60 * 60 * 24 * 3);
+  // Índice de pedidos por cliente (para consultar_estado_pedido / cancelar_pedido).
+  try {
+    const ids = (await getJSON(`cliente:pedidos:${waId}`)) || [];
+    ids.push(id);
+    await setJSON(`cliente:pedidos:${waId}`, ids, 60 * 60 * 24 * 30);
+  } catch (_) {}
   await iniciarBarridoMudanceros(pedido);
   return pedido;
+}
+
+// ------------------------------------------------------------------
+// Herramientas del agente (además de crear_pedido)
+// ------------------------------------------------------------------
+async function pedidosDelCliente(waId) {
+  const ids = (await getJSON(`cliente:pedidos:${waId}`)) || [];
+  const pedidos = [];
+  for (const id of ids.slice(-5)) {
+    const p = await getJSON(`mudanza:${id}`);
+    if (p) pedidos.push(p);
+  }
+  return pedidos;
+}
+function resumenPedido(p) {
+  return {
+    id: p.id,
+    tipo: p.tipo,
+    origen: p.origen,
+    destino: p.destino,
+    fecha: p.fecha,
+    estado: p.estado,
+    cotizaciones: Array.isArray(p.cotizaciones) ? p.cotizaciones.length : 0,
+    vence: p.vence,
+  };
+}
+async function cancelarPedidoCliente(waId, id) {
+  const pedidos = await pedidosDelCliente(waId);
+  let target = id ? pedidos.find((p) => p.id === id) : null;
+  if (!target) {
+    target = pedidos.reverse().find((p) => p.estado && p.estado !== 'cancelado' && p.estado !== 'completado');
+  }
+  if (!target) return { ok: false, mensaje: 'No encontré un pedido activo para cancelar.' };
+  target.estado = 'cancelado';
+  target.canceladoEn = new Date().toISOString();
+  await setJSON(`mudanza:${target.id}`, target, 60 * 60 * 24 * 3);
+  return { ok: true, id: target.id, mensaje: 'Pedido cancelado.' };
+}
+async function derivarHumano(waId, motivo, conv) {
+  try {
+    const { Resend } = require('resend');
+    const adminMail = process.env.ADMIN_EMAIL;
+    if (process.env.RESEND_API_KEY && adminMail) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const ultimos = (conv.messages || [])
+        .slice(-6)
+        .map((m) => `${m.role}: ${typeof m.content === 'string' ? m.content : '[media]'}`)
+        .join('\n');
+      await resend.emails.send({
+        from: 'MudateYa <noreply@mudateya.ar>',
+        reply_to: 'hola@mudateya.ar',
+        to: adminMail,
+        subject: `🙋 Cliente pide atención humana — ${waId}`,
+        html:
+          `<p>El cliente <b>${escapeXml(waId)}</b> pidió hablar con una persona por WhatsApp.</p>` +
+          `<p><b>Motivo:</b> ${escapeXml(motivo || '-')}</p>` +
+          `<pre style="background:#f5f5f5;padding:10px;border-radius:8px;white-space:pre-wrap">${escapeXml(ultimos)}</pre>` +
+          `<p><a href="https://wa.me/${String(waId).replace(/\D/g, '')}">Abrir WhatsApp del cliente →</a></p>`,
+      });
+    }
+  } catch (e) {
+    console.warn('derivarHumano email:', e.message);
+  }
+  return { ok: true, mensaje: 'Avisé al equipo. Alguien te va a contactar a la brevedad.' };
+}
+
+// Ejecuta una herramienta y devuelve el resultado (string) que Claude interpreta.
+async function ejecutarTool(name, input, waId, conv) {
+  try {
+    if (name === 'crear_pedido') {
+      const pedido = await crearPedido(input, waId, conv.ubicaciones);
+      return JSON.stringify({ ok: true, id: pedido.id, tipo: pedido.tipo, estado: pedido.estado, nota: 'Pedido creado; salimos a buscar hasta 5 presupuestos de mudanceros cercanos. Vale 24hs.' });
+    }
+    if (name === 'consultar_estado_pedido') {
+      const pedidos = await pedidosDelCliente(waId);
+      if (!pedidos.length) return JSON.stringify({ pedidos: [], nota: 'El cliente no tiene pedidos cargados.' });
+      return JSON.stringify({ pedidos: pedidos.map(resumenPedido) });
+    }
+    if (name === 'cancelar_pedido') {
+      return JSON.stringify(await cancelarPedidoCliente(waId, input && input.id));
+    }
+    if (name === 'derivar_a_humano') {
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv));
+    }
+    return JSON.stringify({ error: 'herramienta desconocida' });
+  } catch (e) {
+    console.error('ejecutarTool', name, e.message);
+    return JSON.stringify({ error: 'Ocurrió un error ejecutando ' + name });
+  }
 }
 
 // Base del barrido saliente a mudanceros. INTENCIONALMENTE deshabilitado: enviar
@@ -412,14 +550,14 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
 
   // Mensajes para Claude: historial (solo texto) recortado + turno actual.
   const historial = conv.messages.slice(-20);
-  const messages = historial.concat([{ role: 'user', content: contenidoActual }]);
+  let trabajo = historial.concat([{ role: 'user', content: contenidoActual }]);
 
-  // Si quien escribe es del equipo fundador, se lo decimos al agente.
+  // Elegimos system + herramientas según sea mudancero, equipo o cliente.
   let system, toolsUsados;
   if (mudancero) {
     const nombre = (mudancero.nombre || '').split(' ')[0] || 'colega';
     system = SYSTEM_PROMPT_MUDANCERO.replace('{NOMBRE}', nombre);
-    toolsUsados = []; // el mudancero NO crea pedidos de cliente
+    toolsUsados = []; // el mudancero todavía no tiene herramientas
   } else {
     const persona = quienEscribe(waId);
     system = persona
@@ -428,23 +566,28 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
     toolsUsados = tools;
   }
 
-  const resp = await askClaude(messages, system, toolsUsados);
-
-  const toolUse = (resp.content || []).find((c) => c.type === 'tool_use' && c.name === 'crear_pedido');
-  let salida;
-  if (toolUse) {
-    const pedido = await crearPedido(toolUse.input, waId, conv.ubicaciones);
-    salida =
-      `¡Listo${pedido.cliente.nombre ? ', ' + pedido.cliente.nombre : ''}! Ya cargué tu ${pedido.tipo} 🚚\n` +
-      `Salgo a buscarte presupuestos de mudanceros cercanos. Te van a llegar acá, hasta 5, y el pedido vale por 24hs.`;
-  } else {
-    salida =
-      (resp.content || [])
-        .filter((c) => c.type === 'text')
-        .map((c) => c.text)
-        .join('\n')
-        .trim() || 'Perdón, no te entendí bien. ¿Me lo repetís?';
+  // Loop agéntico: Claude puede encadenar herramientas hasta dar la respuesta final.
+  let resp = await askClaude(trabajo, system, toolsUsados);
+  let vueltas = 0;
+  while (resp.stop_reason === 'tool_use' && vueltas < 5) {
+    vueltas++;
+    trabajo = trabajo.concat([{ role: 'assistant', content: resp.content }]);
+    const resultados = [];
+    for (const block of resp.content || []) {
+      if (block.type === 'tool_use') {
+        const r = await ejecutarTool(block.name, block.input, waId, conv);
+        resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
+      }
+    }
+    trabajo = trabajo.concat([{ role: 'user', content: resultados }]);
+    resp = await askClaude(trabajo, system, toolsUsados);
   }
+  const salida =
+    (resp.content || [])
+      .filter((c) => c.type === 'text')
+      .map((c) => c.text)
+      .join('\n')
+      .trim() || 'Perdón, no te entendí bien. ¿Me lo repetís?';
 
   // Persistimos historial en texto (turno del cliente + respuesta del bot).
   conv.messages.push({ role: 'user', content: contenidoHistorial });
