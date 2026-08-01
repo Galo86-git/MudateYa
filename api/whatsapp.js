@@ -22,6 +22,7 @@ const { vencimientoHabilISO } = require('./_habiles'); // vencimiento en horas h
 // mudancero (modo "dirigido"), así ningún mudancero real los ve mientras testeás.
 // Vacío = pedido abierto a todos (comportamiento de producción).
 const TEST_MUDANCERO_EMAIL = (process.env.TEST_MUDANCERO_EMAIL || '').toLowerCase().trim();
+const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar'; // para generar el link de pago (MP)
 
 const ANTHROPIC = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5';
@@ -323,7 +324,8 @@ Si te preguntan algo que no está en esta info (condiciones legales, detalles de
 
 HERRAMIENTAS QUE TENÉS:
 - crear_pedido: cuando ya juntaste los datos del pedido.
-- consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos.
+- consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio).
+- aceptar_cotizacion: cuando el cliente ELIGE una cotización. Devuelve la SEÑA (50%), el link de Mercado Pago y los datos de transferencia: pasáselos y explicale que el 50% restante lo paga al terminar y que la seña queda protegida. Si hay varias cotizaciones, confirmá cuál elige antes de aceptar.
 - cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
 - derivar_a_humano: si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar.
 
@@ -381,6 +383,19 @@ const tools = [
       type: 'object',
       properties: {
         id: { type: 'string', description: 'ID del pedido a cancelar. Si no lo sabés, dejalo vacío y se cancela el más reciente activo.' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'aceptar_cotizacion',
+    description:
+      'El cliente ELIGE y acepta una de las cotizaciones que recibió. Marca la mudanza como adjudicada y genera el pago de la SEÑA (50%): link de Mercado Pago + datos de transferencia. Usala cuando el cliente confirme a qué mudancero elige. Si hay varias cotizaciones y no queda claro cuál, preguntale antes de llamarla.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        mudancero: { type: 'string', description: 'Nombre (o parte) del mudancero cuya cotización acepta. Si hay una sola cotización podés omitirlo.' },
+        pedidoId: { type: 'string', description: 'ID del pedido; si no lo sabés, se usa el más reciente con cotizaciones.' },
       },
       required: [],
     },
@@ -604,6 +619,92 @@ async function derivarHumano(waId, motivo, conv) {
   return { ok: true, mensaje: 'Avisé al equipo. Alguien te va a contactar a la brevedad.' };
 }
 
+// Datos bancarios para la seña por transferencia (mismos env que transferencias.js).
+function datosTransferencia() {
+  return {
+    cbu: process.env.TRANSFER_CBU || '',
+    alias: process.env.TRANSFER_ALIAS || '',
+    titular: process.env.TRANSFER_TITULAR || 'MudateYa',
+    cuit: process.env.TRANSFER_CUIT || '',
+  };
+}
+
+// Genera el link de pago de Mercado Pago reusando el endpoint crear-preferencia.
+async function generarLinkMP({ mudanceroNombre, monto, desde, hasta, ambientes, mudanzaId, cotizacionId }) {
+  try {
+    const r = await fetch(`${SITE_URL}/api/crear-preferencia`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanceroNombre, monto, desde, hasta, ambientes, mudanzaId, cotizacionId, tipoPago: 'anticipo' }),
+    });
+    if (!r.ok) { console.warn('crear-preferencia', r.status); return null; }
+    const d = await r.json();
+    return d.init_point || d.sandbox_url || null;
+  } catch (e) { console.warn('generarLinkMP:', e.message); return null; }
+}
+
+// El cliente acepta una cotización → adjudica la mudanza y arma el pago de la seña (50%).
+async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
+  const pedidos = await pedidosDelCliente(waId);
+  let pedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
+  if (!pedido) {
+    pedido = pedidos.reverse().find(
+      (p) => Array.isArray(p.cotizaciones) && p.cotizaciones.length &&
+             ['buscando', 'cotizaciones_completas'].includes(p.estado)
+    );
+  }
+  if (!pedido) return { ok: false, mensaje: 'No encontré un pedido tuyo con cotizaciones para aceptar.' };
+
+  const cots = (pedido.cotizaciones || []).filter((c) => c && c.estado !== 'rechazada');
+  if (!cots.length) return { ok: false, mensaje: 'Todavía no llegaron cotizaciones para ese pedido.' };
+
+  // Elegir la cotización por nombre del mudancero, o la única que haya.
+  let cot = null;
+  if (mudanceroNombre) {
+    const q = String(mudanceroNombre).toLowerCase();
+    cot = cots.find((c) => (c.mudanceroNombre || '').toLowerCase().includes(q));
+  }
+  if (!cot && cots.length === 1) cot = cots[0];
+  if (!cot) {
+    return {
+      ok: false,
+      necesita_eleccion: true,
+      opciones: cots.map((c) => ({ mudancero: c.mudanceroNombre, precio: c.precio })),
+      mensaje: 'Hay varias cotizaciones. Preguntale al cliente cuál elige (por el nombre del mudancero) antes de aceptar.',
+    };
+  }
+
+  // Adjudicar (misma lógica esencial que el "aceptar" del web).
+  pedido.estado = 'cotizacion_aceptada';
+  pedido.cotizacionAceptada = cot;
+  pedido.mudanceroAceptado = cot.mudanceroEmail;
+  pedido.montoTotal = cot.precio;
+  cot.estado = 'aceptada';
+  await setJSON(`mudanza:${pedido.id}`, pedido, 60 * 60 * 24 * 7);
+
+  const sena = Math.round(Number(cot.precio || 0) * 0.5);
+  const link = await generarLinkMP({
+    mudanceroNombre: cot.mudanceroNombre,
+    monto: sena,
+    desde: pedido.desde || pedido.origen,
+    hasta: pedido.hasta || pedido.destino,
+    ambientes: pedido.ambientes || '',
+    mudanzaId: pedido.id,
+    cotizacionId: cot.id,
+  });
+  const transf = datosTransferencia();
+
+  return {
+    ok: true,
+    mudancero: cot.mudanceroNombre,
+    precio_total: cot.precio,
+    sena,
+    link_pago_mp: link,
+    transferencia: (transf.cbu || transf.alias) ? transf : null,
+    nota: 'Cotización aceptada. Mostrale al cliente: el monto de la SEÑA (50%), el link de Mercado Pago (si vino) y los datos de transferencia (si vinieron). Aclarale que el 50% restante se paga al completar la mudanza y que la seña queda protegida. Si no vino ni link ni transferencia, decile que en un momento le pasás cómo pagar y derivá.',
+  };
+}
+
 // Ejecuta una herramienta y devuelve el resultado (string) que Claude interpreta.
 async function ejecutarTool(name, input, waId, conv) {
   try {
@@ -621,6 +722,9 @@ async function ejecutarTool(name, input, waId, conv) {
     }
     if (name === 'cancelar_pedido') {
       return JSON.stringify(await cancelarPedidoCliente(waId, input && input.id));
+    }
+    if (name === 'aceptar_cotizacion') {
+      return JSON.stringify(await aceptarCotizacionCliente(waId, input && input.mudancero, input && input.pedidoId));
     }
     if (name === 'derivar_a_humano') {
       return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv));
