@@ -3841,6 +3841,26 @@ async function notificarClienteNuevoPedido(mudanza) {
 }
 
 async function notificarCliente(mudanza, cotizacion) {
+  // Pedido originado por WhatsApp (bot Emi): el cliente NO tiene email real
+  // (usa uno sintético), así que se le avisa por WhatsApp, no por mail. Solo
+  // se entrega si la charla está dentro de la ventana de 24hs de WhatsApp.
+  if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+    try {
+      const { enviarWhatsAppTexto } = require('./_whatsapp');
+      const precioFmt = '$' + Number(cotizacion.precio || 0).toLocaleString('es-AR');
+      const msg =
+        `💰 ¡Llegó una cotización para tu ${mudanza.tipo || 'mudanza'}!\n` +
+        `${cotizacion.mudanceroNombre || 'Un mudancero'} cotizó ${mudanza.desde} → ${mudanza.hasta} en ${precioFmt}` +
+        (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
+        (cotizacion.nota ? `"${cotizacion.nota}"\n` : '') +
+        `Respondeme por acá y te ayudo a verla y elegir 🙂`;
+      await enviarWhatsAppTexto(mudanza.clienteWA, msg);
+    } catch (e) {
+      console.error('notificarCliente WhatsApp:', e.message);
+    }
+    return; // no seguimos con el mail: el email del cliente WhatsApp es sintético
+  }
+
   const resend = new Resend(process.env.RESEND_API_KEY);
   if (!process.env.RESEND_API_KEY) return;
 

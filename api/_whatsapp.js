@@ -52,4 +52,43 @@ async function enviarWhatsApp(to, contentSid, variables) {
   return { ok: true, sid: data.sid, status: data.status };
 }
 
-module.exports = { enviarWhatsApp };
+// enviarWhatsAppTexto: manda un mensaje de TEXTO LIBRE (sin plantilla).
+// OJO: WhatsApp solo entrega texto libre dentro de la VENTANA DE 24hs desde el
+// último mensaje del usuario. Fuera de esa ventana hay que usar una plantilla
+// aprobada (enviarWhatsApp). Sirve perfecto para responder/avisar en una charla
+// activa (ej: avisarle al cliente que llegó una cotización mientras conversa).
+async function enviarWhatsAppTexto(to, body) {
+  const sid   = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  const from  = process.env.TWILIO_WHATSAPP_FROM;
+  if (!sid || !token || !from) {
+    throw new Error('Twilio no configurado (faltan variables de entorno TWILIO_*)');
+  }
+  var tel = String(to || '').replace(/[^\d+]/g, '');
+  if (!tel) throw new Error('Teléfono de destino inválido');
+  if (tel[0] !== '+') tel = '+' + tel;
+
+  const body2 = new URLSearchParams({
+    To:   'whatsapp:' + tel,
+    From: from,
+    Body: String(body || '').slice(0, 1500),
+  });
+
+  const r = await fetch(
+    'https://api.twilio.com/2010-04-01/Accounts/' + sid + '/Messages.json',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(sid + ':' + token).toString('base64'),
+        'Content-Type':  'application/x-www-form-urlencoded',
+      },
+      body: body2.toString(),
+    }
+  );
+
+  const data = await r.json();
+  if (!r.ok) throw new Error('Twilio error: ' + (data.message || r.status));
+  return { ok: true, sid: data.sid, status: data.status };
+}
+
+module.exports = { enviarWhatsApp, enviarWhatsAppTexto };

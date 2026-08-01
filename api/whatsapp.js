@@ -543,6 +543,7 @@ async function pedidosDelCliente(waId) {
   return pedidos;
 }
 function resumenPedido(p) {
+  const cots = Array.isArray(p.cotizaciones) ? p.cotizaciones : [];
   return {
     id: p.id,
     tipo: p.tipo,
@@ -550,7 +551,15 @@ function resumenPedido(p) {
     destino: p.destino,
     fecha: p.fecha,
     estado: p.estado,
-    cotizaciones: Array.isArray(p.cotizaciones) ? p.cotizaciones.length : 0,
+    // Detalle de las cotizaciones recibidas, para que Emi se las pueda leer al
+    // cliente ("te cotizó Juan $80.000"). El precio sale del modelo nuevo
+    // (propuestas[]) o del campo plano viejo.
+    cotizaciones: cots.map((c) => ({
+      mudancero: c.mudanceroNombre || '',
+      precio: c.precio || (Array.isArray(c.propuestas) && c.propuestas[0] && c.propuestas[0].precio) || 0,
+      tiempo: c.tiempoEstimado || '',
+      nota: c.nota || '',
+    })),
     vence: p.vence,
   };
 }
