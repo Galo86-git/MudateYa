@@ -162,8 +162,11 @@ async function avisarSaldoPendiente(mudanza, saldo, linkMP, transferencia) {
     `✅ ¡Tu ${mudanza.tipo || 'mudanza'} se completó! 🎉\n` +
     `Queda el saldo final (50%): ${montoFmt}.\n`;
   if (linkMP) msg += `\n💳 Mercado Pago:\n${linkMP}\n`;
-  if (transferencia && (transferencia.cbu || transferencia.alias)) {
-    msg += `\n🏦 O por transferencia:\n` +
+  if (transferencia && transferencia.checkoutUrl) {
+    // Link/QR de Talo con el monto YA cargado: el cliente no puede tipear mal.
+    msg += `\n🏦 O por transferencia (monto ya cargado, no te equivocás):\n${transferencia.checkoutUrl}\n`;
+  } else if (transferencia && (transferencia.cbu || transferencia.alias)) {
+    msg += `\n🏦 O por transferencia (transferí exactamente ${montoFmt}):\n` +
       (transferencia.alias ? `Alias: ${transferencia.alias}\n` : '') +
       (transferencia.cbu ? `CBU: ${transferencia.cbu}\n` : '') +
       (transferencia.titular ? `Titular: ${transferencia.titular}\n` : '');
@@ -173,4 +176,22 @@ async function avisarSaldoPendiente(mudanza, saldo, linkMP, transferencia) {
   catch (e) { console.warn('avisarSaldoPendiente:', e.message); }
 }
 
-module.exports = { enviarWhatsApp, enviarWhatsAppTexto, avisarSenaConfirmada, avisarMudanzaIniciada, avisarSaldoPendiente };
+// avisarMudanzaPagadaCompleta: al acreditarse el SALDO, avisa al cliente que la
+// mudanza quedó 100% paga y completada, y lo invita a CALIFICAR al mudancero
+// (respondiendo por WhatsApp; Emi usa la tool calificar_mudancero).
+async function avisarMudanzaPagadaCompleta(mudanza) {
+  if (!mudanza || mudanza.canal !== 'whatsapp' || !mudanza.clienteWA) return;
+  const cot = mudanza.cotizacionAceptada || {};
+  const mud = cot.mudanceroNombre || 'el mudancero';
+  try {
+    await enviarWhatsAppTexto(
+      mudanza.clienteWA,
+      `✅ ¡Recibimos el saldo! Tu ${mudanza.tipo || 'mudanza'} quedó 100% paga y completada 🎉\n` +
+      `Gracias por confiar en MudateYa 🙌\n\n` +
+      `¿Nos dejás una calificación de ${mud}? Respondé del 1 al 5 ⭐ (y un comentario si querés). ` +
+      `Suma a su reputación en la plataforma y ayuda a otros clientes.`
+    );
+  } catch (e) { console.warn('avisarMudanzaPagadaCompleta:', e.message); }
+}
+
+module.exports = { enviarWhatsApp, enviarWhatsAppTexto, avisarSenaConfirmada, avisarMudanzaIniciada, avisarSaldoPendiente, avisarMudanzaPagadaCompleta };

@@ -449,6 +449,12 @@ module.exports = async function handler(req, res) {
           const { avisarSenaConfirmada } = require('./_whatsapp');
           await avisarSenaConfirmada(mFinal);
         } catch (e) { console.warn('[webhook] aviso WhatsApp seña:', e.message); }
+      } else if (ref.tipoPago === 'saldo') {
+        try {
+          const mFinal = await getJSON(`mudanza:${ref.mudanzaId}`);
+          const { avisarMudanzaPagadaCompleta } = require('./_whatsapp');
+          await avisarMudanzaPagadaCompleta(mFinal);
+        } catch (e) { console.warn('[webhook] aviso WhatsApp saldo:', e.message); }
       }
 
       // Si pagó de más, avisar: hay que devolver la diferencia.

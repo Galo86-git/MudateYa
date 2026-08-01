@@ -149,6 +149,13 @@ module.exports = async function handler(req, res) {
         await avisarSenaConfirmada(m);
       } catch (e) { console.warn('[Webhook MP] aviso WhatsApp seña:', e.message); }
     }
+    // Saldo acreditado → mudanza 100% paga: avisar al cliente + invitar a calificar.
+    if (tipoPago === 'saldo') {
+      try {
+        const { avisarMudanzaPagadaCompleta } = require('./_whatsapp');
+        await avisarMudanzaPagadaCompleta(m);
+      } catch (e) { console.warn('[Webhook MP] aviso WhatsApp saldo:', e.message); }
+    }
 
     console.log(`[Webhook MP] ✅ Pago ${tipoPago} registrado para mudanza ${mudanzaId}`);
     return res.status(200).json({ status: 'ok', tipoPago, mudanzaId });

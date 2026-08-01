@@ -327,6 +327,7 @@ HERRAMIENTAS QUE TENÉS:
 - consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio).
 - aceptar_cotizacion: cuando el cliente ELIGE una cotización. Devuelve la SEÑA (50%), el link de Mercado Pago y los datos de transferencia: pasáselos y explicale que el 50% restante lo paga al terminar y que la seña queda protegida. Si hay varias cotizaciones, confirmá cuál elige antes de aceptar.
 - cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
+- calificar_mudancero: cuando el cliente puntúa al mudancero tras una mudanza completada (ej: "5 estrellas", "le pongo un 4, muy bueno"). Pasá las estrellas (1-5) y el comentario si lo hay. Agradecé y contale que suma a la reputación del mudancero.
 - derivar_a_humano: si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar.
 
 REGLAS: no pidas datos sensibles (tarjetas, documentos). Si el mensaje no tiene que ver con esto, respondé amable y reconducí. Si te preguntan derecho si sos un bot o una persona, sé honesta y sin dramas ("soy la asistente virtual de MudateYa, pero te resuelvo igual 🙂") — nunca digas que sos una persona de carne y hueso.`;
@@ -398,6 +399,19 @@ const tools = [
         pedidoId: { type: 'string', description: 'ID del pedido; si no lo sabés, se usa el más reciente con cotizaciones.' },
       },
       required: [],
+    },
+  },
+  {
+    name: 'calificar_mudancero',
+    description:
+      'Registrá la calificación del cliente al mudancero después de una mudanza COMPLETADA y pagada. Estrellas de 1 a 5 + comentario opcional. Se integra con la reputación del mudancero en la plataforma. Usala cuando el cliente puntúe (ej: "5 estrellas, excelente", "le pongo un 4", "muy buena").',
+    input_schema: {
+      type: 'object',
+      properties: {
+        estrellas: { type: 'integer', description: 'Puntaje de 1 a 5' },
+        comentario: { type: 'string', description: 'Comentario opcional del cliente' },
+      },
+      required: ['estrellas'],
     },
   },
   {
@@ -734,6 +748,35 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
   };
 }
 
+// El cliente califica al mudancero tras una mudanza completada+pagada. Reusa el
+// endpoint 'calificar', que guarda la reseña en el perfil del mudancero y
+// recalcula su reputación (promedioEstrellas / calificacion / nroResenas).
+async function calificarMudanceroCliente(waId, estrellas, comentario) {
+  const n = parseInt(estrellas, 10);
+  if (!(n >= 1 && n <= 5)) return { ok: false, mensaje: 'La calificación tiene que ser de 1 a 5 estrellas.' };
+  const pedidos = await pedidosDelCliente(waId);
+  // Mudanza completada + pagada + sin calificar, más reciente.
+  const m = pedidos.slice().reverse().find((p) => p.estado === 'completada' && p.saldoPagado && !p.calificado);
+  if (!m) {
+    if (pedidos.some((p) => p.calificado)) return { ok: false, mensaje: 'Ya dejaste tu calificación. ¡Gracias!' };
+    return { ok: false, mensaje: 'Para calificar, la mudanza tiene que estar completada y con el saldo pagado.' };
+  }
+  try {
+    const r = await fetch(`${SITE_URL}/api/cotizaciones?action=calificar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: m.id, estrellas: n, comentario: comentario || '', clienteEmail: m.clienteEmail }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) return { ok: false, mensaje: (d && d.error) || 'No pude registrar la calificación.' };
+    const mud = (m.cotizacionAceptada || {}).mudanceroNombre || 'el mudancero';
+    return { ok: true, estrellas: n, mudancero: mud, mensaje: `¡Gracias! Registré tu calificación de ${n}⭐ para ${mud}. Suma a su reputación en MudateYa.` };
+  } catch (e) {
+    console.warn('calificarMudanceroCliente:', e.message);
+    return { ok: false, mensaje: 'Tuve un problemita registrando la calificación, probá en un ratito.' };
+  }
+}
+
 // Ejecuta una herramienta y devuelve el resultado (string) que Claude interpreta.
 async function ejecutarTool(name, input, waId, conv) {
   try {
@@ -754,6 +797,9 @@ async function ejecutarTool(name, input, waId, conv) {
     }
     if (name === 'aceptar_cotizacion') {
       return JSON.stringify(await aceptarCotizacionCliente(waId, input && input.mudancero, input && input.pedidoId));
+    }
+    if (name === 'calificar_mudancero') {
+      return JSON.stringify(await calificarMudanceroCliente(waId, input && input.estrellas, input && input.comentario));
     }
     if (name === 'derivar_a_humano') {
       return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv));

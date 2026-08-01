@@ -1603,6 +1603,11 @@ module.exports = async function handler(req, res) {
           catch(e) { console.warn('Email asesor anticipo:', e.message); }
         }
       }
+      if (tipoPago === 'saldo') {
+        // Saldo acreditado → mudanza 100% paga: avisar al cliente + invitar a calificar.
+        try { const { avisarMudanzaPagadaCompleta } = require('./_whatsapp'); await avisarMudanzaPagadaCompleta(m); }
+        catch(e) { console.warn('WhatsApp saldo completa error:', e.message); }
+      }
       return res.status(200).json({ ok: true });
     }
 
