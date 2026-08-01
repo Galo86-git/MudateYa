@@ -95,10 +95,21 @@ module.exports = async function handler(req, res) {
   const apply = req.method === 'POST' && req.body && req.body.apply === true;
   const reporte = { modo: apply ? 'aplicar' : 'preview', actualizar: [], crear: [] };
 
+  // Idempotencia: nombres ya existentes en la cuenta (para no duplicar al re-correr).
+  const existentes = new Set();
+  try {
+    const all = await tw('GET', 'https://content.twilio.com/v1/ContentAndApprovals?PageSize=100', null, AUTH);
+    ((all.d && all.d.contents) || []).forEach((c) => existentes.add(c.friendly_name));
+  } catch (_) {}
+
   // ── ACTUALIZAR las 6 ──
   for (const t of ACTUALIZAR) {
     const got = await tw('GET', `${BASE}/${t.sid}`, null, AUTH);
-    if (!got.ok) { reporte.actualizar.push({ name: t.name, error: `no se pudo leer (HTTP ${got.status})` }); continue; }
+    if (!got.ok) {
+      // El SID viejo ya no existe: si el nombre ya está en la cuenta, se actualizó antes.
+      reporte.actualizar.push({ name: t.name, accion: existentes.has(t.name) ? 'ya_actualizada' : 'SID_viejo_no_existe' });
+      continue;
+    }
     const orig = got.d;
     const typeKey = findBodyType(orig.types);
     const origVars = Object.keys(orig.variables || {});
@@ -126,6 +137,7 @@ module.exports = async function handler(req, res) {
   // ── CREAR las 5 nuevas ──
   for (const t of CREAR) {
     const item = { name: t.name };
+    if (existentes.has(t.name)) { item.accion = 'ya_existe'; reporte.crear.push(item); continue; }
     if (!apply) { item.accion = 'se_crearia'; reporte.crear.push(item); continue; }
     const created = await tw('POST', BASE, { friendly_name: t.name, language: 'es', variables: t.variables, types: t.types }, AUTH);
     if (!created.ok) { item.accion = 'ERROR_crear'; item.detalle = created.d; reporte.crear.push(item); continue; }
