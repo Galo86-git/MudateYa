@@ -414,6 +414,26 @@
     {
       "path": "/api/cron-recordar-pago",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/cron-cerrar-pedidos",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron-cerrar-pedidos",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron-nurturing",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron-nurturing",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron-revisar-mudanceros",
+      "schedule": "0 12 * * *"
     }
   ]
 }

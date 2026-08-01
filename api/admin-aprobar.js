@@ -210,3 +210,7 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: e.message });
   }
 };
+
+// Reutilizable por el cron de auto-aprobación (cron-revisar-mudanceros.js):
+// manda el mismo email de alta + link de términos que la aprobación manual.
+module.exports.enviarEmailAltaExitosa = enviarEmailAltaExitosa;
