@@ -1943,6 +1943,25 @@ function confirmarAccion(opts) {
           </div>
         </div>
 
+        <!-- Calificaciones / reputación del mudancero -->
+        <div class="card" id="cardCalificaciones" style="margin-bottom:1rem">
+          <div class="card-header"><span class="card-title">⭐ Mis calificaciones</span></div>
+          <div style="padding:1.2rem">
+            <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:14px">
+              <div style="text-align:center;min-width:90px">
+                <div id="califPromedio" style="font-size:2.6rem;font-weight:800;color:#003580;line-height:1">—</div>
+                <div id="califEstrellas" style="color:#F59E0B;font-size:18px;letter-spacing:2px">☆☆☆☆☆</div>
+              </div>
+              <div style="display:flex;gap:28px;flex-wrap:wrap">
+                <div><div id="califNro" style="font-size:1.5rem;font-weight:700;color:#0F1923">0</div><div style="font-size:12px;color:#64748B">reseñas</div></div>
+                <div><div id="califTrabajos" style="font-size:1.5rem;font-weight:700;color:#0F1923">0</div><div style="font-size:12px;color:#64748B">trabajos completados</div></div>
+              </div>
+            </div>
+            <div id="califLista" style="display:flex;flex-direction:column;gap:10px"></div>
+            <div id="califVacio" style="color:#64748B;font-size:13px;display:none">Todavía no tenés calificaciones. Cuando completes mudanzas y tus clientes te califiquen, van a aparecer acá. ⭐</div>
+          </div>
+        </div>
+
         <div class="card" style="margin-bottom:1rem">
           <div class="card-header"><span class="card-title">👤 Datos personales</span></div>
           <div style="padding:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -2491,6 +2510,7 @@ async function initApp(){
     var d = await r.json();
     if(!d.found){ showScreen('notFound'); return; }
     mudanceroData = d.mudancero;
+    window.miPerfil = d.perfil || null; // perfil completo (incluye reseñas/reputación)
   }catch(e){
     mudanceroData = {nombre:currentUser.name, estado:'Pendiente', zona:'CABA'};
   }
@@ -5435,8 +5455,48 @@ function loadGanancias(){
 // ════════════════════════════════════════════════════
 // PERFIL
 // ════════════════════════════════════════════════════
+// Renderiza la reputación del mudancero (promedio, nº de reseñas, trabajos, lista).
+// Lee del perfil completo (window.miPerfil), que trae resenas/promedioEstrellas.
+function renderCalificaciones(){
+  var p = window.miPerfil || {};
+  var resenas = Array.isArray(p.resenas) ? p.resenas.slice() : [];
+  var prom = Number(p.promedioEstrellas || p.calificacion || 0) || 0;
+  var nro = Number(p.nroResenas || resenas.length || 0) || 0;
+  var trabajos = Number(p.trabajosCompletados || 0) || 0;
+
+  var elProm = document.getElementById('califPromedio');
+  if(!elProm) return; // la card no está en el DOM
+  elProm.textContent = prom > 0 ? (Math.round(prom*10)/10).toFixed(1) : '—';
+  var full = Math.max(0, Math.min(5, Math.round(prom)));
+  document.getElementById('califEstrellas').textContent = '★'.repeat(full) + '☆'.repeat(5-full);
+  document.getElementById('califNro').textContent = nro;
+  document.getElementById('califTrabajos').textContent = trabajos;
+
+  var lista = document.getElementById('califLista');
+  var vacio = document.getElementById('califVacio');
+  lista.innerHTML = '';
+  if(!resenas.length){ vacio.style.display = 'block'; return; }
+  vacio.style.display = 'none';
+  resenas.sort(function(a,b){ return new Date(b.fecha||0) - new Date(a.fecha||0); });
+  resenas.slice(0,20).forEach(function(r){
+    var est = Math.max(0, Math.min(5, parseInt(r.estrellas)||0));
+    var stars = '★'.repeat(est) + '☆'.repeat(5-est);
+    var fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
+    var div = document.createElement('div');
+    div.style.cssText = 'border:1px solid #E2E8F0;border-radius:10px;padding:12px 14px;background:#F8FAFC';
+    var head = document.createElement('div');
+    head.style.cssText = 'display:flex;justify-content:space-between;align-items:center';
+    var st = document.createElement('span'); st.style.cssText = 'color:#F59E0B;letter-spacing:2px;font-size:15px'; st.textContent = stars;
+    var dt = document.createElement('span'); dt.style.cssText = 'font-size:11px;color:#94A3B8'; dt.textContent = fecha;
+    head.appendChild(st); head.appendChild(dt); div.appendChild(head);
+    if(r.comentario){ var c = document.createElement('div'); c.style.cssText = 'font-size:13.5px;color:#475569;line-height:1.5;margin-top:6px'; c.textContent = '“'+r.comentario+'”'; div.appendChild(c); }
+    lista.appendChild(div);
+  });
+}
+
 function loadPerfil(){
   var m = Array.isArray(mudanceroData) ? mudanceroData : [];
+  try { renderCalificaciones(); } catch(e){ console.warn('renderCalificaciones', e); }
   setVal('pf-nombre', m[1]||currentUser.name||'');
   setVal('pf-empresa', m[2]||'');
   setVal('pf-tel', m[3]||'');
