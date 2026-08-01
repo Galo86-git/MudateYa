@@ -16,6 +16,12 @@
 //   SKIP_TWILIO_VALIDATION    -> "1" solo para debug; en prod dejar sin setear
 
 const crypto = require('crypto');
+const { vencimientoHabilISO } = require('./_habiles'); // vencimiento en horas hábiles (igual que el web)
+
+// Modo prueba: si está seteada, los pedidos del bot se publican SOLO para este
+// mudancero (modo "dirigido"), así ningún mudancero real los ve mientras testeás.
+// Vacío = pedido abierto a todos (comportamiento de producción).
+const TEST_MUDANCERO_EMAIL = (process.env.TEST_MUDANCERO_EMAIL || '').toLowerCase().trim();
 
 const ANTHROPIC = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5';
@@ -420,32 +426,83 @@ async function askClaude(messages, system, toolsArg) {
 function nuevoId() {
   return `${Date.now().toString(36)}${crypto.randomBytes(3).toString('hex')}`;
 }
+// Intenta sacar la cantidad de ambientes del texto libre que junta Emi.
+function parseAmbientes(detalles) {
+  const t = String(detalles || '').toLowerCase();
+  if (/monoambiente|mono ?ambiente|\b1 ?amb/.test(t)) return '1';
+  const m = t.match(/(\d+)\s*(amb|ambiente|dorm|habitac)/);
+  return m ? m[1] : '';
+}
+
 async function crearPedido(input, waId, ubicaciones) {
   const id = nuevoId();
   const ahora = new Date();
+  const nombre = input.nombre || '';
+
+  // Pedido UNIFICADO: un solo objeto que sirve a los dos sistemas.
+  //   - Bot (WhatsApp): origen/destino/vence/detalles → consultar_estado y cancelar.
+  //   - Marketplace web: desde/hasta/expira/zonaBase/estado 'buscando' + índice
+  //     mudanzas:activas → el mudancero lo ve y cotiza desde su cuenta (por-zona).
+  // Con TEST_MUDANCERO_EMAIL el pedido va en modo "dirigido" solo a ese mudancero,
+  // así ningún mudancero real lo ve mientras se prueba.
+  const dirigido = !!TEST_MUDANCERO_EMAIL;
   const pedido = {
     id,
+    // — vista bot —
     tipo: input.tipo,
     origen: input.origen,
     destino: input.destino,
     fecha: input.fecha,
     detalles: input.detalles,
-    cliente: { nombre: input.nombre || '', whatsapp: waId },
+    cliente: { nombre, whatsapp: waId },
     ubicaciones: Array.isArray(ubicaciones) ? ubicaciones : [], // coords compartidas (geo-match)
     canal: 'whatsapp',
     urgente: !!input.urgente, // mudanza urgente → la toma el equipo a mano
-    estado: 'buscando_presupuestos',
+    vence: new Date(ahora.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    // — vista web (marketplace / cotización del mudancero) —
+    clienteNombre: nombre,
+    clienteWA: waId,
+    clienteEmail: `wa-${String(waId).replace(/\D/g, '')}@wa.mudateya.ar`, // sintético: el cliente WA no tiene email
+    desde: input.origen,
+    hasta: input.destino,
+    zonaBase: input.origen,
+    ambientes: parseAmbientes(input.detalles),
+    nivel: input.tipo === 'flete' ? 'flete' : null,
+    servicios: [],
+    extras: [],
+    fotos: [],
+    detallesAdicionales: input.detalles ? { comentario: String(input.detalles).slice(0, 500) } : null,
+    modoCotizacion: dirigido ? 'dirigido' : 'abierto',
+    mudancerosInvitados: dirigido ? [TEST_MUDANCERO_EMAIL] : [],
+    maxCotizaciones: 50,
+    fechaPublicacion: ahora.toISOString(),
+    expira: vencimientoHabilISO(24),
+    // — común —
+    estado: 'buscando', // estado del marketplace web (lo que muestra por-zona)
     cotizaciones: [],
     creado: ahora.toISOString(),
-    vence: new Date(ahora.getTime() + 24 * 60 * 60 * 1000).toISOString(),
   };
-  await setJSON(`mudanza:${id}`, pedido, 60 * 60 * 24 * 3);
-  // Índice de pedidos por cliente (para consultar_estado_pedido / cancelar_pedido).
+  await setJSON(`mudanza:${id}`, pedido, 60 * 60 * 24 * 7);
+
+  // Índice de pedidos por cliente WA (para consultar_estado_pedido / cancelar_pedido).
   try {
     const ids = (await getJSON(`cliente:pedidos:${waId}`)) || [];
     ids.push(id);
     await setJSON(`cliente:pedidos:${waId}`, ids, 60 * 60 * 24 * 30);
   } catch (_) {}
+
+  // Índices del marketplace web: mudanzas:activas (lo lee por-zona) + mudanzas:todos (admin).
+  try {
+    const activas = (await getJSON('mudanzas:activas')) || [];
+    if (!activas.includes(id)) activas.push(id);
+    await setJSON('mudanzas:activas', activas, 60 * 60 * 24 * 7);
+    const todos = (await getJSON('mudanzas:todos')) || [];
+    if (!todos.includes(id)) todos.push(id);
+    await setJSON('mudanzas:todos', todos);
+  } catch (e) { console.warn('índice marketplace:', e.message); }
+
+  // MODO PRUEBA: NO se notifica a ningún mudancero (ni WhatsApp ni email). El
+  // pedido queda visible en la cuenta web (dirigido a TEST_MUDANCERO_EMAIL si está).
   await iniciarBarridoMudanceros(pedido);
   return pedido;
 }
