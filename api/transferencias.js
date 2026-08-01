@@ -93,6 +93,50 @@ function montoEsperado(m, tipoPago) {
   return null;
 }
 
+// Aviso cuando una transferencia entra por MENOS de lo esperado (Talo UNDERPAID):
+// no se acredita, pero NO puede quedar en silencio. Avisa al equipo (email) y al
+// cliente (WhatsApp) para completar la diferencia o resolverlo a mano.
+async function avisarTransferenciaInsuficiente(m, tipoPago, pago) {
+  const esperado = montoEsperado(m, tipoPago);
+  const pagado = Number((pago && (pago.montoPagado || pago.montoPedido)) || 0);
+  const falta = esperado != null ? Math.max(0, esperado - pagado) : null;
+  const label = tipoPago === 'anticipo' ? 'la seña' : 'el saldo';
+  const fmt = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
+
+  // 1) Equipo (email).
+  try {
+    if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+        to: process.env.ADMIN_EMAIL,
+        subject: `⚠️ Transferencia INSUFICIENTE — ${m.id} (${tipoPago})`,
+        html:
+          `<p>Entró una transferencia por <b>menos</b> de lo esperado (NO se acreditó).</p>` +
+          `<p>Mudanza: <b>${m.id}</b> · ${tipoPago}<br>` +
+          `Esperado: ${fmt(esperado)} · Pagado: ${fmt(pagado)} · Falta: ${falta != null ? fmt(falta) : '—'}<br>` +
+          `Cliente: ${m.clienteNombre || ''} ${m.clienteWA || m.clienteEmail || ''}<br>` +
+          `Talo paymentId: ${(pago && pago.paymentId) || '—'}</p>` +
+          `<p>Resolver a mano: acreditar, pedir la diferencia, o devolver.</p>`,
+      });
+    }
+  } catch (e) { console.warn('[underpaid] email admin:', e.message); }
+
+  // 2) Cliente por WhatsApp (si el pedido vino por ese canal).
+  if (m.canal === 'whatsapp' && m.clienteWA) {
+    try {
+      const { enviarWhatsAppTexto } = require('./_whatsapp');
+      await enviarWhatsAppTexto(
+        m.clienteWA,
+        `⚠️ Recibimos tu transferencia para ${label}, pero fue por un monto menor al indicado` +
+        (falta != null ? ` (faltarían ${fmt(falta)})` : '') + `.\n` +
+        `Para que quede acreditada, transferí la diferencia al MISMO alias/CBU que te pasé, o escribime y lo resolvemos juntos. 🙏`
+      );
+    } catch (e) { console.warn('[underpaid] WhatsApp cliente:', e.message); }
+  }
+}
+
 // Código corto para poner en el concepto de la transferencia y cruzarlo contra
 // el extracto bancario.
 //
@@ -303,13 +347,6 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ error: 'No se pudo verificar' });
       }
 
-      // UNDERPAID no se acredita: si transfirieron de menos, la mudanza no
-      // está paga. EXPIRED y PENDING tampoco. OVERPAID sí, pero se avisa.
-      if (pago.estado !== 'SUCCESS' && pago.estado !== 'OVERPAID') {
-        console.warn('[webhook] pago ' + paymentId + ' en estado ' + pago.estado + ', no se acredita');
-        return res.status(200).json({ ok: true, estado: pago.estado });
-      }
-
       const ref = leerExternalId(pago.externalId);
       if (!ref) {
         console.error('[webhook] external_id no reconocido:', pago.externalId);
@@ -320,6 +357,19 @@ module.exports = async function handler(req, res) {
       if (!m) {
         console.error('[webhook] mudanza inexistente:', ref.mudanzaId);
         return res.status(200).json({ ok: true, ignorado: 'mudanza inexistente' });
+      }
+
+      // UNDERPAID no se acredita: si transfirieron de menos, la mudanza no está
+      // paga. EXPIRED y PENDING tampoco. OVERPAID sí (más abajo). PERO un
+      // UNDERPAID no puede quedar MUDO: llegó plata real de menos y el cliente
+      // cree que pagó. Se avisa al equipo y al cliente para completarlo/resolverlo.
+      if (pago.estado !== 'SUCCESS' && pago.estado !== 'OVERPAID') {
+        if (pago.estado === 'UNDERPAID') {
+          try { await avisarTransferenciaInsuficiente(m, ref.tipoPago, pago); }
+          catch (e) { console.warn('[webhook] aviso underpaid:', e.message); }
+        }
+        console.warn('[webhook] pago ' + paymentId + ' en estado ' + pago.estado + ', no se acredita');
+        return res.status(200).json({ ok: true, estado: pago.estado });
       }
 
       // Idempotencia: Talo puede reenviar la misma notificación varias veces.
