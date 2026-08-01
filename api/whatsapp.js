@@ -1125,10 +1125,59 @@ async function ejecutarTool(name, input, waId, conv) {
 // WhatsApp a fleteros reales cuesta plata y les llega a personas reales, así que
 // no se dispara solo. Cuando quieras activarlo, reutilizá enviarWhatsApp() de
 // _whatsapp.js con una plantilla aprobada. Por ahora solo deja el pedido cargado.
+// Barrido a mudanceros REALES. Apagado por defecto: solo se activa con
+// BARRIDO_ACTIVO=1 (así, mientras probás, ningún mudancero real recibe nada).
+// Cuando lo prendas y saques TEST_MUDANCERO_EMAIL, un pedido nuevo dispara:
+//   1) Email + push + PDF a todos los aprobados (reusa notificarMudanceros de la web).
+//   2) WhatsApp: plantilla nuevo_pedido_mudancero a los aprobados con teléfono.
+// Respeta el modo 'dirigido' (si el pedido tiene mudancerosInvitados, solo a ellos).
 async function iniciarBarridoMudanceros(pedido) {
-  console.log(`[barrido] pedido ${pedido.id} (${pedido.tipo}) listo:`, pedido.origen, '->', pedido.destino);
-  // const { enviarWhatsApp } = require('./_whatsapp');
-  // ... buscar mudanceros cercanos y enviarles la plantilla ...
+  const ACTIVO = process.env.BARRIDO_ACTIVO === '1' || process.env.BARRIDO_ACTIVO === 'true';
+  if (!ACTIVO) {
+    console.log(`[barrido] APAGADO — pedido ${pedido.id} (${pedido.tipo}) ${pedido.origen} -> ${pedido.destino}. Prendé BARRIDO_ACTIVO=1 para avisar a mudanceros reales.`);
+    return;
+  }
+  console.log(`[barrido] ACTIVO — pedido ${pedido.id}: notificando mudanceros reales`);
+
+  // 1) Email + push + PDF a los aprobados (misma lógica que el marketplace web).
+  try {
+    const { notificarMudanceros } = require('./cotizaciones');
+    await notificarMudanceros(pedido);
+  } catch (e) { console.error('[barrido] notificarMudanceros:', e.message); }
+
+  // 2) WhatsApp a los aprobados con teléfono.
+  try {
+    await barridoWhatsApp(pedido);
+  } catch (e) { console.error('[barrido] whatsapp:', e.message); }
+}
+
+async function barridoWhatsApp(pedido) {
+  const { enviarPlantilla } = require('./_plantillas');
+  const todos = (await getJSON('mudanceros:todos')) || [];
+  const dirigido = pedido.modoCotizacion === 'dirigido';
+  const invitados = pedido.mudancerosInvitados || [];
+  let enviados = 0;
+  for (const email of todos) {
+    if (enviados >= 60) break; // tope defensivo por corrida
+    const p = await getJSON(`mudancero:perfil:${email}`);
+    if (!p || p.estado !== 'aprobado' || !p.telefono) continue;
+    if (dirigido && !invitados.includes(email)) continue;
+    const nom = (p.nombre || '').split(' ')[0] || 'Hola';
+    const resumen =
+      `🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +
+      `📍 ${pedido.origen}\n🏁 ${pedido.destino}\n📅 ${pedido.fecha || 'a coordinar'}` +
+      `${pedido.km ? `\n📏 ${parseInt(pedido.km)} km` : ''}\n\n` +
+      `Entrá a cotizar: https://mudateya.ar/mi-cuenta`;
+    try {
+      await enviarPlantilla(
+        p.telefono, 'nuevo_pedido_mudancero',
+        { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: pedido.fecha || 'a coordinar' },
+        resumen
+      );
+      enviados++;
+    } catch (e) { console.warn('[barrido] wa', email, e.message); }
+  }
+  console.log(`[barrido] whatsapp enviados: ${enviados}`);
 }
 
 // ------------------------------------------------------------------

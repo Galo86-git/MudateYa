@@ -166,6 +166,32 @@ function bodyHtml(p) {
   '</div>';
 }
 
+// ── Nudge por WhatsApp (además del email) ──
+// Apagado por defecto: solo se envía con ONBOARDING_WA_ACTIVO=1 (así, mientras
+// probás, no le llega WhatsApp a mudanceros reales). Usa la plantilla
+// onboarding_mudancero si Meta la aprobó; si no, texto libre (solo dentro de 24h).
+async function nudgeWhatsApp(perfil, cual) {
+  if (!(process.env.ONBOARDING_WA_ACTIVO === '1' || process.env.ONBOARDING_WA_ACTIVO === 'true')) return;
+  if (!perfil.telefono) return;
+  var primerNombre = (perfil.nombre || '').split(' ')[0] || 'Hola';
+  var frase = {
+    dia1: 'te falta un pasito para activar tu cuenta y empezar a recibir pedidos',
+    dia3: 'seguís sin recibir pedidos porque tu perfil está incompleto — otros mudanceros ya están cotizando',
+    dia7: 'último aviso: si no completás tu perfil, tu cuenta queda inactiva',
+  }[cual] || 'completá tu perfil para empezar a recibir pedidos';
+  try {
+    var enviarPlantilla = require('./_plantillas').enviarPlantilla;
+    var textoLibre =
+      '¡Hola ' + primerNombre + '! Soy Emi de MudateYa. ' + frase.charAt(0).toUpperCase() + frase.slice(1) + '.\n' +
+      'Cargá vehículo, precios, fotos (DNI + camión) y datos de cobro acá: https://mudateya.ar/mi-cuenta 🚚';
+    await enviarPlantilla(
+      perfil.telefono, 'onboarding_mudancero',
+      { 1: primerNombre, 2: frase },
+      textoLibre
+    );
+  } catch (e) { console.warn('nudgeWhatsApp ' + perfil.email + ':', e.message); }
+}
+
 // ── HANDLER ──
 module.exports = async function handler(req, res) {
   // Skip silencioso en deployments preview de Vercel.
@@ -237,6 +263,8 @@ module.exports = async function handler(req, res) {
         perfil.recordatoriosEnviados = enviados.concat([cual]);
         perfil.ultimoRecordatorioOnboarding = new Date().toISOString();
         await setJSON(key, perfil);
+        // Nudge por WhatsApp en paralelo al mail (no bloquea si falla).
+        try { await nudgeWhatsApp(perfil, cual); } catch(e) { /* ya logueado adentro */ }
         resumen.enviados[cual]++;
         resumen.detalle.push({ email: perfil.email, recordatorio: cual, dias: dias });
       } catch(e) {
