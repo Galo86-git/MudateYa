@@ -667,6 +667,7 @@ tr:hover td{background:#F8FAFC}
           <button class="btn-sm" onclick="exportarExcel()" style="background:#22C36A;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⬇ Exportar Excel</button>
           <button class="btn-sm" onclick="recordarDniFaltante()" title="Manda un mail a los mudanceros que subieron una sola foto del DNI" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">🪪 Recordar DNI faltante</button>
           <button class="btn-sm" onclick="recordarCobroFaltante()" title="Manda un mail a los mudanceros que no cargaron su forma de cobro (CBU/Alias o Mercado Pago)" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">💸 Recordar cobro faltante</button>
+          <button class="btn-sm" onclick="gestionarPlantillas()" title="Actualiza las plantillas de WhatsApp a la voz de Emi y crea las nuevas (las manda a revisión de Meta)" style="background:#7C3AED;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📤 Plantillas WhatsApp (Emi)</button>
         </div>
         <div class="table-card">
           <div id="mudancerosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -1711,6 +1712,44 @@ async function recordarCobroFaltante(){
     var d2 = await r2.json();
     if (!r2.ok) { alert('Error al enviar: ' + (d2.error || r2.status)); return; }
     alert('📧 Recordatorios de cobro enviados: ' + d2.enviados + (d2.fallidos ? (' · fallidos: ' + d2.fallidos) : ''));
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// Plantillas WhatsApp: actualiza las 6 a voz Emi + crea las 5 nuevas, y las manda
+// a revisión de Meta. Muestra vista previa y pide confirmación antes de aplicar.
+async function gestionarPlantillas(){
+  try {
+    var r = await fetch('/api/plantillas-emi', { headers: { 'x-admin-token': ADMTK() } });
+    var d = await r.json();
+    if (!r.ok || d.error) { alert('Error: ' + (d.error || r.status)); return; }
+    var act = d.actualizar || [];
+    var okAct = act.filter(function(x){ return x.accion === 'se_actualizaria'; });
+    var salteadas = act.filter(function(x){ return x.accion === 'SALTEADA' || x.error; });
+    var msg = 'PLANTILLAS EMI — vista previa:\n\n'
+      + '• A actualizar (voz Emi): ' + okAct.length + '\n'
+      + '• Salteadas (revisar): ' + salteadas.length + '\n'
+      + '• A crear (nuevas): ' + (d.crear||[]).length + '\n\n';
+    if (salteadas.length) {
+      msg += 'SALTEADAS:\n' + salteadas.map(function(s){ return '  - ' + s.name + ': ' + (s.motivo || s.error || ''); }).join('\n') + '\n\n';
+    }
+    msg += '¿Aplicar? Crea/reemplaza plantillas y las manda a revisión de Meta (resetea el pending actual de las que toca).';
+    if (!confirm(msg)) return;
+    var r2 = await fetch('/api/plantillas-emi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMTK() },
+      body: JSON.stringify({ apply: true })
+    });
+    var d2 = await r2.json();
+    if (!r2.ok || d2.error) { alert('Error al aplicar: ' + (d2.error || r2.status)); return; }
+    console.log('Plantillas — resultado completo:', d2);
+    var upd = (d2.actualizar||[]).filter(function(x){ return x.accion === 'actualizada_y_enviada'; }).length;
+    var cre = (d2.crear||[]).filter(function(x){ return x.accion === 'creada_y_enviada'; }).length;
+    var problemas = (d2.actualizar||[]).concat(d2.crear||[]).filter(function(x){ return x.accion && x.accion.indexOf('ERROR') === 0; });
+    alert('📤 Listo.\nActualizadas y enviadas a Meta: ' + upd + '\nCreadas y enviadas: ' + cre
+      + (problemas.length ? ('\n⚠️ Con problemas: ' + problemas.length + ' (mirá la consola)') : '')
+      + '\n\nEl detalle completo quedó en la consola (F12).');
   } catch(e) {
     alert('Error: ' + e.message);
   }

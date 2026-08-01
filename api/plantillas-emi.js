@@ -1,0 +1,134 @@
+// api/plantillas-emi.js
+// Actualiza las plantillas de WhatsApp desde el servidor (usa las credenciales
+// de Twilio que ya están en Vercel — nunca salen de ahí). Admin-only.
+//
+//   GET  /api/plantillas-emi            -> PREVIEW (dry-run): lee las 6 existentes,
+//                                          reporta estructura/variables y si el body
+//                                          Emi encaja. Lista las 5 nuevas a crear. NO toca nada.
+//   POST /api/plantillas-emi  {apply:true}
+//                                       -> APLICA: actualiza las 6 a voz Emi (crea versión
+//                                          nueva + borra vieja + manda a revisión) SOLO si las
+//                                          variables calzan, y crea las 5 nuevas.
+//
+// Las plantillas Content de Twilio son inmutables: por eso se recrea y reenvía a Meta.
+
+var { esAdmin } = require('./_auth');
+
+const BASE = 'https://content.twilio.com/v1/Content';
+
+function auth() {
+  const sid = process.env.TWILIO_ACCOUNT_SID, tok = process.env.TWILIO_AUTH_TOKEN;
+  if (!sid || !tok) return null;
+  return 'Basic ' + Buffer.from(sid + ':' + tok).toString('base64');
+}
+async function tw(method, url, body, AUTH) {
+  const r = await fetch(url, {
+    method, headers: { Authorization: AUTH, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const t = await r.text();
+  let d; try { d = t ? JSON.parse(t) : {}; } catch { d = { raw: t }; }
+  return { ok: r.ok, status: r.status, d };
+}
+function findBodyType(types) {
+  for (const k of Object.keys(types || {})) if (types[k] && typeof types[k].body === 'string') return k;
+  return null;
+}
+function varsIn(body) {
+  return [...new Set((String(body).match(/\{\{\s*\d+\s*\}\}/g) || []).map((s) => s.replace(/\D/g, '')))];
+}
+
+// ── Las 6 existentes: SOLO cambia el body a voz Emi (se preservan botones/variables) ──
+const ACTUALIZAR = [
+  { name: 'nuevo_pedido_mudancero', sid: 'HX5f39381013f9e1880d6f69afc7fe3b79', category: 'UTILITY',
+    body: 'Hola {{1}}, tenés un pedido nuevo para cotizar en MudateYa.\n\nMudanza: {{2}} → {{3}}\nFecha: {{4}}\n\nRespondé este WhatsApp con tu presupuesto para participar. El pedido queda abierto 24 hs.' },
+  { name: 'recordatorio_pedido_incompleto', sid: 'HX2ebc4cb3b32221059b9d013a212bbbda', category: 'MARKETING',
+    body: 'Hola {{1}}, quedó a medias tu pedido de mudanza en MudateYa. ¿Lo retomamos? Respondé este mensaje y en un minuto te consigo los presupuestos.' },
+  { name: 'mudancero_elegido', sid: 'HX4b32834b2e7a07da7b5ac52dc8bdc853', category: 'UTILITY',
+    body: '¡Te eligieron, {{1}}! 🙌 El cliente reservó tu presupuesto y pagó la seña.\n\nMudanza: {{2}} → {{3}}\nFecha: {{4}}\nContacto: {{5}} — {{6}}\n\nCoordiná directo con el cliente. ¡Éxitos!' },
+  { name: 'pago_confirmado_cliente', sid: 'HX5e31109f51010ea07751dd13e98258d2', category: 'UTILITY',
+    body: '¡Listo, {{1}}! Recibimos tu seña ✅\nTu mudancero {{2}} quedó confirmado para el {{3}}. Te va a escribir para coordinar los detalles.' },
+  { name: 'link_pago_sena', sid: 'HX93c65be02436ce3f138bee796768cd02', category: 'UTILITY',
+    body: '¡Buenísimo, {{1}}! Reservaste con {{2}} por {{3}}.\nPara confirmar, pagá la seña de {{4}} desde el botón de abajo. El resto lo abonás al terminar. Pago protegido por Mercado Pago.' },
+  { name: 'presupuestos_cliente', sid: 'HXa307fb50a1ae96e0eb4535792ee40ea3', category: 'UTILITY',
+    body: '¡Hola {{1}}! Ya tenemos presupuestos para tu mudanza ({{2}} → {{3}}).\nTe los paso acá abajo para que elijas el que más te convenga. Cada presupuesto vale 7 días.' },
+];
+
+// ── Las 5 nuevas: se crean con estructura completa (body + botón de pago si aplica) ──
+const CREAR = [
+  { name: 'mudanza_completada_saldo', category: 'UTILITY',
+    types: { 'twilio/call-to-action': {
+      body: '¡Hola {{1}}! Tu {{2}} ({{3}} → {{4}}) se completó ✅\n\nQueda el saldo final: ${{5}}. Pagalo desde el botón para cerrar el trabajo. ¡Gracias por elegir MudateYa!',
+      actions: [{ type: 'URL', title: 'Pagar saldo', url: 'https://mudateya.ar/pagar/{{6}}' }],
+    } },
+    variables: { '1': 'Juan', '2': 'mudanza', '3': 'Palermo', '4': 'Tigre', '5': '25.000', '6': 'MYA-123' } },
+  { name: 'mudanza_iniciada', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! Tu {{2}} ({{3}} → {{4}}) ya arrancó 🚚\n\n{{5}} está en camino. Cualquier cosa, respondé este mensaje.' } },
+    variables: { '1': 'Juan', '2': 'mudanza', '3': 'Palermo', '4': 'Tigre', '5': 'Cristian' } },
+  { name: 'invitacion_calificar', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! Esperamos que tu {{2}} con {{3}} haya salido genial.\n\n¿Nos dejás una calificación del 1 al 5? Respondé este mensaje con las estrellas (y un comentario si querés). ¡Gracias!' } },
+    variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian' } },
+  { name: 'ajuste_precio_propuesto', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, {{2}} propuso ajustar el precio de tu {{3}} a ${{4}}.\n\nMotivo: {{5}}\n\nRespondé este mensaje para aceptarlo o rechazarlo. Si rechazás, se cancela y te devolvemos la seña.' } },
+    variables: { '1': 'Juan', '2': 'Cristian', '3': 'mudanza', '4': '120.000', '5': 'piso sin ascensor' } },
+  { name: 'transferencia_diferencia', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, recibimos tu transferencia para {{2}}, pero fue por un monto menor al indicado (faltan ${{3}}).\n\nTransferí la diferencia al mismo alias/CVU, o respondé este mensaje y lo resolvemos juntos. 🙏' } },
+    variables: { '1': 'Juan', '2': 'la seña', '3': '5.000' } },
+];
+
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', 'https://mudateya.ar');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-token');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+
+  const AUTH = auth();
+  if (!AUTH) return res.status(200).json({ error: 'Faltan TWILIO_ACCOUNT_SID / AUTH_TOKEN en Vercel' });
+
+  const apply = req.method === 'POST' && req.body && req.body.apply === true;
+  const reporte = { modo: apply ? 'aplicar' : 'preview', actualizar: [], crear: [] };
+
+  // ── ACTUALIZAR las 6 ──
+  for (const t of ACTUALIZAR) {
+    const got = await tw('GET', `${BASE}/${t.sid}`, null, AUTH);
+    if (!got.ok) { reporte.actualizar.push({ name: t.name, error: `no se pudo leer (HTTP ${got.status})` }); continue; }
+    const orig = got.d;
+    const typeKey = findBodyType(orig.types);
+    const origVars = Object.keys(orig.variables || {});
+    const need = varsIn(t.body);
+    const faltan = need.filter((n) => !origVars.includes(n));
+    const item = { name: t.name, typeKey, variablesOriginales: origVars, variablesNuevas: need };
+    if (faltan.length) {
+      item.accion = 'SALTEADA'; item.motivo = `el body nuevo usa {{${faltan.join('}}, {{')}}} que la original no tiene — revisar mapeo`;
+      reporte.actualizar.push(item); continue;
+    }
+    if (!apply) { item.accion = 'se_actualizaria'; reporte.actualizar.push(item); continue; }
+    // Crear versión nueva preservando estructura, cambiando solo el body.
+    const newTypes = JSON.parse(JSON.stringify(orig.types));
+    newTypes[typeKey].body = t.body;
+    const created = await tw('POST', BASE, { friendly_name: t.name, language: orig.language || 'es', variables: orig.variables || {}, types: newTypes }, AUTH);
+    if (!created.ok) { item.accion = 'ERROR_crear'; item.detalle = created.d; reporte.actualizar.push(item); continue; }
+    item.nuevoSid = created.d.sid;
+    await tw('DELETE', `${BASE}/${t.sid}`, null, AUTH);
+    const appr = await tw('POST', `${BASE}/${created.d.sid}/ApprovalRequests/whatsapp`, { name: t.name, category: t.category }, AUTH);
+    item.accion = appr.ok ? 'actualizada_y_enviada' : 'creada_pero_no_enviada';
+    if (!appr.ok) item.aprobacion = appr.d;
+    reporte.actualizar.push(item);
+  }
+
+  // ── CREAR las 5 nuevas ──
+  for (const t of CREAR) {
+    const item = { name: t.name };
+    if (!apply) { item.accion = 'se_crearia'; reporte.crear.push(item); continue; }
+    const created = await tw('POST', BASE, { friendly_name: t.name, language: 'es', variables: t.variables, types: t.types }, AUTH);
+    if (!created.ok) { item.accion = 'ERROR_crear'; item.detalle = created.d; reporte.crear.push(item); continue; }
+    item.sid = created.d.sid;
+    const appr = await tw('POST', `${BASE}/${created.d.sid}/ApprovalRequests/whatsapp`, { name: t.name, category: t.category }, AUTH);
+    item.accion = appr.ok ? 'creada_y_enviada' : 'creada_pero_no_enviada';
+    if (!appr.ok) item.aprobacion = appr.d;
+    reporte.crear.push(item);
+  }
+
+  return res.status(200).json(reporte);
+};
