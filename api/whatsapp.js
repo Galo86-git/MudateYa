@@ -330,6 +330,8 @@ HERRAMIENTAS QUE TENÉS:
 - calificar_mudancero: cuando el cliente puntúa al mudancero tras una mudanza completada (ej: "5 estrellas", "le pongo un 4, muy bueno"). Pasá las estrellas (1-5) y el comentario si lo hay. Agradecé y contale que suma a la reputación del mudancero.
 - derivar_a_humano: si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar.
 
+REGLA CRÍTICA DE PAGOS: los links de pago (Mercado Pago), alias, CBU, CVU y montos SIEMPRE los generan las herramientas. Mostrá SOLO y EXACTAMENTE lo que la herramienta te devuelve en su resultado, copiado carácter por carácter. NUNCA inventes, adivines, completes ni "maquilles" un link, alias, CBU ni monto (nada de ejemplos tipo "mpago.la/sim..." o alias inventados). Si la herramienta NO te devolvió link ni datos de transferencia, NO muestres ninguno: avisá que hubo un problema generando el pago y usá derivar_a_humano. Un dato de pago inventado es un error grave.
+
 REGLAS: no pidas datos sensibles (tarjetas, documentos). Si el mensaje no tiene que ver con esto, respondé amable y reconducí. Si te preguntan derecho si sos un bot o una persona, sé honesta y sin dramas ("soy la asistente virtual de MudateYa, pero te resuelvo igual 🙂") — nunca digas que sos una persona de carne y hueso.`;
 
 // System prompt del asistente para MUDANCEROS (distinto del de clientes).
@@ -737,14 +739,19 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
     if (b.cbu || b.alias) transf = { ...b, automatico: false };
   }
 
+  const hayPago = !!link || !!(transf && (transf.checkoutUrl || transf.cbu || transf.alias));
+  const nota = hayPago
+    ? 'Cotización aceptada. Mostrá SOLO los datos de pago que están en ESTE resultado (link_pago_mp y/o transferencia), copiados EXACTAMENTE como vienen. NO inventes, completes ni cambies ningún link, alias, CBU ni monto. Si viene transferencia.checkoutUrl es un link de Talo con el monto ya cargado: ofrecelo como la mejor opción ("así no te equivocás"). Si no, pasá el CBU/alias tal cual y decile que transfiera EXACTAMENTE la seña. Aclarale que el 50% restante se paga al completar y que la seña queda protegida.'
+    : 'Cotización aceptada, PERO no se pudo generar el pago (no hay link_pago_mp ni transferencia en este resultado). NO inventes NI muestres ningún link, alias, CBU ni monto: sería falso. Decile al cliente que hubo un problema generando el pago y que el equipo se lo pasa enseguida, y usá derivar_a_humano.';
   return {
     ok: true,
     mudancero: cot.mudanceroNombre,
     precio_total: cot.precio,
     sena,
-    link_pago_mp: link,
-    transferencia: transf,
-    nota: 'Cotización aceptada. Pasale al cliente el monto de la SEÑA (50%) y las formas de pago. Para transferencia, si transferencia.checkoutUrl viene, ese es un link de Talo con el MONTO YA CARGADO: ofrecelo como la mejor opción ("así no te equivocás con el importe"). Si no hay checkoutUrl, pasale el CBU/alias y decile que transfiera EXACTAMENTE ese monto. También está el link de Mercado Pago (monto fijo). Aclarale que el 50% restante se paga al completar y que la seña queda protegida. Si no vino ninguna forma de pago, decile que en un momento le pasás cómo pagar y usá derivar_a_humano.',
+    link_pago_mp: link || null,
+    transferencia: transf || null,
+    pago_disponible: hayPago,
+    nota,
   };
 }
 
