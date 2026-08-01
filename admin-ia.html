@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>MudateYa · Laboratorio IA</title>
+<link rel="icon" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#F5F7FA;--surface:#FFFFFF;--border:#E2E8F0;--border2:#CBD5E1;
+  --blue:#1A6FFF;--blue-dark:#0F52CC;--blue-light:#EEF4FF;
+  --green:#22C36A;--green-light:rgba(34,195,106,.1);
+  --red:#EF4444;--amber:#F59E0B;--amber-light:rgba(245,158,11,.1);
+  --text:#0F1923;--text2:#475569;--text3:#64748B;--navy:#003580;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+/* Login */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;flex-direction:column;gap:1.4rem;background:radial-gradient(120% 120% at 50% 0%,#EAF1FF 0%,#F5F7FA 45%,#EEF6F0 100%)}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:1px}
+.logo span{color:var(--green)}
+.sub{font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase}
+.note{font-size:11px;color:var(--text3);font-family:var(--mono);max-width:320px;text-align:center;margin-top:.4rem}
+/* Nav */
+.nav{position:sticky;top:0;z-index:50;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;height:56px;box-shadow:0 1px 0 rgba(34,195,106,.9),0 2px 12px rgba(0,20,60,.18)}
+.nav .logo{font-size:20px;color:#fff}
+.nav .logo small{display:block;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.6);letter-spacing:1.5px;text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:.8rem}
+.nav-user{font-size:12px;color:rgba(255,255,255,.85)}
+.btn-out{font-size:11px;color:rgba(255,255,255,.8);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);padding:6px 12px;border-radius:7px;cursor:pointer;font-family:var(--mono)}
+/* Layout */
+.wrap{max-width:960px;margin:0 auto;padding:1.4rem 1rem 4rem}
+.tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.tab{font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:.15s}
+.tab:hover{border-color:var(--border2)}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.3rem;box-shadow:0 1px 3px rgba(0,20,60,.04)}
+.card h2{font-size:16px;margin-bottom:.3rem}
+.card .desc{font-size:12.5px;color:var(--text3);margin-bottom:1rem;line-height:1.5}
+label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin:.7rem 0 .3rem}
+input,textarea,select{width:100%;font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:#fff;color:var(--text)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-light)}
+textarea{resize:vertical;min-height:80px}
+.row{display:flex;gap:.7rem;flex-wrap:wrap}
+.row>div{flex:1;min-width:140px}
+.check{display:flex;align-items:center;gap:.5rem;margin-top:.9rem}
+.check input{width:auto}
+.btn{margin-top:1.1rem;background:var(--blue);color:#fff;border:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--blue-dark)}
+.btn:disabled{opacity:.5;cursor:default}
+.out{margin-top:1.1rem;display:none}
+.out.show{display:block}
+.result{background:#F8FAFC;border:1px solid var(--border);border-radius:11px;padding:1rem;font-size:13.5px;line-height:1.6}
+.result h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:.5rem}
+.big{font-size:26px;font-weight:700;color:var(--navy)}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin:2px 3px 2px 0}
+.pill.g{background:var(--green-light);color:#137a42}
+.pill.a{background:var(--amber-light);color:#96690a}
+.pill.r{background:rgba(239,68,68,.1);color:#b91c1c}
+.pill.b{background:var(--blue-light);color:var(--blue-dark)}
+.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border)}
+.kv:last-child{border:none}
+.kv b{font-weight:600}
+.muted{color:var(--text3);font-size:12px}
+.err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#b91c1c;padding:.7rem .9rem;border-radius:9px;font-size:13px;margin-top:1rem;display:none}
+.err.show{display:block}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+pre.raw{margin-top:.8rem;font-family:var(--mono);font-size:11px;color:var(--text3);background:#fff;border:1px solid var(--border);border-radius:8px;padding:.7rem;overflow:auto;max-height:200px;white-space:pre-wrap;word-break:break-word}
+.rank-item{border:1px solid var(--border);border-radius:11px;padding:.8rem 1rem;margin-bottom:.6rem;background:#fff}
+.rank-item .top{display:flex;justify-content:space-between;align-items:center}
+.score{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--navy)}
+.thumbs{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.6rem}
+.thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div style="text-align:center">
+    <div class="logo">Mudate<span>Ya</span></div>
+    <div class="sub">Laboratorio IA</div>
+  </div>
+  <div id="googleBtn"></div>
+  <div class="note">Acceso solo para el equipo. Iniciá sesión con tu cuenta de Google autorizada.</div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div class="nav">
+    <div class="logo">Mudate<span>Ya</span><small>Laboratorio IA</small></div>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <button class="btn-out" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="tabs">
+      <button class="tab active" data-t="cotiza" onclick="tab('cotiza',this)">1 · Cotización</button>
+      <button class="tab" data-t="estima" onclick="tab('estima',this)">2 · Estimar mudanza</button>
+      <button class="tab" data-t="precio" onclick="tab('precio',this)">3 · Sugerir precio</button>
+      <button class="tab" data-t="match" onclick="tab('match',this)">4 · Match</button>
+      <button class="tab" data-t="conf" onclick="tab('conf',this)">5 · Confianza</button>
+    </div>
+
+    <!-- 1 · COTIZACIÓN -->
+    <div class="panel active" id="p-cotiza">
+      <div class="card">
+        <h2>Parsear cotización del mudancero</h2>
+        <p class="desc">Pegá el mensaje tal como lo escribiría un mudancero por WhatsApp. La IA lo convierte en una cotización estructurada.</p>
+        <label>Mensaje del mudancero</label>
+        <textarea id="c-texto" placeholder="ej: lo hago 80 lucas, mañana a la tarde, incluye embalaje pero la escalera va aparte. Seña 50%."></textarea>
+        <label>pedidoId (opcional — si lo ponés, la guarda en el pedido)</label>
+        <input id="c-pedido" placeholder="abc123">
+        <button class="btn" onclick="runCotiza()">Analizar</button>
+        <div class="err" id="c-err"></div>
+        <div class="out" id="c-out"></div>
+      </div>
+    </div>
+
+    <!-- 2 · ESTIMAR -->
+    <div class="panel" id="p-estima">
+      <div class="card">
+        <h2>Estimar mudanza desde fotos</h2>
+        <p class="desc">Subí 1 a 6 fotos de la casa/ambiente. La IA estima volumen, bultos, camión y un rango de precio de referencia.</p>
+        <label>Fotos (hasta 6)</label>
+        <input id="e-files" type="file" accept="image/*" multiple onchange="previewFotos()">
+        <div class="thumbs" id="e-thumbs"></div>
+        <div class="row">
+          <div><label>Ambientes</label><input id="e-amb" type="number" min="0" placeholder="2"></div>
+          <div><label>Piso</label><input id="e-piso" type="number" min="0" placeholder="3"></div>
+        </div>
+        <div class="check"><input id="e-asc" type="checkbox"><label style="margin:0">Tiene ascensor</label></div>
+        <div class="row">
+          <div><label>Origen</label><input id="e-ori" placeholder="Palermo"></div>
+          <div><label>Destino</label><input id="e-des" placeholder="Tigre"></div>
+        </div>
+        <button class="btn" onclick="runEstima()">Estimar</button>
+        <div class="err" id="e-err"></div>
+        <div class="out" id="e-out"></div>
+      </div>
+    </div>
+
+    <!-- 3 · PRECIO -->
+    <div class="panel" id="p-precio">
+      <div class="card">
+        <h2>Sugerir precio (para el mudancero)</h2>
+        <p class="desc">Cargá el pedido y la IA sugiere un precio con desglose y un mensaje listo para mandarle al cliente.</p>
+        <div class="row">
+          <div><label>Tipo</label><select id="s-tipo"><option value="mudanza">Mudanza</option><option value="flete">Flete</option></select></div>
+          <div><label>Fecha</label><input id="s-fecha" placeholder="sábado que viene"></div>
+        </div>
+        <div class="row">
+          <div><label>Origen</label><input id="s-ori" placeholder="Caballito, PB"></div>
+          <div><label>Destino</label><input id="s-des" placeholder="Nordelta"></div>
+        </div>
+        <label>Detalles</label>
+        <textarea id="s-det" placeholder="2 ambientes, heladera, lavarropas, ~15 cajas. Origen 3er piso sin ascensor."></textarea>
+        <div class="row">
+          <div><label>Pisos</label><input id="s-pisos" placeholder="3"></div>
+          <div><label>Email del mudancero (opcional, ancla sus precios)</label><input id="s-email" placeholder="juan@..."></div>
+        </div>
+        <div class="check"><input id="s-asc" type="checkbox"><label style="margin:0">Ascensor</label></div>
+        <button class="btn" onclick="runPrecio()">Sugerir precio</button>
+        <div class="err" id="s-err"></div>
+        <div class="out" id="s-out"></div>
+      </div>
+    </div>
+
+    <!-- 4 · MATCH -->
+    <div class="panel" id="p-match">
+      <div class="card">
+        <h2>Match pedido → mudanceros</h2>
+        <p class="desc">Rankea qué mudanceros conviene contactar para un pedido (zona, vehículo, servicios + reordenado por IA).</p>
+        <div class="row">
+          <div><label>Tipo</label><select id="m-tipo"><option value="mudanza">Mudanza</option><option value="flete">Flete</option></select></div>
+          <div><label>¿Cuántos? (1-10)</label><input id="m-n" type="number" min="1" max="10" value="5"></div>
+        </div>
+        <div class="row">
+          <div><label>Origen</label><input id="m-ori" placeholder="Rosario"></div>
+          <div><label>Destino</label><input id="m-des" placeholder="Funes"></div>
+        </div>
+        <label>Detalles</label>
+        <textarea id="m-det" placeholder="Mudanza chica, con embalaje."></textarea>
+        <label>o pedidoId (opcional)</label>
+        <input id="m-pedido" placeholder="abc123">
+        <button class="btn" onclick="runMatch()">Buscar match</button>
+        <div class="err" id="m-err"></div>
+        <div class="out" id="m-out"></div>
+      </div>
+    </div>
+
+    <!-- 5 · CONFIANZA -->
+    <div class="panel" id="p-conf">
+      <div class="card">
+        <h2>Confianza y anti-fraude</h2>
+        <p class="desc">Score de confianza de un mudancero a partir de su perfil (y reseñas si hay). Marca señales de alerta.</p>
+        <label>Email del mudancero</label>
+        <input id="f-email" placeholder="juan@ejemplo.com">
+        <label>Reseñas (opcional, JSON: [{"estrellas":5,"texto":"..."}])</label>
+        <textarea id="f-res" placeholder='[{"estrellas":5,"texto":"Puntual y cuidadoso"},{"estrellas":2,"texto":"Llegó tarde"}]'></textarea>
+        <button class="btn" onclick="runConf()">Evaluar</button>
+        <div class="err" id="f-err"></div>
+        <div class="out" id="f-out"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var GOOGLE_CLIENT_ID='', ADMIN_EMAILS=[], currentUser=null;
+
+function TK(){ return sessionStorage.getItem('adminToken')||''; }
+
+window.onload=async function(){
+  try{ var cfg=await (await fetch('/api/admin-config')).json(); GOOGLE_CLIENT_ID=cfg.googleClientId; ADMIN_EMAILS=cfg.adminEmails||[]; }catch(e){}
+  var saved=sessionStorage.getItem('adminUser');
+  if(saved){
+    try{ var p=JSON.parse(saved);
+      if(p._expires && Date.now()>p._expires){ sessionStorage.removeItem('adminUser'); }
+      else if(TK()){ currentUser=p; showApp(); return; }
+    }catch(e){}
+  }
+  if(GOOGLE_CLIENT_ID && window.google){
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID, callback:onCred});
+    google.accounts.id.renderButton(document.getElementById('googleBtn'),{theme:'filled_black',size:'large',text:'signin_with',width:280});
+  } else {
+    document.getElementById('googleBtn').innerHTML='<div class="note" style="color:#b91c1c">No se pudo cargar el login de Google.</div>';
+  }
+};
+
+async function onCred(resp){
+  var payload={}; try{ payload=JSON.parse(atob(resp.credential.split('.')[1])); }catch(e){}
+  var r,d;
+  try{
+    r=await fetch('/api/admin-sesion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({googleIdToken:resp.credential})});
+    d=await r.json();
+  }catch(e){ alert('No se pudo conectar con el servidor.'); return; }
+  if(!r.ok||!d||!d.token){ alert('⚠ '+((d&&d.error)||'No se pudo iniciar sesión.')); return; }
+  sessionStorage.setItem('adminToken',d.token);
+  currentUser={name:payload.name||d.email,email:d.email};
+  sessionStorage.setItem('adminUser',JSON.stringify({name:currentUser.name,email:currentUser.email,_expires:Date.now()+(d.expiraEn||12*3600*1000)}));
+  showApp();
+}
+function showApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('navUser').textContent=currentUser.name||currentUser.email;
+}
+function logout(){ sessionStorage.removeItem('adminUser'); sessionStorage.removeItem('adminToken'); location.reload(); }
+
+function tab(name,el){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  document.getElementById('p-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── Helpers ──────────────────────────────────────────────
+async function post(url,body){
+  var r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':TK()},body:JSON.stringify(body)});
+  var d=await r.json().catch(function(){return{}});
+  if(!r.ok) throw new Error((d&&d.error)||('Error '+r.status));
+  return d;
+}
+function busy(btn,on){ btn.disabled=on; btn.dataset.t=btn.dataset.t||btn.innerHTML; btn.innerHTML= on?'<span class="spin"></span>Procesando…':btn.dataset.t; }
+function showErr(id,msg){ var e=document.getElementById(id); e.textContent='⚠ '+msg; e.classList.add('show'); }
+function clearErr(id){ document.getElementById(id).classList.remove('show'); }
+function money(n){ if(n==null||isNaN(n))return'—'; return '$'+Number(n).toLocaleString('es-AR'); }
+function pills(arr,cls){ if(!arr||!arr.length)return'<span class="muted">—</span>'; return arr.map(function(x){return '<span class="pill '+(cls||'b')+'">'+esc(x)+'</span>'}).join(''); }
+function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]}); }
+function raw(o){ return '<pre class="raw">'+esc(JSON.stringify(o,null,2))+'</pre>'; }
+function confPill(c){ return '<span class="pill '+(c==='alta'?'g':c==='baja'?'r':'a')+'">confianza '+esc(c)+'</span>'; }
+
+// ── 1 · Cotización ───────────────────────────────────────
+async function runCotiza(){
+  var btn=event.target, out=document.getElementById('c-out'); clearErr('c-err'); out.classList.remove('show');
+  var texto=document.getElementById('c-texto').value.trim();
+  if(!texto){ showErr('c-err','Escribí el mensaje del mudancero'); return; }
+  busy(btn,true);
+  try{
+    var body={texto:texto}; var pid=document.getElementById('c-pedido').value.trim(); if(pid) body.pedidoId=pid;
+    var d=await post('/api/parsear-cotizacion',body); var c=d.cotizacion;
+    var html='<div class="result">';
+    if(!c.cotiza){ html+='<h3>No es una cotización</h3><p>'+esc(c.resumen)+'</p>'; }
+    else{
+      html+='<div class="big">'+money(c.precio_total)+' <span class="muted" style="font-size:14px">'+esc(c.moneda)+'</span></div>';
+      html+='<p style="margin:.4rem 0 .7rem">'+esc(c.resumen)+'</p>';
+      html+='<div class="kv"><span>Disponible</span><b>'+esc(c.fecha_disponible||'—')+'</b></div>';
+      if(c.sena_pct)html+='<div class="kv"><span>Seña</span><b>'+c.sena_pct+'%</b></div>';
+      if(c.validez_dias)html+='<div class="kv"><span>Validez</span><b>'+c.validez_dias+' días</b></div>';
+      html+='<div style="margin-top:.6rem"><b>Incluye:</b><br>'+pills(c.incluye,'g')+'</div>';
+      if(c.no_incluye&&c.no_incluye.length)html+='<div style="margin-top:.4rem"><b>No incluye:</b><br>'+pills(c.no_incluye,'r')+'</div>';
+      if(c.falta&&c.falta.length)html+='<div style="margin-top:.4rem"><b>Repreguntar:</b><br>'+pills(c.falta,'a')+'</div>';
+      html+='<div style="margin-top:.6rem">'+confPill(c.confianza)+(d.guardada?' <span class="pill g">✓ guardada en el pedido</span>':'')+'</div>';
+    }
+    html+='</div>'+raw(c);
+    out.innerHTML=html; out.classList.add('show');
+  }catch(e){ showErr('c-err',e.message); } finally{ busy(btn,false); }
+}
+
+// ── 2 · Estimar ──────────────────────────────────────────
+var fotosB64=[];
+function previewFotos(){
+  var files=Array.prototype.slice.call(document.getElementById('e-files').files).slice(0,6);
+  fotosB64=[]; var cont=document.getElementById('e-thumbs'); cont.innerHTML='';
+  files.forEach(function(f){
+    var rd=new FileReader();
+    rd.onload=function(){
+      var data=rd.result.split(',')[1];
+      fotosB64.push({data:data,mediaType:f.type||'image/jpeg'});
+      var img=document.createElement('img'); img.src=rd.result; cont.appendChild(img);
+    };
+    rd.readAsDataURL(f);
+  });
+}
+async function runEstima(){
+  var btn=event.target, out=document.getElementById('e-out'); clearErr('e-err'); out.classList.remove('show');
+  if(!fotosB64.length){ showErr('e-err','Subí al menos una foto'); return; }
+  busy(btn,true);
+  try{
+    var ctx={}; var amb=document.getElementById('e-amb').value, piso=document.getElementById('e-piso').value;
+    if(amb)ctx.ambientes=+amb; if(piso)ctx.piso=+piso; ctx.ascensor=document.getElementById('e-asc').checked;
+    var ori=document.getElementById('e-ori').value.trim(), des=document.getElementById('e-des').value.trim();
+    if(ori)ctx.origen=ori; if(des)ctx.destino=des;
+    var d=await post('/api/estimar-mudanza',{images:fotosB64,contexto:ctx}); var e=d.estimacion;
+    var html='<div class="result">';
+    html+='<div class="big">'+money(e.rango_precio.min)+' – '+money(e.rango_precio.max)+'</div>';
+    html+='<p class="muted" style="margin-bottom:.6rem">rango orientativo · el precio final lo pone el mudancero</p>';
+    html+='<p style="margin-bottom:.7rem">'+esc(e.resumen)+'</p>';
+    html+='<div class="kv"><span>Volumen</span><b>'+e.volumen_m3+' m³</b></div>';
+    html+='<div class="kv"><span>Bultos</span><b>'+e.bultos+'</b></div>';
+    html+='<div class="kv"><span>Camión sugerido</span><b>'+esc(e.camion_sugerido)+'</b></div>';
+    html+='<div class="kv"><span>Personas</span><b>'+e.personas+'</b></div>';
+    html+='<div class="kv"><span>Desarme</span><b>'+(e.requiere_desarme?'sí':'no')+'</b></div>';
+    if(e.items_delicados&&e.items_delicados.length)html+='<div style="margin-top:.5rem"><b>Delicados:</b><br>'+pills(e.items_delicados,'a')+'</div>';
+    html+='<div style="margin-top:.6rem">'+confPill(e.confianza)+'</div>';
+    if(e.inventario&&e.inventario.length){ html+='<div style="margin-top:.7rem"><b>Inventario detectado:</b>'; e.inventario.forEach(function(i){ html+='<div class="kv"><span>'+esc(i.item)+' ×'+i.cantidad+'</span><b>'+i.volumen_m3+' m³</b></div>'; }); html+='</div>'; }
+    html+='</div>';
+    out.innerHTML=html; out.classList.add('show');
+  }catch(e){ showErr('e-err',e.message); } finally{ busy(btn,false); }
+}
+
+// ── 3 · Precio ───────────────────────────────────────────
+async function runPrecio(){
+  var btn=event.target, out=document.getElementById('s-out'); clearErr('s-err'); out.classList.remove('show');
+  var pedido={tipo:document.getElementById('s-tipo').value,origen:document.getElementById('s-ori').value.trim(),destino:document.getElementById('s-des').value.trim(),fecha:document.getElementById('s-fecha').value.trim(),detalles:document.getElementById('s-det').value.trim(),pisos:document.getElementById('s-pisos').value.trim(),ascensor:document.getElementById('s-asc').checked};
+  if(!pedido.origen||!pedido.destino){ showErr('s-err','Poné al menos origen y destino'); return; }
+  busy(btn,true);
+  try{
+    var body={pedido:pedido}; var em=document.getElementById('s-email').value.trim(); if(em)body.mudanceroEmail=em;
+    var d=await post('/api/sugerir-precio',body); var s=d.sugerencia;
+    var g=s.desglose;
+    var html='<div class="result">';
+    html+='<div class="big">'+money(s.precio_sugerido)+'</div>';
+    html+='<p class="muted" style="margin-bottom:.6rem">rango '+money(s.rango.min)+' – '+money(s.rango.max)+' · '+s.km_estimados+' km · ~'+s.tiempo_estimado_hs+'h · '+s.personas+' personas</p>';
+    html+='<div class="kv"><span>Mano de obra</span><b>'+money(g.mano_obra)+'</b></div>';
+    html+='<div class="kv"><span>Traslado</span><b>'+money(g.traslado)+'</b></div>';
+    html+='<div class="kv"><span>Peajes</span><b>'+money(g.peajes)+'</b></div>';
+    html+='<div class="kv"><span>Embalaje</span><b>'+money(g.embalaje)+'</b></div>';
+    html+='<div class="kv"><span>Otros</span><b>'+money(g.otros)+'</b></div>';
+    if(s.factores&&s.factores.length)html+='<div style="margin-top:.6rem"><b>Factores:</b><br>'+pills(s.factores,'b')+'</div>';
+    html+='<div style="margin-top:.7rem"><b>Por qué:</b><br><span class="muted">'+esc(s.justificacion)+'</span></div>';
+    html+='<div style="margin-top:.7rem"><b>Mensaje para el cliente:</b><div class="result" style="margin-top:.4rem;background:#fff">'+esc(s.mensaje_sugerido)+'</div></div>';
+    html+='</div>';
+    out.innerHTML=html; out.classList.add('show');
+  }catch(e){ showErr('s-err',e.message); } finally{ busy(btn,false); }
+}
+
+// ── 4 · Match ────────────────────────────────────────────
+async function runMatch(){
+  var btn=event.target, out=document.getElementById('m-out'); clearErr('m-err'); out.classList.remove('show');
+  var body={n:+document.getElementById('m-n').value||5};
+  var pid=document.getElementById('m-pedido').value.trim();
+  if(pid) body.pedidoId=pid;
+  else body.pedido={tipo:document.getElementById('m-tipo').value,origen:document.getElementById('m-ori').value.trim(),destino:document.getElementById('m-des').value.trim(),detalles:document.getElementById('m-det').value.trim()};
+  if(!pid && !body.pedido.origen){ showErr('m-err','Poné origen/destino o un pedidoId'); return; }
+  busy(btn,true);
+  try{
+    var d=await post('/api/match-mudanceros',body);
+    var html='';
+    if(!d.ranking||!d.ranking.length){ html='<div class="result"><p class="muted">Sin mudanceros con cobertura para esta zona.</p></div>'; }
+    else{
+      html='<div class="muted" style="margin-bottom:.5rem">'+d.ranking.length+' de '+(d.total||d.ranking.length)+' candidatos</div>';
+      d.ranking.forEach(function(m,i){
+        html+='<div class="rank-item"><div class="top"><b>'+(i+1)+'. '+esc(m.nombre||m.email)+(m.empresa?' · '+esc(m.empresa):'')+'</b><span class="score">'+m.score+'</span></div>';
+        html+='<div class="muted" style="margin:.3rem 0">'+esc(m.motivo)+'</div>';
+        if(m.telefono)html+='<div class="muted">📞 '+esc(m.telefono)+'</div>';
+        if(m.señales&&m.señales.length)html+='<div style="margin-top:.4rem">'+pills(m.señales,'g')+'</div>';
+        html+='</div>';
+      });
+    }
+    out.innerHTML=html; out.classList.add('show');
+  }catch(e){ showErr('m-err',e.message); } finally{ busy(btn,false); }
+}
+
+// ── 5 · Confianza ────────────────────────────────────────
+async function runConf(){
+  var btn=event.target, out=document.getElementById('f-out'); clearErr('f-err'); out.classList.remove('show');
+  var email=document.getElementById('f-email').value.trim();
+  if(!email){ showErr('f-err','Poné el email del mudancero'); return; }
+  var body={email:email};
+  var rt=document.getElementById('f-res').value.trim();
+  if(rt){ try{ body['reseñas']=JSON.parse(rt); }catch(e){ showErr('f-err','Las reseñas no son un JSON válido'); return; } }
+  busy(btn,true);
+  try{
+    var d=await post('/api/confianza-mudancero',body); var c=d.confianza;
+    var nivelCls=c.nivel==='alto'?'g':c.nivel==='bajo'?'r':c.nivel==='sin_datos'?'b':'a';
+    var frCls=c.riesgo_fraude==='alto'?'r':c.riesgo_fraude==='medio'?'a':'g';
+    var html='<div class="result">';
+    html+='<div class="big">'+c.score+'<span class="muted" style="font-size:15px">/100</span> <span class="pill '+nivelCls+'">'+esc(c.nivel)+'</span></div>';
+    html+='<p style="margin:.5rem 0 .7rem">'+esc(c.resumen_reputacion)+'</p>';
+    html+='<div><span class="pill '+frCls+'">riesgo fraude: '+esc(c.riesgo_fraude)+'</span></div>';
+    if(c.señales_positivas&&c.señales_positivas.length)html+='<div style="margin-top:.6rem"><b>Positivas:</b><br>'+pills(c.señales_positivas,'g')+'</div>';
+    if(c.señales_alerta&&c.señales_alerta.length)html+='<div style="margin-top:.5rem"><b>Alertas:</b><br>'+pills(c.señales_alerta,'r')+'</div>';
+    html+='<div style="margin-top:.7rem"><b>Recomendación:</b><br><span class="muted">'+esc(c.recomendacion)+'</span></div>';
+    html+='</div>';
+    if(d['señales_objetivas'])html+=raw(d['señales_objetivas']);
+    out.innerHTML=html; out.classList.add('show');
+  }catch(e){ showErr('f-err',e.message); } finally{ busy(btn,false); }
+}
+</script>
+</body>
+</html>
