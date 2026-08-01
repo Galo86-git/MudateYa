@@ -35,6 +35,11 @@ const EQUIPO = cargarEquipo();
 function ultimos10(waId) {
   return String(waId || '').replace(/\D/g, '').slice(-10);
 }
+// Para mudanceros usamos los últimos 8 dígitos (número de abonado): es la parte
+// estable del celular argentino, más allá de 54 / 9 / 15 / código de área.
+function clave8(tel) {
+  return String(tel || '').replace(/\D/g, '').slice(-8);
+}
 function quienEscribe(waId) {
   return EQUIPO[ultimos10(waId)] || null;
 }
@@ -164,7 +169,7 @@ async function redisPipeline(commands) {
 // mudanceros usa pipelines por lotes de 100 (una llamada por lote), no N GET.
 async function asegurarIndiceMudanceros() {
   try {
-    if (await redisCall('GET', 'mudanceros:tel-idx:built')) return;
+    if (await redisCall('GET', 'mudanceros:tel8-idx:built')) return;
     const emails = (await getJSON('mudanceros:todos')) || [];
     for (let off = 0; off < emails.length; off += 100) {
       const lote = emails.slice(off, off + 100);
@@ -175,14 +180,14 @@ async function asegurarIndiceMudanceros() {
         try {
           const p = JSON.parse(val);
           if (p && p.telefono && p.estado !== 'rechazado') {
-            const t = ultimos10(p.telefono);
-            if (t) hset.push(['HSET', 'mudanceros:tel-idx', t, lote[i]]);
+            const t = clave8(p.telefono);
+            if (t.length === 8) hset.push(['HSET', 'mudanceros:tel8-idx', t, lote[i]]);
           }
         } catch (_) {}
       });
       if (hset.length) await redisPipeline(hset);
     }
-    await redisCall('SET', 'mudanceros:tel-idx:built', '1', 'EX', String(24 * 60 * 60));
+    await redisCall('SET', 'mudanceros:tel8-idx:built', '1', 'EX', String(24 * 60 * 60));
   } catch (e) {
     console.error('asegurarIndiceMudanceros:', e.message);
   }
@@ -190,7 +195,9 @@ async function asegurarIndiceMudanceros() {
 async function buscarMudancero(waId) {
   try {
     await asegurarIndiceMudanceros();
-    const email = await redisCall('HGET', 'mudanceros:tel-idx', ultimos10(waId));
+    const t = clave8(waId);
+    if (t.length !== 8) return null;
+    const email = await redisCall('HGET', 'mudanceros:tel8-idx', t);
     if (!email) return null;
     return await getJSON(`mudancero:perfil:${email}`);
   } catch (e) {
