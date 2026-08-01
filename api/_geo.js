@@ -24,11 +24,13 @@ async function geocodificar(direccion) {
     const r = await fetch(url);
     const d = await r.json();
 
+    if (d.status && d.status !== 'OK' && d.status !== 'ZERO_RESULTS') {
+      // REQUEST_DENIED / OVER_QUERY_LIMIT / etc — lo logueamos para diagnosticar.
+      console.warn('geocodificar status:', d.status, '—', d.error_message || '');
+      return { ok: false, motivo: d.status };
+    }
     if (d.status === 'ZERO_RESULTS' || !d.results || !d.results.length) {
       return { ok: false, existe: false, motivo: 'no_encontrada' };
-    }
-    if (d.status !== 'OK') {
-      return { ok: false, motivo: d.status || ('http_' + r.status) };
     }
 
     const res = d.results[0];
@@ -75,6 +77,9 @@ async function distanciaKm(origen, destino) {
       + '&mode=driving&region=ar&language=es&key=' + key;
     const r = await fetch(url);
     const d = await r.json();
+    if (d.status && d.status !== 'OK') {
+      console.warn('distanciaKm status:', d.status, '—', d.error_message || '');
+    }
     const el = d.rows && d.rows[0] && d.rows[0].elements && d.rows[0].elements[0];
     if (el && el.status === 'OK' && el.distance && el.distance.value) {
       return Math.round(el.distance.value / 1000);
