@@ -25,6 +25,20 @@ async function setJSON(key, value, exSeconds) {
   else           await redisCall('SET', key, str);
 }
 
+// Monto que el sistema espera para este tramo (misma lógica que transferencias.js).
+// Sirve para rechazar pagos por menos de lo debido.
+function montoEsperado(m, tipoPago) {
+  const cot = (m && m.cotizacionAceptada) || {};
+  const total = parseInt(cot.precio || (m && m.montoTotal) || 0) || 0;
+  if (!total) return null;
+  if (tipoPago === 'anticipo') return Math.round(total * 0.5);
+  if (tipoPago === 'saldo') {
+    const ant = parseInt(m.anticipoMonto || Math.round(total * 0.5)) || 0;
+    return Math.max(total - ant, 0);
+  }
+  return null;
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
 
@@ -86,6 +100,19 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ status: 'ya_registrado' });
     }
 
+    // VALIDAR EL MONTO: no acreditar si se pagó menos de lo esperado (evita que
+    // alguien libere el tramo pagando de menos, ej. $1, ya que crear-preferencia
+    // acepta el monto del frontend). Si no se puede calcular lo esperado, se
+    // avisa pero se procesa (para no romper casos borde legítimos).
+    const esperado = montoEsperado(m, tipoPago);
+    const pagado   = Math.round(Number(transaction_amount) || 0);
+    if (esperado && pagado < Math.round(esperado * 0.99)) {
+      console.error(`[Webhook MP] MONTO INSUFICIENTE mudanza ${mudanzaId} (${tipoPago}): pagó $${pagado}, esperado ~$${esperado}. NO se acredita.`);
+      m.pagoInsuficiente = { tipoPago, pagado, esperado, pagoId: String(data.id), cuando: new Date().toISOString() };
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      return res.status(200).json({ status: 'monto_insuficiente', esperado, pagado });
+    }
+
     // Registrar el pago
     if (tipoPago === 'anticipo') {
       m.anticipoPagado    = true;
@@ -108,7 +135,10 @@ module.exports = async function handler(req, res) {
     }
     m.ultimoUpdatePago = new Date().toISOString();
 
-    await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+    // TTL largo (90 días): una mudanza con pago confirmado tiene que sobrevivir
+    // hasta la liquidación al mudancero (~15 días hábiles) y su conciliación.
+    // Con 7 días el registro del cobro podía expirar antes de liquidar.
+    await setJSON(`mudanza:${mudanzaId}`, m, 7776000);
 
     console.log(`[Webhook MP] ✅ Pago ${tipoPago} registrado para mudanza ${mudanzaId}`);
     return res.status(200).json({ status: 'ok', tipoPago, mudanzaId });
