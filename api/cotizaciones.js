@@ -3845,19 +3845,21 @@ async function notificarCliente(mudanza, cotizacion) {
   // (usa uno sintético), así que se le avisa por WhatsApp, no por mail. Solo
   // se entrega si la charla está dentro de la ventana de 24hs de WhatsApp.
   if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+    const { enviarWhatsAppTexto } = require('./_whatsapp');
+    const precioFmt = '$' + Number(cotizacion.precio || 0).toLocaleString('es-AR');
+    const msg =
+      `💰 ¡Llegó una cotización para tu ${mudanza.tipo || 'mudanza'}!\n` +
+      `${cotizacion.mudanceroNombre || 'Un mudancero'} cotizó ${mudanza.desde} → ${mudanza.hasta} en ${precioFmt}` +
+      (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
+      (cotizacion.nota ? `"${cotizacion.nota}"\n` : '') +
+      `Respondeme por acá y te ayudo a verla y elegir 🙂`;
+    // 1) Texto (siempre). 2) PDF como adjunto (independiente: si falla, el aviso ya salió).
+    try { await enviarWhatsAppTexto(mudanza.clienteWA, msg); }
+    catch (e) { console.error('notificarCliente WhatsApp texto:', e.message); }
     try {
-      const { enviarWhatsAppTexto } = require('./_whatsapp');
-      const precioFmt = '$' + Number(cotizacion.precio || 0).toLocaleString('es-AR');
-      const msg =
-        `💰 ¡Llegó una cotización para tu ${mudanza.tipo || 'mudanza'}!\n` +
-        `${cotizacion.mudanceroNombre || 'Un mudancero'} cotizó ${mudanza.desde} → ${mudanza.hasta} en ${precioFmt}` +
-        (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
-        (cotizacion.nota ? `"${cotizacion.nota}"\n` : '') +
-        `Respondeme por acá y te ayudo a verla y elegir 🙂`;
-      await enviarWhatsAppTexto(mudanza.clienteWA, msg);
-    } catch (e) {
-      console.error('notificarCliente WhatsApp:', e.message);
-    }
+      const pdfUrl = `https://mudateya.ar/api/cotizaciones?action=pdf&mudanzaId=${encodeURIComponent(mudanza.id)}&cotizacionId=${encodeURIComponent(cotizacion.id)}`;
+      await enviarWhatsAppTexto(mudanza.clienteWA, '📄 Te paso el presupuesto en PDF:', pdfUrl);
+    } catch (e) { console.error('notificarCliente WhatsApp pdf:', e.message); }
     return; // no seguimos con el mail: el email del cliente WhatsApp es sintético
   }
 

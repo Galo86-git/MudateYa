@@ -57,7 +57,7 @@ async function enviarWhatsApp(to, contentSid, variables) {
 // último mensaje del usuario. Fuera de esa ventana hay que usar una plantilla
 // aprobada (enviarWhatsApp). Sirve perfecto para responder/avisar en una charla
 // activa (ej: avisarle al cliente que llegó una cotización mientras conversa).
-async function enviarWhatsAppTexto(to, body) {
+async function enviarWhatsAppTexto(to, body, mediaUrl) {
   const sid   = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
   const from  = process.env.TWILIO_WHATSAPP_FROM;
@@ -68,11 +68,15 @@ async function enviarWhatsAppTexto(to, body) {
   if (!tel) throw new Error('Teléfono de destino inválido');
   if (tel[0] !== '+') tel = '+' + tel;
 
-  const body2 = new URLSearchParams({
+  const params = {
     To:   'whatsapp:' + tel,
     From: from,
     Body: String(body || '').slice(0, 1500),
-  });
+  };
+  // Adjunto opcional (PDF, imagen, etc.). Twilio lo BAJA de esta URL, así que
+  // tiene que ser pública y HTTPS (ej: el endpoint /api/cotizaciones?action=pdf).
+  if (mediaUrl) params.MediaUrl = mediaUrl;
+  const body2 = new URLSearchParams(params);
 
   const r = await fetch(
     'https://api.twilio.com/2010-04-01/Accounts/' + sid + '/Messages.json',
