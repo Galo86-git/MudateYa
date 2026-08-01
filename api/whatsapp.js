@@ -1014,6 +1014,16 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
     toolsUsados = tools;
   }
 
+  // Contexto temporal: Claude NO sabe qué día ni hora es. Se lo damos (hora de
+  // Argentina) para que interprete "hoy", "mañana", "a la tarde", y se dé cuenta
+  // cuando un horario pedido ya pasó.
+  const ahoraAR = new Date().toLocaleString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+  system += `\n\nAHORA (hora de Argentina): ${ahoraAR}. Usá esto para interpretar "hoy", "mañana", "en un rato", "a la tarde", etc. Si el cliente pide un horario que YA PASÓ hoy, avisale con onda y preguntale si lo quiere más tarde hoy o para otro día. Cuando anotes la fecha/hora del pedido, dejala clara (ej: "hoy 13:00").`;
+
   // Loop agéntico: Claude puede encadenar herramientas hasta dar la respuesta final.
   let resp = await askClaude(trabajo, system, toolsUsados);
   let vueltas = 0;
