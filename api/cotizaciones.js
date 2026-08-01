@@ -3397,6 +3397,7 @@ async function generarPDFDetallesBase64(mudanza) {
       }
       row('Origen', mudanza.desde);
       row('Destino', mudanza.hasta);
+      if (parseInt(mudanza.km) > 0) row('Distancia', parseInt(mudanza.km) + ' km aprox.');
       row('Tamaño', mudanza.ambientes);
       row('Fecha', fmtFechaAR(mudanza.fecha));
       y += 14;

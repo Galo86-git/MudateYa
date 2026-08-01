@@ -530,6 +530,7 @@ async function notificarMudanceroTest(pedido) {
       const resumen =
         `🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +
         `${pedido.origen} → ${pedido.destino}${pedido.fecha ? ' · ' + pedido.fecha : ''}\n` +
+        (pedido.km ? `📏 Distancia: ${pedido.km} km aprox.\n` : '') +
         (pedido.detalles ? pedido.detalles + '\n' : '') +
         `Entrá a mudateya.ar/mi-cuenta para cotizar.`;
       await enviarWhatsAppTexto(tel, resumen);
