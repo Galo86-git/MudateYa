@@ -123,16 +123,17 @@ async function avisarTransferenciaInsuficiente(m, tipoPago, pago) {
     }
   } catch (e) { console.warn('[underpaid] email admin:', e.message); }
 
-  // 2) Cliente por WhatsApp (si el pedido vino por ese canal).
+  // 2) Cliente por WhatsApp → plantilla transferencia_diferencia (o texto libre).
   if (m.canal === 'whatsapp' && m.clienteWA) {
+    const nomCli = (m.clienteNombre || '').split(' ')[0] || 'Hola';
+    const faltaNum = falta != null ? Number(falta).toLocaleString('es-AR') : '0';
+    const texto =
+      `⚠️ Recibimos tu transferencia para ${label}, pero fue por un monto menor al indicado` +
+      (falta != null ? ` (faltarían ${fmt(falta)})` : '') + `.\n` +
+      `Para que quede acreditada, transferí la diferencia al MISMO alias/CBU que te pasé, o escribime y lo resolvemos juntos. 🙏`;
     try {
-      const { enviarWhatsAppTexto } = require('./_whatsapp');
-      await enviarWhatsAppTexto(
-        m.clienteWA,
-        `⚠️ Recibimos tu transferencia para ${label}, pero fue por un monto menor al indicado` +
-        (falta != null ? ` (faltarían ${fmt(falta)})` : '') + `.\n` +
-        `Para que quede acreditada, transferí la diferencia al MISMO alias/CBU que te pasé, o escribime y lo resolvemos juntos. 🙏`
-      );
+      const { enviarPlantilla } = require('./_plantillas');
+      await enviarPlantilla(m.clienteWA, 'transferencia_diferencia', { 1: nomCli, 2: label, 3: faltaNum }, texto);
     } catch (e) { console.warn('[underpaid] WhatsApp cliente:', e.message); }
   }
 }

@@ -102,68 +102,70 @@ async function enviarWhatsAppTexto(to, body, mediaUrl) {
 // los webhooks de pago (MP y Talo). OJO ventana 24h para texto libre.
 async function avisarSenaConfirmada(mudanza) {
   if (!mudanza) return;
+  const { enviarPlantilla } = require('./_plantillas');
   const cot   = mudanza.cotizacionAceptada || {};
   const desde = mudanza.desde || mudanza.origen || '';
   const hasta = mudanza.hasta || mudanza.destino || '';
   const fecha = mudanza.fecha || '';
   const tipo  = mudanza.tipo || 'mudanza';
   const mud   = cot.mudanceroNombre || 'el mudancero';
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
 
-  // 1) Cliente (solo si el pedido vino por WhatsApp).
+  // 1) Cliente → plantilla pago_confirmado_cliente (o texto libre dentro de 24h).
   if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
-    try {
-      await enviarWhatsAppTexto(
-        mudanza.clienteWA,
-        `✅ ¡Seña confirmada! Tu ${tipo} quedó reservada con ${mud} 🎉\n` +
-        `${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
-        (cot.mudanceroTel ? `Coordinás con ${mud}: ${cot.mudanceroTel}\n` : '') +
-        `El 50% restante lo pagás al completar la mudanza. ¡Cualquier cosa escribime por acá!`
-      );
-    } catch (e) { console.warn('avisarSenaConfirmada cliente:', e.message); }
+    const texto =
+      `✅ ¡Seña confirmada! Tu ${tipo} quedó reservada con ${mud} 🎉\n` +
+      `${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
+      (cot.mudanceroTel ? `Coordinás con ${mud}: ${cot.mudanceroTel}\n` : '') +
+      `El 50% restante lo pagás al completar. ¡Cualquier cosa escribime por acá!`;
+    try { await enviarPlantilla(mudanza.clienteWA, 'pago_confirmado_cliente', { 1: nomCli, 2: mud, 3: fecha || 'la fecha coordinada' }, texto); }
+    catch (e) { console.warn('avisarSenaConfirmada cliente:', e.message); }
   }
 
-  // 2) Mudancero elegido (por su teléfono de la cotización).
+  // 2) Mudancero elegido → plantilla mudancero_elegido.
   if (cot.mudanceroTel) {
-    try {
-      await enviarWhatsAppTexto(
-        cot.mudanceroTel,
-        `🎉 ¡Ganaste un pedido en MudateYa! El cliente pagó la seña.\n` +
-        `${tipo}: ${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
-        (mudanza.clienteNombre ? `Cliente: ${mudanza.clienteNombre}` : 'Cliente') +
-        (mudanza.clienteWA ? ` (${mudanza.clienteWA})` : '') + '\n' +
-        `Escribile para coordinar los detalles. ¡Éxitos! 🚚`
-      );
-    } catch (e) { console.warn('avisarSenaConfirmada mudancero:', e.message); }
+    const nomMud = (cot.mudanceroNombre || '').split(' ')[0] || 'Hola';
+    const texto =
+      `🎉 ¡Ganaste un pedido en MudateYa! El cliente pagó la seña.\n` +
+      `${tipo}: ${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
+      (mudanza.clienteNombre ? `Cliente: ${mudanza.clienteNombre}` : 'Cliente') +
+      (mudanza.clienteWA ? ` (${mudanza.clienteWA})` : '') + '\n' +
+      `Escribile para coordinar. ¡Éxitos! 🚚`;
+    try { await enviarPlantilla(cot.mudanceroTel, 'mudancero_elegido', { 1: nomMud, 2: desde, 3: hasta, 4: fecha || 'a coordinar', 5: mudanza.clienteNombre || 'el cliente', 6: mudanza.clienteWA || '—' }, texto); }
+    catch (e) { console.warn('avisarSenaConfirmada mudancero:', e.message); }
   }
 }
 
-// avisarMudanzaIniciada: le avisa al cliente (por WhatsApp) que la mudanza arrancó.
+// avisarMudanzaIniciada: le avisa al cliente que la mudanza arrancó.
 async function avisarMudanzaIniciada(mudanza) {
   if (!mudanza || mudanza.canal !== 'whatsapp' || !mudanza.clienteWA) return;
+  const { enviarPlantilla } = require('./_plantillas');
   const cot   = mudanza.cotizacionAceptada || {};
   const desde = mudanza.desde || mudanza.origen || '';
   const hasta = mudanza.hasta || mudanza.destino || '';
-  try {
-    await enviarWhatsAppTexto(
-      mudanza.clienteWA,
-      `🚚 ¡Tu ${mudanza.tipo || 'mudanza'} arrancó! ${cot.mudanceroNombre || 'El mudancero'} ya está en marcha.\n` +
-      `${desde} → ${hasta}\n` +
-      `Cualquier cosa, escribime por acá. ¡Que salga todo bien! 🙌`
-    );
-  } catch (e) { console.warn('avisarMudanzaIniciada:', e.message); }
+  const tipo  = mudanza.tipo || 'mudanza';
+  const mud   = cot.mudanceroNombre || 'El mudancero';
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+  const texto =
+    `🚚 ¡Tu ${tipo} arrancó! ${mud} ya está en marcha.\n${desde} → ${hasta}\nCualquier cosa, escribime por acá. ¡Que salga todo bien! 🙌`;
+  try { await enviarPlantilla(mudanza.clienteWA, 'mudanza_iniciada', { 1: nomCli, 2: tipo, 3: desde, 4: hasta, 5: mud }, texto); }
+  catch (e) { console.warn('avisarMudanzaIniciada:', e.message); }
 }
 
-// avisarSaldoPendiente: al completarse la mudanza, le avisa al cliente que pague
-// el SALDO (50% restante) con el link de MP y/o los datos de transferencia.
+// avisarSaldoPendiente: al completarse, avisa al cliente que pague el SALDO. La
+// plantilla lleva botón de pago (/pagar/{id}); el texto libre lleva los links.
 async function avisarSaldoPendiente(mudanza, saldo, linkMP, transferencia) {
   if (!mudanza || mudanza.canal !== 'whatsapp' || !mudanza.clienteWA) return;
+  const { enviarPlantilla } = require('./_plantillas');
+  const tipo = mudanza.tipo || 'mudanza';
+  const desde = mudanza.desde || mudanza.origen || '';
+  const hasta = mudanza.hasta || mudanza.destino || '';
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
   const montoFmt = '$' + Number(saldo || 0).toLocaleString('es-AR');
   let msg =
-    `✅ ¡Tu ${mudanza.tipo || 'mudanza'} se completó! 🎉\n` +
-    `Queda el saldo final (50%): ${montoFmt}.\n`;
+    `✅ ¡Tu ${tipo} se completó! 🎉\nQueda el saldo final (50%): ${montoFmt}.\n`;
   if (linkMP) msg += `\n💳 Mercado Pago:\n${linkMP}\n`;
   if (transferencia && transferencia.checkoutUrl) {
-    // Link/QR de Talo con el monto YA cargado: el cliente no puede tipear mal.
     msg += `\n🏦 O por transferencia (monto ya cargado, no te equivocás):\n${transferencia.checkoutUrl}\n`;
   } else if (transferencia && (transferencia.cbu || transferencia.alias)) {
     msg += `\n🏦 O por transferencia (transferí exactamente ${montoFmt}):\n` +
@@ -172,26 +174,26 @@ async function avisarSaldoPendiente(mudanza, saldo, linkMP, transferencia) {
       (transferencia.titular ? `Titular: ${transferencia.titular}\n` : '');
   }
   msg += `\n¡Gracias por elegir MudateYa! 🙌`;
-  try { await enviarWhatsAppTexto(mudanza.clienteWA, msg); }
+  // Plantilla: {{5}}=monto (sin $), botón {{6}}=mudanzaId (→ /pagar/{id}).
+  const montoNum = Number(saldo || 0).toLocaleString('es-AR');
+  try { await enviarPlantilla(mudanza.clienteWA, 'mudanza_completada_saldo', { 1: nomCli, 2: tipo, 3: desde, 4: hasta, 5: montoNum, 6: mudanza.id }, msg); }
   catch (e) { console.warn('avisarSaldoPendiente:', e.message); }
 }
 
-// avisarMudanzaPagadaCompleta: al acreditarse el SALDO, avisa al cliente que la
-// mudanza quedó 100% paga y completada, y lo invita a CALIFICAR al mudancero
-// (respondiendo por WhatsApp; Emi usa la tool calificar_mudancero).
+// avisarMudanzaPagadaCompleta: al acreditarse el SALDO, avisa 100% pago + invita a calificar.
 async function avisarMudanzaPagadaCompleta(mudanza) {
   if (!mudanza || mudanza.canal !== 'whatsapp' || !mudanza.clienteWA) return;
+  const { enviarPlantilla } = require('./_plantillas');
   const cot = mudanza.cotizacionAceptada || {};
+  const tipo = mudanza.tipo || 'mudanza';
   const mud = cot.mudanceroNombre || 'el mudancero';
-  try {
-    await enviarWhatsAppTexto(
-      mudanza.clienteWA,
-      `✅ ¡Recibimos el saldo! Tu ${mudanza.tipo || 'mudanza'} quedó 100% paga y completada 🎉\n` +
-      `Gracias por confiar en MudateYa 🙌\n\n` +
-      `¿Nos dejás una calificación de ${mud}? Respondé del 1 al 5 ⭐ (y un comentario si querés). ` +
-      `Suma a su reputación en la plataforma y ayuda a otros clientes.`
-    );
-  } catch (e) { console.warn('avisarMudanzaPagadaCompleta:', e.message); }
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+  const texto =
+    `✅ ¡Recibimos el saldo! Tu ${tipo} quedó 100% paga y completada 🎉\n` +
+    `Gracias por confiar en MudateYa 🙌\n\n` +
+    `¿Nos dejás una calificación de ${mud}? Respondé del 1 al 5 ⭐ (y un comentario si querés).`;
+  try { await enviarPlantilla(mudanza.clienteWA, 'invitacion_calificar', { 1: nomCli, 2: tipo, 3: mud }, texto); }
+  catch (e) { console.warn('avisarMudanzaPagadaCompleta:', e.message); }
 }
 
 module.exports = { enviarWhatsApp, enviarWhatsAppTexto, avisarSenaConfirmada, avisarMudanzaIniciada, avisarSaldoPendiente, avisarMudanzaPagadaCompleta };

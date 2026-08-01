@@ -665,13 +665,16 @@ async function notificarMudanceroTest(pedido) {
     const tel = perfil && perfil.telefono;
     if (tel) {
       const { enviarWhatsAppTexto } = require('./_whatsapp');
+      const { enviarPlantilla } = require('./_plantillas');
+      const nomMud = (perfil.nombre || '').split(' ')[0] || 'Hola';
       const resumen =
         `🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +
         `${pedido.origen} → ${pedido.destino}${pedido.fecha ? ' · ' + pedido.fecha : ''}\n` +
         (pedido.km ? `📏 Distancia: ${pedido.km} km aprox.\n` : '') +
         (pedido.detalles ? pedido.detalles + '\n' : '') +
         `Entrá a mudateya.ar/mi-cuenta para cotizar.`;
-      await enviarWhatsAppTexto(tel, resumen);
+      // Plantilla nuevo_pedido_mudancero si está aprobada (fuera de 24h); si no, texto libre.
+      await enviarPlantilla(tel, 'nuevo_pedido_mudancero', { 1: nomMud, 2: pedido.origen, 3: pedido.destino, 4: pedido.fecha || 'a coordinar' }, resumen);
       // PDF "Detalles del pedido" como adjunto (Twilio lo baja del endpoint público).
       try {
         const pdfUrl = `${SITE_URL}/api/cotizaciones?action=pedido-pdf&mudanzaId=${encodeURIComponent(pedido.id)}`;

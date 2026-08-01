@@ -3982,16 +3982,19 @@ async function notificarCliente(mudanza, cotizacion) {
   // se entrega si la charla está dentro de la ventana de 24hs de WhatsApp.
   if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
     const { enviarWhatsAppTexto } = require('./_whatsapp');
+    const { enviarPlantilla } = require('./_plantillas');
+    const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
     const precioFmt = '$' + Number(cotizacion.precio || 0).toLocaleString('es-AR');
-    const msg =
+    const texto =
       `💰 ¡Llegó una cotización para tu ${mudanza.tipo || 'mudanza'}!\n` +
       `${cotizacion.mudanceroNombre || 'Un mudancero'} cotizó ${mudanza.desde} → ${mudanza.hasta} en ${precioFmt}` +
       (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
       (cotizacion.nota ? `"${cotizacion.nota}"\n` : '') +
       `Respondeme por acá y te ayudo a verla y elegir 🙂`;
-    // 1) Texto (siempre). 2) PDF como adjunto (independiente: si falla, el aviso ya salió).
-    try { await enviarWhatsAppTexto(mudanza.clienteWA, msg); }
-    catch (e) { console.error('notificarCliente WhatsApp texto:', e.message); }
+    // 1) Aviso: plantilla presupuestos_cliente si está aprobada, si no texto libre.
+    try { await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto); }
+    catch (e) { console.error('notificarCliente WhatsApp:', e.message); }
+    // 2) PDF como adjunto (solo llega dentro de la ventana; fuera, el cliente lo pide a Emi).
     try {
       const pdfUrl = `https://mudateya.ar/api/cotizaciones?action=pdf&mudanzaId=${encodeURIComponent(mudanza.id)}&cotizacionId=${encodeURIComponent(cotizacion.id)}`;
       await enviarWhatsAppTexto(mudanza.clienteWA, '📄 Te paso el presupuesto en PDF:', pdfUrl);
@@ -4899,17 +4902,18 @@ async function notificarClienteSaldoPendiente(mudanza) {
 async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {
   // Pedido por WhatsApp: avisar por WhatsApp (el cliente responde "acepto"/"rechazo").
   if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+    const _cot = mudanza.cotizacionAceptada || {};
+    const _aj = mudanza.ajustePrecio || {};
+    const _nuevoNum = Number(_aj.montoNuevo || 0).toLocaleString('es-AR');
+    const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+    const texto =
+      `${esRecordatorio ? '⏰ Recordatorio: ' : '⚠️ '}${_cot.mudanceroNombre || 'Tu mudancero'} propuso ajustar el precio de tu ${mudanza.tipo || 'mudanza'} a $${_nuevoNum}.\n` +
+      (_aj.motivo ? `Motivo: ${_aj.motivo}\n` : '') +
+      `Respondeme "acepto" o "rechazo". Si rechazás, se cancela y te devolvemos la seña.`;
     try {
-      const _cot = mudanza.cotizacionAceptada || {};
-      const _aj = mudanza.ajustePrecio || {};
-      const _nuevo = '$' + (_aj.montoNuevo || 0).toLocaleString('es-AR');
-      const { enviarWhatsAppTexto } = require('./_whatsapp');
-      await enviarWhatsAppTexto(
-        mudanza.clienteWA,
-        `${esRecordatorio ? '⏰ Recordatorio: ' : '⚠️ '}${_cot.mudanceroNombre || 'Tu mudancero'} propuso ajustar el precio de tu ${mudanza.tipo || 'mudanza'} a ${_nuevo}.\n` +
-        (_aj.motivo ? `Motivo: ${_aj.motivo}\n` : '') +
-        `Respondeme "acepto" o "rechazo". Si rechazás, se cancela y te devolvemos la seña.`
-      );
+      const { enviarPlantilla } = require('./_plantillas');
+      await enviarPlantilla(mudanza.clienteWA, 'ajuste_precio_propuesto',
+        { 1: nomCli, 2: _cot.mudanceroNombre || 'Tu mudancero', 3: mudanza.tipo || 'mudanza', 4: _nuevoNum, 5: _aj.motivo || 'ajuste de precio' }, texto);
     } catch (e) { console.warn('ajuste WhatsApp:', e.message); }
     return;
   }
