@@ -3764,6 +3764,9 @@ async function notificarMudanceros(mudanza) {
     console.error('Error notificando mudanceros:', e.message);
   }
 }
+// Se exporta para reusarla desde el bot de WhatsApp (whatsapp.js): mismo email al
+// mudancero + PDF de detalles del pedido adjunto, respetando el modo 'dirigido'.
+module.exports.notificarMudanceros = notificarMudanceros;
 
 // ════════════════════════════════════════════════════════════════════
 // Mail de confirmación al cliente cuando publica un pedido nuevo.

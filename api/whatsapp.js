@@ -602,8 +602,21 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
 
   // Barrido a mudanceros reales: sigue APAGADO (no manda nada a nadie real).
   await iniciarBarridoMudanceros(pedido);
-  // Solo en modo prueba: aviso por mail al mudancero de test (mudatest).
-  await notificarMudanceroTest(pedido);
+  // Aviso al mudancero con el PDF de detalles del pedido — MISMA función que la web
+  // (mismo mail + PDF adjunto "Detalles-{id}.pdf" + push). notificarMudanceros respeta
+  // el modo 'dirigido', así que en prueba solo le llega al mudancero de test.
+  // Guardado a modo prueba a propósito: en producción avisaría a TODOS los mudanceros
+  // (barrido real) — se prende sacando este guard cuando quieras ir a vivo.
+  if (TEST_MUDANCERO_EMAIL) {
+    try {
+      const { notificarMudanceros } = require('./cotizaciones');
+      if (typeof notificarMudanceros === 'function') await notificarMudanceros(pedido);
+      else await notificarMudanceroTest(pedido); // fallback al aviso simple
+    } catch (e) {
+      console.warn('notificarMudanceros (bot):', e.message);
+      try { await notificarMudanceroTest(pedido); } catch (_) {}
+    }
+  }
   return pedido;
 }
 
