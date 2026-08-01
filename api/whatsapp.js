@@ -467,26 +467,54 @@ function parseAmbientes(detalles) {
   return m ? m[1] : '';
 }
 
-// MODO PRUEBA: avisar por mail SOLO al mudancero de test (nunca a reales).
+// MODO PRUEBA: avisar SOLO al mudancero de test (nunca a reales). Le manda el
+// pedido por MAIL y por WhatsApp CON LAS FOTOS (para que dimensione y cotice).
 // Solo corre si TEST_MUDANCERO_EMAIL está seteada. Fail-soft.
 async function notificarMudanceroTest(pedido) {
-  if (!TEST_MUDANCERO_EMAIL || !process.env.RESEND_API_KEY) return;
+  if (!TEST_MUDANCERO_EMAIL) return;
+
+  // 1) Email
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const fotosHtml = (Array.isArray(pedido.fotos) ? pedido.fotos.slice(0, 6) : [])
+        .map((u) => `<img src="${u}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;margin:4px">`).join('');
+      await resend.emails.send({
+        from: 'MudateYa <noreply@mudateya.ar>',
+        reply_to: 'hola@mudateya.ar',
+        to: TEST_MUDANCERO_EMAIL,
+        subject: `🧪 Pedido para cotizar — ${pedido.origen} → ${pedido.destino}`,
+        html:
+          `<p>Entró un pedido para cotizar (modo prueba).</p>` +
+          `<p><b>${escapeXml(pedido.tipo)}</b>: ${escapeXml(pedido.origen)} → ${escapeXml(pedido.destino)}<br>` +
+          `Fecha: ${escapeXml(pedido.fecha || '—')}<br>` +
+          `Detalles: ${escapeXml(pedido.detalles || '—')}</p>` +
+          (fotosHtml ? `<p>${fotosHtml}</p>` : '') +
+          `<p><a href="https://mudateya.ar/mi-cuenta">Entrá a tu cuenta para cotizar →</a></p>`,
+      });
+    } catch (e) { console.warn('notificarMudanceroTest email:', e.message); }
+  }
+
+  // 2) WhatsApp al mudancero de test: resumen + cada foto como adjunto. Requiere
+  //    que el mudancero haya escrito al bot en las últimas 24h (texto libre).
   try {
-    const { Resend } = require('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: 'MudateYa <noreply@mudateya.ar>',
-      reply_to: 'hola@mudateya.ar',
-      to: TEST_MUDANCERO_EMAIL,
-      subject: `🧪 Pedido para cotizar — ${pedido.origen} → ${pedido.destino}`,
-      html:
-        `<p>Entró un pedido para cotizar (modo prueba).</p>` +
-        `<p><b>${escapeXml(pedido.tipo)}</b>: ${escapeXml(pedido.origen)} → ${escapeXml(pedido.destino)}<br>` +
-        `Fecha: ${escapeXml(pedido.fecha || '—')}<br>` +
-        `Detalles: ${escapeXml(pedido.detalles || '—')}</p>` +
-        `<p><a href="https://mudateya.ar/mi-cuenta">Entrá a tu cuenta para cotizar →</a></p>`,
-    });
-  } catch (e) { console.warn('notificarMudanceroTest:', e.message); }
+    const perfil = await getJSON(`mudancero:perfil:${TEST_MUDANCERO_EMAIL}`);
+    const tel = perfil && perfil.telefono;
+    if (tel) {
+      const { enviarWhatsAppTexto } = require('./_whatsapp');
+      const resumen =
+        `🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +
+        `${pedido.origen} → ${pedido.destino}${pedido.fecha ? ' · ' + pedido.fecha : ''}\n` +
+        (pedido.detalles ? pedido.detalles + '\n' : '') +
+        `Entrá a mudateya.ar/mi-cuenta para cotizar.`;
+      await enviarWhatsAppTexto(tel, resumen);
+      const fotos = Array.isArray(pedido.fotos) ? pedido.fotos.slice(0, 6) : [];
+      for (const url of fotos) {
+        try { await enviarWhatsAppTexto(tel, '📷 Foto del pedido:', url); } catch (_) {}
+      }
+    }
+  } catch (e) { console.warn('notificarMudanceroTest WhatsApp:', e.message); }
 }
 
 // Sube una foto (base64) a Vercel Blob y devuelve su URL pública, para adjuntarla
