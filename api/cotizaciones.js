@@ -70,8 +70,17 @@ function sanitizarParaMudancero(m, emailMudancero) {
   if (!m) return m;
   const copia = JSON.parse(JSON.stringify(m));
   if (!(esMudanceroAceptado(copia, emailMudancero) && contactoLiberado(copia))) {
+    // Datos de contacto del cliente: NO se liberan hasta ganar el pedido Y pagar
+    // el anticipo. El email y el nombre son canales de contacto directos igual que
+    // el WhatsApp — dejarlos pasar permitiría contactar al cliente salteándose la
+    // comisión. Los datos para cotizar (desde/hasta, ambientes, fotos) sí quedan.
     delete copia.clienteWA;
-    if (copia.cotizacionAceptada) delete copia.cotizacionAceptada.clienteWA;
+    delete copia.clienteEmail;
+    delete copia.clienteNombre;
+    if (copia.cotizacionAceptada) {
+      delete copia.cotizacionAceptada.clienteWA;
+      delete copia.cotizacionAceptada.clienteEmail;
+    }
   }
   if (Array.isArray(copia.cotizaciones)) {
     copia.cotizaciones = copia.cotizaciones.map(function(c) {
@@ -1271,8 +1280,10 @@ module.exports = async function handler(req, res) {
       };
       mudanza.cotizaciones.push(cotizacion);
 
-      // Cierre automatico deshabilitado para testing
-      await setJSON(`mudanza:${mudanzaId}`, mudanza, 172800);
+      // Cierre automatico deshabilitado para testing.
+      // TTL de 7 días (igual que al publicar): antes se re-guardaba con 2 días,
+      // lo que hacía DESAPARECER el pedido (con sus cotizaciones) antes de tiempo.
+      await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
       const mudIdx = await getJSON(`mudancero:${mudanceroEmail}`) || [];
       if (!mudIdx.includes(mudanzaId)) mudIdx.push(mudanzaId);
       await setJSON(`mudancero:${mudanceroEmail}`, mudIdx, 2592000);
