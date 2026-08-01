@@ -534,6 +534,11 @@ async function notificarMudanceroTest(pedido) {
         (pedido.detalles ? pedido.detalles + '\n' : '') +
         `Entrá a mudateya.ar/mi-cuenta para cotizar.`;
       await enviarWhatsAppTexto(tel, resumen);
+      // PDF "Detalles del pedido" como adjunto (Twilio lo baja del endpoint público).
+      try {
+        const pdfUrl = `${SITE_URL}/api/cotizaciones?action=pedido-pdf&mudanzaId=${encodeURIComponent(pedido.id)}`;
+        await enviarWhatsAppTexto(tel, '📄 Detalle del pedido (PDF):', pdfUrl);
+      } catch (_) {}
       const fotos = Array.isArray(pedido.fotos) ? pedido.fotos.slice(0, 6) : [];
       for (const url of fotos) {
         try { await enviarWhatsAppTexto(tel, '📷 Foto del pedido:', url); } catch (_) {}

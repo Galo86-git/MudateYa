@@ -1365,6 +1365,23 @@ module.exports = async function handler(req, res) {
       return res.status(200).end(pdfBuffer);
     }
 
+    // PDF "Detalles del pedido" para el mudancero/fletero (sin datos de contacto
+    // del cliente). Público (Twilio lo baja como adjunto de WhatsApp), igual que
+    // el PDF de cotización.
+    if (action === 'pedido-pdf' && req.method === 'GET') {
+      const { mudanzaId } = req.query;
+      if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
+      const mudanza = await getJSON(`mudanza:${mudanzaId}`);
+      if (!mudanza) return res.status(404).json({ error: 'Pedido no encontrado' });
+      const pdfBase64 = await generarPDFDetallesBase64(mudanza);
+      if (!pdfBase64) return res.status(404).json({ error: 'Sin datos para el PDF' });
+      const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="pedido-${mudanzaId}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      return res.status(200).end(pdfBuffer);
+    }
+
     if (action === 'aceptar' && req.method === 'POST') {
       const { mudanzaId, cotizacionId, propuestaNivel } = req.body;
       // Lock: evita doble aceptación concurrente (doble email + doble link de pago).
