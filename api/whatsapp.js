@@ -270,7 +270,7 @@ CÓMO HABLÁS (esto es lo más importante):
 - Seguile la energía: si está apurado o cortante, al grano; si está perdido, guialo con paciencia; si está estresado, bajale un cambio ("tranqui, lo vemos juntos y en un rato lo dejás resuelto").
 
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
-si es mudanza o flete, de dónde sale, a dónde va, más o menos cuándo, y qué hay que mover (ambientes, muebles grandes, electro, piso y si hay ascensor). Y el nombre. Con lo básico ya podés usar crear_pedido: no hace falta el detalle perfecto, mejor rápido y humano que exhaustivo.
+la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
 FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
 
@@ -526,7 +526,9 @@ async function subirFotoBlob(base64, tipo) {
     if (buffer.length > 6 * 1024 * 1024) return null; // tope defensivo
     const ext = (tipo && tipo.split('/')[1]) || 'jpg';
     const filename = `mudateya/pedido-wa/${Date.now()}-${crypto.randomBytes(3).toString('hex')}.${ext}`;
-    const blob = await put(filename, buffer, { access: 'public', contentType: tipo || 'image/jpeg' });
+    // Mismo token que upload-foto.js: las fotos usan el store BLOB_FOTO_*.
+    const token = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+    const blob = await put(filename, buffer, { access: 'public', contentType: tipo || 'image/jpeg', token });
     return blob.url;
   } catch (e) { console.warn('subirFotoBlob:', e.message); return null; }
 }
