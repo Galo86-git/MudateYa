@@ -1475,35 +1475,61 @@ module.exports = async function handler(req, res) {
     if (action === 'registrar-pago' && req.method === 'POST') {
       const { mudanzaId, tipoPago, mpPaymentId } = req.body;
       if (!mudanzaId || !tipoPago) return res.status(400).json({ error: 'Faltan datos' });
-      // ── Solo se acepta desde la API interna de Mercado Pago (webhook) ──
-      // O con un secret interno para el flujo de pago-exitoso
-      const internalSecret = req.headers['x-internal-secret'];
-      const validSecret = process.env.INTERNAL_API_SECRET;
-      if (!validSecret || internalSecret !== validSecret) {
-        return res.status(403).json({ error: 'Sin autorización para registrar pagos' });
-      }
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
-      // Verificar que el pago de MP existe y es válido (si viene mpPaymentId)
-      // Y capturar el monto REAL transferido para guardarlo como fuente de verdad.
+
+      // AUTORIZACIÓN según el origen del llamado:
+      //  - CON mpPaymentId (flujo pago-exitoso del cliente): la autorización ES la
+      //    verificación del pago contra Mercado Pago. No alcanza un secreto: el pago
+      //    debe existir, estar aprobado, corresponder a ESTA mudanza/tramo y cubrir el
+      //    monto esperado. Así el endpoint es seguro aunque el secreto se filtre.
+      //  - SIN mpPaymentId (server-to-server; transferencias ya verificó contra Talo):
+      //    exige el secreto interno fuerte (INTERNAL_API_SECRET, solo del servidor).
       let montoRealMP = null;
-      if (mpPaymentId && process.env.MP_ACCESS_TOKEN) {
+      if (mpPaymentId) {
+        if (!process.env.MP_ACCESS_TOKEN) return res.status(500).json({ error: 'MP no configurado' });
+        let mpData;
         try {
-          const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${mpPaymentId}`, {
+          const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(mpPaymentId)}`, {
             headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` }
           });
-          const mpData = await mpRes.json();
-          if (mpData.status !== 'approved') {
-            return res.status(400).json({ error: 'Pago de MP no aprobado' });
-          }
-          // Capturar el monto real que el cliente pagó (no calcular a partir del precio)
-          montoRealMP = Math.round(Number(mpData.transaction_amount) || 0);
-          // Guardar el ID de pago de MP para auditoría
-          if (tipoPago === 'anticipo') m.mpAnticipoPagoId = mpPaymentId;
-          if (tipoPago === 'saldo')    m.mpSaldoPagoId = mpPaymentId;
-        } catch(mpErr) {
+          mpData = await mpRes.json();
+        } catch (mpErr) {
           console.warn('No se pudo verificar pago MP:', mpErr.message);
-          // Continuar igual — el webhook es la fuente de verdad
+          return res.status(502).json({ error: 'No se pudo verificar el pago' });
+        }
+        if (!mpData || mpData.status !== 'approved') {
+          return res.status(400).json({ error: 'Pago de MP no aprobado' });
+        }
+        // El pago tiene que corresponder a ESTA mudanza y tramo.
+        const metaMud  = mpData.metadata && (mpData.metadata.mudanzaId || mpData.metadata.mudanza_id);
+        const metaTipo = mpData.metadata && (mpData.metadata.tipoPago || mpData.metadata.tipo_pago);
+        const ref = String(mpData.external_reference || '');
+        const correspondeMeta = String(metaMud || '') === String(mudanzaId) && String(metaTipo || '') === String(tipoPago);
+        const correspondeRef  = ref.indexOf(String(mudanzaId)) === 0;
+        if (!correspondeMeta && !correspondeRef) {
+          return res.status(400).json({ error: 'El pago no corresponde a este pedido' });
+        }
+        montoRealMP = Math.round(Number(mpData.transaction_amount) || 0);
+        // Validar que cubre lo esperado (evita liberar el tramo pagando de menos).
+        const cotE = m.cotizacionAceptada || {};
+        const totalE = parseInt(cotE.precio || m.montoTotal || 0) || 0;
+        let esperado = 0;
+        if (totalE) {
+          esperado = tipoPago === 'anticipo'
+            ? Math.round(totalE * 0.5)
+            : Math.max(0, totalE - (parseInt(m.anticipoMonto || Math.round(totalE * 0.5)) || 0));
+        }
+        if (esperado && montoRealMP < Math.round(esperado * 0.99)) {
+          return res.status(400).json({ error: 'Monto insuficiente' });
+        }
+        if (tipoPago === 'anticipo') m.mpAnticipoPagoId = mpPaymentId;
+        if (tipoPago === 'saldo')    m.mpSaldoPagoId = mpPaymentId;
+      } else {
+        const internalSecret = req.headers['x-internal-secret'];
+        const validSecret = process.env.INTERNAL_API_SECRET;
+        if (!validSecret || internalSecret !== validSecret) {
+          return res.status(403).json({ error: 'Sin autorización para registrar pagos' });
         }
       }
       if (tipoPago === 'anticipo') {

@@ -103,14 +103,14 @@ nav{background:var(--navy);padding:0 1.5rem;height:56px;display:flex;align-items
     // Ya se registró antes — solo traer datos reales consultando de nuevo (el backend es idempotente)
     promise = fetch('/api/cotizaciones?action=registrar-pago', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'x-internal-secret':'mya-internal-2025' },
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ mudanzaId: mudanzaId, tipoPago: tipoPago, mpPaymentId: paymentId })
     });
   } else {
     sessionStorage.setItem(key, '1');
     promise = fetch('/api/cotizaciones?action=registrar-pago', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'x-internal-secret':'mya-internal-2025' },
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ mudanzaId: mudanzaId, tipoPago: tipoPago, mpPaymentId: paymentId })
     });
   }
