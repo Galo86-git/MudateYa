@@ -668,6 +668,7 @@ tr:hover td{background:#F8FAFC}
           <button class="btn-sm" onclick="recordarDniFaltante()" title="Manda un mail a los mudanceros que subieron una sola foto del DNI" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">🪪 Recordar DNI faltante</button>
           <button class="btn-sm" onclick="recordarCobroFaltante()" title="Manda un mail a los mudanceros que no cargaron su forma de cobro (CBU/Alias o Mercado Pago)" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">💸 Recordar cobro faltante</button>
           <button class="btn-sm" onclick="gestionarPlantillas()" title="Actualiza las plantillas de WhatsApp a la voz de Emi y crea las nuevas (las manda a revisión de Meta)" style="background:#7C3AED;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📤 Plantillas WhatsApp (Emi)</button>
+          <button class="btn-sm" onclick="generarNotaBlog()" title="Genera y publica una nota de blog SEO ahora (IA con datos reales + revisión automática). Normalmente corre solo 1 vez al mes." style="background:#0EA5E9;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📝 Generar nota de blog</button>
         </div>
         <div class="table-card">
           <div id="mudancerosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
@@ -1753,6 +1754,24 @@ async function gestionarPlantillas(){
   } catch(e) {
     alert('Error: ' + e.message);
   }
+}
+
+// Blog: dispara la generación de una nota ahora (IA + datos reales + revisión auto).
+// El cron la corre solo 1x/mes; este botón es para verlo funcionar cuando quieras.
+async function generarNotaBlog(){
+  if (!confirm('Genera y publica una nota de blog nueva con IA (anclada a datos reales, con revisión automática de calidad).\n\n¿Generar ahora?')) return;
+  try {
+    var r = await fetch('/api/cron-blog', { headers: { 'x-admin-token': ADMTK() } });
+    var d = await r.json();
+    if (!r.ok || d.error) { alert('Error: ' + (d.error || r.status)); return; }
+    console.log('Blog — resultado:', d);
+    if (d.info) { alert('ℹ️ ' + d.info); return; }
+    if (d.publicado) {
+      alert('✅ Nota publicada: ' + d.slug + '\n\nVela en mudateya.ar/blog/' + d.slug + '\n(precios anclados a ' + (d.muestrasPrecios||0) + ' perfiles reales)');
+    } else {
+      alert('📝 La 2da IA no aprobó auto-publicar esta nota (te llegó el borrador por mail para decidir).\nMotivos: ' + ((d.motivos||[]).join(' · ') || '—'));
+    }
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 function filterMudanceros(){
