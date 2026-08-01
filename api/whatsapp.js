@@ -337,23 +337,29 @@ REGLA CRÍTICA DE PAGOS: los links de pago (Mercado Pago), alias, CBU, CVU y mon
 REGLAS: no pidas datos sensibles (tarjetas, documentos). Si el mensaje no tiene que ver con esto, respondé amable y reconducí. Si te preguntan derecho si sos un bot o una persona, sé honesta y sin dramas ("soy la asistente virtual de MudateYa, pero te resuelvo igual 🙂") — nunca digas que sos una persona de carne y hueso.`;
 
 // System prompt del asistente para MUDANCEROS (distinto del de clientes).
-const SYSTEM_PROMPT_MUDANCERO = `Sos el asistente de MudateYa para MUDANCEROS/FLETEROS por WhatsApp. Estás hablando con {NOMBRE}, un mudancero registrado en la plataforma.
+const SYSTEM_PROMPT_MUDANCERO = `Sos Emi, la asistente de MudateYa para MUDANCEROS/FLETEROS por WhatsApp. Estás hablando con {NOMBRE}, un mudancero/fletero registrado.
 
-MudateYa es un marketplace argentino de mudanzas y fletes: los clientes piden presupuesto y vos (junto con otros mudanceros de la zona) cotizan. El cliente elige, paga una seña, y coordinan.
+MudateYa es un marketplace argentino de mudanzas y fletes: el cliente pide presupuesto, vos cotizás, el cliente elige, paga la seña (50%) y coordinan. Al terminar paga el otro 50%. Todo protegido por la plataforma.
 
 TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
 
-QUÉ PODÉS HACER HOY:
-- Responder dudas sobre cómo funciona MudateYa para mudanceros (cómo llegan los pedidos, cómo cotizar, cómo se cobra).
-- Explicar el modelo: cuando entra un pedido en tu zona te vamos a avisar por acá; respondés con tu precio para cotizar; si el cliente te elige y paga la seña, te pasamos su contacto para coordinar. El pago es 50% seña + 50% al completar, protegido.
-- Orientarlo y contenerlo con buena onda.
+PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
+- Ver los pedidos disponibles para cotizar → ver_pedidos.
+- Cotizar un pedido → cotizar (con el id del pedido y el precio). Interpretá la jerga de plata: "80 lucas/palos/mil"/"80k" = 80000; "una gamba" = 100; "un melón" = 1.000.000. Pasá el precio como número entero en pesos.
+- Pasar/rechazar un pedido que no te interesa → pasar.
+- Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo).
+- Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar).
+- Ver el estado de tus pedidos/cotizaciones → mis_pedidos.
 
-QUÉ TODAVÍA NO:
-- Todavía NO estás recibiendo pedidos para cotizar por acá (lo estamos activando). Si te pregunta por un pedido puntual o quiere cotizar ahora, decile que en breve va a poder cotizar directo por WhatsApp, y que por ahora gestione desde su cuenta en mudateya.ar/mi-cuenta.
+CÓMO TRABAJÁS:
+- Los pedidos tienen un ID. Cuando dice "el de Palermo" o "el primero", buscá el id en el último ver_pedidos/mis_pedidos y usalo. Si no queda claro cuál, preguntá.
+- Para COTIZAR confirmá el precio si quedó ambiguo. Podés sumar una nota (qué incluye) y un tiempo estimado. Después avisale que el cliente ya la recibe y que le avisamos si lo elige.
+- Sé proactiva: si pregunta "qué pedidos hay", llamá a ver_pedidos y mostráselos cortito (ruta, km, tipo, si es urgente).
 
 REGLAS:
-- No inventes datos de su cuenta, pagos ni pedidos concretos. Si pregunta algo específico de su perfil, cobros o estado, derivalo a mudateya.ar/mi-cuenta o a hola@mudateya.ar.
-- No pidas ni manejes datos sensibles (tarjetas, contraseñas).`;
+- Solo actuás sobre SUS pedidos/cotizaciones (las herramientas validan con su cuenta). No inventes pedidos ni precios.
+- No pidas ni manejes datos sensibles (tarjetas, contraseñas).
+- Si una herramienta da error, explicáselo simple y ofrecé reintentar o escribir a hola@mudateya.ar.`;
 
 const tools = [
   {
@@ -443,6 +449,127 @@ const tools = [
     },
   },
 ];
+
+// ------------------------------------------------------------------
+// Herramientas del asistente MUDANCERO (flujo completo por WhatsApp).
+// Cada una reusa un endpoint del web (una sola fuente de verdad).
+// ------------------------------------------------------------------
+const mudanceroTools = [
+  {
+    name: 'ver_pedidos',
+    description: 'Lista los pedidos disponibles para que el mudancero cotice (su zona). Devuelve id, ruta, km, tipo y si es urgente.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'cotizar',
+    description: 'Envía la cotización del mudancero para un pedido. Interpretá la jerga de plata y pasá el precio como entero en pesos.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string', description: 'ID del pedido a cotizar (de ver_pedidos)' },
+        precio: { type: 'integer', description: 'Precio en pesos (entero). Ej "80 lucas" = 80000' },
+        nota: { type: 'string', description: 'Qué incluye / aclaraciones (opcional)' },
+        tiempo: { type: 'string', description: 'Tiempo estimado, ej "3 horas" (opcional)' },
+      },
+      required: ['pedidoId', 'precio'],
+    },
+  },
+  {
+    name: 'pasar',
+    description: 'Rechaza/pasa un pedido que no le interesa al mudancero (no se lo muestra más).',
+    input_schema: { type: 'object', properties: { pedidoId: { type: 'string' } }, required: ['pedidoId'] },
+  },
+  {
+    name: 'iniciar_mudanza',
+    description: 'Marca la mudanza/flete como EN CURSO (el mudancero arrancó el trabajo). Requiere que el cliente haya pagado la seña.',
+    input_schema: { type: 'object', properties: { pedidoId: { type: 'string' } }, required: ['pedidoId'] },
+  },
+  {
+    name: 'completar_mudanza',
+    description: 'Marca la mudanza/flete como COMPLETADA. Dispara el aviso al cliente para pagar el saldo (50% restante).',
+    input_schema: { type: 'object', properties: { pedidoId: { type: 'string' } }, required: ['pedidoId'] },
+  },
+  {
+    name: 'proponer_ajuste',
+    description: 'Propone un reajuste de precio DESPUÉS de la seña (por algo no previsto). El cliente lo tiene que aceptar. Se permite una vez.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string' },
+        nuevoPrecio: { type: 'integer', description: 'Nuevo precio total en pesos (entero)' },
+        motivo: { type: 'string', description: 'Motivo del ajuste (mínimo unas palabras)' },
+      },
+      required: ['pedidoId', 'nuevoPrecio', 'motivo'],
+    },
+  },
+  {
+    name: 'mis_pedidos',
+    description: 'Muestra el estado de los pedidos/cotizaciones del mudancero (enviados, aceptados, en curso, completados).',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+];
+
+// Ejecuta una herramienta del MUDANCERO llamando al endpoint web correspondiente.
+async function ejecutarToolMudancero(name, input, mudancero) {
+  const email = mudancero && mudancero.email;
+  const nombre = mudancero && mudancero.nombre;
+  const tel = mudancero && mudancero.telefono;
+  if (!email) return JSON.stringify({ error: 'No pude identificar tu cuenta de mudancero.' });
+  const base = SITE_URL;
+  input = input || {};
+  const postJSON = async (action, body) => {
+    const r = await fetch(`${base}/api/cotizaciones?action=${action}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const d = await r.json().catch(() => ({}));
+    return { ok: r.ok && d.ok !== false, status: r.status, d };
+  };
+  try {
+    if (name === 'ver_pedidos') {
+      const r = await fetch(`${base}/api/cotizaciones?action=por-zona&email=${encodeURIComponent(email)}`);
+      const d = await r.json().catch(() => ({}));
+      const pedidos = (d.mudanzas || []).map((m) => ({
+        id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`,
+        km: m.km || null, ambientes: m.ambientes || '', fecha: m.fecha || '', urgente: !!m.urgente,
+      }));
+      return JSON.stringify({ pedidos, nota: pedidos.length ? 'Pedidos disponibles para cotizar. Para cotizar uno, usá cotizar con su id.' : 'No hay pedidos disponibles en tu zona ahora.' });
+    }
+    if (name === 'cotizar') {
+      const { ok, d } = await postJSON('cotizar', {
+        mudanzaId: input.pedidoId, mudanceroEmail: email, mudanceroNombre: nombre, mudanceroTel: tel,
+        precio: input.precio, nota: input.nota || '', tiempoEstimado: input.tiempo || '',
+      });
+      return JSON.stringify(ok ? { ok: true, nota: 'Cotización enviada. El cliente ya la recibe; te avisamos si te elige.' } : { ok: false, error: d.error || 'No se pudo cotizar.' });
+    }
+    if (name === 'pasar') {
+      const { ok, d } = await postJSON('rechazar', { mudanzaId: input.pedidoId, mudanceroEmail: email });
+      return JSON.stringify(ok ? { ok: true, nota: 'Listo, pasaste ese pedido. No te lo mostramos más.' } : { ok: false, error: d.error });
+    }
+    if (name === 'iniciar_mudanza' || name === 'completar_mudanza') {
+      const estado = name === 'iniciar_mudanza' ? 'en_curso' : 'completada';
+      const { ok, d } = await postJSON('cambiar-estado', { mudanzaId: input.pedidoId, estado, mudanceroEmail: email });
+      if (!ok) return JSON.stringify({ ok: false, error: d.error || 'No se pudo actualizar el estado.' });
+      return JSON.stringify({ ok: true, nota: estado === 'en_curso' ? 'Marcado EN CURSO. Avisamos al cliente.' : 'Marcado COMPLETADA. Avisamos al cliente para que pague el saldo.' });
+    }
+    if (name === 'proponer_ajuste') {
+      const { ok, d } = await postJSON('proponer-ajuste', { mudanzaId: input.pedidoId, mudanceroEmail: email, nuevoPrecio: input.nuevoPrecio, motivo: input.motivo });
+      return JSON.stringify(ok ? { ok: true, nota: 'Ajuste propuesto. El cliente lo tiene que aceptar.' } : { ok: false, error: d.error || 'No se pudo proponer el ajuste.' });
+    }
+    if (name === 'mis_pedidos') {
+      const r = await fetch(`${base}/api/cotizaciones?action=mis-cotizaciones&email=${encodeURIComponent(email)}`);
+      const d = await r.json().catch(() => ({}));
+      const pedidos = (d.mudanzas || []).map((m) => ({
+        id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`, estado: m.estado,
+        miPrecio: (m.miCotizacion && m.miCotizacion.precio) || (m.cotizacionAceptada && m.cotizacionAceptada.precio) || null,
+      }));
+      return JSON.stringify({ pedidos });
+    }
+    return JSON.stringify({ error: 'herramienta desconocida' });
+  } catch (e) {
+    console.error('ejecutarToolMudancero', name, e.message);
+    return JSON.stringify({ error: 'Tuve un problema con esa acción, probá de nuevo.' });
+  }
+}
 
 // ------------------------------------------------------------------
 // Claude
@@ -1019,7 +1146,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
   if (mudancero) {
     const nombre = (mudancero.nombre || '').split(' ')[0] || 'colega';
     system = SYSTEM_PROMPT_MUDANCERO.replace('{NOMBRE}', nombre);
-    toolsUsados = []; // el mudancero todavía no tiene herramientas
+    toolsUsados = mudanceroTools; // flujo completo del mudancero por WhatsApp
   } else {
     const persona = quienEscribe(waId);
     system = persona
@@ -1047,7 +1174,9 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
     const resultados = [];
     for (const block of resp.content || []) {
       if (block.type === 'tool_use') {
-        const r = await ejecutarTool(block.name, block.input, waId, conv);
+        const r = mudancero
+          ? await ejecutarToolMudancero(block.name, block.input, mudancero)
+          : await ejecutarTool(block.name, block.input, waId, conv);
         resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
       }
     }
