@@ -280,7 +280,7 @@ MUDANZA O FLETE URGENTE / EN EL DÍA (es hoy, mañana, ahora, o una emergencia �
 1. Bajale la ansiedad y decile que esto lo tomamos ya para conseguirle a alguien disponible hoy.
 2. Juntá al toque solo lo mínimo: qué hay que mover, de dónde a dónde, y para cuándo exacto. Si es un flete (pocas cosas, un mueble, un electro), no le pidas datos de mudanza completa.
 3. Cargá el pedido con crear_pedido (tipo "flete" o "mudanza" según corresponda) y urgente: true.
-4. Después derivá con derivar_a_humano, con el motivo empezando en "URGENTE:" y un resumen de una línea (ej: "URGENTE: mudanza hoy 18hs, Palermo→Caballito, 2 amb con heladera").
+4. Después derivá con derivar_a_humano, con el motivo empezando en "URGENTE:", aclarando si es FLETE o MUDANZA, y un resumen de una línea (ej: "URGENTE: flete hoy, heladera de Av. Cabildo 1200 a Rivadavia 4500" o "URGENTE: mudanza hoy 18hs, 2 amb, Palermo→Caballito").
 5. Cerrá avisando que alguien del equipo lo contacta a la brevedad por acá. No prometas horario ni precio.
 
 EJEMPLOS DE TONO (son guía, NO los copies literal):
@@ -678,13 +678,16 @@ async function derivarHumano(waId, motivo, conv) {
         .map((m) => `${m.role}: ${typeof m.content === 'string' ? m.content : '[media]'}`)
         .join('\n');
       const esUrgente = /urgente/i.test(motivo || '');
+      const esFlete = /\bflete/i.test(motivo || '');
+      const tipoUrg = esFlete ? 'FLETE' : 'MUDANZA';
+      const artUrg = esFlete ? 'un' : 'una';
       await resend.emails.send({
         from: 'MudateYa <noreply@mudateya.ar>',
         reply_to: 'hola@mudateya.ar',
         to: adminMail,
-        subject: esUrgente ? `🚨 MUDANZA URGENTE — ${waId}` : `🙋 Cliente pide atención humana — ${waId}`,
+        subject: esUrgente ? `🚨 ${tipoUrg} URGENTE — ${waId}` : `🙋 Cliente pide atención humana — ${waId}`,
         html:
-          `<p>El cliente <b>${escapeXml(waId)}</b> ${esUrgente ? 'tiene una <b>mudanza URGENTE</b> y necesita que el equipo lo tome ya' : 'pidió hablar con una persona'} por WhatsApp.</p>` +
+          `<p>El cliente <b>${escapeXml(waId)}</b> ${esUrgente ? `tiene ${artUrg} <b>${tipoUrg.toLowerCase()} URGENTE</b> y necesita que el equipo lo tome ya` : 'pidió hablar con una persona'} por WhatsApp.</p>` +
           `<p><b>Motivo:</b> ${escapeXml(motivo || '-')}</p>` +
           `<pre style="background:#f5f5f5;padding:10px;border-radius:8px;white-space:pre-wrap">${escapeXml(ultimos)}</pre>` +
           `<p><a href="https://wa.me/${String(waId).replace(/\D/g, '')}">Abrir WhatsApp del cliente →</a></p>`,
