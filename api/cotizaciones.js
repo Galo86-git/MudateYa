@@ -1296,6 +1296,12 @@ module.exports = async function handler(req, res) {
       const mudIdx = await getJSON(`mudancero:${mudanceroEmail}`) || [];
       if (!mudIdx.includes(mudanzaId)) mudIdx.push(mudanzaId);
       await setJSON(`mudancero:${mudanceroEmail}`, mudIdx, 2592000);
+      // Señal de actividad del mudancero: cotizar cuenta como "entró". Lo usa
+      // cron-recordar-perfil para NO marcarlo "dormido" si sigue trabajando.
+      try {
+        const _pm = await getJSON(`mudancero:perfil:${mudanceroEmail}`);
+        if (_pm) { _pm.ultimaActividad = new Date().toISOString(); await setJSON(`mudancero:perfil:${mudanceroEmail}`, _pm); }
+      } catch(_) {}
       try { await notificarCliente(mudanza, cotizacion); } catch(e) { console.error(e.message); }
       return res.status(200).json({ ok: true, cotizacion });
     }

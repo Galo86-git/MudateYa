@@ -448,12 +448,8 @@
       "schedule": "0 14 * * 1"
     },
     {
-      "path": "/api/recordar-dni",
+      "path": "/api/cron-recordar-perfil",
       "schedule": "0 13 * * 2"
-    },
-    {
-      "path": "/api/recordar-cobro",
-      "schedule": "0 13 * * 5"
     }
   ]
 }
