@@ -286,6 +286,10 @@
       "destination": "/mudanza-urgente.html"
     },
     {
+      "source": "/flete-en-el-dia",
+      "destination": "/flete-en-el-dia.html"
+    },
+    {
       "source": "/membresia",
       "destination": "/membresia.html"
     },
