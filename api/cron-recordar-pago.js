@@ -34,20 +34,18 @@ async function enviarRecordatorio(m, tipoPago, monto) {
   const mud = cot.mudanceroNombre || 'tu mudancero';
   const tramoTxt = tipoPago === 'anticipo' ? `la seña (${fmt(monto)})` : `el saldo (${fmt(monto)})`;
   const tipoTxt = m.tipo === 'flete' ? 'tu flete' : 'tu mudanza';
-  const sid = process.env.TPL_RECORDATORIO_PAGO_SID; // ContentSid de la plantilla aprobada
   try {
-    const wa = require('./_whatsapp');
-    if (sid && wa.enviarWhatsApp) {
-      // Plantilla: variables 1=nombre 2=tu mudanza/flete 3=mudancero 4=tramo 5=mudanzaId (botón)
-      await wa.enviarWhatsApp(m.clienteWA, sid, { 1: nombre, 2: tipoTxt, 3: mud, 4: tramoTxt, 5: m.id });
-    } else {
-      await wa.enviarWhatsAppTexto(
-        m.clienteWA,
-        `¡Hola ${nombre}! Reservaste ${tipoTxt} con ${mud}, pero quedó pendiente ${tramoTxt}.\n` +
-        `Pagalo acá para confirmar: ${site}/pagar/${m.id}`
-      );
-    }
-    return true;
+    const { enviarPlantilla } = require('./_plantillas');
+    // Usa la plantilla si Meta ya la aprobó (resuelve el SID solo); si no, texto libre.
+    const textoLibre =
+      `¡Hola ${nombre}! Reservaste ${tipoTxt} con ${mud}, pero quedó pendiente ${tramoTxt}.\n` +
+      `Pagalo acá para confirmar: ${site}/pagar/${m.id}`;
+    const r = await enviarPlantilla(
+      m.clienteWA, 'recordatorio_pago_pendiente',
+      { 1: nombre, 2: tipoTxt, 3: mud, 4: tramoTxt, 5: m.id },
+      textoLibre
+    );
+    return !!r.enviado;
   } catch (e) { console.warn('enviarRecordatorio:', e.message); return false; }
 }
 

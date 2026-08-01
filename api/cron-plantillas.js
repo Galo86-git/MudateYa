@@ -36,11 +36,15 @@ module.exports = async function handler(req, res) {
 
     const contents = Array.isArray(d.contents) ? d.contents : [];
     const actual = {};
+    const registro = {}; // nombre -> { sid, status } — lo usa _plantillas.enviarPlantilla
     contents.forEach((c) => {
       if (/^notification/.test(c.friendly_name || '')) return; // ignorar demos de Twilio
       const ar = c.approval_requests || {};
-      actual[c.friendly_name] = ar.status || (ar.whatsapp && ar.whatsapp.status) || 'desconocido';
+      const status = ar.status || (ar.whatsapp && ar.whatsapp.status) || 'desconocido';
+      actual[c.friendly_name] = status;
+      registro[c.friendly_name] = { sid: c.sid, status };
     });
+    await setJSON('plantillas:registro', registro);
 
     const previo = (await getJSON('plantillas:estado')) || {};
     const primeraVez = Object.keys(previo).length === 0;
