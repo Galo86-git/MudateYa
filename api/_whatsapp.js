@@ -95,4 +95,46 @@ async function enviarWhatsAppTexto(to, body, mediaUrl) {
   return { ok: true, sid: data.sid, status: data.status };
 }
 
-module.exports = { enviarWhatsApp, enviarWhatsAppTexto };
+// avisarSenaConfirmada: cuando se acredita la SEÑA (anticipo) de una mudanza que
+// vino por WhatsApp, avisa por WhatsApp al CLIENTE ("seña confirmada, reservada")
+// y al MUDANCERO elegido ("ganaste el pedido, coordiná"). Toma todo del objeto
+// mudanza (no necesita Redis). Fail-soft: cada envío en su try. Se llama desde
+// los webhooks de pago (MP y Talo). OJO ventana 24h para texto libre.
+async function avisarSenaConfirmada(mudanza) {
+  if (!mudanza) return;
+  const cot   = mudanza.cotizacionAceptada || {};
+  const desde = mudanza.desde || mudanza.origen || '';
+  const hasta = mudanza.hasta || mudanza.destino || '';
+  const fecha = mudanza.fecha || '';
+  const tipo  = mudanza.tipo || 'mudanza';
+  const mud   = cot.mudanceroNombre || 'el mudancero';
+
+  // 1) Cliente (solo si el pedido vino por WhatsApp).
+  if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+    try {
+      await enviarWhatsAppTexto(
+        mudanza.clienteWA,
+        `✅ ¡Seña confirmada! Tu ${tipo} quedó reservada con ${mud} 🎉\n` +
+        `${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
+        (cot.mudanceroTel ? `Coordinás con ${mud}: ${cot.mudanceroTel}\n` : '') +
+        `El 50% restante lo pagás al completar la mudanza. ¡Cualquier cosa escribime por acá!`
+      );
+    } catch (e) { console.warn('avisarSenaConfirmada cliente:', e.message); }
+  }
+
+  // 2) Mudancero elegido (por su teléfono de la cotización).
+  if (cot.mudanceroTel) {
+    try {
+      await enviarWhatsAppTexto(
+        cot.mudanceroTel,
+        `🎉 ¡Ganaste un pedido en MudateYa! El cliente pagó la seña.\n` +
+        `${tipo}: ${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
+        (mudanza.clienteNombre ? `Cliente: ${mudanza.clienteNombre}` : 'Cliente') +
+        (mudanza.clienteWA ? ` (${mudanza.clienteWA})` : '') + '\n' +
+        `Escribile para coordinar los detalles. ¡Éxitos! 🚚`
+      );
+    } catch (e) { console.warn('avisarSenaConfirmada mudancero:', e.message); }
+  }
+}
+
+module.exports = { enviarWhatsApp, enviarWhatsAppTexto, avisarSenaConfirmada };

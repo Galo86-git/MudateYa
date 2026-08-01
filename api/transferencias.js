@@ -389,6 +389,17 @@ module.exports = async function handler(req, res) {
         }
       } catch (e) { console.warn('[webhook] registro:', e.message); }
 
+      // Cerrar el círculo por WhatsApp: al acreditar la SEÑA, avisar al cliente
+      // (reservada) y al mudancero elegido (ganó el pedido). Idempotente por el
+      // guard `yaPago` de arriba: solo corre la primera vez que se acredita.
+      if (ref.tipoPago === 'anticipo') {
+        try {
+          const mFinal = await getJSON(`mudanza:${ref.mudanzaId}`);
+          const { avisarSenaConfirmada } = require('./_whatsapp');
+          await avisarSenaConfirmada(mFinal);
+        } catch (e) { console.warn('[webhook] aviso WhatsApp seña:', e.message); }
+      }
+
       // Si pagó de más, avisar: hay que devolver la diferencia.
       if (pago.estado === 'OVERPAID') {
         try {

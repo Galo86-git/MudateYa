@@ -140,6 +140,16 @@ module.exports = async function handler(req, res) {
     // Con 7 días el registro del cobro podía expirar antes de liquidar.
     await setJSON(`mudanza:${mudanzaId}`, m, 7776000);
 
+    // Cerrar el círculo por WhatsApp: al confirmar la SEÑA, avisar al cliente
+    // (reservada) y al mudancero elegido (ganó). Solo pedidos de canal whatsapp
+    // avisan al cliente; el mudancero se avisa por su tel de la cotización.
+    if (tipoPago === 'anticipo') {
+      try {
+        const { avisarSenaConfirmada } = require('./_whatsapp');
+        await avisarSenaConfirmada(m);
+      } catch (e) { console.warn('[Webhook MP] aviso WhatsApp seña:', e.message); }
+    }
+
     console.log(`[Webhook MP] ✅ Pago ${tipoPago} registrado para mudanza ${mudanzaId}`);
     return res.status(200).json({ status: 'ok', tipoPago, mudanzaId });
 
