@@ -428,6 +428,17 @@ module.exports = async function handler(req, res) {
     if (!todos.includes(email)) todos.push(email);
     await setJSON('mudanceros:todos', todos);
 
+    // ── AUTO-APROBACIÓN instantánea ──
+    // Si el alta vino completa (DNI+fotos+vehículo+precios+cobro) y la identidad no da
+    // fraude, se aprueba en el acto y se manda el mail de alta con el link de Términos.
+    // Se apaga con AUTO_APROBAR_ACTIVO=0. Si se aprueba, no mandamos el mail genérico de
+    // "te contactamos en 24hs" (sería contradictorio).
+    var autoAprobado = false;
+    try {
+      var _r = await require('./_aprobar').intentar(email);
+      autoAprobado = _r.accion === 'aprobado';
+    } catch (e) { console.warn('auto-aprobar:', e.message); }
+
     // ── HOOK ALIADOS: crear atribución de alta si vino por un ref ──
     if (refAliado) {
       try { await hookCrearAtribucionAlta(email, refAliado, vehiculo); }
@@ -438,7 +449,11 @@ module.exports = async function handler(req, res) {
     try { await notificarAdmin(perfil); } catch(e) { console.warn('Email admin:', e.message); }
 
     // ── EMAIL DE BIENVENIDA AL MUDANCERO ───────────────────────
-    try { await bienvenidaMudancero(perfil); } catch(e) { console.warn('Email bienvenida:', e.message); }
+    // Si se auto-aprobó, ya recibió el mail de alta (con link de Términos): no mandamos
+    // el genérico de "te contactamos en 24hs" para no contradecirlo.
+    if (!autoAprobado) {
+      try { await bienvenidaMudancero(perfil); } catch(e) { console.warn('Email bienvenida:', e.message); }
+    }
 
     // ── LOG EN SHEETS ───────────────────────────────────────────
     try { await logMudanceroSheets(perfil); } catch(e) { console.warn('Sheets:', e.message); }
@@ -447,7 +462,10 @@ module.exports = async function handler(req, res) {
       ok:      true,
       id:      id,
       cuilOk:  cuilResultado ? cuilResultado.valido === true : false,
-      mensaje: 'Solicitud recibida. Te contactamos en 24hs para activar tu perfil.',
+      autoAprobado: autoAprobado,
+      mensaje: autoAprobado
+        ? '¡Listo! Tu perfil quedó aprobado. Revisá tu mail para aceptar los Términos y activar tu cuenta.'
+        : 'Solicitud recibida. Te contactamos en 24hs para activar tu perfil.',
     });
 
   } catch(e) {

@@ -35,38 +35,10 @@ async function setJSON(k, v, ex) {
 }
 
 // ── Reglas de triage ─────────────────────────────────────────────
-// Devuelve { accion: 'skip'|'aprobar'|'fraude'|'revisar', motivos: [] }
-function evaluar(p) {
-  if ((p.estado || '') !== 'pendiente_revision') return { accion: 'skip', motivos: [] };
-
-  const motivos = [];
-  const nivel = (p.verificacion && p.verificacion.nivel) || (p.dniAnalisis ? 'amarillo' : 'sin_dni');
-
-  if ((p.estadoOnboarding || '') !== 'completo') motivos.push('onboarding incompleto (pre-registrado)');
-  if (!p.dniFrente || !p.dniDorso) motivos.push('faltan fotos de DNI');
-  if (!p.vehiculo) motivos.push('sin vehículo declarado');
-
-  const tienePrecios = (Array.isArray(p.serviciosActivos) && p.serviciosActivos.length) ||
-    (p.precios && (p.precios.amb1 || p.precios.flete));
-  if (!tienePrecios) motivos.push('sin precios cargados');
-
-  const tieneCobro = p.metodoCobro === 'mp' ? !!p.emailMP : !!p.cbu;
-  if (!tieneCobro) motivos.push('sin datos de cobro (CBU/MP)');
-
-  // Rojo = señal de fraude de identidad → siempre a revisión manual.
-  if (nivel === 'rojo') {
-    const detalle = (p.verificacion && Array.isArray(p.verificacion.motivos))
-      ? p.verificacion.motivos.filter((x) => x.nivel === 'rojo').map((x) => x.texto).join(' · ')
-      : 'identidad en rojo';
-    return { accion: 'fraude', motivos: ['⚠️ Identidad ROJA: ' + detalle, ...motivos] };
-  }
-
-  // Limpio de verdad → aprobar.
-  if (motivos.length === 0 && nivel === 'verde') return { accion: 'aprobar', motivos: [] };
-
-  // Le falta algo o identidad amarilla → revisión manual (no es fraude).
-  return { accion: 'revisar', motivos: motivos.length ? motivos : ['identidad amarilla / a confirmar'] };
-}
+// La clasificación y la aprobación viven en _aprobar.js (la MISMA lógica que usan el
+// alta y la edición de perfil). Así este cron es solo la red de seguridad diaria que
+// agarra lo que se haya escapado + el reporte al admin.
+const { evaluar, activo, aprobarEnObjeto } = require('./_aprobar');
 
 // ── Email de resumen al admin ────────────────────────────────────
 async function enviarResumenAdmin({ aprobados, fraude, revisar, dryRun }) {
@@ -109,7 +81,7 @@ async function enviarResumenAdmin({ aprobados, fraude, revisar, dryRun }) {
 
 module.exports = async function handler(req, res) {
   try {
-    const AUTO = process.env.AUTO_APROBAR_ACTIVO === '1' || process.env.AUTO_APROBAR_ACTIVO === 'true';
+    const AUTO = activo(); // default ENCENDIDO (se apaga con AUTO_APROBAR_ACTIVO=0)
     const pendientes = (await getJSON('mudanceros:pendientes')) || [];
 
     const aprobados = [], fraude = [], revisar = [];
@@ -126,17 +98,9 @@ module.exports = async function handler(req, res) {
       if (accion === 'aprobar') {
         aprobados.push(p);
         if (AUTO) {
-          // Aprobar de verdad: mismo efecto que admin-aprobar.
-          p.estado = 'aprobado';
-          p.terminosAceptados = false;
-          p.fechaCambioEstado = new Date().toISOString();
-          p.autoAprobado = new Date().toISOString();
+          await aprobarEnObjeto(p); // aprueba, saca de pendientes y manda el mail de alta
           await setJSON(`mudancero:perfil:${email}`, p);
           quedanPendientes = quedanPendientes.filter((e) => e !== email);
-          try {
-            const { enviarEmailAltaExitosa } = require('./admin-aprobar');
-            await enviarEmailAltaExitosa(p);
-          } catch (e) { console.error('email alta auto:', e.message); }
         }
       } else if (accion === 'fraude') {
         fraude.push(p);

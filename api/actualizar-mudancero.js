@@ -242,7 +242,16 @@ module.exports = async function handler(req, res) {
       if (_tel8.length === 8) await redisCall('HSET', 'mudanceros:tel8-idx', _tel8, data.email);
     } catch (e) { console.warn('idx tel8:', e.message); }
 
-    return res.status(200).json({ ok: true });
+    // ── AUTO-APROBACIÓN instantánea ──
+    // Si con esta edición el perfil quedó completo y sin señal de fraude, se aprueba
+    // solo (manda el mail de alta). No espera al admin. Se apaga con AUTO_APROBAR_ACTIVO=0.
+    let autoAprobado = false;
+    try {
+      const r = await require('./_aprobar').intentar(data.email);
+      autoAprobado = r.accion === 'aprobado';
+    } catch (e) { console.warn('auto-aprobar:', e.message); }
+
+    return res.status(200).json({ ok: true, autoAprobado });
   } catch(e) {
     console.error('Error actualizando perfil:', e.message);
     return res.status(500).json({ error: e.message });
