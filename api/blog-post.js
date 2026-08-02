@@ -30,13 +30,14 @@ const CSS = `
 a{color:var(--navy)}.wrap{max-width:820px;margin:0 auto;padding:0 20px}
 .wrap-wide{max-width:1040px;margin:0 auto;padding:0 20px}
 header.nav{position:sticky;top:0;background:#fff;border-bottom:1px solid #e7ecf3;z-index:10}
-.nav .wrap-wide{display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav .wrap-wide{display:flex;align-items:center;justify-content:space-between;height:58px}
 .brand{font-family:'Bebas Neue',Inter,sans-serif;font-size:26px;letter-spacing:1px;color:var(--navy);text-decoration:none;font-weight:700}
 .brand span{color:var(--green)}
 .nav-links{display:flex;align-items:center;gap:18px}
 .nav-links a.txt{text-decoration:none;color:var(--ink);font-weight:600;font-size:15px}
-.btn{display:inline-block;background:var(--green);color:#04231a;font-weight:700;padding:12px 22px;border-radius:10px;text-decoration:none}
+.btn{display:inline-block;background:var(--green);color:#fff;font-weight:700;padding:12px 22px;border-radius:10px;text-decoration:none}
 .btn.nav-cta{padding:9px 16px}
+@media(max-width:400px){.nav-links a.txt{display:none}.btn.nav-cta{padding:8px 12px;font-size:14px}}
 .hero{background:linear-gradient(160deg,#003580,#00224f);color:#fff;padding:48px 0 40px}
 .hero h1{font-size:clamp(26px,4.4vw,40px);margin:0 0 12px;line-height:1.15}
 .breadcrumb{font-size:13px;color:#9fb3d1;margin:0 0 14px}
