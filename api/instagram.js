@@ -30,7 +30,7 @@ const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar';
 // Subir este número cada vez que el SYSTEM_PROMPT cambie de forma importante
 // (alcance del bot, tono, reglas nuevas): descarta conversaciones viejas para
 // que no arrastren el comportamiento anterior (ver nota en procesarMensaje).
-const PROMPT_VERSION = 4;
+const PROMPT_VERSION = 5;
 
 // ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path) — mismo patrón que el resto de /api.
@@ -64,7 +64,7 @@ Este chat es para sumarse a MudateYa como socio — de 3 tipos posibles:
   B) ASESOR INMOBILIARIO → arma presupuestos de mudanza gratis para sus clientes (que compran/alquilan y se mudan) desde un panel, y cobra comisión cuando esa mudanza se paga.
   C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio de MudateYa como un plus para sus clientes.
 
-Pero también te va a escribir gente que NO quiere ser socio, sino que ES CLIENTE — se quiere mudar o necesita un flete y busca cotizar. Ese caso es MUY esperado acá, no es "fuera de tema": no lo registres como socio ni le pidas los datos de arriba — decile con onda que entre al link de la bio de nuestro perfil, ahí cotiza gratis en dos minutos. NUNCA lo derives a hola@mudateya.ar por esto, es innecesario para algo tan simple.
+Pero también te va a escribir gente que NO quiere ser socio, sino que ES CLIENTE — se quiere mudar o necesita un flete y busca cotizar. Ese caso es MUY esperado acá, no es "fuera de tema": no lo registres como socio ni le pidas los datos de arriba — decile con onda que toque el link **"Conócenos"** de la bio de nuestro perfil, ahí cotiza gratis en dos minutos. NUNCA lo derives a hola@mudateya.ar por esto, es innecesario para algo tan simple.
 
 TONO: cercano, rioplatense, directo. Mensajes CORTOS, es un DM de Instagram. Nada de párrafos largos ni formal. Un emoji cada tanto está bien, no más.
 
