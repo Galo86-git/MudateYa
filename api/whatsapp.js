@@ -20,7 +20,7 @@ const { vencimientoHabilISO } = require('./_habiles'); // vencimiento en horas h
 
 // Modo prueba: si está seteada, los pedidos del bot se publican SOLO para este
 // mudancero (modo "dirigido"), así ningún mudancero real los ve mientras testeás.
-// Vacío = pedido abierto a todos (comportamiento de producción).
+// Vacío = pedido abierto a todos los mudanceros que cubren la zona (producción).
 const TEST_MUDANCERO_EMAIL = (process.env.TEST_MUDANCERO_EMAIL || '').toLowerCase().trim();
 const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar'; // para generar el link de pago (MP)
 
@@ -1153,15 +1153,25 @@ async function iniciarBarridoMudanceros(pedido) {
 
 async function barridoWhatsApp(pedido) {
   const { enviarPlantilla } = require('./_plantillas');
+  const { coincideZona, palabrasZona } = require('./match-mudanceros');
   const todos = (await getJSON('mudanceros:todos')) || [];
   const dirigido = pedido.modoCotizacion === 'dirigido';
   const invitados = pedido.mudancerosInvitados || [];
+  // Pedido del bot en modo abierto: avisar a TODOS los que cubren la zona del
+  // pedido, no a cualquier aprobado sin importar dónde esté (mismo criterio
+  // de zona que usa match-mudanceros.js).
+  const palabrasZonaPedido = palabrasZona(`${pedido.origen || ''} ${pedido.destino || ''}`);
   let enviados = 0;
   for (const email of todos) {
     if (enviados >= 60) break; // tope defensivo por corrida
     const p = await getJSON(`mudancero:perfil:${email}`);
     if (!p || p.estado !== 'aprobado' || !p.telefono) continue;
-    if (dirigido && !invitados.includes(email)) continue;
+    if (dirigido) {
+      if (!invitados.includes(email)) continue;
+    } else {
+      const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
+      if (!coincideZona(cobertura, palabrasZonaPedido)) continue;
+    }
     const nom = (p.nombre || '').split(' ')[0] || 'Hola';
     const resumen =
       `🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +

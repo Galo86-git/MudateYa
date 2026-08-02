@@ -207,3 +207,10 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 };
+
+// Se exportan también los helpers de zona (además del handler) para que
+// cotizaciones.js los reuse en el barrido del bot, en vez de duplicar la
+// lógica de matching por zona en dos archivos.
+module.exports.coincideZona = coincideZona;
+module.exports.palabrasZona = palabrasZona;
+module.exports.norm = norm;

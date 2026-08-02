@@ -2,6 +2,9 @@
 
 var { esAdmin } = require('./_auth');
 var { vencimientoHabilISO } = require('./_habiles');
+// Matching por zona (mismo criterio que match-mudanceros.js) — lo usa
+// notificarMudanceros para filtrar a quién avisar en pedidos del bot.
+var { coincideZona, palabrasZona } = require('./match-mudanceros');
 
 const { Resend } = require('resend');
 
@@ -3739,12 +3742,22 @@ async function notificarMudanceros(mudanza) {
     } catch(e) { console.error('Email admin error:', e.message); }
   }
 
-  // 2. Notificar a mudanceros aprobados
-  // Si es modo dirigido, solo notificar a los invitados
-  // Si es abierto, notificar a todos los aprobados
+  // 2. Notificar a mudanceros — REGLA (según lo pedido):
+  //    - modoCotizacion 'dirigido' (el cliente eligió mudanceros puntuales,
+  //      ej. desde /m/{slug}, el perfil de un mudancero): SOLO a esos, sea
+  //      cual sea el canal. Esto ya funcionaba así, no se tocó.
+  //    - Pedido del BOT (canal:'whatsapp') en modo abierto: a TODOS los que
+  //      cubren la ZONA del pedido (usa el mismo matching de zona de
+  //      match-mudanceros.js) — no a los 40 aprobados sin importar dónde estén.
+  //    - Pedido de la WEB en modo abierto (publicación general, no vino de
+  //      un perfil puntual): sigue igual que siempre, a todos los aprobados.
   try {
     const todosEmails = await getJSON('mudanceros:todos') || [];
     const destinatarios = [];
+    const esBot = mudanza.canal === 'whatsapp';
+    const palabrasZonaPedido = esBot
+      ? palabrasZona(`${mudanza.origen || mudanza.desde || ''} ${mudanza.destino || mudanza.hasta || ''}`)
+      : null;
 
     for (const email of todosEmails) {
       try {
@@ -3752,10 +3765,13 @@ async function notificarMudanceros(mudanza) {
         if (!p || p.estado !== 'aprobado') continue;
         if (!p.email) continue;
 
-        // Modo dirigido: solo los invitados
         if (mudanza.modoCotizacion === 'dirigido') {
           if (!(mudanza.mudancerosInvitados || []).includes(email)) continue;
+        } else if (esBot) {
+          const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
+          if (!coincideZona(cobertura, palabrasZonaPedido)) continue;
         }
+        // Web en modo abierto: sin filtro extra, se mantiene como siempre.
 
         destinatarios.push({ email: p.email, nombre: p.nombre || '', tel: p.telefono || '' });
       } catch(e) { /* ignorar errores individuales */ }
