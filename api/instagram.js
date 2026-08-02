@@ -1,14 +1,18 @@
 // api/instagram.js
 // Agente que RESPONDE los DMs de Instagram de MudateYa.
-// Objetivo: captar asesores inmobiliarios como socios referidores y darlos de alta.
+// Objetivo: sumar socios a MudateYa por DM — de los 3 tipos que existen:
+//   - Mudancero / fletero / empresa de mudanzas
+//   - Asesor inmobiliario (individual)
+//   - Inmobiliaria (la agencia)
 //
-// IMPORTANTE: el alta NO se hace acá — se llama al endpoint real de asesores
-// (api/asesores.js?action=register), el mismo que usa el form de la web
-// (asesor-registro.html). Así el asesor que se registra por Instagram queda
-// 100% igual que uno que se registra por la web: mismo esquema en Redis
-// (asesor:{email} + índice asesores:todos), mismo mail de bienvenida, mismo
-// panel (/asesor-login). Si el día de mañana cambia el flujo de alta, este
-// bot lo hereda solo, sin tocar nada acá.
+// IMPORTANTE: ninguna alta se hace acá — cada tool llama al endpoint REAL
+// correspondiente (el mismo que usa cada form de la web), así el registro
+// por Instagram queda 100% igual que uno hecho por la web: mismo esquema en
+// Redis, mismo mail, mismo panel. Si el día de mañana cambia algún flujo de
+// alta, este bot lo hereda solo, sin tocar nada acá.
+//   - registrar_asesor        -> api/asesores.js?action=register (asesor-registro.html)
+//   - registrar_inmobiliaria  -> api/inmobiliarias.js?action=solicitar-alta (inmobiliarias-registro.html)
+//   - registrar_mudancero     -> api/registrar-mudancero.js, tipoRegistro:'corto' (mudanceros.html)
 //
 // Variables de entorno necesarias (Vercel → Settings → Environment Variables):
 //   IG_VERIFY_TOKEN         -> token que vos inventás y también ponés en el panel de Meta
@@ -51,23 +55,28 @@ async function setJSON(key, value, ttlSeconds) {
 // ------------------------------------------------------------------
 const SYSTEM_PROMPT = `Sos el asistente de MudateYa en Instagram. MudateYa es un marketplace argentino de mudanzas y fletes que conecta clientes con mudanceros/fleteros verificados.
 
-Tu único objetivo en este chat: sumar ASESORES INMOBILIARIOS al programa de Asesores MudateYa. Un asesor arma presupuestos de mudanza gratis para sus clientes (que acaban de comprar o alquilar y se tienen que mudar) desde su panel — un servicio que suma valor a su propuesta, y cobra una comisión cuando esa mudanza se concreta y se paga.
+Este chat es para TODO lo relacionado a sumarse a MudateYa como socio — de 3 tipos posibles:
+  A) MUDANCERO / FLETERO / EMPRESA DE MUDANZAS → labura haciendo mudanzas o fletes, quiere recibir pedidos para cotizar.
+  B) ASESOR INMOBILIARIO → arma presupuestos de mudanza gratis para sus clientes (que compran/alquilan y se mudan) desde un panel, y cobra comisión cuando esa mudanza se paga.
+  C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio de MudateYa como un plus para sus clientes.
 
 TONO: cercano, rioplatense, directo. Mensajes CORTOS, es un DM de Instagram. Nada de párrafos largos ni formal. Un emoji cada tanto está bien, no más.
 
 CÓMO TRABAJÁS:
-1. Si saludan o preguntan por el programa, explicá en 1-2 líneas y arrancá a pedir datos.
-2. Necesitás juntar 5 datos, de a uno o dos por mensaje (no los pidas todos de golpe):
-   - nombre y apellido
-   - inmobiliaria (o "Independiente")
-   - email
-   - WhatsApp
-   - zona donde trabaja (ej: CABA, zona norte, zona sur, Rosario, Córdoba, Mendoza, u otra ciudad)
-3. Cuando tengas los 5 datos, llamá a la herramienta registrar_asesor. Si te devuelve un error (dato inválido), pedile amablemente que te lo corrija y volvé a intentar — NO inventes datos para completar.
-4. Si preguntan por la plata: la comisión se acredita cuando la mudanza que armó desde su panel se completa y se paga. NO prometas montos exactos si no los sabés.
-5. Después de un alta exitosa, contale que le mandamos un mail con el link a su panel para empezar a armar presupuestos.
+1. Si no es obvio por lo que ya escribió, tu PRIMERA pregunta es identificar cuál de los 3 es ("¿sos mudancero/fletero, asesor inmobiliario, o tenés una inmobiliaria?"). Si ya lo dijo (ej: "soy fletero", "tengo una inmobiliaria", "soy asesor"), no se lo vuelvas a preguntar — seguí directo con esos datos.
+2. Según cuál sea, juntá estos datos (de a uno o dos por mensaje, no todos de golpe):
 
-REGLAS: no pidas datos sensibles, no prometas lo que no podés cumplir, y si el mensaje no tiene que ver con esto respondé amable y reconducí al programa.
+   A) MUDANCERO/FLETERO/EMPRESA: nombre y apellido, empresa (o "Independiente"), WhatsApp, email, zona donde opera (ej: CABA, zona norte, Rosario, etc.). Con eso llamá a registrar_mudancero. Aclarale que esto es un pre-registro rápido: después completa el resto (vehículo, fotos, precios) desde su cuenta — no le prometas que ya puede recibir pedidos todavía.
+
+   B) ASESOR INMOBILIARIO: nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: puede armar presupuestos ya mismo.
+
+   C) INMOBILIARIA: nombre de la inmobiliaria, tu nombre (el contacto), colegio profesional donde está matriculado el contacto, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Aclarale que esto queda como SOLICITUD: el equipo la revisa y lo contactan en 24h hábiles para coordinar la activación — no es instantáneo como el alta de asesor.
+
+3. Si la herramienta te devuelve un error (dato inválido, ya registrado, etc.), pedile amablemente que lo corrija o contale lo que corresponda (ej. si ya existe, que va a recibir un mail) — NO inventes datos para completar ni festejes un alta que no pasó.
+4. Si preguntan por la plata: la comisión/pago se define según cada caso, NO prometas montos exactos si no los sabés.
+5. Después de un alta o solicitud exitosa, contale que le llega un mail con los próximos pasos.
+
+REGLAS: no pidas datos sensibles, no prometas lo que no podés cumplir, y si el mensaje no tiene nada que ver con sumarse a MudateYa (ej. alguien pidiendo cotizar una mudanza como cliente) respondé amable y derivalo a que escriba por WhatsApp o entre a la web, sin registrarlo como socio.
 
 IMPORTANTE — NUNCA escribas en este chat ningún link, URL ni dominio (ni "mudateya.ar", ni "http...", nada). Instagram bloquea el envío de mensajes con links desde esta cuenta. El link de verdad SIEMPRE le llega por mail — acá solo decile "te lo mandamos por mail" o "revisá tu casilla", sin repetir la dirección.`;
 
@@ -75,7 +84,7 @@ const tools = [
   {
     name: 'registrar_asesor',
     description:
-      "Registra a un asesor inmobiliario en el programa de Asesores MudateYa. Llamala SOLO cuando ya tengas los 5 datos: nombre y apellido, inmobiliaria (o 'Independiente'), email, WhatsApp y zona donde trabaja.",
+      "Registra a un ASESOR INMOBILIARIO individual en el programa de Asesores MudateYa (queda activo al toque). Llamala SOLO cuando ya tengas los 5 datos: nombre y apellido, inmobiliaria (o 'Independiente'), email, WhatsApp y zona donde trabaja.",
     input_schema: {
       type: 'object',
       properties: {
@@ -86,6 +95,39 @@ const tools = [
         zona: { type: 'string', description: 'zona donde trabaja (ej: CABA, zona norte, zona sur, Rosario, Córdoba, Mendoza, u otra)' },
       },
       required: ['nombre', 'inmobiliaria', 'email', 'whatsapp', 'zona'],
+    },
+  },
+  {
+    name: 'registrar_inmobiliaria',
+    description:
+      "Manda la SOLICITUD de alta de una INMOBILIARIA (la agencia, no un asesor individual). Queda pendiente de revisión, NO es instantáneo. Llamala SOLO con los 6 datos: nombre de la inmobiliaria, tu nombre (contacto), colegio profesional, matrícula, email, WhatsApp.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombreInmobiliaria: { type: 'string', description: 'nombre de la inmobiliaria' },
+        contacto: { type: 'string', description: 'nombre y apellido de la persona de contacto' },
+        colegio: { type: 'string', description: 'colegio profesional donde está matriculado el contacto (ej: CUCICBA — CABA, San Isidro, La Plata, etc.)' },
+        matricula: { type: 'string', description: 'número de matrícula' },
+        email: { type: 'string' },
+        whatsapp: { type: 'string', description: 'número de WhatsApp / teléfono de contacto' },
+      },
+      required: ['nombreInmobiliaria', 'contacto', 'colegio', 'matricula', 'email', 'whatsapp'],
+    },
+  },
+  {
+    name: 'registrar_mudancero',
+    description:
+      "Pre-registra a un MUDANCERO, FLETERO o EMPRESA DE MUDANZAS (registro rápido — después completa vehículo/fotos/precios desde su cuenta). Llamala SOLO con los 5 datos: nombre y apellido, empresa (o 'Independiente'), WhatsApp, email, zona donde opera.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'nombre y apellido' },
+        empresa: { type: 'string', description: "nombre de la empresa, o 'Independiente'" },
+        whatsapp: { type: 'string', description: 'número de WhatsApp / teléfono de contacto' },
+        email: { type: 'string' },
+        zona: { type: 'string', description: 'zona donde opera (ej: CABA, zona norte, zona sur, Rosario, Córdoba, Mendoza, u otra)' },
+      },
+      required: ['nombre', 'empresa', 'whatsapp', 'email', 'zona'],
     },
   },
 ];
@@ -139,6 +181,69 @@ async function registrarAsesor(input) {
       return JSON.stringify({ ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le mandamos un mail con el link a su panel.' });
     }
     return JSON.stringify({ ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con el link a su panel de Asesor MudateYa.' });
+  } catch (e) {
+    return JSON.stringify({ ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' });
+  }
+}
+
+// ------------------------------------------------------------------
+// Solicitud de alta de inmobiliaria: delega en el endpoint REAL
+// (api/inmobiliarias.js?action=solicitar-alta), el mismo que usa
+// inmobiliarias-registro.html. Queda como SOLICITUD pendiente de revisión
+// del admin — no es alta instantánea como la de asesor.
+// ------------------------------------------------------------------
+async function registrarInmobiliaria(input) {
+  try {
+    const r = await fetch(`${SITE_URL}/api/inmobiliarias?action=solicitar-alta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: input.nombreInmobiliaria,
+        contacto: input.contacto,
+        colegio: input.colegio,
+        matricula: input.matricula,
+        email: input.email,
+        whatsapp: input.whatsapp,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      return JSON.stringify({ ok: false, error: data.error || 'No se pudo enviar la solicitud. Revisá los datos.' });
+    }
+    return JSON.stringify({ ok: true, nota: 'Solicitud recibida. El equipo la revisa y lo contacta en 24h hábiles para coordinar la activación.' });
+  } catch (e) {
+    return JSON.stringify({ ok: false, error: 'No pudimos enviar la solicitud ahora. Probá de nuevo en un rato.' });
+  }
+}
+
+// ------------------------------------------------------------------
+// Pre-registro de mudancero/fletero/empresa: delega en el endpoint REAL
+// (api/registrar-mudancero.js, tipoRegistro:'corto' — mismo pre-registro
+// rápido que existe en mudanceros.html). Después completa vehículo, fotos
+// y precios desde su cuenta; esto NO lo deja listo para recibir pedidos.
+// ------------------------------------------------------------------
+async function registrarMudancero(input) {
+  try {
+    const r = await fetch(`${SITE_URL}/api/registrar-mudancero`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipoRegistro: 'corto',
+        nombre: input.nombre,
+        empresa: input.empresa,
+        telefono: input.whatsapp,
+        email: input.email,
+        zonaBase: input.zona,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (data.estado) {
+        return JSON.stringify({ ok: true, existente: true, nota: 'Ya tenía un perfil con ese email (estado: ' + data.estado + '). Le mandamos un mail para que entre a completarlo.' });
+      }
+      return JSON.stringify({ ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' });
+    }
+    return JSON.stringify({ ok: true, existente: false, nota: 'Pre-registrado con éxito. Le llega un mail para completar vehículo, fotos y precios desde su cuenta — recién ahí queda listo para recibir pedidos.' });
   } catch (e) {
     return JSON.stringify({ ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' });
   }
@@ -212,10 +317,13 @@ async function procesarMensaje(igsid, texto) {
       trabajo = trabajo.concat([{ role: 'assistant', content: resp.content }]);
       const resultados = [];
       for (const block of resp.content || []) {
-        if (block.type === 'tool_use' && block.name === 'registrar_asesor') {
-          const r = await registrarAsesor(block.input);
-          resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
-        }
+        if (block.type !== 'tool_use') continue;
+        let r;
+        if (block.name === 'registrar_asesor') r = await registrarAsesor(block.input);
+        else if (block.name === 'registrar_inmobiliaria') r = await registrarInmobiliaria(block.input);
+        else if (block.name === 'registrar_mudancero') r = await registrarMudancero(block.input);
+        else r = JSON.stringify({ ok: false, error: 'Herramienta desconocida.' });
+        resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
       }
       trabajo = trabajo.concat([{ role: 'user', content: resultados }]);
       resp = await askClaude(trabajo);
