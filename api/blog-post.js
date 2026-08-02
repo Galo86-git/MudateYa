@@ -107,7 +107,7 @@ function render(post) {
 <script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>
 <style>${CSS}</style>
 </head><body>
-<header class="nav"><div class="wrap-wide"><a class="brand" href="/">MUDATE<span>YA</span></a><div class="nav-links"><a class="txt" href="/blog">Blog</a><a class="btn nav-cta" href="/#cotizar">Cotizar gratis →</a></div></div></header>
+<header class="nav"><div class="wrap-wide"><a class="brand" href="/">MUDATE<span>YA</span></a><div class="nav-links"><a class="txt" href="/blog">Blog</a><a class="btn nav-cta" href="/mi-mudanza">Cotizar gratis →</a></div></div></header>
 <section class="hero"><div class="wrap">
 <p class="breadcrumb"><a href="/">Inicio</a> › <a href="/blog">Blog</a> › ${esc(post.titulo)}</p>
 ${post.tag ? `<span class="tag-hero">${esc(post.tag)}</span>` : ''}
@@ -116,12 +116,12 @@ ${fecha ? `<p class="post-meta">Publicado el ${fecha}</p>` : ''}
 </div></section>
 <article class="post"><div class="wrap">
 ${post.cuerpoHtml}
-<div class="inline-cta"><p>¿Te vas a mudar? Compará presupuestos de mudanceros verificados en 2 minutos.</p><a class="btn" href="/#cotizar">Cotizar gratis →</a></div>
+<div class="inline-cta"><p>¿Te vas a mudar? Compará presupuestos de mudanceros verificados en 2 minutos.</p><a class="btn" href="/mi-mudanza">Cotizar gratis →</a></div>
 </div></article>
 <section class="cta"><div class="wrap">
 <h2>¿Listo para mudarte?</h2>
 <p>Compará precios de mudanceros verificados y pagá seguro con Mercado Pago o transferencia bancaria.</p>
-<a class="btn" href="/#cotizar">Cotizar gratis en 2 minutos →</a>
+<a class="btn" href="/mi-mudanza">Cotizar gratis en 2 minutos →</a>
 </div></section>
 <footer><div class="wrap-wide">© MudateYa — Marketplace de mudanzas y fletes de Argentina · <a href="/">Inicio</a> · <a href="/blog">Blog</a> · <a href="/contacto">Contacto</a> · <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></div></footer>
 </body></html>`;
