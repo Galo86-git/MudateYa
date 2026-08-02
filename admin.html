@@ -2026,7 +2026,11 @@ function fmtFechaCorta(d) {
   return date.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
 }
 
-var DIAS_LIQUIDACION = 14;
+// 15 días hábiles: mismo plazo que se le promete al mudancero en todo el resto
+// del sistema (mails de bienvenida, cotizaciones.js, webhook-mp.js, transferencias.js).
+// Antes decía 14 acá — el panel le mostraba al admin una fecha de liberación un
+// día antes de lo que el sistema realmente promete.
+var DIAS_LIQUIDACION = 15;
 
 // ═══════════════════════════════════════════════════════════
 // Clasifica cada pago: liquidable ya o en retención
