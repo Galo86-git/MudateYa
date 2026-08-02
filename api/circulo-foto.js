@@ -35,9 +35,11 @@ module.exports = async function handler(req, res) {
     var pathname = req.query.pathname;
     if (!pathname) return res.status(400).json({ error: 'Falta pathname' });
 
-    // TODO (gate de socio): cuando exista la sesión de /c/[slug], validar acá
-    // que la request tenga sesión válida ANTES de servir la foto.
-    // Por ahora queda abierto para poder probar la carga.
+    // TODO (gate de socio): El Círculo todavía está en pruebas, sin socios reales
+    // ni sesión implementada (el botón "Mi link" en circulo.html no está conectado).
+    // Antes de sumar contenido/socios reales, hay que definir qué es "socio" y cómo
+    // se identifica, y then validar sesión ANTES de servir la foto. Decisión
+    // consciente de dejarlo abierto mientras tanto (confirmado 2026-08-02).
 
     var token = process.env.BLOB_READ_WRITE_TOKEN;
     var result = await blobLib.get(pathname, { access: 'private', token: token });

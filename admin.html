@@ -1659,64 +1659,6 @@ function renderDashboard(){
 // ── MUDANCEROS PAGE ────────────────────────────────────────────────────────
 function renderMudancerosFull(){ filterMudanceros(); }
 
-// Recordar DNI faltante: busca mudanceros con 1 sola foto y les manda un mail.
-// Primero muestra cuántos son (vista previa) y pide confirmación antes de enviar.
-async function recordarDniFaltante(){
-  try {
-    var r = await fetch('/api/recordar-dni', { headers: { 'x-admin-token': ADMTK() } });
-    var d = await r.json();
-    if (!r.ok) { alert('Error: ' + (d.error || r.status)); return; }
-    if (!d.total) { alert('✅ No hay mudanceros con una sola foto de DNI.'); return; }
-    if (!d.pendientesDeMail) {
-      alert('Los ' + d.total + ' mudanceros con 1 sola foto ya recibieron el recordatorio.');
-      return;
-    }
-    var msg = 'Mudanceros con 1 sola foto de DNI: ' + d.total + '\n'
-            + 'Sin recordatorio enviado todavía: ' + d.pendientesDeMail + '\n\n'
-            + '¿Enviar el mail a los ' + d.pendientesDeMail + ' pendientes?';
-    if (!confirm(msg)) return;
-    var r2 = await fetch('/api/recordar-dni', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMTK() },
-      body: JSON.stringify({})
-    });
-    var d2 = await r2.json();
-    if (!r2.ok) { alert('Error al enviar: ' + (d2.error || r2.status)); return; }
-    alert('📧 Recordatorios enviados: ' + d2.enviados + (d2.fallidos ? (' · fallidos: ' + d2.fallidos) : ''));
-  } catch(e) {
-    alert('Error: ' + e.message);
-  }
-}
-
-// Recordar forma de cobro faltante: mudanceros sin CBU/Alias ni Mercado Pago.
-// Vista previa + confirmación antes de enviar (no manda nada sin confirmar).
-async function recordarCobroFaltante(){
-  try {
-    var r = await fetch('/api/recordar-cobro', { headers: { 'x-admin-token': ADMTK() } });
-    var d = await r.json();
-    if (!r.ok) { alert('Error: ' + (d.error || r.status)); return; }
-    if (!d.total) { alert('✅ Todos los mudanceros tienen forma de cobro cargada.'); return; }
-    if (!d.pendientesDeMail) {
-      alert('Los ' + d.total + ' mudanceros sin forma de cobro ya recibieron el recordatorio.');
-      return;
-    }
-    var msg = 'Mudanceros SIN forma de cobro (ni CBU/Alias ni MP): ' + d.total + '\n'
-            + 'Sin recordatorio enviado todavía: ' + d.pendientesDeMail + '\n\n'
-            + '¿Enviar el mail a los ' + d.pendientesDeMail + ' pendientes?';
-    if (!confirm(msg)) return;
-    var r2 = await fetch('/api/recordar-cobro', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMTK() },
-      body: JSON.stringify({})
-    });
-    var d2 = await r2.json();
-    if (!r2.ok) { alert('Error al enviar: ' + (d2.error || r2.status)); return; }
-    alert('📧 Recordatorios de cobro enviados: ' + d2.enviados + (d2.fallidos ? (' · fallidos: ' + d2.fallidos) : ''));
-  } catch(e) {
-    alert('Error: ' + e.message);
-  }
-}
-
 // Plantillas WhatsApp: actualiza las 6 a voz Emi + crea las 5 nuevas, y las manda
 // a revisión de Meta. Muestra vista previa y pide confirmación antes de aplicar.
 async function gestionarPlantillas(){
