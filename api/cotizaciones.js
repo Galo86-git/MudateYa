@@ -1847,8 +1847,9 @@ module.exports = async function handler(req, res) {
         try { await logPedidoSheets(m); } catch(e) { console.warn('Sheets log error:', e.message); }
         // Email al cliente invitándolo a pagar el saldo
         try { await notificarClienteSaldoPendiente(m); } catch(e) { console.warn('Email saldo error:', e.message); }
-        // WhatsApp: si el pedido vino por WhatsApp, avisar el saldo con MP + transferencia.
-        if (m.canal === 'whatsapp' && m.clienteWA && !m.saldoPagado) {
+        // WhatsApp: avisar el saldo con MP + transferencia (a cualquier cliente
+        // que haya dejado su WhatsApp, venga del bot o de la web).
+        if (m.clienteWA && !m.saldoPagado) {
           try {
             const base = process.env.SITE_URL || 'https://mudateya.ar';
             const cotA = m.cotizacionAceptada || {};
@@ -1881,8 +1882,8 @@ module.exports = async function handler(req, res) {
         // Y en cotizaciones por hora este es el momento en que arranca el reloj:
         // el cliente tiene que enterarse ahora, no al recibir la liquidacion.
         try { await notificarClienteMudanzaIniciada(m); } catch(e) { console.warn('Email inicio error:', e.message); }
-        // WhatsApp: avisar el inicio si el pedido vino por WhatsApp.
-        if (m.canal === 'whatsapp' && m.clienteWA) {
+        // WhatsApp: avisar el inicio (bot o web, si dejó su WhatsApp).
+        if (m.clienteWA) {
           try { const { avisarMudanzaIniciada } = require('./_whatsapp'); await avisarMudanzaIniciada(m); }
           catch(e) { console.warn('WhatsApp inicio error:', e.message); }
         }
@@ -4023,10 +4024,12 @@ async function notificarClienteNuevoPedido(mudanza) {
 }
 
 async function notificarCliente(mudanza, cotizacion) {
+  const esBot = mudanza.canal === 'whatsapp';
+
   // Pedido originado por WhatsApp (bot Emi): el cliente NO tiene email real
-  // (usa uno sintético), así que se le avisa por WhatsApp, no por mail. Solo
-  // se entrega si la charla está dentro de la ventana de 24hs de WhatsApp.
-  if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+  // (usa uno sintético), así que se le avisa SOLO por WhatsApp. Solo se
+  // entrega si la charla está dentro de la ventana de 24hs de WhatsApp.
+  if (esBot && mudanza.clienteWA) {
     const { enviarWhatsAppTexto } = require('./_whatsapp');
     const { enviarPlantilla } = require('./_plantillas');
     const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
@@ -4046,6 +4049,25 @@ async function notificarCliente(mudanza, cotizacion) {
       await enviarWhatsAppTexto(mudanza.clienteWA, '📄 Te paso el presupuesto en PDF:', pdfUrl);
     } catch (e) { console.error('notificarCliente WhatsApp pdf:', e.message); }
     return; // no seguimos con el mail: el email del cliente WhatsApp es sintético
+  }
+
+  // Cliente de la web: además del mail de siempre (abajo), avisale también
+  // por WhatsApp si dejó su número. A diferencia del cliente del bot, acá NO
+  // se corta el mail: son dos canales sumados, no uno u otro. Es un aviso que
+  // no espera respuesta (a diferencia de ajuste de precio / calificación,
+  // que por ahora siguen solo para clientes del bot — ver nota en el código).
+  if (!esBot && mudanza.clienteWA) {
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+      const precioFmt = '$' + Number(cotizacion.precio || 0).toLocaleString('es-AR');
+      const texto =
+        `💰 ¡Llegó una cotización para tu ${mudanza.tipo || 'mudanza'}!\n` +
+        `${cotizacion.mudanceroNombre || 'Un mudancero'} cotizó ${mudanza.desde} → ${mudanza.hasta} en ${precioFmt}` +
+        (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
+        `Entrá a mudateya.ar/mi-mudanza para verla y elegir.`;
+      await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto);
+    } catch (e) { console.error('notificarCliente WhatsApp (web):', e.message); }
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);

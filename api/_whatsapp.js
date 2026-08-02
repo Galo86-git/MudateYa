@@ -112,7 +112,9 @@ async function avisarSenaConfirmada(mudanza) {
   const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
 
   // 1) Cliente → plantilla pago_confirmado_cliente (o texto libre dentro de 24h).
-  if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+  // Antes solo avisaba si el pedido vino del bot; ahora también a clientes de
+  // la web que dejaron su WhatsApp (no es un aviso que espere respuesta).
+  if (mudanza.clienteWA) {
     const texto =
       `✅ ¡Seña confirmada! Tu ${tipo} quedó reservada con ${mud} 🎉\n` +
       `${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
