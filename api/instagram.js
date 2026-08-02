@@ -27,6 +27,10 @@ const GRAPH = 'https://graph.instagram.com/v21.0'; // Instagram API con Instagra
 const ANTHROPIC = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5';
 const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar';
+// Subir este número cada vez que el SYSTEM_PROMPT cambie de forma importante
+// (alcance del bot, tono, reglas nuevas): descarta conversaciones viejas para
+// que no arrastren el comportamiento anterior (ver nota en procesarMensaje).
+const PROMPT_VERSION = 2;
 
 // ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path) — mismo patrón que el resto de /api.
@@ -300,7 +304,16 @@ async function enviarIG(igsid, texto) {
 async function procesarMensaje(igsid, texto) {
   try {
     const key = `ig:conv:${igsid}`;
-    const conv = (await getJSON(key)) || { messages: [] };
+    let conv = (await getJSON(key)) || { messages: [] };
+
+    // Si el SYSTEM_PROMPT cambió de forma importante (ej: se amplió el
+    // alcance del bot), una conversación vieja puede tener mensajes previos
+    // del bot reforzando la instrucción ANTERIOR ("esto es solo para
+    // asesores"). Claude tiende a seguir el tono ya establecido en el
+    // historial aunque el prompt haya cambiado. Para que eso NO quede pegado
+    // para siempre, versionamos: si la conversación es de una versión vieja,
+    // arrancamos el historial de cero (mismo igsid, charla nueva).
+    if (conv.promptVersion !== PROMPT_VERSION) conv = { messages: [] };
 
     conv.messages.push({ role: 'user', content: texto });
     if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20); // acota el historial
@@ -337,6 +350,7 @@ async function procesarMensaje(igsid, texto) {
         .trim() || 'Perdón, no te entendí bien. ¿Me lo repetís?';
 
     conv.messages = trabajo.concat([{ role: 'assistant', content: resp.content || [] }]);
+    conv.promptVersion = PROMPT_VERSION;
     if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
     await setJSON(key, conv, 60 * 60 * 24 * 30);
 
