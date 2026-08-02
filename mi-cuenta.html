@@ -2199,6 +2199,14 @@ function confirmarAccion(opts) {
               <label class="field-label">Anticipación mínima</label>
               <select id="pf-anticipacion"><option>Mismo día</option><option>24 horas</option><option>48 horas</option><option>1 semana</option></select>
             </div>
+            <div class="field" style="max-width:380px">
+              <label class="field-label">¿Cómo cobrás? <span style="color:#EF4444">*</span> <span style="color:#94A3B8;font-weight:400;font-size:11px">— cómo aparece tu precio en el sitio</span></label>
+              <select id="pf-tipoCobro">
+                <option value="">Elegí una opción…</option>
+                <option value="fijo">💰 Precio fijo — total por la mudanza/flete</option>
+                <option value="porHora">⏱ Por hora — tarifa por hora</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -5615,6 +5623,9 @@ async function cargarPreciosLeads(){
     if (!d.ok || !d.perfil) return;
     mudanceroPerfilRedis = d.perfil; // disponible globalmente
     var p = d.perfil;
+    // ── Cargar tipo de cobro (fijo / por hora) ──
+    var _tcEl = document.getElementById('pf-tipoCobro');
+    if (_tcEl) _tcEl.value = (p.tipoCobro === 'fijo' || p.tipoCobro === 'porHora') ? p.tipoCobro : '';
     // Helper local para formato AR
     var fmtP = function(v){
       var n = parseInt(String(v||'').replace(/\D/g,''));
@@ -6157,6 +6168,14 @@ async function guardarPerfil(){
     if (firstErrSvc) firstErrSvc.scrollIntoView({ behavior:'smooth', block:'center' });
     return;
   }
+  // Validar que haya elegido cómo cobra (obligatorio)
+  var _tipoCobro = (document.getElementById('pf-tipoCobro')||{}).value||'';
+  if (_tipoCobro !== 'fijo' && _tipoCobro !== 'porHora') {
+    if (msg) { msg.textContent='Elegí cómo cobrás: precio fijo o por hora.'; msg.style.color='#DC2626'; }
+    var _tc = document.getElementById('pf-tipoCobro');
+    if (_tc) _tc.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
   if (msg) { msg.textContent=''; msg.style.color=''; }
 
   // Confirmación final antes de guardar
@@ -6210,6 +6229,7 @@ async function guardarPerfil(){
     servicios: serviciosStr,
     dias,horarios,
     anticipacion:document.getElementById('pf-anticipacion').value,
+    tipoCobro:(document.getElementById('pf-tipoCobro')||{}).value||'',
     // Compat plano (Esencial como base)
     precio1amb: _pfSvc.esencial ? rawPrecio('pf-esc-p1') : '',
     precio2amb: _pfSvc.esencial ? rawPrecio('pf-esc-p2') : '',

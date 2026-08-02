@@ -161,6 +161,9 @@ module.exports = async function handler(req, res) {
       sinEstres:    data.sinEstres    !== undefined ? data.sinEstres : perfil.sinEstres,
       sitioWeb:     data.sitioWeb     !== undefined ? data.sitioWeb : perfil.sitioWeb,
       metodoCobro:  data.metodoCobro  || perfil.metodoCobro,
+      // Cómo cobra / cómo aparece el precio en el sitio: 'fijo' | 'porHora'.
+      // Lo elige el mudancero (obligatorio). Se preserva si no viene en el update.
+      tipoCobro:    data.tipoCobro    !== undefined ? data.tipoCobro : (perfil.tipoCobro || ''),
       cbu:          data.cbu          !== undefined ? data.cbu : perfil.cbu,
       emailMP:      data.emailMP      !== undefined ? data.emailMP : perfil.emailMP,
       titularCuenta:data.titularCuenta!== undefined ? data.titularCuenta : perfil.titularCuenta,
@@ -225,8 +228,9 @@ module.exports = async function handler(req, res) {
     var tieneFotoVeh   = (Array.isArray(actualizado.fotosVehiculo) && actualizado.fotosVehiculo.filter(Boolean).length > 0) || !!actualizado.fotoCamion;
     var tieneDni       = !!actualizado.dniFrente;
     var tieneCobro     = !!actualizado.cbu || !!actualizado.emailMP;
+    var tieneTipoCobro = actualizado.tipoCobro === 'fijo' || actualizado.tipoCobro === 'porHora';
 
-    if (tieneVehiculo && algunPrecio && tieneFotoVeh && tieneDni && tieneCobro) {
+    if (tieneVehiculo && algunPrecio && tieneFotoVeh && tieneDni && tieneCobro && tieneTipoCobro) {
       actualizado.estadoOnboarding = 'completo';
       // Si era pre-registrado, registramos cuándo completó el onboarding
       if (perfil.estadoOnboarding === 'pre-registrado') {

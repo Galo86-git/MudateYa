@@ -394,6 +394,8 @@ module.exports = async function handler(req, res) {
 
       estadoVerificacion: 'pendiente_revision',
       metodoCobro:    metodoCobro    || 'cbu',
+      // Cómo cobra / cómo aparece el precio en el sitio: 'fijo' | 'porHora' (lo elige el mudancero).
+      tipoCobro:      body.tipoCobro || '',
       cbu:            cbu            || '',
       emailMP:        emailMP        || '',
       titularCuenta:  titularCuenta  || '',

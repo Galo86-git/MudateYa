@@ -59,6 +59,7 @@ function faltantes(p) {
   const cobroOk = p.metodoCobro === 'mp' ? !!p.emailMP : !!p.cbu;
   if (!cobroOk) falta.push({ k: 'cobro', txt: 'Cargar tus datos de cobro (CBU/Alias o Mercado Pago)' });
   if (!tienePrecios(p)) falta.push({ k: 'precios', txt: 'Cargar tus precios' });
+  if (p.tipoCobro !== 'fijo' && p.tipoCobro !== 'porHora') falta.push({ k: 'tipoCobro', txt: 'Elegir cómo cobrás (precio fijo o por hora)' });
   const tieneFotoVeh = !!(p.fotoCamion || (Array.isArray(p.fotosVehiculo) && p.fotosVehiculo.length));
   if (!tieneFotoVeh) falta.push({ k: 'vehiculo', txt: 'Subir una foto de tu vehículo' });
   if (p.estado === 'aprobado' && p.terminosAceptados !== true) {

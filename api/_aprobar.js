@@ -50,6 +50,7 @@ function evaluar(p) {
   const tieneFotoVeh = !!(p.fotoCamion || (Array.isArray(p.fotosVehiculo) && p.fotosVehiculo.filter(Boolean).length));
   if (!tieneFotoVeh) m.push('sin foto del vehículo');
   if (!tienePack(p)) m.push('sin al menos un pack de precios');
+  if (p.tipoCobro !== 'fijo' && p.tipoCobro !== 'porHora') m.push('sin elegir tipo de cobro (fijo o por hora)');
   const cobroOk = p.metodoCobro === 'mp' ? !!p.emailMP : !!p.cbu;
   if (!cobroOk) m.push('sin datos de cobro');
 
