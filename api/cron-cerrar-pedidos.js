@@ -73,7 +73,7 @@ module.exports = async function handler(req, res) {
       m.cerradoAuto = new Date().toISOString();
 
       // Avisar al cliente (una sola vez)
-      if (m.canal === 'whatsapp' && m.clienteWA && !m.avisoVencimiento) {
+      if (m.clienteWA && !m.avisoVencimiento) {
         if (await avisarVencimiento(m, cots.length)) {
           m.avisoVencimiento = new Date().toISOString();
           avisados++;

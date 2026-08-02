@@ -59,7 +59,7 @@ module.exports = async function handler(req, res) {
     for (const id of activas) {
       if (avisados >= MAX) break;
       const m = await getJSON(`mudanza:${id}`);
-      if (!m || m.canal !== 'whatsapp' || !m.clienteWA) continue;
+      if (!m || !m.clienteWA) continue;
       revisados++;
 
       const cots = Array.isArray(m.cotizaciones) ? m.cotizaciones : [];

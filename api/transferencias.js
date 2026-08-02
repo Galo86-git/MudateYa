@@ -124,7 +124,7 @@ async function avisarTransferenciaInsuficiente(m, tipoPago, pago) {
   } catch (e) { console.warn('[underpaid] email admin:', e.message); }
 
   // 2) Cliente por WhatsApp → plantilla transferencia_diferencia (o texto libre).
-  if (m.canal === 'whatsapp' && m.clienteWA) {
+  if (m.clienteWA) {
     const nomCli = (m.clienteNombre || '').split(' ')[0] || 'Hola';
     const faltaNum = falta != null ? Number(falta).toLocaleString('es-AR') : '0';
     const texto =
