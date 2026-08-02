@@ -493,7 +493,7 @@ function verificarMatricula() {
         status.style.color = '#16A34A';
         status.textContent = '✓ Coincide con: ' + nombreEncontrado;
         var campoNombre = document.getElementById('f-contacto');
-        if (campoNombre && !campoNombre.value.trim()) campoNombre.value = nombreEncontrado;
+        if (campoNombre) campoNombre.value = nombreEncontrado; // matrícula confirmada: pisa lo que haya, es la fuente de verdad
       } else {
         status.style.display = 'none'; // sin match: no es error, se completa a mano
       }
