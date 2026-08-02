@@ -3757,7 +3757,7 @@ async function notificarMudanceros(mudanza) {
           if (!(mudanza.mudancerosInvitados || []).includes(email)) continue;
         }
 
-        destinatarios.push({ email: p.email, nombre: p.nombre || '' });
+        destinatarios.push({ email: p.email, nombre: p.nombre || '', tel: p.telefono || '' });
       } catch(e) { /* ignorar errores individuales */ }
     }
 
@@ -3806,6 +3806,30 @@ async function notificarMudanceros(mudanza) {
         link: '/mi-cuenta'
       }).catch(function(e){ console.error('Push mudancero error:', dest.email, e && e.message); });
     }));
+
+    // WhatsApp a los mudanceros (plantilla nuevo_pedido_mudancero → "entrá a
+    // mi-cuenta a cotizar"). GATED por aprobación de Meta: enviarPlantilla solo
+    // manda si la plantilla está 'approved'. Mientras esté pending NO manda nada
+    // (el aviso sigue por email + push). Cuando Meta la apruebe, se activa solo.
+    // Respeta modo dirigido (destinatarios ya viene filtrado).
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      const conTel = destinatarios.filter(function(d){ return d.tel; });
+      const fechaTxt = fmtFechaAR(mudanza.fecha) || 'a coordinar';
+      for (let i = 0; i < conTel.length; i += 5) {
+        const lote = conTel.slice(i, i + 5);
+        await Promise.all(lote.map(function(dest){
+          const nom = (dest.nombre || '').split(' ')[0] || 'Hola';
+          // Sin texto de fallback a propósito: mientras la plantilla esté 'pending',
+          // enviarPlantilla no hace ninguna llamada a Twilio (gate limpio). Se activa
+          // sola cuando Meta la apruebe.
+          return enviarPlantilla(
+            dest.tel, 'nuevo_pedido_mudancero',
+            { 1: nom, 2: mudanza.desde, 3: mudanza.hasta, 4: fechaTxt }
+          ).catch(function(e){ console.error('WhatsApp mudancero error:', dest.tel, e && e.message); });
+        }));
+      }
+    } catch(e) { console.warn('Aviso WhatsApp mudanceros:', e.message); }
   } catch(e) {
     console.error('Error notificando mudanceros:', e.message);
   }
