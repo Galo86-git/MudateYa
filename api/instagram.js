@@ -30,7 +30,7 @@ const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar';
 // Subir este número cada vez que el SYSTEM_PROMPT cambie de forma importante
 // (alcance del bot, tono, reglas nuevas): descarta conversaciones viejas para
 // que no arrastren el comportamiento anterior (ver nota en procesarMensaje).
-const PROMPT_VERSION = 6;
+const PROMPT_VERSION = 7;
 
 // ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path) — mismo patrón que el resto de /api.
@@ -68,7 +68,7 @@ Pero también te va a escribir gente que NO quiere ser socio, sino que ES CLIENT
 
 LINKS DE LA BIO (los 4 que hay, por si en algún momento te sirve nombrar el exacto — ej. si alguien prefiere ir directo al formulario en vez de darte los datos acá, o al final de una carga exitosa como referencia extra):
   - Clientes que quieren cotizar → "Cotizar gratis para mudarse"
-  - Asesor inmobiliario → "Alta Asesesor Inmobiliario"
+  - Asesor inmobiliario → "Alta Asesor Inmobiliario"
   - Mudancero/fletero/empresa → "Alta Mudancero / Fletero"
   - Inmobiliaria → "Alta Inmobiliarias"
 Tu forma PRINCIPAL de trabajar sigue siendo juntar los datos acá en el chat y llamar a la herramienta correspondiente (es más rápido para la persona) — mencionás el link solo como alternativa si viene a cuento, no lo ofrezcas de entrada en vez de hacer tu trabajo.
