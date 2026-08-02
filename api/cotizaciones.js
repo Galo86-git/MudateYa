@@ -5097,11 +5097,26 @@ async function notificarMudanceroAjusteAceptado(mudanza) {
 
 // Email al cliente confirmando que aceptó el ajuste
 async function notificarClienteAjusteAceptado(mudanza) {
+  const cot = mudanza.cotizacionAceptada || {};
+  const saldo = calcularSaldo(mudanza);
+
+  if (mudanza.clienteWA) {
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+      const nuevoNum = Number(mudanza.ajustePrecio.montoNuevo || 0).toLocaleString('es-AR');
+      const saldoNum = Number(saldo).toLocaleString('es-AR');
+      const texto =
+        `¡Hola ${nomCli}! Confirmamos el nuevo precio de tu ${mudanza.tipo || 'mudanza'} con ${cot.mudanceroNombre || 'tu mudancero'}: $${nuevoNum}.\n` +
+        `Te queda un saldo de $${saldoNum} a pagar cuando se complete el trabajo. ¡Gracias!`;
+      await enviarPlantilla(mudanza.clienteWA, 'ajuste_aceptado_cliente',
+        { 1: nomCli, 2: mudanza.tipo || 'mudanza', 3: cot.mudanceroNombre || 'tu mudancero', 4: nuevoNum, 5: saldoNum }, texto);
+    } catch (e) { console.warn('notificarClienteAjusteAceptado WhatsApp:', e.message); }
+  }
+
   if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const cot = mudanza.cotizacionAceptada || {};
   const nuevoFmt = '$' + (mudanza.ajustePrecio.montoNuevo || 0).toLocaleString('es-AR');
-  const saldo = calcularSaldo(mudanza);
   const saldoFmt = '$' + saldo.toLocaleString('es-AR');
   await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
@@ -5145,10 +5160,26 @@ async function notificarMudanceroAjusteRechazado(mudanza) {
 
 // Email al cliente confirmando cancelación + refund
 async function notificarClienteMudanzaCancelada(mudanza, refundOk) {
-  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
-  const resend = new Resend(process.env.RESEND_API_KEY);
   const cot = mudanza.cotizacionAceptada || {};
   const anticipoFmt = '$' + (mudanza.anticipoMonto || 0).toLocaleString('es-AR');
+
+  if (mudanza.clienteWA) {
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+      const mensajeWA = refundOk
+        ? `Procesamos el reintegro de ${anticipoFmt}. Vas a verlo acreditado en 5 a 10 días hábiles en tu medio de pago original.`
+        : `Estamos procesando el reintegro de ${anticipoFmt}. Te vamos a contactar dentro de las próximas 24 horas para completar la devolución.`;
+      const texto =
+        `¡Hola ${nomCli}! Cancelamos tu ${mudanza.tipo || 'mudanza'} con ${cot.mudanceroNombre || 'el mudancero'} como solicitaste.\n` +
+        `${mensajeWA}\n¿Necesitás una nueva mudanza? Entrá a mudateya.ar cuando quieras.`;
+      await enviarPlantilla(mudanza.clienteWA, 'mudanza_cancelada_cliente',
+        { 1: nomCli, 2: mudanza.tipo || 'mudanza', 3: cot.mudanceroNombre || 'el mudancero', 4: mensajeWA }, texto);
+    } catch (e) { console.warn('notificarClienteMudanzaCancelada WhatsApp:', e.message); }
+  }
+
+  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const mensaje = refundOk
     ? `Procesamos el reintegro de <strong>${anticipoFmt}</strong>. Vas a ver el acreditado en 5 a 10 días hábiles en tu medio de pago original.`
     : `Estamos procesando el reintegro de <strong>${anticipoFmt}</strong>. Te vamos a contactar dentro de las próximas 24 horas para completar la devolución.`;

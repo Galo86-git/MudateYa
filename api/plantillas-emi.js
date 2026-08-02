@@ -106,6 +106,19 @@ const CREAR = [
   { name: 'pedido_recibido_cliente', category: 'UTILITY',
     types: { 'twilio/text': { body: '¡Hola {{1}}! Recibimos tu pedido de {{2}} ({{3}} → {{4}}) en MudateYa.\n\nYa estamos consiguiéndote presupuestos de mudanceros/fleteros verificados — te aviso por acá apenas lleguen. 🚚' } },
     variables: { '1': 'Juan', '2': 'mudanza', '3': 'Palermo', '4': 'Tigre' } },
+
+  // Confirmación al cliente cuando ACEPTA el ajuste de precio propuesto por el
+  // mudancero (hoy solo mandaba email — ver ajuste_precio_propuesto arriba,
+  // que es la propuesta; esta es la confirmación posterior).
+  { name: 'ajuste_aceptado_cliente', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! Confirmamos el nuevo precio de tu {{2}} con {{3}}: ${{4}}.\n\nTe queda un saldo de ${{5}} a pagar cuando se complete el trabajo. ¡Gracias!' } },
+    variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian', '4': '150.000', '5': '30.000' } },
+
+  // Confirmación al cliente cuando se cancela la mudanza (por rechazo de un
+  // ajuste de precio) + estado del reintegro de la seña. Hoy solo mandaba email.
+  { name: 'mudanza_cancelada_cliente', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! Cancelamos tu {{2}} con {{3}} como solicitaste.\n\n{{4}}\n\n¿Necesitás una nueva mudanza? Entrá a mudateya.ar cuando quieras.' } },
+    variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian', '4': 'Procesamos el reintegro de $25.000. Vas a verlo acreditado en 5 a 10 días hábiles.' } },
 ];
 
 module.exports = async function handler(req, res) {
