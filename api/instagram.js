@@ -145,12 +145,27 @@ async function registrarAsesor(input) {
 // ------------------------------------------------------------------
 // Enviar mensaje por Instagram
 // ------------------------------------------------------------------
+// CRÍTICO: si no revisamos la respuesta, un rechazo de Meta (token sin
+// permiso, fuera de la ventana de 24hs, app no aprobada aún, etc.) queda
+// completamente en silencio — el bot "no contesta más" y nunca hay ningún
+// error en los logs para saber por qué. Acá SIEMPRE logueamos el motivo.
 async function enviarIG(igsid, texto) {
-  await fetch(`${GRAPH}/me/messages?access_token=${process.env.IG_ACCESS_TOKEN}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ recipient: { id: igsid }, message: { text: texto } }),
-  });
+  try {
+    const r = await fetch(`${GRAPH}/me/messages?access_token=${process.env.IG_ACCESS_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient: { id: igsid }, message: { text: texto } }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      console.error('[instagram] Meta RECHAZÓ el envío del mensaje:', JSON.stringify(data));
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[instagram] Error de red enviando a Instagram:', e.message);
+    return false;
+  }
 }
 
 // ------------------------------------------------------------------
@@ -159,40 +174,54 @@ async function enviarIG(igsid, texto) {
 // que el bot de WhatsApp (api/whatsapp.js).
 // ------------------------------------------------------------------
 async function procesarMensaje(igsid, texto) {
-  const key = `ig:conv:${igsid}`;
-  const conv = (await getJSON(key)) || { messages: [] };
+  try {
+    const key = `ig:conv:${igsid}`;
+    const conv = (await getJSON(key)) || { messages: [] };
 
-  conv.messages.push({ role: 'user', content: texto });
-  if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20); // acota el historial
+    conv.messages.push({ role: 'user', content: texto });
+    if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20); // acota el historial
 
-  let trabajo = conv.messages;
-  let resp = await askClaude(trabajo);
-  let vueltas = 0;
-  while (resp.stop_reason === 'tool_use' && vueltas < 5) {
-    vueltas++;
-    trabajo = trabajo.concat([{ role: 'assistant', content: resp.content }]);
-    const resultados = [];
-    for (const block of resp.content || []) {
-      if (block.type === 'tool_use' && block.name === 'registrar_asesor') {
-        const r = await registrarAsesor(block.input);
-        resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
-      }
+    let trabajo = conv.messages;
+    let resp = await askClaude(trabajo);
+    if (resp.type === 'error' || !resp.content) {
+      // Error de la API de Claude (key inválida, rate limit, modelo caído, etc.)
+      console.error('[instagram] Claude devolvió error:', JSON.stringify(resp).slice(0, 500));
     }
-    trabajo = trabajo.concat([{ role: 'user', content: resultados }]);
-    resp = await askClaude(trabajo);
+    let vueltas = 0;
+    while (resp.stop_reason === 'tool_use' && vueltas < 5) {
+      vueltas++;
+      trabajo = trabajo.concat([{ role: 'assistant', content: resp.content }]);
+      const resultados = [];
+      for (const block of resp.content || []) {
+        if (block.type === 'tool_use' && block.name === 'registrar_asesor') {
+          const r = await registrarAsesor(block.input);
+          resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
+        }
+      }
+      trabajo = trabajo.concat([{ role: 'user', content: resultados }]);
+      resp = await askClaude(trabajo);
+    }
+
+    const textoResp =
+      (resp.content || [])
+        .filter((c) => c.type === 'text')
+        .map((c) => c.text)
+        .join('\n')
+        .trim() || 'Perdón, no te entendí bien. ¿Me lo repetís?';
+
+    conv.messages = trabajo.concat([{ role: 'assistant', content: resp.content || [] }]);
+    if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
+    await setJSON(key, conv, 60 * 60 * 24 * 30);
+
+    const enviado = await enviarIG(igsid, textoResp);
+    if (!enviado) console.error('[instagram] No se pudo entregar la respuesta a', igsid, '- ver error de Meta arriba.');
+  } catch (e) {
+    // Red de seguridad: cualquier falla imprevista (Redis, Claude, lo que sea)
+    // queda LOGUEADA con el igsid y el mensaje que la disparó, en vez de morir
+    // en silencio. Intentamos, best-effort, avisarle al usuario igual.
+    console.error('[instagram] Error procesando mensaje de', igsid, '— texto:', texto, '— error:', e.message, e.stack);
+    try { await enviarIG(igsid, 'Uy, tuve un problema técnico. ¿Me escribís de nuevo en un rato?'); } catch (e2) {}
   }
-
-  const textoResp =
-    (resp.content || [])
-      .filter((c) => c.type === 'text')
-      .map((c) => c.text)
-      .join('\n')
-      .trim() || 'Perdón, no te entendí bien. ¿Me lo repetís?';
-
-  conv.messages = trabajo.concat([{ role: 'assistant', content: resp.content }]);
-  if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
-  await setJSON(key, conv, 60 * 60 * 24 * 30);
-  await enviarIG(igsid, textoResp);
 }
 
 // ------------------------------------------------------------------
