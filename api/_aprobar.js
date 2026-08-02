@@ -24,11 +24,12 @@ async function getJSON(k) { const v = await redisCall('GET', k); return v ? JSON
 async function setJSON(k, v) { await redisCall('SET', k, JSON.stringify(v)); }
 
 const numOf = (v) => parseInt(String(v || '').replace(/[^0-9]/g, '')) || 0;
-function tienePrecios(p) {
+// Requiere AL MENOS UN PACK del modelo nuevo (Esencial / Integral / Llave) con
+// precios, o el flete nuevo. Los precios "legacy" (precios.amb1..amb4) NO alcanzan
+// para auto-aprobar: el mudancero tiene que cargar un pack.
+function tienePack(p) {
   const pack = (pk) => pk && (numOf(pk.amb1) || numOf(pk.amb2) || numOf(pk.amb3) || numOf(pk.amb4));
-  if (pack(p.preciosEsencial) || pack(p.preciosIntegral) || pack(p.preciosLlave) || numOf(p.precioFleteNuevo)) return true;
-  if (p.precios && (numOf(p.precios.amb1) || numOf(p.precios.amb2) || numOf(p.precios.amb3) || numOf(p.precios.amb4) || numOf(p.precios.flete))) return true;
-  return false;
+  return !!(pack(p.preciosEsencial) || pack(p.preciosIntegral) || pack(p.preciosLlave) || numOf(p.precioFleteNuevo));
 }
 function nivelIdentidad(p) {
   return (p.verificacion && p.verificacion.nivel) || (p.dniAnalisis ? 'amarillo' : 'sin_dni');
@@ -48,7 +49,7 @@ function evaluar(p) {
   if (!p.vehiculo) m.push('sin vehículo');
   const tieneFotoVeh = !!(p.fotoCamion || (Array.isArray(p.fotosVehiculo) && p.fotosVehiculo.filter(Boolean).length));
   if (!tieneFotoVeh) m.push('sin foto del vehículo');
-  if (!tienePrecios(p)) m.push('sin precios');
+  if (!tienePack(p)) m.push('sin al menos un pack de precios');
   const cobroOk = p.metodoCobro === 'mp' ? !!p.emailMP : !!p.cbu;
   if (!cobroOk) m.push('sin datos de cobro');
 
