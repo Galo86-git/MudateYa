@@ -378,11 +378,6 @@
         </div>
 
         <div class="field">
-          <label class="field-label" for="f-contacto">Tu nombre <span class="req">*</span></label>
-          <input id="f-contacto" class="field-input" type="text" placeholder="Ej: Juan López" autocomplete="name" maxlength="80" required>
-        </div>
-
-        <div class="field">
           <label class="field-label" for="f-colegio">Colegio donde estás matriculado <span class="req">*</span></label>
           <select id="f-colegio" class="field-input" required>
             <option value="">Seleccioná tu colegio</option>
@@ -418,7 +413,13 @@
 
         <div class="field">
           <label class="field-label" for="f-matricula">Número de matrícula <span class="req">*</span></label>
-          <input id="f-matricula" class="field-input" type="text" placeholder="Ej: 1234" autocomplete="off" maxlength="20" required>
+          <input id="f-matricula" class="field-input" type="text" placeholder="Ej: 1234" autocomplete="off" maxlength="20" required inputmode="numeric">
+          <div id="matriculaStatus" style="display:none;font-size:12.5px;margin-top:6px;font-weight:600"></div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-contacto">Tu nombre <span class="req">*</span></label>
+          <input id="f-contacto" class="field-input" type="text" placeholder="Ej: Juan López" autocomplete="name" maxlength="80" required>
         </div>
 
       </div>
@@ -436,38 +437,6 @@
           <label class="field-label" for="f-wapp">WhatsApp <span class="req">*</span></label>
           <input id="f-wapp" class="field-input" type="tel" placeholder="+54 9 11 1234-5678" autocomplete="tel" required>
         </div>
-      </div>
-
-      <!-- ─── SOBRE EL NEGOCIO ─── -->
-      <div class="form-section">
-        <div class="form-section-label">Sobre tu negocio</div>
-
-        <div class="field">
-          <label class="field-label">Operaciones cerradas por mes (aprox) <span class="req">*</span></label>
-          <div class="radio-grid">
-            <label class="radio-card" data-val="1-5">
-              <input type="radio" name="opsmes" value="1-5">
-              <div class="radio-card-num">1-5</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-            <label class="radio-card" data-val="6-15">
-              <input type="radio" name="opsmes" value="6-15">
-              <div class="radio-card-num">6-15</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-            <label class="radio-card" data-val="16-30">
-              <input type="radio" name="opsmes" value="16-30">
-              <div class="radio-card-num">16-30</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-            <label class="radio-card" data-val="30+">
-              <input type="radio" name="opsmes" value="30+">
-              <div class="radio-card-num">30+</div>
-              <div class="radio-card-label">por mes</div>
-            </label>
-          </div>
-        </div>
-
       </div>
 
       <button type="submit" class="submit-btn" id="submitBtn">Quiero sumarme →</button>
@@ -494,16 +463,50 @@
 
 <script>
 // ════════════════════════════════════════════════════════════════════
-// Radio cards: marcar la activa al click
+// Verificación de matrícula: apenas escribe el número (y ya eligió el
+// colegio), lo chequeamos contra el padrón público y, si matchea,
+// completamos "Tu nombre" solo — así no lo tiene que tipear a mano.
+// Por ahora solo funciona con CUCICBA (CABA); para el resto de los
+// colegios el endpoint devuelve "no encontrado" y se completa a mano,
+// como siempre. Nunca bloquea el alta si no encuentra nada.
 // ════════════════════════════════════════════════════════════════════
-document.querySelectorAll('.radio-card').forEach(function(card){
-  card.addEventListener('click', function(){
-    document.querySelectorAll('.radio-card').forEach(function(c){ c.classList.remove('active'); });
-    card.classList.add('active');
-    var input = card.querySelector('input');
-    if (input) input.checked = true;
-  });
-});
+var matriculaCheckId = 0;
+function verificarMatricula() {
+  var colegio   = document.getElementById('f-colegio').value.trim();
+  var matricula = document.getElementById('f-matricula').value.trim();
+  var status    = document.getElementById('matriculaStatus');
+  var miId      = ++matriculaCheckId; // descarta respuestas viejas si el usuario siguió tipeando
+
+  if (!matricula || !/^\d+$/.test(matricula)) { status.style.display = 'none'; return; }
+  if (colegio.indexOf('CUCICBA') === -1) { status.style.display = 'none'; return; }
+
+  status.style.display = 'block';
+  status.style.color = '#64748B';
+  status.textContent = '🔎 Verificando…';
+
+  fetch('/api/inmobiliarias?action=verificar-matricula&colegio=' + encodeURIComponent(colegio) + '&matricula=' + encodeURIComponent(matricula))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (miId !== matriculaCheckId) return; // el usuario ya cambió el valor, ignorar
+      if (d && d.encontrado) {
+        var nombreEncontrado = ((d.nombre || '') + ' ' + (d.apellido || '')).trim();
+        status.style.color = '#16A34A';
+        status.textContent = '✓ Coincide con: ' + nombreEncontrado;
+        var campoNombre = document.getElementById('f-contacto');
+        if (campoNombre && !campoNombre.value.trim()) campoNombre.value = nombreEncontrado;
+      } else {
+        status.style.display = 'none'; // sin match: no es error, se completa a mano
+      }
+    })
+    .catch(function(){ if (miId === matriculaCheckId) status.style.display = 'none'; });
+}
+(function(){
+  var matriculaInput = document.getElementById('f-matricula');
+  var colegioSelect  = document.getElementById('f-colegio');
+  var t;
+  matriculaInput.addEventListener('input', function(){ clearTimeout(t); t = setTimeout(verificarMatricula, 500); });
+  colegioSelect.addEventListener('change', verificarMatricula);
+})();
 
 // ════════════════════════════════════════════════════════════════════
 // Submit del form
@@ -520,7 +523,6 @@ async function enviarForm(e) {
   var matricula= document.getElementById('f-matricula').value.trim();
   var email    = document.getElementById('f-email').value.trim();
   var wapp     = document.getElementById('f-wapp').value.trim();
-  var opsmes   = (document.querySelector('input[name="opsmes"]:checked') || {}).value || '';
 
   // Validaciones cliente
   var faltan = [];
@@ -530,7 +532,6 @@ async function enviarForm(e) {
   if (!matricula)faltan.push('número de matrícula');
   if (!email)    faltan.push('email');
   if (!wapp)     faltan.push('WhatsApp');
-  if (!opsmes)   faltan.push('cantidad de operaciones por mes');
   if (faltan.length > 0) {
     errGlobal.textContent = 'Faltan datos: ' + faltan.join(', ') + '.';
     errGlobal.style.display = 'block';
@@ -559,8 +560,7 @@ async function enviarForm(e) {
         colegio: colegio,
         matricula: matricula,
         email: email,
-        whatsapp: wapp,
-        operacionesPorMes: opsmes
+        whatsapp: wapp
       })
     });
     // Parsear response con manejo seguro: si no es JSON valido, mostrar texto

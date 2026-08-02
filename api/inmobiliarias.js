@@ -17,6 +17,7 @@
 // ACTIONS:
 //   GET ?action=listar&token=ADMIN_TOKEN          → lista todas (admin)
 //   GET ?action=obtener&slug=X                    → trae una (público, sin token)
+//   GET ?action=verificar-matricula&colegio=X&matricula=X → nombre del matriculado (público, solo CUCICBA)
 //   GET ?action=auto-branding&sitio=X&token=..    → sugiere logo+color a partir del sitio (admin)
 //   POST ?action=crear&token=ADMIN_TOKEN          → alta nueva
 //   POST ?action=actualizar&token=ADMIN_TOKEN     → editar existente
@@ -302,6 +303,10 @@ module.exports = async function handler(req, res) {
       var contacto = (body.contacto || '').toString().trim().slice(0, 80);
       var email    = (body.email || '').toString().trim().toLowerCase().slice(0, 100);
       var wapp     = (body.whatsapp || '').toString().trim().slice(0, 50);
+      var colegio  = (body.colegio || '').toString().trim().slice(0, 80);
+      var matricula= (body.matricula || '').toString().trim().slice(0, 20);
+      // Opcionales: el form rápido ya no los pide, pero si algún caller viejo
+      // los manda, los seguimos guardando (no se pierden, no bloquean el alta).
       var zona     = (body.zona || '').toString().trim().slice(0, 120);
       var opsMes   = (body.operacionesPorMes || '').toString().trim().slice(0, 20);
       var sitio    = (body.sitio || '').toString().trim().slice(0, 120);
@@ -313,9 +318,8 @@ module.exports = async function handler(req, res) {
       if (!contacto) faltan.push('tu nombre');
       if (!email)    faltan.push('email');
       if (!wapp)     faltan.push('WhatsApp');
-      if (!zona)     faltan.push('zona principal');
-      if (!opsMes)   faltan.push('operaciones por mes');
-      if (!sitio)    faltan.push('sitio web o Instagram');
+      if (!colegio)  faltan.push('colegio profesional');
+      if (!matricula) faltan.push('número de matrícula');
       if (faltan.length > 0) {
         console.warn('[solicitar-alta] faltan campos:', faltan.join(', '));
         return res.status(400).json({ error: 'Faltan datos: ' + faltan.join(', ') });
@@ -335,6 +339,8 @@ module.exports = async function handler(req, res) {
         contacto: contacto,
         email: email,
         whatsapp: wapp,
+        colegio: colegio,
+        matricula: matricula,
         zona: zona,
         operacionesPorMes: opsMes,
         sitio: sitio,
@@ -421,6 +427,53 @@ module.exports = async function handler(req, res) {
       }
 
       return res.status(200).json({ ok: true, id: idSolicitud });
+    }
+
+    // ── PÚBLICO: verificar una matrícula contra el padrón oficial ──
+    // Lo usa el form de alta (inmobiliarias-registro.html) para autocompletar
+    // el nombre del matriculado apenas escribe su número, así no lo tipea a mano.
+    //
+    // Por ahora SOLO cubre CUCICBA (CABA): es el único colegio de los ~21 del
+    // dropdown con una consulta pública que devuelve el nombre a partir del
+    // número (confirmado a mano). El padrón único de la Provincia de Bs. As.
+    // (los otros ~20 colegios) tiene búsqueda pública pero NO expone la
+    // matrícula en los resultados, así que no se puede resolver número→nombre
+    // ahí — para esos, sigue siendo carga manual.
+    //
+    // Best-effort SIEMPRE: cualquier falla (timeout, cambio de formato del
+    // 3ro, sin conexión) devuelve encontrado:false, nunca rompe el alta.
+    // GET ?action=verificar-matricula&colegio=X&matricula=1234
+    if (action === 'verificar-matricula' && req.method === 'GET') {
+      var colegioVer   = String(req.query.colegio || '');
+      var matriculaVer = String(req.query.matricula || '').trim();
+
+      if (!/^\d{1,10}$/.test(matriculaVer) || colegioVer.indexOf('CUCICBA') === -1) {
+        return res.status(200).json({ ok: true, encontrado: false });
+      }
+
+      try {
+        var ctrlVer = new AbortController();
+        var tVer = setTimeout(function () { ctrlVer.abort(); }, 5000);
+        var rVer = await fetch(
+          'https://colegioinmobiliario.org.ar/servicios/guia-de-matriculados/buscar?q=' +
+          encodeURIComponent(matriculaVer) + '&limit=5&offset=0',
+          { signal: ctrlVer.signal }
+        );
+        clearTimeout(tVer);
+        if (!rVer.ok) return res.status(200).json({ ok: true, encontrado: false });
+        var dVer = await rVer.json();
+        var matchVer = ((dVer && dVer.data) || []).find(function (p) {
+          return String(p.matricula) === matriculaVer;
+        });
+        if (!matchVer) return res.status(200).json({ ok: true, encontrado: false });
+        return res.status(200).json({
+          ok: true, encontrado: true,
+          nombre: matchVer.nombre || '', apellido: matchVer.apellido || ''
+        });
+      } catch (eVer) {
+        console.warn('[verificar-matricula] no disponible:', eVer.message);
+        return res.status(200).json({ ok: true, encontrado: false });
+      }
     }
 
     // ── ADMIN: listar solicitudes pendientes de inmobiliarias ──

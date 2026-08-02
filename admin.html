@@ -4947,8 +4947,7 @@ async function renderInmoSolicitudes() {
     html += '<thead><tr style="background:var(--surface2);border-bottom:1px solid var(--border)">'
       + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Inmobiliaria</th>'
       + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Contacto</th>'
-      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Zona</th>'
-      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Ops/mes</th>'
+      + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Colegio / Matrícula</th>'
       + '<th style="text-align:left;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Recibida</th>'
       + '<th style="text-align:right;padding:10px 12px;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Acciones</th>'
       + '</tr></thead><tbody>';
@@ -4970,8 +4969,7 @@ async function renderInmoSolicitudes() {
           + '<div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:monospace">' + escHtml(s.email) + '</div>'
           + '<div style="font-size:11px;color:var(--text3);font-family:monospace">' + escHtml(s.whatsapp) + '</div>'
         + '</td>'
-        + '<td style="padding:12px;color:var(--text2)">' + escHtml(s.zona) + '</td>'
-        + '<td style="padding:12px"><span style="display:inline-block;padding:3px 10px;background:var(--surface2);border-radius:8px;font-size:12px;font-weight:700;color:var(--text)">' + escHtml(s.operacionesPorMes) + '</span></td>'
+        + '<td style="padding:12px;color:var(--text2)">' + (s.colegio ? (escHtml(s.colegio) + (s.matricula ? ' · <span style="font-family:monospace">Mat. ' + escHtml(s.matricula) + '</span>' : '')) : '—') + '</td>'
         + '<td style="padding:12px;font-size:12px;color:var(--text3);font-family:monospace">' + fechaTxt + '</td>'
         + '<td style="padding:12px;text-align:right;min-width:240px">'
           + '<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'
@@ -5012,9 +5010,11 @@ async function inmoVerSolicitud(id) {
       + 'Contacto: ' + s.contacto + '\n'
       + 'Email: ' + s.email + '\n'
       + 'WhatsApp: ' + s.whatsapp + '\n'
-      + 'Zona: ' + s.zona + '\n'
-      + 'Operaciones por mes: ' + s.operacionesPorMes + '\n'
-      + 'Sitio/IG: ' + s.sitio + '\n'
+      + 'Colegio: ' + (s.colegio || '(no informado)') + '\n'
+      + 'Matrícula: ' + (s.matricula || '(no informado)') + '\n'
+      + (s.zona ? ('Zona: ' + s.zona + '\n') : '')
+      + (s.operacionesPorMes ? ('Operaciones por mes: ' + s.operacionesPorMes + '\n') : '')
+      + (s.sitio ? ('Sitio/IG: ' + s.sitio + '\n') : '')
       + 'Logo: ' + (s.logoUrl ? s.logoUrl : '(no subió)') + '\n'
       + 'Fecha solicitud: ' + fecha;
     alert(detalle);
