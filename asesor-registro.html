@@ -198,6 +198,23 @@ var _link = '';
 var _inmo = '';
 var _nombre = '';
 var _codigo = '';
+var _canalDetectado = null;
+
+// ── Si el asesor escribe el nombre de una inmobiliaria que ya tiene canal
+//    propio (RE/MAX, Mudafy, Century 21), lo mandamos directo a ESE canal en
+//    vez de meterlo en "independientes" — así queda bien atribuido/segmentado
+//    desde el alta, sin que el asesor tenga que saber que existen landings
+//    separadas por canal. ──
+function detectarCanal(inmoTxt) {
+  var norm = (inmoTxt || '').toLowerCase()
+    .normalize('NFD')
+    .split('').filter(function (ch) { var c = ch.charCodeAt(0); return c < 0x0300 || c > 0x036f; }).join('')
+    .replace(/[^a-z0-9]+/g, '');
+  if (norm.indexOf('remax') !== -1) return { slug: 'remax', nombre: 'RE/MAX' };
+  if (norm.indexOf('mudafy') !== -1) return { slug: 'mudafy', nombre: 'Mudafy' };
+  if (norm.indexOf('century21') !== -1 || /\bc[\s-]?21\b/i.test(inmoTxt || '')) return { slug: 'c21', nombre: 'Century 21' };
+  return null;
+}
 
 function _mostrarError(msg) {
   var e = document.getElementById('gerror');
@@ -225,11 +242,19 @@ async function registrar() {
   btn.disabled = true;
   btn.textContent = 'Generando…';
 
+  _canalDetectado = detectarCanal(inmo);
+  var endpoint = _canalDetectado
+    ? ('/api/' + _canalDetectado.slug + '?action=registrar')
+    : '/api/independientes?action=registrar';
+  var payload = _canalDetectado
+    ? { nombre: nombre, email: email, whatsapp: wapp, origen: ORIGEN }
+    : { nombre: nombre, email: email, whatsapp: wapp, inmobiliaria: inmo, origen: ORIGEN };
+
   try {
-    var r = await fetch('/api/independientes?action=registrar', {
+    var r = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombre, email: email, whatsapp: wapp, inmobiliaria: inmo, origen: ORIGEN })
+      body: JSON.stringify(payload)
     });
     var data;
     var txt = await r.text();
@@ -240,7 +265,7 @@ async function registrar() {
     _link = data.link || '';
     _codigo = data.codigo || '';
     _nombre = nombre;
-    _inmo = data.inmobiliaria || inmo;
+    _inmo = _canalDetectado ? _canalDetectado.nombre : (data.inmobiliaria || inmo);
     mostrarExito();
   } catch (err) {
     _mostrarError(err.message || 'No pudimos generar tu link. Probá de nuevo.');
@@ -254,7 +279,9 @@ function mostrarExito() {
   document.getElementById('successState').style.display = 'block';
   var primerNombre = _nombre.split(' ')[0];
   document.getElementById('succTitle').textContent = '¡Listo, ' + primerNombre + '!';
-  document.getElementById('succInmo').textContent = _inmo || '';
+  document.getElementById('succInmo').textContent = _canalDetectado
+    ? ('✅ Te dimos de alta directo en el canal ' + _canalDetectado.nombre)
+    : (_inmo || '');
   document.getElementById('succLink').textContent = _link.replace(/^https?:\/\//, '');
 
   try {
@@ -312,6 +339,7 @@ function compartirWhatsApp() {
 }
 
 function reiniciar() {
+  _canalDetectado = null;
   document.getElementById('f-inmo').value = '';
   document.getElementById('f-nombre').value = '';
   document.getElementById('f-email').value = '';
