@@ -67,7 +67,9 @@ CÓMO TRABAJÁS:
 4. Si preguntan por la plata: la comisión se acredita cuando la mudanza que armó desde su panel se completa y se paga. NO prometas montos exactos si no los sabés.
 5. Después de un alta exitosa, contale que le mandamos un mail con el link a su panel para empezar a armar presupuestos.
 
-REGLAS: no pidas datos sensibles, no prometas lo que no podés cumplir, y si el mensaje no tiene que ver con esto respondé amable y reconducí al programa.`;
+REGLAS: no pidas datos sensibles, no prometas lo que no podés cumplir, y si el mensaje no tiene que ver con esto respondé amable y reconducí al programa.
+
+IMPORTANTE — NUNCA escribas en este chat ningún link, URL ni dominio (ni "mudateya.ar", ni "http...", nada). Instagram bloquea el envío de mensajes con links desde esta cuenta. El link de verdad SIEMPRE le llega por mail — acá solo decile "te lo mandamos por mail" o "revisá tu casilla", sin repetir la dirección.`;
 
 const tools = [
   {
@@ -149,6 +151,23 @@ async function registrarAsesor(input) {
 // permiso, fuera de la ventana de 24hs, app no aprobada aún, etc.) queda
 // completamente en silencio — el bot "no contesta más" y nunca hay ningún
 // error en los logs para saber por qué. Acá SIEMPRE logueamos el motivo.
+// Red de seguridad además de la instrucción en el system prompt: si Claude
+// igual menciona un link/dominio, lo cortamos ANTES de mandarlo. Instagram
+// puede rechazar el mensaje entero si detecta un link (ver nota abajo).
+function sinLinks(texto) {
+  const original = String(texto || '');
+  const limpio = original
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/www\.\S+/gi, '')
+    .replace(/\b[a-z0-9-]+\.(ar|com|com\.ar|net|org|io|co|app)\b(\/\S*)?/gi, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+  if (limpio !== original.trim()) {
+    console.warn('[instagram] Le saqué un link a la respuesta antes de enviar:', original);
+  }
+  return limpio || 'Dale, seguimos por acá 🙂';
+}
+
 async function enviarIG(igsid, texto) {
   try {
     const r = await fetch(`${GRAPH}/me/messages?access_token=${process.env.IG_ACCESS_TOKEN}`, {
@@ -213,8 +232,14 @@ async function procesarMensaje(igsid, texto) {
     if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
     await setJSON(key, conv, 60 * 60 * 24 * 30);
 
-    const enviado = await enviarIG(igsid, textoResp);
-    if (!enviado) console.error('[instagram] No se pudo entregar la respuesta a', igsid, '- ver error de Meta arriba.');
+    let enviado = await enviarIG(igsid, sinLinks(textoResp));
+    if (!enviado) {
+      // Reintento con un mensaje mínimo, sin nada que pueda volver a disparar
+      // el filtro de Meta — mejor que le llegue algo genérico a que quede mudo.
+      console.error('[instagram] Falló el envío a', igsid, '- reintentando con mensaje mínimo.');
+      enviado = await enviarIG(igsid, 'Hola! 👋 Contame de nuevo en qué te puedo ayudar.');
+      if (!enviado) console.error('[instagram] También falló el reintento a', igsid, '- Meta está bloqueando esta cuenta por completo. Revisar Account Status.');
+    }
   } catch (e) {
     // Red de seguridad: cualquier falla imprevista (Redis, Claude, lo que sea)
     // queda LOGUEADA con el igsid y el mensaje que la disparó, en vez de morir
