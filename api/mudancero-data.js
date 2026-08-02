@@ -22,6 +22,15 @@ module.exports = async function handler(req, res) {
   const email = req.query.email;
   if (!email) return res.status(400).json({ error: 'Falta email' });
 
+  // AUTH: solo el propio mudancero (con su token de sesión) o un admin pueden
+  // leer el perfil. Antes cualquiera con el email accedía a todo (DNI, CBU, etc.).
+  let autorizado = false;
+  try { autorizado = require('./_auth').esAdmin(req); } catch (e) {}
+  if (!autorizado) {
+    try { autorizado = await require('./_sesion').esMudanceroDe(req, email); } catch (e) {}
+  }
+  if (!autorizado) return res.status(401).json({ error: 'No autorizado' });
+
   try {
     const perfil = await getJSON(`mudancero:perfil:${email}`);
     if (!perfil) return res.status(200).json({ found: false });

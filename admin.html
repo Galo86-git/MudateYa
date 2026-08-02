@@ -2339,7 +2339,7 @@ async function openModal(idx){
   // Cargar perfil completo desde Redis
   var perfil = null;
   try {
-    var r = await fetch('/api/mudancero-data?email=' + encodeURIComponent(email));
+    var r = await fetch('/api/mudancero-data?email=' + encodeURIComponent(email), { headers: { 'x-admin-token': ADMTK() } });
     var d = await r.json();
     if (d.perfil) perfil = d.perfil;
   } catch(e) {}
@@ -3566,7 +3566,7 @@ function activarEdicion(){
   footer.insertBefore(btnGuardar, footer.firstChild);
 
   // Cargar datos completos desde Redis
-  fetch('/api/mudancero-data?email=' + encodeURIComponent(m[4])).then(function(r){ return r.json(); }).then(function(d) {
+  fetch('/api/mudancero-data?email=' + encodeURIComponent(m[4]), { headers: { 'x-admin-token': ADMTK() } }).then(function(r){ return r.json(); }).then(function(d) {
     if (!d.perfil) return;
     var p = d.perfil;
     var textMap = {

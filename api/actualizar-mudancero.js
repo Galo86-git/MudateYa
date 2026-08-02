@@ -45,13 +45,23 @@ async function subirFotoBlob(base64, nombre) {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-session-token');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // AUTH: solo el propio mudancero (token de sesión) o un admin pueden leer o
+  // modificar el perfil. Sin esto, cualquiera con el email podía sobrescribir
+  // precios y el CBU de cobro (redirigir los pagos).
+  async function autorizar(email) {
+    if (!email) return false;
+    try { if (require('./_auth').esAdmin(req)) return true; } catch (e) {}
+    try { return await require('./_sesion').esMudanceroDe(req, email); } catch (e) { return false; }
+  }
 
   // ── GET: leer perfil completo desde Redis (incluye preciosLeads) ──
   if (req.method === 'GET') {
     const email = req.query.email;
     if (!email) return res.status(400).json({ error: 'Falta email' });
+    if (!(await autorizar(email))) return res.status(401).json({ error: 'No autorizado' });
     try {
       const perfil = await getJSON(`mudancero:perfil:${email}`);
       if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
@@ -65,6 +75,7 @@ module.exports = async function handler(req, res) {
 
   const data = req.body;
   if (!data.email) return res.status(400).json({ error: 'Falta email' });
+  if (!(await autorizar(data.email))) return res.status(401).json({ error: 'No autorizado' });
 
   try {
     const perfil = await getJSON(`mudancero:perfil:${data.email}`);

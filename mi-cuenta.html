@@ -2309,6 +2309,28 @@ var GOOGLE_CLIENT_ID = '';
 function esc(s){ if(!s) return ''; var d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
 
 var currentUser = null;
+// Token de sesión actual (de memoria o de sessionStorage). Se manda como
+// header x-session-token en las llamadas que ahora exigen autenticación.
+function sessionTokenActual(){
+  try {
+    if (currentUser && currentUser.sessionToken) return currentUser.sessionToken;
+    var raw = sessionStorage.getItem('mudanceroUser') || sessionStorage.getItem('googleUser') || sessionStorage.getItem('clienteUser');
+    if (raw) { var o = JSON.parse(raw); return (o && o.sessionToken) || ''; }
+  } catch(e){}
+  return '';
+}
+function authHeaders(extra){
+  var h = extra || {};
+  var t = sessionTokenActual();
+  if (t) h['x-session-token'] = t;
+  return h;
+}
+// Sesión inválida/vencida (401): limpiamos y volvemos a la pantalla de login.
+function cerrarSesionYReloguear(){
+  try { ['mudanceroUser','googleUser','clienteUser','rolMudancero','rolCliente'].forEach(function(k){ sessionStorage.removeItem(k); }); } catch(e){}
+  currentUser = null;
+  location.replace('/mi-cuenta');
+}
 var mudanceroData = null;
 var mudanceroPerfilRedis = null; // perfil completo de Redis (incluye precios.porKm, preciosLeads, etc.)
 var mudanzasDisponibles = [];
@@ -2371,7 +2393,7 @@ window.onload = async function(){
         return;
       }
       // Login exitoso: guardar sesión igual que con Google
-      currentUser = { name: d.nombre || d.email.split('@')[0], email: d.email, picture: d.foto || '' };
+      currentUser = { name: d.nombre || d.email.split('@')[0], email: d.email, picture: d.foto || '', sessionToken: d.sessionToken };
       var _ms = {...currentUser, _expires: Date.now()+604800000, sessionToken: d.sessionToken};
       var _msStr = JSON.stringify(_ms);
       sessionStorage.setItem('mudanceroUser', _msStr);
@@ -2468,6 +2490,21 @@ async function handleCredential(response){
     console.warn('[google-login] error creando sesión:', e.message);
   }
 
+  // SEGURIDAD: sin token de sesión válido NO entramos (antes se entraba igual y
+  // los endpoints confiaban solo en el email). Mostramos error y pedimos reintentar.
+  if (!sessionToken) {
+    currentUser = null;
+    var gm = document.getElementById('magicLinkMsg');
+    if (gm) {
+      gm.style.display = 'block';
+      gm.style.color = '#DC2626';
+      gm.textContent = 'No pudimos validar tu identidad con Google. Probá de nuevo o entrá con el link por email.';
+    } else {
+      alert('No pudimos validar tu identidad con Google. Probá de nuevo o usá el link por email.');
+    }
+    return;
+  }
+
   // FIX: guardar en todos los storages para que landing y mi-mudanza también lo reconozcan
   var _ms = Object.assign({}, currentUser, { _expires: Date.now()+604800000, sessionToken: sessionToken });
   var _msStr = JSON.stringify(_ms);
@@ -2528,7 +2565,8 @@ async function solicitarMagicLink(){
 
 async function initApp(){
   try{
-    var r = await fetch('/api/mudancero-data?email='+encodeURIComponent(currentUser.email));
+    var r = await fetch('/api/mudancero-data?email='+encodeURIComponent(currentUser.email), { headers: authHeaders() });
+    if(r.status === 401){ cerrarSesionYReloguear(); return; }
     var d = await r.json();
     if(!d.found){ showScreen('notFound'); return; }
     mudanceroData = d.mudancero;
@@ -5572,7 +5610,7 @@ function loadPerfil(){
 // Redis manda sobre cualquier dato cacheado en localStorage del navegador.
 async function cargarPreciosLeads(){
   try {
-    var r = await fetch('/api/actualizar-mudancero?email=' + encodeURIComponent(currentUser.email));
+    var r = await fetch('/api/actualizar-mudancero?email=' + encodeURIComponent(currentUser.email), { headers: authHeaders() });
     var d = await r.json();
     if (!d.ok || !d.perfil) return;
     mudanceroPerfilRedis = d.perfil; // disponible globalmente
@@ -6209,7 +6247,7 @@ async function guardarPerfil(){
 
   localStorage.setItem('banking_'+currentUser.email, JSON.stringify({metodoCobro:document.getElementById('pf-metodoCobro').value,cbu:document.getElementById('pf-cbu').value.trim(),emailMP:document.getElementById('pf-emailMP').value.trim(),titular:document.getElementById('pf-titular').value.trim()}));
   try{
-    var r=await fetch('/api/actualizar-mudancero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});
+    var r=await fetch('/api/actualizar-mudancero',{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(datos)});
     var d=await r.json();
     if(d.error) throw new Error(d.error);
     btn.disabled=false; btn.innerHTML='✓ Guardado';
