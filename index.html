@@ -1326,7 +1326,7 @@
         <button onclick="logout()" class="btn-nav-outline" style="font-size:11px;cursor:pointer">Salir</button>
       </div>
     </div>
-    <button class="nav-burger" id="navBurger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+    <button class="nav-burger" id="navBurger" onclick="toggleMenu()" aria-label="Abrir menú"><span></span><span></span><span></span></button>
   </nav>
 
   <div class="mobile-menu" id="mobileMenu">
@@ -1555,7 +1555,7 @@
       <div class="drawer-handle"></div>
       <div class="drawer-header">
         <span class="drawer-title">Filtros</span>
-        <button class="drawer-close" onclick="cerrarDrawerFiltros()">✕</button>
+        <button class="drawer-close" onclick="cerrarDrawerFiltros()" aria-label="Cerrar filtros">✕</button>
       </div>
       <div class="drawer-body">
         <!-- Ordenar -->
@@ -1806,7 +1806,7 @@
   <!-- MODAL LOGIN -->
   <div class="modal-ov" id="loginModal">
     <div class="modal-box" style="max-width:420px">
-      <button class="modal-close" onclick="cerrarLogin()">✕</button>
+      <button class="modal-close" onclick="cerrarLogin()" aria-label="Cerrar">✕</button>
       <div style="text-align:center">
         <div style="font-size:2.5rem;margin-bottom:10px">🔐</div>
         <div style="font-size:1.2rem;font-weight:700;margin-bottom:.3rem">Iniciá sesión</div>

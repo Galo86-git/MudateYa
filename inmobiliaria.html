@@ -806,7 +806,7 @@
 <!-- Modal Confirmación -->
 <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)cerrarConfirm()">
   <div class="confirm-modal">
-    <button class="modal-close" type="button" onclick="cerrarConfirm()">×</button>
+    <button class="modal-close" type="button" onclick="cerrarConfirm()" aria-label="Cerrar">×</button>
     <div class="confirm-modal-header">
       <div class="confirm-modal-icon">📨</div>
       <h2 class="confirm-modal-title">Revisá tu solicitud</h2>
@@ -898,7 +898,7 @@
 
 <div class="modal-overlay" id="detallesModal" onclick="if(event.target===this)document.getElementById('detallesModal').classList.remove('open')">
   <div class="confirm-modal wide-modal" style="max-height:88vh;display:flex;flex-direction:column">
-    <button class="modal-close" type="button" onclick="document.getElementById('detallesModal').classList.remove('open')">×</button>
+    <button class="modal-close" type="button" onclick="document.getElementById('detallesModal').classList.remove('open')" aria-label="Cerrar">×</button>
     <div class="confirm-modal-header" style="text-align:center">
       <div class="confirm-modal-icon">📋</div>
       <h2 class="confirm-modal-title">Para cotizar bien, necesitamos algunos datos</h2>
@@ -995,7 +995,7 @@
      a los mudanceros. Si dice "Cancelar", vuelve al modal de detalles para revisar. -->
 <div class="modal-overlay" id="confirmEnvioModal" onclick="if(event.target===this)_cerrarConfirmEnvio()">
   <div class="confirm-modal" style="max-width:440px">
-    <button class="modal-close" type="button" onclick="_cerrarConfirmEnvio()">×</button>
+    <button class="modal-close" type="button" onclick="_cerrarConfirmEnvio()" aria-label="Cerrar">×</button>
     <div class="confirm-modal-header" style="text-align:center;border-bottom:none;padding-bottom:0;margin-bottom:14px">
       <div class="confirm-modal-icon" style="background:var(--md-coral-soft);color:var(--md-coral)">📨</div>
       <h2 class="confirm-modal-title" style="font-size:20px">¿Confirmás el envío?</h2>

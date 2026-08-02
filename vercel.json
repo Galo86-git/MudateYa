@@ -34,10 +34,6 @@
       "destination": "/mudancero-perfil.html"
     },
     {
-      "source": "/mudanceros-catalogo",
-      "destination": "/mudanceros-catalogo.html"
-    },
-    {
       "source": "/mi-cuenta",
       "destination": "/mi-cuenta.html"
     },
@@ -72,10 +68,6 @@
     {
       "source": "/asesores",
       "destination": "/asesores.html"
-    },
-    {
-      "source": "/mudafy",
-      "destination": "/mudafy.html"
     },
     {
       "source": "/inmobiliaria/:slug",

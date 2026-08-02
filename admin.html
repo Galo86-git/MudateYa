@@ -3733,7 +3733,7 @@ async function guardarEdicion(){
   <div class="pedido-modal">
     <div class="pedido-modal-head">
       <div class="pedido-modal-title" id="pmTitle">Detalle del pedido</div>
-      <button class="pedido-modal-close" onclick="cerrarPedidoModal()">✕</button>
+      <button class="pedido-modal-close" onclick="cerrarPedidoModal()" aria-label="Cerrar">✕</button>
     </div>
     <div class="pedido-modal-body" id="pmBody">
       <div class="loading"><span class="spinner"></span>Cargando…</div>
@@ -3750,7 +3750,7 @@ async function guardarEdicion(){
         <div class="edif" id="admEdif">—</div>
         <div class="slug" id="admSlug">—</div>
       </div>
-      <button class="ali-modal-close" onclick="cerrarAliDetalle()">×</button>
+      <button class="ali-modal-close" onclick="cerrarAliDetalle()" aria-label="Cerrar">×</button>
     </div>
     <div class="ali-modal-body" id="admBody">
       <div class="loading"><span class="spinner"></span>Cargando…</div>

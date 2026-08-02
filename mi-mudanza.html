@@ -13,9 +13,10 @@
 :root{
   --bg:#FFFFFF;--bg2:#F5F7FA;--surface:#FFFFFF;--surface2:#F5F7FA;
   --border:#E2E8F0;--border2:#CBD5E1;
-  --blue:#1A6FFF;--blue-glow:rgba(26,111,255,.15);--blue-light:#EEF4FF;
+  --blue:#1A6FFF;--blue-dark:#0F52CC;--blue-glow:rgba(26,111,255,.15);--blue-light:#EEF4FF;
   --green:#22C36A;--green-light:rgba(34,195,106,.1);
-  --emerald:#22C36A;--sky:#0EA5E9;
+  --emerald:#22C36A;--sky:#0EA5E9;--sky-glow:rgba(14,165,233,.15);
+  --navy:#003580;
   --red:#EF4444;--red-light:rgba(239,68,68,.08);
   --amber:#F59E0B;--amber-light:rgba(245,158,11,.08);
   --text:#0F1923;--text2:#475569;--text3:#64748B;
@@ -750,7 +751,7 @@ body{background:var(--bg2)!important;-webkit-font-smoothing:antialiased;-moz-osx
 <!-- MODAL PRESUPUESTO -->
 <div class="ppto-modal-overlay" id="pptoModal">
   <div class="ppto-modal">
-    <button class="ppto-close" onclick="cerrarPresupuesto()">✕</button>
+    <button class="ppto-close" onclick="cerrarPresupuesto()" aria-label="Cerrar">✕</button>
     <div class="ppto-header">
       <div class="ppto-avatar" id="ppto-initials">MV</div>
       <div>
@@ -1701,7 +1702,7 @@ function renderMudanzaDetail(m) {
         if (det && Array.isArray(det.fotos) && det.fotos.length) {
           fotosHtml = '<div style="margin-top:8px"><div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Fotos del lugar</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
           det.fotos.forEach(function(url) {
-            fotosHtml += '<a href="' + esc(url) + '" target="_blank" style="display:block"><img src="' + esc(url) + '" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #C7D9FF;cursor:pointer"/></a>';
+            fotosHtml += '<a href="' + esc(url) + '" target="_blank" style="display:block"><img src="' + esc(url) + '" alt="Foto del lugar" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #C7D9FF;cursor:pointer"/></a>';
           });
           fotosHtml += '</div></div>';
         }

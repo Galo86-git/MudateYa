@@ -356,7 +356,7 @@ body.pd-panel-open .pd-list-col{flex:1.3}
 .g-kpis-inline{display:flex;gap:0;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 4px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .g-kpi{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;border-right:1px solid var(--border);text-align:center}
 .g-kpi:last-child{border-right:none}
-.g-kpi-lbl{font-size:9.5px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.3px;font-weight:700;margin-bottom:2px;white-space:nowrap}
+.g-kpi-lbl{font-size:9.5px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.3px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .g-kpi-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--blue);white-space:nowrap}
 .g-kpi-red{color:#DC2626}
 .g-kpi-amber{color:#F59E0B}
@@ -2769,8 +2769,8 @@ function verFotoGrande(mudanzaId, fotoIdx) {
   lb.id = 'fotoLightbox';
   lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:1rem';
   var safeSrc = src && src.startsWith('data:') ? src : encodeURI(src);
-  lb.innerHTML = '<img src="'+safeSrc+'" style="max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;box-shadow:0 32px 80px rgba(0,0,0,.8)">'
-    +'<button onclick="document.getElementById(\'fotoLightbox\').remove()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>';
+  lb.innerHTML = '<img src="'+safeSrc+'" alt="Foto ampliada" style="max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;box-shadow:0 32px 80px rgba(0,0,0,.8)">'
+    +'<button onclick="document.getElementById(\'fotoLightbox\').remove()" aria-label="Cerrar" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>';
   lb.onclick = function(e){ if(e.target===lb) lb.remove(); };
   document.body.appendChild(lb);
 }
@@ -4038,7 +4038,7 @@ function seleccionarPedido(mudanzaId, tipo) {
     if (det && Array.isArray(det.fotos) && det.fotos.length) {
       fotosHtml = '<div style="margin-top:8px"><div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Fotos del lugar</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
       det.fotos.forEach(function(url) {
-        fotosHtml += '<a href="' + esc(url) + '" target="_blank" style="display:block"><img src="' + esc(url) + '" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #C7D9FF;cursor:pointer"/></a>';
+        fotosHtml += '<a href="' + esc(url) + '" target="_blank" style="display:block"><img src="' + esc(url) + '" alt="Foto del lugar" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #C7D9FF;cursor:pointer"/></a>';
       });
       fotosHtml += '</div></div>';
     }
@@ -4197,7 +4197,7 @@ function renderCardDisponible(m) {
   if (m.fotos && m.fotos.length) {
     fotosHtml = '<div style="display:flex;gap:6px;margin-bottom:10px">'
       + m.fotos.map(function(f,fi){
-          return '<img src="'+f+'" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')" title="Ver foto">';
+          return '<img src="'+f+'" alt="Foto del pedido" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')" title="Ver foto">';
         }).join('')
       + '</div>';
   }
@@ -4425,7 +4425,7 @@ function renderCardCotizacion(m) {
     +'<div class="pedido-fecha">📅 '+(m.fecha||'—')+' · '+(m.ambientes||'—')+(cotKm>0?' · '+cotKm+' km':'')+'</div>'
     +'</div>'+badge+'</div>'
     +(m.fotos&&m.fotos.length ? '<div style="display:flex;gap:6px;margin:8px 0">'
-      +m.fotos.map(function(f,fi){ return '<img src="'+f+'" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')">'; }).join('')
+      +m.fotos.map(function(f,fi){ return '<img src="'+f+'" alt="Foto del pedido" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="verFotoGrande(\''+m.id+'\','+fi+')">'; }).join('')
       +'</div>' : '')
     + bloqueCotDesglose
     +(cot?.nota?'<div style="font-size:12px;color:var(--text2);margin-top:5px;font-style:italic">"'+cot.nota+'"</div>':'')

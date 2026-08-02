@@ -43,6 +43,10 @@ textarea{resize:vertical;min-height:120px;line-height:1.6}
 .btn-submit:hover{background:var(--blue-dark);transform:translateY(-1px)}
 .btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
 .success-msg{display:none;background:#F0FFF6;border:1px solid #BBF7D0;border-radius:8px;padding:1rem 1.2rem;text-align:center;font-size:14px;color:#16A34A;margin-top:1rem}
+.error-msg{display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:1rem 1.2rem;text-align:center;font-size:14px;color:#B91C1C;margin-top:1rem}
+.field-error{display:none;font-size:11px;color:#EF4444;font-family:var(--mono);margin-top:5px}
+.field.has-error input,.field.has-error select,.field.has-error textarea{border-color:#EF4444}
+.field.has-error .field-error{display:block}
 footer{border-top:1px solid var(--border);padding:2rem;text-align:center;background:#fff}
 .footer-links{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap}
 .footer-links a{font-size:12px;color:var(--text3);text-decoration:none;font-family:var(--mono);transition:color .2s}
@@ -155,25 +159,27 @@ footer{border-top:1px solid var(--border);padding:2rem;text-align:center;backgro
   <!-- RIGHT: Form -->
   <div class="form-card">
     <div class="form-title">Envianos un mensaje</div>
-    <form id="contactForm" onsubmit="enviarConsulta(event)">
-      <div class="field">
-        <label>Tu nombre</label>
-        <input type="text" id="cf-nombre" placeholder="Juan García" required/>
+    <form id="contactForm" onsubmit="enviarConsulta(event)" novalidate>
+      <div class="field" id="f-cf-nombre">
+        <label for="cf-nombre">Tu nombre</label>
+        <input type="text" id="cf-nombre" placeholder="Juan García"/>
+        <span class="field-error">Contanos tu nombre</span>
       </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="cf-email" placeholder="juan@email.com" required/>
+      <div class="field" id="f-cf-email">
+        <label for="cf-email">Email</label>
+        <input type="email" id="cf-email" placeholder="juan@email.com"/>
+        <span class="field-error">Ingresá un email válido</span>
       </div>
-      <div class="field">
-        <label>Soy</label>
+      <div class="field" id="f-cf-tipo">
+        <label for="cf-tipo">Soy</label>
         <select id="cf-tipo">
           <option value="cliente">Cliente (quiero mudar)</option>
           <option value="mudancero">Mudancero / fletero</option>
           <option value="otro">Otro</option>
         </select>
       </div>
-      <div class="field">
-        <label>Asunto</label>
+      <div class="field" id="f-cf-asunto">
+        <label for="cf-asunto">Asunto</label>
         <select id="cf-asunto">
           <option value="consulta">Consulta general</option>
           <option value="problema-pago">Problema con un pago</option>
@@ -182,14 +188,18 @@ footer{border-top:1px solid var(--border);padding:2rem;text-align:center;backgro
           <option value="otro">Otro</option>
         </select>
       </div>
-      <div class="field">
-        <label>Mensaje</label>
-        <textarea id="cf-mensaje" placeholder="Contanos en qué podemos ayudarte…" required></textarea>
+      <div class="field" id="f-cf-mensaje">
+        <label for="cf-mensaje">Mensaje</label>
+        <textarea id="cf-mensaje" placeholder="Contanos en qué podemos ayudarte…"></textarea>
+        <span class="field-error">Escribinos tu mensaje</span>
       </div>
       <button type="submit" class="btn-submit" id="btnEnviar">Enviar mensaje →</button>
     </form>
     <div class="success-msg" id="successMsg">
       ✓ Mensaje enviado. Te respondemos en menos de 24hs hábiles.
+    </div>
+    <div class="error-msg" id="errorMsg">
+      No pudimos enviar tu mensaje. Escribinos directo a <a href="mailto:hola@mudateya.ar" style="color:#B91C1C;font-weight:700">hola@mudateya.ar</a>
     </div>
   </div>
 
@@ -205,10 +215,17 @@ footer{border-top:1px solid var(--border);padding:2rem;text-align:center;backgro
 </footer>
 
 <script data-cfasync="false">
+function limpiarErrores() {
+  ['f-cf-nombre','f-cf-email','f-cf-mensaje'].forEach(function(id) {
+    document.getElementById(id).classList.remove('has-error');
+  });
+}
+
 async function enviarConsulta(e) {
   e.preventDefault();
-  var btn = document.getElementById('btnEnviar');
-  btn.disabled = true; btn.textContent = 'Enviando…';
+  document.getElementById('successMsg').style.display = 'none';
+  document.getElementById('errorMsg').style.display = 'none';
+  limpiarErrores();
 
   var nombre  = document.getElementById('cf-nombre').value.trim();
   var email   = document.getElementById('cf-email').value.trim();
@@ -216,11 +233,19 @@ async function enviarConsulta(e) {
   var asunto  = document.getElementById('cf-asunto').value;
   var mensaje = document.getElementById('cf-mensaje').value.trim();
 
-  if (!nombre || !email || !mensaje) {
-    alert('Por favor completá nombre, email y mensaje.');
-    btn.disabled = false; btn.textContent = 'Enviar mensaje →';
+  var emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  var primerError = null;
+  if (!nombre) { document.getElementById('f-cf-nombre').classList.add('has-error'); primerError = primerError || 'cf-nombre'; }
+  if (!email || !emailValido) { document.getElementById('f-cf-email').classList.add('has-error'); primerError = primerError || 'cf-email'; }
+  if (!mensaje) { document.getElementById('f-cf-mensaje').classList.add('has-error'); primerError = primerError || 'cf-mensaje'; }
+  if (primerError) {
+    document.getElementById(primerError).focus();
+    document.getElementById('f-' + primerError).scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
+
+  var btn = document.getElementById('btnEnviar');
+  btn.disabled = true; btn.textContent = 'Enviando...';
 
   // Mapeo de tipos y asuntos a texto legible
   var tipoLabel = { cliente: 'Cliente (quiere mudar)', mudancero: 'Mudancero / fletero', otro: 'Otro' }[tipo] || tipo;
@@ -232,28 +257,24 @@ async function enviarConsulta(e) {
     'otro': 'Otro'
   }[asunto] || asunto;
 
-  // Construir el cuerpo del email
-  var subject = '[MudateYa Contacto] ' + asuntoLabel + ' — ' + nombre;
-  var body =
-    'Nombre: ' + nombre + '\n' +
-    'Email: ' + email + '\n' +
-    'Soy: ' + tipoLabel + '\n' +
-    'Asunto: ' + asuntoLabel + '\n\n' +
-    'Mensaje:\n' + mensaje + '\n\n' +
-    '---\nEnviado desde mudateya.ar/contacto';
+  try {
+    var r = await fetch('/api/contacto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: nombre, email: email, tipo: tipoLabel, asunto: asuntoLabel, mensaje: mensaje })
+    });
+    var d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Error al enviar');
 
-  // Abrir cliente de email con todo precargado
-  var mailto = 'mailto:hola' + '\u0040' + 'mudateya.ar' +
-               '?subject=' + encodeURIComponent(subject) +
-               '&body=' + encodeURIComponent(body);
-  window.location.href = mailto;
-
-  // Mostrar mensaje de éxito y resetear
-  setTimeout(function() {
     document.getElementById('contactForm').reset();
     document.getElementById('successMsg').style.display = 'block';
+    document.getElementById('successMsg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (err) {
+    document.getElementById('errorMsg').style.display = 'block';
+    document.getElementById('errorMsg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } finally {
     btn.disabled = false; btn.textContent = 'Enviar mensaje →';
-  }, 500);
+  }
 }
 </script>
 </body>

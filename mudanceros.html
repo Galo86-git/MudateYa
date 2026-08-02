@@ -15,6 +15,7 @@
   --border:#E2E8F0;--border2:#CBD5E1;
   --blue:#1A6FFF;--blue-dark:#0F52CC;--blue-glow:rgba(26,111,255,.15);--blue-light:#EEF4FF;
   --green:#22C36A;--green-light:rgba(34,195,106,.1);--green-dark:#17A356;
+  --emerald:#22C36A;--emerald-subtle:rgba(34,195,106,.15);
   --text:#0F1923;--text2:#475569;--text3:#64748B;
   --mono:'DM Mono',monospace;--r:12px;--r2:16px;--r3:24px;
 }
@@ -229,27 +230,27 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       <div class="section-sub">Tu información de contacto — no se muestra públicamente</div>
       <div class="field-grid cols2">
         <div class="field" id="f-nombre">
-          <label class="field-label">Nombre completo <span>*</span></label>
+          <label class="field-label" for="nombre">Nombre completo <span>*</span></label>
           <input type="text" id="nombre" placeholder="Juan González" autocomplete="name"/>
           <span class="field-error">Este campo es obligatorio</span>
         </div>
         <div class="field" id="f-empresa">
-          <label class="field-label">Nombre de la empresa / razón social</label>
+          <label class="field-label" for="empresa">Nombre de la empresa / razón social</label>
           <input type="text" id="empresa" placeholder="Mudanzas González (opcional)"/>
         </div>
         <div class="field" id="f-telefono">
-          <label class="field-label">WhatsApp / teléfono <span>*</span></label>
+          <label class="field-label" for="telefono">WhatsApp / teléfono <span>*</span></label>
           <input type="tel" id="telefono" placeholder="+54 9 11 1234-5678"/>
           <span class="field-error">Ingresá un teléfono válido</span>
         </div>
         <div class="field" id="f-email">
-          <label class="field-label">Email <span>*</span></label>
+          <label class="field-label" for="email">Email <span>*</span></label>
           <input type="email" id="email" placeholder="tunombre@gmail.com" onblur="validarEmail()"/>
           <span class="field-hint">📧 Recomendamos un email de <b>Gmail</b> o <b>Google Workspace</b> para entrar más rápido con un click. Si usás otro email (Hotmail, Yahoo, dominio propio sin Google), también podés ingresar pidiendo un link de acceso por mail.</span>
           <span class="field-error">Ingresá un email válido</span>
         </div>
         <div class="field" id="f-cuil" style="grid-column:1/-1">
-          <label class="field-label">CUIL / CUIT <span>*</span></label>
+          <label class="field-label" for="cuil">CUIL / CUIT <span>*</span></label>
           <div style="display:flex;gap:8px;align-items:flex-start">
             <input type="text" id="cuil" placeholder="20-12345678-9 o 30-12345678-9" maxlength="13"
               oninput="formatCUIL(this)"
@@ -258,7 +259,7 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           <span style="font-size:10px;color:#64748B;font-family:var(--mono)">Persona física: 20/27-... · Empresa: 30/33-...</span>
         </div>
         <div class="field" style="grid-column:1/-1">
-          <label class="field-label">Sitio web o Instagram <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+          <label class="field-label" for="sitioWeb">Sitio web o Instagram <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
           <input type="text" id="sitioWeb" placeholder="https://www.tumudanza.com.ar o @tumudanza"/>
           <span style="font-size:11px;color:#94A3B8;font-family:var(--mono)">Se muestra en tu perfil público para generar más confianza</span>
         </div>
@@ -271,7 +272,7 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       <div class="section-sub">¿En qué áreas operás?</div>
       <div class="field-grid">
         <div class="field" id="f-zona-base">
-          <label class="field-label">Ciudad / zona base <span>*</span></label>
+          <label class="field-label" for="zonaBase">Ciudad / zona base <span>*</span></label>
           <select id="zonaBase">
             <option value="">Seleccioná tu zona principal</option>
             <optgroup label="── Buenos Aires ──">
