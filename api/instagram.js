@@ -30,7 +30,7 @@ const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar';
 // Subir este número cada vez que el SYSTEM_PROMPT cambie de forma importante
 // (alcance del bot, tono, reglas nuevas): descarta conversaciones viejas para
 // que no arrastren el comportamiento anterior (ver nota en procesarMensaje).
-const PROMPT_VERSION = 2;
+const PROMPT_VERSION = 3;
 
 // ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path) — mismo patrón que el resto de /api.
@@ -79,8 +79,9 @@ CÓMO TRABAJÁS:
 3. Si la herramienta te devuelve un error (dato inválido, ya registrado, etc.), pedile amablemente que lo corrija o contale lo que corresponda (ej. si ya existe, que va a recibir un mail) — NO inventes datos para completar ni festejes un alta que no pasó.
 4. Si preguntan por la plata: la comisión/pago se define según cada caso, NO prometas montos exactos si no los sabés.
 5. Después de un alta o solicitud exitosa, contale que le llega un mail con los próximos pasos.
+6. Si el mensaje NO tiene que ver con sumarse a MudateYa (ej. alguien pidiendo cotizar una mudanza como cliente, un reclamo, una consulta de otro tema), o si ya lo intentaste un par de veces y no lográs entender o resolver lo que necesita, derivalo con onda a que le escriba a hola@mudateya.ar contándole el tema — NO lo registres como socio ni sigas insistiendo.
 
-REGLAS: no pidas datos sensibles, no prometas lo que no podés cumplir, y si el mensaje no tiene nada que ver con sumarse a MudateYa (ej. alguien pidiendo cotizar una mudanza como cliente) respondé amable y derivalo a que escriba por WhatsApp o entre a la web, sin registrarlo como socio.
+REGLAS: no pidas datos sensibles, no prometas lo que no podés cumplir.
 
 IMPORTANTE — NUNCA escribas en este chat ningún link, URL ni dominio (ni "mudateya.ar", ni "http...", nada). Instagram bloquea el envío de mensajes con links desde esta cuenta. El link de verdad SIEMPRE le llega por mail — acá solo decile "te lo mandamos por mail" o "revisá tu casilla", sin repetir la dirección.`;
 
@@ -265,12 +266,22 @@ async function registrarMudancero(input) {
 // puede rechazar el mensaje entero si detecta un link (ver nota abajo).
 function sinLinks(texto) {
   const original = String(texto || '');
-  const limpio = original
+  // Protegemos los emails ANTES de cortar dominios (ej: hola@mudateya.ar es
+  // el contacto que SÍ queremos que llegue — si no, el corte de dominio deja
+  // "hola@" a secas). Instagram no rechaza mensajes por mencionar un email,
+  // solo por links/URLs de navegación.
+  const emails = [];
+  const protegido = original.replace(/[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}/g, (m) => {
+    emails.push(m);
+    return `__EMAIL${emails.length - 1}__`;
+  });
+  let limpio = protegido
     .replace(/https?:\/\/\S+/gi, '')
     .replace(/www\.\S+/gi, '')
     .replace(/\b[a-z0-9-]+\.(ar|com|com\.ar|net|org|io|co|app)\b(\/\S*)?/gi, '')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
+  limpio = limpio.replace(/__EMAIL(\d+)__/g, (m, i) => emails[Number(i)]);
   if (limpio !== original.trim()) {
     console.warn('[instagram] Le saqué un link a la respuesta antes de enviar:', original);
   }
