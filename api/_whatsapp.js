@@ -182,9 +182,12 @@ async function avisarSaldoPendiente(mudanza, saldo, linkMP, transferencia) {
   catch (e) { console.warn('avisarSaldoPendiente:', e.message); }
 }
 
-// avisarMudanzaPagadaCompleta: al acreditarse el SALDO, avisa 100% pago + invita a calificar.
+// avisarMudanzaPagadaCompleta: al acreditarse el SALDO, avisa 100% pago + invita
+// a calificar. Antes solo para clientes del bot; hoy no hay ningún mail
+// equivalente en este paso, así que ampliarlo a cualquier clienteWA (bot o
+// web) es una suma neta, no reemplaza nada.
 async function avisarMudanzaPagadaCompleta(mudanza) {
-  if (!mudanza || mudanza.canal !== 'whatsapp' || !mudanza.clienteWA) return;
+  if (!mudanza || !mudanza.clienteWA) return;
   const { enviarPlantilla } = require('./_plantillas');
   const cot = mudanza.cotizacionAceptada || {};
   const tipo = mudanza.tipo || 'mudanza';

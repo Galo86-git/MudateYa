@@ -97,6 +97,15 @@ const CREAR = [
       actions: [{ type: 'URL', title: 'Completar mi perfil', url: 'https://mudateya.ar/mi-cuenta' }],
     } },
     variables: { '1': 'Cristian', '2': 'te falta un pasito para activar tu cuenta' } },
+
+  // Confirmación al cliente apenas publica el pedido por la WEB (no existía
+  // ninguna plantilla para esto — las demás cubren etapas posteriores). Al
+  // ser la PRIMERA plantilla que le llega, además "abre" la conversación de
+  // WhatsApp con él, así los avisos siguientes (presupuestos, pagos) le
+  // pueden llegar dentro de la ventana de 24hs sin fricción.
+  { name: 'pedido_recibido_cliente', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! Recibimos tu pedido de {{2}} ({{3}} → {{4}}) en MudateYa.\n\nYa estamos consiguiéndote presupuestos de mudanceros/fleteros verificados — te aviso por acá apenas lleguen. 🚚' } },
+    variables: { '1': 'Juan', '2': 'mudanza', '3': 'Palermo', '4': 'Tigre' } },
 ];
 
 module.exports = async function handler(req, res) {

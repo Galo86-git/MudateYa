@@ -1204,9 +1204,32 @@ module.exports = async function handler(req, res) {
       const clientesTodos = await getJSON('clientes:todos') || [];
       if (!clientesTodos.includes(clienteEmail)) clientesTodos.push(clienteEmail);
       await setJSON('clientes:todos', clientesTodos);
+      // Índice teléfono→email (últimos 8 dígitos, mismo criterio que mudanceros)
+      // para que el bot pueda encontrar este pedido cuando el cliente responda
+      // algo por WhatsApp (ajuste de precio, calificación) aunque haya cargado
+      // el pedido por la web, no por el bot.
+      if (clienteWA) {
+        try {
+          const _tel8 = String(clienteWA).replace(/\D/g, '').slice(-8);
+          if (_tel8.length === 8) await redisCall('HSET', 'clientes:tel8-idx', _tel8, clienteEmail);
+        } catch (e) { console.warn('Índice clientes:tel8-idx:', e.message); }
+      }
       try { await notificarMudanceros(mudanza); } catch(e) { console.error(e.message); }
       // Mail de confirmación al cliente con resumen del pedido
       try { await notificarClienteNuevoPedido(mudanza); } catch(e) { console.error('Email cliente confirmación:', e.message); }
+      // WhatsApp de confirmación (cliente de la web con WA cargado) — además de
+      // avisarle, esta es la PRIMERA plantilla que le llega, así que "abre" la
+      // conversación de WhatsApp para que los avisos siguientes entren en la
+      // ventana de 24hs. Sin fallback de texto libre a propósito: es plantilla
+      // nueva (pedido_recibido_cliente), gated hasta que Meta la apruebe — no
+      // manda nada mientras tanto (mismo patrón ya usado para otras plantillas).
+      if (clienteWA) {
+        try {
+          const { enviarPlantilla } = require('./_plantillas');
+          const nomCli = (clienteNombre || '').split(' ')[0] || 'Hola';
+          await enviarPlantilla(clienteWA, 'pedido_recibido_cliente', { 1: nomCli, 2: tipo || 'mudanza', 3: desde, 4: hasta });
+        } catch (e) { console.warn('WhatsApp confirmación pedido (web):', e.message); }
+      }
       // ── Hook aliados: crear atribución si el cliente vino por un link de aliado ──
       if (refAliado) {
         try { await hookCrearAtribucion(id, refAliado, tipo || 'mudanza'); } catch(e) { console.warn('Hook aliado publicar:', e.message); }
@@ -4968,8 +4991,11 @@ async function notificarClienteSaldoPendiente(mudanza) {
 
 // Email al cliente cuando el mudancero propone un nuevo precio (inicial o recordatorio)
 async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {
-  // Pedido por WhatsApp: avisar por WhatsApp (el cliente responde "acepto"/"rechazo").
-  if (mudanza.canal === 'whatsapp' && mudanza.clienteWA) {
+  const esBot = mudanza.canal === 'whatsapp';
+
+  // Pedido por WhatsApp: avisar SOLO por WhatsApp (el cliente responde
+  // "acepto"/"rechazo"; su email es sintético, no tiene sentido mandarle mail).
+  if (esBot && mudanza.clienteWA) {
     const _cot = mudanza.cotizacionAceptada || {};
     const _aj = mudanza.ajustePrecio || {};
     const _nuevoNum = Number(_aj.montoNuevo || 0).toLocaleString('es-AR');
@@ -4985,6 +5011,26 @@ async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {
     } catch (e) { console.warn('ajuste WhatsApp:', e.message); }
     return;
   }
+
+  // Cliente de la web con WhatsApp cargado: mail de siempre (abajo) + WhatsApp
+  // sumado, mismo texto que el del bot ("acepto"/"rechazo" ya se puede
+  // responder porque el pedido quedó indexado por teléfono, ver clientes:tel8-idx).
+  if (!esBot && mudanza.clienteWA) {
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      const _cot = mudanza.cotizacionAceptada || {};
+      const _aj = mudanza.ajustePrecio || {};
+      const _nuevoNum = Number(_aj.montoNuevo || 0).toLocaleString('es-AR');
+      const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+      const texto =
+        `${esRecordatorio ? '⏰ Recordatorio: ' : '⚠️ '}${_cot.mudanceroNombre || 'Tu mudancero'} propuso ajustar el precio de tu ${mudanza.tipo || 'mudanza'} a $${_nuevoNum}.\n` +
+        (_aj.motivo ? `Motivo: ${_aj.motivo}\n` : '') +
+        `Respondeme "acepto" o "rechazo". Si rechazás, se cancela y te devolvemos la seña.`;
+      await enviarPlantilla(mudanza.clienteWA, 'ajuste_precio_propuesto',
+        { 1: nomCli, 2: _cot.mudanceroNombre || 'Tu mudancero', 3: mudanza.tipo || 'mudanza', 4: _nuevoNum, 5: _aj.motivo || 'ajuste de precio' }, texto);
+    } catch (e) { console.warn('ajuste WhatsApp (web):', e.message); }
+  }
+
   if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const cot = mudanza.cotizacionAceptada || {};

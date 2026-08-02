@@ -805,8 +805,28 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
 // ------------------------------------------------------------------
 // Herramientas del agente (además de crear_pedido)
 // ------------------------------------------------------------------
+// Pedidos de un cliente por su WhatsApp — junta DOS orígenes:
+//  1) Pedidos creados por el bot: quedan indexados directo en cliente:pedidos:{waId}.
+//  2) Pedidos creados por la WEB donde el cliente dejó su WhatsApp: se indexan
+//     por los últimos 8 dígitos (clientes:tel8-idx → email), igual que ya se
+//     hace con mudanceros, porque un número puede llegar tipeado de mil formas
+//     (54/9/15/0 celular) y así matchea sin importar cómo lo haya escrito.
+//     Sin esto, un cliente de la web que responde "acepto"/"rechazo" un ajuste
+//     de precio, o califica con estrellas, se encontraba con que el bot no
+//     tenía ningún pedido suyo para relacionar esa respuesta.
 async function pedidosDelCliente(waId) {
-  const ids = (await getJSON(`cliente:pedidos:${waId}`)) || [];
+  const idsBot = (await getJSON(`cliente:pedidos:${waId}`)) || [];
+
+  let idsWeb = [];
+  try {
+    const t8 = clave8(waId);
+    if (t8.length === 8) {
+      const email = await redisCall('HGET', 'clientes:tel8-idx', t8);
+      if (email) idsWeb = (await getJSON(`cliente:${email}`)) || [];
+    }
+  } catch (e) { console.warn('pedidosDelCliente tel8:', e.message); }
+
+  const ids = Array.from(new Set([...idsBot, ...idsWeb]));
   const pedidos = [];
   for (const id of ids.slice(-5)) {
     const p = await getJSON(`mudanza:${id}`);
