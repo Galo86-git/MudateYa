@@ -183,7 +183,7 @@ footer a{color:#22C36A;text-decoration:none}
       </div>
       <div class="faq-item">
         <h3>¿Cómo contratar un ${proveedorStr} verificado en ${datos.nombre}?</h3>
-        <p>En MudateYa podés publicar tu ${tipoStr} gratis y recibir cotizaciones de ${proveedoresStr} con DNI verificado, fotos del vehículo y reseñas reales de clientes anteriores. Sin intermediarios y con pago seguro por Mercado Pago.</p>
+        <p>En MudateYa podés publicar tu ${tipoStr} gratis y recibir cotizaciones de ${proveedoresStr} con DNI verificado, fotos del vehículo y reseñas reales de clientes anteriores. Sin intermediarios y con pago seguro por Mercado Pago o transferencia bancaria.</p>
       </div>
       <div class="faq-item">
         <h3>¿Qué incluye el servicio de ${tipoStr} en ${datos.nombre}?</h3>
@@ -191,7 +191,7 @@ footer a{color:#22C36A;text-decoration:none}
       </div>
       <div class="faq-item">
         <h3>¿Es seguro pagar online?</h3>
-        <p>Sí. MudateYa usa Mercado Pago para todos los pagos. El dinero queda retenido hasta que confirmás que el servicio fue completado correctamente. Si hay algún problema, MudateYa media la situación.</p>
+        <p>Sí. Pagás por Mercado Pago o por transferencia bancaria con CVU único por operación. El dinero queda retenido hasta que confirmás que el servicio fue completado correctamente. Si hay algún problema, MudateYa media la situación.</p>
       </div>
       <div class="faq-item">
         <h3>¿Cuánto tarda en llegar una cotización?</h3>

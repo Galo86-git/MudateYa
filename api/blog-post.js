@@ -120,7 +120,7 @@ ${post.cuerpoHtml}
 </div></article>
 <section class="cta"><div class="wrap">
 <h2>¿Listo para mudarte?</h2>
-<p>Compará precios de mudanceros verificados y pagá seguro con Mercado Pago.</p>
+<p>Compará precios de mudanceros verificados y pagá seguro con Mercado Pago o transferencia bancaria.</p>
 <a class="btn" href="/#cotizar">Cotizar gratis en 2 minutos →</a>
 </div></section>
 <footer><div class="wrap-wide">© MudateYa — Marketplace de mudanzas y fletes de Argentina · <a href="/">Inicio</a> · <a href="/blog">Blog</a> · <a href="/contacto">Contacto</a> · <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></div></footer>

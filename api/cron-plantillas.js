@@ -45,6 +45,16 @@ module.exports = async function handler(req, res) {
       if (creadas.length) console.log('[cron-plantillas] creadas:', creadas.map((c) => c.name).join(', '));
     } catch (e) { console.warn('[cron-plantillas] crearFaltantes:', e.message); }
 
+    // 0b) Auto-aplicar cambios de TEXTO en plantillas que ya existen (array
+    //     ACTUALIZAR de plantillas-emi.js), cuando el body en código difiere del
+    //     que está vivo en Twilio. Idempotente (no hace nada si ya está al día).
+    let actualizadas = [];
+    try {
+      const r2 = await require('./plantillas-emi').actualizarCambiadas();
+      actualizadas = (r2 && r2.actualizadas) || [];
+      if (actualizadas.length) console.log('[cron-plantillas] actualizadas:', actualizadas.map((c) => c.name).join(', '));
+    } catch (e) { console.warn('[cron-plantillas] actualizarCambiadas:', e.message); }
+
     const auth = 'Basic ' + Buffer.from(sid + ':' + token).toString('base64');
     const r = await fetch('https://content.twilio.com/v1/ContentAndApprovals?PageSize=100', {
       headers: { Authorization: auth },
@@ -97,7 +107,7 @@ module.exports = async function handler(req, res) {
       } catch (e) { console.warn('cron-plantillas email:', e.message); }
     }
 
-    return res.status(200).json({ ok: true, primeraVez, creadas: creadas.map((c) => c.name), cambios, avisado, actual });
+    return res.status(200).json({ ok: true, primeraVez, creadas: creadas.map((c) => c.name), actualizadas: actualizadas.map((c) => c.name), cambios, avisado, actual });
   } catch (e) {
     console.error('cron-plantillas:', e.message);
     return res.status(200).json({ error: e.message });

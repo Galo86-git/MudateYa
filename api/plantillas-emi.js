@@ -49,7 +49,7 @@ const ACTUALIZAR = [
   { name: 'pago_confirmado_cliente', sid: 'HX5e31109f51010ea07751dd13e98258d2', category: 'UTILITY',
     body: '¡Listo, {{1}}! Recibimos tu seña ✅\nTu mudancero {{2}} quedó confirmado para el {{3}}. Te va a escribir para coordinar los detalles.' },
   { name: 'link_pago_sena', sid: 'HX93c65be02436ce3f138bee796768cd02', category: 'UTILITY',
-    body: '¡Buenísimo, {{1}}! Reservaste con {{2}} por {{3}}.\nPara confirmar, pagá la seña de {{4}} desde el botón de abajo. El resto lo abonás al terminar. Pago protegido por Mercado Pago.' },
+    body: '¡Buenísimo, {{1}}! Reservaste con {{2}} por {{3}}.\nPara confirmar, pagá la seña de {{4}} desde el botón de abajo (o por transferencia si preferís, pedímela). El resto lo abonás al terminar. Pago protegido.' },
   { name: 'presupuestos_cliente', sid: 'HXa307fb50a1ae96e0eb4535792ee40ea3', category: 'UTILITY',
     body: '¡Hola {{1}}! Ya tenemos presupuestos para tu mudanza ({{2}} → {{3}}).\nTe los paso acá abajo para que elijas el que más te convenga. Cada presupuesto vale 7 días.' },
 ];
@@ -191,3 +191,50 @@ async function crearFaltantes() {
   return { creadas };
 }
 module.exports.crearFaltantes = crearFaltantes;
+
+// ── Reutilizable por el cron: aplica cambios de texto del array ACTUALIZAR sobre
+// las plantillas que YA existen, cuando el body en código difiere del que está
+// vivo en Twilio. Busca el SID ACTUAL por nombre (no el hardcodeado en el array,
+// que queda viejo apenas se actualiza una vez) — así funciona bien en corridas
+// sucesivas. Solo aplica si las variables ({{1}}, {{2}}...) calzan (misma
+// salvaguarda que el flujo manual); si no calzan, se saltea para revisar a mano.
+// Idempotente: si el body ya está al día, no hace nada.
+async function actualizarCambiadas() {
+  const AUTH = auth();
+  if (!AUTH) return { error: 'sin credenciales Twilio', actualizadas: [] };
+  const porNombre = new Map();
+  try {
+    const all = await tw('GET', 'https://content.twilio.com/v1/ContentAndApprovals?PageSize=100', null, AUTH);
+    ((all.d && all.d.contents) || []).forEach((c) => porNombre.set(c.friendly_name, c.sid));
+  } catch (_) {}
+
+  const actualizadas = [];
+  for (const t of ACTUALIZAR) {
+    const sidActual = porNombre.get(t.name);
+    if (!sidActual) continue; // no existe todavía (raro para este array; se salta)
+
+    const got = await tw('GET', `${BASE}/${sidActual}`, null, AUTH);
+    if (!got.ok) continue;
+    const orig = got.d;
+    const typeKey = findBodyType(orig.types);
+    if (!typeKey || orig.types[typeKey].body === t.body) continue; // ya está al día
+
+    const origVars = Object.keys(orig.variables || {});
+    const need = varsIn(t.body);
+    const faltan = need.filter((n) => !origVars.includes(n));
+    if (faltan.length) {
+      actualizadas.push({ name: t.name, accion: 'SALTEADA', motivo: `usa {{${faltan.join('}}, {{')}}} que la plantilla no tiene` });
+      continue;
+    }
+
+    const newTypes = JSON.parse(JSON.stringify(orig.types));
+    newTypes[typeKey].body = t.body;
+    const created = await tw('POST', BASE, { friendly_name: t.name, language: orig.language || 'es', variables: orig.variables || {}, types: newTypes }, AUTH);
+    if (!created.ok) { actualizadas.push({ name: t.name, accion: 'ERROR_crear', detalle: created.d }); continue; }
+    await tw('DELETE', `${BASE}/${sidActual}`, null, AUTH);
+    const appr = await tw('POST', `${BASE}/${created.d.sid}/ApprovalRequests/whatsapp`, { name: t.name, category: t.category }, AUTH);
+    actualizadas.push({ name: t.name, sid: created.d.sid, accion: appr.ok ? 'actualizada_y_enviada' : 'creada_pero_no_enviada' });
+  }
+  return { actualizadas };
+}
+module.exports.actualizarCambiadas = actualizarCambiadas;

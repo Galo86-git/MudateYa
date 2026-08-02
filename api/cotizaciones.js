@@ -427,7 +427,7 @@ async function generarPDFBase64(datos) {
   } else if (fraseAvailWidth >= 60) {
     // Espacio justo: tipografía más chica
     doc.font('Helvetica').fontSize(7).fillColor(C_TEXT2);
-    doc.text('Pago seguro\nMercado Pago', fraseStartX, Y + 24, { width: fraseAvailWidth, align: 'left' });
+    doc.text('Pago seguro\nMP o transf.', fraseStartX, Y + 24, { width: fraseAvailWidth, align: 'left' });
   }
   // Si no entra nada, la frase se omite (mejor que se solape)
 
@@ -443,7 +443,7 @@ async function generarPDFBase64(datos) {
 
   const pasos = [
     ['1', 'Aceptar\ncotizacion'],
-    ['2', 'Pagar con\nMercado Pago'],
+    ['2', 'Pagar\nanticipo'],
     ['3', 'Coordinar\nfecha y hora'],
     ['4', 'Mudanza\nlista!'],
   ];
@@ -468,7 +468,7 @@ async function generarPDFBase64(datos) {
   Y += 12;
 
   const garantias = [
-    { icon: 'MP',   titulo: 'Pago seguro',    sub: 'Mercado Pago' },
+    { icon: 'MP',   titulo: 'Pago seguro',    sub: 'MP o transferencia' },
     { icon: 'DNI',  titulo: 'Verificado',      sub: 'Identidad confirmada' },
     { icon: '*****', titulo: 'Resenas',          sub: 'Verificadas' },
     { icon: '$=',   titulo: 'Sin sorpresas',   sub: 'Precio acordado' },
@@ -4310,7 +4310,7 @@ async function enviarEmailAceptacion(mudanza, cot) {
     await resend.emails.send({
       from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
       to: mudanza.clienteEmail,
-      subject: `✅ Aceptaste la cotización — Pagá ahora con Mercado Pago`,
+      subject: `✅ Aceptaste la cotización — Pagá ahora el anticipo`,
       html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
         <!-- Header -->
         <div style="background:#003580;padding:20px 28px">
@@ -4341,10 +4341,10 @@ async function enviarEmailAceptacion(mudanza, cot) {
             <div style="font-size:14px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:monospace">Anticipo a pagar ahora (50%)</div>
             <div style="font-size:2.2rem;font-weight:700;color:#003580;margin-bottom:4px">${anticipoFmt}</div>
             <div style="font-size:15px;color:#64748B;margin-bottom:18px">de un total de <strong>${precioFmt}</strong> · saldo al completar la mudanza</div>
-            <a href="${linkPago}" style="display:inline-block;background:#009EE3;color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:18px">💳 Pagar anticipo ${anticipoFmt}</a>
-            <p style="color:#64748B;font-size:14px;margin-top:12px;margin-bottom:0">🔒 Pago 100% seguro · MudateYa protege tu dinero hasta confirmar el servicio</p>
+            <a href="${linkPago}" style="display:inline-block;background:#009EE3;color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:18px">💳 Pagar anticipo ${anticipoFmt} con Mercado Pago</a>
+            <p style="color:#64748B;font-size:14px;margin-top:12px;margin-bottom:0">🔒 Pago 100% seguro (Mercado Pago o transferencia bancaria) · MudateYa protege tu dinero hasta confirmar el servicio</p>
           </div>
-          <p style="color:#64748B;font-size:16px;margin-bottom:8px">También podés acceder desde <a href="${siteUrl}/mi-mudanza" style="color:#1A6FFF;font-weight:600">tu panel de mudanzas</a>.</p>
+          <p style="color:#64748B;font-size:16px;margin-bottom:8px">¿Preferís pagar por transferencia? Entrá a <a href="${siteUrl}/mi-mudanza" style="color:#1A6FFF;font-weight:600">tu panel de mudanzas</a> y elegí esa opción — es igual de segura, con CVU único por pago.</p>
           <p style="color:#94A3B8;font-size:15px">Adjuntamos el comprobante en PDF para tus registros.</p>
         </div>
         <!-- Footer -->

@@ -1430,7 +1430,7 @@ function copiarLink() {
 
 function compartirWA() {
   if (!_aliado) return;
-  var msg = '👋 Hola! Si estás pensando en mudarte o necesitás un flete, probá MudateYa — es una plataforma con mudanceros verificados y pago protegido por Mercado Pago. Pedí tu cotización gratis 👉 https://mudateya.ar/r/' + _aliado.slug;
+  var msg = '👋 Hola! Si estás pensando en mudarte o necesitás un flete, probá MudateYa — es una plataforma con mudanceros verificados y pago protegido (Mercado Pago o transferencia). Pedí tu cotización gratis 👉 https://mudateya.ar/r/' + _aliado.slug;
   var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
   window.open(url, '_blank');
 }
