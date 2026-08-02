@@ -5053,6 +5053,12 @@ async function inmoAprobarSolicitud(id) {
       } catch(e) { console.warn('No pude pre-cargar todo:', e); }
     }, 100);
 
+    // Auto-branding: si NO subió su propio logo, lo buscamos por su sitio web
+    // (Clearbit / favicon) y lo sugerimos; si SÍ subió uno, le sacamos el color
+    // dominante a ESE logo. Es solo una sugerencia — Galo la ve prellenada y
+    // puede editarla/reemplazarla antes de guardar, como hoy.
+    inmoAutoBranding(s);
+
     // Marcar la solicitud como "en proceso" para sacarla de pendientes
     // (Galo todavía puede cancelar antes de guardar, pero limpiamos la cola
     // visual para no procesar dos veces lo mismo).
@@ -5065,6 +5071,57 @@ async function inmoAprobarSolicitud(id) {
     alert('Datos cargados en el form. Completá slug, color y comisión, y dale "Guardar inmobiliaria".');
   } catch(e) {
     alert('Error: ' + e.message);
+  }
+}
+
+// Auto-branding: a partir de los datos de la solicitud, busca logo+color
+// (ver api/inmobiliarias.js?action=auto-branding) y prellena el form Nueva.
+// Si la inmobiliaria ya subió su propio logo (s.logoUrl), no buscamos otro:
+// solo le sacamos el color dominante a ESE logo. Si no subió ninguno, lo
+// buscamos por su sitio web. Fire-and-forget: nunca bloquea la aprobación —
+// si no encuentra nada o falla, el form queda como estaba (Galo carga a mano).
+async function inmoAutoBranding(s) {
+  var loadingBox = document.getElementById('inmoLogoBoxLoading');
+  var emptyBox   = document.getElementById('inmoLogoBoxEmpty');
+  var textoOriginalLoading = loadingBox ? loadingBox.innerHTML : '';
+  try {
+    var params = 'token=' + ADMTK();
+    if (s.logoUrl) params += '&logoUrl=' + encodeURIComponent(s.logoUrl);
+    else if (s.sitio) params += '&sitio=' + encodeURIComponent(s.sitio);
+    else return; // no hay logo propio ni sitio: nada para buscar
+
+    // Feedback visual solo si todavía no hay logo cargado en pantalla.
+    if (!s.logoUrl && loadingBox && emptyBox) {
+      emptyBox.style.display = 'none';
+      loadingBox.innerHTML = '<span class="spinner" style="vertical-align:middle"></span> Buscando logo…';
+      loadingBox.style.display = 'block';
+    }
+
+    var r = await fetch('/api/inmobiliarias?action=auto-branding&' + params);
+    var d = await r.json();
+    if (!d || !d.ok) return;
+
+    if (d.logo) {
+      var lg = document.getElementById('inmoLogo');
+      if (lg) lg.value = d.logo;
+      if (typeof _inmoActualizarBoxLogo === 'function') _inmoActualizarBoxLogo(d.logo);
+    } else if (!s.logoUrl && typeof _inmoActualizarBoxLogo === 'function') {
+      _inmoActualizarBoxLogo(''); // no encontramos nada: volver al estado vacío
+    }
+
+    if (d.colorPrimario) {
+      var c  = document.getElementById('inmoColor');
+      var ct = document.getElementById('inmoColorTxt');
+      if (c)  c.value  = d.colorPrimario;
+      if (ct) ct.value = d.colorPrimario;
+    }
+
+    if (typeof inmoPreviewActualizar === 'function') inmoPreviewActualizar();
+  } catch(e) {
+    console.warn('[auto-branding]', e.message);
+    if (!s.logoUrl && typeof _inmoActualizarBoxLogo === 'function') _inmoActualizarBoxLogo('');
+  } finally {
+    if (loadingBox) loadingBox.innerHTML = textoOriginalLoading; // restaurar "Subiendo…" para la próxima carga manual
   }
 }
 

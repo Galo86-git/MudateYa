@@ -17,6 +17,7 @@
 // ACTIONS:
 //   GET ?action=listar&token=ADMIN_TOKEN          → lista todas (admin)
 //   GET ?action=obtener&slug=X                    → trae una (público, sin token)
+//   GET ?action=auto-branding&sitio=X&token=..    → sugiere logo+color a partir del sitio (admin)
 //   POST ?action=crear&token=ADMIN_TOKEN          → alta nueva
 //   POST ?action=actualizar&token=ADMIN_TOKEN     → editar existente
 //   POST ?action=desactivar&token=ADMIN_TOKEN     → soft delete
@@ -55,6 +56,117 @@ function slugValido(slug) {
   if (typeof slug !== 'string') return false;
   if (slug.length < 2 || slug.length > 50) return false;
   return /^[a-z0-9-]+$/.test(slug);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// AUTO-BRANDING: dado el "sitio" que la inmobiliaria puso al pedir el alta,
+// buscar su logo en la web y sugerir un color acorde. Es 100% best-effort: si
+// algo falla (dominio raro, servicio caído, imagen no reconocida) devuelve
+// null y el admin sigue pudiendo cargarlo a mano como hoy — nunca rompe el alta.
+// ────────────────────────────────────────────────────────────────────────────
+
+// Extrae un dominio limpio de lo que haya puesto el solicitante en "sitio"
+// (puede venir como URL completa, con o sin protocolo/www, o un @usuario de
+// Instagram). Devuelve null si no parece un dominio propio usable.
+function extraerDominio(sitio) {
+  if (typeof sitio !== 'string' || !sitio.trim()) return null;
+  var s = sitio.trim().toLowerCase();
+  s = s.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  s = s.split('/')[0].split('?')[0].split('#')[0].split(':')[0];
+  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(s)) return null;
+  // Redes sociales: su favicon es el ícono de la red, no el logo de la
+  // inmobiliaria — no vale la pena (ni corresponde) usarlo como su branding.
+  var REDES = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'x.com', 'tiktok.com', 'wa.me', 'whatsapp.com'];
+  if (REDES.indexOf(s) !== -1) return null;
+  return s;
+}
+
+// Descarga bytes con timeout corto; devuelve null si falla o no es imagen.
+async function descargarImagen(url, ms) {
+  try {
+    var ctrl = new AbortController();
+    var t = setTimeout(function () { ctrl.abort(); }, ms || 5000);
+    var r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    var ct = r.headers.get('content-type') || '';
+    if (ct.indexOf('image') === -1) return null;
+    var buf = Buffer.from(await r.arrayBuffer());
+    if (!buf.length) return null;
+    return { buffer: buf, contentType: ct.split(';')[0] };
+  } catch (e) { return null; }
+}
+
+// Cadena de proveedores gratuitos de logo-por-dominio, del de mejor calidad
+// al más confiable. El primero que devuelva una imagen real, gana.
+async function buscarLogoPorDominio(dominio) {
+  var candidatos = [
+    'https://logo.clearbit.com/' + dominio + '?size=256',
+    'https://www.google.com/s2/favicons?domain=' + dominio + '&sz=256',
+  ];
+  for (var i = 0; i < candidatos.length; i++) {
+    var img = await descargarImagen(candidatos[i]);
+    if (img) return { img: img, fuente: i === 0 ? 'clearbit' : 'google-favicon' };
+  }
+  return null;
+}
+
+// Sube el logo re-descargado a Vercel Blob (mismo store/token que usa el resto
+// del admin para logos, ver api/upload-foto.js) para no depender de que el
+// servicio de terceros siga arriba/accesible a futuro.
+async function rehostearLogo(img, slugOrDominio) {
+  var blobLib = require('@vercel/blob');
+  var ext = (img.contentType.split('/')[1] || 'png').replace('jpeg', 'jpg').split('+')[0];
+  var nombre = 'inmobiliarias/auto-' + String(slugOrDominio).replace(/[^a-z0-9-]/g, '-').slice(0, 40) + '-' + Date.now() + '.' + ext;
+  var token = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+  var blob = await blobLib.put(nombre, img.buffer, { access: 'public', contentType: img.contentType, token: token });
+  return blob.url;
+}
+
+// Color dominante "de marca": promedia los píxeles más saturados (no blanco,
+// no negro, no transparente, no gris) del logo, ponderando por saturación —
+// así un logo con fondo blanco y un isotipo de color no queda promediado a
+// gris. Si no encuentra píxeles vívidos (logo en blanco y negro), promedia lo
+// no-blanco como segundo intento. Cualquier error → null (no rompe el alta).
+async function extraerColorDominante(buffer) {
+  try {
+    var mod = require('jimp');
+    var JimpClase = mod.Jimp || mod.default || mod;
+    var img = await JimpClase.read(buffer);
+    try { img.resize({ width: 40, height: 40 }); } catch (eResize) { /* seguimos con el tamaño original */ }
+
+    var data = img.bitmap.data, w = img.bitmap.width, h = img.bitmap.height;
+    var sumR = 0, sumG = 0, sumB = 0, sumPeso = 0;
+    var sumR2 = 0, sumG2 = 0, sumB2 = 0, n2 = 0; // segundo intento: solo descarta blanco/negro/transparente
+
+    for (var i = 0; i < w * h * 4; i += 4) {
+      var r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      if (a < 200) continue;
+      var max = Math.max(r, g, b), min = Math.min(r, g, b);
+      if (max > 245 && min > 245) continue; // casi blanco
+      if (max < 25) continue;               // casi negro
+      sumR2 += r; sumG2 += g; sumB2 += b; n2++;
+      var sat = max > 0 ? (max - min) / max : 0;
+      if (sat < 0.15) continue;             // gris/neutro: no aporta "color de marca"
+      sumR += r * sat; sumG += g * sat; sumB += b * sat; sumPeso += sat;
+    }
+
+    var rr, gg, bb;
+    if (sumPeso > 0) { rr = sumR / sumPeso; gg = sumG / sumPeso; bb = sumB / sumPeso; }
+    else if (n2 > 0) { rr = sumR2 / n2; gg = sumG2 / n2; bb = sumB2 / n2; }
+    else return null; // logo transparente/blanco puro: no hay nada para extraer
+
+    // Legibilidad: si quedó muy claro para usarse como color de link/acento
+    // sobre fondo blanco, lo oscurecemos un poco.
+    var luminancia = 0.299 * rr + 0.587 * gg + 0.114 * bb;
+    if (luminancia > 200) { rr *= 0.6; gg *= 0.6; bb *= 0.6; }
+
+    var hex = function (n) { return Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0'); };
+    return '#' + hex(rr) + hex(gg) + hex(bb);
+  } catch (e) {
+    console.warn('[auto-branding] extraerColorDominante:', e.message);
+    return null;
+  }
 }
 
 // ── Sanitizar payload de inmobiliaria ──
@@ -342,6 +454,44 @@ module.exports = async function handler(req, res) {
       idxRem = idxRem.filter(function(x){ return x !== idP; });
       await setJSON('solicitudes-inmo:pendientes', idxRem);
       return res.status(200).json({ ok: true });
+    }
+
+    // ── ADMIN: auto-branding — buscar logo + color, o solo color si ya hay logo ──
+    // Best-effort: SIEMPRE devuelve 200. logo/colorPrimario pueden venir null
+    // si no se pudo detectar nada; el admin sigue pudiendo cargarlo a mano.
+    // No persiste nada — el admin ve la sugerencia y confirma/edita antes de
+    // guardar (mismo flujo de "crear"/"actualizar" de siempre).
+    //
+    // Dos modos:
+    //   ?logoUrl=X          → la inmobiliaria ya subió su propio logo al pedir
+    //                         el alta: no buscamos otro, solo le sacamos el
+    //                         color a ESE logo.
+    //   ?sitio=dominio.com  → no hay logo propio: lo buscamos por dominio
+    //                         (Clearbit / favicon de Google), lo re-hosteamos
+    //                         en nuestro Blob, y le sacamos el color.
+    if (action === 'auto-branding' && req.method === 'GET') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+
+      var logoUrlDado = (req.query.logoUrl || '').trim();
+      if (logoUrlDado) {
+        var imgDado = await descargarImagen(logoUrlDado, 6000);
+        if (!imgDado) return res.status(200).json({ ok: true, logo: null, colorPrimario: null, motivo: 'no se pudo leer el logo provisto' });
+        var colorDeDado = await extraerColorDominante(imgDado.buffer);
+        return res.status(200).json({ ok: true, logo: null, colorPrimario: colorDeDado, fuente: 'logo-provisto' });
+      }
+
+      var dominio = extraerDominio(req.query.sitio || '');
+      if (!dominio) return res.status(200).json({ ok: true, logo: null, colorPrimario: null, motivo: 'sin dominio propio detectable' });
+
+      var encontrado = await buscarLogoPorDominio(dominio);
+      if (!encontrado) return res.status(200).json({ ok: true, logo: null, colorPrimario: null, motivo: 'no se encontró logo para ' + dominio });
+
+      var logoUrl = null, colorPrimario = null;
+      try { logoUrl = await rehostearLogo(encontrado.img, req.query.slug || dominio); }
+      catch (e) { console.warn('[auto-branding] rehostear:', e.message); }
+      colorPrimario = await extraerColorDominante(encontrado.img.buffer);
+
+      return res.status(200).json({ ok: true, logo: logoUrl, colorPrimario: colorPrimario, fuente: encontrado.fuente, dominio: dominio });
     }
 
     // ── ADMIN: crear nueva ──
