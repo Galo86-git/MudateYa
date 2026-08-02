@@ -224,7 +224,10 @@ async function registrarInmobiliaria(input) {
     if (!r.ok) {
       return JSON.stringify({ ok: false, error: data.error || 'No se pudo enviar la solicitud. Revisá los datos.' });
     }
-    return JSON.stringify({ ok: true, nota: 'Solicitud recibida. El equipo la revisa y lo contacta en 24h hábiles para coordinar la activación.' });
+    if (data.existente) {
+      return JSON.stringify({ ok: true, existente: true, nota: data.mensaje || 'Ese email ya está registrado.' });
+    }
+    return JSON.stringify({ ok: true, existente: false, nota: 'Solicitud recibida. El equipo la revisa y lo contacta en 24h hábiles para coordinar la activación.' });
   } catch (e) {
     return JSON.stringify({ ok: false, error: 'No pudimos enviar la solicitud ahora. Probá de nuevo en un rato.' });
   }

@@ -329,6 +329,32 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Email inválido' });
       }
 
+      // ── VERIFICAR DUPLICADO: no crear una solicitud nueva si ese email ya
+      // tiene una pendiente, o si ya es una inmobiliaria activa. Antes esto
+      // no se chequeaba nunca (a diferencia de asesores.js y
+      // registrar-mudancero.js, que sí avisan) — cada envío creaba una
+      // solicitud nueva sin importar cuántas veces ya se había mandado. ──
+      var yaPendienteId = await getJSON('solicitud-inmo:email:' + email);
+      if (yaPendienteId) {
+        var solicitudPrevia = await getJSON('solicitud-inmo:' + yaPendienteId);
+        if (solicitudPrevia && solicitudPrevia.estado === 'pendiente') {
+          return res.status(200).json({
+            ok: true, existente: true,
+            mensaje: 'Ya tenés una solicitud en revisión con ese email. El equipo la revisa y te contacta en 24h hábiles.'
+          });
+        }
+      }
+      var listaActivas = (await getJSON('inmobiliarias:lista')) || [];
+      for (var iAct = 0; iAct < listaActivas.length; iAct++) {
+        var inmoAct = await getJSON('inmobiliaria:' + listaActivas[iAct]);
+        if (inmoAct && inmoAct.activa !== false && String(inmoAct.contactoEmail || '').toLowerCase() === email) {
+          return res.status(200).json({
+            ok: true, existente: true, yaActiva: true,
+            mensaje: 'Ese email ya es una inmobiliaria activa en MudateYa. Si necesitás algo, escribinos a hola@mudateya.ar.'
+          });
+        }
+      }
+
       // Persistir solicitud en Redis con clave timestamped para que se ordene
       // naturalmente y sea fácil listar en el admin.
       var ts = Date.now();
@@ -349,6 +375,7 @@ module.exports = async function handler(req, res) {
         estado: 'pendiente'  // 'pendiente' | 'aprobada' | 'rechazada'
       };
       await setJSON('solicitud-inmo:' + idSolicitud, solicitud);
+      await setJSON('solicitud-inmo:email:' + email, idSolicitud);
 
       // Agregar al índice de solicitudes pendientes (lista de IDs)
       var idxPendientes = (await getJSON('solicitudes-inmo:pendientes')) || [];
