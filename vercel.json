@@ -298,6 +298,10 @@
       "destination": "/membresia.html"
     },
     {
+      "source": "/expo",
+      "destination": "/expo.html"
+    },
+    {
       "source": "/blog",
       "destination": "/blog.html"
     },

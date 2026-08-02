@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>MudateYa en Expo Real Estate 2026</title>
+<meta name="description" content="Sumá MudateYa a tu servicio. Inmobiliarias y asesores: registrate en segundos."/>
+<meta name="robots" content="noindex,nofollow"/>
+<meta name="theme-color" content="#001A40"/>
+<link rel="icon" href="/favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{--navy:#003580;--navy-dark:#001A40;--green:#22C36A;--gold:#C6A464;--ink:#0b1b33}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;color:#fff;background:var(--navy-dark);line-height:1.5;overflow-x:hidden}
+
+.stage{position:relative;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;text-align:center;background:radial-gradient(120% 100% at 50% 0%,#003a8f 0%,#001A40 55%,#000c22 100%);overflow:hidden}
+
+/* ── Fondo animado: líneas tipo red/skyline, sutil, no distrae de los botones ── */
+.lines{position:absolute;inset:0;width:100%;height:100%;opacity:.85;pointer-events:none}
+.lines path{fill:none;stroke-width:2;stroke-dasharray:7 11;animation:fluir 14s linear infinite;filter:drop-shadow(0 0 3px currentColor)}
+.lines path:nth-child(1){stroke:var(--green);animation-duration:16s}
+.lines path:nth-child(2){stroke:var(--gold);animation-duration:20s;animation-direction:reverse}
+.lines path:nth-child(3){stroke:#5b9dff;animation-duration:24s}
+.lines path:nth-child(4){stroke:var(--green);opacity:.75;animation-duration:18s;animation-direction:reverse}
+.lines circle{fill:var(--green);animation:pulso 3s ease-in-out infinite;filter:drop-shadow(0 0 5px var(--green))}
+.lines circle:nth-of-type(2n){fill:var(--gold);animation-delay:.8s;filter:drop-shadow(0 0 5px var(--gold))}
+.lines circle:nth-of-type(3n){fill:#5b9dff;animation-delay:1.6s;filter:drop-shadow(0 0 5px #5b9dff)}
+@keyframes fluir{to{stroke-dashoffset:-320}}
+@keyframes pulso{0%,100%{opacity:.35;r:3}50%{opacity:1;r:5.5}}
+@media (prefers-reduced-motion: reduce){.lines path,.lines circle{animation:none}}
+
+.content{position:relative;z-index:1;max-width:460px;width:100%}
+.brand{font-family:'Bebas Neue',Inter,sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:22px;opacity:.9}
+.brand span{color:var(--green)}
+
+.badge{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(4px);color:#e8eeff;font-size:12.5px;font-weight:700;letter-spacing:.4px;padding:9px 18px;border-radius:999px;margin-bottom:22px;line-height:1.5}
+.badge b{color:var(--gold)}
+
+h1{font-size:clamp(26px,7vw,34px);line-height:1.18;margin:0 0 12px;font-weight:800;letter-spacing:-.3px}
+h1 span{color:var(--green)}
+.sub{font-size:15.5px;color:#c3d3f5;margin:0 0 30px;padding:0 6px}
+
+.opciones{display:flex;flex-direction:column;gap:14px}
+.opcion{display:flex;align-items:center;gap:16px;background:#fff;color:var(--ink);text-decoration:none;border-radius:18px;padding:18px 20px;text-align:left;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .15s, box-shadow .15s;border:2px solid transparent}
+.opcion:active{transform:scale(.98)}
+.opcion .ico{flex:0 0 auto;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.opcion.inmo .ico{background:#E5ECF6;color:var(--navy)}
+.opcion.asesor .ico{background:#E3F9EC;color:#0F8A44}
+.opcion .txt{flex:1;min-width:0}
+.opcion .txt strong{display:block;font-size:17.5px;font-weight:800;margin-bottom:2px}
+.opcion .txt small{display:block;font-size:13px;color:#5b6b82;font-weight:500}
+.opcion .arrow{flex:0 0 auto;font-size:20px;color:#94A3B8}
+.opcion.inmo:hover{border-color:var(--navy)}
+.opcion.asesor:hover{border-color:var(--green)}
+
+.foot{position:relative;z-index:1;margin-top:34px;font-size:12px;color:#8ba3d6}
+.foot b{color:#cfe0ff}
+</style>
+</head>
+<body>
+<div class="stage">
+  <svg class="lines" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path d="M-50,620 C150,560 250,700 450,600 S700,500 850,560"/>
+    <path d="M-50,120 C180,220 300,60 520,160 S760,260 860,140"/>
+    <path d="M-50,420 L200,380 L340,460 L520,360 L700,430 L860,380"/>
+    <path d="M-50,760 C220,700 380,780 600,700 S820,650 860,700"/>
+    <circle cx="200" cy="380" r="3"/>
+    <circle cx="450" cy="600" r="3"/>
+    <circle cx="520" cy="160" r="3"/>
+    <circle cx="700" cy="430" r="3"/>
+    <circle cx="600" cy="700" r="3"/>
+    <circle cx="340" cy="460" r="3"/>
+  </svg>
+
+  <div class="content">
+    <div class="brand">MUDATE<span>YA</span></div>
+
+    <div class="badge">📍 EXPO REAL ESTATE <b>2026</b> · HILTON PUERTO MADERO · 12&nbsp;Y&nbsp;13&nbsp;DE&nbsp;AGOSTO</div>
+
+    <h1>Sumá presupuestos de mudanza <span>gratis</span> para tus clientes</h1>
+    <p class="sub">Elegí tu perfil y registrate en menos de un minuto.</p>
+
+    <div class="opciones">
+      <a class="opcion inmo" href="/inmobiliarias-registro">
+        <span class="ico">🏢</span>
+        <span class="txt"><strong>Soy Inmobiliaria</strong><small>Sumá un plus a tu servicio de alquiler/venta</small></span>
+        <span class="arrow">→</span>
+      </a>
+      <a class="opcion asesor" href="/asesor-registro">
+        <span class="ico">🧑‍💼</span>
+        <span class="txt"><strong>Soy Asesor</strong><small>Registrate en 30 segundos</small></span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+
+    <div class="foot"><b>mudateya.ar</b> · Mudanceros y fletes verificados en toda Argentina</div>
+  </div>
+</div>
+</body>
+</html>
