@@ -56,90 +56,6 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 .field select option{background:#F5F7FA}
 .field textarea{resize:vertical;min-height:80px;line-height:1.5}
 .field-hint{font-size:10px;color:#64748B;font-family:var(--mono)}
-.chips-grid{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid #E2E8F0;background:#F5F7FA;cursor:pointer;font-size:12px;font-weight:400;color:#475569;transition:all .2s;user-select:none;}
-.chip:hover{border-color:rgba(34,195,106,.3);background:var(--emerald-subtle)}
-.chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
-.chip-icon{font-size:.9rem}
-.horario-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.horario-chip{padding:8px 6px;border-radius:8px;text-align:center;border:1px solid #E2E8F0;background:#F5F7FA;font-size:11px;font-weight:500;color:#64748B;cursor:pointer;transition:all .2s;user-select:none}
-.horario-chip:hover{border-color:rgba(34,195,106,.3);color:#475569}
-.horario-chip.sel{border-color:var(--emerald);background:var(--emerald-subtle);color:var(--emerald)}
-.precio-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#F5F7FA;border-radius:10px;border:1px solid #E2E8F0}
-.precio-label{font-size:13px;color:#475569;flex:1}
-.precio-input-wrap{position:relative;display:flex;align-items:center}
-.precio-prefix{position:absolute;left:12px;font-size:13px;color:#64748B;font-family:var(--mono)}
-.precio-input{width:140px;padding:9px 12px 9px 26px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:var(--mono);color:#0F1923;background:#fff;outline:none;transition:border-color .2s}
-.precio-input:focus{border-color:var(--emerald)}
-
-/* ══ CARDS DE SERVICIO (Esencial / Integral / Llave en mano / Flete) ══ */
-.svc-card{
-  border:2px solid #E2E8F0;border-radius:14px;
-  margin-bottom:12px;overflow:hidden;
-  transition:all .2s;background:#fff;
-}
-.svc-card.active{border-color:var(--emerald,#16A34A);box-shadow:0 4px 14px rgba(22,163,74,.1)}
-.svc-card.active.is-llave{border-color:#F59E0B;box-shadow:0 4px 14px rgba(245,158,11,.18)}
-.svc-card-head{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 16px;cursor:pointer;
-}
-.svc-card-icon{
-  width:40px;height:40px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;flex-shrink:0;
-}
-.svc-card-info{flex:1;min-width:0}
-.svc-card-title{font-weight:700;color:#0F1923;font-size:14px;line-height:1.3}
-.svc-card-desc{font-size:12px;color:#475569;margin-top:3px;line-height:1.4}
-.svc-card-check{
-  width:22px;height:22px;border-radius:50%;border:2px solid #E2E8F0;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  transition:all .2s;
-}
-.svc-card.active .svc-card-check{
-  background:var(--emerald,#16A34A);border-color:var(--emerald,#16A34A);
-}
-.svc-card.active.is-llave .svc-card-check{background:#F59E0B;border-color:#F59E0B}
-.svc-card.active .svc-card-check::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
-.svc-card-precios{
-  display:none;
-  padding:0 16px 16px;
-  display:flex;flex-direction:column;gap:8px;
-  border-top:1px solid #F1F5F9;
-}
-.svc-card:not(.active) .svc-card-precios{display:none}
-.svc-card.precios-error{border-color:#DC2626;animation:shake .3s}
-@keyframes shake{
-  0%,100%{transform:translateX(0)}
-  25%{transform:translateX(-4px)}
-  75%{transform:translateX(4px)}
-}
-
-/* ══ Adicional: Seguro de mudanza ══ */
-.svc-extra{
-  margin-top:8px;padding:12px 14px;
-  background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;
-}
-.svc-extra-label{
-  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
-}
-.svc-extra-check{
-  width:20px;height:20px;border-radius:5px;border:2px solid #CBD5E1;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  transition:all .2s;margin-top:1px;
-}
-.svc-extra.active .svc-extra-check{background:#1A6FFF;border-color:#1A6FFF}
-.svc-extra.active .svc-extra-check::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
-.svc-extra-title{font-size:13px;font-weight:600;color:#0F1923}
-.svc-extra-desc{font-size:12px;color:#64748B;margin-top:2px;line-height:1.4}
-.upload-area{border:2px dashed #CBD5E1;border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:#F5F7FA;}
-.upload-area:hover{border-color:var(--emerald);background:var(--emerald-subtle)}
-.upload-area.has-file{border-color:var(--emerald);background:rgba(34,195,106,.06)}
-.upload-icon{font-size:1.8rem;margin-bottom:6px}
-.upload-text{font-size:13px;color:#475569;margin-bottom:3px}
-.upload-sub{font-size:11px;color:#64748B;font-family:var(--mono)}
-.upload-preview{max-width:100px;max-height:100px;border-radius:8px;margin:0 auto 6px;display:none;object-fit:cover}
 .form-footer{padding:1.5rem 2rem;background:#EEF4FF;border-top:2px solid #1A6FFF;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .footer-note{font-size:11px;color:#64748B;font-family:var(--mono)}
 .btn-submit{background:#1A6FFF;color:#fff;border:none;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:8px;transition:all .2s;letter-spacing:.2px;box-shadow:0 4px 16px rgba(26,111,255,.35);}
@@ -160,34 +76,14 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 .field.has-error input,.field.has-error select,.field.has-error textarea{border-color:#ff6b6b}
 .field.has-error .field-error{display:block}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
-.spinner-dark{display:inline-block;border-radius:50%;border:2px solid #CBD5E1;border-top-color:var(--emerald);animation:spin .7s linear infinite}
-.cuil-ok{background:var(--emerald-subtle);border:1px solid rgba(34,195,106,.3);color:var(--emerald)}
-.cuil-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);color:#F59E0B}
-.cuil-error{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:#ff6b6b}
 @keyframes spin{to{transform:rotate(360deg)}}
-.dni-result{display:none;background:#F5F7FA;border:1px solid rgba(34,195,106,.25);border-radius:12px;padding:1rem 1.2rem;margin-top:1rem;animation:fadeUp .3s ease}
-.dni-result.show{display:block}
-.dni-result-title{font-size:10px;font-weight:700;color:var(--emerald);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.dni-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:2px solid #22C36A;font-size:12px}
-.dni-row:last-child{border-bottom:none}
-.dni-label{color:#64748B;font-family:var(--mono)}
-.dni-val{color:#0F1923;font-weight:500}
-.dni-val.ok{color:var(--emerald)}
-.dni-val.warn{color:#F59E0B}
-.dni-loading{display:none;text-align:center;padding:.8rem;background:#F5F7FA;border:1px solid #E2E8F0;border-radius:10px;margin-top:1rem;font-size:12px;color:#64748B;font-family:var(--mono)}
-.dni-loading.show{display:flex;align-items:center;justify-content:center;gap:8px}
-.dni-error{display:none;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:10px;padding:.7rem 1rem;margin-top:1rem;font-size:12px;color:#ff6b6b;font-family:var(--mono)}
-.dni-error.show{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:640px){
   nav{padding:0 1.2rem}
   .hero{padding:3rem 1.2rem 2rem}
   .form-wrap{padding:0 1.2rem 4rem}
   .field-grid.cols2,.field-grid.cols3{grid-template-columns:1fr}
-  .horario-grid{grid-template-columns:repeat(2,1fr)}
   .form-footer{flex-direction:column;align-items:stretch}
   .btn-submit{justify-content:center}
-  .foto-grid-2{grid-template-columns:1fr!important}
 }
 </style>
 <link rel="canonical" href="https://mudateya.ar/mudanceros"/>

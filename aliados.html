@@ -136,7 +136,6 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   }
   @media(min-width:901px){
     /* En desktop ocultamos la "Cómo funciona" dentro del flow normal — va como tab */
-    body.register-mode > .wrap > #state-register > .comof{display:none}
   }
 
   /* ── Cómo funciona dentro del panel de tab (reuso estilos existentes) ── */
@@ -178,11 +177,6 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   .ben-txt span{color:var(--text2)}
 
   /* Cómo funciona */
-  .comof{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:18px 18px 8px;margin-bottom:20px}
-  .comof-head{display:flex;gap:10px;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
-  .comof-ico{font-size:22px}
-  .comof-title{font-size:15px;font-weight:700;color:var(--navy)}
-  .comof-sub{font-size:12px;color:var(--text2);margin-top:2px}
   .paso{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed #E2E8F0}
   .paso:last-child{border-bottom:none}
   .paso-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -248,15 +242,6 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   .stat.green .stat-val{color:var(--green)}
   .stat.yellow .stat-val{color:#D97706}
 
-  .progress{margin-bottom:14px}
-  .progress-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
-  .progress-title{font-size:12px;font-weight:700;color:var(--navy)}
-  .progress-val{font-family:var(--mono);font-size:11px;color:var(--text2)}
-  .progress-bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden}
-  .progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:4px;transition:width .4s}
-  .progress-msg{font-size:11px;color:var(--text3);margin-top:5px}
-  .progress-msg.ok{color:var(--green);font-weight:600}
-
   .link-box{background:var(--bg);border:1.5px dashed var(--navy);border-radius:var(--r);padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
   .link-txt{flex:1;font-family:var(--mono);font-size:13px;color:var(--navy);font-weight:600;word-break:break-all;overflow:hidden}
   .btn-copy{padding:7px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
@@ -264,22 +249,6 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
   .actions-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
   .actions-row .btn{padding:12px}
-
-  .op-list{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-  .op-item{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .op-item:last-child{border-bottom:none}
-  .op-left{flex:1;min-width:0}
-  .op-fecha{font-size:11px;color:var(--text3);font-family:var(--mono)}
-  .op-tipo{display:inline-block;font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600;margin-right:6px}
-  .op-tipo.mudanza{background:#EEF4FF;color:var(--blue)}
-  .op-tipo.flete{background:#FEF3C7;color:#D97706}
-  .op-tipo.bono{background:#F0FDF4;color:#15803D}
-  .op-monto{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--navy);text-align:right;flex-shrink:0}
-  .op-estado{font-size:10px;padding:2px 7px;border-radius:3px;font-family:var(--mono);font-weight:600;white-space:nowrap}
-  .op-estado.en_curso{background:#FEF9C3;color:#854D0E}
-  .op-estado.acreditada{background:#D1FAE5;color:#047857}
-  .op-estado.pagada{background:#DBEAFE;color:#1E40AF}
-  .op-estado.cancelada{background:#FEE2E2;color:#B91C1C}
 
   .empty{text-align:center;padding:32px 16px;color:var(--text3);font-size:13px}
   .empty-ico{font-size:2rem;margin-bottom:8px}
