@@ -30,6 +30,7 @@
   --border:#E2E8F0;--border2:#CBD5E1;
   --blue:#1A6FFF;--blue-dark:#0F52CC;--blue-glow:rgba(26,111,255,.15);--blue-light:#EEF4FF;
   --green:#22C36A;--green-light:rgba(34,195,106,.1);--green-dark:#17A356;
+  --emerald:#22C36A;--sky:#0EA5E9;
   --red:#EF4444;--red-light:rgba(239,68,68,.08);
   --amber:#F59E0B;--amber-light:rgba(245,158,11,.08);
   --text:#0F1923;--text2:#475569;--text3:#64748B;
@@ -559,32 +560,6 @@ body.pd-panel-open .pd-list-col{flex:1.3}
   .pd-detail-close{
     width:38px;height:38px;font-size:18px;border-radius:10px
   }
-
-  /* ───── Tabs mobile friendly (Disponibles / En espera / etc.) ───── */
-  .tabs-pedidos{
-    display:flex;gap:6px;overflow-x:auto;
-    -webkit-overflow-scrolling:touch;scrollbar-width:none;
-    padding:8px 12px;margin:0 -12px 12px;
-    background:#FAFBFC;border-bottom:1px solid #E2E8F0
-  }
-  .tabs-pedidos::-webkit-scrollbar{display:none}
-  .tab-pedido{
-    flex-shrink:0;padding:10px 14px;border-radius:20px;
-    font-size:12.5px;font-weight:600;color:var(--text2);
-    background:#fff;border:1px solid #E2E8F0;cursor:pointer;
-    white-space:nowrap;transition:all .15s
-  }
-  .tab-pedido:active{transform:scale(.96)}
-  .tab-pedido.active{
-    background:var(--blue);color:#fff;border-color:var(--blue);
-    box-shadow:0 2px 8px rgba(26,111,255,.3)
-  }
-  .tab-pedido .tab-count{
-    display:inline-block;background:rgba(0,0,0,.08);
-    color:inherit;font-size:10.5px;padding:1px 6px;border-radius:8px;
-    margin-left:5px;font-weight:700
-  }
-  .tab-pedido.active .tab-count{background:rgba(255,255,255,.25)}
 }
 
 /* ───── Tabs Mis Pedidos: 4 columnas iguales sin scroll (GLOBAL — funciona en mobile y desktop) ───── */
@@ -649,14 +624,56 @@ body.pd-panel-open .pd-list-col{flex:1.3}
   background:var(--tab-color, var(--blue));
   color:#fff;
 }
-/* Mobile: ajustes finos */
-@media (max-width:640px){
-  .tabs-pedidos-label{font-size:11.5px}
-}
-/* Pantallas muy chicas (≤360px) — labels más chicos para que entren */
-@media (max-width:360px){
-  .tabs-pedidos-label{font-size:10.5px}
-  .tabs-pedidos-btn{padding:9px 2px 11px}
+/* ───── Mobile (≤768px): chips horizontales con scroll — cada tab mide lo que
+   necesita su texto, así ninguna etiqueta se corta. Un solo color de acento
+   (el semántico de cada tab) para el estado activo, como en apps tipo
+   MercadoLibre/Uber. ───── */
+@media (max-width:768px){
+  .tabs-pedidos-row{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    border-bottom:none;
+    margin:0 -.9rem 14px;
+    padding:2px .9rem 6px;
+  }
+  .tabs-pedidos-row::-webkit-scrollbar{display:none}
+  .tabs-pedidos-btn{
+    flex:0 0 auto;
+    flex-direction:row;
+    align-items:center;
+    gap:6px;
+    padding:9px 15px;
+    border-radius:999px;
+    border:1.5px solid var(--border);
+    background:#fff;
+    color:var(--text2);
+    border-bottom:none;
+  }
+  .tabs-pedidos-btn.active{
+    background:var(--tab-color, var(--blue));
+    border-color:var(--tab-color, var(--blue));
+    color:#fff;
+    box-shadow:0 3px 10px -3px rgba(15,23,42,.35);
+  }
+  .tabs-pedidos-label{
+    font-size:13px;
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+    max-width:none;
+  }
+  .tabs-pedidos-count{
+    font-size:11px;
+    min-width:20px;
+    padding:1px 7px;
+  }
+  .tabs-pedidos-btn.active .tabs-pedidos-count{
+    background:rgba(255,255,255,.28);
+    color:#fff;
+  }
 }
 
 @media (max-width:900px) and (min-width:641px){
