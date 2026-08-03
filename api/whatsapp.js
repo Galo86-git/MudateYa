@@ -1903,7 +1903,12 @@ async function barridoWhatsApp(pedido) {
 // Genera la respuesta del agente (texto) para un mensaje entrante
 // ------------------------------------------------------------------
 async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, asesor) {
-  const key = mudancero ? `wa:conv:mud:${waId}` : asesor ? `wa:conv:ase:${waId}` : `wa:conv:${waId}`;
+  // El equipo fundador (persona) gana SIEMPRE sobre mudancero/asesor, aunque
+  // el número también esté de alta como tal (ej: cuentas de prueba) — si no,
+  // Emi le contesta con el prompt de mudancero/asesor, que explícitamente no
+  // da datos internos del negocio.
+  const persona = quienEscribe(waId);
+  const key = mudancero && !persona ? `wa:conv:mud:${waId}` : asesor && !persona ? `wa:conv:ase:${waId}` : `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
 
   // ── Fotos para un pedido YA ABIERTO (relevamiento remoto) ──────────────────
@@ -1913,7 +1918,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   // como fotos para un pedido nuevo. Cada foto se modera antes de guardarse:
   // no puede mostrar teléfono ni email (mismo criterio que las fotos de
   // mudanceros) — el contacto siempre tiene que ser a través de MudateYa.
-  if (!mudancero && !asesor && imagenes && imagenes.length) {
+  if ((!mudancero || persona) && (!asesor || persona) && imagenes && imagenes.length) {
     try {
       const pedidos = await pedidosDelCliente(waId);
       const abiertos = pedidos.filter((p) => p && (p.estado === 'buscando' || p.estado === 'cotizando'));
@@ -1999,9 +2004,13 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   const historial = conv.messages.slice(-20);
   let trabajo = historial.concat([{ role: 'user', content: contenidoActual }]);
 
-  // Elegimos system + herramientas según sea mudancero, equipo o cliente.
+  // Elegimos system + herramientas según sea mudancero, asesor, equipo o
+  // cliente. El equipo fundador (persona) gana SIEMPRE, aunque el número
+  // también esté de alta como mudancero o asesor (ej: cuentas de prueba):
+  // si no, quienEscribe() nunca se llega a chequear y Emi les contesta con
+  // el prompt de mudancero/asesor, que explícitamente no da datos internos.
   let system, toolsUsados;
-  if (mudancero) {
+  if (mudancero && !persona) {
     const nombre = (mudancero.nombre || '').split(' ')[0] || 'colega';
     system = SYSTEM_PROMPT_MUDANCERO.replace('{NOMBRE}', nombre);
     toolsUsados = mudanceroTools; // flujo completo del mudancero por WhatsApp
@@ -2022,7 +2031,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
         : 'No tenés pedidos/cotizaciones activos ahora mismo.';
       system += `\n\nTUS PEDIDOS/COTIZACIONES (snapshot de referencia rápida — no hace falta llamar a mis_pedidos si ya está acá; para pedidos NUEVOS disponibles en tu zona usá ver_pedidos):\n${resumenMud}`;
     } catch (e) { console.warn('auto-contexto mudancero:', e.message); }
-  } else if (asesor) {
+  } else if (asesor && !persona) {
     const nombre = (asesor.nombre || '').split(' ')[0] || 'colega';
     const canalNombre = CANALES_ASESOR_NOMBRE[asesor.canal] || asesor.canal;
     system = SYSTEM_PROMPT_ASESOR.split('{NOMBRE}').join(nombre).split('{CANAL}').join(canalNombre);
@@ -2039,7 +2048,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       system += `\n\nTUS PEDIDOS REFERIDOS (snapshot de referencia rápida — no hace falta llamar a ver_mis_pedidos_referidos si ya está acá):\n${resumenAse}`;
     } catch (e) { console.warn('auto-contexto asesor:', e.message); }
   } else {
-    const persona = quienEscribe(waId);
+    // persona ya está calculado arriba (gana sobre mudancero/asesor).
     // Base de conocimiento sincronizada de la web (ver _conocimiento.js) — si
     // todavía no corrió el cron o Redis falla, usa el fallback fijo de acá.
     // Nunca bloquea: si algo falla, sigue con el fallback sin cortar el flujo.
@@ -2094,9 +2103,9 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     const resultados = [];
     for (const block of resp.content || []) {
       if (block.type === 'tool_use') {
-        const r = mudancero
+        const r = mudancero && !persona
           ? await ejecutarToolMudancero(block.name, block.input, mudancero, waId, conv)
-          : asesor
+          : asesor && !persona
           ? await ejecutarToolAsesor(block.name, block.input, asesor, waId, conv)
           : await ejecutarTool(block.name, block.input, waId, conv);
         resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
