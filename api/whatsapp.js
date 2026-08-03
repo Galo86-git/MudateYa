@@ -289,7 +289,7 @@ Confianza y seguridad:
 - Opción de seguro de mudanza (ampliado en el nivel Llave en Mano).
 - Tus datos quedan protegidos: solo se comparten con el mudancero que elegís.
 
-Cobertura: CABA y Gran Buenos Aires; interior (Rosario, Córdoba, Mendoza) según disponibilidad — NO está garantizada en todo el interior, depende de si hay un mudancero cerca. Si el pedido es en una zona floja de cobertura, no prometas que seguro le conseguimos uno: aclará que depende de disponibilidad en su zona.`;
+Cobertura: CABA, Gran Buenos Aires, Córdoba y Rosario tienen cobertura real. En el RESTO del interior depende de disponibilidad — no está garantizada. Si el pedido es en una zona fuera de CABA/GBA/Córdoba/Rosario, no prometas que seguro le conseguimos un mudancero: aclará que depende de disponibilidad en su zona.`;
 
 const SYSTEM_PROMPT = `Sos Emi, la asistente de MudateYa por WhatsApp. MudateYa es un marketplace argentino de mudanzas y fletes que le consigue presupuestos al cliente contactando mudanceros/fleteros verificados de su zona.
 
@@ -434,7 +434,7 @@ const tools = [
   {
     name: 'cancelar_pedido',
     description:
-      'Cancelá el pedido activo del cliente. IMPORTANTE: confirmá con el cliente ANTES de llamar a esta herramienta. Si ya había pagado la seña, la herramienta intenta el reembolso automático y te avisa si salió bien o si el equipo lo va a procesar a mano — contale EXACTAMENTE lo que te devuelve, no asumas que siempre se reintegra al toque.',
+      'Cancelá el pedido activo del cliente. IMPORTANTE: confirmá con el cliente ANTES de llamar a esta herramienta. Si ya había pagado la seña, la herramienta intenta el reembolso automático y te avisa si salió bien o si el equipo lo va a procesar a mano — contale EXACTAMENTE lo que te devuelve, no asumas que siempre se reintegra al toque. Si la mudanza YA ESTÁ EN CURSO (el mudancero ya arrancó), la herramienta va a rechazar la cancelación automática: en ese caso es un problema/reclamo, no una cancelación normal — usá derivar_a_humano.',
     input_schema: {
       type: 'object',
       properties: {

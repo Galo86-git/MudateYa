@@ -2109,6 +2109,12 @@ module.exports = async function handler(req, res) {
       if (['cancelado', 'cancelada_por_ajuste', 'completada'].includes(m.estado)) {
         return res.status(400).json({ error: 'Este pedido ya no está activo' });
       }
+      // Con la mudanza YA iniciada no se puede cancelar sola con reembolso
+      // automático — el mudancero puede haber hecho parte o todo el trabajo.
+      // Cualquier problema en este punto necesita que lo mire una persona.
+      if (m.estado === 'en_curso') {
+        return res.status(400).json({ error: 'La mudanza ya está en curso, no se puede cancelar automáticamente. Si hay un problema, contactá al equipo.', requiereHumano: true });
+      }
 
       const teniaSeñaPagada = !!m.anticipoPagado;
       m.estado = 'cancelado';
