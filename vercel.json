@@ -66,6 +66,22 @@
       "destination": "/mya-mobility.html"
     },
     {
+      "source": "/relocation-clubes-de-futbol",
+      "destination": "/relocation-clubes-de-futbol.html"
+    },
+    {
+      "source": "/relocation-colegios",
+      "destination": "/relocation-colegios.html"
+    },
+    {
+      "source": "/relocation-cuerpo-diplomatico",
+      "destination": "/relocation-cuerpo-diplomatico.html"
+    },
+    {
+      "source": "/relocation-vaca-muerta",
+      "destination": "/relocation-vaca-muerta.html"
+    },
+    {
       "source": "/asesores",
       "destination": "/asesores.html"
     },
@@ -359,7 +375,7 @@
       ]
     },
     {
-      "source": "/(mudanceros|asesores|mya-mobility|contacto|circulo|membresia|plan-inmobiliarias|terminos|privacidad)",
+      "source": "/(mudanceros|asesores|mya-mobility|relocation-clubes-de-futbol|relocation-colegios|relocation-cuerpo-diplomatico|relocation-vaca-muerta|contacto|circulo|membresia|plan-inmobiliarias|terminos|privacidad)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -386,6 +402,11 @@
       ]
     }
   ],
+  "functions": {
+    "api/registrar-mudancero.js": {
+      "regions": ["gru1"]
+    }
+  },
   "crons": [
     {
       "path": "/api/cron-onboarding",
