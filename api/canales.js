@@ -108,10 +108,11 @@ async function setJSON(key, value) {
 // firmada emitida por /api/admin-sesion). Sin fallback hardcodeado.
 var { esAdmin } = require('./_auth');
 
-// ── Resolución del canal a partir del query ──
+// ── Resolución del canal a partir del query (o un slug explícito, para
+//    poder resolver un canal DISTINTO al pedido — ver detección más abajo) ──
 // Devuelve el objeto de config con el slug ya adentro, o null si no existe.
-function resolverCanal(req) {
-  var slug = ((req.query && req.query.canal) || '').toString().trim().toLowerCase();
+function resolverCanal(req, slugForzado) {
+  var slug = (slugForzado || (req.query && req.query.canal) || '').toString().trim().toLowerCase();
   if (!slug) return null;
   var cfg = CANALES[slug];
   if (!cfg) return null;
@@ -125,6 +126,25 @@ function resolverCanal(req) {
     pideInmobiliaria: cfg.pideInmobiliaria === true,
     linkBase: SITE_BASE + '/inmobiliaria/' + slug
   };
+}
+
+// Si alguien se registra en el canal "independientes" (el genérico) pero
+// escribió el nombre de una inmobiliaria que YA tiene canal propio (RE/MAX,
+// Mudafy, Century 21), lo redirigimos a ESE canal en vez de dejarlo en
+// independientes. Centralizado acá (server-side) para que beneficie a
+// CUALQUIER entrada — la landing web (asesor-registro.html, que además tiene
+// su propia detección del lado del cliente) y el registro por WhatsApp
+// (registrar_asesor en whatsapp.js, que llama a este mismo endpoint) — sin
+// duplicar la lógica en cada punto de entrada.
+function detectarCanalDesdeTexto(texto) {
+  var norm = (texto || '').toLowerCase()
+    .normalize('NFD')
+    .split('').filter(function (ch) { var c = ch.charCodeAt(0); return c < 0x0300 || c > 0x036f; }).join('')
+    .replace(/[^a-z0-9]+/g, '');
+  if (norm.indexOf('remax') !== -1) return 'remax';
+  if (norm.indexOf('mudafy') !== -1) return 'mudafy';
+  if (norm.indexOf('century21') !== -1 || /\bc[\s-]?21\b/i.test(texto || '')) return 'c21';
+  return null;
 }
 
 // ── Helpers de keys por canal ──
@@ -227,8 +247,19 @@ module.exports = async function handler(req, res) {
       var email    = (typeof body.email === 'string')    ? body.email.trim().slice(0, 120)   : '';
       var whatsapp = (typeof body.whatsapp === 'string') ? body.whatsapp.trim().slice(0, 40) : '';
       var zona     = (typeof body.zona === 'string')     ? body.zona.trim().slice(0, 80)     : '';
-      var origen   = (typeof body.origen === 'string')   ? body.origen.trim().slice(0, 40)   : canal.slug;
       var inmobiliaria = (typeof body.inmobiliaria === 'string') ? body.inmobiliaria.trim().slice(0, 80) : '';
+
+      // Redirección server-side: si viene a "independientes" pero escribió el
+      // nombre de una inmobiliaria con canal propio, lo mandamos a ese canal.
+      if (canal.slug === 'independientes' && inmobiliaria) {
+        var slugDetectado = detectarCanalDesdeTexto(inmobiliaria);
+        if (slugDetectado) {
+          var canalRedirigido = resolverCanal(req, slugDetectado);
+          if (canalRedirigido) canal = canalRedirigido;
+        }
+      }
+
+      var origen = (typeof body.origen === 'string') ? body.origen.trim().slice(0, 40) : canal.slug;
 
       if (!nombre)   return res.status(400).json({ error: 'Falta el nombre.' });
       if (!email || !emailValido(email)) return res.status(400).json({ error: 'Email inválido.' });
