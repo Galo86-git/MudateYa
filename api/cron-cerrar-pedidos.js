@@ -72,9 +72,18 @@ module.exports = async function handler(req, res) {
       m.estado = cots.length ? 'vencido_con_cotizaciones' : 'vencido_sin_cotizaciones';
       m.cerradoAuto = new Date().toISOString();
 
-      // Avisar al cliente (una sola vez)
-      if (m.clienteWA && !m.avisoVencimiento) {
-        if (await avisarVencimiento(m, cots.length)) {
+      // Avisar al cliente (una sola vez) — WhatsApp si tiene número, y SIEMPRE
+      // mail con el detalle real de las cotizaciones (antes solo salía el
+      // WhatsApp genérico "tenés N presupuestos", y ni eso les llegaba a los
+      // clientes web sin WhatsApp cargado).
+      if (!m.avisoVencimiento) {
+        let avisadoOk = false;
+        if (m.clienteWA && (await avisarVencimiento(m, cots.length))) avisadoOk = true;
+        try {
+          const { avisarVencimientoPorMail } = require('./cotizaciones');
+          if (await avisarVencimientoPorMail(m, cots)) avisadoOk = true;
+        } catch (e) { console.warn('avisarVencimientoPorMail:', e.message); }
+        if (avisadoOk) {
           m.avisoVencimiento = new Date().toISOString();
           avisados++;
         }

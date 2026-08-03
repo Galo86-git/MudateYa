@@ -4296,6 +4296,57 @@ async function avisarSugerenciaFotosPorMail(mudanza, cotizacion) {
   });
 }
 
+// Mail al cliente cuando vence el plazo de 24hs hábiles sin que haya elegido
+// mudancero — con el DETALLE real de las cotizaciones que llegó a recibir
+// (antes solo salía un WhatsApp genérico "tenés N presupuestos", sin decir
+// cuáles ni a qué precio, y ni siquiera eso les llegaba a los clientes web
+// sin WhatsApp cargado). Se exporta para que cron-cerrar-pedidos.js la llame.
+async function avisarVencimientoPorMail(mudanza, cots) {
+  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail || mudanza.canal === 'whatsapp') return false;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+  const tipoLabel = mudanza.tipo === 'flete' ? 'flete' : 'mudanza';
+
+  const filas = cots.map((c) => {
+    const precio = c.precio || (Array.isArray(c.propuestas) && c.propuestas[0] && c.propuestas[0].precio) || 0;
+    return `<tr>
+      <td style="padding:11px 0;border-top:1px solid #E2E8F0;font-size:15px;color:#0F1923">${c.mudanceroNombre || 'Mudancero'}</td>
+      <td style="padding:11px 0;border-top:1px solid #E2E8F0;text-align:right;font-weight:700;color:#003580;font-size:15px">$${Number(precio).toLocaleString('es-AR')}</td>
+    </tr>`;
+  }).join('');
+
+  const subject = cots.length
+    ? `Venció el plazo para elegir — tenías ${cots.length} presupuesto${cots.length > 1 ? 's' : ''}`
+    : 'Venció el plazo — no llegamos a conseguirte presupuestos';
+
+  const mensaje = cots.length
+    ? `El plazo de 24hs hábiles para elegir tu ${tipoLabel} venció, pero estos son los presupuestos que llegaste a recibir:`
+    : `No llegamos a conseguirte presupuestos a tiempo para tu ${tipoLabel}.`;
+
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: mudanza.clienteEmail,
+    subject,
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px">
+        <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span>
+      </div>
+      <div style="padding:28px">
+        <p style="color:#0F1923;font-size:16px;line-height:1.7;margin:0 0 16px">Hola ${nomCli},</p>
+        <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 8px">${mensaje}</p>
+        ${cots.length ? `<table style="width:100%;border-collapse:collapse;margin:8px 0 20px">${filas}</table>` : ''}
+        <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">Si querés, lo reactivamos y seguimos consiguiéndote presupuestos — solo respondé este mail o entrá a tu cuenta.</p>
+        <div style="text-align:center;margin:20px 0">
+          <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mi pedido →</a>
+        </div>
+        <p style="color:#94A3B8;font-size:11px;margin:0">Cualquier cosa, escribinos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;font-weight:600">hola&#64;mudateya.ar</a></p>
+      </div>
+    </div>`,
+  });
+  return true;
+}
+module.exports.avisarVencimientoPorMail = avisarVencimientoPorMail;
+
 // ════════════════════════════════════════════════════
 // HELPER — Precio del PERFIL del mudancero según ambientes/tipo
 // El monto del mail al mudancero seleccionado debe coincidir
