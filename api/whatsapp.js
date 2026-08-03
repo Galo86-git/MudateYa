@@ -281,13 +281,15 @@ Precios y pagos:
 - El precio lo pone cada mudancero en su cotización: "el precio que acordás es el que pagás". NUNCA inventes montos.
 - Pago: 50% de seña al reservar + 50% al completar la mudanza. Protegido (Mercado Pago o transferencia bancaria con CVU único) — el mudancero cobra recién cuando la mudanza está hecha.
 - Cada presupuesto vale 7 días.
+- Si se cancela una mudanza con la seña ya paga (por ejemplo, rechazás un ajuste de precio), el reintegro tarda 5 a 10 días hábiles en acreditarse en tu medio de pago original. NUNCA digas otro plazo.
+- El mudancero puede proponer UN reajuste de precio como máximo por mudanza (si detecta algo no previsto al llegar). No hay una segunda vuelta.
 
 Confianza y seguridad:
 - Mudanceros verificados (DNI y vehículo). Reseñas reales de clientes.
 - Opción de seguro de mudanza (ampliado en el nivel Llave en Mano).
 - Tus datos quedan protegidos: solo se comparten con el mudancero que elegís.
 
-Cobertura: CABA y Gran Buenos Aires; interior (Rosario, Córdoba, Mendoza) según disponibilidad.`;
+Cobertura: CABA y Gran Buenos Aires; interior (Rosario, Córdoba, Mendoza) según disponibilidad — NO está garantizada en todo el interior, depende de si hay un mudancero cerca. Si el pedido es en una zona floja de cobertura, no prometas que seguro le conseguimos uno: aclará que depende de disponibilidad en su zona.`;
 
 const SYSTEM_PROMPT = `Sos Emi, la asistente de MudateYa por WhatsApp. MudateYa es un marketplace argentino de mudanzas y fletes que le consigue presupuestos al cliente contactando mudanceros/fleteros verificados de su zona.
 
@@ -432,7 +434,7 @@ const tools = [
   {
     name: 'cancelar_pedido',
     description:
-      'Cancelá el pedido activo del cliente. IMPORTANTE: confirmá con el cliente ANTES de llamar a esta herramienta.',
+      'Cancelá el pedido activo del cliente. IMPORTANTE: confirmá con el cliente ANTES de llamar a esta herramienta. Si ya había pagado la seña, la herramienta intenta el reembolso automático y te avisa si salió bien o si el equipo lo va a procesar a mano — contale EXACTAMENTE lo que te devuelve, no asumas que siempre se reintegra al toque.',
     input_schema: {
       type: 'object',
       properties: {
@@ -1059,10 +1061,29 @@ async function cancelarPedidoCliente(waId, id) {
     target = pedidos.reverse().find((p) => p.estado && p.estado !== 'cancelado' && p.estado !== 'completado');
   }
   if (!target) return { ok: false, mensaje: 'No encontré un pedido activo para cancelar.' };
-  target.estado = 'cancelado';
-  target.canceladoEn = new Date().toISOString();
-  await setJSON(`mudanza:${target.id}`, target, 60 * 60 * 24 * 3);
-  return { ok: true, id: target.id, mensaje: 'Pedido cancelado.' };
+
+  // Delegado a cotizaciones.js (una sola fuente de verdad): si ya había
+  // pagado la seña, esa acción intenta el refund en MP y avisa al admin si
+  // no se puede automático — antes esta función solo cambiaba el estado acá
+  // mismo y, si había plata pagada, quedaba sin reintegrar y sin que nadie
+  // se enterara.
+  try {
+    const r = await fetch(`${SITE_URL}/api/cotizaciones?action=cancelar-pedido`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: target.id, clienteEmail: target.clienteEmail }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false) return { ok: false, mensaje: (d && d.error) || 'No pude cancelar el pedido.' };
+    const mensaje = !d.teniaSeñaPagada
+      ? 'Pedido cancelado.'
+      : d.refundOk
+        ? 'Pedido cancelado. Te devolvemos la seña — la vas a ver acreditada en unos días.'
+        : 'Pedido cancelado. Ya habías pagado la seña, así que el equipo te va a contactar para coordinar la devolución.';
+    return { ok: true, id: target.id, mensaje };
+  } catch (e) {
+    console.warn('cancelarPedidoCliente:', e.message);
+    return { ok: false, mensaje: 'Tuve un problema cancelando el pedido. Probá de nuevo en un momento.' };
+  }
 }
 async function derivarHumano(waId, motivo, conv, opts) {
   opts = opts || {};

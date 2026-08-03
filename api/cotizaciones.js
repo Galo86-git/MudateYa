@@ -2094,6 +2094,70 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, refundOk: refundOk });
     }
 
+    // 3b. Cliente cancela su pedido directamente (NO por rechazo de un ajuste
+    // — ese caso ya se maneja arriba en rechazar-ajuste). Si ya había pagado
+    // la seña, intenta el refund automático en MP; si falla (o pagó por
+    // transferencia, que no se puede reintegrar por API), avisa al ADMIN para
+    // que lo procese a mano — antes esto no existía: el cliente cancelaba y
+    // la plata quedaba pagada sin que nadie se enterara de reintegrarla.
+    if (action === 'cancelar-pedido' && req.method === 'POST') {
+      const { mudanzaId, clienteEmail } = req.body;
+      if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
+      if (['cancelado', 'cancelada_por_ajuste', 'completada'].includes(m.estado)) {
+        return res.status(400).json({ error: 'Este pedido ya no está activo' });
+      }
+
+      const teniaSeñaPagada = !!m.anticipoPagado;
+      m.estado = 'cancelado';
+      m.canceladaEn = new Date().toISOString();
+
+      let refundOk = false;
+      let refundError = null;
+      if (teniaSeñaPagada && m.mpAnticipoPagoId) {
+        try {
+          const r = await fetch(`https://api.mercadopago.com/v1/payments/${m.mpAnticipoPagoId}/refunds`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json',
+              'X-Idempotency-Key': `refund-${mudanzaId}-${Date.now()}`
+            }
+          });
+          const rData = await r.json();
+          if (r.ok && (rData.status === 'approved' || rData.id)) {
+            refundOk = true;
+            m.refundAnticipoId = rData.id;
+            m.refundAnticipoEn = new Date().toISOString();
+          } else {
+            refundError = rData.message || 'Error desconocido de MP';
+          }
+        } catch (e) {
+          refundError = e.message;
+          console.error('Error en refund MP (cancelar-pedido):', e.message);
+        }
+      } else if (teniaSeñaPagada) {
+        refundError = 'Pagó por transferencia (sin ID de MP) — no se puede reintegrar por API.';
+      }
+
+      if (refundError) m.refundError = refundError;
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+
+      try {
+        if (teniaSeñaPagada) await notificarClienteMudanzaCancelada(m, refundOk);
+      } catch (e) { console.warn('Email cliente cancelación (cancelar-pedido):', e.message); }
+      try {
+        if (m.cotizacionAceptada) await notificarMudanceroPedidoCancelado(m);
+      } catch (e) { console.warn('Email mudancero cancelación:', e.message); }
+      if (teniaSeñaPagada && !refundOk) {
+        try { await notificarAdminRefundManual(m, refundError); } catch (e) { console.warn('Email admin refund (cancelar-pedido):', e.message); }
+      }
+
+      return res.status(200).json({ ok: true, refundOk: refundOk, teniaSeñaPagada: teniaSeñaPagada });
+    }
+
     // 4. Mudancero manda recordatorio al cliente
     if (action === 'recordar-ajuste' && req.method === 'POST') {
       const { mudanzaId, mudanceroEmail } = req.body;
@@ -5230,6 +5294,28 @@ async function notificarMudanceroAjusteRechazado(mudanza) {
       <div style="background:#DC2626;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.9);margin-left:12px">❌ Ajuste rechazado</span></div>
       <div style="padding:28px">
         <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> rechazó el ajuste de precio que propusiste. La mudanza queda cancelada y le devolvemos el anticipo.</p>
+        <p style="font-size:16px;color:#64748B;margin-bottom:16px;line-height:1.7">No te preocupes, esto no afecta tu calificación. Seguí cotizando otras mudanzas en tu panel.</p>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver panel →</a>
+      </div>
+    </div>`,
+  });
+}
+
+// Email al mudancero cuando el cliente cancela directamente (no por rechazo
+// de un ajuste — esa es notificarMudanceroAjusteRechazado, con otro texto).
+async function notificarMudanceroPedidoCancelado(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const cot = mudanza.cotizacionAceptada || {};
+  if (!cot.mudanceroEmail) return;
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: cot.mudanceroEmail,
+    subject: `❌ El cliente canceló la mudanza — ${mudanza.id}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#DC2626;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.9);margin-left:12px">❌ Mudanza cancelada</span></div>
+      <div style="padding:28px">
+        <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7"><strong>${mudanza.clienteNombre || 'El cliente'}</strong> canceló la ${mudanza.tipo || 'mudanza'} que tenías reservada (${mudanza.desde || ''} → ${mudanza.hasta || ''}).</p>
         <p style="font-size:16px;color:#64748B;margin-bottom:16px;line-height:1.7">No te preocupes, esto no afecta tu calificación. Seguí cotizando otras mudanzas en tu panel.</p>
         <a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#003580;color:#fff;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:17px">Ver panel →</a>
       </div>
