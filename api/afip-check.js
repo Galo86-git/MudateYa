@@ -19,12 +19,20 @@ function diagnosticarB64(valor, marcadoresValidos) {
   var decoded = '';
   try { decoded = Buffer.from(valor, 'base64').toString('utf8'); } catch (e) {}
   var decodedTienePem = marcadoresValidos.some(function (m) { return decoded.indexOf(m) !== -1; });
+  // Chequeos estructurales extra — nunca exponen el contenido, solo su "forma".
+  var caracteresNoBase64 = (valor.match(/[^A-Za-z0-9+/=\s]/g) || []).length;
   return {
     presente: true,
     largo: largo,
     pareceQueNoEstaEnBase64_sePegoElArchivoCrudo: pareceRawPem,
     decodificaAUnPemValido: decodedTienePem,
     largoDecodificado: decoded.length,
+    contieneLaPalabraBEGINenAlgunLado: valor.indexOf('BEGIN') !== -1,
+    empiezaConComillaOApostrofe: /^["']/.test(valor),
+    terminaConComillaOApostrofe: /["']$/.test(valor),
+    contieneBarraNLiteral_backslash_n: valor.indexOf('\\n') !== -1,
+    cantidadDeCaracteresQueNoSonBase64Valido: caracteresNoBase64,
+    primerCaracter_soloElTipo: /[A-Za-z]/.test(valor[0]) ? 'letra' : /[0-9]/.test(valor[0]) ? 'numero' : 'simbolo(' + valor[0] + ')',
   };
 }
 
