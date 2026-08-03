@@ -239,8 +239,12 @@ async function validarCuit(cuit) {
       domicilioFiscal: dg.domicilioFiscal || null,
     };
   } catch (e) {
-    console.warn('validarCuit AFIP:', e.message);
-    return { disponible: false, motivo: e.message };
+    // fetch() de Node envuelve el error real de red/TLS en e.cause y deja
+    // e.message como el genérico "fetch failed" — sin esto no se ve la causa.
+    var causa = e.cause ? (e.cause.code || e.cause.message || String(e.cause)) : null;
+    var detalle = causa ? (e.message + ' — causa: ' + causa) : e.message;
+    console.warn('validarCuit AFIP:', detalle);
+    return { disponible: false, motivo: detalle };
   }
 }
 

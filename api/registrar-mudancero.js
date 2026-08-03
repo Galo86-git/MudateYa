@@ -5,6 +5,7 @@
 
 const { Resend } = require('resend');
 const { validarCuit: validarCuitAfip } = require('./_afip');
+const { redisPipeline } = require('./_ia');
 
 // ── REDIS ────────────────────────────────────────────────────────
 async function redisCall(method, ...args) {
@@ -359,12 +360,43 @@ module.exports = async function handler(req, res) {
     var afipResultado = verificacion ? verificacion.afip : null;
 
     // ── VERIFICAR DUPLICADO ─────────────────────────────────────
+    // Antes solo se chequeaba el email exacto. Ahora también CUIL/CUIT y
+    // teléfono (últimos 8 dígitos, mismo criterio que mudanceros:tel8-idx),
+    // y el email se compara sin importar mayúsculas/espacios — para que no
+    // se cuelen altas duplicadas de la misma persona/empresa con otro mail
+    // o con el mail escrito distinto. Un perfil 'rechazado' NO cuenta como
+    // duplicado (se le deja reintentar), igual que ya pasaba con el email.
+    var emailNorm = String(email || '').trim().toLowerCase();
+    var tel8Nuevo = String(telefono || '').replace(/\D/g, '').slice(-8);
+    var cuilNuevo = cuil ? String(cuil).replace(/[-\s]/g, '') : '';
+
     var existente = await getJSON('mudancero:perfil:' + email);
-    if (existente && existente.estado !== 'rechazado') {
-      return res.status(400).json({
-        error: 'Ya existe un perfil con ese email',
-        estado: existente.estado
-      });
+    var motivoDup = existente && existente.estado !== 'rechazado' ? 'email' : null;
+
+    if (!motivoDup) {
+      var todosEmails = (await getJSON('mudanceros:todos')) || [];
+      var otrosEmails = todosEmails.filter(function (e) { return e !== email; });
+      var perfiles = [];
+      for (var off = 0; off < otrosEmails.length; off += 100) {
+        var lote = otrosEmails.slice(off, off + 100);
+        var vals = await redisPipeline(lote.map(function (e) { return ['GET', 'mudancero:perfil:' + e]; }));
+        vals.forEach(function (v) { if (v) { try { perfiles.push(JSON.parse(v)); } catch (e) {} } });
+      }
+      for (var pi = 0; pi < perfiles.length; pi++) {
+        var otro = perfiles[pi];
+        if (!otro || otro.estado === 'rechazado') continue;
+        if (String(otro.email || '').trim().toLowerCase() === emailNorm) { motivoDup = 'email'; existente = otro; break; }
+        if (cuilNuevo && otro.cuil && otro.cuil === cuilNuevo) { motivoDup = 'cuil'; existente = otro; break; }
+        var tel8Otro = String(otro.telefono || '').replace(/\D/g, '').slice(-8);
+        if (tel8Nuevo.length === 8 && tel8Otro === tel8Nuevo) { motivoDup = 'telefono'; existente = otro; break; }
+      }
+    }
+
+    if (motivoDup) {
+      var mensajeDup = motivoDup === 'cuil' ? 'Ya existe un perfil registrado con ese CUIL/CUIT.'
+        : motivoDup === 'telefono' ? 'Ya existe un perfil registrado con ese teléfono.'
+        : 'Ya existe un perfil con ese email';
+      return res.status(400).json({ error: mensajeDup, motivo: motivoDup, estado: existente.estado });
     }
 
     // ── GENERAR ID ──────────────────────────────────────────────
