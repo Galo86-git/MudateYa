@@ -120,12 +120,13 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 <div class="form-wrap">
   <form class="form-card" id="regForm" novalidate>
 
-    <!-- ── PASO 1: CUIL/CUIT — se valida primero, contra AFIP en vivo, antes de
-         pedir el resto de los datos. Así nadie llena todo el formulario para
-         enterarse recién al final que su CUIT tiene un problema. ── -->
+    <!-- ── PASO 1: CUIL/CUIT — se valida primero, contra ARCA (ex-AFIP) en vivo,
+         antes de pedir el resto de los datos. Así nadie llena todo el
+         formulario para enterarse recién al final que su CUIT tiene un
+         problema. ── -->
     <div class="form-section">
       <div class="section-title">1. Tu CUIL / CUIT</div>
-      <div class="section-sub">Lo verificamos primero contra AFIP — el resto del formulario se habilita cuando esté OK</div>
+      <div class="section-sub">Lo verificamos primero contra ARCA — el resto del formulario se habilita cuando esté OK</div>
       <div class="field-grid">
         <div class="field" id="f-cuil">
           <label class="field-label" for="cuil">CUIL / CUIT <span>*</span></label>
@@ -288,7 +289,7 @@ function formatCUIL(input) {
   else { cuilGateOk = false; setCuilGate(false); document.getElementById('cuil-status').textContent = ''; }
 }
 
-// ── VALIDAR CUIL EN VIVO (local + AFIP) — gatea el resto del formulario ──
+// ── VALIDAR CUIL EN VIVO (local + ARCA) — gatea el resto del formulario ──
 var cuilGateOk = false;
 var cuilCheckSeq = 0; // evita que una respuesta vieja pise a una más nueva
 
@@ -300,7 +301,7 @@ function setCuilGate(ok) {
   document.getElementById('f-nombre').style.display = ok ? '' : 'none';
 }
 
-// ── NOMBRE autocompletado desde AFIP (o manual si AFIP no responde) ──
+// ── NOMBRE autocompletado desde ARCA (o manual si ARCA no responde) ──
 var nombreEsDeAfip = false;
 function setNombreDesdeAfip(nombre) {
   var input = document.getElementById('nombre');
@@ -308,7 +309,7 @@ function setNombreDesdeAfip(nombre) {
   var editar = document.getElementById('nombre-afip-editar');
   input.value = nombre;
   input.readOnly = true;
-  hint.textContent = 'Según AFIP — así queda en tu perfil, es tu nombre legal';
+  hint.textContent = 'Según ARCA — así queda en tu perfil, es tu nombre legal';
   editar.style.display = 'inline-block';
   nombreEsDeAfip = true;
 }
@@ -338,7 +339,7 @@ async function validarCuilVivo() {
 
   var seq = ++cuilCheckSeq;
   statusEl.style.color = '#64748B';
-  statusEl.textContent = '⏳ Verificando con AFIP…';
+  statusEl.textContent = '⏳ Verificando con ARCA…';
   field.classList.remove('has-error');
 
   try {
@@ -355,26 +356,26 @@ async function validarCuilVivo() {
     }
     if (d.afip && d.afip.disponible && d.afip.existe === false) {
       statusEl.style.color = '#EF4444';
-      statusEl.textContent = '✗ Este CUIL/CUIT no existe en el padrón de AFIP. Revisalo.';
+      statusEl.textContent = '✗ Este CUIL/CUIT no existe en el padrón de ARCA. Revisalo.';
       field.classList.add('has-error');
       setCuilGate(false);
       return;
     }
     if (d.afip && d.afip.disponible && d.afip.existe && d.afip.estadoClave && d.afip.estadoClave !== 'ACTIVO') {
       statusEl.style.color = '#B45309';
-      statusEl.textContent = '⚠ Existe en AFIP pero su estado no es activo (' + d.afip.estadoClave + '). Vamos a revisarlo a mano.';
+      statusEl.textContent = '⚠ Existe en ARCA pero su estado no es activo (' + d.afip.estadoClave + '). Vamos a revisarlo a mano.';
       if (d.afip.nombre) setNombreDesdeAfip(d.afip.nombre); else setNombreManual();
       setCuilGate(true);
       return;
     }
     if (d.afip && d.afip.disponible && d.afip.existe) {
       statusEl.style.color = '#15803D';
-      statusEl.textContent = '✓ CUIL/CUIT verificado contra AFIP';
+      statusEl.textContent = '✓ CUIL/CUIT verificado contra ARCA';
       if (d.afip.nombre) setNombreDesdeAfip(d.afip.nombre); else setNombreManual();
       setCuilGate(true);
       return;
     }
-    // AFIP no disponible ahora mismo (caído, límite de uso, o no configurado) — no bloqueamos,
+    // ARCA no disponible ahora mismo (caído, límite de uso, o no configurado) — no bloqueamos,
     // pero tampoco hay nombre para autocompletar: lo carga a mano como antes.
     statusEl.style.color = '#15803D';
     statusEl.textContent = '✓ Formato válido';
