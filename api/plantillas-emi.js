@@ -52,6 +52,12 @@ const ACTUALIZAR = [
     body: '¡Buenísimo, {{1}}! Reservaste con {{2}} por {{3}}.\nPara confirmar, pagá la seña de {{4}} desde el botón de abajo (o por transferencia si preferís, pedímela). El resto lo abonás al terminar. Pago protegido.' },
   { name: 'presupuestos_cliente', sid: 'HXa307fb50a1ae96e0eb4535792ee40ea3', category: 'UTILITY',
     body: '¡Hola {{1}}! Ya tenemos presupuestos para tu mudanza ({{2}} → {{3}}).\nTe los paso acá abajo para que elijas el que más te convenga. Cada presupuesto vale 7 días.' },
+  // Meta la reclasificó sola de UTILITY a MARKETING apenas se creó (mismo
+  // problema que ya tuvo nuevo_pedido_mudancero) -- sospecha: "antes de que
+  // se los lleve otro mudancero" suena a apuro/venta. Texto más neutro/
+  // informativo acá, recreada para que Meta la vuelva a evaluar como UTILITY.
+  { name: 'recordatorio_pedido_sin_cotizar', sid: 'HX4257153b4001300b86b15413fc851e78', category: 'UTILITY',
+    body: 'Hola {{1}}, tenés {{2}} pedido(s) sin cotizar en MudateYa. Entrá a tu cuenta para verlos y mandar tu presupuesto.' },
 ];
 
 // ── Las 5 nuevas: se crean con estructura completa (body + botón de pago si aplica) ──
@@ -120,14 +126,6 @@ const CREAR = [
     types: { 'twilio/text': { body: '¡Hola {{1}}! Cancelamos tu {{2}} con {{3}} como solicitaste.\n\n{{4}}\n\n¿Necesitás una nueva mudanza? Entrá a mudateya.ar cuando quieras.' } },
     variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian', '4': 'Procesamos el reintegro de $25.000. Vas a verlo acreditado en 5 a 10 días hábiles.' } },
 
-  // Recordatorio al MUDANCERO: tiene pedido(s) abiertos esperando su
-  // cotización (ver api/recordar-cotizar.js — acción manual admin, no cron).
-  { name: 'recordatorio_pedido_sin_cotizar', category: 'UTILITY',
-    types: { 'twilio/call-to-action': {
-      body: '¡Hola {{1}}! Tenés {{2}} pedido(s) esperando tu cotización en MudateYa 🚚\n\nEntrá y cotizalos antes de que se los lleve otro mudancero.',
-      actions: [{ type: 'URL', title: 'Ver pedidos', url: 'https://mudateya.ar/mi-cuenta' }],
-    } },
-    variables: { '1': 'Cristian', '2': '2' } },
 ];
 
 module.exports = async function handler(req, res) {

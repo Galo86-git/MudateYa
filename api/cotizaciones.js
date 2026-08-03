@@ -66,6 +66,23 @@ function contactoLiberado(m) {
   return !!(m && m.anticipoPagado === true);
 }
 
+// Los campos de arriba (clienteWA/Email, mudanceroTel) ya se ocultan hasta
+// que se paga el anticipo — pero eso no evita que alguien cuele su teléfono
+// o mail DENTRO de un campo de texto libre que sí se muestra antes de eso
+// (la nota de una cotización, el comentario del pedido). Esto lo tapa ahí.
+// Best-effort, no perfecto: es una segunda capa además de que el prompt de
+// Emi ya evita ofrecerlo/repetirlo — no depende de que la IA se acuerde.
+function sinContacto(texto) {
+  if (!texto) return texto;
+  let t = String(texto);
+  // Teléfonos: corridas de 8+ dígitos, con separadores típicos (espacio, guion,
+  // punto, paréntesis) pero NO "/" (para no comerse fechas tipo 15/03/2026).
+  t = t.replace(/\+?\d[\d\s.()-]{6,}\d/g, (m) => ((m.match(/\d/g) || []).length >= 8 ? '[contacto oculto]' : m));
+  // Emails.
+  t = t.replace(/[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}/g, '[contacto oculto]');
+  return t;
+}
+
 // Devuelve true si este mudancero es el que ganó el pedido.
 function esMudanceroAceptado(m, emailMudancero) {
   if (!m || !emailMudancero) return false;
@@ -1113,7 +1130,7 @@ module.exports = async function handler(req, res) {
           // Compartido: solo comentario + fotos
           const tmp = {};
           if (typeof detallesAdicionales.comentario === 'string') {
-            const c = detallesAdicionales.comentario.trim().slice(0, 500);
+            const c = sinContacto(detallesAdicionales.comentario.trim().slice(0, 500));
             if (c.length) tmp.comentario = c;
           }
           if (Array.isArray(detallesAdicionales.fotos)) {
@@ -1132,7 +1149,7 @@ module.exports = async function handler(req, res) {
             if (p > 0 && p <= 20) tmp.escalerasPisos = p;
           }
           if (typeof detallesAdicionales.comentario === 'string') {
-            const c = detallesAdicionales.comentario.trim().slice(0, 500);
+            const c = sinContacto(detallesAdicionales.comentario.trim().slice(0, 500));
             if (c.length) tmp.comentario = c;
           }
           if (Array.isArray(detallesAdicionales.fotos)) {
@@ -1267,8 +1284,8 @@ module.exports = async function handler(req, res) {
           .map(p => ({
             nivel: p.nivel,
             precio: parseInt(String(p.precio||0).replace(/\./g,'').replace(/[^0-9]/g,'')) || 0,
-            tiempoEstimado: p.tiempoEstimado || '',
-            nota: p.nota || ''
+            tiempoEstimado: sinContacto(p.tiempoEstimado || ''),
+            nota: sinContacto(p.nota || '')
           }))
           .filter(p => p.precio > 0);
       } else if (precio) {
@@ -1279,8 +1296,8 @@ module.exports = async function handler(req, res) {
           propuestasNorm = [{
             nivel: nivelDefault,
             precio: precioLimpio,
-            tiempoEstimado: tiempoEstimado || '',
-            nota: nota || ''
+            tiempoEstimado: sinContacto(tiempoEstimado || ''),
+            nota: sinContacto(nota || '')
           }];
         }
       }
