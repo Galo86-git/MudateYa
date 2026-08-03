@@ -119,6 +119,15 @@ const CREAR = [
   { name: 'mudanza_cancelada_cliente', category: 'UTILITY',
     types: { 'twilio/text': { body: '¡Hola {{1}}! Cancelamos tu {{2}} con {{3}} como solicitaste.\n\n{{4}}\n\n¿Necesitás una nueva mudanza? Entrá a mudateya.ar cuando quieras.' } },
     variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian', '4': 'Procesamos el reintegro de $25.000. Vas a verlo acreditado en 5 a 10 días hábiles.' } },
+
+  // Recordatorio al MUDANCERO: tiene pedido(s) abiertos esperando su
+  // cotización (ver api/recordar-cotizar.js — acción manual admin, no cron).
+  { name: 'recordatorio_pedido_sin_cotizar', category: 'UTILITY',
+    types: { 'twilio/call-to-action': {
+      body: '¡Hola {{1}}! Tenés {{2}} pedido(s) esperando tu cotización en MudateYa 🚚\n\nEntrá y cotizalos antes de que se los lleve otro mudancero.',
+      actions: [{ type: 'URL', title: 'Ver pedidos', url: 'https://mudateya.ar/mi-cuenta' }],
+    } },
+    variables: { '1': 'Cristian', '2': '2' } },
 ];
 
 module.exports = async function handler(req, res) {
