@@ -61,33 +61,57 @@ function sinOutliers(arr) {
   return limpio;
 }
 
-// ── Precios REALES de referencia (packs + legacy, de perfiles aprobados) ──
-// Mismo criterio que datosReales() de cron-blog.js pero sumando también los
-// packs (Esencial/Integral/Llave), que es el modelo de precios actual — el
-// legacy solo ya no alcanza para reflejar bien el mercado real. Usa MEDIANA
-// (no promedio simple): con pocas muestras, un solo valor mal cargado puede
+const AMBIENTES = ['amb1', 'amb2', 'amb3', 'amb4'];
+const NOMBRES_AMB = { amb1: 'Monoambiente/1 ambiente', amb2: '2 ambientes', amb3: '3 ambientes', amb4: '4 ambientes o más' };
+const NIVELES = [
+  { key: 'esencial', campo: 'preciosEsencial', label: 'Esencial' },
+  { key: 'integral', campo: 'preciosIntegral', label: 'Integral' },
+  { key: 'llave', campo: 'preciosLlave', label: 'Llave en Mano' },
+];
+
+// ── Precios REALES de referencia, DESGLOSADOS POR NIVEL (Esencial/Integral/
+// Llave en Mano) y por tamaño — de perfiles aprobados. El legacy `precios`
+// (viejo, sin distinguir nivel) queda como respaldo "general" solo para el
+// tamaño/nivel donde no haya dato específico de ningún pack. Usa MEDIANA (no
+// promedio simple): con pocas muestras, un solo valor mal cargado puede
 // disparar un promedio a un número absurdo; la mediana no se mueve por eso.
 async function preciosPromedio() {
   try {
     const todos = (await getJSON('mudanceros:todos')) || [];
-    const acc = { amb1: [], amb2: [], amb3: [], amb4: [] };
+    const acc = {};
+    AMBIENTES.forEach((k) => {
+      acc[k] = { general: [] };
+      NIVELES.forEach((niv) => { acc[k][niv.key] = []; });
+    });
+
     let n = 0;
     for (const email of todos.slice(0, 300)) {
       const p = await getJSON(`mudancero:perfil:${email}`);
       if (!p || p.estado !== 'aprobado') continue;
-      const fuentes = [p.precios, p.preciosEsencial, p.preciosIntegral, p.preciosLlave].filter(Boolean);
-      if (!fuentes.length) continue;
       let sumo = false;
-      fuentes.forEach((pack) => {
-        ['amb1', 'amb2', 'amb3', 'amb4'].forEach((k) => {
+      NIVELES.forEach((niv) => {
+        const pack = p[niv.campo];
+        if (!pack) return;
+        AMBIENTES.forEach((k) => {
           const v = parseInt(String(pack[k] || '').replace(/\D/g, ''));
-          if (v > 0) { acc[k].push(v); sumo = true; }
+          if (v > 0) { acc[k][niv.key].push(v); sumo = true; }
         });
       });
+      if (p.precios) {
+        AMBIENTES.forEach((k) => {
+          const v = parseInt(String(p.precios[k] || '').replace(/\D/g, ''));
+          if (v > 0) { acc[k].general.push(v); sumo = true; }
+        });
+      }
       if (sumo) n++;
     }
     const central = (arr) => mediana(sinOutliers(arr));
-    return { muestras: n, amb1: central(acc.amb1), amb2: central(acc.amb2), amb3: central(acc.amb3), amb4: central(acc.amb4) };
+    const porAmbiente = {};
+    AMBIENTES.forEach((k) => {
+      porAmbiente[k] = { general: central(acc[k].general) };
+      NIVELES.forEach((niv) => { porAmbiente[k][niv.key] = central(acc[k][niv.key]); });
+    });
+    return { muestras: n, porAmbiente };
   } catch (e) {
     console.warn('preciosPromedio:', e.message);
     return { muestras: 0 };
@@ -95,18 +119,29 @@ async function preciosPromedio() {
 }
 
 function bloquePrecios(d) {
-  if (!d || !d.muestras) {
+  if (!d || !d.muestras || !d.porAmbiente) {
     return 'PRECIOS: no hay datos reales de precios disponibles ahora mismo. NO inventes cifras — hablá de precios en términos relativos (qué los sube o baja: distancia, piso sin ascensor, volumen), sin dar montos.';
   }
   const l = [];
-  if (d.amb1) l.push(`- Monoambiente/1 ambiente: ronda los ${fmt(d.amb1)}`);
-  if (d.amb2) l.push(`- 2 ambientes: ronda los ${fmt(d.amb2)}`);
-  if (d.amb3) l.push(`- 3 ambientes: ronda los ${fmt(d.amb3)}`);
-  if (d.amb4) l.push(`- 4 ambientes o más: ronda los ${fmt(d.amb4)}`);
+  AMBIENTES.forEach((k) => {
+    const fila = d.porAmbiente[k];
+    if (!fila) return;
+    const porNivel = NIVELES.map((niv) => (fila[niv.key] ? `${niv.label} ${fmt(fila[niv.key])}` : null)).filter(Boolean);
+    if (porNivel.length) {
+      l.push(`- ${NOMBRES_AMB[k]}: ${porNivel.join(' · ')}`);
+    } else if (fila.general) {
+      // Sin desglose por nivel para este tamaño (perfiles con precio legacy
+      // nomás, sin cargar los packs) — mejor una cifra general que nada.
+      l.push(`- ${NOMBRES_AMB[k]}: ronda los ${fmt(fila.general)} (sin desglose por nivel)`);
+    }
+  });
+  if (!l.length) {
+    return 'PRECIOS: no hay datos reales de precios disponibles ahora mismo. NO inventes cifras — hablá de precios en términos relativos (qué los sube o baja: distancia, piso sin ascensor, volumen), sin dar montos.';
+  }
   return (
-    `PRECIOS DE REFERENCIA (promedio real de mudanceros de MudateYa, ${d.muestras} perfiles — ` +
-    `sirve para dar una idea, el precio final lo pone cada mudancero en su cotización):\n${l.join('\n')}\n` +
-    `Si te preguntan cuánto sale, podés tirar esta cifra COMO REFERENCIA aproximada (aclarando que varía según distancia, piso/ascensor, volumen) — nunca la des como precio cerrado ni la fuerces si no viene a cuento.`
+    `PRECIOS DE REFERENCIA (promedio real de mudanceros de MudateYa, ${d.muestras} perfiles — desglosado por nivel de servicio ` +
+    `cuando hay dato; sirve para dar una idea, el precio final lo pone cada mudancero en su cotización):\n${l.join('\n')}\n` +
+    `Si te preguntan cuánto sale, podés tirar estas cifras COMO REFERENCIA aproximada por nivel (aclarando que varía según distancia, piso/ascensor, volumen) — nunca las des como precio cerrado ni las fuerces si no viene a cuento.`
   );
 }
 
