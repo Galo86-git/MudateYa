@@ -1532,6 +1532,23 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
     const nombre = (mudancero.nombre || '').split(' ')[0] || 'colega';
     system = SYSTEM_PROMPT_MUDANCERO.replace('{NOMBRE}', nombre);
     toolsUsados = mudanceroTools; // flujo completo del mudancero por WhatsApp
+
+    // AUTO-CONTEXTO: cargamos sus cotizaciones/pedidos actuales SIEMPRE, no
+    // solo si decide llamar a mis_pedidos. Es un snapshot al arranque del
+    // turno — si necesita algo más fresco a mitad de charla (recién cotizó
+    // otro), igual puede llamar a mis_pedidos/ver_pedidos.
+    try {
+      const rMis = await fetch(`${SITE_URL}/api/cotizaciones?action=mis-cotizaciones&email=${encodeURIComponent(mudancero.email)}`);
+      const dMis = await rMis.json().catch(() => ({}));
+      const misPedidos = (dMis.mudanzas || []).map((m) => ({
+        id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`, estado: m.estado,
+        miPrecio: (m.miCotizacion && m.miCotizacion.precio) || (m.cotizacionAceptada && m.cotizacionAceptada.precio) || null,
+      }));
+      const resumenMud = misPedidos.length
+        ? misPedidos.map((p) => `- ${p.id} (${p.tipo}, ${p.ruta}), estado: ${p.estado}${p.miPrecio ? `, tu precio: $${p.miPrecio}` : ''}`).join('\n')
+        : 'No tenés pedidos/cotizaciones activos ahora mismo.';
+      system += `\n\nTUS PEDIDOS/COTIZACIONES (snapshot de referencia rápida — no hace falta llamar a mis_pedidos si ya está acá; para pedidos NUEVOS disponibles en tu zona usá ver_pedidos):\n${resumenMud}`;
+    } catch (e) { console.warn('auto-contexto mudancero:', e.message); }
   } else {
     const persona = quienEscribe(waId);
     // Base de conocimiento sincronizada de la web (ver _conocimiento.js) — si
@@ -1547,6 +1564,26 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
       ? `${promptCliente}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
       : promptCliente;
     toolsUsados = tools;
+
+    // AUTO-CONTEXTO: cargamos los pedidos/cotizaciones del cliente SIEMPRE, no
+    // solo si Emi decide llamar a consultar_estado_pedido. Es un snapshot al
+    // arranque del turno — si necesita algo más fresco (recién llegó una
+    // cotización nueva), igual puede llamar a consultar_estado_pedido.
+    if (!persona) {
+      try {
+        const pedidosCliente = await pedidosDelCliente(waId);
+        const resumenCliente = pedidosCliente.length
+          ? pedidosCliente.map((p) => {
+              const r = resumenPedido(p);
+              const cots = r.cotizaciones.length
+                ? r.cotizaciones.map((c) => `${c.mudancero || 'un mudancero'}: $${c.precio}${c.nota ? ` ("${c.nota}")` : ''}`).join('; ')
+                : 'sin cotizaciones todavía';
+              return `- ${r.id} (${r.tipo}, ${r.origen || ''} → ${r.destino || ''}, estado: ${r.estado}${r.vence ? `, vence: ${r.vence}` : ''}): ${cots}`;
+            }).join('\n')
+          : 'El cliente no tiene pedidos activos ahora mismo.';
+        system += `\n\nPEDIDOS/COTIZACIONES ACTUALES DE ESTE CLIENTE (snapshot de referencia rápida — no hace falta llamar a consultar_estado_pedido si ya está acá):\n${resumenCliente}`;
+      } catch (e) { console.warn('auto-contexto cliente:', e.message); }
+    }
   }
 
   // Contexto temporal: Claude NO sabe qué día ni hora es. Se lo damos (hora de
