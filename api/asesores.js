@@ -186,13 +186,18 @@ async function enviarEmailBienvenida(asesor) {
         '<span style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:2px;color:#22C36A">YA</span>' +
       '</div>' +
       '<h2 style="color:#003580;font-size:22px;margin-bottom:14px">🎉 Bienvenido, ' + esc(asesor.nombre) + '</h2>' +
-      '<p style="color:#475569;font-size:15px;line-height:1.6">Ya sos Asesor Referido de MudateYa. Desde tu panel vas a poder armar presupuestos de mudanzas premium para tus clientes — un servicio gratis que suma valor a tu propuesta inmobiliaria.</p>' +
+      '<p style="color:#475569;font-size:15px;line-height:1.6">Ya sos Asesor Referido de MudateYa. Con tu link exclusivo entrás a tu panel para armar presupuestos de mudanzas premium para tus clientes — un servicio gratis que suma valor a tu propuesta inmobiliaria.</p>' +
       '<div style="background:#F5F7FA;padding:14px;border-radius:8px;margin:18px 0">' +
         '<p style="margin:0;color:#475569;font-size:13px"><strong style="color:#003580">Inmobiliaria:</strong> ' + esc(asesor.inmobiliaria || '—') + '</p>' +
         '<p style="margin:8px 0 0 0;color:#475569;font-size:13px"><strong style="color:#003580">Zona:</strong> ' + esc(asesor.zona || '—') + '</p>' +
       '</div>' +
       '<div style="text-align:center;margin:32px 0">' +
         '<a href="' + link + '" style="display:inline-block;padding:14px 32px;background:#22C36A;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">Entrar a mi panel</a>' +
+        '<p style="color:#94A3B8;font-size:11px;margin:10px 0 0">Este link es personal — guardalo, es tu acceso directo.</p>' +
+      '</div>' +
+      '<div style="text-align:center;margin:28px 0 0">' +
+        '<p style="color:#475569;font-size:13px;margin-bottom:10px">Seguinos para novedades y tips de mudanza 👇</p>' +
+        '<a href="https://www.instagram.com/mudateya.ar" style="display:inline-block;padding:9px 20px;border:1px solid #E2E8F0;border-radius:20px;color:#0F1923;text-decoration:none;font-size:13px;font-weight:600">📷 @mudateya.ar en Instagram</a>' +
       '</div>' +
       '<hr style="border:none;border-top:1px solid #E2E8F0;margin:28px 0">' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center">MudateYa · mudateya.ar</p>' +
