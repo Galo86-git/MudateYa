@@ -133,6 +133,8 @@ module.exports = async function handler(req, res) {
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   const out = { revisados: 0, incompletos: 0, reactivados: 0, fallidos: 0 };
+  // Detalle por mudancero -- qué le falta a cada uno, no solo el conteo.
+  const detalle = { enviados: [], omitidosPorPiso: [], reactivados: [], fallidos: [] };
 
   try {
     const todos = (await getJSON('mudanceros:todos')) || [];
@@ -150,6 +152,7 @@ module.exports = async function handler(req, res) {
         const prev = p.recordatorioPerfil || {};
         const cambioSet = prev.hash !== hash;
         const pasoPiso = diasDesde(prev.enviadoEn) >= PISO_INCOMPLETO;
+        const faltaTxt = falta.map((f) => f.txt);
         if (cambioSet || pasoPiso) {
           try {
             await resend.emails.send({
@@ -162,7 +165,15 @@ module.exports = async function handler(req, res) {
             p.recordatorioPerfil = { enviadoEn: new Date().toISOString(), hash };
             await setJSON(`mudancero:perfil:${email}`, p);
             out.incompletos++;
-          } catch (e) { out.fallidos++; console.warn('incompleto', email, e.message); }
+            detalle.enviados.push({ email, nombre: p.nombre || '', falta: faltaTxt });
+          } catch (e) {
+            out.fallidos++; console.warn('incompleto', email, e.message);
+            detalle.fallidos.push({ email, nombre: p.nombre || '', falta: faltaTxt, motivo: e.message });
+          }
+        } else {
+          // Le sigue faltando lo mismo, pero ya se le avisó hace menos de
+          // PISO_INCOMPLETO días -- no se lo re-manda para no ser pesado.
+          detalle.omitidosPorPiso.push({ email, nombre: p.nombre || '', falta: faltaTxt, ultimoEnvio: prev.enviadoEn });
         }
         continue; // si le falta algo, no lo tratamos como "dormido"
       }
@@ -182,14 +193,18 @@ module.exports = async function handler(req, res) {
             p.reactivacionMudancero = { enviadoEn: new Date().toISOString(), diasInactivo: dias };
             await setJSON(`mudancero:perfil:${email}`, p);
             out.reactivados++;
-          } catch (e) { out.fallidos++; console.warn('reactivar', email, e.message); }
+            detalle.reactivados.push({ email, nombre: p.nombre || '', diasInactivo: dias });
+          } catch (e) {
+            out.fallidos++; console.warn('reactivar', email, e.message);
+            detalle.fallidos.push({ email, nombre: p.nombre || '', motivo: e.message });
+          }
         }
       }
     }
 
-    return res.status(200).json({ ok: true, ...out });
+    return res.status(200).json({ ok: true, ...out, detalle });
   } catch (e) {
     console.error('cron-recordar-perfil:', e.message);
-    return res.status(200).json({ error: e.message, ...out });
+    return res.status(200).json({ error: e.message, ...out, detalle });
   }
 };
