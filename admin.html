@@ -1492,7 +1492,7 @@ async function loadMudanceros(){
         m.equipo, m.servicios, m.dias, m.horarios, m.extra,
         m.metodoCobro, m.cbu, m.emailMP, m.fechaRegistro,
         m.cuilVerificado ? 'Verificado' : 'No verificado',
-        m.dniLegible ? 'Legible' : 'No legible',
+        (m.dniFrente && m.dniDorso) ? 'Legible' : 'No legible',
         m.estado === 'aprobado' ? 'Aprobado' : m.estado === 'rechazado' ? 'Rechazado' : 'Pendiente',
         m.ultimaActualizacion || '',  // [22] última edición de perfil
         m.terminosAceptados === true,  // [23] firmó TyC (boolean)
@@ -1761,7 +1761,11 @@ async function generarNotaBlog(){
 }
 
 // Resumen de completitud del perfil (usa datos ya cargados en mudancerosData).
-// m[16]=cbu, m[17]=emailMP, m[20]=dniLegible, m[23]=TyC, m[25]=precios('sin'/...).
+// m[16]=cbu, m[17]=emailMP, m[20]=tiene DNI frente+dorso subidos ('Legible'/'No legible'
+// pese al nombre — antes chequeaba m.dniLegible, un campo que el backend nunca
+// escribe, así que "Falta: DNI" quedaba marcado SIEMPRE, incluso con las fotos
+// ya cargadas; ahora refleja dniFrente && dniDorso, igual que _aprobar.js).
+// m[23]=TyC, m[25]=precios('sin'/...).
 function perfilFalta(m){
   var falta = [];
   if (m[20] !== 'Legible') falta.push('DNI');
