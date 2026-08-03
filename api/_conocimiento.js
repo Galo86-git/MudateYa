@@ -69,84 +69,119 @@ const NIVELES = [
   { key: 'llave', campo: 'preciosLlave', label: 'Llave en Mano' },
 ];
 
+// Junta los valores de precio de un perfil (packs + legacy) en un acumulador
+// { amb1: {esencial:[],integral:[],llave:[],general:[]}, ... }. Se usa una vez
+// para el cohorte "fijo" y otra para "porHora" — MISMOS campos del perfil,
+// pero el número significa cosas distintas según tipoCobro (precio total del
+// trabajo vs. tarifa horaria), así que nunca se mezclan en el mismo cálculo.
+function sumarPerfil(acc, p) {
+  let sumo = false;
+  NIVELES.forEach((niv) => {
+    const pack = p[niv.campo];
+    if (!pack) return;
+    AMBIENTES.forEach((k) => {
+      const v = parseInt(String(pack[k] || '').replace(/\D/g, ''));
+      if (v > 0) { acc[k][niv.key].push(v); sumo = true; }
+    });
+  });
+  if (p.precios) {
+    AMBIENTES.forEach((k) => {
+      const v = parseInt(String(p.precios[k] || '').replace(/\D/g, ''));
+      if (v > 0) { acc[k].general.push(v); sumo = true; }
+    });
+  }
+  return sumo;
+}
+function accVacio() {
+  const acc = {};
+  AMBIENTES.forEach((k) => {
+    acc[k] = { general: [] };
+    NIVELES.forEach((niv) => { acc[k][niv.key] = []; });
+  });
+  return acc;
+}
+function centralPorAmbiente(acc) {
+  const central = (arr) => mediana(sinOutliers(arr));
+  const porAmbiente = {};
+  AMBIENTES.forEach((k) => {
+    porAmbiente[k] = { general: central(acc[k].general) };
+    NIVELES.forEach((niv) => { porAmbiente[k][niv.key] = central(acc[k][niv.key]); });
+  });
+  return porAmbiente;
+}
+
 // ── Precios REALES de referencia, DESGLOSADOS POR NIVEL (Esencial/Integral/
-// Llave en Mano) y por tamaño — de perfiles aprobados. El legacy `precios`
-// (viejo, sin distinguir nivel) queda como respaldo "general" solo para el
-// tamaño/nivel donde no haya dato específico de ningún pack. Usa MEDIANA (no
-// promedio simple): con pocas muestras, un solo valor mal cargado puede
-// disparar un promedio a un número absurdo; la mediana no se mueve por eso.
+// Llave en Mano) y por tamaño — de perfiles aprobados. Separa dos cohortes
+// que NO se pueden promediar juntos: tipoCobro='fijo' (precio total del
+// trabajo) vs 'porHora' (tarifa horaria) — son unidades distintas. Usa
+// MEDIANA (no promedio simple): con pocas muestras, un solo valor mal cargado
+// puede disparar un promedio a un número absurdo; la mediana no se mueve.
 async function preciosPromedio() {
   try {
     const todos = (await getJSON('mudanceros:todos')) || [];
-    const acc = {};
-    AMBIENTES.forEach((k) => {
-      acc[k] = { general: [] };
-      NIVELES.forEach((niv) => { acc[k][niv.key] = []; });
-    });
-
-    let n = 0;
+    const accFijo = accVacio();
+    const accHora = accVacio();
+    let nFijo = 0, nHora = 0;
     for (const email of todos.slice(0, 300)) {
       const p = await getJSON(`mudancero:perfil:${email}`);
       if (!p || p.estado !== 'aprobado') continue;
-      // Los que cobran "por hora" (tipoCobro) tienen una TARIFA, no el precio
-      // total del trabajo — mezclarlos con los de precio fijo arruina el
-      // promedio (compara cosas distintas). Solo entran los de precio fijo.
-      if (p.tipoCobro !== 'fijo') continue;
-      let sumo = false;
-      NIVELES.forEach((niv) => {
-        const pack = p[niv.campo];
-        if (!pack) return;
-        AMBIENTES.forEach((k) => {
-          const v = parseInt(String(pack[k] || '').replace(/\D/g, ''));
-          if (v > 0) { acc[k][niv.key].push(v); sumo = true; }
-        });
-      });
-      if (p.precios) {
-        AMBIENTES.forEach((k) => {
-          const v = parseInt(String(p.precios[k] || '').replace(/\D/g, ''));
-          if (v > 0) { acc[k].general.push(v); sumo = true; }
-        });
+      if (p.tipoCobro === 'porHora') {
+        if (sumarPerfil(accHora, p)) nHora++;
+      } else if (p.tipoCobro === 'fijo') {
+        if (sumarPerfil(accFijo, p)) nFijo++;
       }
-      if (sumo) n++;
+      // sin tipoCobro seteado: no se sabe qué unidad es, se descarta (no se adivina).
     }
-    const central = (arr) => mediana(sinOutliers(arr));
-    const porAmbiente = {};
-    AMBIENTES.forEach((k) => {
-      porAmbiente[k] = { general: central(acc[k].general) };
-      NIVELES.forEach((niv) => { porAmbiente[k][niv.key] = central(acc[k][niv.key]); });
-    });
-    return { muestras: n, porAmbiente };
+    return {
+      muestras: nFijo,
+      porAmbiente: centralPorAmbiente(accFijo),
+      muestrasPorHora: nHora,
+      porAmbientePorHora: centralPorAmbiente(accHora),
+    };
   } catch (e) {
     console.warn('preciosPromedio:', e.message);
-    return { muestras: 0 };
+    return { muestras: 0, muestrasPorHora: 0 };
   }
 }
 
-function bloquePrecios(d) {
-  if (!d || !d.muestras || !d.porAmbiente) {
-    return 'PRECIOS: no hay datos reales de precios disponibles ahora mismo. NO inventes cifras — hablá de precios en términos relativos (qué los sube o baja: distancia, piso sin ascensor, volumen), sin dar montos.';
-  }
+function filasPrecios(porAmbiente) {
   const l = [];
   AMBIENTES.forEach((k) => {
-    const fila = d.porAmbiente[k];
+    const fila = porAmbiente[k];
     if (!fila) return;
     const porNivel = NIVELES.map((niv) => (fila[niv.key] ? `${niv.label} ${fmt(fila[niv.key])}` : null)).filter(Boolean);
     if (porNivel.length) {
       l.push(`- ${NOMBRES_AMB[k]}: ${porNivel.join(' · ')}`);
     } else if (fila.general) {
-      // Sin desglose por nivel para este tamaño (perfiles con precio legacy
-      // nomás, sin cargar los packs) — mejor una cifra general que nada.
       l.push(`- ${NOMBRES_AMB[k]}: ronda los ${fmt(fila.general)} (sin desglose por nivel)`);
     }
   });
-  if (!l.length) {
+  return l;
+}
+
+function bloquePrecios(d) {
+  const filasFijo = d && d.muestras ? filasPrecios(d.porAmbiente || {}) : [];
+  const filasHora = d && d.muestrasPorHora ? filasPrecios(d.porAmbientePorHora || {}) : [];
+
+  if (!filasFijo.length && !filasHora.length) {
     return 'PRECIOS: no hay datos reales de precios disponibles ahora mismo. NO inventes cifras — hablá de precios en términos relativos (qué los sube o baja: distancia, piso sin ascensor, volumen), sin dar montos.';
   }
-  return (
-    `PRECIOS DE REFERENCIA (promedio real de mudanceros de MudateYa, ${d.muestras} perfiles — desglosado por nivel de servicio ` +
-    `cuando hay dato; sirve para dar una idea, el precio final lo pone cada mudancero en su cotización):\n${l.join('\n')}\n` +
-    `Si te preguntan cuánto sale, podés tirar estas cifras COMO REFERENCIA aproximada por nivel (aclarando que varía según distancia, piso/ascensor, volumen) — nunca las des como precio cerrado ni las fuerces si no viene a cuento.`
+
+  const partes = [];
+  if (filasFijo.length) {
+    partes.push(
+      `PRECIOS DE REFERENCIA — PRECIO FIJO (promedio real de ${d.muestras} mudanceros que cobran precio fijo por el trabajo completo, desglosado por nivel cuando hay dato):\n${filasFijo.join('\n')}`
+    );
+  }
+  if (filasHora.length) {
+    partes.push(
+      `TARIFA POR HORA (promedio real de ${d.muestrasPorHora} mudanceros que cobran por hora en vez de precio fijo — estos números son $/hora, NO el total del trabajo; el total depende de cuántas horas tome):\n${filasHora.join('\n')}`
+    );
+  }
+  partes.push(
+    'Si te preguntan cuánto sale: fijate primero si ese mudancero cobra fijo o por hora (lo sabés cuando cotiza). Usá estos números SOLO como referencia aproximada general (aclarando que varía según distancia, piso/ascensor, volumen) — nunca los des como precio cerrado ni los fuerces si no viene a cuento. Nunca confundas un precio fijo con una tarifa horaria.'
   );
+  return partes.join('\n\n');
 }
 
 // ── Texto plano de una URL propia del sitio (sin tags/scripts/estilos) ──
