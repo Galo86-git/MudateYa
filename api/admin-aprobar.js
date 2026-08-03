@@ -60,6 +60,29 @@ async function enviarEmailAltaExitosa(perfil) {
   const empresa  = perfil.empresa  ? ` · ${perfil.empresa}` : '';
   const linkTerminos = `https://mudateya.ar/aceptar-terminos?token=${token}`;
 
+  // La aprobación manual (este flujo) no exige perfil completo como sí lo
+  // exige la auto-aprobación (_aprobar.js) -- un admin puede aprobar a
+  // alguien con datos pendientes. Antes el mail siempre decía "todo está en
+  // orden, ya podés recibir pedidos", lo cual era falso si todavía le
+  // faltaba DNI/cobro/precios: aparecía en el catálogo pero sin precios
+  // cargados nunca iba a matchear con ningún pedido, y no había forma de que
+  // supiera por qué. Ahora lista lo que falta, si falta algo.
+  let falta = [];
+  try {
+    // 'tyc' se excluye acá: ya tiene su propio bloque dedicado más abajo
+    // (el CTA de aceptar términos) — listarlo dos veces sería redundante.
+    falta = require('./cron-recordar-perfil').faltantes(perfil).filter((f) => f.k !== 'tyc');
+  } catch (e) { console.warn('faltantes:', e.message); }
+  const bloqueFalta = falta.length
+    ? `<div style="background:#FFF7ED;border:1px solid #FCD34D;border-radius:12px;padding:20px 24px;margin-bottom:24px">
+        <div style="font-size:15px;font-weight:700;color:#92400E;margin-bottom:8px">⚠ Para que te empiecen a llegar pedidos, todavía te falta:</div>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:#475569;line-height:1.8">
+          ${falta.map((f) => `<li>${f.txt}</li>`).join('')}
+        </ul>
+        <a href="https://mudateya.ar/mi-cuenta" style="display:block;margin-top:14px;color:#1A6FFF;font-size:13px;font-weight:600;text-decoration:none">Completarlo ahora →</a>
+      </div>`
+    : '';
+
   await resend.emails.send({
     from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
     to:      perfil.email,
@@ -84,9 +107,11 @@ async function enviarEmailAltaExitosa(perfil) {
           ¡Estás aprobado, ${nombre}!
         </h2>
         <p style="font-size:14px;color:#475569;text-align:center;margin:0 0 28px">
-          Revisamos tu perfil${empresa} y todo está en orden.<br/>
-          Ya podés empezar a recibir pedidos de mudanza en tu zona.
+          Revisamos tu perfil${empresa}${falta.length ? ' y ya sos parte de MudateYa.' : ' y todo está en orden.'}<br/>
+          ${falta.length ? 'Te falta completar algunos datos antes de recibir pedidos (los ves abajo).' : 'Ya podés empezar a recibir pedidos de mudanza en tu zona.'}
         </p>
+
+        ${bloqueFalta}
 
         <!-- Paso final -->
         <div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px 24px;margin-bottom:28px">

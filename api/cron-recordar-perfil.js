@@ -208,3 +208,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ error: e.message, ...out, detalle });
   }
 };
+
+// Reutilizable: admin-aprobar.js la usa para avisar en el email de alta qué
+// le sigue faltando a un mudancero aprobado manualmente con perfil incompleto
+// (una sola fuente de verdad — mismo criterio que el recordatorio semanal).
+module.exports.faltantes = faltantes;
