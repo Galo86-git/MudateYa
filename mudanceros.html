@@ -135,6 +135,13 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           <span style="font-size:10px;color:#64748B;font-family:var(--mono)">Persona física: 20/27-... · Empresa: 30/33-...</span>
           <span class="field-error">CUIL/CUIT inválido</span>
         </div>
+        <div class="field" id="f-nombre" style="display:none">
+          <label class="field-label" for="nombre">Nombre completo <span>*</span></label>
+          <input type="text" id="nombre" placeholder="Juan González" autocomplete="name"/>
+          <span style="font-size:11px;color:#94A3B8" id="nombre-afip-hint"></span>
+          <a href="#" id="nombre-afip-editar" style="font-size:11px;color:#1A6FFF;display:none;margin-top:4px" onclick="habilitarNombreManual(event)">¿No es tu nombre? Editalo</a>
+          <span class="field-error">Este campo es obligatorio</span>
+        </div>
       </div>
     </div>
 
@@ -146,14 +153,10 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       <div class="section-title">2. Datos personales</div>
       <div class="section-sub">Tu información de contacto — no se muestra públicamente</div>
       <div class="field-grid cols2">
-        <div class="field" id="f-nombre">
-          <label class="field-label" for="nombre">Nombre completo <span>*</span></label>
-          <input type="text" id="nombre" placeholder="Juan González" autocomplete="name"/>
-          <span class="field-error">Este campo es obligatorio</span>
-        </div>
         <div class="field" id="f-empresa">
-          <label class="field-label" for="empresa">Nombre de la empresa / razón social</label>
+          <label class="field-label" for="empresa">Nombre de fantasía</label>
           <input type="text" id="empresa" placeholder="Mudanzas González (opcional)"/>
+          <span style="font-size:11px;color:#94A3B8">El nombre comercial con el que te conocen — se muestra en tu perfil público</span>
         </div>
         <div class="field" id="f-telefono">
           <label class="field-label" for="telefono">WhatsApp / teléfono <span>*</span></label>
@@ -294,6 +297,35 @@ function setCuilGate(ok) {
   var resto = document.getElementById('restoForm');
   resto.style.opacity = ok ? '1' : '.4';
   resto.style.pointerEvents = ok ? 'auto' : 'none';
+  document.getElementById('f-nombre').style.display = ok ? '' : 'none';
+}
+
+// ── NOMBRE autocompletado desde AFIP (o manual si AFIP no responde) ──
+var nombreEsDeAfip = false;
+function setNombreDesdeAfip(nombre) {
+  var input = document.getElementById('nombre');
+  var hint = document.getElementById('nombre-afip-hint');
+  var editar = document.getElementById('nombre-afip-editar');
+  input.value = nombre;
+  input.readOnly = true;
+  hint.textContent = 'Según AFIP — así queda en tu perfil, es tu nombre legal';
+  editar.style.display = 'inline-block';
+  nombreEsDeAfip = true;
+}
+function setNombreManual() {
+  var input = document.getElementById('nombre');
+  var hint = document.getElementById('nombre-afip-hint');
+  var editar = document.getElementById('nombre-afip-editar');
+  if (nombreEsDeAfip) input.value = ''; // el nombre viejo era de un CUIT distinto
+  input.readOnly = false;
+  hint.textContent = '';
+  editar.style.display = 'none';
+  nombreEsDeAfip = false;
+}
+function habilitarNombreManual(e) {
+  e.preventDefault();
+  setNombreManual();
+  document.getElementById('nombre').focus();
 }
 
 async function validarCuilVivo() {
@@ -331,23 +363,28 @@ async function validarCuilVivo() {
     if (d.afip && d.afip.disponible && d.afip.existe && d.afip.estadoClave && d.afip.estadoClave !== 'ACTIVO') {
       statusEl.style.color = '#B45309';
       statusEl.textContent = '⚠ Existe en AFIP pero su estado no es activo (' + d.afip.estadoClave + '). Vamos a revisarlo a mano.';
+      if (d.afip.nombre) setNombreDesdeAfip(d.afip.nombre); else setNombreManual();
       setCuilGate(true);
       return;
     }
     if (d.afip && d.afip.disponible && d.afip.existe) {
       statusEl.style.color = '#15803D';
       statusEl.textContent = '✓ CUIL/CUIT verificado contra AFIP';
+      if (d.afip.nombre) setNombreDesdeAfip(d.afip.nombre); else setNombreManual();
       setCuilGate(true);
       return;
     }
-    // AFIP no disponible ahora mismo (caído, límite de uso, o no configurado) — no bloqueamos.
+    // AFIP no disponible ahora mismo (caído, límite de uso, o no configurado) — no bloqueamos,
+    // pero tampoco hay nombre para autocompletar: lo carga a mano como antes.
     statusEl.style.color = '#15803D';
     statusEl.textContent = '✓ Formato válido';
+    setNombreManual();
     setCuilGate(true);
   } catch (e) {
     if (seq !== cuilCheckSeq) return;
     statusEl.style.color = '#15803D';
     statusEl.textContent = '✓ Formato válido';
+    setNombreManual();
     setCuilGate(true);
   }
 }

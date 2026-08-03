@@ -260,12 +260,14 @@ module.exports = async function handler(req, res) {
           try {
             var afip = await validarCuitAfip(local.cuil);
             if (afip && afip.disponible) {
-              // A propósito NO se manda nombre/apellido/domicilio acá: este
-              // endpoint es público (lo pega el formulario antes de loguearse),
-              // no puede convertirse en "consultá el domicilio de cualquier
-              // CUIT gratis". El nombre completo SÍ se cruza más adelante,
-              // server-to-server, durante el alta real (evaluarIdentidad).
+              // Se manda el nombre/razón social para autocompletar el form (el
+              // mudancero confirma que es el suyo, en vez de tipearlo a mano).
+              // OJO: no es un leak nuevo — la propia AFIP ya deja consultar el
+              // nombre por CUIT sin login en su "Constancia de Inscripción"
+              // pública. domicilioFiscal sí se sigue omitiendo: no hace falta
+              // para este uso y es más sensible que el nombre.
               out.afip = { disponible: true, existe: afip.existe, estadoClave: afip.estadoClave || null };
+              if (afip.existe && afip.nombre) out.afip.nombre = afip.nombre;
             } else {
               out.afip = { disponible: false };
             }
