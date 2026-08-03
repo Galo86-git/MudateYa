@@ -746,6 +746,54 @@ async function subirFotoBlob(base64, tipo) {
   } catch (e) { console.warn('subirFotoBlob:', e.message); return null; }
 }
 
+// Chequea con Claude si una foto (base64) muestra un teléfono o email visible —
+// mismo criterio que las fotos de perfil/vehículo de los mudanceros (ver
+// api/moderar-fotos-mudanceros.js). Acá aplica a fotos que MANDA EL CLIENTE
+// para un relevamiento remoto: tampoco pueden llevar contacto directo, porque
+// el mudancero las ve al cotizar y el punto es que sigan contactándose por acá.
+// Falla ABIERTO: si el chequeo no responde, no bloquea (defensa extra, no el único control).
+async function chequearContactoEnFoto(base64, tipo) {
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: tipo || 'image/jpeg', data: base64 } },
+            { type: 'text', text: '¿Aparece escrito o visible en esta imagen un número de teléfono o una dirección de email (cartel, adhesivo, remera, escrito a mano, etc.)? No cuentes patentes de vehículos ni numeración de calle/piso. Respondé SOLO con JSON válido: {"tieneContacto": true|false, "detalle": "el texto visto, o vacío si no hay"}' },
+          ],
+        }],
+        output_config: {
+          format: {
+            type: 'json_schema',
+            schema: {
+              type: 'object', additionalProperties: false,
+              required: ['tieneContacto', 'detalle'],
+              properties: { tieneContacto: { type: 'boolean' }, detalle: { type: 'string' } },
+            },
+          },
+        },
+      }),
+    });
+    if (!r.ok) return { tieneContacto: false };
+    const data = await r.json();
+    const texto = (data.content || []).map((b) => b.text || '').join('');
+    const analisis = JSON.parse(texto.trim());
+    return { tieneContacto: !!analisis.tieneContacto, detalle: analisis.detalle || '' };
+  } catch (e) {
+    console.warn('chequearContactoEnFoto:', e.message);
+    return { tieneContacto: false };
+  }
+}
+
 async function crearPedido(input, waId, ubicaciones, fotos) {
   const id = nuevoId();
   const ahora = new Date();
@@ -1276,6 +1324,49 @@ async function barridoWhatsApp(pedido) {
 async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
   const key = mudancero ? `wa:conv:mud:${waId}` : `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
+
+  // ── Fotos para un pedido YA ABIERTO (relevamiento remoto) ──────────────────
+  // Si el cliente (no mudancero) manda fotos y ya tiene un pedido buscando/
+  // cotizando, se las adjuntamos DIRECTO a ese pedido (así el mudancero que
+  // pidió "relevamiento" puede ajustar el precio sin visita) en vez de tratarlas
+  // como fotos para un pedido nuevo. Cada foto se modera antes de guardarse:
+  // no puede mostrar teléfono ni email (mismo criterio que las fotos de
+  // mudanceros) — el contacto siempre tiene que ser a través de MudateYa.
+  if (!mudancero && imagenes && imagenes.length) {
+    try {
+      const pedidos = await pedidosDelCliente(waId);
+      const abiertos = pedidos.filter((p) => p && (p.estado === 'buscando' || p.estado === 'cotizando'));
+      if (abiertos.length) {
+        const pedido = abiertos[abiertos.length - 1]; // el más reciente
+        const fotosActuales = (pedido.detallesAdicionales && Array.isArray(pedido.detallesAdicionales.fotos))
+          ? pedido.detallesAdicionales.fotos.slice() : [];
+        let agregadas = 0, rechazadasPorContacto = 0;
+        for (const img of imagenes) {
+          if (fotosActuales.length >= 5) break; // mismo tope que usa cotizaciones.js
+          const data = await descargarMediaBase64(img.url);
+          if (!data) continue;
+          const chequeo = await chequearContactoEnFoto(data, img.tipo);
+          if (chequeo.tieneContacto) { rechazadasPorContacto++; continue; }
+          const url = await subirFotoBlob(data, img.tipo);
+          if (url) { fotosActuales.push(url); agregadas++; }
+        }
+        if (agregadas > 0 || rechazadasPorContacto > 0) {
+          pedido.detallesAdicionales = pedido.detallesAdicionales || {};
+          pedido.detallesAdicionales.fotos = fotosActuales;
+          try { await setJSON(`mudanza:${pedido.id}`, pedido); } catch (e) { console.warn('guardar fotos pedido:', e.message); }
+
+          if (agregadas > 0 && !rechazadasPorContacto) {
+            return `¡Gracias! Agregué ${agregadas} foto${agregadas > 1 ? 's' : ''} a tu pedido — el mudancero ya las va a ver para ajustarte el precio sin necesidad de visitarte. 📷`;
+          }
+          if (agregadas > 0 && rechazadasPorContacto) {
+            return `Agregué ${agregadas} foto${agregadas > 1 ? 's' : ''} a tu pedido, pero ${rechazadasPorContacto === 1 ? 'una mostraba' : rechazadasPorContacto + ' mostraban'} un teléfono o email — esa${rechazadasPorContacto > 1 ? 's' : ''} no la${rechazadasPorContacto > 1 ? 's' : ''} guardé. El contacto con el mudancero siempre es a través de MudateYa. Si querés, mandame otra sin esos datos.`;
+          }
+          return `Esa foto mostraba un teléfono o email de contacto, así que no la guardé — el mudancero te tiene que contactar siempre a través de MudateYa. Mandame otra sin esos datos y la agrego a tu pedido. 📷`;
+        }
+        // Si ninguna foto se pudo bajar/procesar, seguimos al flujo normal abajo.
+      }
+    } catch (e) { console.warn('fotos relevamiento pedido abierto:', e.message); }
+  }
 
   // Ubicación compartida por WhatsApp: se la contamos al agente (como texto) y
   // guardamos las coordenadas para poder hacer geo-match de mudanceros después.

@@ -126,6 +126,13 @@ const CREAR = [
     types: { 'twilio/text': { body: '¡Hola {{1}}! Cancelamos tu {{2}} con {{3}} como solicitaste.\n\n{{4}}\n\n¿Necesitás una nueva mudanza? Entrá a mudateya.ar cuando quieras.' } },
     variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian', '4': 'Procesamos el reintegro de $25.000. Vas a verlo acreditado en 5 a 10 días hábiles.' } },
 
+  // Cuando un mudancero cotiza pidiendo un relevamiento/visita presencial para
+  // dar el precio final. Le sugerimos al cliente mandar fotos por acá como
+  // alternativa, para no perder el pedido por la fricción de coordinar una visita.
+  { name: 'sugerencia_fotos_relevamiento', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! {{2}} te cotizó tu {{3}}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar — se las paso al mudancero para que ajuste el precio sin necesidad de ir. 📷' } },
+    variables: { '1': 'Juan', '2': 'Cristian', '3': 'mudanza' } },
+
 ];
 
 module.exports = async function handler(req, res) {

@@ -4063,6 +4063,13 @@ async function notificarClienteNuevoPedido(mudanza) {
   }
 }
 
+// Detecta si la nota de una cotización pide un relevamiento/visita presencial
+// para dar el precio final — para sugerirle al cliente mandar fotos en cambio
+// (evita perder el pedido por la fricción de coordinar una visita).
+function pideVisitaPresencial(nota) {
+  return /relevamiento|visitar|visita\s+(presencial|domiciliaria)|recorrer\s+el\s+(lugar|domicilio)|pasar\s+a\s+ver|ir\s+a\s+ver\s+(el|la)|necesita(mos)?\s+ver\s+el\s+lugar/i.test(String(nota || ''));
+}
+
 async function notificarCliente(mudanza, cotizacion) {
   const esBot = mudanza.canal === 'whatsapp';
 
@@ -4088,6 +4095,13 @@ async function notificarCliente(mudanza, cotizacion) {
       const pdfUrl = `https://mudateya.ar/api/cotizaciones?action=pdf&mudanzaId=${encodeURIComponent(mudanza.id)}&cotizacionId=${encodeURIComponent(cotizacion.id)}`;
       await enviarWhatsAppTexto(mudanza.clienteWA, '📄 Te paso el presupuesto en PDF:', pdfUrl);
     } catch (e) { console.error('notificarCliente WhatsApp pdf:', e.message); }
+    // 3) Si el mudancero pidió relevamiento/visita, sugerirle fotos como alternativa.
+    if (pideVisitaPresencial(cotizacion.nota)) {
+      try {
+        const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar — se las paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
+        await enviarPlantilla(mudanza.clienteWA, 'sugerencia_fotos_relevamiento', { 1: nomCli, 2: cotizacion.mudanceroNombre || 'El mudancero', 3: mudanza.tipo || 'mudanza' }, textoSugerencia);
+      } catch (e) { console.warn('sugerencia fotos relevamiento:', e.message); }
+    }
     return; // no seguimos con el mail: el email del cliente WhatsApp es sintético
   }
 
@@ -4107,6 +4121,13 @@ async function notificarCliente(mudanza, cotizacion) {
         (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
         `Entrá a mudateya.ar/mi-mudanza para verla y elegir.`;
       await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto);
+
+      // Si el mudancero pidió relevamiento/visita, sugerirle fotos como alternativa.
+      if (pideVisitaPresencial(cotizacion.nota)) {
+        const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar — se las paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
+        try { await enviarPlantilla(mudanza.clienteWA, 'sugerencia_fotos_relevamiento', { 1: nomCli, 2: cotizacion.mudanceroNombre || 'El mudancero', 3: mudanza.tipo || 'mudanza' }, textoSugerencia); }
+        catch (e) { console.warn('sugerencia fotos relevamiento (web):', e.message); }
+      }
     } catch (e) { console.error('notificarCliente WhatsApp (web):', e.message); }
   }
 
