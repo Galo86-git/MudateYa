@@ -4110,6 +4110,7 @@ async function notificarCliente(mudanza, cotizacion) {
   // se corta el mail: son dos canales sumados, no uno u otro. Es un aviso que
   // no espera respuesta (a diferencia de ajuste de precio / calificación,
   // que por ahora siguen solo para clientes del bot — ver nota en el código).
+  let sugerenciaFotosEntregada = false; // por WhatsApp — define si hace falta el respaldo por mail
   if (!esBot && mudanza.clienteWA) {
     try {
       const { enviarPlantilla } = require('./_plantillas');
@@ -4125,18 +4126,20 @@ async function notificarCliente(mudanza, cotizacion) {
       // Si el mudancero pidió relevamiento/visita, sugerirle fotos como alternativa.
       if (pideVisitaPresencial(cotizacion.nota)) {
         const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar o contame más detalles por escrito — se los paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
-        try { await enviarPlantilla(mudanza.clienteWA, 'sugerencia_fotos_relevamiento', { 1: nomCli, 2: cotizacion.mudanceroNombre || 'El mudancero', 3: mudanza.tipo || 'mudanza' }, textoSugerencia); }
-        catch (e) { console.warn('sugerencia fotos relevamiento (web):', e.message); }
+        try {
+          const r = await enviarPlantilla(mudanza.clienteWA, 'sugerencia_fotos_relevamiento', { 1: nomCli, 2: cotizacion.mudanceroNombre || 'El mudancero', 3: mudanza.tipo || 'mudanza' }, textoSugerencia);
+          sugerenciaFotosEntregada = !!(r && r.enviado);
+        } catch (e) { console.warn('sugerencia fotos relevamiento (web):', e.message); }
       }
     } catch (e) { console.error('notificarCliente WhatsApp (web):', e.message); }
   }
 
-  // Respaldo por mail de la sugerencia de fotos: la plantilla de WhatsApp de
-  // arriba solo entrega si el cliente le escribió a Emi en las últimas 24hs
-  // (o si ya está aprobada por Meta) — el mail no tiene esa restricción, así
-  // que esto garantiza que le llegue sí o sí. Solo aplica a clientes web (los
+  // Respaldo por mail de la sugerencia de fotos — SOLO si el WhatsApp no se
+  // pudo entregar (sin número, fuera de la ventana de 24hs y sin plantilla
+  // aprobada). No es un segundo aviso duplicado, es el respaldo garantizado
+  // para cuando el canal principal no llega. Solo aplica a clientes web (los
   // del bot no tienen email real).
-  if (!esBot && pideVisitaPresencial(cotizacion.nota)) {
+  if (!esBot && !sugerenciaFotosEntregada && pideVisitaPresencial(cotizacion.nota)) {
     try { await avisarSugerenciaFotosPorMail(mudanza, cotizacion); }
     catch (e) { console.warn('sugerencia fotos relevamiento (mail):', e.message); }
   }

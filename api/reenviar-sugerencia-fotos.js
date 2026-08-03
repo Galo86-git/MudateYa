@@ -80,9 +80,11 @@ module.exports = async function handler(req, res) {
           } catch (e) { resultado.whatsappError = e.message; }
         }
 
-        // Mail: canal garantizado, sin la restricción de ventana de 24hs de WhatsApp.
-        if (mudanza.clienteEmail) {
-          try { await mandarMailSugerencia(mudanza, c, nomCli); resultado.mail = 'enviado'; }
+        // Mail: SOLO si el WhatsApp no se pudo entregar (fuera de ventana y sin
+        // plantilla aprobada) — es un respaldo, no un segundo aviso duplicado.
+        var whatsappOk = resultado.whatsapp && resultado.whatsapp.enviado === true;
+        if (!whatsappOk && mudanza.clienteEmail) {
+          try { await mandarMailSugerencia(mudanza, c, nomCli); resultado.mail = 'enviado (whatsapp no entregó)'; }
           catch (e) { resultado.mailError = e.message; }
         }
 
