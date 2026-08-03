@@ -134,61 +134,115 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Mandar el mail (cron o admin forzándolo) ──
+    // Estilo "ledger/scoreboard": números grandes tipo tablero + secciones
+    // como planilla (nombre a la izquierda, dato alineado a la derecha), en
+    // vez de tarjetas grises con emoji. Todo inline (obligatorio para mail).
     var enviado = false;
     if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
       var resend = new Resend(process.env.RESEND_API_KEY);
-      var filaLista = function (items, vacio) {
-        if (!items.length) return '<p style="color:#94A3B8;font-size:13px;margin:0 0 16px">' + vacio + '</p>';
-        return '<ul style="margin:0 0 16px;padding-left:18px;font-size:13px;color:#475569;line-height:1.7">'
-          + items.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
+
+      var seccion = function (titulo, cantidad, filas, vacio) {
+        var head = '<div style="padding:16px 0 8px;border-top:1px solid #EFEDE6">' +
+          '<span style="font-family:Georgia,serif;font-size:13.5px;font-weight:700;color:#14202B">' + titulo +
+          (cantidad != null ? '<span style="color:#8A93A0;font-weight:400;font-size:12px;margin-left:2px"> · ' + cantidad + '</span>' : '') +
+          '</span></div>';
+        if (!filas.length) {
+          return head + '<p style="padding:0 0 9px;margin:0;font-size:12.5px;color:#8A93A0;font-style:italic">' + vacio + '</p>';
+        }
+        var filasHtml = '<table role="presentation" style="width:100%;border-collapse:collapse">' +
+          filas.map(function (f, i) {
+            var borde = i === 0 ? '' : 'border-top:1px solid #EFEDE6;';
+            return '<tr>' +
+              '<td style="padding:7px 0;font-size:13px;color:#14202B;' + borde + '">' + f.nombre +
+                (f.sub ? '<span style="display:block;color:#5B6472;font-size:11.5px;margin-top:1px">' + f.sub + '</span>' : '') +
+              '</td>' +
+              '<td style="padding:7px 0;font-size:12.5px;color:#5B6472;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;' + borde + '">' + f.valor + (f.chip || '') + '</td>' +
+            '</tr>';
+          }).join('') +
+          '</table>';
+        return head + filasHtml;
       };
-      var htmlPedidos = filaLista(pedidosHoy.slice(0, 15).map(function (m) {
-        return (m.tipo || 'mudanza') + ': ' + (m.desde || m.origen || '') + ' → ' + (m.hasta || m.destino || '') + ' (' + m.id + ')';
-      }), 'Sin pedidos nuevos hoy.');
-      var htmlCots = filaLista(cotizacionesHoy.slice(0, 15).map(function (c) {
-        return c.mudancero + ': $' + Number(c.precio).toLocaleString('es-AR') + ' — pedido ' + c.mudanzaId;
-      }), 'Sin cotizaciones nuevas hoy.');
-      var htmlMud = filaLista(mudancerosNuevosHoy.slice(0, 15).map(function (p) {
-        return (p.nombre || '') + (p.empresa ? ' (' + p.empresa + ')' : '') + ' — ' + p.email;
-      }), 'Sin mudanceros nuevos hoy.');
-      var htmlAsesores = filaLista(
-        asesoresGeneralesHoy.map(function (a) { return (a.nombre || '') + ' (asesor) — ' + a.email; })
-          .concat(asesoresCanalHoy.map(function (a) { return a.nombre + ' — ' + a.canal + (a.email ? ' (' + a.email + ')' : ''); })),
-        'Sin asesores nuevos hoy.'
-      );
-      var htmlCancel = filaLista(canceladasHoy.slice(0, 15).map(function (m) {
+      var chipCritico = '<span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;padding:2px 7px;border-radius:2px;margin-left:8px;background:#FCEEEC;color:#B42318;vertical-align:1px">crítico</span>';
+
+      var filasPedidos = pedidosHoy.slice(0, 15).map(function (m) {
+        var val = m.urgente ? 'urgente' : (m.ambientes || (m.tipo === 'flete' ? 'flete' : ''));
+        return { nombre: (m.tipo || 'mudanza') + ' — ' + (m.desde || m.origen || '') + ' → ' + (m.hasta || m.destino || ''), sub: m.id, valor: val };
+      });
+      var filasCots = cotizacionesHoy.slice(0, 15).map(function (c) {
+        return { nombre: c.mudancero || 'mudancero', sub: 'pedido ' + c.mudanzaId, valor: '$' + Number(c.precio).toLocaleString('es-AR') };
+      });
+      var filasMud = mudancerosNuevosHoy.slice(0, 15).map(function (p) {
+        return { nombre: (p.nombre || '') + (p.empresa ? ' (' + p.empresa + ')' : ''), sub: p.email, valor: p.zonaBase || '—' };
+      });
+      var filasAsesores = asesoresGeneralesHoy.map(function (a) {
+        return { nombre: a.nombre || '', sub: a.email || '', valor: 'alta hoy' };
+      }).concat(asesoresCanalHoy.map(function (a) {
+        return { nombre: a.nombre || '', sub: a.canal, valor: 'alta hoy' };
+      }));
+      var filasCancel = canceladasHoy.slice(0, 15).map(function (m) {
         var problema = (m.anticipoPagado && !m.refundAnticipoId);
-        return m.id + (problema ? ' ⚠️ <b style="color:#DC2626">necesita reembolso manual</b>' : (m.anticipoPagado ? ' (reembolso OK)' : ''));
-      }), 'Sin cancelaciones hoy.');
+        var sub = m.anticipoPagado ? (problema ? 'seña pagada, sin reintegrar' : 'seña reintegrada') : 'sin seña pagada';
+        return { nombre: m.id, sub: sub, valor: problema ? 'reembolso manual' : '', chip: problema ? chipCritico : '' };
+      });
 
       var alertaCritica = canceladasConProblema.length
-        ? '<div style="background:#FEF2F2;border:1px solid #FECACA;border-left:4px solid #DC2626;border-radius:8px;padding:14px 18px;margin:0 0 20px"><b style="color:#DC2626">🚨 ' + canceladasConProblema.length + ' cancelación(es) necesitan reembolso manual hoy</b> — mirá el detalle de cancelaciones abajo.</div>'
+        ? '<p style="margin:0;padding:13px 32px;background:#FCEEEC;border-bottom:1px solid #F3B8AE;font-size:13px;color:#B42318;line-height:1.5"><b>' + canceladasConProblema.length + ' cancelación(es) necesitan reembolso manual hoy</b> — el pago no se pudo reintegrar solo. Mirá el detalle en Cancelaciones, abajo.</p>'
         : '';
+
+      var ahoraAR = new Date();
+      var datelineTxt = ahoraAR.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      datelineTxt = datelineTxt.charAt(0).toUpperCase() + datelineTxt.slice(1);
+      var horaTxt = ahoraAR.toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit' });
+
+      var scoreCelda = function (num, label, esUltima, flag) {
+        var borde = esUltima ? '' : 'border-left:1px solid #EFEDE6;';
+        return '<td style="text-align:center;padding:0 6px;' + borde + '">' +
+          '<div style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:' + (flag ? '#B42318' : '#003580') + ';font-variant-numeric:tabular-nums;line-height:1">' + num + '</div>' +
+          '<div style="font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:#8A93A0;margin-top:6px;line-height:1.3">' + label + '</div>' +
+        '</td>';
+      };
 
       await resend.emails.send({
         from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
         to: process.env.ADMIN_EMAIL,
-        subject: '📊 Resumen del día ' + hoy + ' — MudateYa',
+        subject: 'Resumen del día ' + hoy + ' — MudateYa',
         html:
-          '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">' +
-          '<div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:13px;color:rgba(255,255,255,.7);margin-left:10px">Resumen ' + hoy + '</span></div>' +
-          '<div style="padding:28px">' +
-            alertaCritica +
-            '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:22px">' +
-              '<div style="background:#F5F7FA;border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:700">Pedidos nuevos</div><div style="font-size:22px;font-weight:800;color:#003580">' + resumen.pedidosNuevos + '</div></div>' +
-              '<div style="background:#F5F7FA;border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:700">Cotizaciones</div><div style="font-size:22px;font-weight:800;color:#003580">' + resumen.cotizacionesRecibidas + '</div></div>' +
-              '<div style="background:#F5F7FA;border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:700">Mudanceros nuevos</div><div style="font-size:22px;font-weight:800;color:#003580">' + resumen.mudancerosNuevos + '</div></div>' +
-              '<div style="background:#F5F7FA;border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:700">Asesores nuevos</div><div style="font-size:22px;font-weight:800;color:#003580">' + resumen.asesoresNuevos + '</div></div>' +
-              '<div style="background:#F5F7FA;border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:700">Cancelaciones</div><div style="font-size:22px;font-weight:800;color:' + (canceladasConProblema.length ? '#DC2626' : '#003580') + '">' + resumen.cancelaciones + '</div></div>' +
-              '<div style="background:#F5F7FA;border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:#94A3B8;text-transform:uppercase;font-weight:700">Emi habló con</div><div style="font-size:22px;font-weight:800;color:#003580">' + resumen.emiHablóConClientes + ' cli · ' + resumen.emiHablóConMudanceros + ' mud</div></div>' +
+          '<div style="font-family:Arial,Helvetica,sans-serif;color:#14202B;max-width:600px;margin:0 auto;background:#fff;border:1px solid #E7E4DC">' +
+            '<div style="background:#003580;padding:26px 32px 22px;color:#fff">' +
+              '<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:24px;font-weight:700;letter-spacing:.2px">Mudate<span style="color:#6FE0A0">Ya</span></div>' +
+              '<div style="font-family:Georgia,serif;font-style:italic;font-size:12.5px;color:#C7D6EE;margin-top:4px">Resumen del día</div>' +
+              '<div style="font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#89A2CC;margin-top:14px;border-top:1px solid rgba(255,255,255,.18);padding-top:12px">' + datelineTxt + ' · ' + horaTxt + '</div>' +
             '</div>' +
-            '<h3 style="font-size:13px;color:#0F1923;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px">🚚 Pedidos nuevos</h3>' + htmlPedidos +
-            '<h3 style="font-size:13px;color:#0F1923;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px">💰 Cotizaciones recibidas</h3>' + htmlCots +
-            '<h3 style="font-size:13px;color:#0F1923;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px">🚛 Mudanceros nuevos</h3>' + htmlMud +
-            '<h3 style="font-size:13px;color:#0F1923;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px">🤝 Asesores nuevos</h3>' + htmlAsesores +
-            '<h3 style="font-size:13px;color:#0F1923;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px">❌ Cancelaciones</h3>' + htmlCancel +
-            '<p style="color:#94A3B8;font-size:12px;margin-top:20px">Plantillas WhatsApp: ' + aprobadas + ' aprobadas · ' + pendientes + ' en revisión.</p>' +
-          '</div>' +
+            alertaCritica +
+            '<div style="padding:24px 32px 20px">' +
+              '<table role="presentation" style="width:100%;border-collapse:collapse"><tr>' +
+                scoreCelda(resumen.pedidosNuevos, 'Pedidos', false, false) +
+                scoreCelda(resumen.cotizacionesRecibidas, 'Cotizaciones', false, false) +
+                scoreCelda(resumen.mudancerosNuevos, 'Mudanceros', false, false) +
+                scoreCelda(resumen.asesoresNuevos, 'Asesores', false, false) +
+                scoreCelda(resumen.cancelaciones, 'Cancelaciones', true, canceladasConProblema.length > 0) +
+              '</tr></table>' +
+            '</div>' +
+            '<div style="padding:4px 32px 4px">' +
+              seccion('Pedidos nuevos', resumen.pedidosNuevos, filasPedidos, 'Sin pedidos nuevos hoy.') +
+              seccion('Cotizaciones recibidas', resumen.cotizacionesRecibidas, filasCots, 'Sin cotizaciones nuevas hoy.') +
+              seccion('Mudanceros nuevos', resumen.mudancerosNuevos, filasMud, 'Sin mudanceros nuevos hoy.') +
+              seccion('Asesores nuevos', resumen.asesoresNuevos, filasAsesores, 'Sin asesores nuevos hoy.') +
+              seccion('Cancelaciones', resumen.cancelaciones, filasCancel, 'Sin cancelaciones hoy.') +
+              seccion('Emi habló hoy con', null, [
+                { nombre: 'Clientes', valor: String(resumen.emiHablóConClientes) },
+                { nombre: 'Mudanceros', valor: String(resumen.emiHablóConMudanceros) },
+              ], '') +
+            '</div>' +
+            '<div style="margin:18px 32px 0;padding:12px 16px;background:#F6F5F1;border:1px solid #EFEDE6;font-size:12px;color:#5B6472">' +
+              '<table role="presentation" style="width:100%"><tr>' +
+                '<td>Plantillas de WhatsApp</td>' +
+                '<td style="text-align:right;font-variant-numeric:tabular-nums"><b style="color:#14202B">' + aprobadas + '</b> aprobadas · <b style="color:#14202B">' + pendientes + '</b> en revisión</td>' +
+              '</tr></table>' +
+            '</div>' +
+            '<div style="padding:22px 32px 26px;font-size:11px;color:#8A93A0;border-top:1px solid #E7E4DC;margin-top:22px">' +
+              'Generado automáticamente todas las noches a las 20hs · <a href="https://mudateya.ar/admin" style="color:#003580;text-decoration:none">Ver panel de admin →</a>' +
+            '</div>' +
           '</div>',
       });
       enviado = true;
