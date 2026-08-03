@@ -345,7 +345,8 @@ Si te preguntan algo que no está en esta info (condiciones legales, detalles de
 
 HERRAMIENTAS QUE TENÉS:
 - crear_pedido: cuando ya juntaste los datos del pedido.
-- consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio).
+- consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio). Si alguna cotización pidió relevamiento/visita presencial para el precio final (lo ves en la nota), ofrecele mandar fotos por acá (se guardan solas) o contarte más por escrito (usá agregar_detalle_pedido) para evitarse la visita.
+- agregar_detalle_pedido: cuando un mudancero pidió relevamiento/visita y el cliente, en vez de mandar fotos, te cuenta por escrito más sobre lo que hay que mudar. Guardalo con esta herramienta — se lo pasamos al mudancero por vos.
 - aceptar_cotizacion: cuando el cliente ELIGE una cotización. Devuelve la SEÑA (50%), el link de Mercado Pago y los datos de transferencia: pasáselos y explicale que puede pagar por cualquiera de los dos medios (ambos igual de seguros y protegidos), que el 50% restante lo paga al terminar y que la seña queda protegida. Si hay varias cotizaciones, confirmá cuál elige antes de aceptar.
 - cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
 - responder_ajuste: si el mudancero propuso un ajuste de precio y el cliente acepta o rechaza (decision "aceptar" o "rechazar"). Aclarale que si rechaza se cancela la mudanza y se le devuelve la seña.
@@ -413,6 +414,18 @@ const tools = [
     description:
       'Consultá el estado de los pedidos del cliente. Usala cuando pregunta cómo va su mudanza/flete, si llegaron presupuestos, o por un pedido anterior.',
     input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'agregar_detalle_pedido',
+    description:
+      'Agregá información en TEXTO al pedido activo del cliente (las fotos se guardan solas, no hace falta esta herramienta para fotos). Usala cuando un mudancero pidió una visita/relevamiento para dar el precio final y el cliente, en vez de mandar fotos, te cuenta por escrito más detalle de lo que hay que mudar. Se lo pasamos por mail al mudancero para que pueda ajustar el precio sin necesidad de ir.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        detalle: { type: 'string', description: 'El texto con el detalle que dio el cliente' },
+      },
+      required: ['detalle'],
+    },
   },
   {
     name: 'cancelar_pedido',
@@ -794,6 +807,45 @@ async function chequearContactoEnFoto(base64, tipo) {
   }
 }
 
+// Mismo detector que cotizaciones.js (pideVisitaPresencial) — si cambia ahí,
+// actualizar acá también. Duplicado a propósito: este archivo no importa
+// cotizaciones.js para evitar dependencias circulares.
+function pedidoPideVisita(nota) {
+  return /relevamiento|visitar|visita\s+(presencial|domiciliaria)|recorrer\s+el\s+(lugar|domicilio)|pasar\s+a\s+ver|ir\s+a\s+ver\s+(el|la)|necesita(mos)?\s+ver\s+el\s+lugar/i.test(String(nota || ''));
+}
+
+// Avisa por mail al/los mudancero(s) que pidieron relevamiento/visita en su
+// cotización de que el cliente mandó fotos o más detalle en vez de la visita
+// — sin esto, las fotos/el texto quedaban guardados en el pedido pero nadie
+// del lado del mudancero se enteraba que ya estaban disponibles.
+async function avisarMudanceroFotosOTexto(pedido, motivo) {
+  const cots = Array.isArray(pedido.cotizaciones) ? pedido.cotizaciones : [];
+  const matches = cots.filter((c) => c && pedidoPideVisita(c.nota));
+  if (!matches.length || !process.env.RESEND_API_KEY) return;
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  for (const c of matches) {
+    if (!c.mudanceroEmail) continue;
+    try {
+      const nomMud = (c.mudanceroNombre || '').split(' ')[0] || '';
+      await resend.emails.send({
+        from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+        to: c.mudanceroEmail,
+        subject: `El cliente te mandó ${motivo} para tu cotización — pedido ${pedido.id}`,
+        html:
+          `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">` +
+          `<div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span></div>` +
+          `<div style="padding:28px">` +
+            `<p style="color:#0F1923;font-size:16px;line-height:1.7;margin:0 0 16px">Hola${nomMud ? ', ' + nomMud : ''}!</p>` +
+            `<p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">El cliente de tu cotización para el pedido <b>${pedido.id}</b> (${pedido.desde || pedido.origen || ''} → ${pedido.hasta || pedido.destino || ''}) te mandó ${motivo} en vez de coordinar la visita que pediste. Entrá a revisarlo para ajustar el precio si hace falta.</p>` +
+            `<div style="text-align:center;margin:20px 0"><a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver el pedido →</a></div>` +
+          `</div>` +
+          `</div>`,
+      });
+    } catch (e) { console.warn('avisarMudanceroFotosOTexto:', c.mudanceroEmail, e.message); }
+  }
+}
+
 async function crearPedido(input, waId, ubicaciones, fotos) {
   const id = nuevoId();
   const ahora = new Date();
@@ -948,6 +1000,29 @@ function resumenPedido(p) {
     })),
     vence: p.vence || p.expira,
   };
+}
+// Agrega un detalle en TEXTO al pedido abierto del cliente (contraparte de las
+// fotos: cuando el cliente responde con más info escrita en vez de una foto,
+// por ejemplo porque un mudancero pidió relevamiento). Avisa por mail al
+// mudancero que lo pidió, mismo mecanismo que las fotos.
+async function agregarDetallePedidoCliente(waId, detalle) {
+  const texto = String(detalle || '').trim();
+  if (!texto) return { ok: false, mensaje: 'No me llegó ningún detalle para agregar.' };
+
+  const pedidos = await pedidosDelCliente(waId);
+  const abiertos = pedidos.filter((p) => p && (p.estado === 'buscando' || p.estado === 'cotizando'));
+  if (!abiertos.length) return { ok: false, mensaje: 'No encontré un pedido tuyo abierto para agregarle esto.' };
+  const pedido = abiertos[abiertos.length - 1]; // el más reciente
+
+  const textoLimpio = texto.slice(0, 500);
+  pedido.detallesAdicionales = pedido.detallesAdicionales || {};
+  pedido.detallesAdicionales.comentario = pedido.detallesAdicionales.comentario
+    ? pedido.detallesAdicionales.comentario + '\n' + textoLimpio
+    : textoLimpio;
+  try { await setJSON(`mudanza:${pedido.id}`, pedido); } catch (e) { console.warn('guardar detalle pedido:', e.message); }
+  try { await avisarMudanceroFotosOTexto(pedido, 'más información'); } catch (e) { console.warn('avisar mudancero detalle:', e.message); }
+
+  return { ok: true, id: pedido.id, mensaje: 'Listo, lo agregué a tu pedido y se lo paso al mudancero.' };
 }
 async function cancelarPedidoCliente(waId, id) {
   const pedidos = await pedidosDelCliente(waId);
@@ -1213,6 +1288,9 @@ async function ejecutarTool(name, input, waId, conv) {
       if (!pedidos.length) return JSON.stringify({ pedidos: [], nota: 'El cliente no tiene pedidos cargados.' });
       return JSON.stringify({ pedidos: pedidos.map(resumenPedido) });
     }
+    if (name === 'agregar_detalle_pedido') {
+      return JSON.stringify(await agregarDetallePedidoCliente(waId, input && input.detalle));
+    }
     if (name === 'cancelar_pedido') {
       return JSON.stringify(await cancelarPedidoCliente(waId, input && input.id));
     }
@@ -1358,6 +1436,9 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
           pedido.detallesAdicionales = pedido.detallesAdicionales || {};
           pedido.detallesAdicionales.fotos = fotosActuales;
           try { await setJSON(`mudanza:${pedido.id}`, pedido); } catch (e) { console.warn('guardar fotos pedido:', e.message); }
+          if (agregadas > 0) {
+            try { await avisarMudanceroFotosOTexto(pedido, 'fotos'); } catch (e) { console.warn('avisar mudancero fotos:', e.message); }
+          }
 
           if (agregadas > 0 && !rechazadasPorContacto) {
             return `¡Gracias! Agregué ${agregadas} foto${agregadas > 1 ? 's' : ''} a tu pedido — el mudancero ya las va a ver para ajustarte el precio sin necesidad de visitarte. 📷`;
