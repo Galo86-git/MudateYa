@@ -647,6 +647,12 @@ module.exports = async function handler(req, res) {
                     ${data.comisionInmobiliaria ? `<div style="margin-bottom:4px"><strong style="color:#0F1419">Comisión:</strong> ${data.comisionInmobiliaria}% sobre cada mudanza concretada</div>` : ''}
                   </div>
 
+                  <!-- CTA Emi (WhatsApp) -->
+                  <div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px 18px;margin-top:24px;text-align:center">
+                    <div style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600">📱 Cualquier duda, hablá con Emi por WhatsApp</div>
+                    <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
+                  </div>
+
                   <!-- Soporte -->
                   <p style="color:#4B5563;font-size:14px;margin-top:24px;line-height:1.6">¿Dudas o querés que te ayudemos a armar tu primer envío a clientes? Escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF;font-weight:700">hola@mudateya.ar</a> y te respondemos rápido.</p>
                   <p style="color:#9CA3AF;font-size:13px;margin-top:18px">¡Bienvenida al equipo!<br><strong>El equipo de MudateYa</strong></p>
