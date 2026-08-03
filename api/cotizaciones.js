@@ -4335,7 +4335,7 @@ async function avisarVencimientoPorMail(mudanza, cots) {
         <p style="color:#0F1923;font-size:16px;line-height:1.7;margin:0 0 16px">Hola ${nomCli},</p>
         <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 8px">${mensaje}</p>
         ${cots.length ? `<table style="width:100%;border-collapse:collapse;margin:8px 0 20px">${filas}</table>` : ''}
-        <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">Si querés, lo reactivamos y seguimos consiguiéndote presupuestos — entrá a tu cuenta o escribinos.</p>
+        <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">Si querés, podés reactivarlo o publicar un nuevo pedido desde tu cuenta.</p>
         <div style="text-align:center;margin:20px 0">
           <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mi pedido →</a>
         </div>
