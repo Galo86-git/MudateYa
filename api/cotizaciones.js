@@ -1157,6 +1157,22 @@ module.exports = async function handler(req, res) {
       if (mudanza.partnerAsesor) {
         try { await notificarAsesorPedidoPublicado(mudanza); }
         catch(e) { console.warn('Email asesor publicado:', e.message); }
+        // Índice inverso {prefijo}:asesor:{codigo}:mudanzas — para que Emi
+        // (WhatsApp) pueda listar los pedidos referidos de un asesor sin
+        // escanear mudanzas:todos. Se resuelve el canal igual que el mail de
+        // arriba (resolverAsesor prueba el canal declarado y, si no está, los
+        // 4 conocidos) para no indexar bajo un prefijo equivocado.
+        try {
+          const a = await resolverAsesor(mudanza);
+          if (a && CLAVES_ASESOR[a.canal]) {
+            const idxKey = `${CLAVES_ASESOR[a.canal]}${mudanza.partnerAsesor}:mudanzas`;
+            const idxAsesor = await getJSON(idxKey) || [];
+            if (!idxAsesor.includes(id)) {
+              idxAsesor.push(id);
+              await setJSON(idxKey, idxAsesor);
+            }
+          }
+        } catch(e) { console.warn('Índice mudanzas asesor:', e.message); }
       }
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);

@@ -237,45 +237,79 @@ async function buscarMudancero(waId) {
   }
 }
 
-// Mismo patrón que asegurarIndiceMudanceros/buscarMudancero, pero para
-// asesores inmobiliarios (api/asesores.js): índice tel8→email armado desde
-// asesores:todos + asesor:{email} (OJO: la clave del perfil es "asesor:",
-// sin ":perfil:" — asesores.js no usa ese sufijo como sí hace mudancero:perfil:).
-async function asegurarIndiceAsesores() {
+// Asesores inmobiliarios REALES de MudateYa: NO son los de api/asesores.js
+// (ese sistema de dashboard/login no se usa). Son los de los canales de
+// derivación por link fijo — api/canales.js (y sus versiones por-canal
+// remax.js/mudafy.js/independientes.js/c21.js): el asesor se registra una vez
+// y recibe un link ESTÁTICO que no vence (https://mudateya.ar/inmobiliaria/
+// {canal}?asesor={codigo}); lo comparte con clientes, que publican SU PROPIA
+// mudanza atribuida a ese código. Sin login, sin sesión, sin dashboard.
+// Mismo registro de canales que CANALES en api/canales.js — se duplica acá
+// (4 entradas fijas) para no depender de otro archivo en cada mensaje de WhatsApp.
+const CANALES_ASESOR = {
+  independientes: 'indep',
+  mudafy: 'mudafy',
+  remax: 'remax',
+  c21: 'c21',
+};
+const CANALES_ASESOR_NOMBRE = {
+  independientes: 'Asesores independientes',
+  mudafy: 'Mudafy',
+  remax: 'RE/MAX',
+  c21: 'Century 21',
+};
+function linkAsesorCanal(canal, codigo) {
+  return `${SITE_URL}/inmobiliaria/${canal}?asesor=${encodeURIComponent(codigo)}`;
+}
+
+// Índice tel8→"canal:codigo" armado desde {prefijo}:asesores + {prefijo}:asesor:
+// {codigo} de los 4 canales. Mismo patrón de cache 24h que asegurarIndiceMudanceros.
+async function asegurarIndiceAsesoresCanal() {
   try {
-    if (await redisCall('GET', 'asesores:tel8-idx:built')) return;
-    const emails = (await getJSON('asesores:todos')) || [];
-    for (let off = 0; off < emails.length; off += 100) {
-      const lote = emails.slice(off, off + 100);
-      const perfiles = await redisPipeline(lote.map((e) => ['GET', `asesor:${e}`]));
-      const hset = [];
-      perfiles.forEach((val, i) => {
-        if (!val) return;
-        try {
-          const a = JSON.parse(val);
-          if (a && a.telefono && a.estado !== 'inactivo') {
-            const t = clave8(a.telefono);
-            if (t.length === 8) hset.push(['HSET', 'asesores:tel8-idx', t, lote[i]]);
-          }
-        } catch (_) {}
-      });
-      if (hset.length) await redisPipeline(hset);
+    if (await redisCall('GET', 'asesorescanal:tel8-idx:built')) return;
+    for (const canal of Object.keys(CANALES_ASESOR)) {
+      const prefijo = CANALES_ASESOR[canal];
+      const codigos = (await getJSON(`${prefijo}:asesores`)) || [];
+      for (let off = 0; off < codigos.length; off += 100) {
+        const lote = codigos.slice(off, off + 100);
+        const perfiles = await redisPipeline(lote.map((c) => ['GET', `${prefijo}:asesor:${c}`]));
+        const hset = [];
+        perfiles.forEach((val, i) => {
+          if (!val) return;
+          try {
+            const a = JSON.parse(val);
+            if (a && a.whatsapp && a.activo !== false) {
+              const t = clave8(a.whatsapp);
+              if (t.length === 8) hset.push(['HSET', 'asesorescanal:tel8-idx', t, `${canal}:${lote[i]}`]);
+            }
+          } catch (_) {}
+        });
+        if (hset.length) await redisPipeline(hset);
+      }
     }
-    await redisCall('SET', 'asesores:tel8-idx:built', '1', 'EX', String(24 * 60 * 60));
+    await redisCall('SET', 'asesorescanal:tel8-idx:built', '1', 'EX', String(24 * 60 * 60));
   } catch (e) {
-    console.error('asegurarIndiceAsesores:', e.message);
+    console.error('asegurarIndiceAsesoresCanal:', e.message);
   }
 }
-async function buscarAsesor(waId) {
+async function buscarAsesorCanal(waId) {
   try {
-    await asegurarIndiceAsesores();
+    await asegurarIndiceAsesoresCanal();
     const t = clave8(waId);
     if (t.length !== 8) return null;
-    const email = await redisCall('HGET', 'asesores:tel8-idx', t);
-    if (!email) return null;
-    return await getJSON(`asesor:${email}`);
+    const val = await redisCall('HGET', 'asesorescanal:tel8-idx', t);
+    if (!val) return null;
+    const sep = val.indexOf(':');
+    if (sep === -1) return null;
+    const canal = val.slice(0, sep);
+    const codigo = val.slice(sep + 1);
+    const prefijo = CANALES_ASESOR[canal];
+    if (!prefijo) return null;
+    const a = await getJSON(`${prefijo}:asesor:${codigo}`);
+    if (!a) return null;
+    return { ...a, canal, codigo, prefijo, link: linkAsesorCanal(canal, codigo) };
   } catch (e) {
-    console.error('buscarAsesor:', e.message);
+    console.error('buscarAsesorCanal:', e.message);
     return null; // ante error, se trata como cliente (seguro)
   }
 }
@@ -367,7 +401,7 @@ PRIMER MENSAJE GENUINAMENTE AMBIGUO (tipo "hola", vino de un link, no dice para 
 
 QUIERE SUMARSE COMO SOCIO (no confundir con alguien que quiere mudarse — estos quieren trabajar CON MudateYa, no contratarla): como ya está por WhatsApp, lo más práctico es resolverlo ahí mismo, charlando, no mandarlo a la web. Hay 3 tipos:
   A) MUDANCERO/FLETERO/EMPRESA → labura haciendo mudanzas o fletes, quiere recibir pedidos para cotizar. Juntá nombre y apellido, empresa (o "Independiente"), email, zona donde opera — el WhatsApp ya lo tenés (el mismo desde el que escribe, salvo que use otro). Con eso llamá a registrar_mudancero. Aclarale que es un pre-registro rápido: después completa el resto (vehículo, fotos, precios) desde su cuenta — no le prometas que ya puede recibir pedidos todavía.
-  B) ASESOR INMOBILIARIO (individual) → arma presupuestos de mudanza gratis para sus propios clientes (que compran/alquilan y se mudan) desde su link exclusivo, y cobra comisión cuando esa mudanza se paga. Juntá nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: puede armar presupuestos ya mismo.
+  B) ASESOR INMOBILIARIO (individual) → recibe un link propio y fijo (no vence) para compartir con sus propios clientes (los que compran/alquilan y se mudan); el cliente entra ahí y pide su mudanza como cualquier cliente, pero queda atribuida a este asesor. Si es alquiler cobra comisión cuando se completa; si es compraventa, su cliente recibe un regalo en vez de comisión. Juntá nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: ya puede compartir su link.
   C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio como un plus para sus clientes. Juntá nombre de la inmobiliaria, nombre del contacto, colegio profesional donde está matriculado, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Aclarale que esto queda como SOLICITUD: el equipo la revisa y lo contacta en 24h hábiles — no es instantáneo como el alta de asesor.
   OJO: no confundas el caso C (una inmobiliaria sumándose como socio) con *MudateYa Mobility* (ver más abajo) — son productos distintos. Mobility es la línea B2B de relocation corporativo; esto es una inmobiliaria de barrio que quiere ofrecerle MudateYa a sus propios clientes.
 
@@ -463,33 +497,45 @@ REGLAS:
 - Si te preguntan por *MudateYa Mobility* (relocation B2B para inmobiliarias, desarrolladoras, clubes, colegios, diplomáticos o empresas de Vaca Muerta) o por coordinar una reunión de ese tema: para ESA respuesta puntual usá un tono más formal y serio (nada de onda relajada ni emojis, es un contacto institucional). Contale en una línea que es la línea B2B de MudateYa y decile que escriba a *contacto@mudateya.ar* para coordinar con el equipo comercial. No es algo que resolvés vos ni con tus herramientas de pedidos.`;
 
 // System prompt del asistente para ASESORES INMOBILIARIOS (distinto del de
-// clientes y del de mudanceros). El asesor arma presupuestos para SUS
-// clientes desde su link exclusivo (asesor-dashboard.html) — acá por WhatsApp
-// solo resuelve dos cosas rápidas: recuperar el link y ver cómo van sus
-// pedidos referidos. Para armar presupuestos nuevos lo mandamos a su link,
-// porque ese flujo (elegir mudancera, packs, precios) es visual y no tiene
-// sentido reconstruirlo por chat.
-const SYSTEM_PROMPT_ASESOR = `Sos Emi, LA asistente de MudateYa por WhatsApp — una sola, la misma que atiende a clientes, mudanceros y asesores, no una versión aparte para cada uno. Ahora mismo estás hablando con {NOMBRE}, que es Asesor Inmobiliario registrado en el Plan Referidos de MudateYa.
+// clientes y del de mudanceros). OJO: estos son los asesores de los canales de
+// derivación (api/canales.js, api/independientes.js, mudafy.js, remax.js,
+// c21.js) — link FIJO que no vence, sin login ni dashboard. NO confundir con
+// api/asesores.js / asesor-dashboard.html (Plan Referidos con login): ese
+// sistema NO se usa, no existe para el usuario real.
+// El asesor comparte su link con clientes, que publican SU PROPIA mudanza en
+// el marketplace normal (varias cotizaciones, elige, paga) atribuida a su
+// código. Por eso acá Emi no arma presupuestos ni nada visual: solo le pasa
+// su link (siempre el mismo, no expira) y le cuenta cómo van sus referidos.
+const SYSTEM_PROMPT_ASESOR = `Sos Emi, LA asistente de MudateYa por WhatsApp — una sola, la misma que atiende a clientes, mudanceros y asesores, no una versión aparte para cada uno. Ahora mismo estás hablando con {NOMBRE}, que es Asesor Inmobiliario aliado de MudateYa (canal {CANAL}).
 
-MudateYa es un marketplace argentino de mudanzas y fletes. Los asesores como {NOMBRE} arman presupuestos de mudanza gratis para sus propios clientes (los que compran/alquilan y se mudan) desde su link exclusivo, y cobran comisión cuando esa mudanza se paga.
+MudateYa es un marketplace argentino de mudanzas y fletes. Los asesores como {NOMBRE} tienen un link propio y fijo que comparten con sus clientes (los que compran/alquilan y se mudan); el cliente entra por ahí, publica su mudanza y recibe presupuestos de mudanceros verificados como cualquier cliente — pero queda atribuida a {NOMBRE}. Si es un ALQUILER, {NOMBRE} cobra comisión cuando se completa; si es COMPRAVENTA, no hay comisión pero su cliente recibe un regalo (limpieza, Big Box, etc. según el valor de la mudanza).
 
 TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
 
 PODÉS HACER ESTO POR ACÁ:
-- Mandarle de nuevo su link exclusivo de acceso (por si lo perdió o cambió de celu) → reenviar_mi_link.
-- Contarle cómo van los pedidos que armó para sus clientes (a quién le mandaste presupuesto, si ya eligió, si pagó la seña, si la mudanza está en curso o ya se completó) → ver_mis_pedidos_referidos.
+- Pasarle su link (siempre el mismo, no vence nunca) → mi_link. Por defecto lo pasás VOS ACÁ MISMO por WhatsApp (canal "whatsapp", es lo más rápido); solo lo mandás por mail (canal "mail") si te lo pide explícitamente él.
+- Contarle cómo van los clientes que le llegaron por su link (si ya publicaron la mudanza, si tienen cotizaciones, si ya eligieron, si pagaron la seña, si está en curso o completada) → ver_mis_pedidos_referidos.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
 
-PARA ARMAR UN PRESUPUESTO NUEVO (packs, elegir mudancera, precios): eso se hace desde su link exclusivo, no por acá — es un flujo visual. Si te pide armar uno nuevo, mandale una línea con onda y, si no tiene el link a mano, ofrecele reenviar_mi_link.
+APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus clientes?, ¿tiene un reclamo/problema? Andá directo a eso.
 
-APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus pedidos/clientes?, ¿tiene un reclamo/problema? Andá directo a eso.
+PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola"): no asumas qué quiere — saludalo corto por su nombre, con onda, y dejá que te diga qué necesita. Si ya te contó algo concreto de entrada, seguís directo con eso.
 
-PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", vino de un link): no asumas qué quiere — saludalo corto por su nombre, con onda, y dejá que te diga qué necesita. Si ya te contó algo concreto de entrada, seguís directo con eso.
+GLOSARIO PARA CONTAR EL ESTADO DE UN PEDIDO REFERIDO (traducilo siempre a lenguaje natural, nunca repitas estas palabras técnicas tal cual):
+- buscando: el cliente publicó la mudanza, buscando presupuestos de mudanceros.
+- cotizando / cotizaciones_completas: ya le llegaron cotizaciones, todavía no eligió.
+- cotizacion_aceptada + seña sin pagar: eligió una cotización, falta que pague la seña para confirmar.
+- cotizacion_aceptada + seña pagada (sin estar en_curso): seña pagada, esperando la fecha de la mudanza.
+- en_curso: la mudanza está pasando ahora.
+- completada + saldo pagado: mudanza terminada y cobrada del todo (acá ya se sabe si {NOMBRE} cobra comisión o si es el regalo de compraventa).
+- cancelado / cancelada_por_ajuste: se canceló.
 
 RECLAMOS Y PROBLEMAS: si te cuenta que un cliente suyo tuvo un problema con la mudanza (no le cotizaron, algo salió mal, tarda en pagarle la comisión, etc.), no lo dejes con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea, y avisale que lo van a contactar.
 
+REGLA CRÍTICA DEL LINK: cuando mi_link te devuelva un link (canal whatsapp), pasáselo EXACTO, carácter por carácter, tal cual te lo dio la herramienta — nunca lo inventes, completes ni "arregles" de memoria. Si no te devolvió link, no muestres ninguno: avisá que hubo un problema y ofrecé reintentar.
+
 REGLAS:
-- Solo actuás sobre SUS pedidos referidos (las herramientas validan con su cuenta). No inventes pedidos, clientes ni comisiones.
+- Solo actuás sobre SUS pedidos referidos (las herramientas ya vienen filtradas a su cuenta). No inventes pedidos, clientes ni comisiones.
 - No pidas ni manejes datos sensibles (tarjetas, contraseñas).
 - Si una herramienta da error, explicáselo simple y ofrecé reintentar.
 - Si te preguntan por *MudateYa Mobility* (relocation B2B): contale en una línea que es la línea B2B de MudateYa y decile que escriba a *contacto@mudateya.ar* para coordinar con el equipo comercial — no es algo que resolvés vos.`;
@@ -622,7 +668,7 @@ const tools = [
   {
     name: 'registrar_asesor',
     description:
-      "Registra a un ASESOR INMOBILIARIO individual en el programa de Asesores MudateYa (queda activo al toque, ya puede armar presupuestos). Llamala SOLO con los 5 datos: nombre y apellido, inmobiliaria (o 'Independiente'), email, WhatsApp, zona donde trabaja.",
+      "Registra a un ASESOR INMOBILIARIO individual en MudateYa: le genera un link propio y fijo (no vence) para compartir con sus clientes, queda activo al toque. Llamala SOLO con los 5 datos: nombre y apellido, inmobiliaria (o 'Independiente'), email, WhatsApp, zona donde trabaja.",
     input_schema: {
       type: 'object',
       properties: {
@@ -653,6 +699,46 @@ const tools = [
     },
   },
 ];
+
+// Herramienta EXTRA que solo se suma cuando escribe alguien del equipo
+// fundador (reconocido por EQUIPO_TELEFONOS/quienEscribe) — cuenta rápida de
+// lo que hoy se ve en el admin (pedidos, mudanceros, asesores). No expone
+// datos sensibles (nombres/emails/plata), solo totales.
+const RESUMEN_MUDATEYA_TOOL = {
+  name: 'resumen_mudateya',
+  description: 'SOLO para el equipo fundador. Da un pantallazo numérico de MudateYa ahora mismo: pedidos activos y totales, mudanceros y clientes registrados, y asesores por canal (independientes, Mudafy, RE/MAX, C21). Para preguntas tipo "qué pedidos hay", "cuántos asesores tenemos", "cómo estamos".',
+  input_schema: { type: 'object', properties: {}, required: [] },
+};
+
+// Cuenta rápida y barata: son todos largos de listas ya indexadas (sin leer
+// cada perfil/mudanza individual), para no pagar N reads por pregunta.
+async function resumenMudateYa() {
+  const [activas, todas, mudanceros, clientes, idxIndep, idxMudafy, idxRemax, idxC21] = await Promise.all([
+    getJSON('mudanzas:activas'),
+    getJSON('mudanzas:todos'),
+    getJSON('mudanceros:todos'),
+    getJSON('clientes:todos'),
+    getJSON('indep:asesores'),
+    getJSON('mudafy:asesores'),
+    getJSON('remax:asesores'),
+    getJSON('c21:asesores'),
+  ]);
+  const asesores = {
+    independientes: (idxIndep || []).length,
+    mudafy: (idxMudafy || []).length,
+    remax: (idxRemax || []).length,
+    c21: (idxC21 || []).length,
+  };
+  asesores.total = asesores.independientes + asesores.mudafy + asesores.remax + asesores.c21;
+  return {
+    pedidosActivos: (activas || []).length,
+    pedidosHistoricos: (todas || []).length,
+    mudancerosRegistrados: (mudanceros || []).length,
+    clientesRegistrados: (clientes || []).length,
+    asesores,
+    nota: 'Son totales rápidos (listas indexadas). Para desglose fino (por estado, por zona, montos) hay que mirar el admin.',
+  };
+}
 
 // ------------------------------------------------------------------
 // Herramientas del asistente MUDANCERO (flujo completo por WhatsApp).
@@ -786,6 +872,106 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv) {
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
     console.error('ejecutarToolMudancero', name, e.message);
+    return JSON.stringify({ error: 'Tuve un problema con esa acción, probá de nuevo.' });
+  }
+}
+
+const asesorTools = [
+  {
+    name: 'mi_link',
+    description: 'Le pasa al asesor su link fijo de derivación (siempre el mismo, no vence nunca). Por defecto usá canal "whatsapp" (te devuelve el link y se lo pegás vos mismo en el chat, es lo más rápido). Solo usá canal "mail" si el asesor pide específicamente que se lo mandes por mail.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        canal: { type: 'string', enum: ['whatsapp', 'mail'], description: 'Por defecto "whatsapp". Usá "mail" solo si el asesor lo pide explícitamente.' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'ver_mis_pedidos_referidos',
+    description: 'Muestra las mudanzas que le llegaron al asesor por su link: cliente, ruta, si ya tiene cotizaciones, si eligió una, si pagó la seña, si está en curso o completada.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'derivar_a_humano',
+    description: 'Derivá al equipo un RECLAMO o problema que tus otras herramientas no resuelven, o cuando el asesor pide hablar con una persona.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+      },
+      required: ['motivo'],
+    },
+  },
+];
+
+// Mudanzas que le llegaron a un asesor por su link (mudanza.partnerAsesor ===
+// codigo). Lee el índice {prefijo}:asesor:{codigo}:mudanzas que arma
+// api/cotizaciones.js al publicarse cada mudanza (junto al aviso por mail que
+// ya le manda notificarAsesorPedidoPublicado/resolverAsesor).
+async function pedidosReferidosDelAsesor(prefijo, codigo) {
+  const ids = (await getJSON(`${prefijo}:asesor:${codigo}:mudanzas`)) || [];
+  const pedidos = [];
+  for (const id of ids.slice(-15)) {
+    const m = await getJSON(`mudanza:${id}`);
+    if (!m) continue;
+    pedidos.push({
+      id: m.id,
+      cliente: m.clienteNombre || '',
+      ruta: `${m.desde || ''} → ${m.hasta || ''}`,
+      estado: m.estado, // buscando | cotizando | cotizaciones_completas | cotizacion_aceptada | en_curso | completada | cancelado...
+      anticipoPagado: !!m.anticipoPagado,
+      saldoPagado: !!m.saldoPagado,
+      tipoOperacion: m.tipoOperacion || '', // alquiler | compraventa (define si cobra comisión o si el cliente recibe un regalo)
+      montoTotal: m.montoTotal || m.precio_estimado || null,
+      cantCotizaciones: (m.cotizaciones || []).length,
+      fechaPublicacion: m.fechaPublicacion,
+    });
+  }
+  pedidos.sort((a, b) => String(b.fechaPublicacion || '').localeCompare(String(a.fechaPublicacion || '')));
+  return pedidos;
+}
+
+// Ejecuta una herramienta del ASESOR.
+async function ejecutarToolAsesor(name, input, asesor, waId, conv) {
+  const nombre = asesor && asesor.nombre;
+  const email = asesor && asesor.email;
+  const link = asesor && asesor.link;
+  if (!asesor || !link) return JSON.stringify({ error: 'No pude identificar tu cuenta de asesor.' });
+  try {
+    if (name === 'mi_link') {
+      const porMail = input && input.canal === 'mail';
+      if (porMail) {
+        if (!email) return JSON.stringify({ ok: false, error: 'No tengo un mail cargado para vos.' });
+        try {
+          const { Resend } = require('resend');
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          const primerNombre = (nombre || '').split(' ')[0] || '';
+          await resend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+            to: email,
+            subject: 'Tu link de asesor MudateYa',
+            html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#0F1923"><p>¡Hola ${primerNombre}! Este es tu link fijo de MudateYa, para compartir con tus clientes:</p><p style="margin:20px 0"><a href="${link}" style="color:#003580;font-weight:700">${link}</a></p><p style="color:#94A3B8;font-size:12px">MudateYa · mudateya.ar</p></div>`,
+          });
+          return JSON.stringify({ ok: true, nota: `Te mandé un mail a ${email} con tu link.` });
+        } catch (e) {
+          console.error('mail link asesor:', e.message);
+          return JSON.stringify({ ok: false, error: 'No se pudo mandar el mail. Ofrecele pasárselo acá mismo por WhatsApp.' });
+        }
+      }
+      return JSON.stringify({ ok: true, link, nota: `Pasále este link EXACTO tal cual, sin cambiarle nada: ${link}` });
+    }
+    if (name === 'ver_mis_pedidos_referidos') {
+      const pedidos = await pedidosReferidosDelAsesor(asesor.prefijo, asesor.codigo);
+      return JSON.stringify({ pedidos, nota: pedidos.length ? undefined : 'Todavía no te llegó ningún cliente por tu link.' });
+    }
+    if (name === 'derivar_a_humano') {
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'asesor', nombre }));
+    }
+    return JSON.stringify({ error: 'herramienta desconocida' });
+  } catch (e) {
+    console.error('ejecutarToolAsesor', name, e.message);
     return JSON.stringify({ error: 'Tuve un problema con esa acción, probá de nuevo.' });
   }
 }
@@ -1237,7 +1423,8 @@ async function cancelarPedidoCliente(waId, id) {
 async function derivarHumano(waId, motivo, conv, opts) {
   opts = opts || {};
   const esMudancero = opts.rol === 'mudancero';
-  const quienLabel = esMudancero ? 'mudancero/fletero' : 'cliente';
+  const ROL_LABELS = { mudancero: 'mudancero/fletero', asesor: 'asesor inmobiliario' };
+  const quienLabel = ROL_LABELS[opts.rol] || 'cliente';
   const quienConNombre = opts.nombre ? `${quienLabel} ${opts.nombre}` : quienLabel;
   try {
     const { Resend } = require('resend');
@@ -1260,7 +1447,7 @@ async function derivarHumano(waId, motivo, conv, opts) {
         ? `🚨 ${tipoUrg} URGENTE — ${waId}`
         : esReclamo
         ? `⚠️ Reclamo de ${quienLabel} — ${waId}`
-        : `🙋 ${esMudancero ? 'Mudancero' : 'Cliente'} pide atención humana — ${waId}`;
+        : `🙋 ${opts.rol === 'mudancero' ? 'Mudancero' : opts.rol === 'asesor' ? 'Asesor' : 'Cliente'} pide atención humana — ${waId}`;
       const intro = esUrgente
         ? `tiene ${artUrg} <b>${tipoUrg.toLowerCase()} URGENTE</b> y necesita que el equipo lo tome ya`
         : esReclamo
@@ -1531,6 +1718,12 @@ async function ejecutarTool(name, input, waId, conv) {
     if (name === 'registrar_inmobiliaria') {
       return JSON.stringify(await registrarInmobiliariaCliente(input));
     }
+    if (name === 'resumen_mudateya') {
+      // Defensa en profundidad: aunque esta tool solo se agrega a toolsUsados
+      // para el equipo, se re-chequea acá por si algún día se llama distinto.
+      if (!quienEscribe(waId)) return JSON.stringify({ error: 'No autorizado.' });
+      return JSON.stringify(await resumenMudateYa());
+    }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
     console.error('ejecutarTool', name, e.message);
@@ -1573,30 +1766,34 @@ async function registrarMudanceroCliente(waId, input) {
 }
 
 // Alta de asesor inmobiliario directo por WhatsApp — mismo endpoint REAL que
-// usa asesor-registro.html y el bot de Instagram (api/asesores.js?action=register).
+// usan las landings de derivación (api/canales.js?action=registrar). Se da de
+// alta en el canal "independientes" (el genérico, para asesores que no son de
+// Mudafy/RE-MAX/C21): recibe un link FIJO que no vence, sin login ni
+// dashboard — es el único sistema de asesores que se usa de verdad hoy.
 async function registrarAsesorCliente(waId, input) {
   input = input || {};
-  const telefono = input.whatsapp || waId;
+  const whatsapp = input.whatsapp || waId;
   try {
-    const r = await fetch(`${SITE_URL}/api/asesores?action=register`, {
+    const r = await fetch(`${SITE_URL}/api/canales?action=registrar&canal=independientes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nombre: input.nombre,
         email: input.email,
-        telefono,
+        whatsapp,
         inmobiliaria: input.inmobiliaria,
         zona: input.zona,
+        origen: 'whatsapp-emi',
       }),
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       return { ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' };
     }
-    if (data.existente) {
-      return { ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le llega un mail con su link exclusivo de acceso.' };
+    if (data.yaExistia) {
+      return { ok: true, existente: true, link: data.link, nota: `Ya estaba registrado con ese email. Este es su link fijo (no vence): ${data.link}` };
     }
-    return { ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con su link exclusivo de Asesor MudateYa para armar presupuestos.' };
+    return { ok: true, existente: false, link: data.link, nota: `Registrado con éxito. Le llega un mail de bienvenida con su link y QR. Este es su link fijo (no vence, pasáselo tal cual): ${data.link}` };
   } catch (e) {
     return { ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' };
   }
@@ -1705,8 +1902,8 @@ async function barridoWhatsApp(pedido) {
 // ------------------------------------------------------------------
 // Genera la respuesta del agente (texto) para un mensaje entrante
 // ------------------------------------------------------------------
-async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
-  const key = mudancero ? `wa:conv:mud:${waId}` : `wa:conv:${waId}`;
+async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, asesor) {
+  const key = mudancero ? `wa:conv:mud:${waId}` : asesor ? `wa:conv:ase:${waId}` : `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
 
   // ── Fotos para un pedido YA ABIERTO (relevamiento remoto) ──────────────────
@@ -1716,7 +1913,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
   // como fotos para un pedido nuevo. Cada foto se modera antes de guardarse:
   // no puede mostrar teléfono ni email (mismo criterio que las fotos de
   // mudanceros) — el contacto siempre tiene que ser a través de MudateYa.
-  if (!mudancero && imagenes && imagenes.length) {
+  if (!mudancero && !asesor && imagenes && imagenes.length) {
     try {
       const pedidos = await pedidosDelCliente(waId);
       const abiertos = pedidos.filter((p) => p && (p.estado === 'buscando' || p.estado === 'cotizando'));
@@ -1825,6 +2022,22 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
         : 'No tenés pedidos/cotizaciones activos ahora mismo.';
       system += `\n\nTUS PEDIDOS/COTIZACIONES (snapshot de referencia rápida — no hace falta llamar a mis_pedidos si ya está acá; para pedidos NUEVOS disponibles en tu zona usá ver_pedidos):\n${resumenMud}`;
     } catch (e) { console.warn('auto-contexto mudancero:', e.message); }
+  } else if (asesor) {
+    const nombre = (asesor.nombre || '').split(' ')[0] || 'colega';
+    const canalNombre = CANALES_ASESOR_NOMBRE[asesor.canal] || asesor.canal;
+    system = SYSTEM_PROMPT_ASESOR.split('{NOMBRE}').join(nombre).split('{CANAL}').join(canalNombre);
+    toolsUsados = asesorTools;
+
+    // AUTO-CONTEXTO: mismo criterio que con mudanceros — snapshot de sus
+    // pedidos referidos al arranque del turno, sin esperar a que llame a
+    // ver_mis_pedidos_referidos.
+    try {
+      const misPedidos = await pedidosReferidosDelAsesor(asesor.prefijo, asesor.codigo);
+      const resumenAse = misPedidos.length
+        ? misPedidos.map((p) => `- ${p.id} (cliente: ${p.cliente || '?'}, ${p.ruta}), estado: ${p.estado}${p.anticipoPagado ? ', seña pagada' : ''}${p.saldoPagado ? ', saldo pagado' : ''}${p.tipoOperacion ? `, operación: ${p.tipoOperacion}` : ''}`).join('\n')
+        : 'Todavía no le llegó ningún cliente por su link.';
+      system += `\n\nTUS PEDIDOS REFERIDOS (snapshot de referencia rápida — no hace falta llamar a ver_mis_pedidos_referidos si ya está acá):\n${resumenAse}`;
+    } catch (e) { console.warn('auto-contexto asesor:', e.message); }
   } else {
     const persona = quienEscribe(waId);
     // Base de conocimiento sincronizada de la web (ver _conocimiento.js) — si
@@ -1837,9 +2050,9 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
     // .replace() interpreta patrones especiales ($&, $', etc.) en el reemplazo.
     const promptCliente = SYSTEM_PROMPT.split('{{CONOCIMIENTO}}').join(bloqueConocimiento);
     system = persona
-      ? `${promptCliente}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
+      ? `${promptCliente}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo. Tenés una herramienta extra, resumen_mudateya, para cuando te pregunte números del negocio (pedidos, mudanceros, asesores) — no existe para clientes comunes.`
       : promptCliente;
-    toolsUsados = tools;
+    toolsUsados = persona ? tools.concat([RESUMEN_MUDATEYA_TOOL]) : tools;
 
     // AUTO-CONTEXTO: cargamos los pedidos/cotizaciones del cliente SIEMPRE, no
     // solo si Emi decide llamar a consultar_estado_pedido. Es un snapshot al
@@ -1883,6 +2096,8 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
       if (block.type === 'tool_use') {
         const r = mudancero
           ? await ejecutarToolMudancero(block.name, block.input, mudancero, waId, conv)
+          : asesor
+          ? await ejecutarToolAsesor(block.name, block.input, asesor, waId, conv)
           : await ejecutarTool(block.name, block.input, waId, conv);
         resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
       }
@@ -1946,8 +2161,11 @@ module.exports = async function handler(req, res) {
         .send(twiml('¡Pará un toque! 😅 Estás mandando muchos mensajes muy seguido. Esperá un minuto y seguimos.'));
     }
 
-    // ¿Quien escribe es un mudancero registrado? (por teléfono) → asistente aparte.
+    // ¿Quien escribe es un mudancero o un asesor registrado? (por teléfono) →
+    // asistente aparte. Se chequea mudancero primero (ya existía); asesor solo
+    // si no es mudancero, para no pagar el lookup de más en el caso común.
     const mud = await buscarMudancero(waId);
+    const ase = mud ? null : await buscarAsesorCanal(waId);
     if (waId) await registrarInteraccionDiaria(waId, !!mud);
 
     // Ubicación compartida (Twilio manda Latitude/Longitude, y a veces Address/Label).
@@ -1994,7 +2212,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
     }
 
-    const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion, mud);
+    const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion, mud, ase);
     return res.status(200).send(twiml(respuesta));
   } catch (e) {
     console.error('Error webhook Twilio WhatsApp:', e);

@@ -30,7 +30,7 @@ const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar';
 // Subir este número cada vez que el SYSTEM_PROMPT cambie de forma importante
 // (alcance del bot, tono, reglas nuevas): descarta conversaciones viejas para
 // que no arrastren el comportamiento anterior (ver nota en procesarMensaje).
-const PROMPT_VERSION = 11;
+const PROMPT_VERSION = 12;
 
 // ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path) — mismo patrón que el resto de /api.
@@ -65,7 +65,7 @@ const SYSTEM_PROMPT = `Sos el asistente de MudateYa en Instagram. MudateYa es un
 
 Este chat es para sumarse a MudateYa como socio — de 3 tipos posibles:
   A) MUDANCERO / FLETERO / EMPRESA DE MUDANZAS → labura haciendo mudanzas o fletes, quiere recibir pedidos para cotizar.
-  B) ASESOR INMOBILIARIO → arma presupuestos de mudanza gratis para sus clientes (que compran/alquilan y se mudan) desde su link exclusivo, y cobra comisión cuando esa mudanza se paga.
+  B) ASESOR INMOBILIARIO → recibe un link propio y fijo (no vence) para compartir con sus clientes (los que compran/alquilan y se mudan); el cliente pide su mudanza como cualquier cliente pero queda atribuida a este asesor. Si es alquiler cobra comisión al completarse; si es compraventa, su cliente recibe un regalo en vez de comisión.
   C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio de MudateYa como un plus para sus clientes.
 
 Pero también te va a escribir gente que NO quiere ser socio, sino que ES CLIENTE — se quiere mudar o necesita un flete y busca cotizar. Ese caso es MUY esperado acá, no es "fuera de tema": no lo registres como socio ni le pidas los datos de arriba — decile con onda que toque el link **"Cotizar gratis para mudarse"** de la bio de nuestro perfil, ahí cotiza gratis en dos minutos. NUNCA lo derives a hola@mudateya.ar por esto, es innecesario para algo tan simple.
@@ -194,20 +194,24 @@ async function askClaude(messages, system) {
 }
 
 // ------------------------------------------------------------------
-// Alta del asesor: delega en el endpoint REAL (api/asesores.js), el mismo
-// que usa asesor-registro.html. No reinventamos el esquema acá.
+// Alta del asesor: delega en el endpoint REAL (api/canales.js, canal
+// "independientes" — el genérico para asesores que no son de Mudafy/RE-MAX/
+// C21). Le genera un link FIJO que no vence, sin login ni dashboard: es el
+// único sistema de asesores que se usa de verdad (api/asesores.js con
+// login/dashboard NO se usa, no reconstruir nada apuntando ahí).
 // ------------------------------------------------------------------
 async function registrarAsesor(input) {
   try {
-    const r = await fetch(`${SITE_URL}/api/asesores?action=register`, {
+    const r = await fetch(`${SITE_URL}/api/canales?action=registrar&canal=independientes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nombre: input.nombre,
         email: input.email,
-        telefono: input.whatsapp,
+        whatsapp: input.whatsapp,
         inmobiliaria: input.inmobiliaria,
         zona: input.zona,
+        origen: 'instagram-emi',
       }),
     });
     const data = await r.json().catch(() => ({}));
@@ -216,10 +220,10 @@ async function registrarAsesor(input) {
       // Error de validación del endpoint real (email inválido, tel corto, etc.)
       return JSON.stringify({ ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' });
     }
-    if (data.existente) {
-      return JSON.stringify({ ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le mandamos un mail con su link exclusivo de acceso.' });
+    if (data.yaExistia) {
+      return JSON.stringify({ ok: true, existente: true, link: data.link, nota: `Ya estaba registrado con ese email. Este es su link fijo (no vence): ${data.link}` });
     }
-    return JSON.stringify({ ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con su link exclusivo de Asesor MudateYa para armar presupuestos.' });
+    return JSON.stringify({ ok: true, existente: false, link: data.link, nota: `Registrado con éxito. Le llega un mail de bienvenida con su link y QR. Este es su link fijo (no vence, pasáselo tal cual): ${data.link}` });
   } catch (e) {
     return JSON.stringify({ ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' });
   }
