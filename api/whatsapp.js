@@ -256,6 +256,39 @@ function firmaValida(req) {
 // ------------------------------------------------------------------
 // System prompt del agente cliente
 // ------------------------------------------------------------------
+// Base de conocimiento por defecto — se usa si api/_conocimiento.js todavía no
+// sincronizó nada desde la web (cron recién agregado) o Redis no responde.
+// generarRespuesta() reemplaza {{CONOCIMIENTO}} en SYSTEM_PROMPT por esto O
+// por el texto sincronizado (ver obtenerConocimiento en _conocimiento.js).
+const CONOCIMIENTO_FALLBACK = `BASE DE CONOCIMIENTO (info real de MudateYa — usá esto, no inventes):
+Qué es: marketplace argentino que conecta clientes con mudanceros y fleteros verificados. Comparás presupuestos gratis y sin compromiso.
+
+Cómo funciona:
+1. Cargás el pedido (origen, destino, fecha, ambientes/detalles; podés mandar fotos).
+2. Va a mudanceros verificados de tu zona.
+3. Recibís hasta 5 presupuestos por acá.
+4. Elegís el que más te convenga y pagás la seña para reservar.
+5. Coordinás con el mudancero.
+
+Los 3 niveles de mudanza:
+- Esencial: vehículo + chofer, carga y descarga. El embalaje lo hace el cliente.
+- Integral (el más elegido): vehículo + chofer, embalaje básico incluido, desarmado y armado de muebles.
+- Llave en Mano (todo incluido): todo lo de Integral + cajas y papel incluido + seguro ampliado + limpieza post-mudanza.
+También hay fletes y servicio de mudanza urgente.
+
+Precios y pagos:
+- Solicitar y comparar presupuestos es GRATIS.
+- El precio lo pone cada mudancero en su cotización: "el precio que acordás es el que pagás". NUNCA inventes montos.
+- Pago: 50% de seña al reservar + 50% al completar la mudanza. Protegido (Mercado Pago o transferencia bancaria con CVU único) — el mudancero cobra recién cuando la mudanza está hecha.
+- Cada presupuesto vale 7 días.
+
+Confianza y seguridad:
+- Mudanceros verificados (DNI y vehículo). Reseñas reales de clientes.
+- Opción de seguro de mudanza (ampliado en el nivel Llave en Mano).
+- Tus datos quedan protegidos: solo se comparten con el mudancero que elegís.
+
+Cobertura: CABA y Gran Buenos Aires; interior (Rosario, Córdoba, Mendoza) según disponibilidad.`;
+
 const SYSTEM_PROMPT = `Sos Emi, la asistente de MudateYa por WhatsApp. MudateYa es un marketplace argentino de mudanzas y fletes que le consigue presupuestos al cliente contactando mudanceros/fleteros verificados de su zona.
 
 Del otro lado hay alguien que está por mudarse o necesita un flete. Mudarse estresa y muchos llegan medio perdidos o apurados: tu trabajo es hacérselo fácil, entender qué necesita y armar el pedido para que MudateYa le busque presupuestos. Que sienta que lo atiende alguien que sabe y le da bola, no un formulario.
@@ -297,34 +330,9 @@ Vos: "Genial, anotado 👌 ¿Tenés muebles grandes o electro pesado tipo helade
 Cliente: "uf esto es un quilombo, no sé por dónde empezar"
 Vos: "Tranqui, para eso estoy 🙌 Lo vamos viendo de a poco. ¿Arrancamos por a dónde te estás yendo a vivir?"
 
-BASE DE CONOCIMIENTO (info real de MudateYa — usá esto, no inventes):
-Qué es: marketplace argentino que conecta clientes con mudanceros y fleteros verificados. Comparás presupuestos gratis y sin compromiso.
+Si la charla se pone larga de tipear (un relato con muchos detalles, o notás que le cuesta escribir), podés sugerirle UNA vez, con onda, que te mande un audio si le resulta más cómodo — lo entendés igual. No lo ofrezcas de entrada ni lo repitas, es una opción, no un pedido.
 
-Cómo funciona:
-1. Cargás el pedido (origen, destino, fecha, ambientes/detalles; podés mandar fotos).
-2. Va a mudanceros verificados de tu zona.
-3. Recibís hasta 5 presupuestos por acá.
-4. Elegís el que más te convenga y pagás la seña para reservar.
-5. Coordinás con el mudancero.
-
-Los 3 niveles de mudanza:
-- Esencial: vehículo + chofer, carga y descarga. El embalaje lo hace el cliente.
-- Integral (el más elegido): vehículo + chofer, embalaje básico incluido, desarmado y armado de muebles.
-- Llave en Mano (todo incluido): todo lo de Integral + cajas y papel incluido + seguro ampliado + limpieza post-mudanza.
-También hay fletes y servicio de mudanza urgente.
-
-Precios y pagos:
-- Solicitar y comparar presupuestos es GRATIS.
-- El precio lo pone cada mudancero en su cotización: "el precio que acordás es el que pagás". NUNCA inventes montos.
-- Pago: 50% de seña al reservar + 50% al completar la mudanza. Protegido (Mercado Pago o transferencia bancaria con CVU único) — el mudancero cobra recién cuando la mudanza está hecha.
-- Cada presupuesto vale 7 días.
-
-Confianza y seguridad:
-- Mudanceros verificados (DNI y vehículo). Reseñas reales de clientes.
-- Opción de seguro de mudanza (ampliado en el nivel Llave en Mano).
-- Tus datos quedan protegidos: solo se comparten con el mudancero que elegís.
-
-Cobertura: CABA y Gran Buenos Aires; interior (Rosario, Córdoba, Mendoza) según disponibilidad.
+{{CONOCIMIENTO}}
 
 MUDATEYA MOBILITY — RELOCATION B2B (esto NO es un pedido de mudanza normal, es otro producto): además del marketplace de mudanzas para particulares, MudateYa tiene una línea B2B llamada *MudateYa Mobility*, para empresas e instituciones que necesitan reubicar gente (no cajas sueltas): mudanza + vivienda + colegio + adaptación, con un solo responsable de punta a punta. Los canales son:
 - Real estate: inmobiliarias y desarrolladoras (la mudanza como beneficio de cierre para el comprador/inquilino, sin costo ni gestión para ellas).
@@ -1322,9 +1330,18 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
     toolsUsados = mudanceroTools; // flujo completo del mudancero por WhatsApp
   } else {
     const persona = quienEscribe(waId);
+    // Base de conocimiento sincronizada de la web (ver _conocimiento.js) — si
+    // todavía no corrió el cron o Redis falla, usa el fallback fijo de acá.
+    // Nunca bloquea: si algo falla, sigue con el fallback sin cortar el flujo.
+    let conocimiento = null;
+    try { conocimiento = await require('./_conocimiento').obtenerConocimiento(); } catch (e) {}
+    const bloqueConocimiento = (conocimiento && conocimiento.texto) || CONOCIMIENTO_FALLBACK;
+    // split/join en vez de .replace(): el bloque tiene precios con "$" y
+    // .replace() interpreta patrones especiales ($&, $', etc.) en el reemplazo.
+    const promptCliente = SYSTEM_PROMPT.split('{{CONOCIMIENTO}}').join(bloqueConocimiento);
     system = persona
-      ? `${SYSTEM_PROMPT}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
-      : SYSTEM_PROMPT;
+      ? `${promptCliente}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo.`
+      : promptCliente;
     toolsUsados = tools;
   }
 

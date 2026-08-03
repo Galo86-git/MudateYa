@@ -30,7 +30,7 @@ const SITE_URL = process.env.SITE_URL || 'https://mudateya.ar';
 // Subir este número cada vez que el SYSTEM_PROMPT cambie de forma importante
 // (alcance del bot, tono, reglas nuevas): descarta conversaciones viejas para
 // que no arrastren el comportamiento anterior (ver nota en procesarMensaje).
-const PROMPT_VERSION = 10;
+const PROMPT_VERSION = 11;
 
 // ------------------------------------------------------------------
 // Redis (Upstash REST, estilo path) — mismo patrón que el resto de /api.
@@ -54,6 +54,10 @@ async function setJSON(key, value, ttlSeconds) {
   return redisCall(...args);
 }
 
+// Info de respaldo si api/_conocimiento.js todavía no sincronizó nada desde
+// la web (cron recién agregado) o Redis no responde. Corta, como todo en IG.
+const CONOCIMIENTO_FALLBACK_IG = `MudateYa: marketplace argentino de mudanzas y fletes, conecta clientes con mudanceros/fleteros verificados. Comparar presupuestos es gratis. Niveles: Esencial, Integral, Llave en Mano (todo incluido). Pago: 50% seña + 50% al terminar, protegido (Mercado Pago o transferencia). Cobertura: CABA/GBA, interior según disponibilidad.`;
+
 // ------------------------------------------------------------------
 // System prompt del agente
 // ------------------------------------------------------------------
@@ -75,7 +79,14 @@ LINKS DE LA BIO (los 4 que hay, por si en algún momento te sirve nombrar el exa
   - Inmobiliaria → "Alta Inmobiliarias"
 Tu forma PRINCIPAL de trabajar sigue siendo juntar los datos acá en el chat y llamar a la herramienta correspondiente (es más rápido para la persona) — mencionás el link solo como alternativa si viene a cuento, no lo ofrezcas de entrada en vez de hacer tu trabajo.
 
-TONO: cercano, rioplatense, directo. Mensajes CORTOS, es un DM de Instagram. Nada de párrafos largos ni formal. Un emoji cada tanto está bien, no más.
+TONO: cercano, rioplatense, directo. Mensajes CORTOS, es un DM de Instagram. Nada de párrafos largos ni formal. Un emoji cada tanto está bien, no más. Lo más importante: que NO se sienta un bot — que la persona sienta que le escribe alguien real que le da bola, no un formulario con onda. Nunca sonés armado ni repitas la misma frase dos veces.
+
+APENAS TE ESCRIBEN, UBICATE RÁPIDO: ¿quiere sumarse como socio (¿cuál de los 3?), es un cliente que quiere cotizar, tiene una pregunta general sobre MudateYa, o te está contando un problema/reclamo? Andá directo a eso, no lo hagas repetir ni arranques el checklist de alta si en realidad solo tiene una pregunta.
+
+INFO DE MUDATEYA (para responder preguntas generales sin derivar de más — usá esto, no inventes):
+{{CONOCIMIENTO}}
+
+RECLAMOS Y PROBLEMAS: si alguien te cuenta que algo salió mal (un pedido, un pago, un mudancero, lo que sea) o está claramente molesto, no lo dejes con un genérico "escribinos a hola@mudateya.ar" — usá la herramienta derivar_a_humano con un motivo que empiece con "RECLAMO:" y el detalle. Eso SÍ le avisa al equipo de verdad (antes esto no mandaba nada). Confirmale con onda que el equipo lo va a contactar.
 
 CÓMO TRABAJÁS:
 1. Si no es obvio por lo que ya escribió, tu PRIMERA pregunta es identificar cuál de los 3 es ("¿sos mudancero/fletero, asesor inmobiliario, o tenés una inmobiliaria?"). Si ya lo dijo (ej: "soy fletero", "tengo una inmobiliaria", "soy asesor"), no se lo vuelvas a preguntar — seguí directo con esos datos.
@@ -90,7 +101,7 @@ CÓMO TRABAJÁS:
 3. Si la herramienta te devuelve un error (dato inválido, ya registrado, etc.), pedile amablemente que lo corrija o contale lo que corresponda (ej. si ya existe, que va a recibir un mail) — NO inventes datos para completar ni festejes un alta que no pasó.
 4. Si preguntan por la plata: la comisión/pago se define según cada caso, NO prometas montos exactos si no los sabés.
 5. Después de un alta o solicitud exitosa, contale que le llega un mail con los próximos pasos.
-6. Si el mensaje NO tiene que ver con sumarse a MudateYa NI con querer cotizar una mudanza como cliente (ej. un reclamo, una consulta de otro tema, algo que no entendés), o si ya lo intentaste un par de veces y no lográs entender o resolver lo que necesita, derivalo con onda a que le escriba a hola@mudateya.ar contándole el tema — NO lo registres como socio ni sigas insistiendo.
+6. Si el mensaje NO tiene que ver con sumarse a MudateYa NI con querer cotizar una mudanza como cliente, primero fijate si es una pregunta general que podés responder con la INFO DE MUDATEYA de arriba. Si es un reclamo/problema o algo que no lográs resolver (ya lo intentaste un par de veces y no avanza), usá derivar_a_humano — NO lo registres como socio ni sigas insistiendo.
 
 REGLAS: no pidas datos sensibles, no prometas lo que no podés cumplir.
 
@@ -146,12 +157,24 @@ const tools = [
       required: ['nombre', 'empresa', 'whatsapp', 'email', 'zona'],
     },
   },
+  {
+    name: 'derivar_a_humano',
+    description:
+      'Derivá al equipo un RECLAMO/problema, o algo que no podés resolver con las otras herramientas ni con la info que tenés. Avisa al equipo por email con el motivo y el historial reciente del DM.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+      },
+      required: ['motivo'],
+    },
+  },
 ];
 
 // ------------------------------------------------------------------
 // Claude
 // ------------------------------------------------------------------
-async function askClaude(messages) {
+async function askClaude(messages, system) {
   const res = await fetch(ANTHROPIC, {
     method: 'POST',
     headers: {
@@ -162,7 +185,7 @@ async function askClaude(messages) {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 400,
-      system: SYSTEM_PROMPT,
+      system: system || SYSTEM_PROMPT,
       tools,
       messages,
     }),
@@ -269,6 +292,43 @@ async function registrarMudancero(input) {
 }
 
 // ------------------------------------------------------------------
+// Derivar al equipo (reclamos / lo que el bot no puede resolver). Antes de
+// esto NO existía ningún aviso real: el prompt solo le decía al usuario que
+// escribiera él mismo a hola@mudateya.ar, y muchos no lo hacían.
+// ------------------------------------------------------------------
+async function derivarHumanoIG(igsid, motivo, conv) {
+  try {
+    const { Resend } = require('resend');
+    const adminMail = process.env.ADMIN_EMAIL;
+    if (process.env.RESEND_API_KEY && adminMail) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const ultimos = (conv.messages || [])
+        .slice(-6)
+        .map((m) => `${m.role}: ${typeof m.content === 'string' ? m.content : '[tool]'}`)
+        .join('\n');
+      const esReclamo = /^reclamo/i.test(String(motivo || '').trim());
+      await resend.emails.send({
+        from: 'MudateYa <noreply@mudateya.ar>',
+        reply_to: 'hola@mudateya.ar',
+        to: adminMail,
+        subject: esReclamo ? `⚠️ Reclamo por Instagram DM — ${igsid}` : `🙋 DM de Instagram necesita atención humana — ${igsid}`,
+        html:
+          `<p>Un contacto por <b>Instagram DM</b> (id ${escapeXml(igsid)}) ${esReclamo ? 'tiene un <b>reclamo</b>' : 'necesita que una persona lo atienda'}.</p>` +
+          `<p><b>Motivo:</b> ${escapeXml(motivo || '-')}</p>` +
+          `<pre style="background:#f5f5f5;padding:10px;border-radius:8px;white-space:pre-wrap">${escapeXml(ultimos)}</pre>` +
+          `<p>Respondé desde el inbox de Instagram de MudateYa.</p>`,
+      });
+    }
+  } catch (e) {
+    console.warn('derivarHumanoIG email:', e.message);
+  }
+  return { ok: true, mensaje: 'Avisé al equipo. Te contactan a la brevedad.' };
+}
+function escapeXml(s) {
+  return String(s || '').replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&#39;', '"': '&quot;' }[c]));
+}
+
+// ------------------------------------------------------------------
 // Enviar mensaje por Instagram
 // ------------------------------------------------------------------
 // CRÍTICO: si no revisamos la respuesta, un rechazo de Meta (token sin
@@ -343,8 +403,16 @@ async function procesarMensaje(igsid, texto) {
     conv.messages.push({ role: 'user', content: texto });
     if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20); // acota el historial
 
+    // Base de conocimiento sincronizada de la web (ver _conocimiento.js) — si
+    // todavía no corrió el cron o Redis falla, sigue con el fallback fijo de
+    // acá sin cortar el flujo.
+    let conocimiento = null;
+    try { conocimiento = await require('./_conocimiento').obtenerConocimiento(); } catch (e) {}
+    const bloqueConocimiento = (conocimiento && conocimiento.texto) || CONOCIMIENTO_FALLBACK_IG;
+    const system = SYSTEM_PROMPT.split('{{CONOCIMIENTO}}').join(bloqueConocimiento);
+
     let trabajo = conv.messages;
-    let resp = await askClaude(trabajo);
+    let resp = await askClaude(trabajo, system);
     if (resp.type === 'error' || !resp.content) {
       // Error de la API de Claude (key inválida, rate limit, modelo caído, etc.)
       console.error('[instagram] Claude devolvió error:', JSON.stringify(resp).slice(0, 500));
@@ -360,11 +428,12 @@ async function procesarMensaje(igsid, texto) {
         if (block.name === 'registrar_asesor') r = await registrarAsesor(block.input);
         else if (block.name === 'registrar_inmobiliaria') r = await registrarInmobiliaria(block.input);
         else if (block.name === 'registrar_mudancero') r = await registrarMudancero(block.input);
+        else if (block.name === 'derivar_a_humano') r = JSON.stringify(await derivarHumanoIG(igsid, block.input && block.input.motivo, conv));
         else r = JSON.stringify({ ok: false, error: 'Herramienta desconocida.' });
         resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
       }
       trabajo = trabajo.concat([{ role: 'user', content: resultados }]);
-      resp = await askClaude(trabajo);
+      resp = await askClaude(trabajo, system);
     }
 
     const textoResp =

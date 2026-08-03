@@ -467,6 +467,10 @@
     {
       "path": "/api/cron-recordar-perfil",
       "schedule": "0 13 * * 2"
+    },
+    {
+      "path": "/api/cron-conocimiento",
+      "schedule": "0 10 * * *"
     }
   ]
 }
