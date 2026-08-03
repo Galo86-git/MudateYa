@@ -127,11 +127,6 @@ nav{
 /* ══ VERTICAL detail sections ══ */
 .vert{padding:82px 0;position:relative;overflow:hidden;scroll-margin-top:72px;border-top:1px solid transparent;border-image:linear-gradient(90deg,transparent,var(--line),transparent) 1}
 .vert .wrap{position:relative;z-index:2}
-.ghost{
-  position:absolute;top:26px;right:-4px;z-index:0;pointer-events:none;user-select:none;
-  font-family:'Anton',sans-serif;font-size:300px;line-height:.8;color:transparent;
-  -webkit-text-stroke:1.5px rgba(198,164,100,.07);text-stroke:1.5px rgba(198,164,100,.07);
-}
 .vert-eyebrow{display:inline-flex;align-items:center;gap:12px;margin-bottom:22px}
 .vert-eyebrow::before{content:'';width:24px;height:2px;background:var(--gold)}
 .vert h2{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;font-size:clamp(31px,4.8vw,50px);line-height:.98;letter-spacing:.4px;max-width:15ch}
@@ -161,7 +156,7 @@ nav{
 .resuelto .rlabel{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 .resuelto .rlabel .dash{width:24px;height:2px;background:var(--gold)}
 .resuelto .rlabel .t{font-size:11px;font-weight:600;letter-spacing:2.6px;text-transform:uppercase;color:var(--muted)}
-.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .feat{
   position:relative;border:1px solid var(--line-soft);border-radius:10px;padding:17px 18px 17px 40px;
   background:rgba(255,255,255,.025);transition:border-color .2s ease,background .2s ease,transform .2s ease;
@@ -174,17 +169,14 @@ nav{
 .feat .ft{font-size:14px;font-weight:600;color:#fff;margin-bottom:2px}
 .feat .fs{font-size:12px;color:var(--muted-2);line-height:1.5}
 
-.quote{position:relative;margin-top:52px;padding:0 0 0 30px}
-.quote::before{content:'\201C';position:absolute;left:-8px;top:-46px;font-family:'Anton',sans-serif;font-size:130px;line-height:1;color:rgba(198,164,100,.18)}
-.quote .bar{position:absolute;left:0;top:4px;bottom:4px;width:3px;background:linear-gradient(180deg,var(--gold),rgba(198,164,100,.2))}
-.quote p{font-size:clamp(18px,2.6vw,24px);font-weight:600;line-height:1.42;color:#fff;font-style:italic}
-.tagline{margin-top:20px;font-size:14px;letter-spacing:.4px;color:var(--gold);font-weight:600}
+.quote{margin-top:44px;padding-left:18px;border-left:2px solid var(--gold)}
+.quote p{font-size:clamp(16px,2vw,18px);font-weight:500;line-height:1.6;color:var(--white)}
 .top-link{display:inline-flex;align-items:center;gap:8px;margin-top:36px;font-size:13px;font-weight:600;letter-spacing:.4px;color:var(--muted);text-decoration:none;border:1px solid var(--line-soft);border-radius:30px;padding:9px 18px;transition:color .2s,border-color .2s,gap .2s,background .2s}
 .top-link:hover{color:var(--gold);border-color:var(--line);gap:11px;background:rgba(198,164,100,.05)}
 .vert-actions{display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-top:38px}
 .vert-actions .top-link{margin-top:0}
-.meet-link{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(140deg,var(--gold-bright),var(--gold));color:var(--navy-2);font-weight:700;font-size:13.5px;letter-spacing:.4px;text-decoration:none;border-radius:30px;padding:12px 24px;box-shadow:0 8px 22px rgba(198,164,100,.24);transition:transform .2s ease,box-shadow .2s ease,gap .2s ease}
-.meet-link:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(198,164,100,.34);gap:11px}
+.meet-link{display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-weight:600;font-size:13.5px;letter-spacing:.4px;text-decoration:none;border-radius:30px;padding:11px 23px;transition:background .2s ease,gap .2s ease}
+.meet-link:hover{background:rgba(198,164,100,.08);gap:11px}
 #canales{scroll-margin-top:84px}
 
 /* ══ CTA ══ */
@@ -199,19 +191,17 @@ nav{
 .cta-body{font-size:17px;color:var(--muted);max-width:640px;line-height:1.72}
 .cta-body b{color:var(--white);font-weight:600}
 .cta-card{
-  position:relative;overflow:hidden;margin-top:48px;max-width:620px;
-  background:linear-gradient(125deg,var(--gold-bright) 0%,var(--gold) 55%,#B8955A 100%);
-  border-radius:18px;padding:36px 38px;color:var(--navy-2);
-  box-shadow:0 26px 60px rgba(198,164,100,.24),inset 0 1px 0 rgba(255,255,255,.4);
+  position:relative;margin-top:48px;max-width:620px;
+  background:linear-gradient(158deg,rgba(30,64,102,.55),rgba(18,40,72,.32));
+  border:1px solid var(--line);border-radius:14px;padding:34px 38px;color:var(--white);
 }
-.cta-card::after{content:'';position:absolute;width:300px;height:300px;border:1px solid rgba(20,44,76,.14);border-radius:50%;top:-160px;right:-120px}
-.cta-card .k{position:relative;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(20,44,76,.72)}
-.cta-card a.mail{position:relative;display:inline-block;font-family:'Anton',sans-serif;font-size:clamp(27px,4.6vw,40px);letter-spacing:.5px;color:var(--navy-2);text-decoration:none;margin:9px 0 6px;text-transform:uppercase;transition:opacity .2s}
+.cta-card .k{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.cta-card a.mail{display:inline-block;font-family:'Anton',sans-serif;font-size:clamp(24px,3.6vw,32px);letter-spacing:.5px;color:var(--gold);text-decoration:none;margin:10px 0 6px;text-transform:uppercase;transition:opacity .2s}
 .cta-card a.mail:hover{opacity:.78}
-.cta-card .site{position:relative;font-size:13px;font-weight:700;color:rgba(20,44,76,.74)}
-.cta-card .cta-actions{position:relative;margin-top:16px}
-.cta-card .wa{display:inline-flex;align-items:center;gap:9px;background:var(--navy-2);color:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;letter-spacing:.2px;text-decoration:none;border-radius:3px;padding:12px 20px;transition:opacity .18s ease}
-.cta-card .wa:hover{opacity:.9}
+.cta-card .site{font-size:13px;font-weight:600;color:var(--muted-2)}
+.cta-card .cta-actions{margin-top:18px}
+.cta-card .wa{display:inline-flex;align-items:center;gap:9px;background:transparent;border:1px solid var(--line);color:var(--white);font-family:'Inter',sans-serif;font-weight:600;font-size:14px;letter-spacing:.2px;text-decoration:none;border-radius:3px;padding:12px 20px;transition:border-color .18s ease,background .18s ease}
+.cta-card .wa:hover{border-color:var(--gold);background:rgba(198,164,100,.06)}
 .cta-card .wa svg{width:18px;height:18px;fill:#25D366;flex:0 0 auto}
 
 /* ══ FOOTER ══ */
@@ -224,24 +214,16 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
 .foot-r a:hover{color:var(--gold)}
 
 /* ══ reveal ══ */
-.rev{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.rev{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
 .rev.in{opacity:1;transform:none}
 
-/* ══ IMPACTO: entrada cinematográfica, fondo vivo, brillo ══ */
-@keyframes heroUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
-.hero .eyebrow,.hero .display,.hero-lede,.hero-stats{opacity:0;animation:heroUp .85s cubic-bezier(.22,.61,.36,1) both}
-.hero .eyebrow{animation-delay:.10s}
-.hero .display{animation-delay:.26s}
-.hero-lede{animation-delay:.46s}
-.hero-stats{animation-delay:.64s}
-
-@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.rings span{animation:breathe 10s ease-in-out infinite;will-change:transform}
-.rings span:nth-child(2){animation-duration:12.5s;animation-delay:-3s}
-.rings span:nth-child(3){animation-duration:15s;animation-delay:-6s}
-
-.cta-card::before{content:'';position:absolute;top:0;left:-70%;width:55%;height:100%;pointer-events:none;z-index:1;background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);transform:skewX(-16deg);animation:shine 6s ease-in-out infinite}
-@keyframes shine{0%{left:-70%}16%{left:135%}100%{left:135%}}
+/* ══ entrada sobria: un solo fade, sin rebote ni brillo ══ */
+@keyframes heroUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.hero .eyebrow,.hero .display,.hero-lede,.hero-stats{opacity:0;animation:heroUp .7s ease both}
+.hero .eyebrow{animation-delay:.05s}
+.hero .display{animation-delay:.12s}
+.hero-lede{animation-delay:.22s}
+.hero-stats{animation-delay:.32s}
 
 /* ══ responsive ══ */
 @media(max-width:760px){
@@ -254,7 +236,6 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
   .hero-stats div{padding:14px 0 2px}
   .hero-stats div+div{padding-left:0;border-left:none;border-top:1px solid var(--line);padding-top:14px}
   .hero-stats .n{font-size:24px}
-  .ghost{display:none}
   .canales{padding:8px 0 36px}
   .group{margin-top:30px}
   .chan{gap:14px;padding:17px 16px}
@@ -271,8 +252,7 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
   .subcard{padding:24px 22px}
   .feats{grid-template-columns:1fr;gap:12px}
   .resuelto{margin-top:38px}
-  .quote{margin-top:40px}
-  .quote::before{font-size:100px;top:-34px}
+  .quote{margin-top:34px}
   .top-link{margin-top:28px;padding:13px 22px}
   .vert-actions{margin-top:30px;gap:12px}
   .cta{padding:64px 0 72px}
@@ -292,8 +272,6 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
   .rev{opacity:1;transform:none;transition:none}
   .chan,.feat,.subcard,.arw,.nav-back{transition:none}
   .hero .eyebrow,.hero .display,.hero-lede,.hero-stats{opacity:1;animation:none}
-  .rings span{animation:none}
-  .cta-card::before{display:none}
 }
 </style>
 <link rel="canonical" href="https://mudateya.ar/mya-mobility"/>
@@ -373,7 +351,6 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
 
 <!-- REAL ESTATE -->
 <section class="vert" id="real-estate">
-  <span class="ghost" aria-hidden="true">01</span>
   <div class="wrap">
     <div class="eyebrow vert-eyebrow rev">Real Estate · Canales 01–02</div>
     <h2 class="rev">Interceptamos la mudanza <span class="gold">antes de Google.</span></h2>
@@ -397,15 +374,12 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
       <div class="rlabel"><span class="dash"></span><span class="t">Todo resuelto, en un solo lugar</span></div>
       <div class="feats">
         <div class="feat"><div class="ft">Embalaje y protección</div><div class="fs">de todo, profesional</div></div>
-        <div class="feat"><div class="ft">Traslado puerta a puerta</div><div class="fs">con seguimiento</div></div>
         <div class="feat"><div class="ft">Montaje e instalación</div><div class="fs">muebles armados</div></div>
         <div class="feat"><div class="ft">Casa lista el día uno</div><div class="fs">lista para habitar</div></div>
-        <div class="feat"><div class="ft">Red verificada y asegurada</div><div class="fs">en AMBA + Córdoba + Rosario</div></div>
         <div class="feat"><div class="ft">Un solo responsable</div><div class="fs">una sola gestión</div></div>
       </div>
     </div>
-    <div class="quote rev"><span class="bar"></span><p>La mudanza deja de ser un problema del cliente y pasa a ser un activo de la marca.</p></div>
-    <div class="tagline rev">La inmobiliaria suma. La desarrolladora suma. El cliente se muda tranquilo. MudateYa ejecuta.</div>
+    <div class="quote rev"><p>La mudanza deja de ser un problema del cliente y pasa a ser un activo de la marca.</p></div>
     <div class="vert-actions rev">
       <a href="#canales" class="top-link">↑ Volver a los canales</a>
       <a href="mailto:contacto&#64;mudateya.ar?subject=MudateYa%20Mobility%20-%20Real%20Estate" class="meet-link">Coordinar reunión →</a>
@@ -415,7 +389,6 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
 
 <!-- INSTITUCIONES -->
 <section class="vert" id="instituciones">
-  <span class="ghost" aria-hidden="true">03</span>
   <div class="wrap">
     <div class="eyebrow vert-eyebrow rev">Instituciones · Canales 03–04</div>
     <h2 class="rev">El talento llega. <span class="gold">La institución delega.</span></h2>
@@ -441,13 +414,10 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
         <div class="feat"><div class="ft">Vivienda cerca</div><div class="fs">del predio o el colegio</div></div>
         <div class="feat"><div class="ft">Colegio de los chicos</div><div class="fs">búsqueda y reinserción</div></div>
         <div class="feat"><div class="ft">Mudanza completa</div><div class="fs">embalaje, traslado, montaje</div></div>
-        <div class="feat"><div class="ft">Día a día resuelto</div><div class="fs">la ciudad, lista</div></div>
-        <div class="feat"><div class="ft">Adaptación de la familia</div><div class="fs">acompañamiento</div></div>
         <div class="feat"><div class="ft">Un solo responsable</div><div class="fs">discreción total</div></div>
       </div>
     </div>
-    <div class="quote rev"><span class="bar"></span><p>Si la familia se adapta, el talento rinde y los chicos también. Nosotros nos ocupamos de que se adapten desde el primer día.</p></div>
-    <div class="tagline rev">El jugador, en la cancha. Los chicos, en clase. La familia, en casa.</div>
+    <div class="quote rev"><p>Si la familia se adapta, el talento rinde y los chicos también. Nosotros nos ocupamos de que se adapten desde el primer día.</p></div>
     <div class="vert-actions rev">
       <a href="#canales" class="top-link">↑ Volver a los canales</a>
       <a href="mailto:contacto&#64;mudateya.ar?subject=MudateYa%20Mobility%20-%20Instituciones" class="meet-link">Coordinar reunión →</a>
@@ -457,7 +427,6 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
 
 <!-- DIPLOMÁTICOS -->
 <section class="vert" id="diplomaticos">
-  <span class="ghost" aria-hidden="true">05</span>
   <div class="wrap">
     <div class="eyebrow vert-eyebrow rev">Diplomáticos · Canales 05–06</div>
     <h2 class="rev">Que la misión <span class="gold">sea la misión.</span></h2>
@@ -483,13 +452,10 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
         <div class="feat"><div class="ft">Vivienda cerca de la sede</div><div class="fs">o reinstalación en el AMBA</div></div>
         <div class="feat"><div class="ft">Colegio internacional</div><div class="fs">o bilingüe para los hijos</div></div>
         <div class="feat"><div class="ft">Mudanza y reinstalación</div><div class="fs">de punta a punta</div></div>
-        <div class="feat"><div class="ft">Día a día resuelto</div><div class="fs">la ciudad, lista</div></div>
-        <div class="feat"><div class="ft">Adaptación de la familia</div><div class="fs">acompañamiento</div></div>
         <div class="feat"><div class="ft">Discreción total</div><div class="fs">en cada operación</div></div>
       </div>
     </div>
-    <div class="quote rev"><span class="bar"></span><p>La discreción no es un extra: es la condición. Un solo interlocutor, de la llegada al regreso.</p></div>
-    <div class="tagline rev">El diplomático, en su misión. Su familia, en casa.</div>
+    <div class="quote rev"><p>La discreción no es un extra: es la condición. Un solo interlocutor, de la llegada al regreso.</p></div>
     <div class="vert-actions rev">
       <a href="#canales" class="top-link">↑ Volver a los canales</a>
       <a href="mailto:contacto&#64;mudateya.ar?subject=MudateYa%20Mobility%20-%20Diplom%C3%A1ticos" class="meet-link">Coordinar reunión →</a>
@@ -499,7 +465,6 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
 
 <!-- ENERGÍA · VACA MUERTA -->
 <section class="vert" id="energia">
-  <span class="ghost" aria-hidden="true">07</span>
   <div class="wrap">
     <div class="eyebrow vert-eyebrow rev">Energía · Vaca Muerta · Canal 07 · Alianza</div>
     <h2 class="rev">Mueven la energía del país. <span class="gold">Nosotros, a su gente.</span></h2>
@@ -524,14 +489,11 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
       <div class="feats">
         <div class="feat"><div class="ft">Logística origen–destino</div><div class="fs">red en toda la cuenca</div></div>
         <div class="feat"><div class="ft">Vivienda en Neuquén / Añelo</div><div class="fs">cerca de la operación</div></div>
-        <div class="feat"><div class="ft">Colegio de los chicos</div><div class="fs">para la familia</div></div>
         <div class="feat"><div class="ft">Soft-landing C·HOST</div><div class="fs">hoja de ruta a medida</div></div>
-        <div class="feat"><div class="ft">Integración cultural</div><div class="fs">vínculos locales</div></div>
         <div class="feat"><div class="ft">Un solo aliado</div><div class="fs">una sola gestión</div></div>
       </div>
     </div>
-    <div class="quote rev"><span class="bar"></span><p>Llegar no es lo mismo que quedarse. Nosotros movemos la mudanza; C·HOST construye el arraigo.</p></div>
-    <div class="tagline rev">El talento llega. La familia se queda. La empresa gana.</div>
+    <div class="quote rev"><p>Llegar no es lo mismo que quedarse. Nosotros movemos la mudanza; C·HOST construye el arraigo.</p></div>
     <div class="vert-actions rev">
       <a href="#canales" class="top-link">↑ Volver a los canales</a>
       <a href="mailto:contacto&#64;mudateya.ar?subject=MudateYa%20Mobility%20-%20Vaca%20Muerta" class="meet-link">Coordinar reunión →</a>
@@ -584,29 +546,6 @@ footer{background:rgba(10,24,44,.6);border-top:1px solid var(--line-soft);paddin
     }
   }, { threshold:0.12, rootMargin:'0px 0px -40px 0px' });
   for (var k=0;k<els.length;k++){ obs.observe(els[k]); }
-})();
-
-// Números que cuentan (0 → valor) al entrar en pantalla
-(function(){
-  var counters = document.querySelectorAll('.count');
-  if (!counters.length) return;
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce || !('IntersectionObserver' in window)){
-    for (var i=0;i<counters.length;i++){ counters[i].textContent = counters[i].getAttribute('data-to'); }
-    return;
-  }
-  var cobs = new IntersectionObserver(function(entries){
-    for (var j=0;j<entries.length;j++){
-      if (!entries[j].isIntersecting) continue;
-      (function(el){
-        var to = parseInt(el.getAttribute('data-to'),10) || 0, dur = 1200, start = null;
-        function step(ts){ if(!start) start=ts; var p=Math.min((ts-start)/dur,1); el.textContent = Math.round(p*to); if(p<1){ requestAnimationFrame(step); } }
-        requestAnimationFrame(step);
-      })(entries[j].target);
-      cobs.unobserve(entries[j].target);
-    }
-  }, { threshold:0.6 });
-  for (var k=0;k<counters.length;k++){ cobs.observe(counters[k]); }
 })();
 </script>
 
