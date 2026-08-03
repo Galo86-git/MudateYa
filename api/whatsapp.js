@@ -273,7 +273,7 @@ Cómo funciona:
 Los 3 niveles de mudanza:
 - Esencial: vehículo + chofer, carga y descarga. El embalaje lo hace el cliente.
 - Integral (el más elegido): vehículo + chofer, embalaje básico incluido, desarmado y armado de muebles.
-- Llave en Mano (todo incluido): todo lo de Integral + cajas y papel incluido + seguro ampliado + limpieza post-mudanza.
+- Llave en Mano (todo incluido): todo lo de Integral + cajas y papel incluido + seguro ampliado.
 También hay fletes y servicio de mudanza urgente.
 
 Precios y pagos:

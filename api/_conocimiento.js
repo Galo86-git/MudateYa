@@ -38,10 +38,35 @@ async function setJSON(k, v) { await redisCall('SET', k, JSON.stringify(v)); }
 
 const fmt = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
 
+function mediana(arr) {
+  if (!arr.length) return null;
+  const s = arr.slice().sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+}
+
+// Descarta valores disparatados frente al RESTO DE SU MISMO grupo (ej: un
+// mudancero que tipeó mal un precio y quedó con varios ceros de más — pasó
+// en la práctica: un solo outlier en un grupo chico dispara el promedio a
+// millones). Se calibra con la propia mediana del grupo, no con un techo fijo
+// en pesos (que quedaría viejo con la inflación).
+function sinOutliers(arr) {
+  if (arr.length < 3) return arr; // muy pocos puntos: no hay con qué comparar
+  const m = mediana(arr);
+  if (!m) return arr;
+  const limpio = arr.filter((v) => v <= m * 8 && v >= m / 8);
+  if (limpio.length !== arr.length) {
+    console.warn('preciosPromedio: descarté outliers', arr.filter((v) => !limpio.includes(v)), 'vs mediana', m);
+  }
+  return limpio;
+}
+
 // ── Precios REALES de referencia (packs + legacy, de perfiles aprobados) ──
 // Mismo criterio que datosReales() de cron-blog.js pero sumando también los
 // packs (Esencial/Integral/Llave), que es el modelo de precios actual — el
-// legacy solo ya no alcanza para reflejar bien el mercado real.
+// legacy solo ya no alcanza para reflejar bien el mercado real. Usa MEDIANA
+// (no promedio simple): con pocas muestras, un solo valor mal cargado puede
+// disparar un promedio a un número absurdo; la mediana no se mueve por eso.
 async function preciosPromedio() {
   try {
     const todos = (await getJSON('mudanceros:todos')) || [];
@@ -61,8 +86,8 @@ async function preciosPromedio() {
       });
       if (sumo) n++;
     }
-    const prom = (arr) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null);
-    return { muestras: n, amb1: prom(acc.amb1), amb2: prom(acc.amb2), amb3: prom(acc.amb3), amb4: prom(acc.amb4) };
+    const central = (arr) => mediana(sinOutliers(arr));
+    return { muestras: n, amb1: central(acc.amb1), amb2: central(acc.amb2), amb3: central(acc.amb3), amb4: central(acc.amb4) };
   } catch (e) {
     console.warn('preciosPromedio:', e.message);
     return { muestras: 0 };
@@ -109,7 +134,7 @@ async function textoDePagina(path) {
   }
 }
 
-async function claudeTexto(system, userText) {
+async function claudeTexto(system, userText, maxTokens) {
   const r = await fetch(ANTHROPIC, {
     method: 'POST',
     headers: {
@@ -117,7 +142,7 @@ async function claudeTexto(system, userText) {
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ model: MODEL_LIGHT, max_tokens: 1200, system, messages: [{ role: 'user', content: userText }] }),
+    body: JSON.stringify({ model: MODEL_LIGHT, max_tokens: maxTokens || 2500, system, messages: [{ role: 'user', content: userText }] }),
   });
   const d = await r.json();
   if (!r.ok) throw new Error('anthropic ' + r.status + ' ' + JSON.stringify(d).slice(0, 200));
@@ -127,7 +152,7 @@ async function claudeTexto(system, userText) {
 // Semilla de tono/estructura para que la destilación NO suene a resumen
 // genérico de IA — reusa exactamente el estilo que ya está probado en Emi.
 const ESTILO_SEMILLA = `Cómo funciona: 1) Cargás el pedido (origen, destino, fecha, detalles). 2) Va a mudanceros verificados de tu zona. 3) Recibís hasta 5 presupuestos. 4) Elegís y pagás la seña. 5) Coordinás con el mudancero.
-Los 3 niveles de mudanza: Esencial (vehículo+chofer, carga y descarga), Integral (+ embalaje básico, desarmado/armado de muebles), Llave en Mano (+ cajas y papel, seguro ampliado, limpieza post-mudanza).
+Los 3 niveles de mudanza: Esencial (vehículo+chofer, carga y descarga), Integral (+ embalaje básico, desarmado/armado de muebles), Llave en Mano (+ cajas y papel, seguro ampliado). La limpieza post-mudanza NO es parte de Llave en Mano para clientes del marketplace — solo aplica en compraventas coordinadas por asesores inmobiliarios (otro flujo, no lo menciones acá salvo que la fuente lo confirme).
 Pagos: 50% de seña al reservar + 50% al completar. Protegido (Mercado Pago o transferencia con CVU único). Cada presupuesto vale 7 días.
 Cobertura: CABA y Gran Buenos Aires; interior (Rosario, Córdoba, Mendoza) según disponibilidad.`;
 
@@ -153,13 +178,13 @@ async function generarConocimiento() {
   const system =
     `Destilás el contenido real del sitio web de MudateYa (marketplace argentino de mudanzas/fletes) en una BASE DE CONOCIMIENTO compacta para un asistente de WhatsApp/Instagram. ` +
     `El asistente ya sabe hablar en tono rioplatense/casual por su cuenta — vos NO escribís diálogo ni ejemplos de conversación, solo los HECHOS que necesita para no inventar nada: qué es MudateYa, cómo funciona paso a paso, los niveles de servicio y qué incluye cada uno, cómo son los pagos, la cobertura geográfica, qué es MudateYa Mobility (relocation B2B: para quién es — inmobiliarias/desarrolladoras, clubes de fútbol, colegios, cuerpo diplomático, empresas de Vaca Muerta — y que se coordina por contacto@mudateya.ar) y cualquier pregunta frecuente real que encuentres (del FAQ). ` +
-    `Sacá paja de marketing/navegación/CSS. Sé preciso y breve: bullets cortos, sin inventar nada que no esté en el texto fuente. Como referencia de nivel de detalle esperado (no la copies, es solo el estilo):\n${ESTILO_SEMILLA}`;
+    `Sacá paja de marketing/navegación/CSS. Sé preciso y breve: bullets cortos con guion ("- "), sin inventar nada que no esté en el texto fuente. FORMATO: texto plano nomás — nada de Markdown pesado (sin #, ##, **negrita**, tablas con |, líneas ---, emojis de título). Es texto que va DENTRO de un prompt para que lea una IA, no un documento para mostrarle a una persona. Como referencia de nivel de detalle y formato esperado (no la copies, es solo el estilo):\n${ESTILO_SEMILLA}`;
 
   const userText =
     `Contenido real extraído de mudateya.ar (HTML ya limpiado, puede tener ruido residual — ignoralo):\n\n${fuente}\n\n` +
-    `Armá la base de conocimiento destilada. Estructurala con estos títulos si hay info: QUÉ ES / CÓMO FUNCIONA, NIVELES DE SERVICIO, PAGOS, COBERTURA, MUDATEYA MOBILITY, PREGUNTAS FRECUENTES. Si algún título no tiene info real en el texto fuente, omitilo (no inventes).`;
+    `Armá la base de conocimiento destilada, en texto plano (sin Markdown). Estructurala con estos títulos EN MAYÚSCULA seguidos de ":" si hay info real (ej "PAGOS:"): QUE ES / COMO FUNCIONA, NIVELES DE SERVICIO, PAGOS, COBERTURA, MUDATEYA MOBILITY, PREGUNTAS FRECUENTES. Si algún título no tiene info real en el texto fuente, omitilo (no inventes). Sé conciso: mejor que falte una FAQ menor a que se corte a mitad de frase.`;
 
-  const destilado = await claudeTexto(system, userText);
+  const destilado = await claudeTexto(system, userText, 2500);
   if (!destilado || destilado.length < 50) throw new Error('destilado vacío o demasiado corto');
 
   const texto = `${destilado.trim()}\n\n${bloquePrecios(precios)}`;
