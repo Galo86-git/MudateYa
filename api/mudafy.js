@@ -103,6 +103,23 @@ function emailValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// ── El alta pública (action=registrar) exige mail corporativo de Mudafy —
+//    evita que alguien se registre con su Gmail personal y quede duplicado
+//    con el alta real (pasó de verdad en el canal de C21: 8 de 41 asesores
+//    terminaron duplicados así). Dominio exacto confirmado: ext.mudafy.com. ──
+function esMailMudafy(email) {
+  var m = /@([^@]+)$/.exec(String(email || '').toLowerCase());
+  if (!m) return false;
+  return m[1] === 'ext.mudafy.com';
+}
+
+// ── Últimos 8 dígitos del teléfono (parte estable de un celular argentino,
+//    más allá de 54/9/15/código de área) — mismo criterio que usa whatsapp.js
+//    para matchear un número sin importar cómo lo haya tipeado la persona. ──
+function clave8(tel) {
+  return String(tel || '').replace(/\D/g, '').slice(-8);
+}
+
 
 // ── Escape de HTML para todo lo que venga del listado (nombre, zona, etc.)
 //    Sin esto, un nombre con < o & rompe el HTML del mail. ──
@@ -314,12 +331,21 @@ module.exports = async function handler(req, res) {
 
       if (!nombre)   return res.status(400).json({ error: 'Falta el nombre.' });
       if (!email || !emailValido(email)) return res.status(400).json({ error: 'Email inválido.' });
+      if (!esMailMudafy(email)) return res.status(400).json({ error: 'Usá tu mail de Mudafy (@ext.mudafy.com) para darte de alta.' });
       if (!whatsapp || whatsapp.replace(/\D/g, '').length < 8) return res.status(400).json({ error: 'WhatsApp inválido.' });
 
-      // ── No duplicar por email: si ya hay un asesor activo con ese mail,
-      //    devolvemos su link existente (alta idempotente) en vez de crear otro. ──
+      var tel8 = clave8(whatsapp);
+      var telKey = tel8.length === 8 ? 'mudafy:whatsapp8:' + tel8 : null;
+
+      // ── No duplicar: si ya hay un asesor activo con ese MAIL o con ese
+      //    WHATSAPP (aunque haya usado otro mail), devolvemos su link
+      //    existente (alta idempotente) en vez de crear otro. El chequeo por
+      //    whatsapp evita el caso real que pasó en C21: la misma persona
+      //    registrada dos veces con mails distintos (uno personal, uno
+      //    corporativo) por no saber que ya estaba de alta. ──
       var emailKey = 'mudafy:email:' + email.toLowerCase();
       var existenteCod = await getJSON(emailKey);
+      if (!existenteCod && telKey) existenteCod = await getJSON(telKey);
       if (existenteCod) {
         var existente = await getJSON('mudafy:asesor:' + existenteCod);
         if (existente && existente.activo !== false) {
@@ -342,6 +368,7 @@ module.exports = async function handler(req, res) {
       await setJSON('mudafy:asesor:' + codigo, asesor);
       await agregarAlIndice(codigo);
       await setJSON(emailKey, codigo);
+      if (telKey) await setJSON(telKey, codigo);
 
       var link = LINK_BASE + '?asesor=' + encodeURIComponent(codigo);
 
