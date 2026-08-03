@@ -15,6 +15,26 @@
 //
 // Devuelve { ok, sid, status } o lanza un error con el detalle de Twilio.
 
+// Normaliza un teléfono argentino a formato E.164 (+549<área><número>) para
+// WhatsApp. El "9" después del 54 es OBLIGATORIO para celulares AR — es la
+// causa más común de rechazo de Twilio ("not a valid phone number") cuando el
+// número se guardó tal cual lo tipeó la persona en un form (sin código de
+// país), que es el caso típico de mudanceros.telefono. Detectado en la
+// práctica: 3 de 4 recordatorios fallaron por esto (ver api/recordar-cotizar.js).
+// Si ya viene con "549" al principio, se devuelve intacto — así no rompe los
+// números que YA llegan bien formados (ej. desde el webhook de Twilio).
+// Límite conocido: no despeja un "15" de celular local pegado después del
+// código de área (ambiguo sin saber el largo del código de área); no visto
+// en los datos reales hasta ahora.
+function normalizarTelefonoAR(crudo) {
+  var d = String(crudo || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.indexOf('549') === 0) return '+' + d;
+  if (d.indexOf('54') === 0)  return '+549' + d.slice(2);
+  if (d.indexOf('0') === 0)   d = d.slice(1); // 0 de discado local
+  return '+549' + d;
+}
+
 async function enviarWhatsApp(to, contentSid, variables) {
   const sid   = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
@@ -23,10 +43,8 @@ async function enviarWhatsApp(to, contentSid, variables) {
     throw new Error('Twilio no configurado (faltan variables de entorno TWILIO_*)');
   }
 
-  // Normalizar el teléfono a formato "whatsapp:+<solo dígitos>"
-  var tel = String(to || '').replace(/[^\d+]/g, '');
+  var tel = normalizarTelefonoAR(to);
   if (!tel) throw new Error('Teléfono de destino inválido');
-  if (tel[0] !== '+') tel = '+' + tel;
 
   const body = new URLSearchParams({
     To:               'whatsapp:' + tel,
@@ -64,9 +82,8 @@ async function enviarWhatsAppTexto(to, body, mediaUrl) {
   if (!sid || !token || !from) {
     throw new Error('Twilio no configurado (faltan variables de entorno TWILIO_*)');
   }
-  var tel = String(to || '').replace(/[^\d+]/g, '');
+  var tel = normalizarTelefonoAR(to);
   if (!tel) throw new Error('Teléfono de destino inválido');
-  if (tel[0] !== '+') tel = '+' + tel;
 
   const params = {
     To:   'whatsapp:' + tel,
