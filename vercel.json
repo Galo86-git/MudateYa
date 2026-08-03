@@ -471,6 +471,10 @@
     {
       "path": "/api/cron-conocimiento",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron-resumen-diario",
+      "schedule": "0 23 * * *"
     }
   ]
 }

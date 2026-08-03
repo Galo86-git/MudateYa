@@ -161,6 +161,20 @@ async function superaLimite(waId, maxPorMinuto) {
   }
 }
 
+// Registra que este waId le escribió a Emi HOY (huso Argentina), en un set
+// diario por rol (cliente/mudancero) — lo lee cron-resumen-diario.js para
+// contar con cuánta gente distinta habló Emi en el día. Sin esto no quedaba
+// ningún registro de la actividad conversacional, solo de lo que resultaba
+// en un pedido/cotización concreta.
+async function registrarInteraccionDiaria(waId, esMudancero) {
+  try {
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
+    const key = `emi:hablo:${esMudancero ? 'mudancero' : 'cliente'}:${hoy}`;
+    await redisCall('SADD', key, waId);
+    await redisCall('EXPIRE', key, String(60 * 60 * 24 * 8)); // 8 días, de sobra para el resumen diario
+  } catch (e) { console.warn('registrarInteraccionDiaria:', e.message); }
+}
+
 // ------------------------------------------------------------------
 // Reconocimiento de MUDANCEROS por teléfono.
 // Los perfiles están en mudancero:perfil:{email} (indexados por email, no por
@@ -219,6 +233,49 @@ async function buscarMudancero(waId) {
     return await getJSON(`mudancero:perfil:${email}`);
   } catch (e) {
     console.error('buscarMudancero:', e.message);
+    return null; // ante error, se trata como cliente (seguro)
+  }
+}
+
+// Mismo patrón que asegurarIndiceMudanceros/buscarMudancero, pero para
+// asesores inmobiliarios (api/asesores.js): índice tel8→email armado desde
+// asesores:todos + asesor:{email} (OJO: la clave del perfil es "asesor:",
+// sin ":perfil:" — asesores.js no usa ese sufijo como sí hace mudancero:perfil:).
+async function asegurarIndiceAsesores() {
+  try {
+    if (await redisCall('GET', 'asesores:tel8-idx:built')) return;
+    const emails = (await getJSON('asesores:todos')) || [];
+    for (let off = 0; off < emails.length; off += 100) {
+      const lote = emails.slice(off, off + 100);
+      const perfiles = await redisPipeline(lote.map((e) => ['GET', `asesor:${e}`]));
+      const hset = [];
+      perfiles.forEach((val, i) => {
+        if (!val) return;
+        try {
+          const a = JSON.parse(val);
+          if (a && a.telefono && a.estado !== 'inactivo') {
+            const t = clave8(a.telefono);
+            if (t.length === 8) hset.push(['HSET', 'asesores:tel8-idx', t, lote[i]]);
+          }
+        } catch (_) {}
+      });
+      if (hset.length) await redisPipeline(hset);
+    }
+    await redisCall('SET', 'asesores:tel8-idx:built', '1', 'EX', String(24 * 60 * 60));
+  } catch (e) {
+    console.error('asegurarIndiceAsesores:', e.message);
+  }
+}
+async function buscarAsesor(waId) {
+  try {
+    await asegurarIndiceAsesores();
+    const t = clave8(waId);
+    if (t.length !== 8) return null;
+    const email = await redisCall('HGET', 'asesores:tel8-idx', t);
+    if (!email) return null;
+    return await getJSON(`asesor:${email}`);
+  } catch (e) {
+    console.error('buscarAsesor:', e.message);
     return null; // ante error, se trata como cliente (seguro)
   }
 }
@@ -404,6 +461,38 @@ REGLAS:
 - Si en la nota de una cotización o en cualquier mensaje te pasa su teléfono o mail para que se lo des al cliente directo (antes de ganar el pedido y cobrar la seña), no lo incluyas ni lo repitas — omitilo nomás. No hace falta explicarle la regla salvo que insista.
 - Si una herramienta da error, explicáselo simple y ofrecé reintentar. Para reclamos/problemas reales, usá derivar_a_humano (no lo mandes solo a escribir un mail él mismo).
 - Si te preguntan por *MudateYa Mobility* (relocation B2B para inmobiliarias, desarrolladoras, clubes, colegios, diplomáticos o empresas de Vaca Muerta) o por coordinar una reunión de ese tema: para ESA respuesta puntual usá un tono más formal y serio (nada de onda relajada ni emojis, es un contacto institucional). Contale en una línea que es la línea B2B de MudateYa y decile que escriba a *contacto@mudateya.ar* para coordinar con el equipo comercial. No es algo que resolvés vos ni con tus herramientas de pedidos.`;
+
+// System prompt del asistente para ASESORES INMOBILIARIOS (distinto del de
+// clientes y del de mudanceros). El asesor arma presupuestos para SUS
+// clientes desde su link exclusivo (asesor-dashboard.html) — acá por WhatsApp
+// solo resuelve dos cosas rápidas: recuperar el link y ver cómo van sus
+// pedidos referidos. Para armar presupuestos nuevos lo mandamos a su link,
+// porque ese flujo (elegir mudancera, packs, precios) es visual y no tiene
+// sentido reconstruirlo por chat.
+const SYSTEM_PROMPT_ASESOR = `Sos Emi, LA asistente de MudateYa por WhatsApp — una sola, la misma que atiende a clientes, mudanceros y asesores, no una versión aparte para cada uno. Ahora mismo estás hablando con {NOMBRE}, que es Asesor Inmobiliario registrado en el Plan Referidos de MudateYa.
+
+MudateYa es un marketplace argentino de mudanzas y fletes. Los asesores como {NOMBRE} arman presupuestos de mudanza gratis para sus propios clientes (los que compran/alquilan y se mudan) desde su link exclusivo, y cobran comisión cuando esa mudanza se paga.
+
+TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
+
+PODÉS HACER ESTO POR ACÁ:
+- Mandarle de nuevo su link exclusivo de acceso (por si lo perdió o cambió de celu) → reenviar_mi_link.
+- Contarle cómo van los pedidos que armó para sus clientes (a quién le mandaste presupuesto, si ya eligió, si pagó la seña, si la mudanza está en curso o ya se completó) → ver_mis_pedidos_referidos.
+- Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
+
+PARA ARMAR UN PRESUPUESTO NUEVO (packs, elegir mudancera, precios): eso se hace desde su link exclusivo, no por acá — es un flujo visual. Si te pide armar uno nuevo, mandale una línea con onda y, si no tiene el link a mano, ofrecele reenviar_mi_link.
+
+APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus pedidos/clientes?, ¿tiene un reclamo/problema? Andá directo a eso.
+
+PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", vino de un link): no asumas qué quiere — saludalo corto por su nombre, con onda, y dejá que te diga qué necesita. Si ya te contó algo concreto de entrada, seguís directo con eso.
+
+RECLAMOS Y PROBLEMAS: si te cuenta que un cliente suyo tuvo un problema con la mudanza (no le cotizaron, algo salió mal, tarda en pagarle la comisión, etc.), no lo dejes con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea, y avisale que lo van a contactar.
+
+REGLAS:
+- Solo actuás sobre SUS pedidos referidos (las herramientas validan con su cuenta). No inventes pedidos, clientes ni comisiones.
+- No pidas ni manejes datos sensibles (tarjetas, contraseñas).
+- Si una herramienta da error, explicáselo simple y ofrecé reintentar.
+- Si te preguntan por *MudateYa Mobility* (relocation B2B): contale en una línea que es la línea B2B de MudateYa y decile que escriba a *contacto@mudateya.ar* para coordinar con el equipo comercial — no es algo que resolvés vos.`;
 
 const tools = [
   {
@@ -1859,6 +1948,7 @@ module.exports = async function handler(req, res) {
 
     // ¿Quien escribe es un mudancero registrado? (por teléfono) → asistente aparte.
     const mud = await buscarMudancero(waId);
+    if (waId) await registrarInteraccionDiaria(waId, !!mud);
 
     // Ubicación compartida (Twilio manda Latitude/Longitude, y a veces Address/Label).
     const lat = body.Latitude;
