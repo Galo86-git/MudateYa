@@ -120,9 +120,30 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
 <div class="form-wrap">
   <form class="form-card" id="regForm" novalidate>
 
-    <!-- ── SECCIÓN 1: DATOS PERSONALES ── -->
+    <!-- ── PASO 1: CUIL/CUIT — se valida primero, contra AFIP en vivo, antes de
+         pedir el resto de los datos. Así nadie llena todo el formulario para
+         enterarse recién al final que su CUIT tiene un problema. ── -->
     <div class="form-section">
-      <div class="section-title">Datos personales</div>
+      <div class="section-title">1. Tu CUIL / CUIT</div>
+      <div class="section-sub">Lo verificamos primero contra AFIP — el resto del formulario se habilita cuando esté OK</div>
+      <div class="field-grid">
+        <div class="field" id="f-cuil">
+          <label class="field-label" for="cuil">CUIL / CUIT <span>*</span></label>
+          <input type="text" id="cuil" placeholder="20-12345678-9 o 30-12345678-9" maxlength="13"
+            oninput="formatCUIL(this)" onblur="validarCuilVivo()" autocomplete="off"/>
+          <span id="cuil-status" style="font-size:12.5px;margin-top:7px;display:block;min-height:16px"></span>
+          <span style="font-size:10px;color:#64748B;font-family:var(--mono)">Persona física: 20/27-... · Empresa: 30/33-...</span>
+          <span class="field-error">CUIL/CUIT inválido</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- El resto del form arranca deshabilitado hasta que el CUIL valide OK -->
+    <div id="restoForm" style="opacity:.4;pointer-events:none;transition:opacity .25s ease">
+
+    <!-- ── SECCIÓN 2: DATOS PERSONALES ── -->
+    <div class="form-section">
+      <div class="section-title">2. Datos personales</div>
       <div class="section-sub">Tu información de contacto — no se muestra públicamente</div>
       <div class="field-grid cols2">
         <div class="field" id="f-nombre">
@@ -145,15 +166,6 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
           <span class="field-hint">📧 Recomendamos un email de <b>Gmail</b> o <b>Google Workspace</b> para entrar más rápido con un click. Si usás otro email (Hotmail, Yahoo, dominio propio sin Google), también podés ingresar pidiendo un link de acceso por mail.</span>
           <span class="field-error">Ingresá un email válido</span>
         </div>
-        <div class="field" id="f-cuil" style="grid-column:1/-1">
-          <label class="field-label" for="cuil">CUIL / CUIT <span>*</span></label>
-          <div style="display:flex;gap:8px;align-items:flex-start">
-            <input type="text" id="cuil" placeholder="20-12345678-9 o 30-12345678-9" maxlength="13"
-              oninput="formatCUIL(this)"
-              style="flex:1"/>
-          </div>
-          <span style="font-size:10px;color:#64748B;font-family:var(--mono)">Persona física: 20/27-... · Empresa: 30/33-...</span>
-        </div>
         <div class="field" style="grid-column:1/-1">
           <label class="field-label" for="sitioWeb">Sitio web o Instagram <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
           <input type="text" id="sitioWeb" placeholder="https://www.tumudanza.com.ar o @tumudanza"/>
@@ -162,7 +174,7 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
       </div>
     </div>
 
-    <!-- ── SECCIÓN 2: ZONA ── -->
+    <!-- ── SECCIÓN 3: ZONA ── -->
     <div class="form-section">
       <div class="section-title">Zona de cobertura</div>
       <div class="section-sub">¿En qué áreas operás?</div>
@@ -231,6 +243,8 @@ nav{position:sticky;top:0;z-index:200;background:#003580;backdrop-filter:blur(20
         <svg width="14" height="14" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </div>
+
+    </div><!-- /#restoForm -->
   </form>
 </div>
 
@@ -265,6 +279,77 @@ function formatCUIL(input) {
   if (v.length > 10)      input.value = v.slice(0,2) + '-' + v.slice(2,10) + '-' + v.slice(10);
   else if (v.length > 2)  input.value = v.slice(0,2) + '-' + v.slice(2);
   else                    input.value = v;
+  // Apenas llega a los 11 dígitos completos, valida solo (no hace falta esperar
+  // el blur) — feedback lo más rápido posible.
+  if (v.length === 11) validarCuilVivo();
+  else { cuilGateOk = false; setCuilGate(false); document.getElementById('cuil-status').textContent = ''; }
+}
+
+// ── VALIDAR CUIL EN VIVO (local + AFIP) — gatea el resto del formulario ──
+var cuilGateOk = false;
+var cuilCheckSeq = 0; // evita que una respuesta vieja pise a una más nueva
+
+function setCuilGate(ok) {
+  cuilGateOk = ok;
+  var resto = document.getElementById('restoForm');
+  resto.style.opacity = ok ? '1' : '.4';
+  resto.style.pointerEvents = ok ? 'auto' : 'none';
+}
+
+async function validarCuilVivo() {
+  var input = document.getElementById('cuil');
+  var limpio = input.value.replace(/[-\s]/g, '');
+  var statusEl = document.getElementById('cuil-status');
+  var field = document.getElementById('f-cuil');
+
+  if (limpio.length !== 11) { setCuilGate(false); statusEl.textContent = ''; return; }
+
+  var seq = ++cuilCheckSeq;
+  statusEl.style.color = '#64748B';
+  statusEl.textContent = '⏳ Verificando con AFIP…';
+  field.classList.remove('has-error');
+
+  try {
+    var r = await fetch('/api/registrar-mudancero?action=validar-cuil&cuil=' + encodeURIComponent(limpio));
+    var d = await r.json();
+    if (seq !== cuilCheckSeq) return; // llegó tarde, ya hay un chequeo más nuevo en curso
+
+    if (!d.valido) {
+      statusEl.style.color = '#EF4444';
+      statusEl.textContent = '✗ ' + (d.error || 'CUIL/CUIT inválido');
+      field.classList.add('has-error');
+      setCuilGate(false);
+      return;
+    }
+    if (d.afip && d.afip.disponible && d.afip.existe === false) {
+      statusEl.style.color = '#EF4444';
+      statusEl.textContent = '✗ Este CUIL/CUIT no existe en el padrón de AFIP. Revisalo.';
+      field.classList.add('has-error');
+      setCuilGate(false);
+      return;
+    }
+    if (d.afip && d.afip.disponible && d.afip.existe && d.afip.estadoClave && d.afip.estadoClave !== 'ACTIVO') {
+      statusEl.style.color = '#B45309';
+      statusEl.textContent = '⚠ Existe en AFIP pero su estado no es activo (' + d.afip.estadoClave + '). Vamos a revisarlo a mano.';
+      setCuilGate(true);
+      return;
+    }
+    if (d.afip && d.afip.disponible && d.afip.existe) {
+      statusEl.style.color = '#15803D';
+      statusEl.textContent = '✓ CUIL/CUIT verificado contra AFIP';
+      setCuilGate(true);
+      return;
+    }
+    // AFIP no disponible ahora mismo (caído, límite de uso, o no configurado) — no bloqueamos.
+    statusEl.style.color = '#15803D';
+    statusEl.textContent = '✓ Formato válido';
+    setCuilGate(true);
+  } catch (e) {
+    if (seq !== cuilCheckSeq) return;
+    statusEl.style.color = '#15803D';
+    statusEl.textContent = '✓ Formato válido';
+    setCuilGate(true);
+  }
 }
 
 // ── VALIDAR FIELD ──
@@ -286,6 +371,17 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
   var cuil     = document.getElementById('cuil').value.trim();
   var sitioWeb = document.getElementById('sitioWeb').value.trim();
   var zonaBase = document.getElementById('zonaBase').value;
+
+  // Salvaguarda: si por algún motivo el JS de arriba no corrió (ej. autofill
+  // raro del navegador) y el CUIL nunca se validó, lo forzamos acá antes de
+  // dejar pasar el submit — nunca confiar solo en que el botón esté habilitado.
+  if (!cuilGateOk) {
+    await validarCuilVivo();
+    if (!cuilGateOk) {
+      document.getElementById('f-cuil').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+  }
 
   var ok = true;
   ok = validateField('nombre',   nombre.length > 1)   && ok;

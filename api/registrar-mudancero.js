@@ -246,7 +246,35 @@ module.exports = async function handler(req, res) {
     if (action === 'validar-cuil') {
       var cuilParam = req.query.cuil;
       if (!cuilParam) return res.status(400).json({ error: 'Falta el CUIL/CUIT' });
-      return res.json(validarCuilLocal(cuilParam));
+
+      var local = validarCuilLocal(cuilParam);
+      var out = Object.assign({}, local);
+
+      // Chequeo en vivo contra AFIP — solo si el checksum local ya cerró (evita
+      // gastar cuota de AFIP con CUILs con formato inválido) y sin pasarse de
+      // rate limit (esto es público, sin login: un uso normal son 2-3 intentos
+      // tipeando el propio CUIT, no cientos por minuto).
+      if (local.valido) {
+        var limitado = await require('./_seguridad').limitarPorIP(req, 'validar-cuil-afip', 8);
+        if (!limitado) {
+          try {
+            var afip = await validarCuitAfip(local.cuil);
+            if (afip && afip.disponible) {
+              // A propósito NO se manda nombre/apellido/domicilio acá: este
+              // endpoint es público (lo pega el formulario antes de loguearse),
+              // no puede convertirse en "consultá el domicilio de cualquier
+              // CUIT gratis". El nombre completo SÍ se cruza más adelante,
+              // server-to-server, durante el alta real (evaluarIdentidad).
+              out.afip = { disponible: true, existe: afip.existe, estadoClave: afip.estadoClave || null };
+            } else {
+              out.afip = { disponible: false };
+            }
+          } catch (e) {
+            out.afip = { disponible: false };
+          }
+        }
+      }
+      return res.json(out);
     }
     return res.status(400).json({ error: 'Acción GET no reconocida' });
   }
