@@ -387,6 +387,10 @@ module.exports = async function handler(req, res) {
                   <div style="margin:0 0 12px;font-size:12px;color:#475569;line-height:1.6">Te reenvía tu link, o te cuenta cómo van los clientes que ya te llegaron — al toque, sin entrar a ningún lado.</div>
                   <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
                 </div>
+                <div style="margin-top:20px;padding-top:20px;border-top:1px solid #EEF1F5;text-align:center">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:8px">Seguinos en IG</div>
+                  <a href="https://www.instagram.com/mudateya.ar/" style="color:#003580;font-weight:700;font-size:14px;text-decoration:none">@mudateya.ar</a>
+                </div>
               </div>
               <div style="background:#FAFAFA;border-top:1px solid #E5E7EB;padding:16px 28px;text-align:center">
                 <span style="font-size:12px;color:#94A3B8">MudateYa · la seguridad de mudarse · mudateya.ar</span>
