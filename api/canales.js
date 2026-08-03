@@ -351,6 +351,11 @@ module.exports = async function handler(req, res) {
                 <div style="text-align:center;margin-top:16px">
                   <a href="${SITE_BASE}${canal.beneficios}" style="display:inline-block;background:${canal.color};color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:12px 22px;border-radius:10px">Ver tus beneficios completos →</a>
                 </div>
+                <div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px 18px;margin-top:20px;text-align:center">
+                  <div style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600">📱 Cualquier duda, hablá con Emi por WhatsApp</div>
+                  <div style="margin:0 0 12px;font-size:12px;color:#475569;line-height:1.6">Te reenvía tu link, o te cuenta cómo van los clientes que ya te llegaron — al toque, sin entrar a ningún lado.</div>
+                  <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
+                </div>
               </div>
               <div style="background:#FAFAFA;border-top:1px solid #E5E7EB;padding:16px 28px;text-align:center">
                 <span style="font-size:12px;color:#94A3B8">MudateYa · la seguridad de mudarse · mudateya.ar</span>

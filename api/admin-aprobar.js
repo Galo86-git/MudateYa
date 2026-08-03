@@ -163,9 +163,16 @@ async function enviarEmailAltaExitosa(perfil) {
           </div>
         </div>
 
+        <!-- CTA Emi (WhatsApp) -->
+        <div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px 18px;margin:0 0 24px;text-align:center">
+          <p style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600">📱 Desde ahora también podés resolver todo por WhatsApp con Emi</p>
+          <p style="margin:0 0 12px;font-size:12px;color:#475569;line-height:1.6">Ver pedidos disponibles, cotizar, avisar que arrancaste o terminaste un trabajo — todo por chat, sin entrar a la web.</p>
+          <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
+        </div>
+
         <!-- CTA secundario -->
         <div style="text-align:center">
-          <a href="https://mudateya.ar/mi-cuenta" 
+          <a href="https://mudateya.ar/mi-cuenta"
              style="display:inline-block;color:#1A6FFF;font-size:13px;text-decoration:none">
             Ver mi cuenta en MudateYa →
           </a>
