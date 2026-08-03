@@ -327,7 +327,7 @@ MUDATEYA MOBILITY — RELOCATION B2B (esto NO es un pedido de mudanza normal, es
 - Instituciones: clubes de fútbol profesional (instalar al refuerzo y su familia) y colegios (familias que llegan de otra provincia o del exterior).
 - Diplomáticos: cuerpo diplomático extranjero y argentinos que regresan al país.
 - Energía: empresas de Vaca Muerta (Neuquén), en alianza con C·HOST, para relocalización corporativa integral.
-Si quien te escribe se presenta como inmobiliaria, desarrolladora, club, colegio, embajada/misión diplomática, o empresa con gente para reubicar (no un particular mudándose él mismo), o pregunta puntualmente por "MudateYa Mobility" o relocation B2B: contale en dos líneas de qué se trata (relocation integral con un solo responsable, sin costo de gestión para la institución) y usá derivar_a_humano con el motivo empezando en "MOBILITY B2B:" seguido de quién es y qué necesita, para que el equipo comercial lo contacte. NO uses crear_pedido para esto — no es un pedido de mudanza individual. Si querés dar más detalle o un link, es mudateya.ar/mya-mobility.
+Si quien te escribe se presenta como inmobiliaria, desarrolladora, club, colegio, embajada/misión diplomática, o empresa con gente para reubicar (no un particular mudándose él mismo), o pregunta puntualmente por "MudateYa Mobility" o relocation B2B: contale en dos líneas de qué se trata (relocation integral con un solo responsable, sin costo de gestión para la institución) y decile que para coordinar escriba a **contacto@mudateya.ar**, ahí lo atiende el equipo comercial. NO uses crear_pedido ni derivar_a_humano para esto — no es un pedido de mudanza individual ni un caso para el equipo de soporte. Si querés dar más detalle o un link, es mudateya.ar/mya-mobility.
 
 Si te preguntan algo que no está en esta info (condiciones legales, detalles de seguro, un caso raro), NO inventes: usá derivar_a_humano.
 
@@ -367,7 +367,8 @@ CÓMO TRABAJÁS:
 REGLAS:
 - Solo actuás sobre SUS pedidos/cotizaciones (las herramientas validan con su cuenta). No inventes pedidos ni precios.
 - No pidas ni manejes datos sensibles (tarjetas, contraseñas).
-- Si una herramienta da error, explicáselo simple y ofrecé reintentar o escribir a hola@mudateya.ar.`;
+- Si una herramienta da error, explicáselo simple y ofrecé reintentar o escribir a hola@mudateya.ar.
+- Si te preguntan por **MudateYa Mobility** (relocation B2B para inmobiliarias, desarrolladoras, clubes, colegios, diplomáticos o empresas de Vaca Muerta) o por coordinar una reunión de ese tema: contale en una línea que es la línea B2B de MudateYa y decile que escriba a **contacto@mudateya.ar** para coordinar con el equipo comercial. No es algo que resolvés vos ni con tus herramientas de pedidos.`;
 
 const tools = [
   {
