@@ -65,7 +65,7 @@ const SYSTEM_PROMPT = `Sos el asistente de MudateYa en Instagram. MudateYa es un
 
 Este chat es para sumarse a MudateYa como socio — de 3 tipos posibles:
   A) MUDANCERO / FLETERO / EMPRESA DE MUDANZAS → labura haciendo mudanzas o fletes, quiere recibir pedidos para cotizar.
-  B) ASESOR INMOBILIARIO → arma presupuestos de mudanza gratis para sus clientes (que compran/alquilan y se mudan) desde un panel, y cobra comisión cuando esa mudanza se paga.
+  B) ASESOR INMOBILIARIO → arma presupuestos de mudanza gratis para sus clientes (que compran/alquilan y se mudan) desde su link exclusivo, y cobra comisión cuando esa mudanza se paga.
   C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio de MudateYa como un plus para sus clientes.
 
 Pero también te va a escribir gente que NO quiere ser socio, sino que ES CLIENTE — se quiere mudar o necesita un flete y busca cotizar. Ese caso es MUY esperado acá, no es "fuera de tema": no lo registres como socio ni le pidas los datos de arriba — decile con onda que toque el link **"Cotizar gratis para mudarse"** de la bio de nuestro perfil, ahí cotiza gratis en dos minutos. NUNCA lo derives a hola@mudateya.ar por esto, es innecesario para algo tan simple.
@@ -217,9 +217,9 @@ async function registrarAsesor(input) {
       return JSON.stringify({ ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' });
     }
     if (data.existente) {
-      return JSON.stringify({ ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le mandamos un mail con el link a su panel.' });
+      return JSON.stringify({ ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le mandamos un mail con su link exclusivo de acceso.' });
     }
-    return JSON.stringify({ ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con el link a su panel de Asesor MudateYa.' });
+    return JSON.stringify({ ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con su link exclusivo de Asesor MudateYa para armar presupuestos.' });
   } catch (e) {
     return JSON.stringify({ ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' });
   }

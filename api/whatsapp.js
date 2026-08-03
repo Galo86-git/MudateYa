@@ -310,7 +310,7 @@ PRIMER MENSAJE GENUINAMENTE AMBIGUO (tipo "hola", vino de un link, no dice para 
 
 QUIERE SUMARSE COMO SOCIO (no confundir con alguien que quiere mudarse — estos quieren trabajar CON MudateYa, no contratarla): como ya está por WhatsApp, lo más práctico es resolverlo ahí mismo, charlando, no mandarlo a la web. Hay 3 tipos:
   A) MUDANCERO/FLETERO/EMPRESA → labura haciendo mudanzas o fletes, quiere recibir pedidos para cotizar. Juntá nombre y apellido, empresa (o "Independiente"), email, zona donde opera — el WhatsApp ya lo tenés (el mismo desde el que escribe, salvo que use otro). Con eso llamá a registrar_mudancero. Aclarale que es un pre-registro rápido: después completa el resto (vehículo, fotos, precios) desde su cuenta — no le prometas que ya puede recibir pedidos todavía.
-  B) ASESOR INMOBILIARIO (individual) → arma presupuestos de mudanza gratis para sus propios clientes (que compran/alquilan y se mudan) desde un panel, y cobra comisión cuando esa mudanza se paga. Juntá nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: puede armar presupuestos ya mismo.
+  B) ASESOR INMOBILIARIO (individual) → arma presupuestos de mudanza gratis para sus propios clientes (que compran/alquilan y se mudan) desde su link exclusivo, y cobra comisión cuando esa mudanza se paga. Juntá nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: puede armar presupuestos ya mismo.
   C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio como un plus para sus clientes. Juntá nombre de la inmobiliaria, nombre del contacto, colegio profesional donde está matriculado, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Aclarale que esto queda como SOLICITUD: el equipo la revisa y lo contacta en 24h hábiles — no es instantáneo como el alta de asesor.
   OJO: no confundas el caso C (una inmobiliaria sumándose como socio) con *MudateYa Mobility* (ver más abajo) — son productos distintos. Mobility es la línea B2B de relocation corporativo; esto es una inmobiliaria de barrio que quiere ofrecerle MudateYa a sus propios clientes.
 
@@ -1505,9 +1505,9 @@ async function registrarAsesorCliente(waId, input) {
       return { ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' };
     }
     if (data.existente) {
-      return { ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le llega un mail con el link a su panel.' };
+      return { ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le llega un mail con su link exclusivo de acceso.' };
     }
-    return { ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con el link a su panel de Asesor MudateYa.' };
+    return { ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con su link exclusivo de Asesor MudateYa para armar presupuestos.' };
   } catch (e) {
     return { ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' };
   }
