@@ -89,13 +89,18 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      // Filtro opcional { soloEmails: [...] } -- para reintentar SOLO los que
+      // fallaron sin volver a mandarle a quien ya le llegó bien.
+      const soloEmails = req.body && Array.isArray(req.body.soloEmails) ? req.body.soloEmails : null;
+      const aEnviar = soloEmails ? destinatarios.filter((d) => soloEmails.includes(d.email)) : destinatarios;
+
       const resultados = [];
-      for (const d of destinatarios) {
+      for (const d of aEnviar) {
         const r = await enviarPlantilla(d.telefono, 'recordatorio_pedido_sin_cotizar', { 1: (d.nombre || '').split(' ')[0] || 'che', 2: String(d.cantidad) }, d.texto);
         resultados.push({ email: d.email, telefono: d.telefono, cantidad: d.cantidad, ...r });
       }
       const enviados = resultados.filter((r) => r.enviado).length;
-      return res.status(200).json({ ok: true, totalDestinatarios: destinatarios.length, enviados, fallidos: destinatarios.length - enviados, resultados });
+      return res.status(200).json({ ok: true, totalDestinatarios: aEnviar.length, enviados, fallidos: aEnviar.length - enviados, resultados });
     }
 
     return res.status(405).json({ error: 'Método no permitido' });
