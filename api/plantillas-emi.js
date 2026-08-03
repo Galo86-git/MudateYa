@@ -130,7 +130,7 @@ const CREAR = [
   // dar el precio final. Le sugerimos al cliente mandar fotos por acá como
   // alternativa, para no perder el pedido por la fricción de coordinar una visita.
   { name: 'sugerencia_fotos_relevamiento', category: 'UTILITY',
-    types: { 'twilio/text': { body: '¡Hola {{1}}! {{2}} te cotizó tu {{3}}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar — se las paso al mudancero para que ajuste el precio sin necesidad de ir. 📷' } },
+    types: { 'twilio/text': { body: '¡Hola {{1}}! {{2}} te cotizó tu {{3}}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar o contame más detalles por escrito — se los paso al mudancero para que ajuste el precio sin necesidad de ir. 📷' } },
     variables: { '1': 'Juan', '2': 'Cristian', '3': 'mudanza' } },
 
 ];

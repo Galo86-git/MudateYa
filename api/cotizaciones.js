@@ -4098,7 +4098,7 @@ async function notificarCliente(mudanza, cotizacion) {
     // 3) Si el mudancero pidió relevamiento/visita, sugerirle fotos como alternativa.
     if (pideVisitaPresencial(cotizacion.nota)) {
       try {
-        const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar — se las paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
+        const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar o contame más detalles por escrito — se los paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
         await enviarPlantilla(mudanza.clienteWA, 'sugerencia_fotos_relevamiento', { 1: nomCli, 2: cotizacion.mudanceroNombre || 'El mudancero', 3: mudanza.tipo || 'mudanza' }, textoSugerencia);
       } catch (e) { console.warn('sugerencia fotos relevamiento:', e.message); }
     }
@@ -4124,7 +4124,7 @@ async function notificarCliente(mudanza, cotizacion) {
 
       // Si el mudancero pidió relevamiento/visita, sugerirle fotos como alternativa.
       if (pideVisitaPresencial(cotizacion.nota)) {
-        const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar — se las paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
+        const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar o contame más detalles por escrito — se los paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
         try { await enviarPlantilla(mudanza.clienteWA, 'sugerencia_fotos_relevamiento', { 1: nomCli, 2: cotizacion.mudanceroNombre || 'El mudancero', 3: mudanza.tipo || 'mudanza' }, textoSugerencia); }
         catch (e) { console.warn('sugerencia fotos relevamiento (web):', e.message); }
       }
