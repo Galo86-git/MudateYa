@@ -34,6 +34,7 @@ module.exports = async function handler(req, res) {
       ok: true,
       generadoEn: registro.generadoEn,
       muestrasPrecios: registro.muestrasPrecios,
+      muestrasPreciosPorHora: registro.muestrasPreciosPorHora,
       largoTexto: registro.texto.length,
     });
   } catch (e) {

@@ -262,7 +262,12 @@ async function generarConocimiento() {
   if (!destilado || destilado.length < 50) throw new Error('destilado vacío o demasiado corto');
 
   const texto = `${destilado.trim()}\n\n${bloquePrecios(precios)}`;
-  const registro = { texto, generadoEn: new Date().toISOString(), muestrasPrecios: precios.muestras || 0 };
+  const registro = {
+    texto,
+    generadoEn: new Date().toISOString(),
+    muestrasPrecios: precios.muestras || 0,
+    muestrasPreciosPorHora: precios.muestrasPorHora || 0,
+  };
   await setJSON(CONOCIMIENTO_KEY, registro);
   return registro;
 }
