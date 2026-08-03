@@ -304,11 +304,15 @@ CÓMO HABLÁS (esto es lo más importante):
 - Un emoji de vez en cuando si pega, no en cada mensaje. Sin tono de folleto.
 - Seguile la energía: si está apurado o cortante, al grano; si está perdido, guialo con paciencia; si está estresado, bajale un cambio ("tranqui, lo vemos juntos y en un rato lo dejás resuelto").
 
-APENAS TE ESCRIBEN, UBICATE RÁPIDO: leé el mensaje y date cuenta al toque de qué se trata — ¿pedido nuevo?, ¿pregunta por uno que ya tiene (consultar_estado_pedido)?, ¿algo salió mal (reclamo/problema, ver abajo)?, ¿quiere SUMARSE como mudancero/fletero (ver abajo, es distinto de pedir una mudanza)?, ¿otra cosa? No arranques el checklist de "armemos el pedido" si en realidad te está preguntando por algo que ya existe, contándote un problema, o queriendo trabajar CON nosotros en vez de contratarnos — andá directo a lo que necesita.
+APENAS TE ESCRIBEN, UBICATE RÁPIDO: leé el mensaje y date cuenta al toque de qué se trata — ¿pedido nuevo?, ¿pregunta por uno que ya tiene (consultar_estado_pedido)?, ¿algo salió mal (reclamo/problema, ver abajo)?, ¿quiere SUMARSE como socio (mudancero/fletero, asesor inmobiliario, o inmobiliaria — ver abajo, es distinto de pedir una mudanza)?, ¿otra cosa? No arranques el checklist de "armemos el pedido" si en realidad te está preguntando por algo que ya existe, contándote un problema, o queriendo trabajar CON nosotros en vez de contratarnos — andá directo a lo que necesita.
 
-PRIMER MENSAJE GENUINAMENTE AMBIGUO (tipo "hola", vino de un link, no dice para qué): no asumas que quiere armar un pedido — puede ser eso, una consulta, o querer sumarse como mudancero (ver abajo). Saludalo corto y con onda, preguntale con tus palabras (no una frase de manual) qué anda necesitando. Si en cambio ya te contó algo concreto de entrada ("necesito mudarme de Palermo a Núñez"), ahí seguís directo con eso, no le preguntes de nuevo qué quiere.
+PRIMER MENSAJE GENUINAMENTE AMBIGUO (tipo "hola", vino de un link, no dice para qué): no asumas que quiere armar un pedido — puede ser eso, una consulta, o querer sumarse como socio (ver abajo). Saludalo corto y con onda, preguntale con tus palabras (no una frase de manual) qué anda necesitando. Si en cambio ya te contó algo concreto de entrada ("necesito mudarme de Palermo a Núñez"), ahí seguís directo con eso, no le preguntes de nuevo qué quiere.
 
-QUIERE SER MUDANCERO/FLETERO (no confundir con alguien que quiere mudarse — este quiere trabajar repartiendo/mudando, cobrar por pedidos): como ya está por WhatsApp, lo más práctico es resolverlo ahí mismo, no mandarlo a la web. Juntá (de a uno o dos por mensaje, charlando): nombre y apellido, empresa (o "Independiente"), email, zona donde opera — el WhatsApp ya lo tenés, es el mismo desde el que te escribe salvo que use otro. Con eso llamá a registrar_mudancero. Aclarale que es un pre-registro rápido: después completa el resto (vehículo, fotos, precios) desde su cuenta — no le prometas que ya puede recibir pedidos todavía.
+QUIERE SUMARSE COMO SOCIO (no confundir con alguien que quiere mudarse — estos quieren trabajar CON MudateYa, no contratarla): como ya está por WhatsApp, lo más práctico es resolverlo ahí mismo, charlando, no mandarlo a la web. Hay 3 tipos:
+  A) MUDANCERO/FLETERO/EMPRESA → labura haciendo mudanzas o fletes, quiere recibir pedidos para cotizar. Juntá nombre y apellido, empresa (o "Independiente"), email, zona donde opera — el WhatsApp ya lo tenés (el mismo desde el que escribe, salvo que use otro). Con eso llamá a registrar_mudancero. Aclarale que es un pre-registro rápido: después completa el resto (vehículo, fotos, precios) desde su cuenta — no le prometas que ya puede recibir pedidos todavía.
+  B) ASESOR INMOBILIARIO (individual) → arma presupuestos de mudanza gratis para sus propios clientes (que compran/alquilan y se mudan) desde un panel, y cobra comisión cuando esa mudanza se paga. Juntá nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: puede armar presupuestos ya mismo.
+  C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio como un plus para sus clientes. Juntá nombre de la inmobiliaria, nombre del contacto, colegio profesional donde está matriculado, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Aclarale que esto queda como SOLICITUD: el equipo la revisa y lo contacta en 24h hábiles — no es instantáneo como el alta de asesor.
+  OJO: no confundas el caso C (una inmobiliaria sumándose como socio) con *MudateYa Mobility* (ver más abajo) — son productos distintos. Mobility es la línea B2B de relocation corporativo; esto es una inmobiliaria de barrio que quiere ofrecerle MudateYa a sus propios clientes.
 
 RECLAMOS Y PROBLEMAS: si te cuenta algo que salió mal (el mudancero no llegó o se retrasó mucho, algo se rompió, el pago no se acreditó, quiere un reembolso, hay una discrepancia con lo acordado, o está enojado/frustrado), primero bajale el nivel con empatía genuina — no un genérico "lamento escuchar eso". Si tiene un pedido activo, usá consultar_estado_pedido para ver los datos reales antes de responder — no asumas ni inventes qué pasó. Si es algo que tus otras herramientas resuelven (cancelar, responder un ajuste), hacelo. Si es un reclamo de verdad que necesita que una persona lo mire, usá derivar_a_humano con un motivo que empiece con "RECLAMO:" y el detalle (qué pasó, con qué pedido si aplica). Cerrá siempre confirmando que el equipo lo va a contactar — nunca prometas algo que no podés garantizar (reembolsos, sanciones al mudancero: eso lo decide el equipo).
 
@@ -524,6 +528,39 @@ const tools = [
         zona: { type: 'string', description: 'zona donde opera (ej: CABA, zona norte, zona sur, Rosario, Córdoba, Mendoza, u otra)' },
       },
       required: ['nombre', 'empresa', 'whatsapp', 'email', 'zona'],
+    },
+  },
+  {
+    name: 'registrar_asesor',
+    description:
+      "Registra a un ASESOR INMOBILIARIO individual en el programa de Asesores MudateYa (queda activo al toque, ya puede armar presupuestos). Llamala SOLO con los 5 datos: nombre y apellido, inmobiliaria (o 'Independiente'), email, WhatsApp, zona donde trabaja.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'nombre y apellido del asesor' },
+        inmobiliaria: { type: 'string', description: "nombre de la inmobiliaria, o 'Independiente'" },
+        email: { type: 'string' },
+        whatsapp: { type: 'string', description: 'número de WhatsApp / teléfono de contacto (si no lo da, usá el mismo número desde el que escribe)' },
+        zona: { type: 'string', description: 'zona donde trabaja (ej: CABA, zona norte, zona sur, Rosario, Córdoba, Mendoza, u otra)' },
+      },
+      required: ['nombre', 'inmobiliaria', 'email', 'whatsapp', 'zona'],
+    },
+  },
+  {
+    name: 'registrar_inmobiliaria',
+    description:
+      "Manda la SOLICITUD de alta de una INMOBILIARIA (la agencia, no un asesor individual). Queda pendiente de revisión, NO es instantáneo. Llamala SOLO con los 6 datos: nombre de la inmobiliaria, nombre del contacto, colegio profesional, matrícula, email, WhatsApp.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombreInmobiliaria: { type: 'string', description: 'nombre de la inmobiliaria' },
+        contacto: { type: 'string', description: 'nombre y apellido de la persona de contacto' },
+        colegio: { type: 'string', description: 'colegio profesional donde está matriculado el contacto (ej: CUCICBA — CABA, San Isidro, La Plata, etc.)' },
+        matricula: { type: 'string', description: 'número de matrícula' },
+        email: { type: 'string' },
+        whatsapp: { type: 'string', description: 'número de WhatsApp / teléfono de contacto (si no lo da, usá el mismo número desde el que escribe)' },
+      },
+      required: ['nombreInmobiliaria', 'contacto', 'colegio', 'matricula', 'email', 'whatsapp'],
     },
   },
 ];
@@ -1399,6 +1436,12 @@ async function ejecutarTool(name, input, waId, conv) {
     if (name === 'registrar_mudancero') {
       return JSON.stringify(await registrarMudanceroCliente(waId, input));
     }
+    if (name === 'registrar_asesor') {
+      return JSON.stringify(await registrarAsesorCliente(waId, input));
+    }
+    if (name === 'registrar_inmobiliaria') {
+      return JSON.stringify(await registrarInmobiliariaCliente(input));
+    }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
     console.error('ejecutarTool', name, e.message);
@@ -1437,6 +1480,67 @@ async function registrarMudanceroCliente(waId, input) {
     return { ok: true, existente: false, nota: 'Pre-registrado con éxito. Le llega un mail para completar vehículo, fotos y precios desde su cuenta — recién ahí queda listo para recibir pedidos.' };
   } catch (e) {
     return { ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' };
+  }
+}
+
+// Alta de asesor inmobiliario directo por WhatsApp — mismo endpoint REAL que
+// usa asesor-registro.html y el bot de Instagram (api/asesores.js?action=register).
+async function registrarAsesorCliente(waId, input) {
+  input = input || {};
+  const telefono = input.whatsapp || waId;
+  try {
+    const r = await fetch(`${SITE_URL}/api/asesores?action=register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: input.nombre,
+        email: input.email,
+        telefono,
+        inmobiliaria: input.inmobiliaria,
+        zona: input.zona,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      return { ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' };
+    }
+    if (data.existente) {
+      return { ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le llega un mail con el link a su panel.' };
+    }
+    return { ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con el link a su panel de Asesor MudateYa.' };
+  } catch (e) {
+    return { ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' };
+  }
+}
+
+// Solicitud de alta de inmobiliaria directo por WhatsApp — mismo endpoint REAL
+// que usa inmobiliarias-registro.html y el bot de Instagram
+// (api/inmobiliarias.js?action=solicitar-alta). Queda pendiente de revisión.
+async function registrarInmobiliariaCliente(input) {
+  input = input || {};
+  try {
+    const r = await fetch(`${SITE_URL}/api/inmobiliarias?action=solicitar-alta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: input.nombreInmobiliaria,
+        contacto: input.contacto,
+        colegio: input.colegio,
+        matricula: input.matricula,
+        email: input.email,
+        whatsapp: input.whatsapp,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      return { ok: false, error: data.error || 'No se pudo enviar la solicitud. Revisá los datos.' };
+    }
+    if (data.existente) {
+      return { ok: true, existente: true, nota: data.mensaje || 'Ese email ya está registrado.' };
+    }
+    return { ok: true, existente: false, nota: 'Solicitud recibida. El equipo la revisa y lo contacta en 24h hábiles para coordinar la activación.' };
+  } catch (e) {
+    return { ok: false, error: 'No pudimos enviar la solicitud ahora. Probá de nuevo en un rato.' };
   }
 }
 
