@@ -687,6 +687,17 @@ module.exports = async function handler(req, res) {
         var a = await getJSON('aliado:' + idx[k]);
         if (!a) continue;
         var bal = await calcularBalance(idx[k]);
+        // "Ops este mes" para el dashboard admin: cuenta atribuciones creadas
+        // en el mes calendario actual. bal.historial SÍ tiene esto (lo arma
+        // calcularBalance), pero antes no se mandaba nada del historial acá
+        // -- el dashboard filtraba a.atribuciones/a.operaciones, campos que
+        // este endpoint nunca puso en el item, así que "con ops este mes"
+        // daba siempre 0. Se cuenta acá (server-side) en vez de mandar todo
+        // el historial solo para un contador.
+        var mesActualIdx = new Date().toISOString().slice(0, 7);
+        var opsMes = (bal.historial || []).filter(function(op) {
+          return op.creadaEn && String(op.creadaEn).slice(0, 7) === mesActualIdx;
+        }).length;
         lista.push({
           email: a.email,
           nombre: a.nombre,
@@ -706,7 +717,8 @@ module.exports = async function handler(req, res) {
             pagadasMonto: bal.pagadas.monto,
             pendientePago: bal.pendientePago,
             trimestre: bal.trimestre,
-            anio: bal.anio
+            anio: bal.anio,
+            opsMes: opsMes
           }
         });
       }

@@ -1406,16 +1406,12 @@ async function loadAliadosDash(){
     var lista = d.aliados || [];
     var total = lista.length;
     var activos = lista.filter(function(a){ return a.estado === 'activo'; }).length;
-    // "Con ops este mes" = aliados con atribuciones creadas este mes
-    var hoy = new Date();
-    var mesActual = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
+    // "Con ops este mes" = aliados con atribuciones creadas este mes.
+    // opsMes lo calcula el backend (admin-list, api/aliados.js) a partir de
+    // bal.historial -- antes esto leía a.atribuciones/a.operaciones, campos
+    // que el endpoint nunca mandaba, así que siempre daba 0.
     var conOpsMes = lista.filter(function(a){
-      var ops = a.atribuciones || a.operaciones || [];
-      if (!ops.length) return false;
-      return ops.some(function(op){
-        var f = op.fechaCreada || op.fecha || op.creadaEn;
-        return f && String(f).startsWith(mesActual);
-      });
+      return (a.balance && a.balance.opsMes) > 0;
     }).length;
     document.getElementById('m-aliados').textContent = total;
     document.getElementById('m-aliados-sub').textContent = activos + ' activos · ' + conOpsMes + ' con ops este mes';
@@ -1673,7 +1669,7 @@ function renderDashboard(){
     return {
       mudancero: p.mudancero || '—',
       monto: parseFloat(p.montoPagado || 0),
-      fecha: p.fecha || '—',
+      fecha: p.fechaPago || '—',
       metodo: (metodo === 'transferencia' ? 'Transferencia' : 'Mercado Pago')
             + (p.tipoPago === 'saldo' ? ' · saldo' : p.tipoPago === 'anticipo' ? ' · anticipo' : ''),
       tipo: p.tipo || 'mudanza'
@@ -2051,7 +2047,14 @@ function clasificarPagos() {
       tipo: p.tipo,
       fechaPago: p.fechaPago,
       fechaLiberacion: fechaLiberacion,
-      diasRestantes: diasHabilesHasta(fechaLiberacion)
+      diasRestantes: diasHabilesHasta(fechaLiberacion),
+      // Antes se perdían acá: renderLiquidaciones() los lee de este mismo
+      // objeto para la columna "Asesor" (🎁 compraventa / -$X comisión), pero
+      // como no estaban copiados, esa columna daba siempre "—".
+      tipoOperacion: p.tipoOperacion,
+      comisionAsesor: p.comisionAsesor,
+      comisionAsesorPct: p.comisionAsesorPct,
+      asesorCodigo: p.asesorCodigo
     };
     if (fechaLiberacion <= hoy) liquidables.push(item);
     else enRetencion.push(item);
