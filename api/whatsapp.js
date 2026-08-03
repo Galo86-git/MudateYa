@@ -814,35 +814,61 @@ function pedidoPideVisita(nota) {
   return /relevamiento|visitar|visita\s+(presencial|domiciliaria)|recorrer\s+el\s+(lugar|domicilio)|pasar\s+a\s+ver|ir\s+a\s+ver\s+(el|la)|necesita(mos)?\s+ver\s+el\s+lugar/i.test(String(nota || ''));
 }
 
-// Avisa por mail al/los mudancero(s) que pidieron relevamiento/visita en su
-// cotización de que el cliente mandó fotos o más detalle en vez de la visita
-// — sin esto, las fotos/el texto quedaban guardados en el pedido pero nadie
-// del lado del mudancero se enteraba que ya estaban disponibles.
+// Mismo helper que cotizaciones.js (sinContacto) — redacta teléfonos y emails
+// de un texto libre. Acá hacía falta para el detalle que el cliente escribe
+// en agregar_detalle_pedido: ese texto queda guardado en el pedido y lo ve el
+// mudancero, así que no puede llevar contacto directo (mismo criterio que las
+// fotos, que ya se moderan).
+function sinContactoWA(texto) {
+  if (!texto) return texto;
+  let t = String(texto);
+  t = t.replace(/\+?\d[\d\s.()-]{6,}\d/g, (m) => ((m.match(/\d/g) || []).length >= 8 ? '[contacto oculto]' : m));
+  t = t.replace(/[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}/g, '[contacto oculto]');
+  return t;
+}
+
+// Avisa al/los mudancero(s) que pidieron relevamiento/visita en su cotización
+// de que el cliente mandó fotos o más detalle en vez de la visita — sin esto,
+// quedaban guardadas en el pedido pero nadie del lado del mudancero se
+// enteraba. WhatsApp primero (mismo canal donde ya interactúa con Emi); el
+// mail es un respaldo SOLO si el WhatsApp no se pudo entregar (sin teléfono,
+// fuera de ventana y la plantilla sin aprobar todavía).
 async function avisarMudanceroFotosOTexto(pedido, motivo) {
   const cots = Array.isArray(pedido.cotizaciones) ? pedido.cotizaciones : [];
   const matches = cots.filter((c) => c && pedidoPideVisita(c.nota));
-  if (!matches.length || !process.env.RESEND_API_KEY) return;
-  const { Resend } = require('resend');
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  if (!matches.length) return;
+  const { enviarPlantilla } = require('./_plantillas');
   for (const c of matches) {
-    if (!c.mudanceroEmail) continue;
-    try {
-      const nomMud = (c.mudanceroNombre || '').split(' ')[0] || '';
-      await resend.emails.send({
-        from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-        to: c.mudanceroEmail,
-        subject: `El cliente te mandó ${motivo} para tu cotización — pedido ${pedido.id}`,
-        html:
-          `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">` +
-          `<div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span></div>` +
-          `<div style="padding:28px">` +
-            `<p style="color:#0F1923;font-size:16px;line-height:1.7;margin:0 0 16px">Hola${nomMud ? ', ' + nomMud : ''}!</p>` +
-            `<p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">El cliente de tu cotización para el pedido <b>${pedido.id}</b> (${pedido.desde || pedido.origen || ''} → ${pedido.hasta || pedido.destino || ''}) te mandó ${motivo} en vez de coordinar la visita que pediste. Entrá a revisarlo para ajustar el precio si hace falta.</p>` +
-            `<div style="text-align:center;margin:20px 0"><a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver el pedido →</a></div>` +
-          `</div>` +
-          `</div>`,
-      });
-    } catch (e) { console.warn('avisarMudanceroFotosOTexto:', c.mudanceroEmail, e.message); }
+    const nomMud = (c.mudanceroNombre || '').split(' ')[0] || '';
+    let entregado = false;
+    if (c.mudanceroTel) {
+      try {
+        const textoWA = `¡Hola${nomMud ? ', ' + nomMud : ''}! El cliente del pedido ${pedido.id} (${pedido.desde || pedido.origen || ''} → ${pedido.hasta || pedido.destino || ''}) te mandó ${motivo} en vez de la visita — entrá a tu cuenta para verlo y ajustar el precio si hace falta.`;
+        const r = await enviarPlantilla(c.mudanceroTel, 'fotos_relevamiento_mudancero',
+          { 1: nomMud, 2: pedido.id, 3: pedido.desde || pedido.origen || '', 4: pedido.hasta || pedido.destino || '', 5: motivo }, textoWA);
+        entregado = !!(r && r.enviado);
+      } catch (e) { console.warn('avisarMudanceroFotosOTexto WhatsApp:', c.mudanceroTel, e.message); }
+    }
+    if (!entregado && c.mudanceroEmail && process.env.RESEND_API_KEY) {
+      try {
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+          to: c.mudanceroEmail,
+          subject: `El cliente te mandó ${motivo} para tu cotización — pedido ${pedido.id}`,
+          html:
+            `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">` +
+            `<div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span></div>` +
+            `<div style="padding:28px">` +
+              `<p style="color:#0F1923;font-size:16px;line-height:1.7;margin:0 0 16px">Hola${nomMud ? ', ' + nomMud : ''}!</p>` +
+              `<p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">El cliente de tu cotización para el pedido <b>${pedido.id}</b> (${pedido.desde || pedido.origen || ''} → ${pedido.hasta || pedido.destino || ''}) te mandó ${motivo} en vez de coordinar la visita que pediste. Entrá a revisarlo para ajustar el precio si hace falta.</p>` +
+              `<div style="text-align:center;margin:20px 0"><a href="https://mudateya.ar/mi-cuenta" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver el pedido →</a></div>` +
+            `</div>` +
+            `</div>`,
+        });
+      } catch (e) { console.warn('avisarMudanceroFotosOTexto mail:', c.mudanceroEmail, e.message); }
+    }
   }
 }
 
@@ -1014,7 +1040,7 @@ async function agregarDetallePedidoCliente(waId, detalle) {
   if (!abiertos.length) return { ok: false, mensaje: 'No encontré un pedido tuyo abierto para agregarle esto.' };
   const pedido = abiertos[abiertos.length - 1]; // el más reciente
 
-  const textoLimpio = texto.slice(0, 500);
+  const textoLimpio = sinContactoWA(texto.slice(0, 500));
   pedido.detallesAdicionales = pedido.detallesAdicionales || {};
   pedido.detallesAdicionales.comentario = pedido.detallesAdicionales.comentario
     ? pedido.detallesAdicionales.comentario + '\n' + textoLimpio

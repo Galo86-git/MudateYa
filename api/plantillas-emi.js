@@ -133,6 +133,12 @@ const CREAR = [
     types: { 'twilio/text': { body: '¡Hola {{1}}! {{2}} te cotizó tu {{3}}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar o contame más detalles por escrito — se los paso al mudancero para que ajuste el precio sin necesidad de ir. 📷' } },
     variables: { '1': 'Juan', '2': 'Cristian', '3': 'mudanza' } },
 
+  // Aviso al MUDANCERO cuando el cliente le manda fotos o más detalle en vez
+  // de la visita que pidió (contraparte de sugerencia_fotos_relevamiento).
+  { name: 'fotos_relevamiento_mudancero', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Hola {{1}}! El cliente del pedido {{2}} ({{3}} → {{4}}) te mandó {{5}} en vez de la visita — entrá a tu cuenta para verlo y ajustar el precio si hace falta.' } },
+    variables: { '1': 'Cristian', '2': 'MYA-123', '3': 'Palermo', '4': 'Tigre', '5': 'fotos' } },
+
 ];
 
 module.exports = async function handler(req, res) {
