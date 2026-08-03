@@ -54,10 +54,16 @@ module.exports = async function handler(req, res) {
     var matches = cotizaciones.filter(function (c) { return c && pideVisitaPresencial(c.nota); });
 
     if (req.method === 'GET') {
+      var nomClipreview = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
       return res.status(200).json({
         mudanzaId: mudanzaId, cliente: mudanza.clienteNombre, clienteWA: mudanza.clienteWA,
         totalCotizaciones: cotizaciones.length,
-        matches: matches.map(function (c) { return { mudanceroNombre: c.mudanceroNombre, nota: c.nota }; }),
+        matches: matches.map(function (c) {
+          return {
+            mudanceroNombre: c.mudanceroNombre, nota: c.nota,
+            textoAEnviar: `¡Hola ${nomClipreview}! ${c.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar o contame más detalles por escrito — se los paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`,
+          };
+        }),
       });
     }
 
