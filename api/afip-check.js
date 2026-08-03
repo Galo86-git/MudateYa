@@ -8,14 +8,34 @@
 var { esAdmin } = require('./_auth');
 var { validarCuit } = require('./_afip');
 
+// Diagnostica el FORMATO de una variable *_B64 sin exponer nunca su contenido
+// real — solo mira si empieza con el encabezado PEM (señal de que se pegó el
+// archivo tal cual, SIN pasar por base64) o si decodifica a algo con pinta de
+// PEM válido. Nada de esto revela la clave/certificado en sí.
+function diagnosticarB64(valor, marcadoresValidos) {
+  if (!valor) return { presente: false };
+  var largo = valor.length;
+  var pareceRawPem = /^\s*-----BEGIN/.test(valor); // no se codificó a base64, se pegó el archivo posta
+  var decoded = '';
+  try { decoded = Buffer.from(valor, 'base64').toString('utf8'); } catch (e) {}
+  var decodedTienePem = marcadoresValidos.some(function (m) { return decoded.indexOf(m) !== -1; });
+  return {
+    presente: true,
+    largo: largo,
+    pareceQueNoEstaEnBase64_sePegoElArchivoCrudo: pareceRawPem,
+    decodificaAUnPemValido: decodedTienePem,
+    largoDecodificado: decoded.length,
+  };
+}
+
 module.exports = async function handler(req, res) {
   if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
   try {
     var cuit = (req.query && req.query.cuit) || process.env.AFIP_CUIT;
     var envOk = {
       AFIP_CUIT: !!process.env.AFIP_CUIT,
-      AFIP_CERT_B64: !!process.env.AFIP_CERT_B64,
-      AFIP_KEY_B64: !!process.env.AFIP_KEY_B64,
+      AFIP_CERT_B64: diagnosticarB64(process.env.AFIP_CERT_B64, ['BEGIN CERTIFICATE']),
+      AFIP_KEY_B64: diagnosticarB64(process.env.AFIP_KEY_B64, ['BEGIN PRIVATE KEY', 'BEGIN RSA PRIVATE KEY']),
       AFIP_ENV: process.env.AFIP_ENV || 'prod (default)',
     };
     var t0 = Date.now();
