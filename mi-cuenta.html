@@ -5808,6 +5808,35 @@ var _pfUrlDniDorso  = '';
 var _pfDniData      = { frente: null, dorso: null, analisis: null };
 var _pfCarpetaTmp   = 'mudanceros/perfil-' + Date.now();
 
+// ── Moderación: rechaza fotos de perfil/vehículo con un teléfono visible ──
+// (mudanceros pegando su contacto en la foto para esquivar la plataforma).
+// Falla ABIERTO: si el chequeo no responde (red, IA caída), no bloqueamos la
+// carga — es una defensa extra, no el único control de esta política.
+var PROMPT_MODERACION_TELEFONO = '¿Aparece escrito o visible en esta imagen un número de teléfono (cartel, adhesivo, remera, escrito a mano, etc.)? No cuentes patentes de vehículos ni numeración de calle/piso. Respondé SOLO con JSON válido: {"tieneTelefono": true|false, "telefonoDetectado": "el texto visto, o vacío si no hay"}';
+
+function pfDataUrlAPartes(dataUrl) {
+  var m = String(dataUrl || '').match(/^data:([^;]+);base64,(.+)$/);
+  return m ? { mediaType: m[1], data: m[2] } : null;
+}
+
+async function pfChequearTelefonoEnFoto(dataUrl) {
+  var partes = pfDataUrlAPartes(dataUrl);
+  if (!partes) return { tieneTelefono: false };
+  try {
+    var r = await fetch('/api/analizar-foto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ images: [{ data: partes.data, mediaType: partes.mediaType }], prompt: PROMPT_MODERACION_TELEFONO }),
+    });
+    var json = await r.json();
+    var a = json && json.analisis;
+    return (a && a.tieneTelefono) ? { tieneTelefono: true, telefonoDetectado: a.telefonoDetectado || '' } : { tieneTelefono: false };
+  } catch (e) {
+    console.warn('chequeo teléfono en foto:', e.message);
+    return { tieneTelefono: false };
+  }
+}
+
 async function pfSubirABlob(file, carpeta, nombre) {
   var res = await fetch('/api/upload-foto', {
     method: 'POST',
@@ -5831,13 +5860,26 @@ function pfOnFotoPerfil(input) {
   var file = input.files[0];
   if (file.size > 5 * 1024 * 1024) { alert('La foto pesa más de 5MB. Reducila e intentá de nuevo.'); return; }
   var reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
+    var dataUrl = e.target.result;
     var preview = document.getElementById('pf-fotoPreview');
-    preview.src = e.target.result;
+    preview.src = dataUrl;
     preview.style.display = 'block';
     document.getElementById('pf-uploadIcon').style.display = 'none';
-    document.getElementById('pf-uploadText').textContent = 'Subiendo… ⏳';
+    document.getElementById('pf-uploadText').textContent = 'Revisando foto… ⏳';
     document.getElementById('pf-uploadArea').classList.add('has-file');
+
+    var chequeo = await pfChequearTelefonoEnFoto(dataUrl);
+    if (chequeo.tieneTelefono) {
+      preview.style.display = 'none';
+      document.getElementById('pf-uploadIcon').style.display = '';
+      document.getElementById('pf-uploadArea').classList.remove('has-file');
+      document.getElementById('pf-uploadText').textContent = 'Subir foto de perfil';
+      alert('Esa foto muestra un teléfono' + (chequeo.telefonoDetectado ? ' (' + chequeo.telefonoDetectado + ')' : '') + '. No la podemos aceptar: los clientes siempre te tienen que contactar a través de MudateYa. Subí otra foto sin datos de contacto.');
+      return;
+    }
+
+    document.getElementById('pf-uploadText').textContent = 'Subiendo… ⏳';
     pfSubirABlob(file, _pfCarpetaTmp, 'perfil')
       .then(function(url) {
         _pfUrlPerfil = url;
@@ -5858,7 +5900,7 @@ function pfOnFotosVehiculo(input) {
   Array.from(input.files).forEach(function(file) {
     if (file.size > 5 * 1024 * 1024) { alert('Una foto pesa más de 5MB. Reducila e intentá de nuevo.'); return; }
     var reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
       var dataUrl = e.target.result;
       var wrap = document.createElement('div');
       wrap.style.cssText = 'position:relative;width:80px;height:80px';
@@ -5872,10 +5914,28 @@ function pfOnFotosVehiculo(input) {
       wrap.appendChild(overlay);
       grid.appendChild(wrap);
       document.getElementById('pf-uploadIconCamion').style.display = 'none';
-      document.getElementById('pf-uploadTextCamion').textContent = 'Subiendo… ⏳';
+      document.getElementById('pf-uploadTextCamion').textContent = 'Revisando foto… ⏳';
       document.getElementById('pf-uploadAreaCamion').classList.add('has-file');
       var idx = _pfUrlsVehiculo.length;
       _pfUrlsVehiculo.push(null);
+
+      var chequeo = await pfChequearTelefonoEnFoto(dataUrl);
+      if (chequeo.tieneTelefono) {
+        wrap.remove();
+        _pfUrlsVehiculo[idx] = null;
+        var countTel = _pfUrlsVehiculo.filter(Boolean).length;
+        if (countTel === 0) {
+          document.getElementById('pf-uploadIconCamion').style.display = '';
+          document.getElementById('pf-uploadTextCamion').textContent = 'Subir fotos del vehículo';
+          document.getElementById('pf-uploadAreaCamion').classList.remove('has-file');
+        } else {
+          document.getElementById('pf-uploadTextCamion').textContent = countTel + ' foto' + (countTel > 1 ? 's' : '') + ' cargada' + (countTel > 1 ? 's' : '') + ' ✓';
+        }
+        alert('Esa foto muestra un teléfono' + (chequeo.telefonoDetectado ? ' (' + chequeo.telefonoDetectado + ')' : '') + '. No la podemos aceptar: los clientes siempre te tienen que contactar a través de MudateYa. Subí otra foto sin datos de contacto.');
+        return;
+      }
+
+      document.getElementById('pf-uploadTextCamion').textContent = 'Subiendo… ⏳';
       pfSubirABlob(file, _pfCarpetaTmp, 'vehiculo-' + idx)
         .then(function(url) {
           _pfUrlsVehiculo[idx] = url;

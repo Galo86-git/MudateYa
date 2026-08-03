@@ -30,12 +30,13 @@ module.exports = async function handler(req, res) {
       prompt.includes('documento') ||
       prompt.includes('numero_dni')
     );
+    const esModeracion = prompt && prompt.includes('tieneTelefono');
 
     const promptFinal = prompt || PROMPT_OBJETO;
 
     // ── ELEGIR MODELO SEGÚN EL CASO ──────────────────────────────────────
     // DNI: precisión legal → Sonnet 5 (más exacto leyendo documentos).
-    // Objeto/flete: estimación simple → Haiku 4.5 (rápido y ~5x más barato).
+    // Objeto/flete y moderación: estimación simple → Haiku 4.5 (rápido y barato).
     // Antes usábamos Opus 4.5 para todo, que era caro y sobredimensionado.
     const modelo = esDNI ? 'claude-sonnet-5' : 'claude-haiku-4-5';
 
@@ -72,7 +73,7 @@ module.exports = async function handler(req, res) {
         output_config: {
           format: {
             type: 'json_schema',
-            schema: esDNI ? SCHEMA_DNI : SCHEMA_OBJETO,
+            schema: esDNI ? SCHEMA_DNI : (esModeracion ? SCHEMA_MODERACION : SCHEMA_OBJETO),
           },
         },
       }),
@@ -141,6 +142,19 @@ const SCHEMA_OBJETO = {
     requiere_desmontaje: { type: 'boolean' },
     personas_necesarias: { type: 'integer', enum: [1, 2] },
     notas:               { type: 'string' },
+  },
+};
+
+// Moderación: detecta un teléfono visible en fotos de perfil/vehículo (mudanceros
+// pegando su contacto para esquivar la plataforma). El prompt lo manda el
+// frontend (mi-cuenta.html → pfChequearTelefonoEnFoto()).
+const SCHEMA_MODERACION = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['tieneTelefono', 'telefonoDetectado'],
+  properties: {
+    tieneTelefono:      { type: 'boolean' },
+    telefonoDetectado:  { type: 'string' },
   },
 };
 
