@@ -32,7 +32,11 @@ function tienePack(p) {
   return !!(pack(p.preciosEsencial) || pack(p.preciosIntegral) || pack(p.preciosLlave) || numOf(p.precioFleteNuevo));
 }
 function nivelIdentidad(p) {
-  return (p.verificacion && p.verificacion.nivel) || (p.dniAnalisis ? 'amarillo' : 'sin_dni');
+  // OJO: evaluarIdentidad() (registrar-mudancero.js) guarda el semáforo como
+  // `.semaforo`, no `.nivel` (admin.html también lee `.semaforo`). Antes este
+  // helper leía `.nivel` — un campo que nunca existió — así que el semáforo
+  // real (incluida la señal de AFIP) nunca frenaba la auto-aprobación.
+  return (p.verificacion && p.verificacion.semaforo) || (p.dniAnalisis ? 'amarillo' : 'sin_dni');
 }
 
 // ¿El flag permite auto-aprobar? Default: ENCENDIDO (solo '0'/'false' lo apaga).

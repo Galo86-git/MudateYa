@@ -4,6 +4,7 @@
 // Las fotos se suben a Vercel Blob (no se guardan en Redis)
 
 const { Resend } = require('resend');
+const { validarCuit: validarCuitAfip } = require('./_afip');
 
 // ── REDIS ────────────────────────────────────────────────────────
 async function redisCall(method, ...args) {
@@ -120,7 +121,7 @@ function nombresParecidos(a, b) {
 //   🟢 verde    → todo consistente
 // El DNI está ADENTRO del CUIL (los 8 dígitos del medio), así que cruzamos
 // el número del CUIL contra el numero_dni que la IA leyó de la foto.
-function evaluarIdentidad(cuil, dniAnalisis, nombreFormulario) {
+async function evaluarIdentidad(cuil, dniAnalisis, nombreFormulario) {
   var motivos = [];
   var rojo = false, amarillo = false;
   var a = dniAnalisis || {};
@@ -130,6 +131,39 @@ function evaluarIdentidad(cuil, dniAnalisis, nombreFormulario) {
   if (!cuilRes.valido) {
     rojo = true;
     motivos.push({ nivel: 'rojo', texto: 'CUIL/CUIT inválido: ' + cuilRes.error });
+  }
+
+  // 1-bis) CUIL contra el padrón REAL de AFIP/ARCA (ver api/_afip.js). Solo suma
+  // señal cuando AFIP responde — si está caído o sin configurar, no bloquea el
+  // alta (queda igual que antes, solo con el checksum local). Que el checksum
+  // cierre matemáticamente no significa que ese CUIT se haya emitido de verdad;
+  // por eso "no existe en el padrón" es una señal más fuerte que el checksum solo.
+  var afipRes = null;
+  if (cuilRes.valido) {
+    try {
+      afipRes = await validarCuitAfip(cuilRes.cuil);
+    } catch (e) {
+      console.warn('evaluarIdentidad AFIP:', e.message);
+      afipRes = { disponible: false, motivo: e.message };
+    }
+    if (afipRes && afipRes.disponible) {
+      if (!afipRes.existe) {
+        rojo = true;
+        motivos.push({ nivel: 'rojo', texto: 'El CUIL/CUIT tiene formato válido pero no existe en el padrón de AFIP.' });
+      } else {
+        if (afipRes.estadoClave && afipRes.estadoClave !== 'ACTIVO') {
+          rojo = true;
+          motivos.push({ nivel: 'rojo', texto: 'El CUIL/CUIT existe en AFIP pero su estado no es activo (' + afipRes.estadoClave + ').' });
+        } else {
+          motivos.push({ nivel: 'verde', texto: 'CUIL/CUIT verificado contra el padrón de AFIP.' });
+        }
+        var nombreAfip = (afipRes.nombre || '') + (afipRes.apellido ? ' ' + afipRes.apellido : '');
+        if (nombreAfip.trim() && nombreFormulario && !nombresParecidos(nombreFormulario, nombreAfip)) {
+          amarillo = true;
+          motivos.push({ nivel: 'amarillo', texto: 'El nombre del formulario ("' + nombreFormulario + '") no coincide claramente con el registrado en AFIP ("' + nombreAfip.trim() + '").' });
+        }
+      }
+    }
   }
 
   // 2) La foto del DNI es legible
@@ -194,6 +228,7 @@ function evaluarIdentidad(cuil, dniAnalisis, nombreFormulario) {
     semaforo:   rojo ? 'rojo' : (amarillo ? 'amarillo' : 'verde'),
     motivos:    motivos,
     cuil:       cuilRes,
+    afip:       afipRes,
     evaluadoEn: new Date().toISOString(),
   };
 }
@@ -289,8 +324,9 @@ module.exports = async function handler(req, res) {
     // Cruza el CUIL con el análisis del DNI (el DNI está adentro del CUIL).
     // NO aprueba solo: es una AYUDA para que el admin decida. El OK final
     // siempre lo da una persona (el estado queda 'pendiente_revision').
-    var verificacion  = esPreRegistro ? null : evaluarIdentidad(cuil, dniAnalisis, nombre);
+    var verificacion  = esPreRegistro ? null : await evaluarIdentidad(cuil, dniAnalisis, nombre);
     var cuilResultado = verificacion ? verificacion.cuil : null;
+    var afipResultado = verificacion ? verificacion.afip : null;
 
     // ── VERIFICAR DUPLICADO ─────────────────────────────────────
     var existente = await getJSON('mudancero:perfil:' + email);
@@ -318,7 +354,7 @@ module.exports = async function handler(req, res) {
       telefono:  telefono,
       empresa:   empresa      || '',
       cuil:      cuil ? cuil.replace(/[-\s]/g, '') : '',
-      cuilAfip:  cuilResultado,
+      cuilAfip:  (afipResultado && afipResultado.existe) ? afipResultado : null,
 
       zonaBase:     zonaBase,
       zonasExtra:   zonasExtra   || '',
@@ -387,8 +423,11 @@ module.exports = async function handler(req, res) {
       verificadoIdentidad: false,
       verificadoVehiculo:  false,
       verificadoSeguro:    false,
-      cuilVerificado:      cuilResultado ? cuilResultado.valido === true  : false,
-      cuilAdvertencia:     cuilResultado ? cuilResultado.advertencia === true : false,
+      // cuilVerificado: paso el checksum local Y (AFIP confirmó que existe y está
+      // activo, o AFIP no se pudo consultar). cuilAdvertencia: AFIP no respondió
+      // durante el alta (vale la pena que el admin lo re-chequee más tarde).
+      cuilVerificado:      cuilResultado ? cuilResultado.valido === true && (!afipResultado || !afipResultado.disponible || (afipResultado.existe && afipResultado.estadoClave === 'ACTIVO')) : false,
+      cuilAdvertencia:     !!(afipResultado && !afipResultado.disponible),
       // Semáforo de identidad (verde/amarillo/rojo + motivos) — ayuda para el admin.
       verificacion:        verificacion,
 
