@@ -88,6 +88,10 @@ async function preciosPromedio() {
     for (const email of todos.slice(0, 300)) {
       const p = await getJSON(`mudancero:perfil:${email}`);
       if (!p || p.estado !== 'aprobado') continue;
+      // Los que cobran "por hora" (tipoCobro) tienen una TARIFA, no el precio
+      // total del trabajo — mezclarlos con los de precio fijo arruina el
+      // promedio (compara cosas distintas). Solo entran los de precio fijo.
+      if (p.tipoCobro !== 'fijo') continue;
       let sumo = false;
       NIVELES.forEach((niv) => {
         const pack = p[niv.campo];
