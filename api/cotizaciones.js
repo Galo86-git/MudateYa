@@ -577,50 +577,14 @@ async function generarPDFBase64(datos) {
 // ════════════════════════════════════════════════════
 
 // ── Email de alta exitosa al mudancero aprobado ───────────────────
-async function enviarEmailAltaMudancero(perfil) {
-  const { Resend } = require('resend');
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const token = Buffer.from(perfil.email + ':' + Date.now()).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
-  await setJSON('terminos:token:' + token, { email: perfil.email, creado: new Date().toISOString() }, 7 * 24 * 60 * 60);
-  const nombre = perfil.nombre || 'Mudancero';
-  const empresa = perfil.empresa ? ' · ' + perfil.empresa : '';
-  const linkTerminos = 'https://mudateya.ar/aceptar-terminos?token=' + token;
-  await resend.emails.send({
-    from:    'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
-    to:      perfil.email,
-    subject: '🎉 ¡Fuiste aprobado en MudateYa! Activá tu cuenta',
-    html: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
-      '<div style="background:#003580;padding:28px 32px"><div style="font-size:30px;font-weight:900;color:#fff">Mudate<span style="color:#22C36A">Ya</span></div></div>' +
-      '<div style="background:#22C36A;padding:4px"></div>' +
-      '<div style="padding:32px">' +
-        '<div style="font-size:40px;text-align:center;margin-bottom:16px">🎉</div>' +
-        '<h2 style="font-size:28px;color:#003580;margin:0 0 8px;text-align:center">¡Estás aprobado, ' + nombre + '!</h2>' +
-        '<p style="font-size:17px;color:#475569;text-align:center;margin:0 0 28px">Revisamos tu perfil' + empresa + ' y todo está en orden.<br/>Ya podés empezar a recibir pedidos en tu zona.</p>' +
-        '<div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px 24px;margin-bottom:28px">' +
-          '<div style="font-size:18px;font-weight:700;color:#166534;margin-bottom:8px">Un último paso — Aceptá los Términos y Condiciones</div>' +
-          '<p style="font-size:16px;color:#475569;margin:0 0 16px;line-height:1.7">Para activar tu cuenta y aparecer en el catálogo, aceptá los Términos y Condiciones de MudateYa. Incluyen las comisiones y las reglas de la plataforma.</p>' +
-          '<a href="' + linkTerminos + '" style="display:block;background:#22C36A;color:#fff;text-align:center;padding:14px 24px;border-radius:10px;text-decoration:none;font-size:18px;font-weight:700">✓ Aceptar Términos y Condiciones →</a>' +
-          '<p style="font-size:14px;color:#94A3B8;text-align:center;margin:10px 0 0;font-family:monospace">Link válido por 7 días</p>' +
-        '</div>' +
-        '<div style="background:#F8FAFC;border-radius:10px;padding:16px 20px;margin-bottom:24px">' +
-          '<div style="font-size:16px;font-weight:700;color:#0F1923;margin-bottom:10px">Comisiones:</div>' +
-          '<table style="width:100%;font-size:16px;color:#475569">' +
-            '<tr><td style="padding:4px 0">🏠 Mudanzas</td><td style="text-align:right;font-weight:700;color:#003580">15% por trabajo completado</td></tr>' +
-            '<tr><td style="padding:4px 0">📦 Fletes</td><td style="text-align:right;font-weight:700;color:#003580">20% por trabajo completado</td></tr>' +
-            '<tr><td style="padding:4px 0">🏢 Pedidos Plan Referidos</td><td style="text-align:right;font-weight:700;color:#003580">25% por trabajo completado</td></tr>' +
-            '<tr><td colspan="2" style="padding:10px 0 4px;color:#64748B;font-size:14px;font-style:italic">Plan Referidos: pedidos que llegan pre-calificados desde nuestros asesores inmobiliarios aliados.</td></tr>' +
-            '<tr><td colspan="2" style="padding:4px 0;color:#94A3B8;font-size:14px">Solo pagás comisión cuando completás un trabajo. Sin costos fijos.</td></tr>' +
-          '</table>' +
-          '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:15px;color:#64748B;line-height:1.7">' +
-            '💸 <strong>Liquidación:</strong> dentro de los <strong>15 días hábiles</strong> posteriores a la confirmación del pago del cliente.' +
-          '</div>' +
-        '</div>' +
-        '<div style="text-align:center"><a href="https://mudateya.ar/mi-cuenta" style="color:#1A6FFF;font-size:16px;text-decoration:none">Ver mi cuenta en MudateYa →</a></div>' +
-      '</div>' +
-      '<div style="background:#F8FAFC;border-top:1px solid #E2E8F0;padding:16px 32px;text-align:center"><p style="font-size:14px;color:#94A3B8;font-family:monospace;margin:0">MudateYa · <a href="https://mudateya.ar" style="color:#94A3B8">mudateya.ar</a></p></div>' +
-    '</div>',
-  });
-}
+// enviarEmailAltaMudancero se retiró: era una copia pegada de
+// enviarEmailAltaExitosa (api/admin-aprobar.js) con la tabla de comisiones
+// desactualizada (le faltaba Plan Referidos) y sin la lista de "qué falta"
+// para aprobaciones manuales con perfil incompleto -- exactamente el tipo de
+// bug que dejó este día: se arregló UNA copia y la que de verdad usa el
+// botón "Aprobar" del panel (admin-aprobar-mudancero, acá abajo) seguía
+// vieja. Ahora hay una sola función (exportada de admin-aprobar.js), usada
+// por los dos caminos de aprobación (manual y automática).
 
 // ═══════════════════════════════════════════════════════════════════
 // HELPERS PARA PROGRAMA DE ALIADOS
@@ -2653,7 +2617,7 @@ module.exports = async function handler(req, res) {
 
       // Si se acaba de aprobar → mandar email de alta con link de términos
       if (nuevoEstado === 'aprobado' && estadoAnterior !== 'aprobado') {
-        try { await enviarEmailAltaMudancero(perfil); } catch(e) { console.error('Email alta error:', e.message); }
+        try { await require('./admin-aprobar').enviarEmailAltaExitosa(perfil); } catch(e) { console.error('Email alta error:', e.message); }
         // Push: avisar que ya está aprobado y puede empezar a recibir pedidos
         enviarPush(email, {
           titulo: '✅ Tu perfil fue aprobado',
