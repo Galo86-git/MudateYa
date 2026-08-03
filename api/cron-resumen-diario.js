@@ -125,7 +125,11 @@ module.exports = async function handler(req, res) {
       plantillasPendientes: pendientes,
     };
 
-    if (req.method === 'GET' && !esVercelCron) {
+    // GET normal = solo vista previa (no manda mail). Para forzar el envío
+    // desde un link (sin terminal, ej. desde el celu) se puede agregar
+    // &enviar=1 a la misma URL — sigue exigiendo el token de admin.
+    var forzarEnvio = req.query.enviar === '1';
+    if (req.method === 'GET' && !esVercelCron && !forzarEnvio) {
       return res.status(200).json({ ok: true, resumen: resumen, detalle: { pedidosHoy, cotizacionesHoy, canceladasHoy, mudancerosNuevosHoy, asesoresGeneralesHoy, asesoresCanalHoy } });
     }
 
