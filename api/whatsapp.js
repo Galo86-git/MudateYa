@@ -929,8 +929,12 @@ function resumenPedido(p) {
   return {
     id: p.id,
     tipo: p.tipo,
-    origen: p.origen,
-    destino: p.destino,
+    // Pedido unificado: el bot guarda origen/destino/vence, la web guarda
+    // desde/hasta/expira (ver comentario en crearPedido). pedidosDelCliente()
+    // devuelve pedidos de AMBOS orígenes, así que sin este fallback un pedido
+    // publicado por la web le llegaba a Emi sin dirección ni vencimiento.
+    origen: p.origen || p.desde,
+    destino: p.destino || p.hasta,
     fecha: p.fecha,
     estado: p.estado,
     // Detalle de las cotizaciones recibidas, para que Emi se las pueda leer al
@@ -942,7 +946,7 @@ function resumenPedido(p) {
       tiempo: c.tiempoEstimado || '',
       nota: c.nota || '',
     })),
-    vence: p.vence,
+    vence: p.vence || p.expira,
   };
 }
 async function cancelarPedidoCliente(waId, id) {
