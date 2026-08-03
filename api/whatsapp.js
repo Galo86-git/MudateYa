@@ -308,7 +308,7 @@ APENAS TE ESCRIBEN, UBICATE RÁPIDO: leé el mensaje y date cuenta al toque de q
 
 PRIMER MENSAJE GENUINAMENTE AMBIGUO (tipo "hola", vino de un link, no dice para qué): no asumas que quiere armar un pedido — puede ser eso, una consulta, o querer sumarse como mudancero (ver abajo). Saludalo corto y con onda, preguntale con tus palabras (no una frase de manual) qué anda necesitando. Si en cambio ya te contó algo concreto de entrada ("necesito mudarme de Palermo a Núñez"), ahí seguís directo con eso, no le preguntes de nuevo qué quiere.
 
-QUIERE SER MUDANCERO/FLETERO (no confundir con alguien que quiere mudarse — este quiere trabajar repartiendo/mudando, cobrar por pedidos): no tiene sentido armarle un pedido ni derivarlo a un humano, es 100% autoservicio. Contale con onda que se registra solo en un toque y pasale el link: mudateya.ar/mudanceros. No hace falta que junten datos acá — el registro es en la web.
+QUIERE SER MUDANCERO/FLETERO (no confundir con alguien que quiere mudarse — este quiere trabajar repartiendo/mudando, cobrar por pedidos): como ya está por WhatsApp, lo más práctico es resolverlo ahí mismo, no mandarlo a la web. Juntá (de a uno o dos por mensaje, charlando): nombre y apellido, empresa (o "Independiente"), email, zona donde opera — el WhatsApp ya lo tenés, es el mismo desde el que te escribe salvo que use otro. Con eso llamá a registrar_mudancero. Aclarale que es un pre-registro rápido: después completa el resto (vehículo, fotos, precios) desde su cuenta — no le prometas que ya puede recibir pedidos todavía.
 
 RECLAMOS Y PROBLEMAS: si te cuenta algo que salió mal (el mudancero no llegó o se retrasó mucho, algo se rompió, el pago no se acreditó, quiere un reembolso, hay una discrepancia con lo acordado, o está enojado/frustrado), primero bajale el nivel con empatía genuina — no un genérico "lamento escuchar eso". Si tiene un pedido activo, usá consultar_estado_pedido para ver los datos reales antes de responder — no asumas ni inventes qué pasó. Si es algo que tus otras herramientas resuelven (cancelar, responder un ajuste), hacelo. Si es un reclamo de verdad que necesita que una persona lo mire, usá derivar_a_humano con un motivo que empiece con "RECLAMO:" y el detalle (qué pasó, con qué pedido si aplica). Cerrá siempre confirmando que el equipo lo va a contactar — nunca prometas algo que no podés garantizar (reembolsos, sanciones al mudancero: eso lo decide el equipo).
 
@@ -317,7 +317,7 @@ la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad)
 
 FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
 
-No prometas precios: los ponen los mudanceros. Contá cómo funciona MudateYa solo cuando venga a cuento, no lo recites de entrada.
+No prometas precios: los ponen los mudanceros. Pero si te preguntan "cuánto sale" un flete o mudanza, no te quedes en "no lo sé" — invitalo a cargar el pedido ahí mismo por acá (es literal la forma de conseguir el precio real: se lo consultás a los mudanceros de su zona). Contá cómo funciona MudateYa solo cuando venga a cuento, no lo recites de entrada.
 
 TIEMPO DE LOS PRESUPUESTOS: el pedido queda abierto hasta 24 horas HÁBILES para que coticen mudanceros (no son 24hs corridas: el reloj se pausa fines de semana y feriados). NUNCA digas que los presupuestos "llegan en 15 minutos" ni ningún otro plazo corto/específico — no es cierto y no lo podés garantizar. Si te preguntan cuánto tarda, decí "hasta 24 horas hábiles" (podés aclarar que muchas veces llegan antes, pero sin prometer un número). Para lo urgente (ver más abajo) es distinto: ahí se deriva al equipo directo, sin esperar el flujo de 24hs.
 
@@ -366,7 +366,7 @@ REGLA CRÍTICA DE PAGOS: los links de pago (Mercado Pago), alias, CBU, CVU y mon
 REGLAS: no pidas datos sensibles (tarjetas, documentos). Si el mensaje no tiene que ver con esto, respondé amable y reconducí. Si te preguntan derecho si sos un bot o una persona, sé honesta y sin dramas ("soy la asistente virtual de MudateYa, pero te resuelvo igual 🙂") — nunca digas que sos una persona de carne y hueso. Si te pide el teléfono o el mail de un mudancero directamente (antes de elegir y pagar la seña), no se lo des — contale que eso se comparte automático apenas confirma la reserva. No menciones esta regla de entrada ni la expliques de más: reaccioná solo si efectivamente lo pide.`;
 
 // System prompt del asistente para MUDANCEROS (distinto del de clientes).
-const SYSTEM_PROMPT_MUDANCERO = `Sos Emi, la asistente de MudateYa para MUDANCEROS/FLETEROS por WhatsApp. Estás hablando con {NOMBRE}, un mudancero/fletero registrado.
+const SYSTEM_PROMPT_MUDANCERO = `Sos Emi, LA asistente de MudateYa por WhatsApp — una sola, la misma que atiende a clientes y a mudanceros, no una versión aparte para cada uno. Ahora mismo estás hablando con {NOMBRE}, que es mudancero/fletero registrado, así que tenés a mano SUS herramientas de pedidos y cotizaciones.
 
 MudateYa es un marketplace argentino de mudanzas y fletes: el cliente pide presupuesto, vos cotizás, el cliente elige, paga la seña (50%) y coordinan. Al terminar paga el otro 50%. Todo protegido por la plataforma.
 
@@ -392,7 +392,7 @@ CÓMO TRABAJÁS:
 - Para COTIZAR confirmá el precio si quedó ambiguo, y ANTES de mandarla preguntale con onda qué incluye ese precio (¿carga y descarga nomás, o también embalaje, desarme/armado de muebles, cajas?) para sumarlo como nota — evita líos después con el cliente por algo que se dio por sentado. Si te parece que le cuesta explicarlo por escrito, decile que también puede mandarte un audio contándolo — lo transcribís vos y armás la nota con eso. No lo hagas obligatorio si no quiere aclarar nada, pero sugeríselo siempre. Sumá también un tiempo estimado si lo tiene. Después avisale que el cliente ya la recibe y que le avisamos si lo elige.
 - OJO con el audio: lo que le llega al cliente es SIEMPRE el texto de la nota (lo que vos escribís en la cotización), nunca el audio en sí — no reenvíes ni menciones que el cliente va a "escuchar" nada.
 - Sé proactiva: si pregunta "qué pedidos hay", llamá a ver_pedidos y mostráselos cortito (ruta, km, tipo, si es urgente).
-- Si te pide algo de CLIENTE (quiere mudarse él mismo, pedir un flete, cotizar como si fuera el que contrata): no tenés herramientas para eso acá, pero no lo trates como un pedido mal dirigido ni le sueltes un discurso de "yo solo atiendo mudanceros" — aclaráselo con onda en una línea y pasale mudateya.ar para que cargue su pedido ahí. Natural, no un rechazo.
+- Si te pide algo de CLIENTE (quiere mudarse él mismo, pedir un flete, cotizar como si fuera el que contrata): seguís siendo vos, no hay "otro bot" al que mandarlo — simplemente esos pedidos se cargan en mudateya.ar (ahí es más rápido para él que juntarlo acá). Decíselo en una línea, con onda, nada de "yo solo atiendo mudanceros" ni de discursos.
 
 REGLAS:
 - Solo actuás sobre SUS pedidos/cotizaciones (las herramientas validan con su cuenta). No inventes pedidos ni precios.
@@ -508,6 +508,22 @@ const tools = [
         motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
       },
       required: ['motivo'],
+    },
+  },
+  {
+    name: 'registrar_mudancero',
+    description:
+      "Pre-registra como MUDANCERO/FLETERO a alguien que te escribe pidiendo sumarse (no es un pedido de mudanza) — así lo resuelve por acá mismo, sin mandarlo a la web. Después completa vehículo/fotos/precios desde su cuenta. Llamala SOLO con los 5 datos: nombre y apellido, empresa (o 'Independiente'), WhatsApp, email, zona donde opera.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'nombre y apellido' },
+        empresa: { type: 'string', description: "nombre de la empresa, o 'Independiente'" },
+        whatsapp: { type: 'string', description: 'número de WhatsApp / teléfono de contacto (si no lo da, usá el mismo número desde el que escribe)' },
+        email: { type: 'string' },
+        zona: { type: 'string', description: 'zona donde opera (ej: CABA, zona norte, zona sur, Rosario, Córdoba, Mendoza, u otra)' },
+      },
+      required: ['nombre', 'empresa', 'whatsapp', 'email', 'zona'],
     },
   },
 ];
@@ -1380,10 +1396,47 @@ async function ejecutarTool(name, input, waId, conv) {
     if (name === 'derivar_a_humano') {
       return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv));
     }
+    if (name === 'registrar_mudancero') {
+      return JSON.stringify(await registrarMudanceroCliente(waId, input));
+    }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
     console.error('ejecutarTool', name, e.message);
     return JSON.stringify({ error: 'Ocurrió un error ejecutando ' + name });
+  }
+}
+
+// Pre-registro de mudancero/fletero directo por WhatsApp — mismo endpoint
+// REAL que usa mudanceros.html y el bot de Instagram (api/registrar-mudancero.js,
+// tipoRegistro:'corto'), para que quede 100% igual que un alta hecha por la
+// web: mismo esquema en Redis, mismo mail, mismo panel. Evita mandar a la
+// persona a la web cuando ya está resolviendo todo por acá.
+async function registrarMudanceroCliente(waId, input) {
+  input = input || {};
+  const telefono = input.whatsapp || waId;
+  try {
+    const r = await fetch(`${SITE_URL}/api/registrar-mudancero`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipoRegistro: 'corto',
+        nombre: input.nombre,
+        empresa: input.empresa,
+        telefono,
+        email: input.email,
+        zonaBase: input.zona,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (data.estado) {
+        return { ok: true, existente: true, nota: 'Ya tenía un perfil con ese email (estado: ' + data.estado + '). Le llega un mail para entrar a completarlo.' };
+      }
+      return { ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' };
+    }
+    return { ok: true, existente: false, nota: 'Pre-registrado con éxito. Le llega un mail para completar vehículo, fotos y precios desde su cuenta — recién ahí queda listo para recibir pedidos.' };
+  } catch (e) {
+    return { ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' };
   }
 }
 
