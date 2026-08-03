@@ -16,6 +16,10 @@
 //
 // No llama a /api/analizar-foto (ese endpoint tiene rate-limit de 5/min por IP,
 // pensado para un usuario subiendo UNA foto — acá llamamos a Claude directo).
+//
+//   GET  /api/moderar-fotos-mudanceros?token=ADMIN_TOKEN&action=log
+//     -> Lista TODO lo que se borró históricamente (mudanceros:fotos-borradas-log):
+//        email, nombre, campo, url, teléfono detectado y fecha. No escanea nada.
 
 var { esAdmin } = require('./_auth');
 const { redisPipeline } = require('./_ia');
@@ -145,6 +149,18 @@ async function avisarFotoBorrada(perfil, cantidad) {
 
 module.exports = async function handler(req, res) {
   if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+
+  // ── Consultar el log de borrados (no requiere ANTHROPIC_API_KEY ni escanea nada) ──
+  if (req.method === 'GET' && req.query.action === 'log') {
+    try {
+      var crudo = (await redisCall('LRANGE', 'mudanceros:fotos-borradas-log', '0', '-1')) || [];
+      var registros = crudo.map(function (s) { try { return JSON.parse(s); } catch (e) { return null; } }).filter(Boolean);
+      return res.status(200).json({ total: registros.length, registros: registros });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada' });
 
   try {
@@ -229,6 +245,17 @@ module.exports = async function handler(req, res) {
               var blobToken = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
               await del(urlsABorrar[ui], { token: blobToken });
               borradas.push({ email: email, url: urlsABorrar[ui] });
+              // Log persistente en Redis — sin esto no queda registro de QUÉ se
+              // borró y de QUIÉN una vez que la foto ya no está (se perdió el
+              // rastro de la primera pasada manual por no tener esto desde el inicio).
+              try {
+                var registro = porEmail[email].filter(function (h) { return h.url === urlsABorrar[ui]; })[0] || {};
+                await redisCall('RPUSH', 'mudanceros:fotos-borradas-log', JSON.stringify({
+                  email: email, nombre: perfil.nombre || '', campo: registro.campo || '',
+                  url: urlsABorrar[ui], telefonoDetectado: registro.telefonoDetectado || '',
+                  fecha: new Date().toISOString(),
+                }));
+              } catch (e) { console.warn('Log fotos-borradas:', e.message); }
             } catch (e) { console.warn('Borrar blob ' + urlsABorrar[ui] + ':', e.message); }
           }
 
