@@ -269,6 +269,10 @@ CÓMO HABLÁS (esto es lo más importante):
 - Un emoji de vez en cuando si pega, no en cada mensaje. Sin tono de folleto.
 - Seguile la energía: si está apurado o cortante, al grano; si está perdido, guialo con paciencia; si está estresado, bajale un cambio ("tranqui, lo vemos juntos y en un rato lo dejás resuelto").
 
+APENAS TE ESCRIBEN, UBICATE RÁPIDO: leé el mensaje y date cuenta al toque de qué se trata — ¿pedido nuevo?, ¿pregunta por uno que ya tiene (consultar_estado_pedido)?, ¿algo salió mal (reclamo/problema, ver abajo)?, ¿otra cosa? No arranques el checklist de "armemos el pedido" si en realidad te está preguntando por algo que ya existe o contándote un problema — andá directo a lo que necesita.
+
+RECLAMOS Y PROBLEMAS: si te cuenta algo que salió mal (el mudancero no llegó o se retrasó mucho, algo se rompió, el pago no se acreditó, quiere un reembolso, hay una discrepancia con lo acordado, o está enojado/frustrado), primero bajale el nivel con empatía genuina — no un genérico "lamento escuchar eso". Si tiene un pedido activo, usá consultar_estado_pedido para ver los datos reales antes de responder — no asumas ni inventes qué pasó. Si es algo que tus otras herramientas resuelven (cancelar, responder un ajuste), hacelo. Si es un reclamo de verdad que necesita que una persona lo mire, usá derivar_a_humano con un motivo que empiece con "RECLAMO:" y el detalle (qué pasó, con qué pedido si aplica). Cerrá siempre confirmando que el equipo lo va a contactar — nunca prometas algo que no podés garantizar (reembolsos, sanciones al mudancero: eso lo decide el equipo).
+
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
@@ -338,7 +342,7 @@ HERRAMIENTAS QUE TENÉS:
 - cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
 - responder_ajuste: si el mudancero propuso un ajuste de precio y el cliente acepta o rechaza (decision "aceptar" o "rechazar"). Aclarale que si rechaza se cancela la mudanza y se le devuelve la seña.
 - calificar_mudancero: cuando el cliente puntúa al mudancero tras una mudanza completada (ej: "5 estrellas", "le pongo un 4, muy bueno"). Pasá las estrellas (1-5) y el comentario si lo hay. Agradecé y contale que suma a la reputación del mudancero.
-- derivar_a_humano: si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar.
+- derivar_a_humano: para reclamos (algo salió mal: no-show, daños, pago no acreditado, disputa de precio — motivo empezando en "RECLAMO:") o si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar.
 
 REGLA CRÍTICA DE PAGOS: los links de pago (Mercado Pago), alias, CBU, CVU y montos SIEMPRE los generan las herramientas. Mostrá SOLO y EXACTAMENTE lo que la herramienta te devuelve en su resultado, copiado carácter por carácter. NUNCA inventes, adivines, completes ni "maquilles" un link, alias, CBU ni monto (nada de ejemplos tipo "mpago.la/sim..." o alias inventados). Si la herramienta NO te devolvió link ni datos de transferencia, NO muestres ninguno: avisá que hubo un problema generando el pago y usá derivar_a_humano. Un dato de pago inventado es un error grave.
 
@@ -358,6 +362,11 @@ PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
 - Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo).
 - Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar).
 - Ver el estado de tus pedidos/cotizaciones → mis_pedidos.
+- Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
+
+APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere ver pedidos?, ¿cotizar?, ¿le pasa algo con uno en curso?, ¿tiene un reclamo/problema (ver abajo)? Andá directo a eso, no lo hagas repetir ni le preguntes cosas que ya te dijo.
+
+RECLAMOS Y PROBLEMAS: si te cuenta que el cliente no le paga el saldo, canceló sin avisar, hay una discrepancia con lo acordado, o cualquier lío que tus herramientas de arriba no resuelven, NO lo dejes solo con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea de verdad, y avisale que lo van a contactar.
 
 CÓMO TRABAJÁS:
 - Los pedidos tienen un ID. Cuando dice "el de Palermo" o "el primero", buscá el id en el último ver_pedidos/mis_pedidos y usalo. Si no queda claro cuál, preguntá.
@@ -367,7 +376,7 @@ CÓMO TRABAJÁS:
 REGLAS:
 - Solo actuás sobre SUS pedidos/cotizaciones (las herramientas validan con su cuenta). No inventes pedidos ni precios.
 - No pidas ni manejes datos sensibles (tarjetas, contraseñas).
-- Si una herramienta da error, explicáselo simple y ofrecé reintentar o escribir a hola@mudateya.ar.
+- Si una herramienta da error, explicáselo simple y ofrecé reintentar. Para reclamos/problemas reales, usá derivar_a_humano (no lo mandes solo a escribir un mail él mismo).
 - Si te preguntan por *MudateYa Mobility* (relocation B2B para inmobiliarias, desarrolladoras, clubes, colegios, diplomáticos o empresas de Vaca Muerta) o por coordinar una reunión de ese tema: para ESA respuesta puntual usá un tono más formal y serio (nada de onda relajada ni emojis, es un contacto institucional). Contale en una línea que es la línea B2B de MudateYa y decile que escriba a *contacto@mudateya.ar* para coordinar con el equipo comercial. No es algo que resolvés vos ni con tus herramientas de pedidos.`;
 
 const tools = [
@@ -458,11 +467,11 @@ const tools = [
   {
     name: 'derivar_a_humano',
     description:
-      'Derivá la conversación a una persona del equipo cuando el cliente lo pide, está frustrado/enojado, o hay algo que no podés resolver. Avisa al equipo.',
+      'Derivá la conversación a una persona del equipo: para RECLAMOS (algo salió mal — no se presentó el mudancero, daños, pago no acreditado, disputa de precio) o cuando el cliente lo pide, está frustrado/enojado, o hay algo que no podés resolver. Avisa al equipo por email con el motivo y el historial reciente.',
     input_schema: {
       type: 'object',
       properties: {
-        motivo: { type: 'string', description: 'Motivo breve de la derivación' },
+        motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
       },
       required: ['motivo'],
     },
@@ -526,10 +535,22 @@ const mudanceroTools = [
     description: 'Muestra el estado de los pedidos/cotizaciones del mudancero (enviados, aceptados, en curso, completados).',
     input_schema: { type: 'object', properties: {}, required: [] },
   },
+  {
+    name: 'derivar_a_humano',
+    description:
+      'Derivá al equipo un RECLAMO o problema que tus otras herramientas no resuelven (el cliente no paga el saldo, canceló sin avisar, una discrepancia con lo acordado, etc.) o cuando el mudancero pide hablar con una persona. Avisa al equipo por email con el motivo y el historial reciente.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+      },
+      required: ['motivo'],
+    },
+  },
 ];
 
 // Ejecuta una herramienta del MUDANCERO llamando al endpoint web correspondiente.
-async function ejecutarToolMudancero(name, input, mudancero) {
+async function ejecutarToolMudancero(name, input, mudancero, waId, conv) {
   const email = mudancero && mudancero.email;
   const nombre = mudancero && mudancero.nombre;
   const tel = mudancero && mudancero.telefono;
@@ -582,6 +603,9 @@ async function ejecutarToolMudancero(name, input, mudancero) {
         miPrecio: (m.miCotizacion && m.miCotizacion.precio) || (m.cotizacionAceptada && m.cotizacionAceptada.precio) || null,
       }));
       return JSON.stringify({ pedidos });
+    }
+    if (name === 'derivar_a_humano') {
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'mudancero', nombre }));
     }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
@@ -875,7 +899,11 @@ async function cancelarPedidoCliente(waId, id) {
   await setJSON(`mudanza:${target.id}`, target, 60 * 60 * 24 * 3);
   return { ok: true, id: target.id, mensaje: 'Pedido cancelado.' };
 }
-async function derivarHumano(waId, motivo, conv) {
+async function derivarHumano(waId, motivo, conv, opts) {
+  opts = opts || {};
+  const esMudancero = opts.rol === 'mudancero';
+  const quienLabel = esMudancero ? 'mudancero/fletero' : 'cliente';
+  const quienConNombre = opts.nombre ? `${quienLabel} ${opts.nombre}` : quienLabel;
   try {
     const { Resend } = require('resend');
     const adminMail = process.env.ADMIN_EMAIL;
@@ -886,19 +914,33 @@ async function derivarHumano(waId, motivo, conv) {
         .map((m) => `${m.role}: ${typeof m.content === 'string' ? m.content : '[media]'}`)
         .join('\n');
       const esUrgente = /urgente/i.test(motivo || '');
+      // "RECLAMO:" al arranque del motivo = algo salió mal (no-show, daños, pago
+      // no acreditado, disputa) — se marca distinto para que el equipo lo triage
+      // más rápido que un "quiere hablar con alguien" genérico.
+      const esReclamo = !esUrgente && /^reclamo/i.test(String(motivo || '').trim());
       const esFlete = /\bflete/i.test(motivo || '');
       const tipoUrg = esFlete ? 'FLETE' : 'MUDANZA';
       const artUrg = esFlete ? 'un' : 'una';
+      const subject = esUrgente
+        ? `🚨 ${tipoUrg} URGENTE — ${waId}`
+        : esReclamo
+        ? `⚠️ Reclamo de ${quienLabel} — ${waId}`
+        : `🙋 ${esMudancero ? 'Mudancero' : 'Cliente'} pide atención humana — ${waId}`;
+      const intro = esUrgente
+        ? `tiene ${artUrg} <b>${tipoUrg.toLowerCase()} URGENTE</b> y necesita que el equipo lo tome ya`
+        : esReclamo
+        ? 'tiene un <b>reclamo</b>'
+        : 'pidió hablar con una persona';
       await resend.emails.send({
         from: 'MudateYa <noreply@mudateya.ar>',
         reply_to: 'hola@mudateya.ar',
         to: adminMail,
-        subject: esUrgente ? `🚨 ${tipoUrg} URGENTE — ${waId}` : `🙋 Cliente pide atención humana — ${waId}`,
+        subject,
         html:
-          `<p>El cliente <b>${escapeXml(waId)}</b> ${esUrgente ? `tiene ${artUrg} <b>${tipoUrg.toLowerCase()} URGENTE</b> y necesita que el equipo lo tome ya` : 'pidió hablar con una persona'} por WhatsApp.</p>` +
+          `<p>El ${quienConNombre} <b>${escapeXml(waId)}</b> ${intro} por WhatsApp.</p>` +
           `<p><b>Motivo:</b> ${escapeXml(motivo || '-')}</p>` +
           `<pre style="background:#f5f5f5;padding:10px;border-radius:8px;white-space:pre-wrap">${escapeXml(ultimos)}</pre>` +
-          `<p><a href="https://wa.me/${String(waId).replace(/\D/g, '')}">Abrir WhatsApp del cliente →</a></p>`,
+          `<p><a href="https://wa.me/${String(waId).replace(/\D/g, '')}">Abrir WhatsApp del ${quienLabel} →</a></p>`,
       });
     }
   } catch (e) {
@@ -1306,7 +1348,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero) {
     for (const block of resp.content || []) {
       if (block.type === 'tool_use') {
         const r = mudancero
-          ? await ejecutarToolMudancero(block.name, block.input, mudancero)
+          ? await ejecutarToolMudancero(block.name, block.input, mudancero, waId, conv)
           : await ejecutarTool(block.name, block.input, waId, conv);
         resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
       }
