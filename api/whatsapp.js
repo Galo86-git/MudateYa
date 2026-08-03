@@ -515,11 +515,17 @@ TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por 
 PODÉS HACER ESTO POR ACÁ:
 - Pasarle su link (siempre el mismo, no vence nunca) → mi_link. Por defecto lo pasás VOS ACÁ MISMO por WhatsApp (canal "whatsapp", es lo más rápido); solo lo mandás por mail (canal "mail") si te lo pide explícitamente él.
 - Contarle cómo van los clientes que le llegaron por su link (si ya publicaron la mudanza, si tienen cotizaciones, si ya eligieron, si pagaron la seña, si está en curso o completada) → ver_mis_pedidos_referidos.
+- Si SE QUIERE MUDAR ÉL MISMO (no un cliente suyo, él): armarle el pedido acá mismo con las mismas herramientas que usa cualquier cliente (crear_pedido, validar_direccion, consultar_estado_pedido, aceptar_cotizacion, etc. — están todas disponibles). Ver más abajo el detalle de esta opción.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
 
-APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus clientes?, ¿tiene un reclamo/problema? Andá directo a eso.
+APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus clientes?, ¿se quiere mudar él?, ¿tiene un reclamo/problema? Andá directo a eso.
 
 PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola"): no asumas qué quiere — saludalo corto por su nombre, con onda, y dejá que te diga qué necesita. Si ya te contó algo concreto de entrada, seguís directo con eso.
+
+SI SE QUIERE MUDAR ÉL MISMO: no lo confundas con sus clientes referidos (eso es ver_mis_pedidos_referidos, esto es aparte). Tiene DOS caminos — contáselos con onda, sin tecnicismos, y dejá que elija él, no asumas cuál prefiere:
+1) Por SU PROPIO link (mi_link): entra como cualquier cliente y publica su mudanza ahí — se aplican las mismas reglas que a cualquier cliente que llega por su link (comisión si es alquiler, regalo si es compraventa).
+2) Acá mismo con vos: se lo armás con crear_pedido igual que a cualquier cliente — pero ESE pedido no queda atribuido a su código, es un pedido común y corriente (sin comisión ni regalo).
+Una vez que elige el camino 2, seguís exactamente igual que con un cliente (mismas reglas de direcciones, fotos para fletes, pagos, etc. — no las repitas acá, ya las sabés).
 
 GLOSARIO PARA CONTAR EL ESTADO DE UN PEDIDO REFERIDO (traducilo siempre a lenguaje natural, nunca repitas estas palabras técnicas tal cual):
 - buscando: el cliente publicó la mudanza, buscando presupuestos de mudanceros.
@@ -535,7 +541,7 @@ RECLAMOS Y PROBLEMAS: si te cuenta que un cliente suyo tuvo un problema con la m
 REGLA CRÍTICA DEL LINK: cuando mi_link te devuelva un link (canal whatsapp), pasáselo EXACTO, carácter por carácter, tal cual te lo dio la herramienta — nunca lo inventes, completes ni "arregles" de memoria. Si no te devolvió link, no muestres ninguno: avisá que hubo un problema y ofrecé reintentar.
 
 REGLAS:
-- Solo actuás sobre SUS pedidos referidos (las herramientas ya vienen filtradas a su cuenta). No inventes pedidos, clientes ni comisiones.
+- Solo actuás sobre SUS pedidos referidos y, si eligió mudarse él mismo por acá, SU PROPIO pedido (las herramientas ya vienen filtradas a su cuenta/número). No inventes pedidos, clientes ni comisiones.
 - No pidas ni manejes datos sensibles (tarjetas, contraseñas).
 - Si una herramienta da error, explicáselo simple y ofrecé reintentar.
 - Si te preguntan por *MudateYa Mobility* (relocation B2B): contale en una línea que es la línea B2B de MudateYa y decile que escriba a *contacto@mudateya.ar* para coordinar con el equipo comercial — no es algo que resolvés vos.`;
@@ -904,6 +910,13 @@ const asesorTools = [
       required: ['motivo'],
     },
   },
+  // Si el asesor elige mudarse ÉL MISMO por acá (en vez de por su propio
+  // link), reusa el MISMO set de herramientas que un cliente — mismos
+  // nombres, mismos schemas, para poder reusar directo ejecutarTool() en el
+  // dispatcher (ver ejecutarToolAsesor). Se excluye derivar_a_humano (ya
+  // tiene su propia versión arriba, con rol 'asesor') y los registrar_* (no
+  // aplican: ya es asesor).
+  ...tools.filter((t) => !['derivar_a_humano', 'registrar_mudancero', 'registrar_asesor', 'registrar_inmobiliaria'].includes(t.name)),
 ];
 
 // Mudanzas que le llegaron a un asesor por su link (mudanza.partnerAsesor ===
@@ -933,12 +946,26 @@ async function pedidosReferidosDelAsesor(prefijo, codigo) {
   return pedidos;
 }
 
+// Herramientas de CLIENTE que un asesor también puede usar si decide mudarse
+// él mismo por acá en vez de por su propio link (ver SYSTEM_PROMPT_ASESOR,
+// sección "SI SE QUIERE MUDAR ÉL MISMO"). Mismos nombres que en `tools`.
+const NOMBRES_TOOLS_CLIENTE_PARA_ASESOR = [
+  'crear_pedido', 'consultar_estado_pedido', 'agregar_detalle_pedido', 'cancelar_pedido',
+  'validar_direccion', 'aceptar_cotizacion', 'responder_ajuste', 'calificar_mudancero',
+];
+
 // Ejecuta una herramienta del ASESOR.
 async function ejecutarToolAsesor(name, input, asesor, waId, conv) {
   const nombre = asesor && asesor.nombre;
   const email = asesor && asesor.email;
   const link = asesor && asesor.link;
   if (!asesor || !link) return JSON.stringify({ error: 'No pude identificar tu cuenta de asesor.' });
+  // El pedido que arma para SÍ MISMO se trata igual que el de cualquier
+  // cliente (mismo waId, mismo índice cliente:pedidos:{waId}) — no queda
+  // atribuido a su código de asesor, es intencional (ver prompt).
+  if (NOMBRES_TOOLS_CLIENTE_PARA_ASESOR.includes(name)) {
+    return ejecutarTool(name, input, waId, conv);
+  }
   try {
     if (name === 'mi_link') {
       const porMail = input && input.canal === 'mail';
