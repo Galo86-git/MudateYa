@@ -57,6 +57,14 @@ module.exports = async function handler(req, res) {
   try { esAdminReq = require('./_auth').esAdmin(req); } catch (_) {}
   if (!esVercelCron && !esAdminReq) return res.status(401).json({ error: 'No autorizado' });
 
+  // Uso puntual/manual: ?sinAviso=id1,id2 cierra esos pedidos igual que a
+  // cualquier otro (estado + índice) pero SIN mandarles el aviso de vencido —
+  // para reconciliar pedidos que quedaron viejos por un corte del cron sin
+  // reabrirle la charla a un cliente al que no tiene sentido avisarle ya.
+  const sinAviso = new Set(
+    String((req.query && req.query.sinAviso) || '').split(',').map((s) => s.trim()).filter(Boolean)
+  );
+
   try {
     const activas = (await getJSON('mudanzas:activas')) || [];
     const ahora = Date.now();
@@ -82,7 +90,9 @@ module.exports = async function handler(req, res) {
       // mail con el detalle real de las cotizaciones (antes solo salía el
       // WhatsApp genérico "tenés N presupuestos", y ni eso les llegaba a los
       // clientes web sin WhatsApp cargado).
-      if (!m.avisoVencimiento) {
+      if (sinAviso.has(id)) {
+        m.avisoVencimiento = 'omitido-manual:' + new Date().toISOString();
+      } else if (!m.avisoVencimiento) {
         let avisadoOk = false;
         if (m.clienteWA && (await avisarVencimiento(m, cots.length))) avisadoOk = true;
         try {
