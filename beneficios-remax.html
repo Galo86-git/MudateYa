@@ -59,14 +59,17 @@
   .calc .win{font-size:32px; font-weight:900; color:var(--coral); margin-top:2px}
   .col-body .exp{font-size:13px; color:var(--t2); line-height:1.6; margin-top:15px}
 
-  /* Tabla compraventa */
+  /* Escalera de regalos (compraventa) */
   .cv-intro{font-size:13px; color:var(--t2); line-height:1.6; margin-bottom:13px}
-  table.tiers{width:100%; border-collapse:collapse; border:1px solid var(--blue-border); border-radius:10px; overflow:hidden}
-  table.tiers th{font-size:10.5px; font-weight:800; color:var(--blue); text-transform:uppercase; letter-spacing:.3px; text-align:left; padding:8px 11px; background:#EEF3FB}
-  table.tiers td{padding:9px 11px; border-top:1px solid var(--blue-soft); font-size:13px; vertical-align:top}
-  table.tiers td.val{font-weight:800; color:var(--ink); white-space:nowrap}
-  table.tiers td.ben{color:#334155}
-  table.tiers tr.top td.ben{color:var(--blue); font-weight:700}
+  .ladder{display:flex; align-items:flex-end; gap:0; margin:14px 0; padding:0 2px}
+  .step{flex:1; text-align:center}
+  .step .bar{margin:0 3px; border-radius:6px 6px 0 0}
+  .step:nth-child(1) .bar{height:22px; background:var(--blue-soft)}
+  .step:nth-child(2) .bar{height:34px; background:var(--blue-border)}
+  .step:nth-child(3) .bar{height:46px; background:#5C82C4}
+  .step:nth-child(4) .bar{height:58px; background:var(--blue)}
+  .step .lbl{font-size:10.5px; font-weight:700; color:var(--t2); margin-top:8px; line-height:1.3; padding:0 2px}
+  .step:nth-child(4) .lbl{color:var(--blue); font-weight:800}
   .cv-foot{font-size:13px; color:var(--t2); line-height:1.6; margin-top:13px}
 
   /* Bonus */
@@ -134,14 +137,13 @@
           <div class="s">Un regalo para tu cliente</div>
         </div>
         <div class="col-body">
-          <div class="cv-intro"><strong>MudateYa le regala a tu cliente</strong> un beneficio que escala con el valor de la mudanza:</div>
-          <table class="tiers">
-            <tr><th>Valor de la mudanza</th><th>El cliente recibe</th></tr>
-            <tr><td class="val">+ $1.000.000</td><td class="ben">Big Box</td></tr>
-            <tr><td class="val">+ $2.000.000</td><td class="ben">Limpieza en origen <strong>o</strong> destino</td></tr>
-            <tr><td class="val">+ $3.000.000</td><td class="ben">Limpieza en <strong>ambos</strong> hogares</td></tr>
-            <tr class="top"><td class="val">+ $4.000.000</td><td class="ben">Limpieza en ambos + Big Box</td></tr>
-          </table>
+          <div class="cv-intro"><strong>MudateYa le regala a tu cliente</strong> un beneficio que crece con el tamaño de la mudanza — desde un regalo especial hasta la limpieza completa del hogar.</div>
+          <div class="ladder">
+            <div class="step"><div class="bar"></div><div class="lbl">Regalo<br>especial</div></div>
+            <div class="step"><div class="bar"></div><div class="lbl">Limpieza en<br>origen o destino</div></div>
+            <div class="step"><div class="bar"></div><div class="lbl">Limpieza en<br>ambos hogares</div></div>
+            <div class="step"><div class="bar"></div><div class="lbl">Todo<br>incluido</div></div>
+          </div>
           <div class="cv-foot">Cuanto más grande la operación, más grande el regalo. Tu cliente se muda sin estrés — y se acuerda de <strong>quién se lo hizo fácil</strong>.</div>
         </div>
       </div>
