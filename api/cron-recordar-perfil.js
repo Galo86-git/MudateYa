@@ -132,6 +132,11 @@ module.exports = async function handler(req, res) {
   // campaña manual) y no queremos duplicar. Igual actualiza el registro de
   // idempotencia, así respeta el piso de 21 días de ahí en adelante.
   const soloWA = !!(req.query && (req.query.soloWA === '1' || req.query.soloWA === 'true'));
+  // ?forzar=1 ignora el piso de 21 días para esta corrida puntual — para el
+  // caso de "ya se mandó el mail, pero el WhatsApp nunca salió" (ej: se activó
+  // ONBOARDING_WA_ACTIVO recién hoy), donde el piso bloquearía el primer envío
+  // real de ese canal.
+  const forzar = !!(req.query && (req.query.forzar === '1' || req.query.forzar === 'true'));
 
   const DIAS_DORMIDO = 45;   // aprobado sin señales de vida → reactivar
   const PISO_INCOMPLETO = 21; // días mínimos entre recordatorios de perfil
@@ -160,7 +165,7 @@ module.exports = async function handler(req, res) {
         const cambioSet = prev.hash !== hash;
         const pasoPiso = diasDesde(prev.enviadoEn) >= PISO_INCOMPLETO;
         const faltaTxt = falta.map((f) => f.txt);
-        if (cambioSet || pasoPiso) {
+        if (cambioSet || pasoPiso || forzar) {
           try {
             if (!soloWA) {
               await resend.emails.send({
