@@ -21,11 +21,20 @@ function extraerPalabrasZona(direccion) {
     .filter(function(p) { return p.length > 2 && !stopwords.includes(p); });
 }
 
+// Frases de cobertura nacional — sin esto "toda argentina" se reducía a
+// "toda" (stopwords descarta "argentina") y nunca matcheaba nada real.
+var COMODINES_ZONA = ['toda argentina', 'todo el pais', 'toda la argentina', 'nacional', 'todo el territorio', 'todas las zonas'];
+function esComodinNacional(cobertura) {
+  return COMODINES_ZONA.some(function(k) { return cobertura.includes(k); });
+}
+
 // Verifica si un mudancero cubre la zona buscada
 function cubreZona(mudancero, palabrasBuscadas) {
   var zonaBase   = norm(mudancero[5] || '');
   var zonasExtra = norm(mudancero[6] || '');
   var cobertura  = zonaBase + ' ' + zonasExtra;
+
+  if (esComodinNacional(cobertura)) return true;
 
   // Match directo: alguna palabra de la búsqueda aparece en la cobertura del mudancero
   var matchDirecto = palabrasBuscadas.some(function(p) {

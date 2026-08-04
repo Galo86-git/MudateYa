@@ -32,7 +32,18 @@ const STOP = ['de', 'del', 'la', 'las', 'los', 'el', 'en', 'y', 'av', 'ave', 'av
 function palabrasZona(direccion) {
   return norm(direccion).split(/[\s,]+/).filter((p) => p.length > 2 && !STOP.includes(p));
 }
+// Frases que un mudancero pone en zonasExtra para decir "cubro cualquier
+// lugar" — sin esto, "toda argentina" quedaba reducida a la palabra "toda"
+// (STOP descarta "argentina"), así que nunca matcheaba con ningún pedido real.
+// Confirmado con un caso real: un mudancero con "Toda Argentina" en su perfil
+// nunca fue notificado de pedidos fuera de su zona base.
+const COMODINES_ZONA = ['toda argentina', 'todo el pais', 'toda la argentina', 'nacional', 'todo el territorio', 'todas las zonas'];
+function esComodinNacional(cobertura) {
+  const c = norm(cobertura);
+  return COMODINES_ZONA.some((k) => c.includes(k));
+}
 function coincideZona(cobertura, palabras) {
+  if (esComodinNacional(cobertura)) return true;
   const cob = norm(cobertura);
   if (palabras.some((p) => cob.includes(p))) return true;
   const cobPal = palabrasZona(cob);
