@@ -718,7 +718,7 @@ const tools = [
 // datos sensibles (nombres/emails/plata), solo totales.
 const RESUMEN_MUDATEYA_TOOL = {
   name: 'resumen_mudateya',
-  description: 'SOLO para el equipo fundador. Da un pantallazo numérico de MudateYa ahora mismo, excluyendo datos de prueba del equipo: pedidos activos, pedidos de las últimas 24hs, pedidos sin cotizar todavía, totales históricos, mudanceros y clientes registrados, y asesores por canal (independientes, Mudafy, RE/MAX, C21). Para preguntas tipo "qué pedidos hay", "hay cotizaciones pendientes", "cuántos asesores tenemos", "cómo estamos".',
+  description: 'SOLO para el equipo fundador. Da un pantallazo numérico de MudateYa ahora mismo, excluyendo datos de prueba del equipo: pedidos activos (con el detalle de cuáles son: ruta, tipo, estado, cotizaciones), pedidos de las últimas 24hs, pedidos sin cotizar todavía, totales históricos, mudanceros y clientes registrados, y asesores por canal (independientes, Mudafy, RE/MAX, C21). Para preguntas tipo "qué pedidos hay", "cuáles son", "hay cotizaciones pendientes", "cuántos asesores tenemos", "cómo estamos".',
   input_schema: { type: 'object', properties: {}, required: [] },
 };
 
@@ -756,6 +756,7 @@ async function resumenMudateYa() {
 
   const idsPedidos = (todosIds || []).slice(-500);
   let pedidosActivos = 0, pedidosUltimas24h = 0, pedidosSinCotizar = 0;
+  const pedidosActivosDetalle = []; // acotado a 20: para responder "cuáles son" sin otra llamada
   for (let off = 0; off < idsPedidos.length; off += 100) {
     const lote = idsPedidos.slice(off, off + 100);
     const vals = await redisPipeline(lote.map((id) => ['GET', `mudanza:${id}`]));
@@ -765,7 +766,17 @@ async function resumenMudateYa() {
       if (esRegistroDeTest(m)) return;
       if (activasSet.has(lote[i])) {
         pedidosActivos++;
-        if (!(m.cotizaciones || []).length) pedidosSinCotizar++;
+        const nCots = (m.cotizaciones || []).length;
+        if (!nCots) pedidosSinCotizar++;
+        if (pedidosActivosDetalle.length < 20) {
+          pedidosActivosDetalle.push({
+            id: lote[i],
+            ruta: `${m.desde || m.origen || '?'} → ${m.hasta || m.destino || '?'}`,
+            tipo: m.tipo || 'mudanza',
+            estado: m.estado || 'buscando',
+            cotizaciones: nCots,
+          });
+        }
       }
       const fecha = new Date(m.fechaPublicacion || m.creado || 0).getTime();
       if (fecha >= HACE_24H) pedidosUltimas24h++;
@@ -813,11 +824,12 @@ async function resumenMudateYa() {
     pedidosActivos,
     pedidosUltimas24h,
     pedidosSinCotizar,
+    pedidosActivosDetalle,
     pedidosHistoricos: (todosIds || []).length,
     mudancerosRegistrados: mudancerosReal,
     clientesRegistrados: clientesReal,
     asesores,
-    nota: 'Todos los números excluyen registros de prueba del equipo (nombre/email con "test", mail de prueba, o teléfonos del equipo fundador).',
+    nota: 'Todos los números excluyen registros de prueba del equipo (nombre/email con "test", mail de prueba, o teléfonos del equipo fundador). pedidosActivosDetalle trae hasta 20 pedidos activos (ruta, tipo, estado, cotizaciones) por si preguntan "cuáles son" — no hace falta otra herramienta para eso.',
   };
 }
 
