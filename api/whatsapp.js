@@ -833,6 +833,33 @@ async function resumenMudateYa() {
   };
 }
 
+const VER_COTIZACIONES_TOOL = {
+  name: 'ver_cotizaciones_pedido',
+  description: 'SOLO para el equipo fundador. Devuelve el detalle REAL de las cotizaciones de un pedido puntual (mudancero, precio, nota, fecha), a partir de su id (el id sale de resumen_mudateya, campo pedidosActivosDetalle). Usala SIEMPRE antes de mencionar mudancero/precio/nota de una cotización puntual — nunca los inventes ni los completes de memoria.',
+  input_schema: {
+    type: 'object',
+    properties: { id: { type: 'string', description: 'id del pedido (mudanza), tal como lo devolvió resumen_mudateya' } },
+    required: ['id'],
+  },
+};
+
+async function verCotizacionesPedido(id) {
+  const m = await getJSON(`mudanza:${id}`);
+  if (!m) return { error: 'No encontré un pedido con ese id.' };
+  const cotizaciones = (m.cotizaciones || []).map((c) => ({
+    mudancero: c.mudanceroNombre || c.mudancero || '(sin nombre)',
+    precio: c.precio || 0,
+    nota: c.nota || '',
+    fecha: c.fecha || '',
+  }));
+  return {
+    id,
+    ruta: `${m.desde || m.origen || '?'} → ${m.hasta || m.destino || '?'}`,
+    estado: m.estado || 'buscando',
+    cotizaciones,
+  };
+}
+
 // ------------------------------------------------------------------
 // Herramientas del asistente MUDANCERO (flujo completo por WhatsApp).
 // Cada una reusa un endpoint del web (una sola fuente de verdad).
@@ -1838,6 +1865,10 @@ async function ejecutarTool(name, input, waId, conv) {
       if (!quienEscribe(waId)) return JSON.stringify({ error: 'No autorizado.' });
       return JSON.stringify(await resumenMudateYa());
     }
+    if (name === 'ver_cotizaciones_pedido') {
+      if (!quienEscribe(waId)) return JSON.stringify({ error: 'No autorizado.' });
+      return JSON.stringify(await verCotizacionesPedido(input.id));
+    }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
     console.error('ejecutarTool', name, e.message);
@@ -2173,9 +2204,9 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     // .replace() interpreta patrones especiales ($&, $', etc.) en el reemplazo.
     const promptCliente = SYSTEM_PROMPT.split('{{CONOCIMIENTO}}').join(bloqueConocimiento);
     system = persona
-      ? `${promptCliente}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo. Tenés una herramienta extra, resumen_mudateya, para cuando te pregunte números del negocio (pedidos, mudanceros, asesores) — no existe para clientes comunes.`
+      ? `${promptCliente}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo. Tenés dos herramientas extra que no existen para clientes comunes: resumen_mudateya (números del negocio: pedidos, mudanceros, asesores) y ver_cotizaciones_pedido (detalle real de las cotizaciones de un pedido puntual, por id). REGLA CRÍTICA: si te pregunta por el detalle de cotizaciones de un pedido (mudancero, precio, nota), NUNCA lo inventes ni completes de memoria — llamá a ver_cotizaciones_pedido primero. Si no tenés el id o la herramienta no te da nada, decilo así, no fabriques nombres ni precios.`
       : promptCliente;
-    toolsUsados = persona ? tools.concat([RESUMEN_MUDATEYA_TOOL]) : tools;
+    toolsUsados = persona ? tools.concat([RESUMEN_MUDATEYA_TOOL, VER_COTIZACIONES_TOOL]) : tools;
 
     // AUTO-CONTEXTO: cargamos los pedidos/cotizaciones del cliente SIEMPRE, no
     // solo si Emi decide llamar a consultar_estado_pedido. Es un snapshot al
