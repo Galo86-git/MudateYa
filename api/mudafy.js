@@ -171,10 +171,6 @@ async function enviarBienvenida(opts) {
       + '<p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin:0 0 20px">No tenés que hacer nada para activarlo: acá abajo está tu <strong>link único</strong>. Compartilo con tus clientes cuando cierren una operación y la mudanza queda atribuida a vos.</p>'
     : '<p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin:0 0 20px">Ya sos aliado de MudateYa a través de Mudafy. Este es tu <strong>link único</strong>: compartilo con tus clientes cuando cierren una operación y ellos consiguen mudanceros verificados.</p>';
 
-  var pieBaja = importado
-    ? '<div style="margin-top:18px;text-align:center"><span style="font-size:12px;color:#94A3B8;line-height:1.6">¿No querés participar? Respondé este mail y te damos de baja.</span></div>'
-    : '';
-
   var envio = await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
     to: destino,
@@ -218,7 +214,10 @@ async function enviarBienvenida(opts) {
             <div style="margin:0 0 12px;font-size:12px;color:#475569;line-height:1.6">Te reenvía tu link, o te cuenta cómo van los clientes que ya te llegaron — al toque, sin entrar a ningún lado.</div>
             <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
           </div>
-          ${pieBaja}
+          <div style="text-align:center;margin:28px 0 0">
+            <p style="color:#475569;font-size:13px;margin-bottom:10px">Seguinos para novedades y tips de mudanza 👇</p>
+            <a href="https://www.instagram.com/mudateya.ar" style="display:inline-block;padding:9px 20px;border:1px solid #E2E8F0;border-radius:20px;color:#0F1923;text-decoration:none;font-size:13px;font-weight:600">📷 @mudateya.ar en Instagram</a>
+          </div>
         </div>
         <div style="background:#FAFAFA;border-top:1px solid #E5E7EB;padding:16px 28px;text-align:center">
           <span style="font-size:12px;color:#94A3B8">MudateYa · la seguridad de mudarse · mudateya.ar</span>
