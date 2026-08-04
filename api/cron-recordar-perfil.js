@@ -127,6 +127,12 @@ module.exports = async function handler(req, res) {
   if (!esVercelCron && !esAdminReq) return res.status(401).json({ error: 'No autorizado' });
   if (!process.env.RESEND_API_KEY) return res.status(200).json({ error: 'sin RESEND_API_KEY' });
 
+  // Uso puntual/manual: ?soloWA=1 manda el recordatorio SOLO por WhatsApp,
+  // sin el mail — para cuando ya se mandó el mail por otra vía (ej. una
+  // campaña manual) y no queremos duplicar. Igual actualiza el registro de
+  // idempotencia, así respeta el piso de 21 días de ahí en adelante.
+  const soloWA = !!(req.query && (req.query.soloWA === '1' || req.query.soloWA === 'true'));
+
   const DIAS_DORMIDO = 45;   // aprobado sin señales de vida → reactivar
   const PISO_INCOMPLETO = 21; // días mínimos entre recordatorios de perfil
   const PISO_REACTIVAR = 45;  // días mínimos entre reactivaciones
@@ -156,12 +162,14 @@ module.exports = async function handler(req, res) {
         const faltaTxt = falta.map((f) => f.txt);
         if (cambioSet || pasoPiso) {
           try {
-            await resend.emails.send({
-              from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-              to: p.email,
-              subject: `Te falta poco para recibir pedidos en MudateYa (${falta.length} paso${falta.length > 1 ? 's' : ''})`,
-              html: emailIncompleto(p, falta),
-            });
+            if (!soloWA) {
+              await resend.emails.send({
+                from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+                to: p.email,
+                subject: `Te falta poco para recibir pedidos en MudateYa (${falta.length} paso${falta.length > 1 ? 's' : ''})`,
+                html: emailIncompleto(p, falta),
+              });
+            }
             await nudgeWhatsApp(p, falta);
             p.recordatorioPerfil = { enviadoEn: new Date().toISOString(), hash };
             await setJSON(`mudancero:perfil:${email}`, p);
