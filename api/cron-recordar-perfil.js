@@ -120,7 +120,8 @@ module.exports = async function handler(req, res) {
   if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
     return res.status(200).json({ ok: true, skipped: 'no-prod' });
   }
-  const esVercelCron = req.headers['x-vercel-cron'] === '1';
+  let esVercelCron = false;
+  try { esVercelCron = require('./_auth').esCronVercel(req); } catch (_) {}
   let esAdminReq = false;
   try { esAdminReq = require('./_auth').esAdmin(req); } catch (_) {}
   if (!esVercelCron && !esAdminReq) return res.status(401).json({ error: 'No autorizado' });

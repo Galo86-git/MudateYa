@@ -7,7 +7,7 @@
 //
 // También sirve de chequeo manual: GET /api/cron-resumen-diario?token=ADMIN_TOKEN
 
-var { esAdmin } = require('./_auth');
+var { esAdmin, esCronVercel } = require('./_auth');
 const { redisPipeline } = require('./_ia');
 const { Resend } = require('resend');
 
@@ -72,7 +72,7 @@ async function asesoresPorCanalHoy(hoy) {
 }
 
 module.exports = async function handler(req, res) {
-  var esVercelCron = req.headers['x-vercel-cron'] === '1';
+  var esVercelCron = esCronVercel(req);
   var admin = false;
   try { admin = esAdmin(req); } catch (e) {}
   if (!esVercelCron && !admin) return res.status(401).json({ error: 'No autorizado' });

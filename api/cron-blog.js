@@ -179,7 +179,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, skipped: 'no-prod' });
   }
   // Seguridad: solo Vercel Cron o admin con token (gasta tokens y publica contenido).
-  const esVercelCron = req.headers['x-vercel-cron'] === '1';
+  let esVercelCron = false;
+  try { esVercelCron = require('./_auth').esCronVercel(req); } catch (_) {}
   let esAdminReq = false;
   try { esAdminReq = require('./_auth').esAdmin(req); } catch (_) {}
   if (!esVercelCron && !esAdminReq) {

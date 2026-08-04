@@ -87,6 +87,19 @@ function tokenDeRequest(req) {
          '';
 }
 
+// true si el request es una invocación genuina de Vercel Cron. Vercel manda
+// el valor de CRON_SECRET (env var propia, no confundir con ADMIN_TOKEN) como
+// header "Authorization: Bearer <CRON_SECRET>" — es el mecanismo que Vercel
+// documenta oficialmente (NO existe un header "x-vercel-cron" real; eso era
+// una suposición vieja que nunca funcionó y hacía que todos los cron dieran
+// 401). Fail closed si CRON_SECRET no está seteado.
+function esCronVercel(req) {
+  var secreto = process.env.CRON_SECRET;
+  if (!secreto) return false;
+  var h = (req && req.headers) || {};
+  return igualSeguro(h['authorization'] || '', 'Bearer ' + secreto);
+}
+
 // Sincrónica a propósito. true si el request trae master token o sesión válida.
 function esAdmin(req) {
   var token = String(tokenDeRequest(req) || '');
@@ -108,6 +121,7 @@ function emailAdmin(req) {
 
 module.exports = {
   esAdmin: esAdmin,
+  esCronVercel: esCronVercel,
   emailAdmin: emailAdmin,
   emitirToken: emitirToken,
   verificarToken: verificarToken,

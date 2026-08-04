@@ -25,7 +25,8 @@ module.exports = async function handler(req, res) {
   // Seguridad: solo lo puede disparar el Cron de Vercel o un admin con token.
   // Sin esto, cualquiera podía llamarlo en loop y quemar cuota de Twilio/Vercel,
   // gatillar creación de plantillas en Meta y leer la lista de todas las plantillas.
-  const esVercelCron = req.headers['x-vercel-cron'] === '1';
+  let esVercelCron = false;
+  try { esVercelCron = require('./_auth').esCronVercel(req); } catch (e) {}
   let esAdmin = false;
   try { esAdmin = require('./_auth').esAdmin(req); } catch (e) {}
   if (!esVercelCron && !esAdmin) return res.status(401).json({ error: 'No autorizado' });
