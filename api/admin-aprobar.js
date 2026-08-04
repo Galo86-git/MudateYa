@@ -170,6 +170,11 @@ async function enviarEmailAltaExitosa(perfil) {
           <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
         </div>
 
+        <!-- CTA Instagram -->
+        <div style="text-align:center;margin:28px 0 0">
+          <a href="https://www.instagram.com/mudateya.ar" style="display:inline-block;padding:9px 20px;border:1px solid #E2E8F0;border-radius:20px;color:#0F1923;text-decoration:none;font-size:13px;font-weight:600">📷 @mudateya.ar en Instagram</a>
+        </div>
+
         <!-- CTA secundario -->
         <div style="text-align:center">
           <a href="https://mudateya.ar/mi-cuenta"
