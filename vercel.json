@@ -475,6 +475,10 @@
     {
       "path": "/api/cron-resumen-diario",
       "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron-healthcheck",
+      "schedule": "0 */2 * * *"
     }
   ]
 }
