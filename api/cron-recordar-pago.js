@@ -50,6 +50,12 @@ async function enviarRecordatorio(m, tipoPago, monto) {
 }
 
 module.exports = async function handler(req, res) {
+  let esVercelCron = false;
+  try { esVercelCron = require('./_auth').esCronVercel(req); } catch (_) {}
+  let esAdminReq = false;
+  try { esAdminReq = require('./_auth').esAdmin(req); } catch (_) {}
+  if (!esVercelCron && !esAdminReq) return res.status(401).json({ error: 'No autorizado' });
+
   try {
     const todos = (await getJSON('mudanzas:todos')) || [];
     // Procesar los más recientes primero (tope defensivo).

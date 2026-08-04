@@ -80,6 +80,12 @@ async function enviarResumenAdmin({ aprobados, fraude, revisar, dryRun }) {
 }
 
 module.exports = async function handler(req, res) {
+  let esVercelCron = false;
+  try { esVercelCron = require('./_auth').esCronVercel(req); } catch (_) {}
+  let esAdminReq = false;
+  try { esAdminReq = require('./_auth').esAdmin(req); } catch (_) {}
+  if (!esVercelCron && !esAdminReq) return res.status(401).json({ error: 'No autorizado' });
+
   try {
     const AUTO = activo(); // default ENCENDIDO (se apaga con AUTO_APROBAR_ACTIVO=0)
     const pendientes = (await getJSON('mudanceros:pendientes')) || [];

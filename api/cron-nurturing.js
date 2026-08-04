@@ -50,6 +50,12 @@ async function avisarPresupuestosEsperando(m, cots) {
 }
 
 module.exports = async function handler(req, res) {
+  let esVercelCron = false;
+  try { esVercelCron = require('./_auth').esCronVercel(req); } catch (_) {}
+  let esAdminReq = false;
+  try { esAdminReq = require('./_auth').esAdmin(req); } catch (_) {}
+  if (!esVercelCron && !esAdminReq) return res.status(401).json({ error: 'No autorizado' });
+
   try {
     const activas = (await getJSON('mudanzas:activas')) || [];
     const ahora = Date.now();
