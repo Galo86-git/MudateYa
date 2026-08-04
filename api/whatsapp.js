@@ -718,14 +718,29 @@ const tools = [
 // datos sensibles (nombres/emails/plata), solo totales.
 const RESUMEN_MUDATEYA_TOOL = {
   name: 'resumen_mudateya',
-  description: 'SOLO para el equipo fundador. Da un pantallazo numérico de MudateYa ahora mismo: pedidos activos y totales, mudanceros y clientes registrados, y asesores por canal (independientes, Mudafy, RE/MAX, C21). Para preguntas tipo "qué pedidos hay", "cuántos asesores tenemos", "cómo estamos".',
+  description: 'SOLO para el equipo fundador. Da un pantallazo numérico de MudateYa ahora mismo, excluyendo datos de prueba del equipo: pedidos activos, pedidos de las últimas 24hs, pedidos sin cotizar todavía, totales históricos, mudanceros y clientes registrados, y asesores por canal (independientes, Mudafy, RE/MAX, C21). Para preguntas tipo "qué pedidos hay", "hay cotizaciones pendientes", "cuántos asesores tenemos", "cómo estamos".',
   input_schema: { type: 'object', properties: {}, required: [] },
 };
 
-// Cuenta rápida y barata: son todos largos de listas ya indexadas (sin leer
-// cada perfil/mudanza individual), para no pagar N reads por pregunta.
+// Reconoce registros de prueba del equipo para no ensuciar los números reales:
+// nombre/email con "test", el mail personal usado para pruebas, o un teléfono
+// del equipo fundador (EQUIPO_TELEFONOS).
+function esRegistroDeTest(obj) {
+  if (!obj) return false;
+  const textos = [obj.nombre, obj.email, obj.clienteNombre, obj.clienteEmail]
+    .filter(Boolean).join(' ').toLowerCase();
+  if (textos.indexOf('test') !== -1) return true;
+  if (textos.indexOf('jgalozaldivar@gmail.com') !== -1) return true;
+  const tels = [obj.telefono, obj.whatsapp, obj.clienteWA, obj.clienteTel].filter(Boolean);
+  for (const t of tels) { if (EQUIPO[ultimos10(t)]) return true; }
+  return false;
+}
+
+// Acotado a propósito (últimos 500 pedidos / todo mudancero-asesor activo):
+// para el volumen actual de MudateYa alcanza para cubrir todo sin escanear
+// un historial que crezca sin límite.
 async function resumenMudateYa() {
-  const [activas, todas, mudanceros, clientes, idxIndep, idxMudafy, idxRemax, idxC21] = await Promise.all([
+  const [activasIds, todosIds, mudancerosIds, clientesEmails, idxIndep, idxMudafy, idxRemax, idxC21] = await Promise.all([
     getJSON('mudanzas:activas'),
     getJSON('mudanzas:todos'),
     getJSON('mudanceros:todos'),
@@ -735,20 +750,74 @@ async function resumenMudateYa() {
     getJSON('remax:asesores'),
     getJSON('c21:asesores'),
   ]);
-  const asesores = {
-    independientes: (idxIndep || []).length,
-    mudafy: (idxMudafy || []).length,
-    remax: (idxRemax || []).length,
-    c21: (idxC21 || []).length,
-  };
-  asesores.total = asesores.independientes + asesores.mudafy + asesores.remax + asesores.c21;
+
+  const activasSet = new Set(activasIds || []);
+  const HACE_24H = Date.now() - 24 * 60 * 60 * 1000;
+
+  const idsPedidos = (todosIds || []).slice(-500);
+  let pedidosActivos = 0, pedidosUltimas24h = 0, pedidosSinCotizar = 0;
+  for (let off = 0; off < idsPedidos.length; off += 100) {
+    const lote = idsPedidos.slice(off, off + 100);
+    const vals = await redisPipeline(lote.map((id) => ['GET', `mudanza:${id}`]));
+    vals.forEach((v, i) => {
+      if (!v) return;
+      let m; try { m = JSON.parse(v); } catch (e) { return; }
+      if (esRegistroDeTest(m)) return;
+      if (activasSet.has(lote[i])) {
+        pedidosActivos++;
+        if (!(m.cotizaciones || []).length) pedidosSinCotizar++;
+      }
+      const fecha = new Date(m.fechaPublicacion || m.creado || 0).getTime();
+      if (fecha >= HACE_24H) pedidosUltimas24h++;
+    });
+  }
+
+  let mudancerosReal = 0;
+  const idsMud = mudancerosIds || [];
+  for (let off = 0; off < idsMud.length; off += 100) {
+    const lote = idsMud.slice(off, off + 100);
+    const vals = await redisPipeline(lote.map((email) => ['GET', `mudancero:perfil:${email}`]));
+    vals.forEach((v) => {
+      if (!v) return;
+      let p; try { p = JSON.parse(v); } catch (e) { return; }
+      if (!esRegistroDeTest(p)) mudancerosReal++;
+    });
+  }
+
+  const clientesReal = (clientesEmails || []).filter((email) => !esRegistroDeTest({ email })).length;
+
+  async function asesoresRealesDe(prefijo, ids) {
+    let real = 0;
+    const lista = ids || [];
+    for (let off = 0; off < lista.length; off += 100) {
+      const sub = lista.slice(off, off + 100);
+      const vals = await redisPipeline(sub.map((c) => ['GET', `${prefijo}:asesor:${c}`]));
+      vals.forEach((v) => {
+        if (!v) return;
+        let a; try { a = JSON.parse(v); } catch (e) { return; }
+        if (!esRegistroDeTest(a)) real++;
+      });
+    }
+    return real;
+  }
+  const [indepReal, mudafyReal, remaxReal, c21Real] = await Promise.all([
+    asesoresRealesDe('indep', idxIndep),
+    asesoresRealesDe('mudafy', idxMudafy),
+    asesoresRealesDe('remax', idxRemax),
+    asesoresRealesDe('c21', idxC21),
+  ]);
+  const asesores = { independientes: indepReal, mudafy: mudafyReal, remax: remaxReal, c21: c21Real };
+  asesores.total = indepReal + mudafyReal + remaxReal + c21Real;
+
   return {
-    pedidosActivos: (activas || []).length,
-    pedidosHistoricos: (todas || []).length,
-    mudancerosRegistrados: (mudanceros || []).length,
-    clientesRegistrados: (clientes || []).length,
+    pedidosActivos,
+    pedidosUltimas24h,
+    pedidosSinCotizar,
+    pedidosHistoricos: (todosIds || []).length,
+    mudancerosRegistrados: mudancerosReal,
+    clientesRegistrados: clientesReal,
     asesores,
-    nota: 'Son totales rápidos (listas indexadas). Para desglose fino (por estado, por zona, montos) hay que mirar el admin.',
+    nota: 'Todos los números excluyen registros de prueba del equipo (nombre/email con "test", mail de prueba, o teléfonos del equipo fundador).',
   };
 }
 
