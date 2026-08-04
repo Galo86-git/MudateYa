@@ -103,17 +103,26 @@ function emailReactivar(p) {
   );
 }
 
+// Devuelve SIEMPRE { enviado, motivo?, via? } — antes esto se descartaba en el
+// caller, así que un rechazo de Twilio (plantilla no aprobada Y sin ventana de
+// 24hs para texto libre, número mal formado, etc.) quedaba invisible: el cron
+// reportaba "enviado" igual con solo hacer console.warn.
 async function nudgeWhatsApp(p, falta) {
-  if (!(process.env.ONBOARDING_WA_ACTIVO === '1' || process.env.ONBOARDING_WA_ACTIVO === 'true')) return;
-  if (!p.telefono) return;
+  if (!(process.env.ONBOARDING_WA_ACTIVO === '1' || process.env.ONBOARDING_WA_ACTIVO === 'true')) {
+    return { enviado: false, motivo: 'ONBOARDING_WA_ACTIVO apagado' };
+  }
+  if (!p.telefono) return { enviado: false, motivo: 'sin teléfono cargado' };
   const nombre = (p.nombre || 'Hola').split(' ')[0];
   const lista = falta.map((f) => f.txt.replace(/^Subir |^Cargar |^Aceptar /, '').toLowerCase()).join(', ');
   const frase = `todavía te falta: ${lista}`;
   try {
     const { enviarPlantilla } = require('./_plantillas');
     const textoLibre = `¡Hola ${nombre}! Soy Emi de MudateYa. Para activar tu cuenta ${frase}. Completalo acá: https://mudateya.ar/mi-cuenta 🚚`;
-    await enviarPlantilla(p.telefono, 'onboarding_mudancero', { 1: nombre, 2: frase }, textoLibre);
-  } catch (e) { console.warn('nudgeWhatsApp perfil:', e.message); }
+    return await enviarPlantilla(p.telefono, 'onboarding_mudancero', { 1: nombre, 2: frase }, textoLibre);
+  } catch (e) {
+    console.warn('nudgeWhatsApp perfil:', e.message);
+    return { enviado: false, motivo: e.message };
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -175,11 +184,19 @@ module.exports = async function handler(req, res) {
                 html: emailIncompleto(p, falta),
               });
             }
-            await nudgeWhatsApp(p, falta);
-            p.recordatorioPerfil = { enviadoEn: new Date().toISOString(), hash };
-            await setJSON(`mudancero:perfil:${email}`, p);
-            out.incompletos++;
-            detalle.enviados.push({ email, nombre: p.nombre || '', falta: faltaTxt });
+            const rWA = await nudgeWhatsApp(p, falta);
+            if (soloWA && !rWA.enviado) {
+              // No se mandó nada de verdad (ni mail -por soloWA- ni WhatsApp):
+              // NO tocamos el piso, para poder reintentar después de arreglar
+              // lo que haya fallado (Twilio, plantilla, teléfono, etc.).
+              out.fallidos++;
+              detalle.fallidos.push({ email, nombre: p.nombre || '', falta: faltaTxt, motivo: 'WhatsApp: ' + (rWA.motivo || 'no se pudo enviar') });
+            } else {
+              p.recordatorioPerfil = { enviadoEn: new Date().toISOString(), hash };
+              await setJSON(`mudancero:perfil:${email}`, p);
+              out.incompletos++;
+              detalle.enviados.push({ email, nombre: p.nombre || '', falta: faltaTxt, wa: rWA.enviado ? (rWA.via || 'ok') : ('WA falló: ' + (rWA.motivo || '?')) });
+            }
           } catch (e) {
             out.fallidos++; console.warn('incompleto', email, e.message);
             detalle.fallidos.push({ email, nombre: p.nombre || '', falta: faltaTxt, motivo: e.message });
