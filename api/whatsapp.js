@@ -1664,6 +1664,20 @@ async function generarLinkMP({ mudanceroNombre, monto, desde, hasta, ambientes, 
   } catch (e) { console.warn('generarLinkMP:', e.message); return null; }
 }
 
+// Mismos números que cotizaciones.js (DIAS_VALIDEZ_COTIZACION / ESTADOS_ACEPTABLES) —
+// duplicado a propósito (mismo patrón que sinContactoWA/pedidoPideVisita en este
+// archivo) para no cruzar imports entre los dos endpoints. Si se cambia acá, cambiar
+// también allá.
+const DIAS_VALIDEZ_COTIZACION_WA = 7;
+const ESTADOS_ACEPTABLES_WA = ['buscando', 'cotizaciones_completas', 'vencido_con_cotizaciones'];
+function cotizacionVencidaWA(cot, pedido) {
+  const base = (cot && cot.fecha) || (pedido && (pedido.fechaPublicacion || pedido.creado));
+  if (!base) return false;
+  const d = new Date(base);
+  if (isNaN(d.getTime())) return false;
+  return Date.now() > d.getTime() + DIAS_VALIDEZ_COTIZACION_WA * 24 * 60 * 60 * 1000;
+}
+
 // El cliente acepta una cotización → adjudica la mudanza y arma el pago de la seña (50%).
 async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
   const pedidos = await pedidosDelCliente(waId);
@@ -1671,10 +1685,17 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
   if (!pedido) {
     pedido = pedidos.reverse().find(
       (p) => Array.isArray(p.cotizaciones) && p.cotizaciones.length &&
-             ['buscando', 'cotizaciones_completas'].includes(p.estado)
+             ESTADOS_ACEPTABLES_WA.includes(p.estado)
     );
   }
   if (!pedido) return { ok: false, mensaje: 'No encontré un pedido tuyo con cotizaciones para aceptar.' };
+
+  // Mismo chequeo que el endpoint web: no se puede aceptar sobre un pedido que
+  // ya no está abierto (adjudicado, en curso, completado, cancelado) — sin esto
+  // se podía pisar la cotización aceptada de una mudanza ya con seña cobrada.
+  if (pedido.estado && !ESTADOS_ACEPTABLES_WA.includes(pedido.estado)) {
+    return { ok: false, mensaje: 'Ese pedido ya no está abierto para aceptar cotizaciones.' };
+  }
 
   const cots = (pedido.cotizaciones || []).filter((c) => c && c.estado !== 'rechazada');
   if (!cots.length) return { ok: false, mensaje: 'Todavía no llegaron cotizaciones para ese pedido.' };
@@ -1692,6 +1713,15 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
       necesita_eleccion: true,
       opciones: cots.map((c) => ({ mudancero: c.mudanceroNombre, precio: c.precio })),
       mensaje: 'Hay varias cotizaciones. Preguntale al cliente cuál elige (por el nombre del mudancero) antes de aceptar.',
+    };
+  }
+
+  // Mismo chequeo que el endpoint web: un presupuesto vale 7 días corridos
+  // desde que se emitió, después el mudancero no puede quedar obligado a sostenerlo.
+  if (cotizacionVencidaWA(cot, pedido)) {
+    return {
+      ok: false,
+      mensaje: `Ese presupuesto de ${cot.mudanceroNombre || 'ese mudancero'} ya venció (tienen validez de ${DIAS_VALIDEZ_COTIZACION_WA} días). Podés publicar el pedido de nuevo para recibir precios actualizados.`,
     };
   }
 

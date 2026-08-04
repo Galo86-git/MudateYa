@@ -1426,7 +1426,13 @@ module.exports = async function handler(req, res) {
       // Sin esto se puede aceptar una segunda cotización sobre una mudanza
       // ya adjudicada, pisando cotizacionAceptada/montoTotal cuando el
       // anticipo del primer mudancero ya se cobró.
-      const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas'];
+      // OJO: 'vencido_con_cotizaciones' SÍ se puede aceptar — las 24hs son
+      // solo la ventana para RECIBIR cotizaciones nuevas; cada cotización ya
+      // recibida sigue siendo válida por DIAS_VALIDEZ_COTIZACION (7 días
+      // corridos, chequeado abajo con cotizacionVencida). Sin esto, un
+      // cliente que tardó más de 24hs en elegir quedaba bloqueado aunque el
+      // presupuesto que quería aceptar todavía estuviera vigente.
+      const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas', 'vencido_con_cotizaciones'];
       if (mudanza.estado && ESTADOS_ACEPTABLES.indexOf(mudanza.estado) === -1) {
         return res.status(409).json({
           error: 'Esta mudanza ya no está abierta para aceptar cotizaciones.',
