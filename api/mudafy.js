@@ -153,53 +153,13 @@ async function enviarBienvenida(opts) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   var primerNombre = escHtml(String(nombre).split(' ')[0] || '');
-  var qrUrl = SITE_BASE + '/api/mudafy?action=qr&codigo=' + encodeURIComponent(codigo);
 
-  // ── QR ────────────────────────────────────────────────────────────────
-  // ANTES: se adjuntaba con content_type + content_id para incrustarlo por CID
-  // (<img src="cid:qrmudafy">). El SDK de Resend 3.x NO soporta esos campos:
-  // su tipo Attachment es solo { filename, content, path }. Los campos de más
-  // viajaban igual en el JSON y la API respondía 422 — el mail no salía nunca.
-  //
-  // AHORA: el <img> apunta al endpoint público /api/mudafy?action=qr (Gmail lo
-  // carga por su proxy sin problema, y ya devuelve Cache-Control) y el PNG va
-  // además como adjunto común, con los campos que el SDK sí acepta.
-  var qrAttachments = [];
-  var qrUrlHtml = qrUrl.replace(/&/g, '&amp;');   // & válido dentro de un atributo
-  var qrBloqueHtml =
-    '<div style="text-align:center;margin:0 0 22px">'
-    + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
-    + '<a href="' + qrUrlHtml + '" style="display:inline-block;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
-    + '</div>';
-  try {
-    const QRCode = require('qrcode');
-    var qrBuf = await QRCode.toBuffer(link, { type: 'png', width: 600, margin: 1, color: { dark: '#003580', light: '#FFFFFF' } });
-    qrAttachments = [{ filename: 'mudateya-qr-' + codigo + '.png', content: qrBuf.toString('base64') }];
-
-    if (opts.prueba) {
-      // En modo prueba el código es ficticio: el endpoint del QR devolvería 404,
-      // así que no ponemos el <img> roto. El PNG va igual como adjunto.
-      qrBloqueHtml =
-        '<div style="text-align:center;margin:0 0 22px">'
-        + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
-        + '<div style="border:1px dashed #CBD5E1;border-radius:12px;padding:18px;color:#64748B;font-size:12.5px;line-height:1.6">'
-        + 'Acá va el QR del asesor.<br>En esta prueba el código es de mentira, así que lo mandamos <strong>adjunto</strong> en vez de incrustado.'
-        + '</div></div>';
-    } else {
-      qrBloqueHtml =
-        '<div style="text-align:center;margin:0 0 22px">'
-        + '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:10px">Tu QR</div>'
-        + '<img src="' + qrUrlHtml + '" alt="QR de tu link" width="180" height="180" style="display:block;margin:0 auto;border:1px solid #E5E7EB;border-radius:12px;padding:8px;background:#fff"/>'
-        + '<a href="' + qrUrlHtml + '" style="display:inline-block;margin-top:10px;font-size:13px;color:#003580;font-weight:700;text-decoration:none">⬇ Descargar mi QR</a>'
-        + '</div>';
-    }
-  } catch (qrErr) {
-    console.warn('No se pudo generar el QR para el mail:', qrErr.message);
-  }
-
+  // Sin QR: lo sacamos del mail (hacía el mensaje pesado) — el código sigue
+  // disponible vía /api/mudafy?action=qr para quien lo necesite desde el
+  // admin, y para "se me perdió el link" ahora está Emi por WhatsApp.
   var asunto = importado
-    ? 'Mudafy te dio de alta en MudateYa · tu link y QR'
-    : '✅ Ya sos aliado de MudateYa · tu link y QR';
+    ? 'Mudafy te dio de alta en MudateYa · tu link'
+    : '✅ Ya sos aliado de MudateYa · tu link';
   if (opts.prueba) asunto = '[PRUEBA] ' + asunto;
 
   var titulo = importado
@@ -219,7 +179,6 @@ async function enviarBienvenida(opts) {
     from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
     to: destino,
     subject: asunto,
-    attachments: qrAttachments,
     html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
         <div style="background:#003580;padding:22px 28px">
@@ -244,8 +203,6 @@ async function enviarBienvenida(opts) {
             <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:6px">Tu link único</div>
             <a href="${link}" style="color:#003580;font-weight:700;font-size:14px;word-break:break-all;text-decoration:none">${escHtml(link.replace(/^https?:\/\//, ''))}</a>
           </div>
-
-          ${qrBloqueHtml}
 
           <div style="background:#FFF5F5;border-left:3px solid #FF5A5F;border-radius:8px;padding:12px 16px;margin:0 0 8px">
             <div style="font-size:13px;color:#0F1419;line-height:1.7">
