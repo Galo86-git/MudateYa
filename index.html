@@ -1982,6 +1982,13 @@
           <div id="pd-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
         </div>
 
+        <div id="pd-comparar-niveles-wrap" style="margin-top:14px">
+          <label class="pd-chk" style="border-color:var(--border)">
+            <input type="checkbox" id="pd-comparar-niveles"/>
+            <span>Quiero comparar presupuestos de los 3 niveles (Esencial, Integral, Llave en Mano)</span>
+          </label>
+        </div>
+
         <div style="margin-top:18px">
           <button id="pd-btn-enviar" onclick="pdEnviar()" disabled style="width:100%;padding:13px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;opacity:.5">Enviar solicitud →</button>
           <div id="pd-validar-msg" style="display:none;font-size:11px;color:#DC2626;text-align:center;margin-top:6px;font-family:var(--mono)">Completá el tipo de lugar (origen y destino). Si es depto, también el piso.</div>
@@ -3103,6 +3110,10 @@
     var co = document.getElementById('pd-comentario'); if (co) co.value = '';
     var grid = document.getElementById('pd-fotos-grid'); if (grid) grid.innerHTML = '';
     var txtF = document.getElementById('pd-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
+    // Comparar los 3 niveles: solo tiene sentido para mudanza (no para flete, que es un solo precio)
+    var cmpNiv = document.getElementById('pd-comparar-niveles'); if (cmpNiv) cmpNiv.checked = false;
+    var cmpNivWrap = document.getElementById('pd-comparar-niveles-wrap');
+    if (cmpNivWrap) cmpNivWrap.style.display = (_busqueda.tipo === 'flete') ? 'none' : 'block';
     // Reset tipos
     _pdTipoOrigen = null;
     _pdTipoDestino = null;
@@ -3441,6 +3452,9 @@
           tipo:_busqueda.tipo, modoCotizacion:modo,
           // Nivel/pack que pidió el cliente: 'esencial' | 'integral' | 'llave' | 'flete'
           nivel: _busqueda.tipo === 'flete' ? 'flete' : (_nivel || 'esencial'),
+          // Si tildó "comparar los 3 niveles": el mudancero ve los 3 packs pre-activados
+          // al cotizar, en vez de solo el nivel pedido (ver mi-cuenta.html _renderPackCard).
+          compararNiveles: !!(document.getElementById('pd-comparar-niveles') && document.getElementById('pd-comparar-niveles').checked),
           mudancerosInvitados:modo==='dirigido' ? Array.from(_sel) : [],
           refAliado: refAliado,
           km: _busqueda.km || null,

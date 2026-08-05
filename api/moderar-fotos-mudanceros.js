@@ -225,20 +225,21 @@ module.exports = async function handler(req, res) {
       var porEmail = {};
       hallazgos.forEach(function (h) { (porEmail[h.email] = porEmail[h.email] || []).push(h); });
 
+      var { actualizarPerfilMudancero } = require('./_perfil-mudancero');
       for (var email in porEmail) {
         try {
-          var perfil = await getJSON('mudancero:perfil:' + email);
-          if (!perfil) continue;
           var urlsABorrar = porEmail[email].map(function (h) { return h.url; });
 
-          if (urlsABorrar.indexOf(perfil.foto) !== -1) perfil.foto = '';
-          if (Array.isArray(perfil.fotosVehiculo)) {
-            perfil.fotosVehiculo = perfil.fotosVehiculo.filter(function (u) { return urlsABorrar.indexOf(u) === -1; });
-          }
-          if (urlsABorrar.indexOf(perfil.fotoCamion) !== -1) {
-            perfil.fotoCamion = (perfil.fotosVehiculo && perfil.fotosVehiculo[0]) || '';
-          }
-          await setJSON('mudancero:perfil:' + email, perfil);
+          var perfil = await actualizarPerfilMudancero(email, function (perfil) {
+            if (urlsABorrar.indexOf(perfil.foto) !== -1) perfil.foto = '';
+            if (Array.isArray(perfil.fotosVehiculo)) {
+              perfil.fotosVehiculo = perfil.fotosVehiculo.filter(function (u) { return urlsABorrar.indexOf(u) === -1; });
+            }
+            if (urlsABorrar.indexOf(perfil.fotoCamion) !== -1) {
+              perfil.fotoCamion = (perfil.fotosVehiculo && perfil.fotosVehiculo[0]) || '';
+            }
+          });
+          if (!perfil) continue;
 
           for (var ui = 0; ui < urlsABorrar.length; ui++) {
             try {

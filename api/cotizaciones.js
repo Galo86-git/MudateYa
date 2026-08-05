@@ -962,7 +962,7 @@ module.exports = async function handler(req, res) {
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
-      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales, tipoOrigen, tipoDestino, deptoOrigen, deptoDestino, horaOrigen, tipoOperacion, urgente } = req.body;
+      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales, tipoOrigen, tipoDestino, deptoOrigen, deptoDestino, horaOrigen, tipoOperacion, urgente, compararNiveles } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
@@ -1154,7 +1154,9 @@ module.exports = async function handler(req, res) {
         horaOrigenNorm = horaOrigen.trim();
       }
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, urgente: urgenteNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: urgenteNorm ? new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() : vencimientoHabilISO(HORAS_VIGENCIA), cotizaciones: [] };
+      // Comparar los 3 niveles: solo aplica a mudanza (un flete tiene un solo precio, no 3 packs).
+      const compararNivelesNorm = compararNiveles === true && nivelNorm !== 'flete';
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, compararNiveles: compararNivelesNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, urgente: urgenteNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: urgenteNorm ? new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() : vencimientoHabilISO(HORAS_VIGENCIA), cotizaciones: [] };
       mudanza.origenCanal = origenCanal;
       // Se guarda solo si difiere del validado: si partnerNorm quedó null pero
       // el cliente llegó por /inmobiliaria/{slug}, acá queda cuál era.
@@ -1331,9 +1333,12 @@ module.exports = async function handler(req, res) {
       await setJSON(`mudancero:${mudanceroEmail}`, mudIdx, 2592000);
       // Señal de actividad del mudancero: cotizar cuenta como "entró". Lo usa
       // cron-recordar-perfil para NO marcarlo "dormido" si sigue trabajando.
+      // Con lock (_perfil-mudancero.js): sin esto, si el mudancero está
+      // guardando precios en su perfil justo cuando cotiza, esta escritura
+      // puede pisar esos precios con una copia vieja del perfil.
       try {
-        const _pm = await getJSON(`mudancero:perfil:${mudanceroEmail}`);
-        if (_pm) { _pm.ultimaActividad = new Date().toISOString(); await setJSON(`mudancero:perfil:${mudanceroEmail}`, _pm); }
+        const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+        await actualizarPerfilMudancero(mudanceroEmail, function(_pm) { _pm.ultimaActividad = new Date().toISOString(); });
       } catch(_) {}
       try { await notificarCliente(mudanza, cotizacion); } catch(e) { console.error(e.message); }
       return res.status(200).json({ ok: true, cotizacion });
@@ -2241,12 +2246,12 @@ module.exports = async function handler(req, res) {
       m.comentario = comentario || '';
       m.fechaCalificacion = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
-      // Guardar reseña en el perfil del mudancero
+      // Guardar reseña en el perfil del mudancero (con lock: ver _perfil-mudancero.js)
       try {
         const cot = m.cotizacionAceptada;
         if (cot && cot.mudanceroEmail) {
-          const perfil = await getJSON(`mudancero:perfil:${cot.mudanceroEmail}`);
-          if (perfil) {
+          const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+          await actualizarPerfilMudancero(cot.mudanceroEmail, function(perfil) {
             if (!perfil.resenas) perfil.resenas = [];
             perfil.resenas.push({ estrellas: m.estrellas, comentario: m.comentario, fecha: m.fechaCalificacion, mudanzaId });
             perfil.promedioEstrellas = Math.round((perfil.resenas.reduce((a, r) => a + r.estrellas, 0) / perfil.resenas.length) * 10) / 10;
@@ -2254,8 +2259,7 @@ module.exports = async function handler(req, res) {
             perfil.calificacion = perfil.promedioEstrellas;
             perfil.nroResenas = perfil.resenas.length;
             perfil.trabajosCompletados = (perfil.trabajosCompletados || 0) + 1;
-            await setJSON(`mudancero:perfil:${cot.mudanceroEmail}`, perfil);
-          }
+          });
         }
       } catch(e) { console.warn('Error guardando reseña en perfil:', e.message); }
       return res.status(200).json({ ok: true });
@@ -2567,8 +2571,8 @@ module.exports = async function handler(req, res) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       if (!email || !cambios) return res.status(400).json({ error: 'Faltan datos' });
-      const perfil = await getJSON(`mudancero:perfil:${email}`);
-      if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado' });
+      const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+      const perfilEditado = await actualizarPerfilMudancero(email, function(perfil) {
 
       // ── Campos string simples (no se sobrescriben con string vacío) ───────
       // Comportamiento original: si admin manda '' lo ignoramos (no borra el dato existente).
@@ -2672,7 +2676,8 @@ module.exports = async function handler(req, res) {
       var _now = new Date().toISOString();
       perfil.ultimaEdicionAdmin = _now;
       perfil.ultimaActualizacion = _now;  // mismo timestamp para que la tabla del admin lo vea
-      await setJSON(`mudancero:perfil:${email}`, perfil);
+      });
+      if (!perfilEditado) return res.status(404).json({ error: 'Mudancero no encontrado' });
       return res.status(200).json({ ok: true });
     }
 
@@ -2683,19 +2688,20 @@ module.exports = async function handler(req, res) {
       }
       if (!email || !nuevoEstado) return res.status(400).json({ error: 'Faltan datos' });
 
-      const perfil = await getJSON(`mudancero:perfil:${email}`);
+      const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+      let estadoAnterior;
+      const perfil = await actualizarPerfilMudancero(email, function(perfil) {
+        estadoAnterior = perfil.estado;
+        perfil.estado = nuevoEstado;
+        perfil.fechaCambioEstado = new Date().toISOString();
+        if (nuevoEstado === 'aprobado') {
+          perfil.terminosAceptados = perfil.terminosAceptados || false;
+          // Setear verificaciones si se pasan explícitamente
+          if (verificadoIdentidad !== undefined) perfil.verificadoIdentidad = verificadoIdentidad;
+          if (verificadoVehiculo  !== undefined) perfil.verificadoVehiculo  = verificadoVehiculo;
+        }
+      });
       if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado' });
-
-      const estadoAnterior = perfil.estado;
-      perfil.estado = nuevoEstado;
-      perfil.fechaCambioEstado = new Date().toISOString();
-      if (nuevoEstado === 'aprobado') {
-        perfil.terminosAceptados = perfil.terminosAceptados || false;
-        // Setear verificaciones si se pasan explícitamente
-        if (verificadoIdentidad !== undefined) perfil.verificadoIdentidad = verificadoIdentidad;
-        if (verificadoVehiculo  !== undefined) perfil.verificadoVehiculo  = verificadoVehiculo;
-      }
-      await setJSON(`mudancero:perfil:${email}`, perfil);
 
       // Si se acaba de aprobar → mandar email de alta con link de términos
       if (nuevoEstado === 'aprobado' && estadoAnterior !== 'aprobado') {
@@ -2718,13 +2724,15 @@ module.exports = async function handler(req, res) {
         return res.status(401).json({ error: 'Token inválido' });
       }
       const todos = await getJSON('mudanceros:todos') || [];
+      const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
       var actualizados = [];
       for (const email of todos) {
-        const perfil = await getJSON(`mudancero:perfil:${email}`);
-        if (!perfil || perfil.estado !== 'aprobado') continue;
-        perfil.verificadoIdentidad = true;
-        perfil.verificadoVehiculo  = true;
-        await setJSON(`mudancero:perfil:${email}`, perfil);
+        const previo = await getJSON(`mudancero:perfil:${email}`);
+        if (!previo || previo.estado !== 'aprobado') continue;
+        await actualizarPerfilMudancero(email, function(perfil) {
+          perfil.verificadoIdentidad = true;
+          perfil.verificadoVehiculo  = true;
+        });
         actualizados.push(email);
       }
       return res.status(200).json({ ok: true, actualizados });
@@ -2846,12 +2854,13 @@ module.exports = async function handler(req, res) {
       if (!token) return res.status(400).json({ error: 'Falta token' });
       const datos = await getJSON(`terminos:token:${token}`);
       if (!datos) return res.status(400).json({ error: 'Token inválido o expirado' });
-      const perfil = await getJSON(`mudancero:perfil:${datos.email}`);
+      const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+      const perfil = await actualizarPerfilMudancero(datos.email, function(perfil) {
+        perfil.terminosAceptados   = true;
+        perfil.fechaAceptoTerminos = new Date().toISOString();
+        perfil.versionTerminos     = '1.0';
+      });
       if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
-      perfil.terminosAceptados   = true;
-      perfil.fechaAceptoTerminos = new Date().toISOString();
-      perfil.versionTerminos     = '1.0';
-      await setJSON(`mudancero:perfil:${datos.email}`, perfil);
       await redisCall('DEL', `terminos:token:${token}`);
 
       // ── Notificar al admin que se firmaron los TyC ──────────────────
@@ -3164,12 +3173,13 @@ module.exports = async function handler(req, res) {
       const { token, email, trabajosCompletados, calificacion, nroResenas } = req.body;
       if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       if (!email) return res.status(400).json({ error: 'Falta email' });
-      const perfil = await getJSON(`mudancero:perfil:${email}`);
+      const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+      const perfil = await actualizarPerfilMudancero(email, function(perfil) {
+        if (trabajosCompletados !== undefined) perfil.trabajosCompletados = parseInt(trabajosCompletados);
+        if (calificacion !== undefined) perfil.calificacion = parseFloat(calificacion);
+        if (nroResenas !== undefined) perfil.nroResenas = parseInt(nroResenas);
+      });
       if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
-      if (trabajosCompletados !== undefined) perfil.trabajosCompletados = parseInt(trabajosCompletados);
-      if (calificacion !== undefined) perfil.calificacion = parseFloat(calificacion);
-      if (nroResenas !== undefined) perfil.nroResenas = parseInt(nroResenas);
-      await setJSON(`mudancero:perfil:${email}`, perfil);
       return res.status(200).json({ ok: true, trabajosCompletados: perfil.trabajosCompletados, calificacion: perfil.calificacion, nroResenas: perfil.nroResenas });
     }
 
@@ -3182,18 +3192,20 @@ module.exports = async function handler(req, res) {
       if (!m.calificado || !m.estrellas) return res.status(400).json({ error: 'Mudanza no tiene calificación' });
       const cot = m.cotizacionAceptada;
       if (!cot || !cot.mudanceroEmail) return res.status(400).json({ error: 'No hay cotización aceptada' });
-      const perfil = await getJSON(`mudancero:perfil:${cot.mudanceroEmail}`);
+      const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+      let yaExistia = false;
+      const perfil = await actualizarPerfilMudancero(cot.mudanceroEmail, function(perfil) {
+        if (!perfil.resenas) perfil.resenas = [];
+        // Evitar duplicados
+        if (perfil.resenas.find(function(r){ return r.mudanzaId === mudanzaId; })) { yaExistia = true; return; }
+        perfil.resenas.push({ estrellas: m.estrellas, comentario: m.comentario || '', fecha: m.fechaCalificacion, mudanzaId });
+        perfil.promedioEstrellas = Math.round((perfil.resenas.reduce((a, r) => a + r.estrellas, 0) / perfil.resenas.length) * 10) / 10;
+        perfil.calificacion = perfil.promedioEstrellas;
+        perfil.nroResenas = perfil.resenas.length;
+        perfil.trabajosCompletados = (perfil.trabajosCompletados || 0) + 1;
+      });
       if (!perfil) return res.status(404).json({ error: 'Perfil mudancero no encontrado' });
-      if (!perfil.resenas) perfil.resenas = [];
-      // Evitar duplicados
-      const yaExiste = perfil.resenas.find(function(r){ return r.mudanzaId === mudanzaId; });
-      if (yaExiste) return res.status(200).json({ ok: true, msg: 'La reseña ya estaba guardada', resenas: perfil.resenas.length });
-      perfil.resenas.push({ estrellas: m.estrellas, comentario: m.comentario || '', fecha: m.fechaCalificacion, mudanzaId });
-      perfil.promedioEstrellas = Math.round((perfil.resenas.reduce((a, r) => a + r.estrellas, 0) / perfil.resenas.length) * 10) / 10;
-      perfil.calificacion = perfil.promedioEstrellas;
-      perfil.nroResenas = perfil.resenas.length;
-      perfil.trabajosCompletados = (perfil.trabajosCompletados || 0) + 1;
-      await setJSON(`mudancero:perfil:${cot.mudanceroEmail}`, perfil);
+      if (yaExistia) return res.status(200).json({ ok: true, msg: 'La reseña ya estaba guardada', resenas: perfil.resenas.length });
       return res.status(200).json({ ok: true, msg: 'Reseña guardada', estrellas: m.estrellas, mudancero: cot.mudanceroEmail, resenas: perfil.resenas.length });
     }
 

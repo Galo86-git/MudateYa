@@ -94,8 +94,11 @@ async function intentar(email) {
   const r = evaluar(p);
   if (r.accion !== 'aprobar') return r;
   if (!activo()) return { accion: 'aprobaria', motivos: [] };
-  await aprobarEnObjeto(p);
-  await setJSON(`mudancero:perfil:${email}`, p);
+  // Con lock (_perfil-mudancero.js): aprobarEnObjeto muta la copia fresca
+  // leída adentro del lock, no la `p` de arriba (que solo sirvió para decidir).
+  const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+  const guardado = await actualizarPerfilMudancero(email, aprobarEnObjeto);
+  if (!guardado) return { accion: 'skip' };
   return { accion: 'aprobado' };
 }
 

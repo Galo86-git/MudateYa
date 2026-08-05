@@ -2027,6 +2027,7 @@ function confirmarAccion(opts) {
                 <div class="precio-row-mc"><span class="precio-label-mc">2 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-esc-p2" placeholder="90.000"/></div></div>
                 <div class="precio-row-mc"><span class="precio-label-mc">3 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-esc-p3" placeholder="135.000"/></div></div>
                 <div class="precio-row-mc"><span class="precio-label-mc">4+ ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-esc-p4" placeholder="180.000"/></div></div>
+                <textarea id="pf-esc-desc" rows="2" maxlength="300" placeholder="Qué incluye tu Esencial (se precarga solo al cotizar, podés editarlo por pedido)" style="width:100%;margin-top:8px;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;color:var(--text);background:#fff;outline:none;resize:vertical"></textarea>
               </div>
             </div>
 
@@ -2045,6 +2046,7 @@ function confirmarAccion(opts) {
                 <div class="precio-row-mc"><span class="precio-label-mc">2 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-int-p2" placeholder="135.000"/></div></div>
                 <div class="precio-row-mc"><span class="precio-label-mc">3 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-int-p3" placeholder="200.000"/></div></div>
                 <div class="precio-row-mc"><span class="precio-label-mc">4+ ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-int-p4" placeholder="270.000"/></div></div>
+                <textarea id="pf-int-desc" rows="2" maxlength="300" placeholder="Qué incluye tu Integral (se precarga solo al cotizar, podés editarlo por pedido)" style="width:100%;margin-top:8px;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;color:var(--text);background:#fff;outline:none;resize:vertical"></textarea>
               </div>
             </div>
 
@@ -2063,6 +2065,7 @@ function confirmarAccion(opts) {
                 <div class="precio-row-mc"><span class="precio-label-mc">2 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-llv-p2" placeholder="200.000"/></div></div>
                 <div class="precio-row-mc"><span class="precio-label-mc">3 ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-llv-p3" placeholder="305.000"/></div></div>
                 <div class="precio-row-mc"><span class="precio-label-mc">4+ ambientes</span><div class="precio-input-wrap-mc"><span class="precio-prefix-mc">$</span><input class="precio-input-mc" type="text" inputmode="numeric" oninput="formatearPrecioInput(this)" id="pf-llv-p4" placeholder="405.000"/></div></div>
+                <textarea id="pf-llv-desc" rows="2" maxlength="300" placeholder="Qué incluye tu Llave en mano (se precarga solo al cotizar, podés editarlo por pedido)" style="width:100%;margin-top:8px;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;color:var(--text);background:#fff;outline:none;resize:vertical"></textarea>
               </div>
             </div>
 
@@ -4669,6 +4672,13 @@ function abrirCotizacion(mudanza){
     return 0;
   }
 
+  // Descripción predeterminada del pack (cargada en el perfil) — se precarga
+  // en la nota al cotizar, editable por el mudancero para ese pedido puntual.
+  function _notaPredetPorNivel(nivel) {
+    if (nivel === 'flete') return '';
+    return perfilRedis['nota' + nivel.charAt(0).toUpperCase() + nivel.slice(1)] || '';
+  }
+
   // Determinar qué packs ofrece el mudancero
   var serviciosActivos = Array.isArray(perfilRedis.serviciosActivos) ? perfilRedis.serviciosActivos : null;
   var packsDisponibles = []; // niveles que el mudancero puede ofrecer
@@ -4698,8 +4708,10 @@ function abrirCotizacion(mudanza){
     var pBase = _precioBasePorNivel(nivel);
     var esElPedido = (nivel === nivelPedido);
     var sinPrecio = (pBase === 0);
-    // Activar por default solo el pack pedido
-    var activado = esElPedido;
+    // Activar por default solo el pack pedido — salvo que el cliente haya
+    // tildado "comparar los 3 niveles" al publicar: ahí vienen los 3 activados
+    // de una (el precio de cada uno se pre-llena igual, vía _precioBasePorNivel).
+    var activado = esElPedido || (mudanza.compararNiveles === true && nivel !== 'flete');
     // Highlight del pack pedido por el cliente
     var bordeHL = esElPedido ? cfg.color : '#E2E8F0';
     var bgHL = esElPedido ? cfg.color + '08' : '#fff';
@@ -4725,7 +4737,7 @@ function abrirCotizacion(mudanza){
       +     'style="width:100%;padding:10px 12px 10px 24px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px;font-family:var(--mono);color:var(--text);background:#fff;outline:none;font-weight:600" '
       +     'oninput="formatearPrecioInput(this);_recalcularTotalCot()"/></div>'
       + (sinPrecio?'<div style="font-size:10.5px;color:#F59E0B;font-family:var(--mono);margin-bottom:4px">⚠ No tenés precio cargado para '+cfg.nombre+' — ingresalo o cargalo en tu perfil</div>':'')
-      +   '<input type="text" id="pp-nota-'+nivel+'" placeholder="Nota específica para este pack (opcional)" '
+      +   '<input type="text" id="pp-nota-'+nivel+'" value="'+esc(_notaPredetPorNivel(nivel))+'" placeholder="Nota específica para este pack (opcional)" '
       +     'style="width:100%;padding:8px 10px;border:1px solid #E2E8F0;border-radius:7px;font-size:11.5px;font-family:Inter,sans-serif;color:var(--text);background:#fff;outline:none"/>'
       + '</div>'
       + '</div>';
@@ -4734,8 +4746,13 @@ function abrirCotizacion(mudanza){
   // El cliente ya eligio su pack al publicar: se cotiza ESE, no un menu de tres.
   // Ofrecerle alternativas lo obliga a volver a decidir algo que ya decidio, y
   // convierte una comparacion de precios entre mudanceros en una de packs.
-  packsDisponibles = packsDisponibles.filter(function(n){ return n === nivelPedido; });
-  if (packsDisponibles.length === 0) packsDisponibles = [nivelPedido];
+  // EXCEPCIÓN: si tildó "comparar los 3 niveles" al publicar, es justo lo que
+  // pidió — ahí sí se dejan los 3 packs disponibles (cada uno pre-tildado,
+  // ver _renderPackCard) para que el mudancero cotice los que quiera.
+  if (!(mudanza.compararNiveles === true && nivelPedido !== 'flete')) {
+    packsDisponibles = packsDisponibles.filter(function(n){ return n === nivelPedido; });
+    if (packsDisponibles.length === 0) packsDisponibles = [nivelPedido];
+  }
 
   var packsHTML = packsDisponibles.map(_renderPackCard).join('<div style="height:8px"></div>');
 
@@ -5604,6 +5621,10 @@ async function cargarPreciosLeads(){
     } else {
       setVal('pf-llv-p1',''); setVal('pf-llv-p2',''); setVal('pf-llv-p3',''); setVal('pf-llv-p4','');
     }
+    // Descripción predeterminada por pack
+    setVal('pf-esc-desc', p.notaEsencial || '');
+    setVal('pf-int-desc', p.notaIntegral || '');
+    setVal('pf-llv-desc', p.notaLlave    || '');
     // Flete
     if (p.precioFleteNuevo) {
       setVal('pf-flt-p', fmtP(p.precioFleteNuevo));
@@ -6235,6 +6256,10 @@ async function guardarPerfil(){
     preciosIntegral: preciosIntegral,
     preciosLlave: preciosLlave,
     precioFleteNuevo: precioFleteNuevo,
+    // Descripción predeterminada por pack (se precarga sola al cotizar)
+    notaEsencial: (document.getElementById('pf-esc-desc').value || '').trim(),
+    notaIntegral: (document.getElementById('pf-int-desc').value || '').trim(),
+    notaLlave:    (document.getElementById('pf-llv-desc').value || '').trim(),
     // Fotos y documentación: URLs de Vercel Blob (subidas en pfOnFotoPerfil/pfOnDNIUpload/pfOnFotosVehiculo)
     foto:          _pfUrlPerfil    || mudanceroPerfilRedis && mudanceroPerfilRedis.foto || '',
     fotoCamion:    (_pfUrlsVehiculo.filter(Boolean)[0]) || '',

@@ -110,15 +110,18 @@ module.exports = async function handler(req, res) {
       }
 
       var baneados = [];
+      var { actualizarPerfilMudancero } = require('./_perfil-mudancero');
       for (var i = 0; i < hallazgos.length; i++) {
         var h = hallazgos[i];
         try {
-          var perfil = await getJSON('mudancero:perfil:' + h.email);
-          if (!perfil || perfil.estado === 'rechazado') continue;
-          perfil.estado = 'rechazado';
-          perfil.fechaCambioEstado = new Date().toISOString();
-          perfil.motivoRechazo = 'Datos de contacto (email o teléfono) detectados en la descripción del perfil — viola la política de no intermediación.';
-          await setJSON('mudancero:perfil:' + h.email, perfil);
+          var previo = await getJSON('mudancero:perfil:' + h.email);
+          if (!previo || previo.estado === 'rechazado') continue;
+          var perfil = await actualizarPerfilMudancero(h.email, function (perfil) {
+            perfil.estado = 'rechazado';
+            perfil.fechaCambioEstado = new Date().toISOString();
+            perfil.motivoRechazo = 'Datos de contacto (email o teléfono) detectados en la descripción del perfil — viola la política de no intermediación.';
+          });
+          if (!perfil) continue;
           try { await avisarBaneo(perfil); } catch (e) { console.warn('Email baneo ' + h.email + ':', e.message); }
           baneados.push(h.email);
         } catch (e) { console.warn('Banear ' + h.email + ':', e.message); }

@@ -192,8 +192,10 @@ module.exports = async function handler(req, res) {
               out.fallidos++;
               detalle.fallidos.push({ email, nombre: p.nombre || '', falta: faltaTxt, motivo: 'WhatsApp: ' + (rWA.motivo || 'no se pudo enviar') });
             } else {
-              p.recordatorioPerfil = { enviadoEn: new Date().toISOString(), hash };
-              await setJSON(`mudancero:perfil:${email}`, p);
+              const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+              await actualizarPerfilMudancero(email, function(perfil) {
+                perfil.recordatorioPerfil = { enviadoEn: new Date().toISOString(), hash };
+              });
               out.incompletos++;
               detalle.enviados.push({ email, nombre: p.nombre || '', falta: faltaTxt, wa: rWA.enviado ? (rWA.via || 'ok') : ('WA falló: ' + (rWA.motivo || '?')) });
             }
@@ -221,8 +223,10 @@ module.exports = async function handler(req, res) {
               subject: `${(p.nombre || '').split(' ')[0] || 'Hola'}, hace rato no te vemos — hay pedidos en tu zona`,
               html: emailReactivar(p),
             });
-            p.reactivacionMudancero = { enviadoEn: new Date().toISOString(), diasInactivo: dias };
-            await setJSON(`mudancero:perfil:${email}`, p);
+            const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+            await actualizarPerfilMudancero(email, function(perfil) {
+              perfil.reactivacionMudancero = { enviadoEn: new Date().toISOString(), diasInactivo: dias };
+            });
             out.reactivados++;
             detalle.reactivados.push({ email, nombre: p.nombre || '', diasInactivo: dias });
           } catch (e) {

@@ -259,10 +259,14 @@ module.exports = async function handler(req, res) {
           subject: mail.subject,
           html:    mail.html,
         });
-        // Registrar en Redis para no duplicar
-        perfil.recordatoriosEnviados = enviados.concat([cual]);
-        perfil.ultimoRecordatorioOnboarding = new Date().toISOString();
-        await setJSON(key, perfil);
+        // Registrar en Redis para no duplicar (con lock: ver _perfil-mudancero.js —
+        // evita pisar un guardado de perfil concurrente, ej. si el mudancero está
+        // completando su perfil justo cuando corre este cron)
+        var cualEnviado = cual;
+        await require('./_perfil-mudancero').actualizarPerfilMudancero(perfil.email, function(p) {
+          p.recordatoriosEnviados = (p.recordatoriosEnviados || []).concat([cualEnviado]);
+          p.ultimoRecordatorioOnboarding = new Date().toISOString();
+        });
         // Nudge por WhatsApp en paralelo al mail (no bloquea si falla).
         try { await nudgeWhatsApp(perfil, cual); } catch(e) { /* ya logueado adentro */ }
         resumen.enviados[cual]++;

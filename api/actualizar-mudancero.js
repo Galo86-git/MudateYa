@@ -2,6 +2,7 @@
 // Actualiza datos y fotos del mudancero en Redis + Vercel Blob
 
 const { put } = require('@vercel/blob');
+const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
 
 async function redisCall(method, ...args) {
   const url   = process.env.UPSTASH_REDIS_REST_URL;
@@ -143,102 +144,114 @@ module.exports = async function handler(req, res) {
       dniAnalisisData = data.dniAnalisis || dniAnalisisData;
     }
 
-    // Actualizar campos del perfil
-    const actualizado = Object.assign({}, perfil, {
-      nombre:       data.nombre       || perfil.nombre,
-      empresa:      data.empresa      !== undefined ? data.empresa : perfil.empresa,
-      telefono:     data.telefono     || perfil.telefono,
-      zonaBase:     data.zonaBase     || perfil.zonaBase,
-      zonasExtra:   data.zonasExtra   !== undefined ? data.zonasExtra : perfil.zonasExtra,
-      vehiculo:     data.vehiculo     || perfil.vehiculo,
-      cantVehiculos:data.cantVehiculos|| perfil.cantVehiculos,
-      equipo:       data.equipo       || perfil.equipo,
-      servicios:    data.servicios    !== undefined ? data.servicios : perfil.servicios,
-      dias:         data.dias         !== undefined ? data.dias : perfil.dias,
-      horarios:     data.horarios     !== undefined ? data.horarios : perfil.horarios,
-      anticipacion: data.anticipacion || perfil.anticipacion,
-      extra:        data.extra        !== undefined ? data.extra : perfil.extra,
-      sinEstres:    data.sinEstres    !== undefined ? data.sinEstres : perfil.sinEstres,
-      sitioWeb:     data.sitioWeb     !== undefined ? data.sitioWeb : perfil.sitioWeb,
-      metodoCobro:  data.metodoCobro  || perfil.metodoCobro,
-      // Cómo cobra / cómo aparece el precio en el sitio: 'fijo' | 'porHora'.
-      // Lo elige el mudancero (obligatorio). Se preserva si no viene en el update.
-      tipoCobro:    data.tipoCobro    !== undefined ? data.tipoCobro : (perfil.tipoCobro || ''),
-      cbu:          data.cbu          !== undefined ? data.cbu : perfil.cbu,
-      emailMP:      data.emailMP      !== undefined ? data.emailMP : perfil.emailMP,
-      titularCuenta:data.titularCuenta!== undefined ? data.titularCuenta : perfil.titularCuenta,
-      // ── Modelo nuevo: niveles de servicio + precios por nivel ──
-      // Se guardan en Redis para que el catálogo público los vea.
-      serviciosActivos: Array.isArray(data.serviciosActivos)
-        ? data.serviciosActivos
-        : (perfil.serviciosActivos || null),
-      seguroMudanza:    data.seguroMudanza !== undefined ? !!data.seguroMudanza : !!perfil.seguroMudanza,
-      preciosEsencial:  data.preciosEsencial !== undefined ? data.preciosEsencial : (perfil.preciosEsencial || null),
-      preciosIntegral:  data.preciosIntegral !== undefined ? data.preciosIntegral : (perfil.preciosIntegral || null),
-      preciosLlave:     data.preciosLlave    !== undefined ? data.preciosLlave    : (perfil.preciosLlave    || null),
-      precioFleteNuevo: data.precioFleteNuevo!== undefined ? data.precioFleteNuevo: (perfil.precioFleteNuevo|| ''),
-      precios: {
-        amb1: data.precio1amb || perfil.precios?.amb1 || '',
-        amb2: data.precio2amb || perfil.precios?.amb2 || '',
-        amb3: data.precio3amb || perfil.precios?.amb3 || '',
-        amb4: data.precio4amb || perfil.precios?.amb4 || '',
-        flete:data.precioFlete|| perfil.precios?.flete|| '',
-        porKm:data.precioPorKm!== undefined ? data.precioPorKm : (perfil.precios?.porKm || ''),
-      },
-      // Precios para Leads Plan Referidos Inmobiliarios (25% comisión)
-      // Estructura: 5 tamaños × 3 packs. Cada nivel guardado como número (0 si vacío).
-      // Si data.preciosLeads viene → reemplaza el bloque entero.
-      // Si no viene → preserva lo que ya estaba en Redis (no rompe).
-      preciosLeads: data.preciosLeads !== undefined ? data.preciosLeads : (perfil.preciosLeads || {
-        amb1:    { esencial: 0, integral: 0, llave: 0 },
-        amb2:    { esencial: 0, integral: 0, llave: 0 },
-        amb3:    { esencial: 0, integral: 0, llave: 0 },
-        amb4:    { esencial: 0, integral: 0, llave: 0 },
-        amb5plus:{ esencial: 0, integral: 0, llave: 0 }
-      }),
-      foto:          fotoUrl,
-      fotoCamion:    fotoCamionUrl,
-      fotosVehiculo: fotosVehUrls,
-      dniFrente:     dniFrenteUrl,
-      dniDorso:      dniDorsoUrl,
-      dniAnalisis:   dniAnalisisData,
-      ultimaActualizacion: new Date().toISOString(),
-    });
+    // ── Actualizar campos del perfil, con LOCK ──────────────────────────
+    // actualizarPerfilMudancero() vuelve a leer el perfil de Redis DENTRO
+    // del lock (perfilFresco) — es la copia que hace de base del merge, no
+    // la `perfil` de más arriba (que pudo quedar vieja mientras se subían
+    // las fotos). Así, si otra escritura (cotizar, cron, admin) tocó el
+    // perfil mientras tanto, no la pisamos con una copia stale y viceversa.
+    var actualizado = await actualizarPerfilMudancero(data.email, function(perfilFresco) {
+      Object.assign(perfilFresco, {
+        nombre:       data.nombre       || perfilFresco.nombre,
+        empresa:      data.empresa      !== undefined ? data.empresa : perfilFresco.empresa,
+        telefono:     data.telefono     || perfilFresco.telefono,
+        zonaBase:     data.zonaBase     || perfilFresco.zonaBase,
+        zonasExtra:   data.zonasExtra   !== undefined ? data.zonasExtra : perfilFresco.zonasExtra,
+        vehiculo:     data.vehiculo     || perfilFresco.vehiculo,
+        cantVehiculos:data.cantVehiculos|| perfilFresco.cantVehiculos,
+        equipo:       data.equipo       || perfilFresco.equipo,
+        servicios:    data.servicios    !== undefined ? data.servicios : perfilFresco.servicios,
+        dias:         data.dias         !== undefined ? data.dias : perfilFresco.dias,
+        horarios:     data.horarios     !== undefined ? data.horarios : perfilFresco.horarios,
+        anticipacion: data.anticipacion || perfilFresco.anticipacion,
+        extra:        data.extra        !== undefined ? data.extra : perfilFresco.extra,
+        sinEstres:    data.sinEstres    !== undefined ? data.sinEstres : perfilFresco.sinEstres,
+        sitioWeb:     data.sitioWeb     !== undefined ? data.sitioWeb : perfilFresco.sitioWeb,
+        metodoCobro:  data.metodoCobro  || perfilFresco.metodoCobro,
+        // Cómo cobra / cómo aparece el precio en el sitio: 'fijo' | 'porHora'.
+        // Lo elige el mudancero (obligatorio). Se preserva si no viene en el update.
+        tipoCobro:    data.tipoCobro    !== undefined ? data.tipoCobro : (perfilFresco.tipoCobro || ''),
+        cbu:          data.cbu          !== undefined ? data.cbu : perfilFresco.cbu,
+        emailMP:      data.emailMP      !== undefined ? data.emailMP : perfilFresco.emailMP,
+        titularCuenta:data.titularCuenta!== undefined ? data.titularCuenta : perfilFresco.titularCuenta,
+        // ── Modelo nuevo: niveles de servicio + precios por nivel ──
+        // Se guardan en Redis para que el catálogo público los vea.
+        serviciosActivos: Array.isArray(data.serviciosActivos)
+          ? data.serviciosActivos
+          : (perfilFresco.serviciosActivos || null),
+        seguroMudanza:    data.seguroMudanza !== undefined ? !!data.seguroMudanza : !!perfilFresco.seguroMudanza,
+        preciosEsencial:  data.preciosEsencial !== undefined ? data.preciosEsencial : (perfilFresco.preciosEsencial || null),
+        preciosIntegral:  data.preciosIntegral !== undefined ? data.preciosIntegral : (perfilFresco.preciosIntegral || null),
+        preciosLlave:     data.preciosLlave    !== undefined ? data.preciosLlave    : (perfilFresco.preciosLlave    || null),
+        precioFleteNuevo: data.precioFleteNuevo!== undefined ? data.precioFleteNuevo: (perfilFresco.precioFleteNuevo|| ''),
+        // Descripción predeterminada de cada pack (qué incluye) — se precarga sola
+        // en la nota al cotizar, para no tipearla de cero en cada pedido.
+        notaEsencial:     data.notaEsencial !== undefined ? String(data.notaEsencial).slice(0,300) : (perfilFresco.notaEsencial || ''),
+        notaIntegral:     data.notaIntegral !== undefined ? String(data.notaIntegral).slice(0,300) : (perfilFresco.notaIntegral || ''),
+        notaLlave:        data.notaLlave    !== undefined ? String(data.notaLlave).slice(0,300)    : (perfilFresco.notaLlave    || ''),
+        precios: {
+          amb1: data.precio1amb || perfilFresco.precios?.amb1 || '',
+          amb2: data.precio2amb || perfilFresco.precios?.amb2 || '',
+          amb3: data.precio3amb || perfilFresco.precios?.amb3 || '',
+          amb4: data.precio4amb || perfilFresco.precios?.amb4 || '',
+          flete:data.precioFlete|| perfilFresco.precios?.flete|| '',
+          porKm:data.precioPorKm!== undefined ? data.precioPorKm : (perfilFresco.precios?.porKm || ''),
+        },
+        // Precios para Leads Plan Referidos Inmobiliarios (25% comisión)
+        // Estructura: 5 tamaños × 3 packs. Cada nivel guardado como número (0 si vacío).
+        // Si data.preciosLeads viene → reemplaza el bloque entero.
+        // Si no viene → preserva lo que ya estaba en Redis (no rompe).
+        preciosLeads: data.preciosLeads !== undefined ? data.preciosLeads : (perfilFresco.preciosLeads || {
+          amb1:    { esencial: 0, integral: 0, llave: 0 },
+          amb2:    { esencial: 0, integral: 0, llave: 0 },
+          amb3:    { esencial: 0, integral: 0, llave: 0 },
+          amb4:    { esencial: 0, integral: 0, llave: 0 },
+          amb5plus:{ esencial: 0, integral: 0, llave: 0 }
+        }),
+        foto:          fotoUrl,
+        fotoCamion:    fotoCamionUrl,
+        fotosVehiculo: fotosVehUrls,
+        dniFrente:     dniFrenteUrl,
+        dniDorso:      dniDorsoUrl,
+        dniAnalisis:   dniAnalisisData,
+        ultimaActualizacion: new Date().toISOString(),
+      });
 
-    // ── AUTO-PROMOTE de pre-registrado → completo ──
-    // Si el perfil cumple los requisitos mínimos para empezar a recibir pedidos,
-    // marcamos estadoOnboarding='completo' para que desaparezca el badge "Pre-reg" en admin.
-    // El estado de aprobación (pendiente_revision/aprobado/rechazado) NO cambia acá; eso lo
-    // sigue manejando el admin manualmente.
-    function _toNum(v) {
-      if (v === null || v === undefined || v === '') return 0;
-      return parseInt(String(v).replace(/\./g,'').replace(/[^0-9]/g,''), 10) || 0;
-    }
-    function _packTienePrecio(pk) {
-      if (!pk || typeof pk !== 'object') return false;
-      return _toNum(pk.amb1) > 0 || _toNum(pk.amb2) > 0 || _toNum(pk.amb3) > 0 || _toNum(pk.amb4) > 0;
-    }
-    var sa = Array.isArray(actualizado.serviciosActivos) ? actualizado.serviciosActivos : [];
-    var algunPrecio =
-      (sa.indexOf('esencial') !== -1 && _packTienePrecio(actualizado.preciosEsencial)) ||
-      (sa.indexOf('integral') !== -1 && _packTienePrecio(actualizado.preciosIntegral)) ||
-      (sa.indexOf('llave')    !== -1 && _packTienePrecio(actualizado.preciosLlave)) ||
-      (sa.indexOf('flete')    !== -1 && _toNum(actualizado.precioFleteNuevo) > 0);
-    var tieneVehiculo  = !!actualizado.vehiculo;
-    var tieneFotoVeh   = (Array.isArray(actualizado.fotosVehiculo) && actualizado.fotosVehiculo.filter(Boolean).length > 0) || !!actualizado.fotoCamion;
-    var tieneDni       = !!actualizado.dniFrente;
-    var tieneCobro     = !!actualizado.cbu || !!actualizado.emailMP;
-    var tieneTipoCobro = actualizado.tipoCobro === 'fijo' || actualizado.tipoCobro === 'porHora';
-
-    if (tieneVehiculo && algunPrecio && tieneFotoVeh && tieneDni && tieneCobro && tieneTipoCobro) {
-      actualizado.estadoOnboarding = 'completo';
-      // Si era pre-registrado, registramos cuándo completó el onboarding
-      if (perfil.estadoOnboarding === 'pre-registrado') {
-        actualizado.fechaCompletoOnboarding = new Date().toISOString();
+      // ── AUTO-PROMOTE de pre-registrado → completo ──
+      // Si el perfil cumple los requisitos mínimos para empezar a recibir pedidos,
+      // marcamos estadoOnboarding='completo' para que desaparezca el badge "Pre-reg" en admin.
+      // El estado de aprobación (pendiente_revision/aprobado/rechazado) NO cambia acá; eso lo
+      // sigue manejando el admin manualmente.
+      function _toNum(v) {
+        if (v === null || v === undefined || v === '') return 0;
+        return parseInt(String(v).replace(/\./g,'').replace(/[^0-9]/g,''), 10) || 0;
       }
-    }
+      function _packTienePrecio(pk) {
+        if (!pk || typeof pk !== 'object') return false;
+        return _toNum(pk.amb1) > 0 || _toNum(pk.amb2) > 0 || _toNum(pk.amb3) > 0 || _toNum(pk.amb4) > 0;
+      }
+      var estadoOnboardingPrevio = perfilFresco.estadoOnboarding;
+      var sa = Array.isArray(perfilFresco.serviciosActivos) ? perfilFresco.serviciosActivos : [];
+      var algunPrecio =
+        (sa.indexOf('esencial') !== -1 && _packTienePrecio(perfilFresco.preciosEsencial)) ||
+        (sa.indexOf('integral') !== -1 && _packTienePrecio(perfilFresco.preciosIntegral)) ||
+        (sa.indexOf('llave')    !== -1 && _packTienePrecio(perfilFresco.preciosLlave)) ||
+        (sa.indexOf('flete')    !== -1 && _toNum(perfilFresco.precioFleteNuevo) > 0);
+      var tieneVehiculo  = !!perfilFresco.vehiculo;
+      var tieneFotoVeh   = (Array.isArray(perfilFresco.fotosVehiculo) && perfilFresco.fotosVehiculo.filter(Boolean).length > 0) || !!perfilFresco.fotoCamion;
+      var tieneDni       = !!perfilFresco.dniFrente;
+      var tieneCobro     = !!perfilFresco.cbu || !!perfilFresco.emailMP;
+      var tieneTipoCobro = perfilFresco.tipoCobro === 'fijo' || perfilFresco.tipoCobro === 'porHora';
 
-    await setJSON(`mudancero:perfil:${data.email}`, actualizado);
+      if (tieneVehiculo && algunPrecio && tieneFotoVeh && tieneDni && tieneCobro && tieneTipoCobro) {
+        perfilFresco.estadoOnboarding = 'completo';
+        // Si era pre-registrado, registramos cuándo completó el onboarding
+        if (estadoOnboardingPrevio === 'pre-registrado') {
+          perfilFresco.fechaCompletoOnboarding = new Date().toISOString();
+        }
+      }
+    });
+    if (!actualizado) return res.status(404).json({ error: 'Perfil no encontrado' });
 
     // Índice teléfono→mudancero para reconocimiento instantáneo en el bot de WhatsApp.
     try {

@@ -223,17 +223,18 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // 1. Actualizar estado en Redis
-    const perfil = await getJSON(`mudancero:perfil:${email}`);
+    // 1. Actualizar estado en Redis (con lock: ver _perfil-mudancero.js)
+    const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+    let estadoAnterior;
+    const perfil = await actualizarPerfilMudancero(email, function(perfil) {
+      estadoAnterior = perfil.estado;
+      perfil.estado = nuevoEstado.toLowerCase() === 'aprobado' ? 'aprobado' : 'rechazado';
+      perfil.fechaCambioEstado = new Date().toISOString();
+      if (nuevoEstado.toLowerCase() === 'aprobado') {
+        perfil.terminosAceptados = false; // Se activa cuando acepta el link
+      }
+    });
     if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado en Redis' });
-
-    const estadoAnterior = perfil.estado;
-    perfil.estado = nuevoEstado.toLowerCase() === 'aprobado' ? 'aprobado' : 'rechazado';
-    perfil.fechaCambioEstado = new Date().toISOString();
-    if (nuevoEstado.toLowerCase() === 'aprobado') {
-      perfil.terminosAceptados = false; // Se activa cuando acepta el link
-    }
-    await setJSON(`mudancero:perfil:${email}`, perfil);
 
     // 2. Actualizar en Google Sheets
     try {

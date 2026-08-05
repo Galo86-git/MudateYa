@@ -52,11 +52,13 @@ module.exports = async function handler(req, res) {
       return res.status(200).send(paginaExito(perfil.nombre, true));
     }
 
-    // Registrar aceptación
-    perfil.terminosAceptados     = true;
-    perfil.fechaAceptoTerminos   = new Date().toISOString();
-    perfil.versionTerminos       = '1.0';
-    await setJSON(`mudancero:perfil:${email}`, perfil);
+    // Registrar aceptación (con lock: ver _perfil-mudancero.js)
+    const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+    await actualizarPerfilMudancero(email, function(perfil) {
+      perfil.terminosAceptados     = true;
+      perfil.fechaAceptoTerminos   = new Date().toISOString();
+      perfil.versionTerminos       = '1.0';
+    });
 
     // Invalidar token (borrar)
     await redisCall('DEL', `terminos:token:${token}`);

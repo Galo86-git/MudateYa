@@ -102,11 +102,21 @@ module.exports = async function handler(req, res) {
       p._motivos = motivos;
 
       if (accion === 'aprobar') {
-        aprobados.push(p);
         if (AUTO) {
-          await aprobarEnObjeto(p); // aprueba, saca de pendientes y manda el mail de alta
-          await setJSON(`mudancero:perfil:${email}`, p);
-          quedanPendientes = quedanPendientes.filter((e) => e !== email);
+          // Con lock (_perfil-mudancero.js): aprobarEnObjeto muta la copia
+          // FRESCA leída adentro del lock, no la `p` de más arriba — evita
+          // pisar un guardado concurrente (ej. el mudancero completando su
+          // perfil justo cuando corre este cron).
+          const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+          const guardado = await actualizarPerfilMudancero(email, async function(perfilFresco) {
+            await aprobarEnObjeto(perfilFresco); // aprueba, saca de pendientes y manda el mail de alta
+          });
+          if (guardado) {
+            aprobados.push(guardado);
+            quedanPendientes = quedanPendientes.filter((e) => e !== email);
+          }
+        } else {
+          aprobados.push(p);
         }
       } else if (accion === 'fraude') {
         fraude.push(p);

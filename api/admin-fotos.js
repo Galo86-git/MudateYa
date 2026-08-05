@@ -62,14 +62,13 @@ module.exports = async function handler(req, res) {
       var body = req.body;
       if (!body.email) return res.status(400).json({ error: 'Falta email' });
 
-      var perfil = await getJSON('mudancero:perfil:' + body.email);
+      var { actualizarPerfilMudancero } = require('./_perfil-mudancero');
+      var perfil = await actualizarPerfilMudancero(body.email, function(perfil) {
+        if (body.foto          !== undefined) perfil.foto          = body.foto;
+        if (body.fotoCamion    !== undefined) perfil.fotoCamion    = body.fotoCamion;
+        if (body.fotosVehiculo !== undefined) perfil.fotosVehiculo = body.fotosVehiculo;
+      });
       if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado' });
-
-      if (body.foto          !== undefined) perfil.foto          = body.foto;
-      if (body.fotoCamion    !== undefined) perfil.fotoCamion    = body.fotoCamion;
-      if (body.fotosVehiculo !== undefined) perfil.fotosVehiculo = body.fotosVehiculo;
-
-      await setJSON('mudancero:perfil:' + body.email, perfil);
       return res.status(200).json({ ok: true });
     } catch(e) {
       return res.status(500).json({ error: e.message });

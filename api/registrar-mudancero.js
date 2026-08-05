@@ -453,12 +453,16 @@ module.exports = async function handler(req, res) {
       horarios:     horarios     || '',
       anticipacion: anticipacion || '48 horas',
 
+      // Si es un reintento tras un rechazo (existente truthy acá abajo), y el
+      // form nuevo no mandó precios (típico de la alta corta 'tipoRegistro
+      // === corto'), preservamos los que ya tenía cargados en vez de
+      // pisarlos con vacío — antes se perdían para siempre en cada reintento.
       precios: {
-        amb1:  precio1amb  || '',
-        amb2:  precio2amb  || '',
-        amb3:  precio3amb  || '',
-        amb4:  precio4amb  || '',
-        flete: precioFlete || '',
+        amb1:  precio1amb  || (existente && existente.precios && existente.precios.amb1)  || '',
+        amb2:  precio2amb  || (existente && existente.precios && existente.precios.amb2)  || '',
+        amb3:  precio3amb  || (existente && existente.precios && existente.precios.amb3)  || '',
+        amb4:  precio4amb  || (existente && existente.precios && existente.precios.amb4)  || '',
+        flete: precioFlete || (existente && existente.precios && existente.precios.flete) || '',
       },
 
       // ── Modelo nuevo: packs por nivel ────────────────────────────────
@@ -471,24 +475,29 @@ module.exports = async function handler(req, res) {
         amb2: String(preciosEsencial.amb2 || ''),
         amb3: String(preciosEsencial.amb3 || ''),
         amb4: String(preciosEsencial.amb4 || ''),
-      } : null,
+      } : (existente && existente.preciosEsencial) || null,
       preciosIntegral:  (preciosIntegral && typeof preciosIntegral === 'object') ? {
         amb1: String(preciosIntegral.amb1 || ''),
         amb2: String(preciosIntegral.amb2 || ''),
         amb3: String(preciosIntegral.amb3 || ''),
         amb4: String(preciosIntegral.amb4 || ''),
-      } : null,
+      } : (existente && existente.preciosIntegral) || null,
       preciosLlave:     (preciosLlave && typeof preciosLlave === 'object') ? {
         amb1: String(preciosLlave.amb1 || ''),
         amb2: String(preciosLlave.amb2 || ''),
         amb3: String(preciosLlave.amb3 || ''),
         amb4: String(preciosLlave.amb4 || ''),
-      } : null,
-      precioFleteNuevo: String(precioFleteNuevo || ''),
+      } : (existente && existente.preciosLlave) || null,
+      precioFleteNuevo: String(precioFleteNuevo || (existente && existente.precioFleteNuevo) || ''),
+      notaEsencial: (existente && existente.notaEsencial) || '',
+      notaIntegral: (existente && existente.notaIntegral) || '',
+      notaLlave:    (existente && existente.notaLlave)    || '',
       // Lista de niveles que ofrece el mudancero. Filtrada contra valores válidos.
-      serviciosActivos: serviciosActivos.filter(function(s) {
-        return ['esencial','integral','llave','flete'].indexOf(s) !== -1;
-      }),
+      // Si es un reintento y el form nuevo no mandó ninguno (alta corta), se
+      // preserva lo que ya tenía activado en vez de vaciarlo.
+      serviciosActivos: serviciosActivos.length
+        ? serviciosActivos.filter(function(s) { return ['esencial','integral','llave','flete'].indexOf(s) !== -1; })
+        : (existente && Array.isArray(existente.serviciosActivos) ? existente.serviciosActivos : []),
       // Flag de seguro de mudanza (modelo nuevo). El admin lo puede toggle desde su panel.
       seguroMudanza:    seguroMudanza,
 

@@ -497,6 +497,8 @@ FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de est
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
+COMPARAR LOS 3 NIVELES: si el cliente quiere ver precios de Esencial, Integral y Llave en Mano para elegir entre las tres (no solo un nivel), marcá comparar_niveles:true al crear el pedido — así los mudanceros cotizan los 3 y el cliente los compara lado a lado. No lo ofrezcas de entrada como opción por defecto (la mayoría solo quiere un nivel), pero si pregunta "¿me pueden pasar los 3 precios?" o algo así, es justo para eso. No aplica a fletes (un solo precio).
+
 FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
 
 TIP ENTRE SEMANA: si NO es urgente y el cliente todavía no cerró un día fijo (dice "el finde", "el sábado", o pregunta "¿cuándo me conviene?"), mencioná una vez, con onda y sin insistir, que entre semana suele ser más barato y hay más mudanceros libres — algo en la línea de "Dato: si tenés margen, entre semana (mar-jue) sueles conseguir mejores precios y más mudanceros libres — ¿te cierra alguno de esos días, o va sí o sí el finde?". Si ya te dijo que tiene que ser un día puntual (por lo que sea), no insistas ni lo repitas.
@@ -629,6 +631,8 @@ Si es hoy, mañana, o en 1-2 días, marcá urgente:true — igual se publica nor
 
 FOTOS: siempre sugerí que el asesor mande alguna foto del lugar o de lo que hay que mudar, sea urgente o no — ayuda muchísimo a que el mudancero cotice más ajustado. No es obligatorio, así que si no tiene, seguí sin problema (no bloquees la carga por eso), pero preguntalo ("si tenés alguna foto del lugar, mandámela así el mudancero cotiza más afinado — si no tenés, no hay drama"). Las fotos que te mande el asesor en la conversación se adjuntan solas al pedido.
 
+COMPARAR LOS 3 NIVELES: si el asesor te pide presupuestos de Esencial, Integral y Llave en Mano (los 3, no uno solo) para que su cliente compare y elija, marcá comparar_niveles:true — los mudanceros van a poder cotizar los 3 niveles en un mismo presupuesto y el cliente los ve lado a lado para elegir. No hace falta armar 3 pedidos ni pedirlo de otra forma: es un solo pedido con esa marca. No aplica a flete.
+
 TIP ENTRE SEMANA: si el cliente todavía NO tiene un día fijo (el asesor te dice "el finde" o "todavía no sabe bien cuándo") y no es urgente, mencionalo una vez con onda, sin insistir: "Dato: si tu cliente tiene margen, entre semana (mar-jue) suele conseguir mejores precios y más mudanceros libres — ¿le cierra alguno de esos días, o va sí o sí el finde?". Si ya te dio un día puntual, no lo repitas.
 
 TIP DE AUDIO: podés recibir audios perfectamente. NO lo menciones en el primer mensaje — recién a partir del segundo o tercer intercambio, si el asesor te sigue tipeando todos los datos del cliente, mencionalo una vez con onda: algo como "Che, si te resulta más rápido también me podés mandar un audio con los datos del cliente — te entiendo igual 🎙️". Una sola vez por conversación.
@@ -709,6 +713,7 @@ const tools = [
         detalles: { type: 'string' },
         nombre: { type: 'string' },
         urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
+        comparar_niveles: { type: 'boolean', description: 'true si el cliente quiere que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para comparar precio por operador, en vez de uno solo. No aplica a flete.' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
     },
@@ -1174,6 +1179,7 @@ const asesorTools = [
         ambientes: { type: 'string', description: 'Cantidad de ambientes, si el cliente la mencionó (opcional)' },
         detalles: { type: 'string', description: 'Cualquier detalle extra que haya dado el cliente (opcional)' },
         urgente: { type: 'boolean', description: 'true si el cliente necesita mudarse hoy, mañana, o en 1-2 días — el pedido queda con ventana corta (3hs) y avisa al equipo al toque, en vez de esperar el flujo normal de 24hs.' },
+        comparar_niveles: { type: 'boolean', description: 'true si el asesor pidió que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para poder comparar precio por operador, en vez de uno solo. No aplica a flete.' },
       },
       required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha'],
     },
@@ -1257,6 +1263,7 @@ async function cargarPedidoReferido(input, asesor, fotos) {
         tipo: input.tipo || 'mudanza',
         tipoOperacion: input.tipo_operacion,
         urgente: !!input.urgente,
+        compararNiveles: (input.tipo || 'mudanza') !== 'flete' && !!input.comparar_niveles,
         fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [],
         // Si el asesor pertenece a una inmobiliaria real (inmobiliarias.js),
         // el partner tiene que ser SU slug — así action=publicar resuelve la
@@ -1701,6 +1708,7 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     origenCoords: origenCoords,
     destinoCoords: destinoCoords,
     nivel: input.tipo === 'flete' ? 'flete' : null,
+    compararNiveles: input.tipo !== 'flete' && !!input.comparar_niveles,
     servicios: [],
     extras: [],
     fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [], // URLs de las fotos que mandó el cliente (para dimensionar)
