@@ -175,7 +175,7 @@ function emailPropuesta(o) {
   var nm = esc(o.n || 'tu oficina');
   var linkB = linkBaja(o.e, 'remax-propuesta');
   return {
-    subject: o.n + ': activá MudateYa para tu oficina (gratis)',
+    subject: o.n + ': activá MudateYa para tu oficina',
     html:
       '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
         '<div style="background:#003580;padding:22px 28px;text-align:center">' +
