@@ -192,7 +192,7 @@ function emailPropuesta(nombre) {
               '<li style="margin:6px 0"><strong>Gratis</strong> para la oficina y para el cliente. Un diferencial que la competencia no ofrece.</li>' +
             '</ul>' +
           '</div>' +
-          '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 6px">Pasales este link a tus asesores: cada uno se registra en 2 minutos y arma cotizaciones con su propio acceso.</p>' +
+          '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 6px">Pasales este link a tus asesores: cada uno se registra en 30 seg y arma cotizaciones con su propio acceso.</p>' +
           '<div style="text-align:center;margin:20px 0">' +
             '<a href="https://mudateya.ar/remax-registro.html" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Registro para asesores →</a>' +
           '</div>' +
