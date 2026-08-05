@@ -222,6 +222,10 @@
   }
   .fecha-chip:hover{border-color:var(--blue);color:var(--blue)}
   .fecha-chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
+  .fecha-tip{
+    margin-top:9px;font-size:11px;color:var(--green-dark);background:var(--green-light);
+    border-radius:8px;padding:6px 9px;line-height:1.4;
+  }
 
   /* Popover altura — aparece anclado al segment cuando la dirección elegida no incluye número */
   .altura-pop{
@@ -1398,6 +1402,7 @@
                 <div class="fecha-chip" onclick="setFechaChip(this,'En 2-3 meses')">En 2-3 meses</div>
                 <div class="fecha-chip" onclick="setFechaChip(this,'Sin fecha fija')">Sin fecha fija</div>
               </div>
+              <div class="fecha-tip">📅 Entre semana suele salir más económico</div>
             </div>
           </div>
           <div class="search-segment" id="seg-amb" style="flex:.7;cursor:pointer;position:relative" onclick="toggleAmbPopup(event)">

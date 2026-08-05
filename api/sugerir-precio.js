@@ -65,7 +65,7 @@ REGLAS:
 - Si te dan el perfil del mudancero (su lista de precios por ambientes / flete), USALO como ancla y ajustá por distancia, piso y volumen. Si no, estimá con valores de mercado.
 - Piso alto SIN ascensor encarece bastante (más gente, más tiempo). Ascensor chico también suma.
 - precio_sugerido = valor central razonable; rango = min/max defendible.
-- factores: bullets cortos de lo que sube o baja el precio en este caso puntual.
+- factores: bullets cortos de lo que sube o baja el precio en este caso puntual. Si la fecha del pedido cae en día de semana (lunes a viernes), sumá como último factor esta línea EXACTA (reemplazando {DIA} por el día real, ej. "martes"): "🗓️ Es {DIA} — día de baja demanda. Cotizar competitivo hoy te puede hacer ganar el pedido más rápido." Si cae sábado/domingo, o no podés determinar el día con la fecha que te dieron, NO agregues esta línea.
 - justificacion: 2-3 líneas explicándole al mudancero cómo salió el número (es interno, para él).
 - mensaje_sugerido: un texto corto, cordial y rioplatense, listo para que el mudancero se lo mande al cliente con el precio (sin desglose interno). No prometas nada que el pedido no aclare.
 - Es una sugerencia orientativa; el mudancero decide.`;
@@ -106,10 +106,18 @@ module.exports = async function handler(req, res) {
       inventario: pedido.inventario, ubicaciones: pedido.ubicaciones,
     }).slice(0, 1200);
 
+    // Referencia de fecha para que el modelo pueda resolver "el día que cae" a
+    // partir de texto relativo ("mañana", "el jueves que viene") o una fecha
+    // concreta, y así saber si corresponde el factor de día de baja demanda.
+    const hoyAR = new Date().toLocaleDateString('es-AR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
+
     const sugerencia = await claudeJSON({
       model: MODEL_SMART,
       system: SYSTEM,
-      content: `PEDIDO A COTIZAR:\n${pedidoTxt}${perfilTxt}\n\nSugerí el precio con desglose.`,
+      content: `Hoy es ${hoyAR} (hora Argentina).\n\nPEDIDO A COTIZAR:\n${pedidoTxt}${perfilTxt}\n\nSugerí el precio con desglose.`,
       schema: SCHEMA,
       maxTokens: 1000,
     });
