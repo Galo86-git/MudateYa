@@ -279,6 +279,30 @@ module.exports = async function handler(req, res) {
       }
       return res.json(out);
     }
+
+    // ── Admin: reenviar a mano el WhatsApp de bienvenida a un mudancero puntual ──
+    // Para casos como altas de días previos al deploy de este envío inmediato,
+    // que nunca lo recibieron. Busca por perfil.id (ej MUD-1785948480648) porque
+    // no hay índice id→email: escanea mudanceros:todos.
+    if (action === 'reenviar-wapp-bienvenida') {
+      if (!require('./_auth').esAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+      var idBuscado = req.query.id;
+      if (!idBuscado) return res.status(400).json({ error: 'Falta el parámetro id' });
+      var emailsTodos = await getJSON('mudanceros:todos') || [];
+      var perfilEncontrado = null;
+      for (var _i = 0; _i < emailsTodos.length; _i++) {
+        var _p = await getJSON('mudancero:perfil:' + emailsTodos[_i]);
+        if (_p && _p.id === idBuscado) { perfilEncontrado = _p; break; }
+      }
+      if (!perfilEncontrado) return res.status(404).json({ error: 'No se encontró un mudancero con ese id' });
+      if (!perfilEncontrado.telefono) return res.status(400).json({ error: 'Ese perfil no tiene teléfono cargado' });
+      var primerNombreRe = (perfilEncontrado.nombre || '').split(' ')[0] || 'Hola';
+      var fraseRe = 'ya te registraste — para empezar a recibir pedidos, completá tu perfil (vehículo, precios, fotos y datos de cobro)';
+      var textoLibreRe = '¡Hola ' + primerNombreRe + '! Soy Emi de MudateYa 👋 Tu cuenta ya está creada. Para arrancar a recibir pedidos, completá tu perfil (vehículo, precios, fotos y datos de cobro) acá: https://mudateya.ar/mi-cuenta 🚚';
+      var resultadoRe = await require('./_plantillas').enviarPlantilla(perfilEncontrado.telefono, 'onboarding_mudancero', { 1: primerNombreRe, 2: fraseRe }, textoLibreRe);
+      return res.status(200).json({ ok: true, email: perfilEncontrado.email, telefono: perfilEncontrado.telefono, envio: resultadoRe });
+    }
+
     return res.status(400).json({ error: 'Acción GET no reconocida' });
   }
 
