@@ -134,6 +134,17 @@ async function oficinasOficiales() {
   return names;
 }
 
+// ── Une oficiales + agregadas, sin duplicar, ordenadas ──
+function unirOrdenar(a, b) {
+  var out = [], seen = {};
+  (a || []).concat(b || []).forEach(function(n){
+    var k = normOficina(n);
+    if (n && k && !seen[k]) { seen[k] = 1; out.push(n); }
+  });
+  out.sort(function(x, y){ return x.localeCompare(y); });
+  return out;
+}
+
 // ── HANDLER ──
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -158,15 +169,26 @@ module.exports = async function handler(req, res) {
       if (!email || !emailValido(email)) return res.status(400).json({ error: 'Email inválido.' });
       if (!whatsapp || whatsapp.replace(/\D/g, '').length < 8) return res.status(400).json({ error: 'WhatsApp inválido.' });
       if (!oficina) return res.status(400).json({ error: 'Elegí tu oficina RE/MAX.' });
-      // Validar contra la lista oficial (si la tenemos). Guardamos el nombre canónico.
+      // Validar contra la lista (oficial + agregadas). Guardamos el nombre canónico.
+      // Si el asesor marca "mi oficina no está" (oficinaNueva), la aceptamos y la
+      // sumamos a la lista de agregadas para que aparezca a futuro.
+      var oficinaNueva = (body.oficinaNueva === true || body.oficinaNueva === 'true');
       var _oficiales = await oficinasOficiales();
-      if (_oficiales.length) {
+      var _extra = (await getJSON('remax:oficinas-extra')) || [];
+      var _todas = _oficiales.concat(_extra);
+      if (_todas.length) {
         var _match = null, _oi = normOficina(oficina);
-        for (var _k = 0; _k < _oficiales.length; _k++) {
-          if (normOficina(_oficiales[_k]) === _oi) { _match = _oficiales[_k]; break; }
+        for (var _k = 0; _k < _todas.length; _k++) {
+          if (normOficina(_todas[_k]) === _oi) { _match = _todas[_k]; break; }
         }
-        if (!_match) return res.status(400).json({ error: 'No encontramos esa oficina. Empezá a escribir y elegí la que aparece en la lista.' });
-        oficina = _match;
+        if (_match) {
+          oficina = _match;
+        } else if (oficinaNueva && oficina.length >= 3) {
+          _extra.push(oficina);
+          try { await setJSON('remax:oficinas-extra', _extra); } catch (e) {}
+        } else {
+          return res.status(400).json({ error: 'No encontramos esa oficina. Elegí una de la lista, o marcá "Mi oficina no está en la lista".' });
+        }
       }
 
       // ── No duplicar por email: si ya hay un asesor activo con ese mail,
@@ -272,8 +294,10 @@ module.exports = async function handler(req, res) {
     // ── PÚBLICO: lista oficial de oficinas RE/MAX (para el autocompletado del form) ──
     if (action === 'oficinas-oficiales' && req.method === 'GET') {
       var names = await oficinasOficiales();
+      var extra = (await getJSON('remax:oficinas-extra')) || [];
+      var todas = unirOrdenar(names, extra);
       res.setHeader('Cache-Control', 'public, max-age=3600');
-      return res.status(200).json({ ok: true, total: names.length, oficinas: names });
+      return res.status(200).json({ ok: true, total: todas.length, oficinas: todas });
     }
 
     // ── PÚBLICO: QR (PNG) del link del asesor. Lo usa el <img> del mail y se
