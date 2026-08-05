@@ -425,12 +425,24 @@ module.exports = async function handler(req, res) {
             continue;
           }
 
-          // ── ALTA REAL. Idempotente por email. ──
+          // ── ALTA REAL. Idempotente por email Y por WhatsApp (clave8) — el
+          //    mismo caso que pasó de verdad con Gonzalo Peralta y Lautaro
+          //    Cogorno: ya estaban en el roster importado, se auto-registraron
+          //    de nuevo en el evento con otro mail, y como el índice de
+          //    WhatsApp no se escribía acá, no los detectó. ──
           var emailKeyImp = 'mudafy:email:' + aImp.email;
           var codExistente = await getJSON(emailKeyImp);
+          var tel8Imp = clave8(aImp.whatsapp);
+          var telKeyImp = tel8Imp.length === 8 ? 'mudafy:whatsapp8:' + tel8Imp : null;
+          if (!codExistente && telKeyImp) codExistente = await getJSON(telKeyImp);
           var yaEsta = codExistente ? await getJSON('mudafy:asesor:' + codExistente) : null;
 
           if (yaEsta && yaEsta.activo !== false) {
+            // Backfill: si esta fila ya existía pero el índice de WhatsApp
+            // todavía no estaba (roster importado antes de este fix), lo
+            // completa acá — así una re-corrida del mismo archivo deja
+            // indexados a todos sin duplicar nada.
+            if (telKeyImp) await setJSON(telKeyImp, yaEsta.codigo);
             var linkYa = LINK_BASE + '?asesor=' + encodeURIComponent(yaEsta.codigo);
             var mailYaEstado = 'omitido';
             var errYa = '';
@@ -471,6 +483,7 @@ module.exports = async function handler(req, res) {
           await setJSON('mudafy:asesor:' + codImp, regImp);
           await agregarAlIndice(codImp);
           await setJSON(emailKeyImp, codImp);
+          if (telKeyImp) await setJSON(telKeyImp, codImp);
 
           var linkImp = LINK_BASE + '?asesor=' + encodeURIComponent(codImp);
           var mailImpEstado = 'omitido';
