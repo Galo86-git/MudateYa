@@ -146,6 +146,23 @@ const CREAR = [
     types: { 'twilio/text': { body: 'Hola {{1}}, el cliente ya eligió otra propuesta para el pedido {{2}}. Este pedido pasó a tu sección Expirados. ¡Gracias por cotizar, seguí atento que vienen más! 🚚' } },
     variables: { '1': 'Cristian', '2': 'Palermo → Tigre' } },
 
+  // Avisos al asesor (link fijo independientes/mudafy/remax/c21) a medida que
+  // avanza la mudanza de su cliente derivado. Antes solo mandaban email
+  // (notificarAsesorPedidoPublicado/AnticipoPagado/MudanzaCompletada/PedidoCancelado
+  // en cotizaciones.js) — mismo contenido, ahora también por WhatsApp.
+  { name: 'asesor_pedido_publicado', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, tu cliente {{2}} publicó su mudanza ({{3}} → {{4}}) 📦 Ya está recibiendo cotizaciones de mudanceros verificados. Te aviso cuando reserve y cuando termine.' } },
+    variables: { '1': 'Marina', '2': 'Juan', '3': 'Palermo', '4': 'Tigre' } },
+  { name: 'asesor_sena_pagada', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, tu cliente {{2}} pagó la seña y la mudanza quedó confirmada con {{3}} ✅ Te aviso cuando esté terminada.' } },
+    variables: { '1': 'Marina', '2': 'Juan', '3': 'Cristian' } },
+  { name: 'asesor_mudanza_completada', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, la mudanza de {{2}} se completó 🏁 {{3}}' } },
+    variables: { '1': 'Marina', '2': 'Juan', '3': 'Tu comisión (5%): $60.000. Nos contactamos para coordinar el pago.' } },
+  { name: 'asesor_pedido_cancelado', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, tu cliente {{2}} canceló su mudanza ({{3}} → {{4}}) ❌ Si querés, contactalo para entender el motivo y ofrecerle otra alternativa.' } },
+    variables: { '1': 'Marina', '2': 'Juan', '3': 'Palermo', '4': 'Tigre' } },
+
 ];
 
 module.exports = async function handler(req, res) {

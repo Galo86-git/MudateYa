@@ -2289,6 +2289,11 @@ module.exports = async function handler(req, res) {
       if (m.pedidoAsesorId) {
         try { await hookAsesorCancelado(m.pedidoAsesorId); } catch(e) { console.warn('Hook asesor cancelar:', e.message); }
       }
+      // Sistema real de asesores (link fijo independientes/mudafy/remax/c21): no usa
+      // pedidoAsesorId, así que se avisa acá directo por mail + WhatsApp.
+      if (m.partnerAsesor) {
+        try { await notificarAsesorPedidoCancelado(m); } catch(e) { console.warn('Aviso asesor cancelado:', e.message); }
+      }
 
       // ── NOTIFICAR A LOS MUDANCEROS QUE COTIZARON ──────────────────────
       // Push + email para que sepan que el cliente canceló y no esperen respuesta.
@@ -5087,7 +5092,7 @@ async function resolverAsesor(mudanza) {
     try {
       const a = await getJSON(CLAVES_ASESOR[canal] + cod);
       if (a && a.email && a.activo !== false) {
-        return { email: a.email, nombre: a.nombre || '', inmobiliaria: a.inmobiliaria || '', canal: canal };
+        return { email: a.email, nombre: a.nombre || '', inmobiliaria: a.inmobiliaria || '', canal: canal, telefono: a.whatsapp || '' };
       }
     } catch (e) { /* sigue con el próximo canal */ }
   }
@@ -5118,6 +5123,12 @@ function _asesorRuta(m) {
       <tr><td style="color:#64748B;padding:11px 8px;font-size:16px">Hasta</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${m.hasta || '—'}</td></tr>
     </table>`;
 }
+// Versión corta "Palermo → Tigre" para plantillas de WhatsApp (sin HTML).
+function _asesorRutaTxt(m) {
+  const d = (m.desde || '').split(',')[0].trim();
+  const h = (m.hasta || '').split(',')[0].trim();
+  return (d || '—') + ' → ' + (h || '—');
+}
 
 // ── 1. El cliente publicó el pedido ────────────────────────────────
 async function notificarAsesorPedidoPublicado(mudanza) {
@@ -5143,6 +5154,12 @@ async function notificarAsesorPedidoPublicado(mudanza) {
       ${_asesorPie(mudanza)}
     </div>`
   });
+  if (a.telefono) {
+    const { enviarPlantilla } = require('./_plantillas');
+    const texto = `Hola ${a.nombre || ''}, tu cliente ${mudanza.clienteNombre || ''} publicó su mudanza (${_asesorRutaTxt(mudanza)}) 📦 Ya está recibiendo cotizaciones de mudanceros verificados. Te aviso cuando reserve y cuando termine.`;
+    enviarPlantilla(a.telefono, 'asesor_pedido_publicado', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: (mudanza.desde || '—').split(',')[0].trim(), 4: (mudanza.hasta || '—').split(',')[0].trim() }, texto)
+      .catch(e => console.warn('WhatsApp asesor publicado:', e.message));
+  }
 }
 
 // ── 2. Pagó la seña ────────────────────────────────────────────────
@@ -5170,6 +5187,12 @@ async function notificarAsesorAnticipoPagado(mudanza) {
       ${_asesorPie(mudanza)}
     </div>`
   });
+  if (a.telefono) {
+    const { enviarPlantilla } = require('./_plantillas');
+    const texto = `Hola ${a.nombre || ''}, tu cliente ${mudanza.clienteNombre || ''} pagó la seña y la mudanza quedó confirmada con ${cot.mudanceroNombre || 'el mudancero'} ✅ Te aviso cuando esté terminada.`;
+    enviarPlantilla(a.telefono, 'asesor_sena_pagada', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: cot.mudanceroNombre || 'el mudancero' }, texto)
+      .catch(e => console.warn('WhatsApp asesor seña:', e.message));
+  }
 }
 
 // ── 3. Mudanza completada: comisión o regalo ───────────────────────
@@ -5225,6 +5248,59 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
       ${_asesorPie(mudanza)}
     </div>`
   });
+  if (a.telefono) {
+    const { enviarPlantilla } = require('./_plantillas');
+    let resumen;
+    if (esCompraventa) {
+      const regaloTxt = regaloCompraventa(precio);
+      resumen = regaloTxt
+        ? `Tu cliente accede a: ${regaloTxt}. Nos contactamos para coordinarlo.`
+        : `Esta operación no alcanza el monto mínimo para el regalo — nos contactamos si corresponde algún beneficio.`;
+    } else {
+      const pctWa = parseFloat(mudanza.comisionInmobiliariaPct) > 0 ? parseFloat(mudanza.comisionInmobiliariaPct) : COMISION_ASESOR_DEFAULT;
+      const montoWa = Math.round(precio * pctWa / 100);
+      resumen = `Tu comisión (${pctWa}%): $${montoWa.toLocaleString('es-AR')}. Nos contactamos para coordinar el pago.`;
+    }
+    const texto = `Hola ${a.nombre || ''}, la mudanza de ${mudanza.clienteNombre || 'tu cliente'} se completó 🏁 ${resumen}`;
+    enviarPlantilla(a.telefono, 'asesor_mudanza_completada', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: resumen }, texto)
+      .catch(e => console.warn('WhatsApp asesor completada:', e.message));
+  }
+}
+
+// ── 4. El cliente canceló la mudanza ────────────────────────────────
+// (distinto del hook de la vieja Plan Referidos / asesor-dashboard en
+// asesores.js — ese solo cubre pedidoAsesorId, que nunca se setea para el
+// sistema real de link fijo. Este cubre partnerAsesor, el que sí está vivo.)
+async function notificarAsesorPedidoCancelado(mudanza) {
+  const a = await resolverAsesor(mudanza);
+  if (!a) return;
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+      to: a.email,
+      subject: `❌ ${mudanza.clienteNombre || 'Tu cliente'} canceló su mudanza`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+        ${_asesorHead('❌ Mudanza cancelada')}
+        <div style="padding:28px">
+          <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+            Hola <strong>${a.nombre || ''}</strong>, el cliente que derivaste canceló su mudanza.
+          </p>
+          ${_asesorRuta(mudanza)}
+          <p style="font-size:16px;color:#475569;line-height:1.7;margin:18px 0 0">
+            Si querés, podés contactarlo para entender el motivo y ofrecerle otra alternativa.
+          </p>
+        </div>
+        ${_asesorPie(mudanza)}
+      </div>`
+    }).catch(e => console.warn('Email asesor cancelado:', e.message));
+  }
+  if (a.telefono) {
+    const { enviarPlantilla } = require('./_plantillas');
+    const texto = `Hola ${a.nombre || ''}, tu cliente ${mudanza.clienteNombre || ''} canceló su mudanza (${_asesorRutaTxt(mudanza)}) ❌ Si querés, contactalo para entender el motivo y ofrecerle otra alternativa.`;
+    enviarPlantilla(a.telefono, 'asesor_pedido_cancelado', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: (mudanza.desde || '—').split(',')[0].trim(), 4: (mudanza.hasta || '—').split(',')[0].trim() }, texto)
+      .catch(e => console.warn('WhatsApp asesor cancelado:', e.message));
+  }
 }
 
 async function notificarClienteSaldoPendiente(mudanza) {
