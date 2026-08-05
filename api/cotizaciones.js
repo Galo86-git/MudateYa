@@ -1608,6 +1608,17 @@ module.exports = async function handler(req, res) {
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
 
+      // Idempotencia: si ya estaba registrado, no reprocesar (evita mails
+      // duplicados al asesor/cliente/mudancero cuando pago-exitoso.html se
+      // recarga o el usuario vuelve atrás/adelante después de que el lock de
+      // arriba ya expiró — mismo guard que ya tiene webhook-mp.js).
+      if (tipoPago === 'anticipo' && m.anticipoPagado) {
+        return res.status(200).json({ ok: true, status: 'ya_registrado' });
+      }
+      if (tipoPago === 'saldo' && m.saldoPagado) {
+        return res.status(200).json({ ok: true, status: 'ya_registrado' });
+      }
+
       // AUTORIZACIÓN según el origen del llamado:
       //  - CON mpPaymentId (flujo pago-exitoso del cliente): la autorización ES la
       //    verificación del pago contra Mercado Pago. No alcanza un secreto: el pago
