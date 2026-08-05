@@ -162,14 +162,14 @@ async function superaLimite(waId, maxPorMinuto) {
 }
 
 // Registra que este waId le escribió a Emi HOY (huso Argentina), en un set
-// diario por rol (cliente/mudancero) — lo lee cron-resumen-diario.js para
-// contar con cuánta gente distinta habló Emi en el día. Sin esto no quedaba
-// ningún registro de la actividad conversacional, solo de lo que resultaba
-// en un pedido/cotización concreta.
-async function registrarInteraccionDiaria(waId, esMudancero) {
+// diario por rol (cliente/mudancero/asesor) — lo lee cron-resumen-diario.js
+// para contar con cuánta gente distinta habló Emi en el día. Sin esto no
+// quedaba ningún registro de la actividad conversacional, solo de lo que
+// resultaba en un pedido/cotización concreta.
+async function registrarInteraccionDiaria(waId, rol) {
   try {
     const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
-    const key = `emi:hablo:${esMudancero ? 'mudancero' : 'cliente'}:${hoy}`;
+    const key = `emi:hablo:${rol}:${hoy}`;
     await redisCall('SADD', key, waId);
     await redisCall('EXPIRE', key, String(60 * 60 * 24 * 8)); // 8 días, de sobra para el resumen diario
   } catch (e) { console.warn('registrarInteraccionDiaria:', e.message); }
@@ -2354,7 +2354,7 @@ module.exports = async function handler(req, res) {
     // si no es mudancero, para no pagar el lookup de más en el caso común.
     const mud = await buscarMudancero(waId);
     const ase = mud ? null : await buscarAsesorCanal(waId);
-    if (waId) await registrarInteraccionDiaria(waId, !!mud);
+    if (waId) await registrarInteraccionDiaria(waId, mud ? 'mudancero' : (ase ? 'asesor' : 'cliente'));
 
     // Ubicación compartida (Twilio manda Latitude/Longitude, y a veces Address/Label).
     const lat = body.Latitude;

@@ -105,6 +105,7 @@ module.exports = async function handler(req, res) {
     // Con cuánta gente distinta habló Emi hoy (registrarInteraccionDiaria en whatsapp.js).
     var hablaronClientes = (await redisCall('SCARD', 'emi:hablo:cliente:' + hoy)) || 0;
     var hablaronMudanceros = (await redisCall('SCARD', 'emi:hablo:mudancero:' + hoy)) || 0;
+    var hablaronAsesores = (await redisCall('SCARD', 'emi:hablo:asesor:' + hoy)) || 0;
 
     var registroPlantillas = (await getJSON('plantillas:registro')) || {};
     var nombresPlantillas = Object.keys(registroPlantillas);
@@ -121,6 +122,7 @@ module.exports = async function handler(req, res) {
       cancelacionesConProblema: canceladasConProblema.length,
       emiHablóConClientes: Number(hablaronClientes),
       emiHablóConMudanceros: Number(hablaronMudanceros),
+      emiHablóConAsesores: Number(hablaronAsesores),
       plantillasAprobadas: aprobadas,
       plantillasPendientes: pendientes,
     };
@@ -232,6 +234,7 @@ module.exports = async function handler(req, res) {
               seccion('Emi habló hoy con', null, [
                 { nombre: 'Clientes', valor: String(resumen.emiHablóConClientes) },
                 { nombre: 'Mudanceros', valor: String(resumen.emiHablóConMudanceros) },
+                { nombre: 'Asesores', valor: String(resumen.emiHablóConAsesores) },
               ], '') +
             '</div>' +
             '<div style="margin:18px 32px 0;padding:12px 16px;background:#F6F5F1;border:1px solid #EFEDE6;font-size:12px;color:#5B6472">' +
