@@ -102,10 +102,6 @@
       "destination": "/inmobiliarias-registro.html"
     },
     {
-      "source": "/plan-inmobiliarias",
-      "destination": "/plan-inmobiliarias.html"
-    },
-    {
       "source": "/research-mudanceros",
       "destination": "/research-mudanceros.html"
     },
@@ -383,7 +379,7 @@
       ]
     },
     {
-      "source": "/(mudanceros|asesores|mya-mobility|relocation-clubes-de-futbol|relocation-colegios|relocation-cuerpo-diplomatico|relocation-vaca-muerta|contacto|circulo|membresia|plan-inmobiliarias|terminos|privacidad)",
+      "source": "/(mudanceros|asesores|mya-mobility|relocation-clubes-de-futbol|relocation-colegios|relocation-cuerpo-diplomatico|relocation-vaca-muerta|contacto|circulo|membresia|terminos|privacidad)",
       "headers": [
         {
           "key": "Cache-Control",
