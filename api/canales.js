@@ -330,6 +330,19 @@ module.exports = async function handler(req, res) {
       await agregarAlIndice(canal, codigo);
       await setJSON(emailKey, codigo);
 
+      // Índice inverso por inmobiliaria — para que Emi (WhatsApp) pueda
+      // listar "mis asesores" de una agencia sin escanear TODO el pool de
+      // independientes cada vez. Guarda {codigo, canal} porque el asesor
+      // podría (en teoría) haber quedado en otro canal por detección de texto.
+      if (inmobiliariaVinculada) {
+        var kAsesoresInmo = 'inmobiliaria:' + inmobiliariaVinculada.slug + ':asesores';
+        var listaAsesoresInmo = (await getJSON(kAsesoresInmo)) || [];
+        if (!listaAsesoresInmo.some(function(a){ return a.codigo === codigo; })) {
+          listaAsesoresInmo.push({ codigo: codigo, canal: canal.slug });
+          await setJSON(kAsesoresInmo, listaAsesoresInmo);
+        }
+      }
+
       // Con inmobiliaria vinculada, el link público lleva SU slug (así
       // inmobiliaria.html carga su logo/color real) en vez del slug genérico
       // del canal — el prefijo de Redis (indep:asesor:*) no cambia.

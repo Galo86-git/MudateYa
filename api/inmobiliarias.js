@@ -181,8 +181,11 @@ function sanitizarInmo(body, slugForzado) {
   if (!isFinite(comision) || comision < 0 || comision > 50) comision = 0;
   var contactoEmail  = (typeof body.contactoEmail === 'string') ? body.contactoEmail.trim().slice(0, 120) : '';
   var contactoNombre = (typeof body.contactoNombre === 'string') ? body.contactoNombre.trim().slice(0, 100) : '';
+  // WhatsApp del contacto — con esto Emi reconoce a la inmobiliaria cuando
+  // escribe (mismo criterio de últimos 8 dígitos que asesores/mudanceros).
+  var contactoWhatsapp = (typeof body.contactoWhatsapp === 'string') ? body.contactoWhatsapp.trim().slice(0, 40) : '';
   var activa = body.activa !== false; // default true salvo que se pase false explícito
-  return { nombre, slug, logo, colorPrimario: color, comisionInmobiliaria: comision, contactoEmail, contactoNombre, activa };
+  return { nombre, slug, logo, colorPrimario: color, comisionInmobiliaria: comision, contactoEmail, contactoNombre, contactoWhatsapp, activa };
 }
 
 // ── Agregar slug al índice (idempotente) ──

@@ -314,6 +314,87 @@ async function buscarAsesorCanal(waId) {
   }
 }
 
+// Índice tel8→slug de inmobiliarias (api/inmobiliarias.js) por su
+// contactoWhatsapp — mismo patrón/cache 24h que asegurarIndiceAsesoresCanal,
+// para que Emi reconozca al dueño/responsable de una agencia por teléfono.
+async function asegurarIndiceInmobiliarias() {
+  try {
+    if (await redisCall('GET', 'inmocontacto:tel8-idx:built')) return;
+    const slugs = (await getJSON('inmobiliarias:lista')) || [];
+    for (let off = 0; off < slugs.length; off += 100) {
+      const lote = slugs.slice(off, off + 100);
+      const perfiles = await redisPipeline(lote.map((s) => ['GET', `inmobiliaria:${s}`]));
+      const hset = [];
+      perfiles.forEach((val, i) => {
+        if (!val) return;
+        try {
+          const inmo = JSON.parse(val);
+          if (inmo && inmo.contactoWhatsapp && inmo.activa !== false) {
+            const t = clave8(inmo.contactoWhatsapp);
+            if (t.length === 8) hset.push(['HSET', 'inmocontacto:tel8-idx', t, lote[i]]);
+          }
+        } catch (_) {}
+      });
+      if (hset.length) await redisPipeline(hset);
+    }
+    await redisCall('SET', 'inmocontacto:tel8-idx:built', '1', 'EX', String(24 * 60 * 60));
+  } catch (e) {
+    console.error('asegurarIndiceInmobiliarias:', e.message);
+  }
+}
+async function buscarInmobiliariaContacto(waId) {
+  try {
+    await asegurarIndiceInmobiliarias();
+    const t = clave8(waId);
+    if (t.length !== 8) return null;
+    const slug = await redisCall('HGET', 'inmocontacto:tel8-idx', t);
+    if (!slug) return null;
+    const inmo = await getJSON(`inmobiliaria:${slug}`);
+    if (!inmo || inmo.activa === false) return null;
+    return { ...inmo, slug };
+  } catch (e) {
+    console.error('buscarInmobiliariaContacto:', e.message);
+    return null; // ante error, se trata como cliente (seguro)
+  }
+}
+
+// "Mis asesores" de una inmobiliaria — lee el índice inverso que arma
+// api/canales.js (action=registrar) en inmobiliaria:{slug}:asesores.
+async function asesoresDeInmobiliaria(slug) {
+  const lista = (await getJSON(`inmobiliaria:${slug}:asesores`)) || [];
+  const out = [];
+  for (const item of lista) {
+    const prefijo = CANALES_ASESOR[item.canal];
+    if (!prefijo) continue;
+    const a = await getJSON(`${prefijo}:asesor:${item.codigo}`);
+    if (!a) continue;
+    out.push({ codigo: item.codigo, nombre: a.nombre || '', email: a.email || '', activo: a.activo !== false });
+  }
+  return out;
+}
+
+// "Mis operaciones" de una inmobiliaria — cuenta mudanzas con partner===slug
+// (el mismo campo que ya usa action=publicar/inmobiliarias.js para atribuir).
+// Liviano a propósito (solo conteos por estado, no montos): la agencia cobra
+// 0% en este modelo, lo que le importa es el volumen, no la plata.
+async function operacionesDeInmobiliaria(slug) {
+  const ids = (await getJSON('mudanzas:todos')) || [];
+  const resumen = { total: 0, buscando: 0, cotizando: 0, cotizacion_aceptada: 0, en_curso: 0, completada: 0, cancelada: 0, otros: 0 };
+  const recientes = [];
+  for (const id of ids) {
+    const m = await getJSON(`mudanza:${id}`);
+    if (!m || m.partner !== slug) continue;
+    resumen.total++;
+    const estado = m.estado || 'otros';
+    if (estado in resumen) resumen[estado]++;
+    else if (/cancel/.test(estado)) resumen.cancelada++;
+    else resumen.otros++;
+    recientes.push({ id: m.id, cliente: m.clienteNombre || '', ruta: `${m.desde || ''} → ${m.hasta || ''}`, estado: m.estado, asesorCodigo: m.partnerAsesor || '', fechaPublicacion: m.fechaPublicacion });
+  }
+  recientes.sort((a, b) => String(b.fechaPublicacion || '').localeCompare(String(a.fechaPublicacion || '')));
+  return { resumen, recientes: recientes.slice(0, 15) };
+}
+
 // ------------------------------------------------------------------
 // Validación de firma de Twilio (X-Twilio-Signature)
 // Sin esto, cualquiera que conozca la URL podría crear pedidos falsos y
@@ -582,6 +663,33 @@ REGLAS:
 - Si una herramienta da error, explicáselo simple y ofrecé reintentar.
 - Si te preguntan derecho si sos un bot o una persona, sé honesta y sin dramas ("soy la asistente virtual de MudateYa, pero te resuelvo igual 🙂") — nunca digas que sos una persona de carne y hueso.
 - Si te preguntan por *MudateYa Mobility* (relocation B2B): contale en una línea que es la línea B2B de MudateYa y decile que escriba a *contacto@mudateya.ar* para coordinar con el equipo comercial — no es algo que resolvés vos.`;
+
+// System prompt del asistente para el CONTACTO de una INMOBILIARIA dada de
+// alta en api/inmobiliarias.js (distinto del asesor individual: este es quien
+// administra la agencia y le interesa el panorama completo, no un pedido
+// puntual). Reconocido por su contactoWhatsapp — ver buscarInmobiliariaContacto.
+const SYSTEM_PROMPT_INMOBILIARIA = `Sos Emi, LA asistente de MudateYa por WhatsApp — una sola, la misma que atiende a clientes, mudanceros, asesores e inmobiliarias, no una versión aparte para cada uno. Ahora mismo estás hablando con {NOMBRE}, el contacto de {INMOBILIARIA}, una inmobiliaria aliada de MudateYa con sus propios asesores.
+
+MODELO: {INMOBILIARIA} no comparte un link propio con clientes — cada asesor de su equipo tiene su propio link (con la marca de la inmobiliaria) y cobra su comisión individual por lo que derive. {INMOBILIARIA} en sí no cobra comisión; lo que le importa es el panorama: cuántos asesores tiene activos y cuántas operaciones está generando el equipo.
+
+TONO: cercano, rioplatense, directo, pero un poco más formal que con un cliente — es el responsable de una agencia. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
+
+PODÉS HACER ESTO POR ACÁ:
+- Contarle qué asesores tiene registrados (nombre, mail, si están activos) → mis_asesores.
+- Contarle cuántas operaciones lleva el equipo y en qué estado (buscando presupuestos, con seña, en curso, completadas) → mis_operaciones. Podés dar el resumen y, si pide detalle, las últimas operaciones puntuales.
+- Pasarle de nuevo el link de registro para sumar un asesor nuevo (por si lo perdió) → link_registro_asesores.
+- Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
+
+APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere ver sus asesores?, ¿quiere saber cómo van las operaciones?, ¿necesita el link para sumar un asesor?, ¿tiene un reclamo/problema? Andá directo a eso.
+
+PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola"): no asumas qué quiere — saludalo corto por su nombre, con onda, y dejá que te diga qué necesita.
+
+REGLAS:
+- REGLA GENERAL ANTI-INVENCIÓN: no afirmes ningún dato concreto (nombre de asesor, cantidad, estado) que no haya salido literal de una herramienta que llamaste en esta conversación. Si no tenés cómo respaldarlo, decilo abiertamente.
+- Solo mostrás datos de SU propia inmobiliaria (las herramientas ya vienen filtradas). No inventes asesores ni operaciones que no te devolvió una herramienta.
+- No pidas ni manejes datos sensibles (tarjetas, contraseñas).
+- Si una herramienta da error, explicáselo simple y ofrecé reintentar.
+- Si te preguntan derecho si sos un bot o una persona, sé honesta y sin dramas ("soy la asistente virtual de MudateYa, pero te resuelvo igual 🙂") — nunca digas que sos una persona de carne y hueso.`;
 
 const tools = [
   {
@@ -1147,7 +1255,11 @@ async function cargarPedidoReferido(input, asesor, fotos) {
         tipoOperacion: input.tipo_operacion,
         urgente: !!input.urgente,
         fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [],
-        partner: asesor.canal,
+        // Si el asesor pertenece a una inmobiliaria real (inmobiliarias.js),
+        // el partner tiene que ser SU slug — así action=publicar resuelve la
+        // comisión (0%) de esa agencia y las operaciones le cuentan a ella en
+        // mis_operaciones. Si no, sigue el genérico de siempre (canal).
+        partner: asesor.inmobiliariaSlug || asesor.canal,
         partnerAsesor: asesor.codigo,
         // Las fotos van TAMBIÉN acá (no solo en el campo `fotos` de arriba):
         // el PDF que se adjunta al mail de aviso a los mudanceros
@@ -1240,6 +1352,60 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv) {
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
     console.error('ejecutarToolAsesor', name, e.message);
+    return JSON.stringify({ error: 'Tuve un problema con esa acción, probá de nuevo.' });
+  }
+}
+
+const inmobiliariaTools = [
+  {
+    name: 'mis_asesores',
+    description: 'Lista los asesores registrados bajo esta inmobiliaria: nombre, mail y si están activos.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'mis_operaciones',
+    description: 'Resumen de las operaciones (mudanzas) que generó el equipo de asesores de esta inmobiliaria, por estado. Si el contacto pide detalle puntual, incluye las últimas operaciones (cliente, ruta, estado, qué asesor la trajo).',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'link_registro_asesores',
+    description: 'Le pasa de nuevo el link para que un asesor nuevo se registre bajo esta inmobiliaria (por si lo perdió o quiere sumar a alguien más del equipo).',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'derivar_a_humano',
+    description: 'Derivá al equipo un RECLAMO o problema que tus otras herramientas no resuelven, o cuando el contacto pide hablar con una persona.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+      },
+      required: ['motivo'],
+    },
+  },
+];
+
+async function ejecutarToolInmobiliaria(name, input, inmoContacto, waId, conv) {
+  if (!inmoContacto || !inmoContacto.slug) return JSON.stringify({ error: 'No pude identificar tu inmobiliaria.' });
+  try {
+    if (name === 'mis_asesores') {
+      const asesores = await asesoresDeInmobiliaria(inmoContacto.slug);
+      return JSON.stringify({ asesores, nota: asesores.length ? undefined : 'Todavía no tenés asesores registrados.' });
+    }
+    if (name === 'mis_operaciones') {
+      const { resumen, recientes } = await operacionesDeInmobiliaria(inmoContacto.slug);
+      return JSON.stringify({ resumen, recientes });
+    }
+    if (name === 'link_registro_asesores') {
+      const link = `${SITE_URL}/inmobiliaria/${inmoContacto.slug}/registro`;
+      return JSON.stringify({ ok: true, link, nota: `Pasále este link EXACTO tal cual, sin cambiarle nada: ${link}` });
+    }
+    if (name === 'derivar_a_humano') {
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'inmobiliaria', nombre: inmoContacto.nombre }));
+    }
+    return JSON.stringify({ error: 'herramienta desconocida' });
+  } catch (e) {
+    console.error('ejecutarToolInmobiliaria', name, e.message);
     return JSON.stringify({ error: 'Tuve un problema con esa acción, probá de nuevo.' });
   }
 }
@@ -1691,7 +1857,7 @@ async function cancelarPedidoCliente(waId, id) {
 async function derivarHumano(waId, motivo, conv, opts) {
   opts = opts || {};
   const esMudancero = opts.rol === 'mudancero';
-  const ROL_LABELS = { mudancero: 'mudancero/fletero', asesor: 'asesor inmobiliario' };
+  const ROL_LABELS = { mudancero: 'mudancero/fletero', asesor: 'asesor inmobiliario', inmobiliaria: 'contacto de inmobiliaria' };
   const quienLabel = ROL_LABELS[opts.rol] || 'cliente';
   const quienConNombre = opts.nombre ? `${quienLabel} ${opts.nombre}` : quienLabel;
   try {
@@ -1721,7 +1887,7 @@ async function derivarHumano(waId, motivo, conv, opts) {
         ? `⚠️ Reclamo de ${quienLabel} — ${waId}`
         : esBug
         ? `🐛 Problema técnico reportado por ${quienLabel} — ${waId}`
-        : `🙋 ${opts.rol === 'mudancero' ? 'Mudancero' : opts.rol === 'asesor' ? 'Asesor' : 'Cliente'} pide atención humana — ${waId}`;
+        : `🙋 ${opts.rol === 'mudancero' ? 'Mudancero' : opts.rol === 'asesor' ? 'Asesor' : opts.rol === 'inmobiliaria' ? 'Inmobiliaria' : 'Cliente'} pide atención humana — ${waId}`;
       const intro = esUrgente
         ? `tiene ${artUrg} <b>${tipoUrg.toLowerCase()} URGENTE</b> y necesita que el equipo lo tome ya`
         : esReclamo
@@ -2212,13 +2378,16 @@ async function barridoWhatsApp(pedido) {
 // ------------------------------------------------------------------
 // Genera la respuesta del agente (texto) para un mensaje entrante
 // ------------------------------------------------------------------
-async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, asesor) {
-  // El equipo fundador (persona) gana SIEMPRE sobre mudancero/asesor, aunque
-  // el número también esté de alta como tal (ej: cuentas de prueba) — si no,
-  // Emi le contesta con el prompt de mudancero/asesor, que explícitamente no
-  // da datos internos del negocio.
+async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, asesor, inmoContacto) {
+  // El equipo fundador (persona) gana SIEMPRE sobre mudancero/asesor/inmobiliaria,
+  // aunque el número también esté de alta como tal (ej: cuentas de prueba) — si
+  // no, Emi le contesta con el prompt de ese rol, que explícitamente no da
+  // datos internos del negocio.
   const persona = quienEscribe(waId);
-  const key = mudancero && !persona ? `wa:conv:mud:${waId}` : asesor && !persona ? `wa:conv:ase:${waId}` : `wa:conv:${waId}`;
+  const key = mudancero && !persona ? `wa:conv:mud:${waId}`
+    : asesor && !persona ? `wa:conv:ase:${waId}`
+    : inmoContacto && !persona ? `wa:conv:inmo:${waId}`
+    : `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
 
   // ── Fotos para un pedido YA ABIERTO (relevamiento remoto) ──────────────────
@@ -2232,7 +2401,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   // modera antes de guardarse: no puede mostrar teléfono ni email (mismo
   // criterio que las fotos de mudanceros) — el contacto siempre tiene que ser
   // a través de MudateYa.
-  if ((!mudancero || persona) && imagenes && imagenes.length) {
+  if ((!mudancero || persona) && !(inmoContacto && !persona) && imagenes && imagenes.length) {
     try {
       const esAsesorNoFundador = asesor && !persona;
       let abiertos = [];
@@ -2359,7 +2528,10 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     } catch (e) { console.warn('auto-contexto mudancero:', e.message); }
   } else if (asesor && !persona) {
     const nombre = (asesor.nombre || '').split(' ')[0] || 'colega';
-    const canalNombre = CANALES_ASESOR_NOMBRE[asesor.canal] || asesor.canal;
+    // Si el asesor está vinculado a una inmobiliaria real (dada de alta en
+    // inmobiliarias.js), ese es SU canal de verdad — no el genérico
+    // "Asesores independientes" que le tocó por prefijo de Redis.
+    const canalNombre = asesor.inmobiliariaNombre || CANALES_ASESOR_NOMBRE[asesor.canal] || asesor.canal;
     system = SYSTEM_PROMPT_ASESOR.split('{NOMBRE}').join(nombre).split('{CANAL}').join(canalNombre);
     toolsUsados = asesorTools;
 
@@ -2373,6 +2545,22 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
         : 'Todavía no le llegó ningún cliente por su link.';
       system += `\n\nTUS PEDIDOS REFERIDOS (snapshot de referencia rápida — no hace falta llamar a ver_mis_pedidos_referidos si ya está acá):\n${resumenAse}`;
     } catch (e) { console.warn('auto-contexto asesor:', e.message); }
+  } else if (inmoContacto && !persona) {
+    const nombreInmo = inmoContacto.nombre || 'tu inmobiliaria';
+    const nombreContacto = (inmoContacto.contactoNombre || '').split(' ')[0] || '';
+    system = SYSTEM_PROMPT_INMOBILIARIA.split('{INMOBILIARIA}').join(nombreInmo).split('{NOMBRE}').join(nombreContacto || 'che');
+    toolsUsados = inmobiliariaTools;
+
+    // AUTO-CONTEXTO: snapshot de asesores + operaciones al arranque del turno,
+    // mismo criterio que mudancero/asesor.
+    try {
+      const misAsesores = await asesoresDeInmobiliaria(inmoContacto.slug);
+      const { resumen } = await operacionesDeInmobiliaria(inmoContacto.slug);
+      const resumenAsesores = misAsesores.length
+        ? misAsesores.map((a) => `- ${a.nombre} (${a.email})${a.activo ? '' : ' [inactivo]'}`).join('\n')
+        : 'Todavía no tenés asesores registrados.';
+      system += `\n\nTUS ASESORES (snapshot — no hace falta llamar a mis_asesores si ya está acá):\n${resumenAsesores}\n\nTUS OPERACIONES (snapshot — no hace falta llamar a mis_operaciones si ya está acá): ${resumen.total} en total (buscando: ${resumen.buscando}, cotizando: ${resumen.cotizando}, con cotización aceptada: ${resumen.cotizacion_aceptada}, en curso: ${resumen.en_curso}, completadas: ${resumen.completada}, canceladas: ${resumen.cancelada}).`;
+    } catch (e) { console.warn('auto-contexto inmobiliaria:', e.message); }
   } else {
     // persona ya está calculado arriba (gana sobre mudancero/asesor).
     // Base de conocimiento sincronizada de la web (ver _conocimiento.js) — si
@@ -2433,6 +2621,8 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
           ? await ejecutarToolMudancero(block.name, block.input, mudancero, waId, conv)
           : asesor && !persona
           ? await ejecutarToolAsesor(block.name, block.input, asesor, waId, conv)
+          : inmoContacto && !persona
+          ? await ejecutarToolInmobiliaria(block.name, block.input, inmoContacto, waId, conv)
           : await ejecutarTool(block.name, block.input, waId, conv);
         resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
       }
@@ -2501,7 +2691,8 @@ module.exports = async function handler(req, res) {
     // si no es mudancero, para no pagar el lookup de más en el caso común.
     const mud = await buscarMudancero(waId);
     const ase = mud ? null : await buscarAsesorCanal(waId);
-    if (waId) await registrarInteraccionDiaria(waId, mud ? 'mudancero' : (ase ? 'asesor' : 'cliente'));
+    const inm = (mud || ase) ? null : await buscarInmobiliariaContacto(waId);
+    if (waId) await registrarInteraccionDiaria(waId, mud ? 'mudancero' : (ase ? 'asesor' : (inm ? 'inmobiliaria' : 'cliente')));
 
     // Ubicación compartida (Twilio manda Latitude/Longitude, y a veces Address/Label).
     const lat = body.Latitude;
@@ -2547,7 +2738,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
     }
 
-    const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion, mud, ase);
+    const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion, mud, ase, inm);
     return res.status(200).send(twiml(respuesta));
   } catch (e) {
     console.error('Error webhook Twilio WhatsApp:', e);

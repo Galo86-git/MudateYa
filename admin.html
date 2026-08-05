@@ -947,6 +947,13 @@ tr:hover td{background:#F8FAFC}
                   <input type="email" id="inmoContactoEmail" maxlength="120" placeholder="contacto@..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box"/>
                 </div>
               </div>
+              <div style="display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:16px">
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Contacto - WhatsApp</label>
+                  <input type="tel" id="inmoContactoWhatsapp" maxlength="40" placeholder="+54 9 11 1234-5678" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box"/>
+                  <div style="font-size:11px;color:var(--text2);margin-top:4px">Con esto Emi reconoce a la inmobiliaria por WhatsApp (sus asesores, cuántas operaciones lleva, etc).</div>
+                </div>
+              </div>
 
               <!-- Preview del header -->
               <div style="margin:24px 0;padding:0;background:#F5F7FA;border-radius:12px;border:1px solid var(--border);overflow:hidden">
@@ -5038,9 +5045,10 @@ async function inmoAprobarSolicitud(id) {
     inmoTab('nueva');
     setTimeout(function(){
       try {
-        var n  = document.getElementById('inmoNombre');         if (n)  n.value  = s.nombre || '';
-        var em = document.getElementById('inmoContactoEmail');  if (em) em.value = s.email || '';
-        var cn = document.getElementById('inmoContactoNombre'); if (cn) cn.value = s.contacto || '';
+        var n  = document.getElementById('inmoNombre');            if (n)  n.value  = s.nombre || '';
+        var em = document.getElementById('inmoContactoEmail');     if (em) em.value = s.email || '';
+        var cn = document.getElementById('inmoContactoNombre');    if (cn) cn.value = s.contacto || '';
+        var wa = document.getElementById('inmoContactoWhatsapp');  if (wa) wa.value = s.whatsapp || '';
         var lg = document.getElementById('inmoLogo');           if (lg) lg.value = s.logoUrl || '';
         if (s.logoUrl && typeof _inmoActualizarBoxLogo === 'function') {
           _inmoActualizarBoxLogo(s.logoUrl);
@@ -5840,6 +5848,7 @@ function inmoResetForm() {
   document.getElementById('inmoComision').value = '';
   document.getElementById('inmoContactoNombre').value = '';
   document.getElementById('inmoContactoEmail').value = '';
+  document.getElementById('inmoContactoWhatsapp').value = '';
   document.getElementById('inmoBtnGuardar').textContent = 'Guardar inmobiliaria';
   // Checkbox bienvenida: visible y marcado por default en modo "crear"
   var bienvRow = document.getElementById('inmoBienvenidaRow');
@@ -5872,6 +5881,7 @@ async function inmoEditar(slug) {
     document.getElementById('inmoComision').value = inmo.comisionInmobiliaria || '';
     document.getElementById('inmoContactoNombre').value = inmo.contactoNombre || '';
     document.getElementById('inmoContactoEmail').value = inmo.contactoEmail || '';
+    document.getElementById('inmoContactoWhatsapp').value = inmo.contactoWhatsapp || '';
     document.getElementById('inmoBtnGuardar').textContent = 'Guardar cambios';
     // En modo edición no aplica el mail de bienvenida (ya fue activada antes)
     var bienvRow2 = document.getElementById('inmoBienvenidaRow');
@@ -5897,6 +5907,7 @@ async function inmoGuardar(e) {
     comisionInmobiliaria: parseFloat(document.getElementById('inmoComision').value) || 0,
     contactoNombre:       document.getElementById('inmoContactoNombre').value.trim(),
     contactoEmail:        document.getElementById('inmoContactoEmail').value.trim(),
+    contactoWhatsapp:     document.getElementById('inmoContactoWhatsapp').value.trim(),
     // El backend solo respeta este flag en action=crear. En actualizar lo ignora.
     enviarBienvenida:     enviarBienvenida
   };
