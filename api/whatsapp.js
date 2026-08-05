@@ -521,10 +521,19 @@ TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por 
 PODÉS HACER ESTO POR ACÁ:
 - Pasarle su link (siempre el mismo, no vence nunca) → mi_link. Por defecto lo pasás VOS ACÁ MISMO por WhatsApp (canal "whatsapp", es lo más rápido); solo lo mandás por mail (canal "mail") si te lo pide explícitamente él.
 - Contarle cómo van los clientes que le llegaron por su link (si ya publicaron la mudanza, si tienen cotizaciones, si ya eligieron, si pagaron la seña, si está en curso o completada) → ver_mis_pedidos_referidos.
+- Si tiene un CLIENTE que le cerró una operación y quiere proponerle la mudanza YA MISMO, sin mandarle el link: cargale vos el pedido acá con cargar_pedido_referido. Ver más abajo el detalle.
 - Si SE QUIERE MUDAR ÉL MISMO (no un cliente suyo, él): armarle el pedido acá mismo con las mismas herramientas que usa cualquier cliente (crear_pedido, validar_direccion, consultar_estado_pedido, aceptar_cotizacion, etc. — están todas disponibles). Ver más abajo el detalle de esta opción.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
 
-APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus clientes?, ¿se quiere mudar él?, ¿tiene un reclamo/problema? Andá directo a eso.
+APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus clientes?, ¿tiene un cliente para cargar ahora?, ¿se quiere mudar él?, ¿tiene un reclamo/problema? Andá directo a eso.
+
+SI TIENE UN CLIENTE PARA CARGAR (cargar_pedido_referido): esto es una ALTERNATIVA a pasarle el link — en vez de que el asesor reenvíe el link y el cliente publique por su cuenta, el asesor te da los datos y vos publicás el pedido ya atribuido a él. Pedile, en orden: nombre del cliente, si la operación es alquiler o compraventa, origen y destino de la mudanza, PARA CUÁNDO es (obligatorio: sin fecha el mudancero no puede cotizar bien ni saber si tiene que apurarse), y el MAIL del cliente (imprescindible: ahí le llegan los presupuestos — sin mail no se puede cargar). El WhatsApp del cliente es opcional pero recomendalo ("¿tenés también el WhatsApp? así tu cliente puede recibir avisos ahí también").
+
+Si es hoy, mañana, o en 1-2 días, marcá urgente:true — igual se publica normal, pero ADEMÁS avisamos al equipo al toque para que se ocupen ellos de conseguir un mudancero rápido, sin esperar el flujo normal de 24hs hábiles, y el pedido se destaca como urgente para los mudanceros de la zona. En ese caso pedile también la hora aproximada si la sabe (campo horario), y contale al asesor que el equipo se contacta directo a la brevedad.
+
+FOTOS: siempre sugerí que el asesor mande alguna foto del lugar o de lo que hay que mudar, sea urgente o no — ayuda muchísimo a que el mudancero cotice más ajustado. No es obligatorio, así que si no tiene, seguí sin problema (no bloquees la carga por eso), pero preguntalo ("si tenés alguna foto del lugar, mandámela así el mudancero cotiza más afinado — si no tenés, no hay drama"). Las fotos que te mande el asesor en la conversación se adjuntan solas al pedido.
+
+Una vez cargado, confirmale el link/ID del pedido y recordale que ahora el que recibe las cotizaciones es el cliente directamente (a su mail), no él.
 
 PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola"): no asumas qué quiere — saludalo corto por su nombre, con onda, y dejá que te diga qué necesita. Si ya te contó algo concreto de entrada, seguís directo con eso.
 
@@ -1018,6 +1027,29 @@ const asesorTools = [
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
+    name: 'cargar_pedido_referido',
+    description:
+      'Publica el pedido de un CLIENTE del asesor (alguien que le cerró una operación y quiere el servicio de mudanza) directo acá por WhatsApp, sin que el cliente tenga que entrar por el link — queda atribuido al asesor igual que si hubiera entrado por su link. Necesitás el mail del cliente (ahí le van a llegar los presupuestos) y si tenés el WhatsApp mejor, así también puede recibir avisos ahí. Preguntá primero si es alquiler o compraventa (define si el asesor cobra comisión o si el cliente recibe un regalo).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre_cliente: { type: 'string', description: 'Nombre del cliente que se muda' },
+        email_cliente: { type: 'string', description: 'Mail del cliente — obligatorio, ahí le llegan los presupuestos' },
+        whatsapp_cliente: { type: 'string', description: 'WhatsApp del cliente, si lo tenés (opcional)' },
+        tipo_operacion: { type: 'string', enum: ['alquiler', 'compraventa'], description: 'Qué operación inmobiliaria originó la mudanza' },
+        tipo: { type: 'string', enum: ['mudanza', 'flete'] },
+        origen: { type: 'string' },
+        destino: { type: 'string' },
+        fecha: { type: 'string', description: 'Para cuándo es la mudanza (fecha u "hoy"/"mañana"). Obligatorio: los mudanceros necesitan saber cuándo para cotizar y para saber si tienen que apurarse.' },
+        horario: { type: 'string', description: 'Hora aproximada, si la sabés (formato HH:MM). Opcional pero recomendado, sobre todo si es urgente.' },
+        ambientes: { type: 'string', description: 'Cantidad de ambientes, si el cliente la mencionó (opcional)' },
+        detalles: { type: 'string', description: 'Cualquier detalle extra que haya dado el cliente (opcional)' },
+        urgente: { type: 'boolean', description: 'true si el cliente necesita mudarse hoy, mañana, o en 1-2 días — el pedido queda con ventana corta (3hs) y avisa al equipo al toque, en vez de esperar el flujo normal de 24hs.' },
+      },
+      required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha'],
+    },
+  },
+  {
     name: 'derivar_a_humano',
     description: 'Derivá al equipo un RECLAMO o problema que tus otras herramientas no resuelven, o cuando el asesor pide hablar con una persona.',
     input_schema: {
@@ -1062,6 +1094,63 @@ async function pedidosReferidosDelAsesor(prefijo, codigo) {
   }
   pedidos.sort((a, b) => String(b.fechaPublicacion || '').localeCompare(String(a.fechaPublicacion || '')));
   return pedidos;
+}
+
+// Publica el pedido de un CLIENTE del asesor directo desde WhatsApp, ya
+// atribuido a su código — reusa el MISMO endpoint que usa la web cuando el
+// cliente entra por el link del asesor (api/cotizaciones.js?action=publicar),
+// así toda la lógica de comisión/regalo, notificación al asesor e indexado
+// ({prefijo}:asesor:{codigo}:mudanzas) es una sola fuente de verdad, la misma
+// para los dos caminos de entrada (link propio / Emi).
+function emailValido(e) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim());
+}
+async function cargarPedidoReferido(input, asesor, fotos) {
+  input = input || {};
+  const email = String(input.email_cliente || '').trim();
+  if (!emailValido(email)) return { ok: false, error: 'Necesito un mail válido del cliente para poder cargar el pedido.' };
+  if (!input.nombre_cliente || !input.origen || !input.destino || !input.tipo_operacion || !input.fecha) {
+    return { ok: false, error: 'Me faltan datos: nombre del cliente, origen, destino, para cuándo es, o si es alquiler/compraventa.' };
+  }
+  try {
+    const r = await fetch(`${SITE_URL}/api/cotizaciones?action=publicar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clienteEmail: email,
+        clienteNombre: input.nombre_cliente,
+        clienteWA: input.whatsapp_cliente || '',
+        desde: input.origen,
+        hasta: input.destino,
+        ambientes: input.ambientes || '',
+        fecha: input.fecha,
+        horaOrigen: input.horario || '',
+        tipo: input.tipo || 'mudanza',
+        tipoOperacion: input.tipo_operacion,
+        urgente: !!input.urgente,
+        fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [],
+        partner: asesor.canal,
+        partnerAsesor: asesor.codigo,
+        // Las fotos van TAMBIÉN acá (no solo en el campo `fotos` de arriba):
+        // el PDF que se adjunta al mail de aviso a los mudanceros
+        // (generarPDFDetallesBase64) solo lee detallesAdicionales.fotos, no
+        // el campo fotos top-level de la mudanza.
+        detallesAdicionales: (input.detalles || (Array.isArray(fotos) && fotos.length))
+          ? { comentario: input.detalles ? String(input.detalles).slice(0, 500) : '', fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
+          : undefined,
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || !data.ok) return { ok: false, error: data.error || 'No se pudo cargar el pedido, probá de nuevo.' };
+    return {
+      ok: true,
+      id: data.id,
+      nota: `Pedido cargado y atribuido a tu código. Los presupuestos le van a llegar a ${input.nombre_cliente} directo a ${email}${input.whatsapp_cliente ? ' (y avisos por WhatsApp)' : ''}.`,
+    };
+  } catch (e) {
+    console.error('cargarPedidoReferido:', e.message);
+    return { ok: false, error: 'No pude cargar el pedido ahora, probá de nuevo en un rato.' };
+  }
 }
 
 // Herramientas de CLIENTE que un asesor también puede usar si decide mudarse
@@ -1110,6 +1199,22 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv) {
     if (name === 'ver_mis_pedidos_referidos') {
       const pedidos = await pedidosReferidosDelAsesor(asesor.prefijo, asesor.codigo);
       return JSON.stringify({ pedidos, nota: pedidos.length ? undefined : 'Todavía no te llegó ningún cliente por tu link.' });
+    }
+    if (name === 'cargar_pedido_referido') {
+      const fotosConv = Array.isArray(conv.fotos) ? conv.fotos : [];
+      const resultado = await cargarPedidoReferido(input, asesor, fotosConv);
+      if (resultado.ok) conv.fotos = []; // mismo patrón que crear_pedido: se consumen al publicar
+      // Urgente: además de publicar el pedido normal, avisamos al equipo YA
+      // (mismo mecanismo que usa crear_pedido con clientes directos) para que
+      // se ocupen ellos en vez de esperar el flujo normal de 24hs hábiles.
+      if (resultado.ok && input && input.urgente) {
+        try {
+          const detalleOp = input.tipo_operacion === 'compraventa' ? 'compraventa' : 'alquiler';
+          const motivoUrg = `URGENTE: pedido referido por asesor ${nombre || asesor.codigo} — ${detalleOp}, ${input.tipo === 'flete' ? 'flete' : 'mudanza'} de ${input.origen} a ${input.destino}. Cliente: ${input.nombre_cliente} (${input.email_cliente}${input.whatsapp_cliente ? ', WhatsApp ' + input.whatsapp_cliente : ''}). Pedido ${resultado.id}.`;
+          await derivarHumano(waId, motivoUrg, conv, { rol: 'asesor', nombre });
+        } catch (e) { console.warn('derivar urgente asesor:', e.message); }
+      }
+      return JSON.stringify(resultado);
     }
     if (name === 'derivar_a_humano') {
       return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'asesor', nombre }));
@@ -2091,18 +2196,34 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   const conv = (await getJSON(key)) || { messages: [] };
 
   // ── Fotos para un pedido YA ABIERTO (relevamiento remoto) ──────────────────
-  // Si el cliente (no mudancero) manda fotos y ya tiene un pedido buscando/
-  // cotizando, se las adjuntamos DIRECTO a ese pedido (así el mudancero que
-  // pidió "relevamiento" puede ajustar el precio sin visita) en vez de tratarlas
-  // como fotos para un pedido nuevo. Cada foto se modera antes de guardarse:
-  // no puede mostrar teléfono ni email (mismo criterio que las fotos de
-  // mudanceros) — el contacto siempre tiene que ser a través de MudateYa.
-  if ((!mudancero || persona) && (!asesor || persona) && imagenes && imagenes.length) {
+  // Si el cliente O EL ASESOR (no mudancero) manda fotos y ya tiene un pedido
+  // buscando/cotizando, se las adjuntamos DIRECTO a ese pedido (así el
+  // mudancero que pidió "relevamiento" puede ajustar el precio sin visita) en
+  // vez de tratarlas como fotos para un pedido nuevo. Para el asesor, "su"
+  // pedido abierto es el más reciente de sus REFERIDOS (cliente.te cerró algo
+  // y vos lo cargaste con cargar_pedido_referido) — nunca uno ajeno, porque
+  // sale del propio índice {prefijo}:asesor:{codigo}:mudanzas. Cada foto se
+  // modera antes de guardarse: no puede mostrar teléfono ni email (mismo
+  // criterio que las fotos de mudanceros) — el contacto siempre tiene que ser
+  // a través de MudateYa.
+  if ((!mudancero || persona) && imagenes && imagenes.length) {
     try {
-      const pedidos = await pedidosDelCliente(waId);
-      const abiertos = pedidos.filter((p) => p && (p.estado === 'buscando' || p.estado === 'cotizando'));
+      const esAsesorNoFundador = asesor && !persona;
+      let abiertos = [];
+      if (esAsesorNoFundador) {
+        const referidos = await pedidosReferidosDelAsesor(asesor.prefijo, asesor.codigo);
+        const idsAbiertos = referidos.filter((p) => p && (p.estado === 'buscando' || p.estado === 'cotizando')).map((p) => p.id);
+        for (const id of idsAbiertos) {
+          const m = await getJSON(`mudanza:${id}`);
+          if (m) abiertos.push(m); // pedidosReferidosDelAsesor devuelve un resumen recortado; acá necesitamos el objeto completo
+        }
+      } else {
+        const pedidos = await pedidosDelCliente(waId);
+        abiertos = pedidos.filter((p) => p && (p.estado === 'buscando' || p.estado === 'cotizando'));
+      }
       if (abiertos.length) {
         const pedido = abiertos[abiertos.length - 1]; // el más reciente
+        const paraQuien = esAsesorNoFundador ? `el pedido de ${pedido.clienteNombre || 'tu cliente'}` : 'tu pedido';
         const fotosActuales = (pedido.detallesAdicionales && Array.isArray(pedido.detallesAdicionales.fotos))
           ? pedido.detallesAdicionales.fotos.slice() : [];
         let agregadas = 0, rechazadasPorContacto = 0;
@@ -2124,12 +2245,12 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
           }
 
           if (agregadas > 0 && !rechazadasPorContacto) {
-            return `¡Gracias! Agregué ${agregadas} foto${agregadas > 1 ? 's' : ''} a tu pedido — el mudancero ya las va a ver para ajustarte el precio sin necesidad de visitarte. 📷`;
+            return `¡Gracias! Agregué ${agregadas} foto${agregadas > 1 ? 's' : ''} a ${paraQuien} — el mudancero ya las va a ver para ajustar el precio sin necesidad de visita. 📷`;
           }
           if (agregadas > 0 && rechazadasPorContacto) {
-            return `Agregué ${agregadas} foto${agregadas > 1 ? 's' : ''} a tu pedido, pero ${rechazadasPorContacto === 1 ? 'una mostraba' : rechazadasPorContacto + ' mostraban'} un teléfono o email — esa${rechazadasPorContacto > 1 ? 's' : ''} no la${rechazadasPorContacto > 1 ? 's' : ''} guardé. El contacto con el mudancero siempre es a través de MudateYa. Si querés, mandame otra sin esos datos.`;
+            return `Agregué ${agregadas} foto${agregadas > 1 ? 's' : ''} a ${paraQuien}, pero ${rechazadasPorContacto === 1 ? 'una mostraba' : rechazadasPorContacto + ' mostraban'} un teléfono o email — esa${rechazadasPorContacto > 1 ? 's' : ''} no la${rechazadasPorContacto > 1 ? 's' : ''} guardé. El contacto con el mudancero siempre es a través de MudateYa. Si querés, mandame otra sin esos datos.`;
           }
-          return `Esa foto mostraba un teléfono o email de contacto, así que no la guardé — el mudancero te tiene que contactar siempre a través de MudateYa. Mandame otra sin esos datos y la agrego a tu pedido. 📷`;
+          return `Esa foto mostraba un teléfono o email de contacto, así que no la guardé — el contacto con el mudancero siempre tiene que ser a través de MudateYa. Mandame otra sin esos datos y la agrego a ${paraQuien}. 📷`;
         }
         // Si ninguna foto se pudo bajar/procesar, seguimos al flujo normal abajo.
       }

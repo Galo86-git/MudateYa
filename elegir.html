@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta name="robots" content="noindex,nofollow"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Elegir presupuesto — MudateYa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#003580;--navy-dark:#001f4d;
+  --green:#22C36A;--green-dim:rgba(34,195,106,.1);--green-glow:rgba(34,195,106,.25);
+  --border:#E2E8F0;--bg:#F8FAFC;--text:#0F1923;--text2:#475569;--text3:#94A3B8;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
+nav{background:var(--navy);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;text-decoration:none}
+.nav-logo span{color:var(--green)}
+.nav-link{font-size:13px;color:rgba(255,255,255,.7);text-decoration:none}
+.nav-link:hover{color:#fff}
+.hero{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);padding:2.6rem 1.5rem 3.4rem;text-align:center;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:40px;background:var(--bg);clip-path:ellipse(55% 100% at 50% 100%)}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,5.5vw,2.6rem);letter-spacing:2px;color:#fff;margin-bottom:.5rem}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.72);line-height:1.6;max-width:420px;margin:0 auto}
+.card{max-width:480px;margin:-1.6rem auto 0;background:#fff;border-radius:16px;border:1px solid var(--border);padding:1.6rem;box-shadow:0 4px 24px rgba(0,0,0,.08);position:relative;z-index:1}
+.state{display:none}
+.state.active{display:block}
+.route{font-size:12px;color:var(--text3);text-align:center;margin-bottom:14px;font-family:'DM Mono',monospace}
+.mudancero-row{display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex:none}
+.mudancero-name{font-weight:700;font-size:16px;color:var(--text)}
+.mudancero-time{font-size:12.5px;color:var(--text2);margin-top:2px}
+.precio-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.precio-label{font-size:13px;color:var(--text2)}
+.precio-val{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);letter-spacing:.5px}
+.senia-note{font-size:12.5px;color:var(--text3);margin-bottom:20px}
+.nota-box{background:var(--bg);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:18px}
+.btn-main{display:block;width:100%;background:var(--green);color:#fff;border:none;padding:15px;border-radius:12px;font-size:15px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:filter .15s}
+.btn-main:hover{filter:brightness(.94)}
+.btn-main:disabled{opacity:.6;cursor:default}
+.btn-sec{display:block;width:100%;background:transparent;color:var(--navy);border:1.5px solid var(--border);padding:13px;border-radius:12px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;margin-top:10px}
+.btn-sec:hover{border-color:var(--navy)}
+.err-msg{font-size:13px;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;margin-top:12px;display:none}
+.center-icon{font-size:2.2rem;text-align:center;margin-bottom:12px}
+.center-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;text-align:center;color:var(--text);margin-bottom:8px}
+.center-text{font-size:13.5px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:18px}
+.transfer-box{background:var(--bg);border-radius:10px;padding:14px 16px;margin-top:14px;font-size:13px}
+.transfer-row{display:flex;justify-content:space-between;padding:5px 0}
+.transfer-row span:first-child{color:var(--text2)}
+.transfer-row span:last-child{font-weight:600;font-family:'DM Mono',monospace}
+.spinner{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;margin:2.5rem auto;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer-link{display:block;text-align:center;margin-top:16px;font-size:12.5px;color:var(--text3);text-decoration:none}
+.footer-link:hover{color:var(--text2)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Mudate<span>Ya</span></a>
+  <a href="/mi-mudanza" class="nav-link">Ver mi mudanza →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-title" id="heroTitle">Elegí tu mudancero</div>
+  <div class="hero-sub" id="heroSub">Revisá el presupuesto y confirmá para avanzar con el pago.</div>
+</div>
+
+<div class="card">
+
+  <div class="state active" id="stLoading">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="state" id="stError">
+    <div class="center-icon">⚠️</div>
+    <div class="center-title">No pudimos abrir esto</div>
+    <div class="center-text" id="errorText">El link parece incompleto o vencido.</div>
+    <a href="/mi-mudanza" class="footer-link">Ver mi mudanza →</a>
+  </div>
+
+  <div class="state" id="stElegir">
+    <div class="route" id="routeText"></div>
+    <div class="mudancero-row">
+      <div class="avatar" id="avatarLetra">M</div>
+      <div>
+        <div class="mudancero-name" id="mudanceroNombre">—</div>
+        <div class="mudancero-time" id="mudanceroTiempo"></div>
+      </div>
+    </div>
+    <div class="precio-row">
+      <span class="precio-label">Precio total</span>
+      <span class="precio-val" id="precioVal">$0</span>
+    </div>
+    <div class="senia-note">Pagás el 50% ahora como seña y el resto al completar la mudanza.</div>
+    <div class="nota-box" id="notaBox" style="display:none"></div>
+    <button class="btn-main" id="btnElegir">Elegir a este mudancero →</button>
+    <div class="err-msg" id="acceptErr"></div>
+  </div>
+
+  <div class="state" id="stVencida">
+    <div class="center-icon">⏳</div>
+    <div class="center-title">Este presupuesto venció</div>
+    <div class="center-text">Los presupuestos son válidos por 7 días. Desde tu cuenta podés ver los demás o publicar un pedido nuevo.</div>
+    <a href="/mi-mudanza" class="btn-sec" style="display:block;text-decoration:none;text-align:center;line-height:1.4">Ver mi mudanza →</a>
+  </div>
+
+  <div class="state" id="stYaOtra">
+    <div class="center-icon">✅</div>
+    <div class="center-title">Ya elegiste otro mudancero</div>
+    <div class="center-text">Para esta mudanza ya habías elegido a otro presupuesto. Podés ver el detalle desde tu cuenta.</div>
+    <a href="/mi-mudanza" class="btn-sec" style="display:block;text-decoration:none;text-align:center;line-height:1.4">Ver mi mudanza →</a>
+  </div>
+
+  <div class="state" id="stListo">
+    <div class="center-icon">🎉</div>
+    <div class="center-title">¡Listo!</div>
+    <div class="center-text" id="listoText">Elegiste a este mudancero. Ahora pagá la seña para confirmar.</div>
+    <button class="btn-main" id="btnMP">Pagar con Mercado Pago →</button>
+    <button class="btn-sec" id="btnTransfer">Prefiero transferencia</button>
+    <div class="transfer-box" id="transferBox" style="display:none"></div>
+  </div>
+
+</div>
+
+<script>
+var qs = new URLSearchParams(window.location.search);
+var mudanzaId = qs.get('m') || qs.get('mudanzaId') || '';
+var cotizacionId = qs.get('cot') || qs.get('cotizacionId') || '';
+
+function showState(id) {
+  document.querySelectorAll('.state').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function money(n) {
+  return '$' + (Number(n) || 0).toLocaleString('es-AR');
+}
+
+if (!mudanzaId || !cotizacionId) {
+  document.getElementById('errorText').textContent = 'Falta información en el link. Volvé al mail y probá de nuevo, o entrá directo a tu cuenta.';
+  showState('stError');
+} else {
+  fetch('/api/cotizaciones?action=detalle-cotizacion&mudanzaId=' + encodeURIComponent(mudanzaId) + '&cotizacionId=' + encodeURIComponent(cotizacionId))
+    .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+    .then(function(res){
+      if (!res.ok || !res.data.ok) {
+        document.getElementById('errorText').textContent = (res.data && res.data.error) || 'No encontramos este presupuesto.';
+        showState('stError');
+        return;
+      }
+      renderDetalle(res.data);
+    })
+    .catch(function(){
+      document.getElementById('errorText').textContent = 'No pudimos conectarnos. Probá de nuevo en un rato.';
+      showState('stError');
+    });
+}
+
+function renderDetalle(d) {
+  var nombre = d.mudanceroNombre || 'Mudancero';
+  document.getElementById('mudanceroNombre').textContent = nombre;
+  document.getElementById('avatarLetra').textContent = nombre.trim().charAt(0).toUpperCase() || 'M';
+  document.getElementById('mudanceroTiempo').textContent = d.tiempoEstimado ? ('Tiempo estimado: ' + d.tiempoEstimado) : '';
+  document.getElementById('precioVal').textContent = money(d.precio);
+  document.getElementById('routeText').textContent = (d.desde || '') + '  →  ' + (d.hasta || '');
+  if (d.nota) {
+    var nb = document.getElementById('notaBox');
+    nb.style.display = 'block';
+    nb.textContent = d.nota;
+  }
+
+  if (d.esLaElegida) {
+    document.getElementById('listoText').textContent = 'Ya habías elegido a ' + nombre + '. Podés pagar la seña cuando quieras.';
+    showState('stListo');
+    wireListo();
+    return;
+  }
+  if (d.yaAceptada) { showState('stYaOtra'); return; }
+  if (d.vencida || !d.puedeElegir) { showState('stVencida'); return; }
+
+  showState('stElegir');
+  document.getElementById('btnElegir').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Confirmando...';
+    document.getElementById('acceptErr').style.display = 'none';
+    fetch('/api/cotizaciones?action=aceptar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: mudanzaId, cotizacionId: cotizacionId })
+    })
+      .then(function(r){ return r.json().then(function(dd){ return { ok: r.ok, data: dd }; }); })
+      .then(function(res){
+        if (!res.ok) {
+          btn.disabled = false;
+          btn.textContent = 'Elegir a este mudancero →';
+          var e = document.getElementById('acceptErr');
+          e.textContent = (res.data && res.data.error) || 'No pudimos confirmar la elección. Probá de nuevo.';
+          e.style.display = 'block';
+          return;
+        }
+        document.getElementById('listoText').textContent = 'Elegiste a ' + nombre + '. Ahora pagá la seña para confirmar.';
+        showState('stListo');
+        wireListo();
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = 'Elegir a este mudancero →';
+        var e = document.getElementById('acceptErr');
+        e.textContent = 'No pudimos conectarnos. Probá de nuevo.';
+        e.style.display = 'block';
+      });
+  });
+}
+
+function wireListo() {
+  document.getElementById('btnMP').addEventListener('click', function() {
+    window.location.href = '/pagar/' + encodeURIComponent(mudanzaId);
+  });
+  document.getElementById('btnTransfer').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Buscando datos...';
+    fetch('/api/transferencias?action=datos&mudanzaId=' + encodeURIComponent(mudanzaId) + '&tipoPago=anticipo')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        btn.disabled = false;
+        btn.textContent = 'Prefiero transferencia';
+        var box = document.getElementById('transferBox');
+        var banco = d.banco || {};
+        if (d.checkoutUrl) {
+          box.innerHTML = '<a href="' + d.checkoutUrl + '" style="display:block;text-align:center;color:#003580;font-weight:700;text-decoration:none">Abrir checkout con el monto ya cargado →</a>';
+        } else if (banco.cbu || banco.alias) {
+          var rows = '';
+          if (banco.alias) rows += '<div class="transfer-row"><span>Alias</span><span>' + banco.alias + '</span></div>';
+          if (banco.cbu) rows += '<div class="transfer-row"><span>CBU/CVU</span><span>' + banco.cbu + '</span></div>';
+          if (banco.titular) rows += '<div class="transfer-row"><span>Titular</span><span>' + banco.titular + '</span></div>';
+          if (d.monto) rows += '<div class="transfer-row"><span>Monto exacto</span><span>' + money(d.monto) + '</span></div>';
+          box.innerHTML = rows;
+        } else {
+          box.innerHTML = '<span style="color:#B91C1C">' + (d.error || 'No pudimos traer los datos de transferencia.') + '</span>';
+        }
+        box.style.display = 'block';
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = 'Prefiero transferencia';
+      });
+  });
+}
+</script>
+</body>
+</html>

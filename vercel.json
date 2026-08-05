@@ -46,6 +46,10 @@
       "destination": "/pago-exitoso.html"
     },
     {
+      "source": "/elegir",
+      "destination": "/elegir.html"
+    },
+    {
       "source": "/terminos",
       "destination": "/terminos.html"
     },
@@ -384,7 +388,7 @@
       ]
     },
     {
-      "source": "/(admin|admin-ia|admin-circulo|aliados|asesor-dashboard|asesor-login|asesor-registro|c21-altas|c21-importar|c21-registro|mudafy-importar|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|r|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|cliente-packs|mudancero-perfil)(\\.html)?",
+      "source": "/(admin|admin-ia|admin-circulo|aliados|asesor-dashboard|asesor-login|asesor-registro|c21-altas|c21-importar|c21-registro|mudafy-importar|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|r|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|cliente-packs|mudancero-perfil|elegir)(\\.html)?",
       "headers": [
         {
           "key": "Cache-Control",

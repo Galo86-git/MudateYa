@@ -33,13 +33,17 @@ const { Resend } = require('resend');
 // ── Canales con link exclusivo de cotización (?asesor={codigo}) ──
 // prefijo = prefijo de las claves en Redis · slug = canal en la URL pública.
 // Ojo: independientes guarda con prefijo "indep" pero la URL dice "independientes".
+// nombre/color/fondoAviso: MISMO branding que ya usa el mail de alta en
+// api/canales.js (asesorRegistro) — se duplica acá a propósito (config mínima,
+// sin efectos secundarios) para no acoplar este cron a ese archivo.
 var CANALES = [
-  { prefijo: 'remax',  slug: 'remax' },
-  { prefijo: 'c21',    slug: 'c21' },
-  { prefijo: 'mudafy', slug: 'mudafy' },
-  { prefijo: 'indep',  slug: 'independientes' }
+  { prefijo: 'remax',  slug: 'remax',          nombre: 'RE/MAX',                color: '#DC1C2E', fondoAviso: '#FFF5F5' },
+  { prefijo: 'c21',    slug: 'c21',             nombre: 'Century 21',            color: '#BEAF87', fondoAviso: '#FBF8F1' },
+  { prefijo: 'mudafy', slug: 'mudafy',          nombre: 'Mudafy',                color: '#FF5A5F', fondoAviso: '#FFF5F5' },
+  { prefijo: 'indep',  slug: 'independientes',  nombre: 'Asesores independientes', color: '#003580', fondoAviso: '#F5F8FC' }
 ];
 var SITE = 'https://mudateya.ar';
+var WA_EMI = 'https://wa.me/12399462954?text=' + encodeURIComponent('Hola Emi!');
 
 // ── Wrappers Redis (mismo patrón que cron-onboarding.js) ──
 async function redisCall(method, args) {
@@ -100,6 +104,9 @@ async function recolectarDestinatarios() {
         email:  a.email,
         nombre: a.nombre || '',
         canal:  canal.slug,
+        canalNombre: canal.nombre,
+        color: canal.color,
+        fondoAviso: canal.fondoAviso,
         link:   linkCotizacion(canal.slug, a.codigo || ids[i])
       });
     }
@@ -108,13 +115,19 @@ async function recolectarDestinatarios() {
 }
 
 // ── PLANTILLA DEL EMAIL ──
-function emailRecordatorio(nombre, ctaHref) {
+// canal (opcional): { canalNombre, color, fondoAviso } — si no viene (ej. modo
+// test sin match), cae al branding genérico de MudateYa.
+function emailRecordatorio(nombre, ctaHref, canal) {
   var primerNombre = ((nombre || '').trim().split(' ')[0]) || 'Hola';
   return {
-    subject: primerNombre + ', ¿algún cliente que se muda esta semana?',
+    subject: primerNombre + ', ¿tenés alguna operación abierta esta semana?',
     html: bodyHtml({
+      canalNombre: canal && canal.canalNombre,
+      color:       (canal && canal.color) || '#22C36A',
+      fondoAviso:  (canal && canal.fondoAviso) || '#F5F7FA',
       titulo: '¡Arrancá la semana, ' + primerNombre + '! 🚀',
-      lead:   'Te lo recordamos todos los lunes porque funciona: cada cliente que alquila o compra con vos se va a mudar. Convertí ese momento en un servicio premium — y gratis — que te posiciona frente a tu cliente.',
+      lead:   '¿Tenés alguna operación abierta esta semana — alquiler o compraventa? En cuanto la cierres, proponele la mudanza a tu cliente: es un servicio premium, gratis, que te posiciona frente a él y te trae ' +
+              (canal && canal.canalNombre === 'Asesores independientes' ? 'una comisión o un regalo para tu cliente' : 'un beneficio') + ' según el tipo de operación.',
       bullets: [
         'Cargás los datos del cliente y de la mudanza',
         'Elegís presupuestos de mudanceras verificadas',
@@ -131,22 +144,34 @@ function bodyHtml(p) {
   var bullets = p.bullets.map(function(b) {
     return '<li style="margin:6px 0">' + b + '</li>';
   }).join('');
+  var marcaCanal = p.canalNombre
+    ? '<span style="color:rgba(255,255,255,.75);font-size:15px;margin-left:10px">× ' + p.canalNombre + '</span>'
+    : '';
   return '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
     '<div style="background:#003580;padding:22px 28px;text-align:center">' +
       '<span style="font-family:Bebas Neue,Arial,sans-serif;font-size:30px;font-weight:900;letter-spacing:2px;color:#fff">MUDATE</span>' +
       '<span style="font-family:Bebas Neue,Arial,sans-serif;font-size:30px;font-weight:900;letter-spacing:2px;color:#22C36A">YA</span>' +
+      marcaCanal +
     '</div>' +
     '<div style="padding:28px">' +
       '<h2 style="margin:0 0 12px;color:#0F1923;font-size:20px">' + p.titulo + '</h2>' +
       '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">' + p.lead + '</p>' +
-      '<div style="background:#F5F7FA;border-radius:12px;padding:14px 20px;margin-bottom:18px">' +
-        '<div style="font-size:12px;font-weight:700;color:#003580;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">En 2 minutos:</div>' +
+      '<div style="background:' + p.fondoAviso + ';border-radius:12px;padding:14px 20px;margin-bottom:18px">' +
+        '<div style="font-size:12px;font-weight:700;color:' + p.color + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">En 2 minutos:</div>' +
         '<ul style="margin:0;padding-left:20px;color:#0F1923;font-size:13px;line-height:1.5">' + bullets + '</ul>' +
       '</div>' +
       '<div style="text-align:center;margin:24px 0">' +
-        '<a href="' + p.ctaHref + '" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">' + p.cta + '</a>' +
+        '<a href="' + p.ctaHref + '" style="display:inline-block;background:' + p.color + ';color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">' + p.cta + '</a>' +
       '</div>' +
       '<p style="color:#475569;font-size:13px;line-height:1.6;margin:0">' + p.cierre + '</p>' +
+      '<div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 16px;margin-top:20px;text-align:center">' +
+        '<div style="font-size:13px;color:#166534;font-weight:600;margin-bottom:8px">📱 Y si te resulta más rápido, hacelo por WhatsApp con Emi</div>' +
+        '<a href="' + WA_EMI + '" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>' +
+      '</div>' +
+      '<div style="margin-top:20px;padding-top:20px;border-top:1px solid #EEF1F5;text-align:center">' +
+        '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:8px">Seguinos en IG</div>' +
+        '<a href="https://www.instagram.com/mudateya.ar/" style="color:#003580;font-weight:700;font-size:14px;text-decoration:none">@mudateya.ar</a>' +
+      '</div>' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">' +
         'Recibís este recordatorio porque sos Asesor de MudateYa. ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
       '</p>' +
@@ -187,7 +212,7 @@ module.exports = async function handler(req, res) {
       for (var m = 0; m < lista0.length; m++) {
         if (lista0[m].email.toLowerCase() === testTo.toLowerCase()) { match = lista0[m]; break; }
       }
-      var muestra = emailRecordatorio(match ? match.nombre : 'Asesor de prueba', match ? match.link : null);
+      var muestra = emailRecordatorio(match ? match.nombre : 'Asesor de prueba', match ? match.link : null, match);
       var rt = await resend.emails.send({
         from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
         to: testTo, subject: muestra.subject, html: muestra.html
@@ -224,7 +249,7 @@ module.exports = async function handler(req, res) {
         continue;
       }
 
-      var mail = emailRecordatorio(d.nombre, d.link);
+      var mail = emailRecordatorio(d.nombre, d.link, d);
       try {
         var r = await resend.emails.send({
           from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',

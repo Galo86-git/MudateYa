@@ -181,6 +181,11 @@ function fmtFechaAR(fecha) {
 // que un documento diga 7 días y otro diga 24 horas.
 const DIAS_VALIDEZ_COTIZACION = 7;
 
+// Estados de la mudanza en los que TODAVÍA se puede aceptar una cotización.
+// Única fuente de verdad para action=aceptar y action=detalle-cotizacion —
+// si divergen, el mail muestra un botón "Elegir y pagar" que la API rechaza.
+const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas', 'vencido_con_cotizaciones'];
+
 // Devuelve el Date en que vence una cotización, o null si no se puede saber.
 function vencimientoCotizacion(cot, mudanza) {
   const base = (cot && cot.fecha) || (mudanza && mudanza.fechaPublicacion);
@@ -702,7 +707,7 @@ module.exports = async function handler(req, res) {
   const { action } = req.query;
 
   // ── RATE LIMITING por IP ─────────────────────────────────────────
-  const RATE_LIMITED_ACTIONS = ['publicar', 'cotizar', 'analizar-foto', 'crear-sesion', 'request-magic-link', 'request-magic-link-cliente'];
+  const RATE_LIMITED_ACTIONS = ['publicar', 'cotizar', 'analizar-foto', 'crear-sesion', 'request-magic-link', 'request-magic-link-cliente', 'detalle-cotizacion', 'aceptar'];
   if (RATE_LIMITED_ACTIONS.includes(action)) {
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
     const rlKey = `ratelimit:${action}:${ip}`;
@@ -957,7 +962,7 @@ module.exports = async function handler(req, res) {
   try {
 
     if (action === 'publicar' && req.method === 'POST') {
-      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales, tipoOrigen, tipoDestino, deptoOrigen, deptoDestino, horaOrigen, tipoOperacion } = req.body;
+      const { clienteEmail, clienteNombre, desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, clienteWA, tipo, pisoOrigen, pisoDestino, ascOrigen, ascDestino, fotos, refAliado, km, nivel, partner, partnerAsesor, partnerPropiedad, detallesAdicionales, tipoOrigen, tipoDestino, deptoOrigen, deptoDestino, horaOrigen, tipoOperacion, urgente } = req.body;
       if (!clienteEmail || !desde || !hasta) return res.status(400).json({ error: 'Faltan datos' });
       // ── LÍMITES ANTI-SPAM ──────────────────────────────────────────────
       // Límite 1: máximo 2 pedidos activos simultáneos por cliente
@@ -991,6 +996,11 @@ module.exports = async function handler(req, res) {
       const MAX_COT = 50;
       // Vigencia del pedido en HORAS HÁBILES (ver api/_habiles.js):
       // el reloj se pausa los fines de semana y feriados.
+      // Urgente (hoy/mañana/1-2 días): mismo criterio que ya usa el bot con
+      // clientes directos (crearPedido en whatsapp.js) — 3 horas CORRIDAS en
+      // vez de 24hs hábiles, para no mostrarle a los mudanceros un plazo largo
+      // mientras el equipo ya lo está resolviendo a mano.
+      const urgenteNorm = urgente === true;
       const HORAS_VIGENCIA = 24;
 
       // km viene calculado desde el frontend (Google Maps lado cliente).
@@ -1144,7 +1154,7 @@ module.exports = async function handler(req, res) {
         horaOrigenNorm = horaOrigen.trim();
       }
 
-      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: vencimientoHabilISO(HORAS_VIGENCIA), cotizaciones: [] };
+      const mudanza = { id, clienteEmail, clienteNombre, clienteWA: clienteWA||'', desde, hasta, ambientes, fecha, servicios, extras, zonaBase, precio_estimado, tipo: tipo||'mudanza', nivel: nivelNorm, tipoOrigen: tipoOrigenNorm, tipoDestino: tipoDestinoNorm, pisoOrigen: pisoOrigenNorm, pisoDestino: pisoDestinoNorm, deptoOrigen: deptoOrigenNorm, deptoDestino: deptoDestinoNorm, horaOrigen: horaOrigenNorm, urgente: urgenteNorm, ascOrigen, ascDestino, fotos: fotos||[], km: kmDistancia, estado: 'buscando', modoCotizacion: modo, maxCotizaciones: MAX_COT, mudancerosInvitados: mudancerosInvitados||[], refAliado: refAliado || null, partner: partnerNorm, partnerAsesor: partnerAsesorNorm, partnerPropiedad: partnerPropiedadNorm, tipoOperacion: tipoOperacionNorm, comisionInmobiliariaPct: comisionInmobiliariaPct, comisionInmobiliariaPagar: 0, comisionInmobiliariaLiquidada: false, detallesOrigen: detallesOrigenNorm, detallesDestino: detallesDestinoNorm, detallesAdicionales: detallesNorm, fechaPublicacion: new Date().toISOString(), expira: urgenteNorm ? new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() : vencimientoHabilISO(HORAS_VIGENCIA), cotizaciones: [] };
       mudanza.origenCanal = origenCanal;
       // Se guarda solo si difiere del validado: si partnerNorm quedó null pero
       // el cliente llegó por /inmobiliaria/{slug}, acá queda cuál era.
@@ -1411,6 +1421,37 @@ module.exports = async function handler(req, res) {
       return res.status(200).end(pdfBuffer);
     }
 
+    // Detalle público y mínimo de UNA cotización puntual, para la página de
+    // confirmación /elegir (link "Elegir y pagar" del mail de vencimiento).
+    // Mismo modelo de confianza que /pagar/:id (api/pagar.js): mudanzaId +
+    // cotizacionId ya funcionan como bearer implícito en este código — no se
+    // agrega una capa de auth nueva, solo se acota lo que se expone (nada de
+    // otras cotizaciones, ni datos del cliente).
+    if (action === 'detalle-cotizacion' && req.method === 'GET') {
+      const { mudanzaId, cotizacionId } = req.query;
+      if (!mudanzaId || !cotizacionId) return res.status(400).json({ error: 'Faltan datos' });
+      const mudanza = await getJSON(`mudanza:${mudanzaId}`);
+      if (!mudanza) return res.status(404).json({ error: 'Pedido no encontrado' });
+      const cot = (mudanza.cotizaciones || []).find(c => c.id === cotizacionId);
+      if (!cot) return res.status(404).json({ error: 'Presupuesto no encontrado' });
+      const yaAceptada = ['cotizacion_aceptada', 'en_curso', 'completada'].includes(mudanza.estado);
+      const vencida = cotizacionVencida(cot, mudanza);
+      return res.status(200).json({
+        ok: true,
+        mudanceroNombre: cot.mudanceroNombre || 'Mudancero',
+        precio: cot.precio || 0,
+        tiempoEstimado: cot.tiempoEstimado || '',
+        nota: cot.nota || '',
+        desde: mudanza.desde || '',
+        hasta: mudanza.hasta || '',
+        tipo: mudanza.tipo || 'mudanza',
+        yaAceptada,
+        esLaElegida: yaAceptada && !!mudanza.cotizacionAceptada && mudanza.cotizacionAceptada.id === cot.id,
+        vencida,
+        puedeElegir: !yaAceptada && !vencida && ESTADOS_ACEPTABLES.includes(mudanza.estado),
+      });
+    }
+
     if (action === 'aceptar' && req.method === 'POST') {
       const { mudanzaId, cotizacionId, propuestaNivel } = req.body;
       // Lock: evita doble aceptación concurrente (doble email + doble link de pago).
@@ -1432,7 +1473,6 @@ module.exports = async function handler(req, res) {
       // corridos, chequeado abajo con cotizacionVencida). Sin esto, un
       // cliente que tardó más de 24hs en elegir quedaba bloqueado aunque el
       // presupuesto que quería aceptar todavía estuviera vigente.
-      const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas', 'vencido_con_cotizaciones'];
       if (mudanza.estado && ESTADOS_ACEPTABLES.indexOf(mudanza.estado) === -1) {
         return res.status(409).json({
           error: 'Esta mudanza ya no está abierta para aceptar cotizaciones.',
@@ -3745,6 +3785,14 @@ async function notificarMudanceros(mudanza) {
     ? `<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:11px 28px;font-size:16px;color:#1A6FFF;font-weight:600;display:flex;align-items:center"><span style="background:#1A6FFF;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">📋</span>Detalles del lugar adjuntos en PDF</div>`
     : '';
 
+  // Banner URGENTE — el pedido tiene una ventana corta (3hs corridas, ver
+  // action=publicar) en vez de las 24hs hábiles normales. Necesita destacarse
+  // bien arriba para que el mudancero sepa que tiene que responder ya, no
+  // "cuando pueda" como cualquier otro pedido.
+  const bannerUrgente = mudanza.urgente
+    ? `<div style="background:#FEE2E2;border-bottom:1px solid #FCA5A5;padding:11px 28px;font-size:16px;color:#B91C1C;font-weight:700;display:flex;align-items:center"><span style="background:#DC2626;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">🚨</span>URGENTE · Necesitan mudarse ya, respondé lo antes posible</div>`
+    : '';
+
   const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
     <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
     ${bannerMudafyMudancero}
@@ -4318,12 +4366,17 @@ async function avisarVencimientoPorMail(mudanza, cots) {
   const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
   const tipoLabel = mudanza.tipo === 'flete' ? 'flete' : 'mudanza';
 
+  const SITE = process.env.SITE_URL || 'https://mudateya.ar';
   const filas = cots.map((c) => {
     const precio = c.precio || (Array.isArray(c.propuestas) && c.propuestas[0] && c.propuestas[0].precio) || 0;
-    return `<tr>
-      <td style="padding:11px 0;border-top:1px solid #E2E8F0;font-size:15px;color:#0F1923">${c.mudanceroNombre || 'Mudancero'}</td>
-      <td style="padding:11px 0;border-top:1px solid #E2E8F0;text-align:right;font-weight:700;color:#003580;font-size:15px">$${Number(precio).toLocaleString('es-AR')}</td>
-    </tr>`;
+    const elegirHref = `${SITE}/elegir?m=${encodeURIComponent(mudanza.id)}&cot=${encodeURIComponent(c.id)}`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-top:1px solid #E2E8F0">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:#0F1923">${c.mudanceroNombre || 'Mudancero'}</div>
+        <div style="font-size:16px;font-weight:700;color:#003580;margin-top:2px">$${Number(precio).toLocaleString('es-AR')}</div>
+      </div>
+      <a href="${elegirHref}" style="flex:none;display:inline-block;background:#22C36A;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px;white-space:nowrap">Elegir y pagar →</a>
+    </div>`;
   }).join('');
 
   const subject = cots.length
@@ -4331,7 +4384,7 @@ async function avisarVencimientoPorMail(mudanza, cots) {
     : 'Venció el plazo — no llegamos a conseguirte presupuestos';
 
   const mensaje = cots.length
-    ? `El plazo de 24hs hábiles para elegir tu ${tipoLabel} venció, pero estos son los presupuestos que llegaste a recibir:`
+    ? `El plazo de 24hs hábiles para elegir tu ${tipoLabel} venció, pero estos son los presupuestos que llegaste a recibir. Elegí uno y te llevamos directo a pagar la seña:`
     : `No llegamos a conseguirte presupuestos a tiempo para tu ${tipoLabel}.`;
 
   await resend.emails.send({
@@ -4345,8 +4398,8 @@ async function avisarVencimientoPorMail(mudanza, cots) {
       <div style="padding:28px">
         <p style="color:#0F1923;font-size:16px;line-height:1.7;margin:0 0 16px">Hola ${nomCli},</p>
         <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 8px">${mensaje}</p>
-        ${cots.length ? `<table style="width:100%;border-collapse:collapse;margin:8px 0 20px">${filas}</table>` : ''}
-        <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">Si querés, podés reactivarlo o publicar un nuevo pedido desde tu cuenta.</p>
+        ${cots.length ? `<div style="margin:8px 0 20px">${filas}</div>` : ''}
+        <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 20px">Si preferís ver todo junto o publicar un nuevo pedido, podés hacerlo desde tu cuenta.</p>
         <div style="text-align:center;margin:20px 0">
           <a href="https://mudateya.ar/mi-mudanza" style="display:inline-block;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">Ver mi pedido →</a>
         </div>
