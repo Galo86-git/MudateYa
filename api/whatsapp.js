@@ -409,6 +409,8 @@ QUIERE SUMARSE COMO SOCIO (no confundir con alguien que quiere mudarse — estos
 
 RECLAMOS Y PROBLEMAS: si te cuenta algo que salió mal (el mudancero no llegó o se retrasó mucho, algo se rompió, el pago no se acreditó, quiere un reembolso, hay una discrepancia con lo acordado, o está enojado/frustrado), primero bajale el nivel con empatía genuina — no un genérico "lamento escuchar eso". Si tiene un pedido activo, usá consultar_estado_pedido para ver los datos reales antes de responder — no asumas ni inventes qué pasó. Si es algo que tus otras herramientas resuelven (cancelar, responder un ajuste), hacelo. Si es un reclamo de verdad que necesita que una persona lo mire, usá derivar_a_humano con un motivo que empiece con "RECLAMO:" y el detalle (qué pasó, con qué pedido si aplica). Cerrá siempre confirmando que el equipo lo va a contactar — nunca prometas algo que no podés garantizar (reembolsos, sanciones al mudancero: eso lo decide el equipo).
 
+PROBLEMA TÉCNICO (distinto de un reclamo — acá algo de la plataforma no le funciona: no lo deja registrarse, ve un error en la web, algo no carga, un botón no responde): pedile con onda que te mande una captura de pantalla o foto de lo que está viendo — la podés mirar vos misma. Si reconocés el problema con lo que sabés de MudateYa (por ejemplo, un mensaje de error que ya conocés y podés explicarle qué significa y cómo resolverlo), ayudalo directo ahí, sin derivar. Si no lo entendés, no estás segura, o parece un error real de la plataforma (no algo que él esté haciendo mal), usá derivar_a_humano con un motivo que empiece con "BUG:" describiendo qué te contó y qué viste en la imagen si mandó una — así el equipo lo revisa como corresponde. No le prometas que se va a arreglar en un plazo determinado.
+
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
@@ -490,6 +492,8 @@ PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", "quiero info", vino de un link): no t
 
 RECLAMOS Y PROBLEMAS: si te cuenta que el cliente no le paga el saldo, canceló sin avisar, hay una discrepancia con lo acordado, o cualquier lío que tus herramientas de arriba no resuelven, NO lo dejes solo con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea de verdad, y avisale que lo van a contactar.
 
+PROBLEMA TÉCNICO (distinto de un reclamo — la plataforma no le funciona: no puede entrar a su cuenta, ve un error, algo no carga): pedile que te mande una captura o foto de lo que está viendo. Si lo reconocés con lo que sabés de MudateYa, ayudalo directo. Si no, o parece un error real de la plataforma, usá derivar_a_humano con motivo empezando en "BUG:" describiendo el problema. No prometas plazos de arreglo.
+
 TIP DE AUDIO: podés recibir audios perfectamente. NO lo menciones en el primer mensaje — recién a partir del segundo o tercer intercambio, si te sigue tipeando todo, mencionalo una vez con onda: algo como "Che, si te resulta más rápido también me podés mandar un audio — te entiendo igual 🎙️". Una sola vez por conversación, no lo repitas (esto es aparte del audio para explicar qué incluye una cotización puntual, que ya lo sugerís siempre al cotizar).
 
 CÓMO TRABAJÁS:
@@ -562,6 +566,8 @@ GLOSARIO PARA CONTAR EL ESTADO DE UN PEDIDO REFERIDO (traducilo siempre a lengua
 - cancelado / cancelada_por_ajuste: se canceló.
 
 RECLAMOS Y PROBLEMAS: si te cuenta que un cliente suyo tuvo un problema con la mudanza (no le cotizaron, algo salió mal, tarda en pagarle la comisión, etc.), no lo dejes con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea, y avisale que lo van a contactar.
+
+PROBLEMA TÉCNICO (distinto de un reclamo — algo de la plataforma no le funciona, por ejemplo no lo deja registrarse o completar algo en la web): pedile que te mande una captura o foto de lo que está viendo. Muchas veces el mensaje de error ya explica solo qué pasó (ej: "el mail tiene que ser de tu empresa") — si lo entendés, explicáselo vos misma en criollo y ayudalo a resolverlo. Si no lo entendés, o parece un error real de la plataforma, usá derivar_a_humano con motivo empezando en "BUG:" describiendo el problema. No prometas plazos de arreglo.
 
 REGLA CRÍTICA DEL LINK: cuando mi_link te devuelva un link (canal whatsapp), pasáselo EXACTO, carácter por carácter, tal cual te lo dio la herramienta — nunca lo inventes, completes ni "arregles" de memoria. Si no te devolvió link, no muestres ninguno: avisá que hubo un problema y ofrecé reintentar.
 
@@ -1700,6 +1706,10 @@ async function derivarHumano(waId, motivo, conv, opts) {
       // no acreditado, disputa) — se marca distinto para que el equipo lo triage
       // más rápido que un "quiere hablar con alguien" genérico.
       const esReclamo = !esUrgente && /^reclamo/i.test(String(motivo || '').trim());
+      // "BUG:" = problema técnico real (no funciona algo de la web/registro),
+      // no una queja sobre el servicio — el equipo lo mira como bug, no como
+      // reclamo. Ver PROBLEMA TÉCNICO en los prompts.
+      const esBug = !esUrgente && !esReclamo && /^bug/i.test(String(motivo || '').trim());
       const esFlete = /\bflete/i.test(motivo || '');
       const tipoUrg = esFlete ? 'FLETE' : 'MUDANZA';
       const artUrg = esFlete ? 'un' : 'una';
@@ -1707,11 +1717,15 @@ async function derivarHumano(waId, motivo, conv, opts) {
         ? `🚨 ${tipoUrg} URGENTE — ${waId}`
         : esReclamo
         ? `⚠️ Reclamo de ${quienLabel} — ${waId}`
+        : esBug
+        ? `🐛 Problema técnico reportado por ${quienLabel} — ${waId}`
         : `🙋 ${opts.rol === 'mudancero' ? 'Mudancero' : opts.rol === 'asesor' ? 'Asesor' : 'Cliente'} pide atención humana — ${waId}`;
       const intro = esUrgente
         ? `tiene ${artUrg} <b>${tipoUrg.toLowerCase()} URGENTE</b> y necesita que el equipo lo tome ya`
         : esReclamo
         ? 'tiene un <b>reclamo</b>'
+        : esBug
+        ? 'reportó un <b>problema técnico</b> (revisar las últimas fotos/mensajes de la charla por si mandó una captura)'
         : 'pidió hablar con una persona';
       await resend.emails.send({
         from: 'MudateYa <noreply@mudateya.ar>',
