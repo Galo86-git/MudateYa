@@ -3950,6 +3950,11 @@ module.exports.notificarMudanceros = notificarMudanceros;
 // El bot también usa el generador de PDF de detalles directamente (para su aviso
 // de prueba a mudatest, que no exige que el perfil esté 'aprobado').
 module.exports.generarPDFDetallesBase64 = generarPDFDetallesBase64;
+// Exportados para los tests automáticos (tests/cotizaciones-validez.test.js) —
+// la ventana de validez de 7 días de una cotización, ver DIAS_VALIDEZ_COTIZACION.
+module.exports.cotizacionVencida = cotizacionVencida;
+module.exports.vencimientoCotizacion = vencimientoCotizacion;
+module.exports.DIAS_VALIDEZ_COTIZACION = DIAS_VALIDEZ_COTIZACION;
 
 // ════════════════════════════════════════════════════════════════════
 // Mail de confirmación al cliente cuando publica un pedido nuevo.
