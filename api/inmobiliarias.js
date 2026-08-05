@@ -591,6 +591,14 @@ module.exports = async function handler(req, res) {
       if (existente) return res.status(409).json({ error: 'Ya existe una inmobiliaria con ese slug' });
 
       var data = sanitizarInmo(body);
+      // Decisión: las inmobiliarias que se dan de alta de acá en más van SIN
+      // logo, solo nombre + los colores default de MudateYa — se ignora
+      // cualquier logo/color que venga en el body (auto-branding incluido),
+      // para no depender de un logo de terceros que se pueda romper o quedar
+      // desactualizado. Si en el futuro se quiere volver a permitir logo
+      // propio, sacar estas dos líneas alcanza.
+      data.logo = '';
+      data.colorPrimario = '#003580';
       data.fechaAlta = new Date().toISOString();
       data.activa = true;
       await setJSON('inmobiliaria:' + data.slug, data);
@@ -606,7 +614,14 @@ module.exports = async function handler(req, res) {
           const { Resend } = require('resend');
           const resend = new Resend(process.env.RESEND_API_KEY);
           var urlInmo = 'https://mudateya.ar/inmobiliaria/' + data.slug;
+          var urlRegistroAsesores = urlInmo + '/registro';
           var saludo = data.contactoNombre ? data.contactoNombre.split(' ')[0] : data.nombre;
+          // Con comisión 0%, lo que cobra es cada asesor individual (5% estándar),
+          // no la agencia — el paso 4 tiene que reflejar eso, no prometer una
+          // comisión que en este modelo no existe a nivel agencia.
+          var pasoComision = data.comisionInmobiliaria > 0
+            ? '<div><strong style="color:#003580">4.</strong> Cuando la mudanza se completa, vos cobrás una comisión automática sobre el viaje.</div>'
+            : '<div><strong style="color:#003580">4.</strong> Cada asesor tuyo cobra su comisión individual por las mudanzas que derive — no hay comisión a nivel agencia en este plan.</div>';
 
           await resend.emails.send({
             from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
@@ -636,7 +651,15 @@ module.exports = async function handler(req, res) {
                     <div style="margin-bottom:10px"><strong style="color:#003580">1.</strong> Cuando un cliente cierra una operación con vos, compartile el link de arriba (por WhatsApp, mail, lo que prefieras).</div>
                     <div style="margin-bottom:10px"><strong style="color:#003580">2.</strong> El cliente entra, completa los datos de su mudanza y recibe cotizaciones de mudanceros verificados.</div>
                     <div style="margin-bottom:10px"><strong style="color:#003580">3.</strong> Elige el que quiera, paga el 50% de seña por Mercado Pago o transferencia y coordina con el mudancero.</div>
-                    <div><strong style="color:#003580">4.</strong> Cuando la mudanza se completa, vos cobrás una comisión automática sobre el viaje.</div>
+                    ${pasoComision}
+                  </div>
+
+                  <!-- Link para tus asesores -->
+                  <h2 style="color:#0F1419;font-size:17px;font-weight:800;margin:28px 0 12px">¿Tenés asesores en tu equipo?</h2>
+                  <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:18px;font-size:14px;color:#4B5563;line-height:1.7">
+                    <p style="margin:0 0 12px">Cada asesor tuyo puede sacarse su propio link (con tu marca) para compartir con sus clientes — queda atribuido a él para su comisión individual, sin que tengan que hacer nada más.</p>
+                    <p style="margin:0 0 12px">Pasales este link para que se registren:</p>
+                    <div style="background:#fff;border:1px dashed #CBD5E1;border-radius:8px;padding:10px 12px;font-family:'Courier New',monospace;font-size:13px;color:#003580;word-break:break-all">${urlRegistroAsesores}</div>
                   </div>
 
                   <!-- Datos cuenta -->

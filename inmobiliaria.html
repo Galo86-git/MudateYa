@@ -1106,6 +1106,13 @@ var ENDPOINTS_ASESOR = {
   independientes: '/api/independientes?action=obtener&codigo=',
   c21:            '/api/c21?action=obtener&codigo='
 };
+// Cualquier slug que NO sea uno de los 4 canales de arriba es una inmobiliaria
+// dada de alta dinámicamente en api/inmobiliarias.js con sus propios asesores
+// (ver api/canales.js action=registrar, campo inmobiliariaSlug). Esos asesores
+// viven igual en el pool "independientes" — solo cambia con qué slug se los busca.
+function endpointAsesorPara(slug) {
+  return ENDPOINTS_ASESOR[(slug || '').toLowerCase()] || ENDPOINTS_ASESOR.independientes;
+}
 
 function aplicarMarcaAsesor(a) {
   if (!a || !a.nombre) return;
@@ -1118,7 +1125,7 @@ function aplicarMarcaAsesor(a) {
   var tieneLogoImg = !!logoBox.querySelector('.logo-inmo-img');
 
   if (!tieneLogoImg) {
-    var titulo = a.inmobiliaria || (_inmoConfig && _inmoConfig.nombre) || 'MudateYa';
+    var titulo = a.inmobiliariaNombre || a.inmobiliaria || (_inmoConfig && _inmoConfig.nombre) || 'MudateYa';
     logoBox.innerHTML = '<span class="logo-inmo-text">' + _escHtml(titulo) + '</span>';
   }
 
@@ -1131,8 +1138,7 @@ function aplicarMarcaAsesor(a) {
 
 function cargarMarcaAsesor() {
   if (!_partnerAsesor) return;
-  var base = ENDPOINTS_ASESOR[(_inmoSlug || '').toLowerCase()];
-  if (!base) return;
+  var base = endpointAsesorPara(_inmoSlug);
 
   fetch(base + encodeURIComponent(_partnerAsesor))
     .then(function(r) {
