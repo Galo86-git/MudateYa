@@ -5274,7 +5274,11 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
       resumen = `Tu comisión (${pctWa}%): $${montoWa.toLocaleString('es-AR')}. Nos contactamos para coordinar el pago.`;
     }
     const texto = `Hola ${a.nombre || ''}, la mudanza de ${mudanza.clienteNombre || 'tu cliente'} se completó 🏁 ${resumen}`;
-    enviarPlantilla(a.telefono, 'asesor_mudanza_completada', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: resumen }, texto)
+    // v2: Meta rechazó la original (asesor_mudanza_completada, SID HXd7f1…47fea) —
+    // esa queda rechazada para siempre, no se recupera. La corregida es una
+    // plantilla NUEVA con nombre y SID propios. Mientras Meta no la apruebe,
+    // enviarPlantilla cae sola al texto libre (fallback ya provisto acá abajo).
+    enviarPlantilla(a.telefono, 'asesor_mudanza_completada_v2', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: resumen }, texto)
       .catch(e => console.warn('WhatsApp asesor completada:', e.message));
   }
 }

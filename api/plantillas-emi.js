@@ -156,7 +156,13 @@ const CREAR = [
   { name: 'asesor_sena_pagada', category: 'UTILITY',
     types: { 'twilio/text': { body: 'Hola {{1}}, tu cliente {{2}} pagó la seña y la mudanza quedó confirmada con {{3}} ✅ Te aviso cuando esté terminada.' } },
     variables: { '1': 'Marina', '2': 'Juan', '3': 'Cristian' } },
-  { name: 'asesor_mudanza_completada', category: 'UTILITY',
+  // v2: Meta rechazó 'asesor_mudanza_completada' (SID HXd7f1…47fea) — queda
+  // rechazada para siempre, Twilio no permite reenviar a aprobación la misma
+  // plantilla. Esta es una plantilla NUEVA con nombre propio, ya creada y
+  // enviada a revisión — si Meta la aprueba, no hace falta tocar código de
+  // nuevo (cotizaciones.js ya apunta acá). Si la rechaza también, corregir
+  // el texto de vuelta acá y crear una _v3 (mismo patrón).
+  { name: 'asesor_mudanza_completada_v2', category: 'UTILITY',
     types: { 'twilio/text': { body: 'Hola {{1}}, la mudanza de {{2}} se completó 🏁 {{3}}' } },
     variables: { '1': 'Marina', '2': 'Juan', '3': 'Tu comisión (5%): $60.000. Nos contactamos para coordinar el pago.' } },
   { name: 'asesor_pedido_cancelado', category: 'UTILITY',
