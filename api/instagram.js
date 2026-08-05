@@ -96,7 +96,7 @@ CÓMO TRABAJÁS:
 
    B) ASESOR INMOBILIARIO: nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: puede armar presupuestos ya mismo.
 
-   C) INMOBILIARIA: nombre de la inmobiliaria, tu nombre (el contacto), colegio profesional donde está matriculado el contacto, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Aclarale que esto queda como SOLICITUD: el equipo la revisa y lo contactan en 24h hábiles para coordinar la activación — no es instantáneo como el alta de asesor.
+   C) INMOBILIARIA: nombre de la inmobiliaria, tu nombre (el contacto), colegio profesional donde está matriculado el contacto, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Esto también queda activo al toque: le llega un mail con el link para que reparta entre sus asesores.
 
 3. Si la herramienta te devuelve un error (dato inválido, ya registrado, etc.), pedile amablemente que lo corrija o contale lo que corresponda (ej. si ya existe, que va a recibir un mail) — NO inventes datos para completar ni festejes un alta que no pasó.
 4. Si preguntan por la plata: la comisión/pago se define según cada caso, NO prometas montos exactos si no los sabés.
@@ -127,7 +127,7 @@ const tools = [
   {
     name: 'registrar_inmobiliaria',
     description:
-      "Manda la SOLICITUD de alta de una INMOBILIARIA (la agencia, no un asesor individual). Queda pendiente de revisión, NO es instantáneo. Llamala SOLO con los 6 datos: nombre de la inmobiliaria, tu nombre (contacto), colegio profesional, matrícula, email, WhatsApp.",
+      "Da de alta una INMOBILIARIA (la agencia, no un asesor individual). Queda activa al toque: le llega un mail con el link para que reparta entre sus asesores. Llamala SOLO con los 6 datos: nombre de la inmobiliaria, tu nombre (contacto), colegio profesional, matrícula, email, WhatsApp.",
     input_schema: {
       type: 'object',
       properties: {
@@ -223,17 +223,16 @@ async function registrarAsesor(input) {
     if (data.yaExistia) {
       return JSON.stringify({ ok: true, existente: true, link: data.link, nota: `Ya estaba registrado con ese email. Este es su link fijo (no vence): ${data.link}` });
     }
-    return JSON.stringify({ ok: true, existente: false, link: data.link, nota: `Registrado con éxito. Le llega un mail de bienvenida con su link y QR. Este es su link fijo (no vence, pasáselo tal cual): ${data.link}` });
+    return JSON.stringify({ ok: true, existente: false, link: data.link, nota: `Registrado con éxito. Le llega un mail de bienvenida con su link. Este es su link fijo (no vence, pasáselo tal cual): ${data.link}` });
   } catch (e) {
     return JSON.stringify({ ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' });
   }
 }
 
 // ------------------------------------------------------------------
-// Solicitud de alta de inmobiliaria: delega en el endpoint REAL
+// Alta de inmobiliaria: delega en el endpoint REAL
 // (api/inmobiliarias.js?action=solicitar-alta), el mismo que usa
-// inmobiliarias-registro.html. Queda como SOLICITUD pendiente de revisión
-// del admin — no es alta instantánea como la de asesor.
+// inmobiliarias-registro.html. Queda activa al instante.
 // ------------------------------------------------------------------
 async function registrarInmobiliaria(input) {
   try {
@@ -256,7 +255,7 @@ async function registrarInmobiliaria(input) {
     if (data.existente) {
       return JSON.stringify({ ok: true, existente: true, nota: data.mensaje || 'Ese email ya está registrado.' });
     }
-    return JSON.stringify({ ok: true, existente: false, nota: 'Solicitud recibida. El equipo la revisa y lo contacta en 24h hábiles para coordinar la activación.' });
+    return JSON.stringify({ ok: true, existente: false, nota: 'Cuenta activada al toque. Le llega un mail con el link para repartir entre sus asesores.' });
   } catch (e) {
     return JSON.stringify({ ok: false, error: 'No pudimos enviar la solicitud ahora. Probá de nuevo en un rato.' });
   }

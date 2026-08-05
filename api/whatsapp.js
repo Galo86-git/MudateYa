@@ -485,7 +485,7 @@ PRIMER MENSAJE GENUINAMENTE AMBIGUO (tipo "hola", vino de un link, no dice para 
 QUIERE SUMARSE COMO SOCIO (no confundir con alguien que quiere mudarse — estos quieren trabajar CON MudateYa, no contratarla): como ya está por WhatsApp, lo más práctico es resolverlo ahí mismo, charlando, no mandarlo a la web. Hay 3 tipos:
   A) MUDANCERO/FLETERO/EMPRESA → labura haciendo mudanzas o fletes, quiere recibir pedidos para cotizar. Juntá nombre y apellido, empresa (o "Independiente"), email, zona donde opera — el WhatsApp ya lo tenés (el mismo desde el que escribe, salvo que use otro). Con eso llamá a registrar_mudancero. Aclarale que es un pre-registro rápido: después completa el resto (vehículo, fotos, precios) desde su cuenta — no le prometas que ya puede recibir pedidos todavía.
   B) ASESOR INMOBILIARIO (individual) → recibe un link propio y fijo (no vence) para compartir con sus propios clientes (los que compran/alquilan y se mudan); el cliente entra ahí y pide su mudanza como cualquier cliente, pero queda atribuida a este asesor. Si es alquiler cobra comisión cuando se completa; si es compraventa, su cliente recibe un regalo en vez de comisión. Juntá nombre y apellido, inmobiliaria (o "Independiente"), email, WhatsApp, zona donde trabaja. Con eso llamá a registrar_asesor. Este SÍ queda activo al toque: ya puede compartir su link.
-  C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio como un plus para sus clientes. Juntá nombre de la inmobiliaria, nombre del contacto, colegio profesional donde está matriculado, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Aclarale que esto queda como SOLICITUD: el equipo la revisa y lo contacta en 24h hábiles — no es instantáneo como el alta de asesor.
+  C) INMOBILIARIA (la agencia en sí, no un asesor individual) → quiere sumar el servicio como un plus para sus clientes. Juntá nombre de la inmobiliaria, nombre del contacto, colegio profesional donde está matriculado, número de matrícula, email, WhatsApp. Con eso llamá a registrar_inmobiliaria. Este también queda activo al toque: le llega un mail con el link para repartir entre sus asesores.
   OJO: no confundas el caso C (una inmobiliaria sumándose como socio) con *MudateYa Mobility* (ver más abajo) — son productos distintos. Mobility es la línea B2B de relocation corporativo; esto es una inmobiliaria de barrio que quiere ofrecerle MudateYa a sus propios clientes.
 
 RECLAMOS Y PROBLEMAS: si te cuenta algo que salió mal (el mudancero no llegó o se retrasó mucho, algo se rompió, el pago no se acreditó, quiere un reembolso, hay una discrepancia con lo acordado, o está enojado/frustrado), primero bajale el nivel con empatía genuina — no un genérico "lamento escuchar eso". Si tiene un pedido activo, usá consultar_estado_pedido para ver los datos reales antes de responder — no asumas ni inventes qué pasó. Si es algo que tus otras herramientas resuelven (cancelar, responder un ajuste), hacelo. Si es un reclamo de verdad que necesita que una persona lo mire, usá derivar_a_humano con un motivo que empiece con "RECLAMO:" y el detalle (qué pasó, con qué pedido si aplica). Cerrá siempre confirmando que el equipo lo va a contactar — nunca prometas algo que no podés garantizar (reembolsos, sanciones al mudancero: eso lo decide el equipo).
@@ -838,7 +838,7 @@ const tools = [
   {
     name: 'registrar_inmobiliaria',
     description:
-      "Manda la SOLICITUD de alta de una INMOBILIARIA (la agencia, no un asesor individual). Queda pendiente de revisión, NO es instantáneo. Llamala SOLO con los 6 datos: nombre de la inmobiliaria, nombre del contacto, colegio profesional, matrícula, email, WhatsApp.",
+      "Da de alta una INMOBILIARIA (la agencia, no un asesor individual). Queda activa al toque: le llega un mail con el link para repartir entre sus asesores. Llamala SOLO con los 6 datos: nombre de la inmobiliaria, nombre del contacto, colegio profesional, matrícula, email, WhatsApp.",
     input_schema: {
       type: 'object',
       properties: {
@@ -2272,15 +2272,15 @@ async function registrarAsesorCliente(waId, input) {
     if (data.yaExistia) {
       return { ok: true, existente: true, link: data.link, nota: `Ya estaba registrado con ese email. Este es su link fijo (no vence): ${data.link}` };
     }
-    return { ok: true, existente: false, link: data.link, nota: `Registrado con éxito. Le llega un mail de bienvenida con su link y QR. Este es su link fijo (no vence, pasáselo tal cual): ${data.link}` };
+    return { ok: true, existente: false, link: data.link, nota: `Registrado con éxito. Le llega un mail de bienvenida con su link. Este es su link fijo (no vence, pasáselo tal cual): ${data.link}` };
   } catch (e) {
     return { ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' };
   }
 }
 
-// Solicitud de alta de inmobiliaria directo por WhatsApp — mismo endpoint REAL
-// que usa inmobiliarias-registro.html y el bot de Instagram
-// (api/inmobiliarias.js?action=solicitar-alta). Queda pendiente de revisión.
+// Alta de inmobiliaria directo por WhatsApp — mismo endpoint REAL que usa
+// inmobiliarias-registro.html y el bot de Instagram
+// (api/inmobiliarias.js?action=solicitar-alta). Queda activa al instante.
 async function registrarInmobiliariaCliente(input) {
   input = input || {};
   try {
@@ -2301,9 +2301,9 @@ async function registrarInmobiliariaCliente(input) {
       return { ok: false, error: data.error || 'No se pudo enviar la solicitud. Revisá los datos.' };
     }
     if (data.existente) {
-      return { ok: true, existente: true, nota: data.mensaje || 'Ese email ya está registrado.' };
+      return { ok: true, existente: true, nota: data.mensaje || 'Ese email ya está registrado.', urlAsesores: data.urlAsesores };
     }
-    return { ok: true, existente: false, nota: 'Solicitud recibida. El equipo la revisa y lo contacta en 24h hábiles para coordinar la activación.' };
+    return { ok: true, existente: false, nota: 'Cuenta activada al toque. Le llega un mail con el link para repartir entre sus asesores.', urlAsesores: data.urlAsesores };
   } catch (e) {
     return { ok: false, error: 'No pudimos enviar la solicitud ahora. Probá de nuevo en un rato.' };
   }
