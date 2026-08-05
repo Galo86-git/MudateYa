@@ -139,6 +139,13 @@ const CREAR = [
     types: { 'twilio/text': { body: '¡Hola {{1}}! El cliente del pedido {{2}} ({{3}} → {{4}}) te mandó {{5}} en vez de la visita — entrá a tu cuenta para verlo y ajustar el precio si hace falta.' } },
     variables: { '1': 'Cristian', '2': 'MYA-123', '3': 'Palermo', '4': 'Tigre', '5': 'fotos' } },
 
+  // Aviso al mudancero NO elegido cuando el cliente acepta otra propuesta.
+  // Antes solo mandaba email (notificarMudancerosNoElegidos en cotizaciones.js)
+  // — mismo texto, ahora también por WhatsApp.
+  { name: 'mudancero_no_elegido', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, el cliente ya eligió otra propuesta para el pedido {{2}}. Este pedido pasó a tu sección Expirados. ¡Gracias por cotizar, seguí atento que vienen más! 🚚' } },
+    variables: { '1': 'Cristian', '2': 'Palermo → Tigre' } },
+
 ];
 
 module.exports = async function handler(req, res) {

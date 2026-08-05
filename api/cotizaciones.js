@@ -4503,13 +4503,15 @@ async function notificarMudancerosNoElegidos(mudanza, emailGanador) {
         link: '/mi-cuenta'
       }).catch(()=>{})
     )).catch(()=>{});
-    // Email a cada uno
-    if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      for (const emailMud of perdedores) {
-        try {
-          const perfil = await getJSON(`mudancero:perfil:${emailMud}`);
-          const nombre = (perfil && perfil.nombre) ? perfil.nombre.split(' ')[0] : 'Mudancero';
+    // Email + WhatsApp a cada uno
+    const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+    const { enviarPlantilla } = require('./_plantillas');
+    for (const emailMud of perdedores) {
+      try {
+        const perfil = await getJSON(`mudancero:perfil:${emailMud}`);
+        const nombre = (perfil && perfil.nombre) ? perfil.nombre.split(' ')[0] : 'Mudancero';
+
+        if (resend) {
           resend.emails.send({
             from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
             to: emailMud,
@@ -4530,8 +4532,14 @@ async function notificarMudancerosNoElegidos(mudanza, emailGanador) {
               </div>
             `
           }).catch(e => console.warn('Email no-elegido:', emailMud, e.message));
-        } catch(e) { console.warn('Email no-elegido loop:', emailMud, e.message); }
-      }
+        }
+
+        if (perfil && perfil.telefono) {
+          const textoLibre = `Hola ${nombre}, el cliente ya eligió otra propuesta para el pedido ${rutaTxt}. Este pedido pasó a tu sección Expirados. ¡Gracias por cotizar, seguí atento que vienen más! 🚚`;
+          enviarPlantilla(perfil.telefono, 'mudancero_no_elegido', { 1: nombre, 2: rutaTxt }, textoLibre)
+            .catch(e => console.warn('WhatsApp no-elegido:', emailMud, e.message));
+        }
+      } catch(e) { console.warn('Aviso no-elegido loop:', emailMud, e.message); }
     }
   } catch(e) { console.warn('notificarMudancerosNoElegidos:', e.message); }
 }
