@@ -483,6 +483,10 @@
     {
       "path": "/api/enviar-propuestas-garantias",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/enviar-propuesta-remax",
+      "schedule": "0 12 * * *"
     }
   ]
 }

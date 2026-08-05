@@ -220,12 +220,20 @@ function payloadDe(o) {
 }
 
 module.exports = async function handler(req, res) {
-  if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+  // Puede dispararlo el Vercel Cron (9am ART) o un admin con token.
+  var esVercelCron = req.headers['x-vercel-cron'] === '1';
+  // En previews (no producción) el cron no debe enviar nada.
+  if (esVercelCron && process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+    return res.status(200).json({ ok: true, skipped: true, reason: 'no-production-env' });
+  }
+  if (!esVercelCron && !esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
   if (!process.env.RESEND_API_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurado' });
 
   var resend = new Resend(process.env.RESEND_API_KEY);
   var testTo = req.query && req.query.test ? String(req.query.test).trim() : '';
-  var apply  = req.query && req.query.apply === '1';
+  // El cron aplica automáticamente; manual requiere &apply=1. La idempotencia
+  // (baja + ya-enviados) hace que las corridas siguientes no manden nada.
+  var apply  = esVercelCron || (req.query && req.query.apply === '1');
 
   try {
     // ── TEST: una muestra (no marca) ──
