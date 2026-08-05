@@ -263,24 +263,38 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ── APPLY: enviar por lotes (Resend batch, máx 100 por llamada) ──
+    // ── APPLY: enviar. Preferimos batch (rápido); si no está en esta versión de
+    //    Resend o falla, caemos a envío uno por uno para no perder el lote. ──
     var resumen = { enviadas: 0, errores: 0, fallidas: [] };
+    async function _marcar(email){ enviados.push(email); await setJSON(CLAVE_ENVIADOS, enviados); }
+    async function _enviarUno(o){
+      var r1 = await resend.emails.send(payloadDe(o));
+      if (r1 && r1.error) throw new Error(typeof r1.error === 'string' ? r1.error : JSON.stringify(r1.error));
+    }
+    var hayBatch = !!(resend.batch && typeof resend.batch.send === 'function');
     var grupos = chunk(pendientes, 100);
     for (var g = 0; g < grupos.length; g++) {
-      var batch = grupos[g].map(payloadDe);
-      try {
-        var rb = await resend.batch.send(batch);
-        if (rb && rb.error) throw new Error(typeof rb.error === 'string' ? rb.error : JSON.stringify(rb.error));
-        // marcar como enviadas y persistir después de CADA lote (idempotencia ante timeout)
-        grupos[g].forEach(function(o){ enviados.push(o.e); resumen.enviadas++; });
-        await setJSON(CLAVE_ENVIADOS, enviados);
-      } catch (e) {
-        resumen.errores += grupos[g].length;
-        resumen.fallidas.push({ lote: g, cantidad: grupos[g].length, error: e.message });
-        console.warn('Propuesta Remax, error en lote ' + g + ':', e.message);
+      var unoAUno = !hayBatch;
+      if (hayBatch) {
+        try {
+          var rb = await resend.batch.send(grupos[g].map(payloadDe));
+          if (rb && rb.error) throw new Error(typeof rb.error === 'string' ? rb.error : JSON.stringify(rb.error));
+          for (var b = 0; b < grupos[g].length; b++) { await _marcar(grupos[g][b].e); resumen.enviadas++; }
+        } catch (eb) {
+          resumen.fallidas.push({ lote: g, modo: 'batch', error: eb.message });
+          unoAUno = true; // reintentamos el lote uno por uno
+        }
+      }
+      if (unoAUno) {
+        for (var q = 0; q < grupos[g].length; q++) {
+          var o = grupos[g][q];
+          try { await _enviarUno(o); await _marcar(o.e); resumen.enviadas++; }
+          catch (e2) { resumen.errores++; resumen.fallidas.push({ email: o.e, error: e2.message }); }
+          await new Promise(function(ok){ setTimeout(ok, 130); });
+        }
       }
     }
-    return res.status(200).json({ ok: true, aplicado: true, yaEnviadasPrevias: enviadosSet ? enviados.length - resumen.enviadas : 0, ...resumen });
+    return res.status(200).json({ ok: true, aplicado: true, batchDisponible: hayBatch, ...resumen });
   } catch (e) {
     console.error('Error en enviar-propuesta-remax:', e.message);
     return res.status(500).json({ error: e.message });
