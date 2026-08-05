@@ -58,8 +58,10 @@ h1 span{color:var(--green)}
 .opcion.inmo:hover{border-color:var(--navy)}
 .opcion.asesor:hover{border-color:var(--green)}
 
-.foot{position:relative;z-index:1;margin-top:34px;font-size:12px;color:#8ba3d6}
-.foot b{color:#cfe0ff}
+.foot{position:relative;z-index:1;margin-top:34px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.foot-brand{font-size:16px;font-weight:800;color:#cfe0ff;letter-spacing:.3px}
+.foot-ig{display:inline-flex;align-items:center;gap:5px;font-size:14px;color:#8ba3d6;text-decoration:none}
+.foot-ig:hover{color:#cfe0ff}
 </style>
 </head>
 <body>
@@ -95,7 +97,13 @@ h1 span{color:var(--green)}
       </a>
     </div>
 
-    <div class="foot"><b>mudateya.ar</b> · Mudanceros y fletes verificados en toda Argentina</div>
+    <div class="foot">
+      <div class="foot-brand">MudateYa</div>
+      <a class="foot-ig" href="https://www.instagram.com/mudateya.ar" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        @mudateya.ar
+      </a>
+    </div>
   </div>
 </div>
 </body>
