@@ -393,6 +393,27 @@
   }
   .mud-sort-chip.active .mud-sort-arr { color: #fff; }
 
+  /* Avatar circular del mudancero — foto real si tiene (m.foto, ya viaja en
+     el catálogo), o iniciales sobre un color derivado del nombre si no. Sin
+     esto cada fila se veía idéntica salvo el precio; con esto cada mudancero
+     se lee como una empresa real, no una línea de spreadsheet. */
+  .mud-avatar {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--md-bg);
+    border: 1px solid var(--md-border);
+  }
+  .mud-avatar-fallback {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
   /* Columna 1: Empresa + zona */
   .mud-empresa { font-size: 15px; font-weight: 800; color: var(--md-text); }
   .mud-meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -1587,6 +1608,37 @@ function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Paleta fija (no random: mismo mudancero siempre el mismo color entre
+// renders/sesiones) para el fallback de iniciales cuando no hay foto.
+var AVATAR_COLORES = ['#F59E0B','#EF4444','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+function _colorDeNombre(nombre) {
+  var s = String(nombre || '');
+  var hash = 0;
+  for (var i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORES[hash % AVATAR_COLORES.length];
+}
+function _iniciales(nombre) {
+  // Solo letras/números: evita que un nombre con comillas o barras rompa el
+  // string de JS del onerror (se arma con comillas simples) y da iniciales
+  // más sensatas si el nombre arranca con un símbolo.
+  var partes = String(nombre || '').replace(/[^\p{L}\p{N}\s]/gu, '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '?';
+  var ini = partes[0].charAt(0);
+  if (partes.length > 1) ini += partes[partes.length - 1].charAt(0);
+  return ini.toUpperCase();
+}
+// Avatar circular: foto real si m.foto existe, o iniciales sobre color
+// determinístico. onerror hace fallback a las iniciales si la URL de la
+// foto está rota (perfil viejo, blob borrado, etc.).
+function avatarHtml(m) {
+  var nombreRef = m.empresa || m.nombre || '';
+  if (m.foto) {
+    return '<img class="mud-avatar" src="' + escHtml(m.foto) + '" alt=""'
+      + ' onerror="this.outerHTML=\'<div class=&quot;mud-avatar-fallback&quot; style=&quot;background:' + _colorDeNombre(nombreRef) + '&quot;>' + _iniciales(nombreRef) + '</div>\'">';
+  }
+  return '<div class="mud-avatar-fallback" style="background:' + _colorDeNombre(nombreRef) + '">' + _iniciales(nombreRef) + '</div>';
+}
+
 // Debug - muestra qué devolvió el backend y por qué se filtró cada uno
 function mostrarDebug(todos) {
   var existing = document.getElementById('debugPanel');
@@ -1742,11 +1794,12 @@ function renderCatalogo() {
       : '';
 
     html += '<div class="mud-row' + (sel ? ' selected' : '') + '" onclick="toggleSel(\'' + emailEsc + '\')">'
-      // Col 1: Check + Empresa con rating chico al lado
+      // Col 1: Check + Avatar + Empresa con rating chico al lado
       + '<div style="display:flex;align-items:center;gap:12px;min-width:0">'
       +   '<div class="mud-check' + (sel ? ' active' : '') + '">'
       +     (sel ? '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' : '')
       +   '</div>'
+      +   avatarHtml(m)
       +   '<div class="mud-empresa" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(m.empresa || m.nombre || '—') + ratingHtml + '</div>'
       + '</div>'
       // Col 2: Zona
