@@ -492,7 +492,23 @@ module.exports = async function handler(req, res) {
     if (body && body.object === 'instagram') {
       for (const entry of body.entry || []) {
         for (const event of entry.messaging || []) {
+          // Reacción a un mensaje nuestro dentro del chat (❤️ a un DM del bot):
+          // Meta la manda en event.reaction, un objeto separado de event.message.
+          // No es una consulta — no hay nada que contestar.
+          if (event.reaction) continue;
           if (!event.message || event.message.is_echo || !event.message.text) continue;
+
+          // Reacción con emoji a una STORY (tap del corazón o de la barra de
+          // emojis): a diferencia de una respuesta escrita a la story, esto
+          // llega como event.message con reply_to.story presente y el texto
+          // siendo el emoji solo — antes el bot le contestaba igual, sin
+          // criterio, tratando el emoji como si fuera una pregunta real. Si en
+          // cambio escribió texto de verdad en la respuesta a la story, eso sí
+          // se procesa normal (reply_to.story también está presente ahí).
+          if (event.message.reply_to && event.message.reply_to.story) {
+            const soloEmoji = /^(?:\p{Extended_Pictographic}|\p{Emoji_Presentation}|\uFE0F|\u200D|\s)+$/u.test(event.message.text);
+            if (soloEmoji) continue;
+          }
 
           // Dedup: Meta puede reintentar el mismo mensaje
           const mid = event.message.mid;
