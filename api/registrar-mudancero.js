@@ -749,6 +749,20 @@ async function bienvenidaMudancero(perfil) {
         '</div>' +
       '</div>',
     });
+    // ── WhatsApp de Emi, en paralelo al mail, apenas se registra ──
+    // Mismo gate (ONBOARDING_WA_ACTIVO) y misma plantilla ya aprobada que usa
+    // el cron día 1/3/7 (cron-onboarding.js) — así no hace falta una plantilla
+    // nueva pendiente de aprobación de Meta para este envío inmediato.
+    if ((process.env.ONBOARDING_WA_ACTIVO === '1' || process.env.ONBOARDING_WA_ACTIVO === 'true') && perfil.telefono) {
+      try {
+        var primerNombreWa = perfil.nombre.split(' ')[0];
+        var fraseWa = 'ya te registraste — para empezar a recibir pedidos, completá tu perfil (vehículo, precios, fotos y datos de cobro)';
+        var textoLibreWa = '¡Hola ' + primerNombreWa + '! Soy Emi de MudateYa 👋 Tu cuenta ya está creada. Para arrancar a recibir pedidos, completá tu perfil (vehículo, precios, fotos y datos de cobro) acá: https://mudateya.ar/mi-cuenta 🚚';
+        var enviarPlantillaWa = require('./_plantillas').enviarPlantilla;
+        enviarPlantillaWa(perfil.telefono, 'onboarding_mudancero', { 1: primerNombreWa, 2: fraseWa }, textoLibreWa)
+          .catch(function(e) { console.warn('WhatsApp bienvenida mudancero:', e.message); });
+      } catch (e) { console.warn('WhatsApp bienvenida mudancero:', e.message); }
+    }
     return;
   }
 
