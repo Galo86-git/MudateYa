@@ -5,10 +5,30 @@
 // GarantíaYa. Remitente contacto@mudateya.ar (dominio ya verificado en Resend,
 // mismo que noreply@/hola@).
 //
+// Corre por cron a las 9am ART (12:00 UTC, ver vercel.json) — pero con
+// idempotencia: solo manda la PRIMERA vez que corre con éxito. Si el cron
+// se queda corriendo después de mandarlo, no vuelve a mandar nada.
+//
 // GET  ?token=ADMIN_TOKEN            → preview, no manda nada
-// POST ?token=ADMIN_TOKEN {apply:true} → manda los 3 mails de verdad
+// POST ?token=ADMIN_TOKEN {apply:true} → fuerza el envío ahora (ignora la hora)
 
 var { esAdmin } = require('./_auth');
+
+var FLAG_ENVIADO = 'propuestas-garantias:enviado';
+
+async function redisCall(method, ...args) {
+  var url = process.env.UPSTASH_REDIS_REST_URL;
+  var token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) throw new Error('Redis no configurado');
+  var r = await fetch(url + '/' + [method, ...args].map(encodeURIComponent).join('/'), {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  var data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
+}
+async function getJSON(k) { var v = await redisCall('GET', k); return v ? JSON.parse(v) : null; }
+async function setJSON(k, v) { return redisCall('SET', k, JSON.stringify(v)); }
 
 var DESTINATARIOS = [
   {
@@ -43,10 +63,14 @@ var CUERPO_HTML =
   '</div>';
 
 module.exports = async function handler(req, res) {
-  if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+  var esVercelCron = false;
+  try { esVercelCron = require('./_auth').esCronVercel(req); } catch (e) {}
+  var admin = false;
+  try { admin = esAdmin(req); } catch (e) {}
+  if (!esVercelCron && !admin) return res.status(401).json({ error: 'No autorizado' });
   if (!process.env.RESEND_API_KEY) return res.status(200).json({ error: 'sin RESEND_API_KEY' });
 
-  var apply = req.method === 'POST' && req.body && req.body.apply === true;
+  var apply = esVercelCron || (req.method === 'POST' && req.body && req.body.apply === true);
 
   if (!apply) {
     return res.status(200).json({
@@ -55,8 +79,13 @@ module.exports = async function handler(req, res) {
       destinatarios: DESTINATARIOS.map(function (d) {
         return { empresa: d.empresa, email: d.email, archivo: d.archivo, asunto: ASUNTO.replace('{EMPRESA}', d.empresa) };
       }),
-      nota: 'POST con {"apply":true} para mandarlos de verdad.',
+      nota: 'POST con {"apply":true} para mandarlos ahora mismo (o esperá al cron de las 9am).',
     });
+  }
+
+  var yaEnviado = await getJSON(FLAG_ENVIADO);
+  if (yaEnviado) {
+    return res.status(200).json({ ok: true, yaEnviado: true, cuando: yaEnviado, nota: 'Ya se mandó antes, no se repite.' });
   }
 
   var { Resend } = require('resend');
@@ -80,5 +109,6 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  await setJSON(FLAG_ENVIADO, new Date().toISOString());
   return res.status(200).json({ ok: true, resultados });
 };
