@@ -90,28 +90,6 @@
   .hero h1 .green { color: var(--mya-green); }
   .hero p { font-size: 16px; opacity: 0.92; max-width: 580px; margin: 0 auto; }
 
-  /* Benefits chips */
-  .benefits {
-    max-width: 800px; margin: -32px auto 0; padding: 0 20px;
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-    position: relative; z-index: 2;
-  }
-  .benefit {
-    background: var(--md-bg-card);
-    border: 1px solid var(--md-border);
-    border-radius: 14px;
-    padding: 18px 16px;
-    text-align: center;
-    box-shadow: 0 4px 18px rgba(15, 25, 35, 0.08);
-  }
-  .benefit-icon {
-    font-size: 22px; margin-bottom: 6px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .benefit-icon svg { width: 24px; height: 24px; }
-  .benefit-title { font-size: 16px; font-weight: 800; color: var(--md-text); margin-bottom: 3px; letter-spacing: -0.1px; }
-  .benefit-sub { font-size: 11.5px; color: var(--md-text-2); line-height: 1.4; }
-
   /* ───── FORM ───── */
   .form-wrap {
     max-width: 640px; margin: 40px auto 60px; padding: 0 20px;
@@ -309,9 +287,6 @@
     .hero { padding: 44px 18px 40px; }
     .hero h1 { font-size: 28px; }
     .hero p { font-size: 14px; }
-    .benefits { grid-template-columns: 1fr; gap: 10px; }
-    .benefit { padding: 14px 16px; text-align: left; display: flex; gap: 12px; align-items: center; }
-    .benefit-icon { margin-bottom: 0; flex-shrink: 0; }
     .form-card { padding: 24px 20px; }
     .form-title { font-size: 19px; }
     .radio-grid { grid-template-columns: repeat(2, 1fr); }
@@ -334,28 +309,6 @@
     <h1>Sumá <span class="green">UN PLUS</span><br>a tu servicio</h1>
   </div>
 </section>
-
-<!-- BENEFITS -->
-<div class="benefits">
-  <div class="benefit">
-    <div class="benefit-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </div>
-    <div class="benefit-title">Lográ la exclusividad</div>
-  </div>
-  <div class="benefit">
-    <div class="benefit-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#1A6FFF" stroke-width="2.2"><path d="M20 7L9 18l-5-5"/></svg>
-    </div>
-    <div class="benefit-title">Empresas verificadas</div>
-  </div>
-  <div class="benefit">
-    <div class="benefit-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#22C36A" stroke-width="2.2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    </div>
-    <div class="benefit-title">Comisión por operación</div>
-  </div>
-</div>
 
 <!-- FORM -->
 <div class="form-wrap">
