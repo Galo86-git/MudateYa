@@ -332,18 +332,17 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Email inválido' });
       }
 
-      // ── VERIFICAR DUPLICADO: no crear una solicitud nueva si ese email ya
-      // tiene una pendiente, o si ya es una inmobiliaria activa. Antes esto
-      // no se chequeaba nunca (a diferencia de asesores.js y
-      // registrar-mudancero.js, que sí avisan) — cada envío creaba una
-      // solicitud nueva sin importar cuántas veces ya se había mandado. ──
-      var yaPendienteId = await getJSON('solicitud-inmo:email:' + email);
-      if (yaPendienteId) {
-        var solicitudPrevia = await getJSON('solicitud-inmo:' + yaPendienteId);
-        if (solicitudPrevia && solicitudPrevia.estado === 'pendiente') {
+      // ── VERIFICAR DUPLICADO: si ese email ya se registró antes (auto-alta
+      // previa, o reenvío del mismo form), no crear una inmobiliaria nueva —
+      // devolvemos la que ya existe. ──
+      var yaExisteId = await getJSON('solicitud-inmo:email:' + email);
+      if (yaExisteId) {
+        var solicitudPrevia = await getJSON('solicitud-inmo:' + yaExisteId);
+        if (solicitudPrevia && solicitudPrevia.slugAsignado) {
           return res.status(200).json({
             ok: true, existente: true,
-            mensaje: 'Ya tenés una solicitud en revisión con ese email. El equipo la revisa y te contacta en 24h hábiles.'
+            mensaje: 'Ese email ya está registrado. Revisá tu casilla — ya te mandamos el link para tus asesores.',
+            slug: solicitudPrevia.slugAsignado
           });
         }
       }
@@ -353,13 +352,26 @@ module.exports = async function handler(req, res) {
         if (inmoAct && inmoAct.activa !== false && String(inmoAct.contactoEmail || '').toLowerCase() === email) {
           return res.status(200).json({
             ok: true, existente: true, yaActiva: true,
-            mensaje: 'Ese email ya es una inmobiliaria activa en MudateYa. Si necesitás algo, escribinos a contacto@mudateya.ar.'
+            mensaje: 'Ese email ya es una inmobiliaria activa en MudateYa. Si necesitás algo, escribinos a contacto@mudateya.ar.',
+            slug: inmoAct.slug
           });
         }
       }
 
-      // Persistir solicitud en Redis con clave timestamped para que se ordene
-      // naturalmente y sea fácil listar en el admin.
+      // ── Generar un slug único a partir del nombre (el form público no pide
+      // slug — antes lo elegía un admin a mano en /admin → Nueva). ──
+      var slugBase = String(nombre).toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '') // sacar acentos
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'inmobiliaria';
+      var slugFinal = slugBase;
+      var intentoSlug = 1;
+      while (await getJSON('inmobiliaria:' + slugFinal)) {
+        intentoSlug++;
+        slugFinal = slugBase + '-' + intentoSlug;
+      }
+
+      // Persistir la solicitud igual que antes (auditoría + índice de
+      // duplicados por email), pero ya no queda "pendiente": se aprueba sola.
       var ts = Date.now();
       var idSolicitud = 'sol-inmo-' + ts;
       var solicitud = {
@@ -375,92 +387,114 @@ module.exports = async function handler(req, res) {
         sitio: sitio,
         logoUrl: logoUrl,
         fechaSolicitud: new Date(ts).toISOString(),
-        estado: 'pendiente'  // 'pendiente' | 'aprobada' | 'rechazada'
+        estado: 'auto-aprobada',  // 'auto-aprobada' | 'rechazada' (ya no hay 'pendiente': se activa sola)
+        slugAsignado: slugFinal
       };
       await setJSON('solicitud-inmo:' + idSolicitud, solicitud);
       await setJSON('solicitud-inmo:email:' + email, idSolicitud);
+      // NOTA: ya no se agrega a solicitudes-inmo:pendientes — no hay nada que
+      // un admin tenga que revisar/aprobar a mano, así que no debe aparecer
+      // en la cola de /admin → Solicitudes.
 
-      // Agregar al índice de solicitudes pendientes (lista de IDs)
-      var idxPendientes = (await getJSON('solicitudes-inmo:pendientes')) || [];
-      idxPendientes.unshift(idSolicitud);
-      // Cap a 200 solicitudes pendientes para que la lista no crezca infinito
-      if (idxPendientes.length > 200) idxPendientes = idxPendientes.slice(0, 200);
-      await setJSON('solicitudes-inmo:pendientes', idxPendientes);
+      // ── Crear la inmobiliaria YA, activa ──
+      // Mismos campos/defaults que la alta manual (action=crear): sin logo ni
+      // color propio (branding default de MudateYa), comisión en 0 (usa el
+      // default global de la plataforma al liquidar, ver COMISION_ASESOR_DEFAULT
+      // en cotizaciones.js). colegio/matricula quedan igual en el registro por
+      // si hace falta verificar algo después — no bloquean el alta.
+      var dataInmo = {
+        nombre: nombre, slug: slugFinal, logo: '', colorPrimario: '#003580',
+        comisionInmobiliaria: 0, contactoEmail: email, contactoNombre: contacto,
+        contactoWhatsapp: wapp, activa: true, fechaAlta: new Date(ts).toISOString(),
+        colegio: colegio, matricula: matricula
+      };
+      await setJSON('inmobiliaria:' + slugFinal, dataInmo);
+      await agregarAlIndice(slugFinal);
 
-      // ── Mails (no rompemos el flow si fallan) ──
+      var urlRegistroAsesores = 'https://mudateya.ar/inmobiliaria/' + slugFinal + '/registro';
+
+      // ── Mails (no rompemos el flow si fallan: la inmobiliaria ya quedó activa) ──
       try {
         const { Resend } = require('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
 
-        // (1) Confirmación a la inmobiliaria
+        // (1) Bienvenida instantánea, con el link para repartir entre sus asesores
         await resend.emails.send({
           from: 'MudateYa <noreply@mudateya.ar>', reply_to:'contacto@mudateya.ar',
           to: email,
-          subject: '✅ Recibimos tu solicitud para sumarte a MudateYa',
+          subject: '🎉 ¡Bienvenida a MudateYa, ' + nombre + '!',
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
-            <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
-              <div style="background:#003580;padding:22px 28px">
-                <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#22C36A">Ya</span>
+            <div style="font-family:Arial,sans-serif;max-width:580px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+              <div style="background:#003580;padding:24px 28px;text-align:center">
+                <div><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#22C36A">Ya</span></div>
               </div>
               <div style="padding:28px">
-                <h2 style="margin:0 0 12px;color:#0F1419;font-size:20px">¡Gracias por tu interés, ${nombre}!</h2>
-                <p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin-bottom:16px">Recibimos tu solicitud para sumarte a MudateYa como inmobiliaria aliada. En las próximas <strong>24 horas hábiles</strong> nos vamos a contactar con vos para coordinar la activación de tu cuenta.</p>
-                <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:14px 18px;margin:16px 0">
-                  <div style="font-size:11px;color:#003580;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">Datos que recibimos</div>
-                  <table style="width:100%;font-size:13px;color:#4B5563">
-                    <tr><td style="padding:3px 0;width:35%;color:#9CA3AF">Inmobiliaria</td><td style="font-weight:600;color:#0F1419">${nombre}</td></tr>
-                    <tr><td style="padding:3px 0;color:#9CA3AF">Contacto</td><td style="color:#0F1419">${contacto}</td></tr>
-                    <tr><td style="padding:3px 0;color:#9CA3AF">Email</td><td style="color:#0F1419">${email}</td></tr>
-                    <tr><td style="padding:3px 0;color:#9CA3AF">WhatsApp</td><td style="color:#0F1419">${wapp}</td></tr>
-                    <tr><td style="padding:3px 0;color:#9CA3AF">Zona</td><td style="color:#0F1419">${zona}</td></tr>
-                  </table>
+                <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">Cuenta activada</h1>
+                <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${nombre} ya es parte de MudateYa. Cada asesor de tu equipo va a tener su propio link, con tu marca, para que sus clientes consigan mudanceros verificados.</p>
+
+                <div style="background:linear-gradient(135deg,#003580 0%,#0055B8 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
+                  <div style="color:#B8D4FF;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Link de registro para tus asesores</div>
+                  <div style="color:#fff;font-size:16px;font-weight:800;font-family:'Courier New',monospace;word-break:break-all;margin-bottom:14px">${urlRegistroAsesores}</div>
+                  <a href="${urlRegistroAsesores}" style="display:inline-block;background:#22C36A;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Abrir el registro →</a>
                 </div>
-                <p style="color:#4B5563;line-height:1.6;font-size:14px;margin-top:18px">Mientras tanto podés conocer cómo trabajamos en <a href="https://mudateya.ar" style="color:#1A6FFF;font-weight:700">mudateya.ar</a>.</p>
-                <div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px 18px;margin-top:18px;text-align:center">
+
+                <div style="margin-top:24px;padding:16px;background:#FAFBFC;border:1px solid #E5E7EB;border-radius:10px;font-size:13px;color:#4B5563">
+                  <div style="font-size:11px;color:#9CA3AF;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Datos de tu cuenta</div>
+                  <div style="margin-bottom:4px"><strong style="color:#0F1419">Nombre:</strong> ${nombre}</div>
+                  <div style="margin-bottom:4px"><strong style="color:#0F1419">Slug:</strong> ${slugFinal}</div>
+                </div>
+
+                <div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px 18px;margin-top:24px;text-align:center">
                   <div style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600">📱 Cualquier duda, hablá con Emi por WhatsApp</div>
                   <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
                 </div>
-                <p style="color:#9CA3AF;font-size:13px;margin-top:18px">También podés escribirnos a <a href="mailto:contacto&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">contacto&#64;mudateya.ar</a></p>
+
+                <div style="text-align:center;margin:28px 0 0">
+                  <a href="https://www.instagram.com/mudateya.ar" style="display:inline-block;padding:9px 20px;border:1px solid #E2E8F0;border-radius:20px;color:#0F1923;text-decoration:none;font-size:13px;font-weight:600">📷 @mudateya.ar en Instagram</a>
+                </div>
+
+                <p style="color:#4B5563;font-size:14px;margin-top:24px;line-height:1.6">¿Dudas o querés que te ayudemos a armar tu primer envío a tus asesores? Escribinos a <a href="mailto:contacto@mudateya.ar" style="color:#1A6FFF;font-weight:700">contacto@mudateya.ar</a> y te respondemos rápido.</p>
+                <p style="color:#9CA3AF;font-size:13px;margin-top:18px">¡Bienvenida al equipo!<br><strong>El equipo de MudateYa</strong></p>
               </div>
               <div style="background:#F5F8FC;padding:14px 28px;font-size:11px;color:#9CA3AF;text-align:center">
-                MudateYa · marketplace de mudanzas verificadas · mudateya.ar
+                MudateYa · marketplace de mudanzas verificadas en Argentina · <a href="https://mudateya.ar" style="color:#9CA3AF">mudateya.ar</a>
               </div>
             </div></body></html>`
         });
 
-        // (2) Notificación a Galo con todos los datos
+        // (2) Aviso a Galo, informativo — ya no hace falta aprobar nada
         await resend.emails.send({
           from: 'MudateYa <noreply@mudateya.ar>', reply_to:'contacto@mudateya.ar',
           to: 'jgalozaldivar@gmail.com',
-          subject: '🏢 Nueva solicitud de inmobiliaria: ' + nombre,
+          subject: '🏢 Nueva inmobiliaria auto-activada: ' + nombre,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
               <div style="background:#003580;padding:20px 28px">
-                <span style="color:#fff;font-size:14px;font-weight:700">🏢 Nueva solicitud · Inmobiliaria</span>
+                <span style="color:#fff;font-size:14px;font-weight:700">🏢 Nueva inmobiliaria · auto-activada</span>
               </div>
               <div style="padding:24px 28px">
                 <h2 style="margin:0 0 14px;color:#0F1419;font-size:18px">${nombre}</h2>
                 <table style="width:100%;font-size:14px;color:#4B5563;border-collapse:collapse">
-                  <tr><td style="padding:6px 0;width:36%;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Contacto</td><td style="font-weight:600;color:#0F1419;border-bottom:1px solid #F3F4F6">${contacto}</td></tr>
+                  <tr><td style="padding:6px 0;width:36%;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Slug</td><td style="font-weight:600;color:#0F1419;border-bottom:1px solid #F3F4F6">${slugFinal}</td></tr>
+                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Contacto</td><td style="font-weight:600;color:#0F1419;border-bottom:1px solid #F3F4F6">${contacto}</td></tr>
                   <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Email</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6"><a href="mailto:${email}" style="color:#1A6FFF">${email}</a></td></tr>
                   <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">WhatsApp</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${wapp}</td></tr>
+                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Colegio / Matrícula</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${colegio} / ${matricula}</td></tr>
                   <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Zona</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${zona}</td></tr>
-                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Ops/mes</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${opsMes}</td></tr>
-                  <tr><td style="padding:6px 0;color:#9CA3AF;border-bottom:1px solid #F3F4F6">Sitio/IG</td><td style="color:#0F1419;border-bottom:1px solid #F3F4F6">${sitio}</td></tr>
-                  ${logoUrl ? `<tr><td style="padding:6px 0;color:#9CA3AF">Logo</td><td><a href="${logoUrl}" style="color:#1A6FFF">Ver logo subido</a></td></tr>` : ''}
+                  <tr><td style="padding:6px 0;color:#9CA3AF">Ops/mes</td><td style="color:#0F1419">${opsMes}</td></tr>
                 </table>
-                <div style="margin-top:18px;padding:12px 14px;background:#FEF3C7;border-radius:8px;font-size:13px;color:#92400E">
-                  📋 <strong>Próximo paso:</strong> Revisá la solicitud desde <a href="https://mudateya.ar/admin#solicitudes-inmo" style="color:#003580;font-weight:700">/admin → Solicitudes de inmo</a> y aprobá / activá si te interesa.
+                <div style="margin-top:18px;padding:12px 14px;background:#F0FFF4;border-radius:8px;font-size:13px;color:#166534">
+                  ✅ Se activó sola y ya le mandamos el link de registro de asesores. Si algo no corresponde, desactivala desde <a href="https://mudateya.ar/admin" style="color:#003580;font-weight:700">/admin → Inmobiliarias</a>.
                 </div>
               </div>
             </div></body></html>`
         });
       } catch(emailErr) {
         console.error('[solicitar-alta] Error mandando emails:', emailErr && emailErr.message);
-        // No bloqueamos el flow: la solicitud ya quedó guardada en Redis.
+        // No bloqueamos el flow: la inmobiliaria ya quedó activa en Redis.
       }
 
-      return res.status(200).json({ ok: true, id: idSolicitud });
+      return res.status(200).json({ ok: true, id: idSolicitud, slug: slugFinal, urlAsesores: urlRegistroAsesores });
     }
 
     // ── PÚBLICO: verificar una matrícula contra el padrón oficial ──

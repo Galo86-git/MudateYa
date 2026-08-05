@@ -390,7 +390,7 @@
       </div>
 
       <button type="submit" class="submit-btn" id="submitBtn">Quiero sumarme →</button>
-      <div class="submit-note">En 24h hábiles te escribimos para coordinar la activación.</div>
+      <div class="submit-note">Activación instantánea: apenas te sumás te llega el mail con tu link para compartir con tus asesores.</div>
 
     </form>
   </div>
@@ -400,8 +400,13 @@
     <div class="success-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
-    <div class="success-title">¡Recibimos tu solicitud!</div>
-    <div class="success-sub">Te escribimos en menos de 24h hábiles al email que dejaste para coordinar la activación. Mientras tanto, podés ver cómo funciona en nuestra página principal.</div>
+    <div class="success-title">¡Ya sos parte de MudateYa! 🎉</div>
+    <div class="success-sub">Tu cuenta ya está activa. Te mandamos un mail con el link para que tus asesores se registren — también lo tenés acá abajo.</div>
+    <div id="linkAsesoresBox" style="display:none;background:var(--mya-navy-light);border:1px solid var(--mya-navy);border-radius:10px;padding:14px 16px;max-width:420px;margin:0 auto 24px">
+      <div style="font-size:11px;color:var(--mya-navy);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Link de registro para tus asesores</div>
+      <div id="linkAsesoresTxt" style="font-size:13px;color:var(--md-text);font-family:'Courier New',monospace;word-break:break-all;margin-bottom:10px"></div>
+      <button type="button" id="copiarLinkAsesoresBtn" onclick="copiarLinkAsesores()" style="background:var(--mya-green);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer">Copiar link</button>
+    </div>
     <a href="/" class="success-btn">Ir al sitio</a>
   </div>
 </div>
@@ -530,6 +535,10 @@ async function enviarForm(e) {
     // Success: ocultar form, mostrar success card
     document.getElementById('formCard').style.display = 'none';
     document.getElementById('successCard').style.display = 'block';
+    if (data.urlAsesores) {
+      document.getElementById('linkAsesoresTxt').textContent = data.urlAsesores;
+      document.getElementById('linkAsesoresBox').style.display = 'block';
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch(err) {
     errGlobal.textContent = 'No pudimos enviar tu solicitud: ' + err.message + '. Si persiste, escribinos a hola@mudateya.ar';
@@ -538,6 +547,16 @@ async function enviarForm(e) {
     btn.disabled = false;
     btn.textContent = 'Quiero sumarme →';
   }
+}
+
+function copiarLinkAsesores() {
+  var txt = document.getElementById('linkAsesoresTxt').textContent;
+  var btn = document.getElementById('copiarLinkAsesoresBtn');
+  navigator.clipboard.writeText(txt).then(function() {
+    var original = btn.textContent;
+    btn.textContent = '¡Copiado!';
+    setTimeout(function() { btn.textContent = original; }, 1800);
+  });
 }
 </script>
 </body>
