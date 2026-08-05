@@ -144,7 +144,8 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
         </div>
         <div class="field">
           <label class="flabel" for="f-email">Email <span class="req">*</span></label>
-          <input id="f-email" class="finput" type="email" placeholder="juan@ejemplo.com" autocomplete="email" maxlength="120"/>
+          <input id="f-email" class="finput" type="email" placeholder="tuoficina@remax.com.ar" autocomplete="email" maxlength="120"/>
+          <div id="email-hint" class="of-hint"></div>
         </div>
         <div class="field">
           <label class="flabel" for="f-wapp">WhatsApp <span class="req">*</span></label>
@@ -280,6 +281,25 @@ function _acMarcar(items){ for (var i=0;i<items.length;i++) items[i].classList.t
     if (li.getAttribute('data-add')) _acAgregar(); else _acElegir(li.getAttribute('data-of'));
   });
   document.addEventListener('click', function(ev){ if (el.inp && !el.inp.contains(ev.target) && el.ac && !el.ac.contains(ev.target)) _acCerrar(); });
+})();
+
+// ── Aviso si el email no es de RE/MAX (@remax.com.ar). No bloquea: permite personal. ──
+(function _emailInit(){
+  var em = document.getElementById('f-email');
+  var h = document.getElementById('email-hint');
+  if (!em || !h) return;
+  function chk(){
+    var v = (em.value || '').trim().toLowerCase();
+    var esEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    if (esEmail && !/@remax\.com\.ar$/.test(v)) {
+      h.className = 'of-hint show new';
+      h.innerHTML = '⚠️ No parece un email de RE/MAX. Si tenés tu corporativo <strong>@remax.com.ar</strong> usalo; si no, podés seguir con tu email personal.';
+    } else {
+      h.className = 'of-hint';
+    }
+  }
+  em.addEventListener('input', chk);
+  em.addEventListener('blur', chk);
 })();
 
 function _mostrarError(msg) {
