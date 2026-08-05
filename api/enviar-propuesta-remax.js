@@ -18,6 +18,7 @@
 
 const { Resend } = require('resend');
 const { esAdmin } = require('./_auth');
+const { linkBaja } = require('./_baja');
 
 async function redisCall(method, args) {
   var url = process.env.UPSTASH_REDIS_REST_URL;
@@ -170,10 +171,11 @@ var OFICINAS = [
   {n:'REMAX Zenit', e:'zenit@remax.com.ar'}
 ];
 
-function emailPropuesta(nombre) {
-  var nm = esc(nombre || 'tu oficina');
+function emailPropuesta(o) {
+  var nm = esc(o.n || 'tu oficina');
+  var linkB = linkBaja(o.e, 'remax-propuesta');
   return {
-    subject: nombre + ': activá MudateYa para tu oficina (gratis)',
+    subject: o.n + ': activá MudateYa para tu oficina (gratis)',
     html:
       '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0">' +
         '<div style="background:#003580;padding:22px 28px;text-align:center">' +
@@ -199,15 +201,22 @@ function emailPropuesta(nombre) {
           '<div style="text-align:center;margin:22px 0 4px">' +
             '<a href="https://instagram.com/mudateya.ar" style="display:inline-block;color:#003580;font-size:13px;font-weight:700;text-decoration:none">📸 Seguinos en Instagram &#64;mudateya.ar</a>' +
           '</div>' +
-          '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:16px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">Recibís este correo como oficina RE/MAX. Si no querés recibir más, respondé con <strong>BAJA</strong>.<br>MudateYa · mudateya.ar</p>' +
+          '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:16px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">Recibís este correo como oficina RE/MAX. <a href="' + linkB + '" style="color:#94A3B8;text-decoration:underline">Darte de baja</a>.<br>MudateYa · mudateya.ar</p>' +
         '</div>' +
       '</div>'
   };
 }
 
 function payloadDe(o) {
-  var m = emailPropuesta(o.n);
-  return { from: 'MudateYa <contacto@mudateya.ar>', to: o.e, subject: m.subject, html: m.html };
+  var m = emailPropuesta(o);
+  var link = linkBaja(o.e, 'remax-propuesta');
+  return {
+    from: 'MudateYa <contacto@mudateya.ar>', to: o.e, subject: m.subject, html: m.html,
+    headers: {
+      'List-Unsubscribe': '<' + link + '>',
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    }
+  };
 }
 
 module.exports = async function handler(req, res) {
@@ -230,7 +239,9 @@ module.exports = async function handler(req, res) {
     // ── Pendientes (saltea las ya enviadas) ──
     var enviados = (await getJSON(CLAVE_ENVIADOS)) || [];
     var enviadosSet = {}; enviados.forEach(function(e){ enviadosSet[String(e).toLowerCase()] = 1; });
-    var pendientes = OFICINAS.filter(function(o){ return !enviadosSet[o.e.toLowerCase()]; });
+    var suprimidos = (await redisCall('smembers', ['baja:emails'])) || [];
+    var suprSet = {}; suprimidos.forEach(function(e){ suprSet[String(e).toLowerCase()] = 1; });
+    var pendientes = OFICINAS.filter(function(o){ var k = o.e.toLowerCase(); return !enviadosSet[k] && !suprSet[k]; });
 
     // ── DRY (sin apply): informa, no envía ──
     if (!apply) {
@@ -238,6 +249,7 @@ module.exports = async function handler(req, res) {
         ok: true, dry: true,
         totalOficinas: OFICINAS.length,
         yaEnviadas: enviados.length,
+        suprimidas: suprimidos.length,
         pendientes: pendientes.length,
         muestra: pendientes.slice(0, 8).map(function(o){ return o.e; })
       });
