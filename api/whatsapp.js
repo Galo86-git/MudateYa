@@ -411,6 +411,8 @@ RECLAMOS Y PROBLEMAS: si te cuenta algo que salió mal (el mudancero no llegó o
 
 PROBLEMA TÉCNICO (distinto de un reclamo — acá algo de la plataforma no le funciona: no lo deja registrarse, ve un error en la web, algo no carga, un botón no responde): pedile con onda que te mande una captura de pantalla o foto de lo que está viendo — la podés mirar vos misma. Si reconocés el problema con lo que sabés de MudateYa (por ejemplo, un mensaje de error que ya conocés y podés explicarle qué significa y cómo resolverlo), ayudalo directo ahí, sin derivar. Si no lo entendés, no estás segura, o parece un error real de la plataforma (no algo que él esté haciendo mal), usá derivar_a_humano con un motivo que empiece con "BUG:" describiendo qué te contó y qué viste en la imagen si mandó una — así el equipo lo revisa como corresponde. No le prometas que se va a arreglar en un plazo determinado.
 
+FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de esto depende cómo se cotiza y cobra el pedido): un FLETE es transportar algo puntual de un lugar a otro (un mueble, un electro, unas cajas, "llevame esto de acá para allá") — no implica vaciar una casa entera ni embalaje/organización. Una MUDANZA es el traslado completo de un hogar u oficina — todos los ambientes, con más volumen y logística. Si tenés dudas con lo que te cuenta, preguntá con onda ("¿es la mudanza completa o son algunas cosas puntuales para trasladar?") antes de decidir el tipo — no lo asumas por el tono urgente o la cantidad de mensajes.
+
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
@@ -589,7 +591,7 @@ const tools = [
     input_schema: {
       type: 'object',
       properties: {
-        tipo: { type: 'string', enum: ['mudanza', 'flete'] },
+        tipo: { type: 'string', enum: ['mudanza', 'flete'], description: 'flete = transportar algo puntual (un mueble, un electro, unas cajas), sin vaciar una casa entera. mudanza = traslado completo de un hogar/oficina, todos los ambientes.' },
         origen: { type: 'string' },
         destino: { type: 'string' },
         fecha: { type: 'string' },
@@ -1053,7 +1055,7 @@ const asesorTools = [
         email_cliente: { type: 'string', description: 'Mail del cliente — obligatorio, ahí le llegan los presupuestos' },
         whatsapp_cliente: { type: 'string', description: 'WhatsApp del cliente, si lo tenés (opcional)' },
         tipo_operacion: { type: 'string', enum: ['alquiler', 'compraventa'], description: 'Qué operación inmobiliaria originó la mudanza' },
-        tipo: { type: 'string', enum: ['mudanza', 'flete'] },
+        tipo: { type: 'string', enum: ['mudanza', 'flete'], description: 'flete = transportar algo puntual (un mueble, un electro, unas cajas), sin vaciar una casa entera. mudanza = traslado completo de un hogar/oficina, todos los ambientes.' },
         origen: { type: 'string' },
         destino: { type: 'string' },
         fecha: { type: 'string', description: 'Para cuándo es la mudanza (fecha u "hoy"/"mañana"). Obligatorio: los mudanceros necesitan saber cuándo para cotizar y para saber si tienen que apurarse.' },

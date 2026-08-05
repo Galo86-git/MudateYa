@@ -2448,7 +2448,11 @@ module.exports = async function handler(req, res) {
           // estaba registrado y `partner` quedaba vacío: la mudanza venía de un
           // canal igual. Se mantienen los campos viejos para pedidos anteriores.
           const esPlanReferidos = !!(m.origenCanal === true || m.origenAsesor === true || m.refAliado || m.partner || m.partnerAsesor || m.partnerSlugCrudo);
-          const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
+          // El flete SIEMPRE cobra 20%, venga o no de un canal — la comisión de
+          // canal (25%) solo se aplica a mudanzas. esPlanReferidos igual queda
+          // como estaba (marca el origen para reporting), lo que cambia es
+          // cuál gana en el cálculo del %.
+          const feePct = esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15);
           const feePctLabel = (feePct * 100).toFixed(0) + '%';
           const cot = m.cotizacionAceptada || {};
           const precioBase = parseInt(cot.precio || m.precio_estimado || 0);
@@ -4770,7 +4774,8 @@ async function logPedidoSheets(mudanza) {
   // inmobiliaria asociada): 25% flat. Mudanzas normales: 15% · Fletes normales: 20%
   // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
   const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor || mudanza.partnerSlugCrudo);
-  const feePct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
+  // Flete siempre 20%, venga o no de un canal — ver misma nota en la sección de liquidaciones.
+  const feePct = esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15);
   const precio = parseInt(cot.precio || 0);
   const fee = Math.round(precio * feePct);
   const neto = precio - fee;
@@ -4799,7 +4804,7 @@ async function logPedidoSheets(mudanza) {
     'Precio total':    fmt(precio),
     'Fee MudateYa':    fmt(fee),
     'Neto mudancero':  fmt(neto),
-    '% Fee':           esPlanReferidos ? '25%' : (esFlete ? '20%' : '15%'),
+    '% Fee':           esFlete ? '20%' : (esPlanReferidos ? '25%' : '15%'),
     'Origen':          esPlanReferidos ? 'PLAN REFERIDOS' : 'DIRECTO',
     'Anticipo pagado': mudanza.anticipoPagado ? 'SI' : 'NO',
     'Saldo pagado':    mudanza.saldoPagado    ? 'SI' : 'NO',
@@ -4827,7 +4832,8 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   // Coincide con la detección de mi-cuenta.html → _esPlanReferidos()
   // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
   const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor || mudanza.partnerSlugCrudo);
-  const comisionPct = esPlanReferidos ? 0.25 : (esFlete ? 0.20 : 0.15);
+  // Flete siempre 20%, venga o no de un canal — ver misma nota en la sección de liquidaciones.
+  const comisionPct = esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15);
   // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
   // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
   // El saldo NO es la mitad del precio cuando hubo un ajuste: es el precio

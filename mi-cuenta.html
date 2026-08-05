@@ -2661,19 +2661,21 @@ function _precargarNombresInmos() {
   });
 }
 
+// Flete siempre 20%, venga o no de un canal/Plan Referidos — coincide con
+// la prioridad de esFlete sobre esPlanReferidos en api/cotizaciones.js.
 function calcFee(precio, ambientes, m) {
   var pct;
-  if (_esPlanReferidos(m)) pct = 0.25;
-  else pct = (ambientes === 'Flete') ? 0.20 : 0.15;
+  if (ambientes === 'Flete') pct = 0.20;
+  else pct = _esPlanReferidos(m) ? 0.25 : 0.15;
   return Math.round(precio * pct);
 }
 function calcNeto(ambientes, m) {
-  if (_esPlanReferidos(m)) return 0.75;
-  return (ambientes === 'Flete') ? 0.80 : 0.85;
+  if (ambientes === 'Flete') return 0.80;
+  return _esPlanReferidos(m) ? 0.75 : 0.85;
 }
 function calcFeeLabel(ambientes, m) {
-  if (_esPlanReferidos(m)) return '25%';
-  return (ambientes === 'Flete') ? '20%' : '15%';
+  if (ambientes === 'Flete') return '20%';
+  return _esPlanReferidos(m) ? '25%' : '15%';
 }
 function verFotoGrande(mudanzaId, fotoIdx) {
   var m = mudanzasDisponibles.find(function(x){ return x.id === mudanzaId; })
