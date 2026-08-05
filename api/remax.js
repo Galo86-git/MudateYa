@@ -101,6 +101,39 @@ function emailValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// ── Normaliza nombre de oficina para comparar (sin acentos, minúsculas) ──
+function normOficina(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// ── Lista OFICIAL de oficinas RE/MAX (nombres), cacheada 24h en Redis. ──
+// Se trae de la API pública de RE/MAX (findAll, paginado). Si la API falla y no
+// hay cache, devuelve [] y el alta acepta lo tipeado (no bloquea el registro).
+async function oficinasOficiales() {
+  var cache = await getJSON('remax:oficinas-oficiales');
+  if (cache && Array.isArray(cache.names) && cache.names.length) return cache.names;
+  var base = 'https://api-ar.redremax.com/remaxweb-ar/api/offices/findAll';
+  var names = [];
+  try {
+    for (var p = 0; p < 6; p++) {
+      var rr = await fetch(base + '?page=' + p + '&pageSize=100', { headers: { accept: 'application/json' } });
+      var jj = await rr.json();
+      var arr = (jj && jj.data && Array.isArray(jj.data.data)) ? jj.data.data : [];
+      for (var i = 0; i < arr.length; i++) { if (arr[i] && arr[i].name) names.push(arr[i].name); }
+      var totalPages = jj && jj.data && jj.data.totalPages;
+      if (!totalPages || p >= totalPages - 1) break;
+    }
+  } catch (e) { console.warn('No se pudo traer oficinas RE/MAX:', e.message); }
+  names = names.filter(Boolean).sort(function(a, b){ return a.localeCompare(b); });
+  if (names.length) {
+    // cachear 24h (setex)
+    try { await redisCall('set', ['remax:oficinas-oficiales', JSON.stringify({ names: names, updatedAt: new Date().toISOString() }), 'EX', '86400']); } catch (e) {}
+  }
+  return names;
+}
+
 // ── HANDLER ──
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -119,10 +152,22 @@ module.exports = async function handler(req, res) {
       var whatsapp = (typeof body.whatsapp === 'string') ? body.whatsapp.trim().slice(0, 40) : '';
       var zona     = (typeof body.zona === 'string')     ? body.zona.trim().slice(0, 80)     : '';
       var origen   = (typeof body.origen === 'string')   ? body.origen.trim().slice(0, 40)   : 'remax';
+      var oficina  = (typeof body.oficina === 'string')  ? body.oficina.trim().slice(0, 100)  : '';
 
       if (!nombre)   return res.status(400).json({ error: 'Falta el nombre.' });
       if (!email || !emailValido(email)) return res.status(400).json({ error: 'Email inválido.' });
       if (!whatsapp || whatsapp.replace(/\D/g, '').length < 8) return res.status(400).json({ error: 'WhatsApp inválido.' });
+      if (!oficina) return res.status(400).json({ error: 'Elegí tu oficina RE/MAX.' });
+      // Validar contra la lista oficial (si la tenemos). Guardamos el nombre canónico.
+      var _oficiales = await oficinasOficiales();
+      if (_oficiales.length) {
+        var _match = null, _oi = normOficina(oficina);
+        for (var _k = 0; _k < _oficiales.length; _k++) {
+          if (normOficina(_oficiales[_k]) === _oi) { _match = _oficiales[_k]; break; }
+        }
+        if (!_match) return res.status(400).json({ error: 'No encontramos esa oficina. Empezá a escribir y elegí la que aparece en la lista.' });
+        oficina = _match;
+      }
 
       // ── No duplicar por email: si ya hay un asesor activo con ese mail,
       //    devolvemos su link existente (alta idempotente) en vez de crear otro. ──
@@ -142,6 +187,7 @@ module.exports = async function handler(req, res) {
         nombre: nombre,
         email: email,
         whatsapp: whatsapp,
+        oficina: oficina,
         zona: zona,
         origen: origen,
         activo: true,
@@ -181,6 +227,7 @@ module.exports = async function handler(req, res) {
                   <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:8px">Tus datos</div>
                   <table style="font-size:14px;color:#0F1419;line-height:1.8">
                     <tr><td style="color:#64748B;padding-right:12px">Nombre</td><td style="font-weight:600">${nombre}</td></tr>
+                    <tr><td style="color:#64748B;padding-right:12px">Oficina</td><td style="font-weight:600">${oficina}</td></tr>
                     <tr><td style="color:#64748B;padding-right:12px">Email</td><td style="font-weight:600">${email}</td></tr>
                     <tr><td style="color:#64748B;padding-right:12px">WhatsApp</td><td style="font-weight:600">${whatsapp}</td></tr>
                   </table>
@@ -220,6 +267,13 @@ module.exports = async function handler(req, res) {
       }
 
       return res.status(200).json({ ok: true, codigo: codigo, link: link });
+    }
+
+    // ── PÚBLICO: lista oficial de oficinas RE/MAX (para el autocompletado del form) ──
+    if (action === 'oficinas-oficiales' && req.method === 'GET') {
+      var names = await oficinasOficiales();
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.status(200).json({ ok: true, total: names.length, oficinas: names });
     }
 
     // ── PÚBLICO: QR (PNG) del link del asesor. Lo usa el <img> del mail y se

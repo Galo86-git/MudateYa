@@ -150,6 +150,11 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
           <label class="flabel" for="f-wapp">WhatsApp <span class="req">*</span></label>
           <input id="f-wapp" class="finput" type="tel" placeholder="+54 9 11 1234-5678" autocomplete="tel" inputmode="tel" maxlength="40"/>
         </div>
+        <div class="field">
+          <label class="flabel" for="f-oficina">Tu oficina RE/MAX <span class="req">*</span></label>
+          <input id="f-oficina" class="finput" type="text" list="oficinas-list" placeholder="Empezá a escribir el nombre…" autocomplete="off" maxlength="100"/>
+          <datalist id="oficinas-list"></datalist>
+        </div>
 
         <button type="button" class="btn" id="btnEnviar" onclick="registrar()">
           Generar mi link
@@ -198,6 +203,23 @@ var _link = '';
 var _nombre = '';
 var _codigo = '';
 
+// ── Oficinas oficiales RE/MAX para autocompletar + validar ──
+var _oficinas = [];
+var _oficinasNorm = {};
+function _normOf(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); }
+async function cargarOficinas(){
+  try {
+    var r = await fetch('/api/remax?action=oficinas-oficiales');
+    var d = await r.json();
+    _oficinas = (d && d.oficinas) || [];
+    var dl = document.getElementById('oficinas-list');
+    if (dl) dl.innerHTML = _oficinas.map(function(n){ return '<option value="' + n.replace(/"/g,'&quot;') + '"></option>'; }).join('');
+    _oficinasNorm = {};
+    _oficinas.forEach(function(n){ _oficinasNorm[_normOf(n)] = n; });
+  } catch(e) {}
+}
+cargarOficinas();
+
 function _mostrarError(msg) {
   var e = document.getElementById('gerror');
   e.textContent = msg;
@@ -212,11 +234,15 @@ async function registrar() {
   var nombre = (document.getElementById('f-nombre').value || '').trim();
   var email  = (document.getElementById('f-email').value || '').trim();
   var wapp   = (document.getElementById('f-wapp').value || '').trim();
+  var oficina = (document.getElementById('f-oficina').value || '').trim();
 
   if (!nombre) { _mostrarError('Ingresá tu nombre y apellido.'); document.getElementById('f-nombre').focus(); return; }
   if (!email)  { _mostrarError('Ingresá tu email.'); document.getElementById('f-email').focus(); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _mostrarError('El email no parece válido.'); document.getElementById('f-email').focus(); return; }
   if (!wapp || wapp.replace(/\D/g, '').length < 8) { _mostrarError('Ingresá un WhatsApp válido.'); document.getElementById('f-wapp').focus(); return; }
+  if (!oficina) { _mostrarError('Elegí tu oficina RE/MAX.'); document.getElementById('f-oficina').focus(); return; }
+  if (_oficinas.length && !_oficinasNorm[_normOf(oficina)]) { _mostrarError('Elegí tu oficina de la lista: empezá a escribir y tocá la que aparece.'); document.getElementById('f-oficina').focus(); return; }
+  if (_oficinasNorm[_normOf(oficina)]) oficina = _oficinasNorm[_normOf(oficina)];
 
   var btn = document.getElementById('btnEnviar');
   btn.disabled = true;
@@ -226,7 +252,7 @@ async function registrar() {
     var r = await fetch('/api/remax?action=registrar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombre, email: email, whatsapp: wapp, origen: ORIGEN })
+      body: JSON.stringify({ nombre: nombre, email: email, whatsapp: wapp, oficina: oficina, origen: ORIGEN })
     });
     var data;
     var txt = await r.text();
