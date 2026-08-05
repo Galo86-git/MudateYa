@@ -150,12 +150,26 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
           <label class="flabel" for="f-wapp">WhatsApp <span class="req">*</span></label>
           <input id="f-wapp" class="finput" type="tel" placeholder="+54 9 11 1234-5678" autocomplete="tel" inputmode="tel" maxlength="40"/>
         </div>
-        <div class="field">
+        <div class="field" style="position:relative">
           <label class="flabel" for="f-oficina">Tu oficina RE/MAX <span class="req">*</span></label>
-          <input id="f-oficina" class="finput" type="text" list="oficinas-list" placeholder="Empezá a escribir el nombre…" autocomplete="off" maxlength="100"/>
-          <datalist id="oficinas-list"></datalist>
-          <div style="margin-top:6px;font-size:12.5px"><a id="f-oficina-toggle" href="#" onclick="toggleOficinaNueva(event)" style="color:#003580;font-weight:600;text-decoration:none;cursor:pointer">Mi oficina no está en la lista</a></div>
+          <input id="f-oficina" class="finput" type="text" placeholder="Empezá a escribir tu oficina…" autocomplete="off" maxlength="100"/>
+          <ul id="of-ac" class="of-ac"></ul>
+          <div id="of-hint" class="of-hint"></div>
         </div>
+        <style>
+          .of-ac{list-style:none;margin:6px 0 0;padding:5px;position:absolute;left:0;right:0;top:100%;z-index:40;background:#fff;border:1px solid #E2E8F0;border-radius:12px;box-shadow:0 12px 34px rgba(15,25,35,.14);max-height:252px;overflow-y:auto;display:none}
+          .of-ac.open{display:block}
+          .of-ac li{padding:10px 12px;font-size:14px;color:#0F1923;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:9px;line-height:1.3}
+          .of-ac li:hover,.of-ac li.kb{background:#EEF4FF}
+          .of-ac li .ico{flex:none;font-size:14px;opacity:.7}
+          .of-ac li.add{color:#003580;font-weight:700;margin-top:3px;border-top:1px solid #F1F5F9}
+          .of-ac li.add .q{font-weight:800}
+          .of-hint{margin-top:7px;font-size:12.5px;font-weight:600;display:none;align-items:center;gap:6px}
+          .of-hint.show{display:flex}
+          .of-hint.ok{color:#15803D}
+          .of-hint.new{color:#B45309}
+          .finput.of-valid{border-color:#22C36A}
+        </style>
 
         <button type="button" class="btn" id="btnEnviar" onclick="registrar()">
           Generar mi link
@@ -213,31 +227,60 @@ async function cargarOficinas(){
     var r = await fetch('/api/remax?action=oficinas-oficiales');
     var d = await r.json();
     _oficinas = (d && d.oficinas) || [];
-    var dl = document.getElementById('oficinas-list');
-    if (dl) dl.innerHTML = _oficinas.map(function(n){ return '<option value="' + n.replace(/"/g,'&quot;') + '"></option>'; }).join('');
     _oficinasNorm = {};
     _oficinas.forEach(function(n){ _oficinasNorm[_normOf(n)] = n; });
   } catch(e) {}
 }
 cargarOficinas();
 
-// Toggle "Mi oficina no está en la lista": pasa a texto libre y la manda como nueva.
-var _oficinaNueva = false;
-function toggleOficinaNueva(ev){
-  if (ev) ev.preventDefault();
-  _oficinaNueva = !_oficinaNueva;
-  var inp = document.getElementById('f-oficina');
-  var tog = document.getElementById('f-oficina-toggle');
-  if (inp) inp.value = '';
-  if (_oficinaNueva) {
-    if (inp) { inp.removeAttribute('list'); inp.placeholder = 'Escribí el nombre de tu oficina'; }
-    if (tog) tog.textContent = '← Elegir una de la lista';
-  } else {
-    if (inp) { inp.setAttribute('list', 'oficinas-list'); inp.placeholder = 'Empezá a escribir el nombre…'; }
-    if (tog) tog.textContent = 'Mi oficina no está en la lista';
+// ── Autocompletado propio del campo Oficina ──
+var _oficinaNueva = false;   // el asesor eligió "mi oficina no está"
+var _acKb = -1;              // índice resaltado por teclado
+function _acEsc(s){ return String(s||'').replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
+function _acEls(){ return { inp: document.getElementById('f-oficina'), ac: document.getElementById('of-ac'), hint: document.getElementById('of-hint') }; }
+function _acHint(tipo, texto){ var h = _acEls().hint; if (!h) return; h.className = 'of-hint show ' + (tipo || ''); h.innerHTML = texto; }
+function _acReset(){ _oficinaNueva = false; var el = _acEls(); if (el.inp) el.inp.classList.remove('of-valid'); if (el.hint) el.hint.className = 'of-hint'; }
+function _acCerrar(){ var el = _acEls(); if (el.ac){ el.ac.classList.remove('open'); el.ac.innerHTML=''; } _acKb = -1; }
+function _acRender(){
+  var el = _acEls(); if (!el.inp || !el.ac) return;
+  var q = (el.inp.value || '').trim();
+  _acReset();
+  if (q.length < 2) { _acCerrar(); return; }
+  var nq = _normOf(q);
+  var matches = _oficinas.filter(function(n){ return _normOf(n).indexOf(nq) !== -1; });
+  matches.sort(function(a,b){ var pa=_normOf(a).indexOf(nq)===0?0:1, pb=_normOf(b).indexOf(nq)===0?0:1; return pa-pb || a.localeCompare(b); });
+  matches = matches.slice(0, 7);
+  var html = '';
+  matches.forEach(function(n){ html += '<li data-of="' + _acEsc(n) + '"><span class="ico">📍</span>' + _acEsc(n) + '</li>'; });
+  if (!_oficinasNorm[nq]) {
+    html += '<li class="add" data-add="1"><span class="ico">➕</span>Mi oficina no está: usar «<span class="q">' + _acEsc(q) + '</span>»</li>';
   }
-  if (inp) inp.focus();
+  el.ac.innerHTML = html;
+  el.ac.classList.add('open');
+  _acKb = -1;
 }
+function _acElegir(nombre){ var el = _acEls(); el.inp.value = nombre; _oficinaNueva = false; el.inp.classList.add('of-valid'); _acHint('ok', '✓ Oficina seleccionada'); _acCerrar(); }
+function _acAgregar(){ var el = _acEls(); var q = (el.inp.value || '').trim(); _oficinaNueva = true; el.inp.classList.remove('of-valid'); _acHint('new', 'Se registrará como oficina nueva: «' + _acEsc(q) + '»'); _acCerrar(); }
+function _acMarcar(items){ for (var i=0;i<items.length;i++) items[i].classList.toggle('kb', i===_acKb); if (_acKb>=0 && items[_acKb]) items[_acKb].scrollIntoView({block:'nearest'}); }
+(function _acInit(){
+  var el = _acEls(); if (!el.inp) return;
+  el.inp.addEventListener('input', _acRender);
+  el.inp.addEventListener('focus', function(){ if ((el.inp.value||'').trim().length >= 2) _acRender(); });
+  el.inp.addEventListener('keydown', function(ev){
+    if (!el.ac.classList.contains('open')) return;
+    var items = el.ac.querySelectorAll('li'); if (!items.length) return;
+    if (ev.key === 'ArrowDown'){ ev.preventDefault(); _acKb = Math.min(_acKb+1, items.length-1); _acMarcar(items); }
+    else if (ev.key === 'ArrowUp'){ ev.preventDefault(); _acKb = Math.max(_acKb-1, 0); _acMarcar(items); }
+    else if (ev.key === 'Enter'){ ev.preventDefault(); (items[_acKb>=0?_acKb:0]).click(); }
+    else if (ev.key === 'Escape'){ _acCerrar(); }
+  });
+  el.ac.addEventListener('mousedown', function(ev){
+    var li = ev.target && ev.target.closest ? ev.target.closest('li') : null; if (!li) return;
+    ev.preventDefault();
+    if (li.getAttribute('data-add')) _acAgregar(); else _acElegir(li.getAttribute('data-of'));
+  });
+  document.addEventListener('click', function(ev){ if (el.inp && !el.inp.contains(ev.target) && el.ac && !el.ac.contains(ev.target)) _acCerrar(); });
+})();
 
 function _mostrarError(msg) {
   var e = document.getElementById('gerror');
@@ -261,7 +304,7 @@ async function registrar() {
   if (!wapp || wapp.replace(/\D/g, '').length < 8) { _mostrarError('Ingresá un WhatsApp válido.'); document.getElementById('f-wapp').focus(); return; }
   if (!oficina) { _mostrarError('Elegí tu oficina RE/MAX.'); document.getElementById('f-oficina').focus(); return; }
   if (!_oficinaNueva) {
-    if (_oficinas.length && !_oficinasNorm[_normOf(oficina)]) { _mostrarError('Elegí tu oficina de la lista, o tocá "Mi oficina no está en la lista".'); document.getElementById('f-oficina').focus(); return; }
+    if (_oficinas.length && !_oficinasNorm[_normOf(oficina)]) { _mostrarError('Elegí tu oficina de las opciones que aparecen (o usá "Mi oficina no está").'); document.getElementById('f-oficina').focus(); return; }
     if (_oficinasNorm[_normOf(oficina)]) oficina = _oficinasNorm[_normOf(oficina)];
   } else if (oficina.length < 3) {
     _mostrarError('Escribí el nombre completo de tu oficina.'); document.getElementById('f-oficina').focus(); return;
