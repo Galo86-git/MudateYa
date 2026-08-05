@@ -350,7 +350,7 @@ module.exports = async function handler(req, res) {
         if (inmoAct && inmoAct.activa !== false && String(inmoAct.contactoEmail || '').toLowerCase() === email) {
           return res.status(200).json({
             ok: true, existente: true, yaActiva: true,
-            mensaje: 'Ese email ya es una inmobiliaria activa en MudateYa. Si necesitás algo, escribinos a hola@mudateya.ar.'
+            mensaje: 'Ese email ya es una inmobiliaria activa en MudateYa. Si necesitás algo, escribinos a contacto@mudateya.ar.'
           });
         }
       }
@@ -391,7 +391,7 @@ module.exports = async function handler(req, res) {
 
         // (1) Confirmación a la inmobiliaria
         await resend.emails.send({
-          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'contacto@mudateya.ar',
           to: email,
           subject: '✅ Recibimos tu solicitud para sumarte a MudateYa',
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
@@ -417,7 +417,7 @@ module.exports = async function handler(req, res) {
                   <div style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600">📱 Cualquier duda, hablá con Emi por WhatsApp</div>
                   <a href="https://wa.me/12399462954?text=${encodeURIComponent('Hola Emi!')}" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>
                 </div>
-                <p style="color:#9CA3AF;font-size:13px;margin-top:18px">También podés escribirnos a <a href="mailto:hola&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">hola&#64;mudateya.ar</a></p>
+                <p style="color:#9CA3AF;font-size:13px;margin-top:18px">También podés escribirnos a <a href="mailto:contacto&#64;mudateya.ar" style="color:#1A6FFF;text-decoration:none;font-weight:600">contacto&#64;mudateya.ar</a></p>
               </div>
               <div style="background:#F5F8FC;padding:14px 28px;font-size:11px;color:#9CA3AF;text-align:center">
                 MudateYa · marketplace de mudanzas verificadas · mudateya.ar
@@ -427,7 +427,7 @@ module.exports = async function handler(req, res) {
 
         // (2) Notificación a Galo con todos los datos
         await resend.emails.send({
-          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to:'contacto@mudateya.ar',
           to: 'jgalozaldivar@gmail.com',
           subject: '🏢 Nueva solicitud de inmobiliaria: ' + nombre,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
@@ -616,15 +616,9 @@ module.exports = async function handler(req, res) {
           var urlInmo = 'https://mudateya.ar/inmobiliaria/' + data.slug;
           var urlRegistroAsesores = urlInmo + '/registro';
           var saludo = data.contactoNombre ? data.contactoNombre.split(' ')[0] : data.nombre;
-          // Con comisión 0%, lo que cobra es cada asesor individual (5% estándar),
-          // no la agencia — el paso 4 tiene que reflejar eso, no prometer una
-          // comisión que en este modelo no existe a nivel agencia.
-          var pasoComision = data.comisionInmobiliaria > 0
-            ? '<div><strong style="color:#003580">4.</strong> Cuando la mudanza se completa, vos cobrás una comisión automática sobre el viaje.</div>'
-            : '<div><strong style="color:#003580">4.</strong> Cada asesor tuyo cobra su comisión individual por las mudanzas que derive — no hay comisión a nivel agencia en este plan.</div>';
 
           await resend.emails.send({
-            from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to:'contacto@mudateya.ar',
             to: data.contactoEmail,
             subject: '🎉 ¡Bienvenida a MudateYa, ' + data.nombre + '!',
             html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
@@ -636,30 +630,13 @@ module.exports = async function handler(req, res) {
                 <!-- Body -->
                 <div style="padding:28px">
                   <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">Cuenta activada</h1>
-                  <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${data.nombre} ya es parte de MudateYa. Tu cuenta está lista para que tus clientes consigan mudanceros verificados con tu marca.</p>
+                  <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${data.nombre} ya es parte de MudateYa. Cada asesor de tu equipo va a tener su propio link, con tu marca, para que sus clientes consigan mudanceros verificados.</p>
 
-                  <!-- URL destacada -->
+                  <!-- Link de registro para asesores -->
                   <div style="background:linear-gradient(135deg,#003580 0%,#0055B8 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
-                    <div style="color:#B8D4FF;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Tu URL única</div>
-                    <div style="color:#fff;font-size:18px;font-weight:800;font-family:'Courier New',monospace;word-break:break-all;margin-bottom:14px">${urlInmo}</div>
-                    <a href="${urlInmo}" style="display:inline-block;background:#22C36A;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Abrir mi página →</a>
-                  </div>
-
-                  <!-- Cómo usarla -->
-                  <h2 style="color:#0F1419;font-size:17px;font-weight:800;margin:28px 0 12px">¿Cómo la uso con mis clientes?</h2>
-                  <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:18px;font-size:14px;color:#4B5563;line-height:1.7">
-                    <div style="margin-bottom:10px"><strong style="color:#003580">1.</strong> Cuando un cliente cierra una operación con vos, compartile el link de arriba (por WhatsApp, mail, lo que prefieras).</div>
-                    <div style="margin-bottom:10px"><strong style="color:#003580">2.</strong> El cliente entra, completa los datos de su mudanza y recibe cotizaciones de mudanceros verificados.</div>
-                    <div style="margin-bottom:10px"><strong style="color:#003580">3.</strong> Elige el que quiera, paga el 50% de seña por Mercado Pago o transferencia y coordina con el mudancero.</div>
-                    ${pasoComision}
-                  </div>
-
-                  <!-- Link para tus asesores -->
-                  <h2 style="color:#0F1419;font-size:17px;font-weight:800;margin:28px 0 12px">¿Tenés asesores en tu equipo?</h2>
-                  <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:18px;font-size:14px;color:#4B5563;line-height:1.7">
-                    <p style="margin:0 0 12px">Cada asesor tuyo puede sacarse su propio link (con tu marca) para compartir con sus clientes — queda atribuido a él para su comisión individual, sin que tengan que hacer nada más.</p>
-                    <p style="margin:0 0 12px">Pasales este link para que se registren:</p>
-                    <div style="background:#fff;border:1px dashed #CBD5E1;border-radius:8px;padding:10px 12px;font-family:'Courier New',monospace;font-size:13px;color:#003580;word-break:break-all">${urlRegistroAsesores}</div>
+                    <div style="color:#B8D4FF;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Link de registro para tus asesores</div>
+                    <div style="color:#fff;font-size:16px;font-weight:800;font-family:'Courier New',monospace;word-break:break-all;margin-bottom:14px">${urlRegistroAsesores}</div>
+                    <a href="${urlRegistroAsesores}" style="display:inline-block;background:#22C36A;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Abrir el registro →</a>
                   </div>
 
                   <!-- Datos cuenta -->
@@ -682,7 +659,7 @@ module.exports = async function handler(req, res) {
                   </div>
 
                   <!-- Soporte -->
-                  <p style="color:#4B5563;font-size:14px;margin-top:24px;line-height:1.6">¿Dudas o querés que te ayudemos a armar tu primer envío a clientes? Escribinos a <a href="mailto:hola@mudateya.ar" style="color:#1A6FFF;font-weight:700">hola@mudateya.ar</a> y te respondemos rápido.</p>
+                  <p style="color:#4B5563;font-size:14px;margin-top:24px;line-height:1.6">¿Dudas o querés que te ayudemos a armar tu primer envío a clientes? Escribinos a <a href="mailto:contacto@mudateya.ar" style="color:#1A6FFF;font-weight:700">contacto@mudateya.ar</a> y te respondemos rápido.</p>
                   <p style="color:#9CA3AF;font-size:13px;margin-top:18px">¡Bienvenida al equipo!<br><strong>El equipo de MudateYa</strong></p>
                 </div>
                 <!-- Footer -->
