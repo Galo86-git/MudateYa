@@ -202,8 +202,18 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 </div>
 
 <script>
+// El slug puede venir de dos lugares (mismo criterio que inmobiliaria.html):
+//   1. Query string: /inmo-asesor-registro.html?slug=X (cuando Vercel hace rewrite OK)
+//   2. Path: /inmobiliaria/X/registro (extraído del pathname, fallback robusto)
+// Vercel a veces descarta los query params al hacer el rewrite a un archivo
+// estático — sin el fallback, el link real (/inmobiliaria/{slug}/registro)
+// queda roto: "Este link no es válido" aunque la inmobiliaria SÍ exista.
 var qs = new URLSearchParams(window.location.search);
 var SLUG = (qs.get('slug') || '').toLowerCase().trim();
+if (!SLUG) {
+  var _mSlug = window.location.pathname.match(/\/inmobiliaria\/([a-z0-9-]+)/i);
+  if (_mSlug) SLUG = _mSlug[1].toLowerCase();
+}
 var _link = '';
 var _nombre = '';
 var _codigo = '';
