@@ -1833,6 +1833,25 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, enviado: true, diag });
     }
 
+    // ── MANDAR WHATSAPP LIBRE A UN NÚMERO (admin) ────────────────────
+    // Para avisos puntuales uno-a-uno que no tienen un flujo automático
+    // propio (ej: avisarle a un mudancero que ya se resolvió algo que
+    // había pedido). Solo texto libre — entrega dentro de la ventana de
+    // 24hs desde el último mensaje de esa persona; fuera de esa ventana
+    // Twilio la rechaza (WhatsApp exige una plantilla aprobada ahí).
+    if (action === 'admin-enviar-whatsapp' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+      const { telefono, mensaje } = req.body || {};
+      if (!telefono || !mensaje) return res.status(400).json({ error: 'Faltan telefono y/o mensaje' });
+      try {
+        const { enviarWhatsAppTexto } = require('./_whatsapp');
+        const r = await enviarWhatsAppTexto(telefono, mensaje);
+        return res.status(200).json({ ok: true, enviado: true, sid: r.sid, status: r.status });
+      } catch (e) {
+        return res.status(200).json({ ok: false, error: e.message });
+      }
+    }
+
     // ── LIQUIDAR HORAS (solo cotizaciones por hora) ─────────────────
     //
     // No es un ajuste de precio: es aplicar la tarifa que el cliente ya aceptó
