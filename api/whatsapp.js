@@ -1964,6 +1964,42 @@ async function derivarHumano(waId, motivo, conv, opts) {
   } catch (e) {
     console.warn('derivarHumano email:', e.message);
   }
+
+  // Aviso EXTRA al equipo por WhatsApp, SOLO para urgentes. Hasta acá el único
+  // canal era el mail a ADMIN_EMAIL, que para un flete que sale en dos horas
+  // llega tarde (queda enterrado entre las otras notificaciones del día). Va
+  // por plantilla `alerta_urgente_equipo` porque el equipo casi nunca está
+  // dentro de la ventana de 24h de WhatsApp: sin plantilla aprobada el aviso
+  // falla justo cuando más se necesita. El texto libre queda de fallback para
+  // cuando sí está abierta. Los números salen de EQUIPO_TELEFONOS — si no está
+  // seteada, esto no hace nada. Nunca rompe la respuesta a quien escribió.
+  try {
+    if (/urgente/i.test(motivo || '')) {
+      const { enviarPlantilla } = require('./_plantillas');
+      const tipo = /\bflete/i.test(motivo || '') ? 'FLETE' : 'MUDANZA';
+      const digitos = String(waId).replace(/\D/g, '');
+      const detalle = String(motivo || '').replace(/^\s*urgente:\s*/i, '').trim().slice(0, 300) || 'sin detalle';
+      const texto =
+        `🚨 ${tipo} URGENTE — ${waId}\n\n${detalle}\n\n` +
+        `Emi no lo pudo resolver y lo escaló. Tomalo cuanto antes.\nhttps://wa.me/${digitos}`;
+      // Si el que escribió es del propio equipo (caso típico probando el bot),
+      // no se avisa a sí mismo — al resto sí.
+      const propio = ultimos10(waId);
+      for (const tel of Object.keys(EQUIPO)) {
+        if (tel === propio) continue;
+        const r = await enviarPlantilla(
+          tel,
+          'alerta_urgente_equipo',
+          { '1': tipo, '2': waId, '3': detalle, '4': digitos },
+          texto
+        );
+        if (!r.enviado) console.warn('alerta urgente no entregada a', EQUIPO[tel], '-', r.motivo);
+      }
+    }
+  } catch (e) {
+    console.warn('derivarHumano alerta urgente:', e.message);
+  }
+
   return { ok: true, mensaje: 'Avisé al equipo. Alguien te va a contactar a la brevedad.' };
 }
 

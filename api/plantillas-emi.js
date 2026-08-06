@@ -104,6 +104,22 @@ const CREAR = [
     } },
     variables: { '1': 'Cristian', '2': 'te falta un pasito para activar tu cuenta' } },
 
+  // Alerta al EQUIPO (no a un cliente) cuando Emi escala un caso URGENTE — un
+  // flete del día no puede esperar a que alguien abra el mail a ADMIN_EMAIL,
+  // que hasta ahora era el único canal de aviso (ver derivarHumano en
+  // whatsapp.js). Va como plantilla justamente porque el equipo casi nunca
+  // está dentro de la ventana de 24h: sin plantilla aprobada el aviso falla
+  // exactamente cuando más se necesita.
+  // A propósito NO usa botón de URL: Meta es restrictiva con los botones que
+  // apuntan a wa.me y un rechazo acá deja mudo justo el aviso más urgente. El
+  // link va en el cuerpo (WhatsApp lo hace clickeable igual). Tampoco termina
+  // en variable, que es otro motivo típico de rechazo.
+  { name: 'alerta_urgente_equipo', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '🚨 {{1}} URGENTE — {{2}}\n\n{{3}}\n\nAbrir chat: https://wa.me/{{4}}\n\nEmi no lo pudo resolver y lo escaló. Tomalo cuanto antes.',
+    } },
+    variables: { '1': 'FLETE', '2': '+5491133364677', '3': 'flete hoy 17hs, heladera de Palermo a Belgrano', '4': '5491133364677' } },
+
   // Confirmación al cliente apenas publica el pedido por la WEB (no existía
   // ninguna plantilla para esto — las demás cubren etapas posteriores). Al
   // ser la PRIMERA plantilla que le llega, además "abre" la conversación de
