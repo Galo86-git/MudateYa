@@ -250,8 +250,18 @@ async function generarPDFBase64(datos) {
   const extras        = datos.extras || '';
   const nota          = datos.nota || '';
   const tiempo        = datos.tiempoEstimado || '';
+  // `datos.precio` es SIEMPRE el total (en modalidad por hora, el total ESTIMADO
+  // = tarifa x horas). La multiplicacion se hace UNA sola vez al guardar la
+  // cotizacion (ver action 'cotizar'), no aca: asi la seña, el saldo y este PDF
+  // leen todos el mismo numero. Antes el numero grande y la nota salian de dos
+  // campos distintos que nadie conciliaba — caso real: $280.000 arriba y
+  // "3 hs x $90.000 = $270.000" abajo, en el mismo papel.
   const precio        = parseInt(String(datos.precio || '0').replace(/\./g,'').replace(/[^0-9]/g,'')) || 0;
+  const tarifaHora    = valorHoraAd;
   const precioFmt     = '$' + precio.toLocaleString('es-AR');
+  // En modalidad por hora no existe un "precio total": es una estimación que se
+  // liquida al final por horas reales. El rótulo tiene que decirlo.
+  const rotuloPrecio  = esPorHora ? 'PRECIO ESTIMADO' : 'PRECIO TOTAL';
 
   // ── COLORES ───────────────────────────────────────────────────────
   // Paleta MudateYa — legible sobre blanco
@@ -441,7 +451,7 @@ async function generarPDFBase64(datos) {
   var fraseStartX = ML + 20 + precioWidth + 18; // 18px de gap
 
   doc.font('Helvetica-Bold').fontSize(7).fillColor(C_TEXT3);
-  doc.text('PRECIO TOTAL', ML + 20, Y + 52);
+  doc.text(rotuloPrecio, ML + 20, Y + 52);
 
   // Frase a la derecha: usa el espacio que quede después del precio
   var fraseAvailWidth = (ML + CW - 14) - fraseStartX;
@@ -496,7 +506,12 @@ async function generarPDFBase64(datos) {
     { icon: 'MP',   titulo: 'Pago seguro',    sub: 'MP o transferencia' },
     { icon: 'DNI',  titulo: 'Verificado',      sub: 'Identidad confirmada' },
     { icon: '*****', titulo: 'Resenas',          sub: 'Verificadas' },
-    { icon: '$=',   titulo: 'Sin sorpresas',   sub: 'Precio acordado' },
+    // Por hora NO se puede prometer "precio acordado": el total es una
+    // estimacion que se liquida por horas reales. Decir las dos cosas en el
+    // mismo papel es contradecirse delante del cliente.
+    esPorHora
+      ? { icon: 'HS',   titulo: 'Por hora',        sub: 'Se liquida al final' }
+      : { icon: '$=',   titulo: 'Sin sorpresas',   sub: 'Precio acordado' },
   ];
   const GW = (CW - 9) / 4;
   garantias.forEach((g, i) => {
@@ -518,17 +533,16 @@ async function generarPDFBase64(datos) {
   // si las horas extra estan pactadas aca, que el trabajo se estire no es un
   // imprevisto y no hace falta renegociar el precio.
   if (esPorHora) {
-    const horaH = 58;
+    const horaH = 46;
     fillRect(ML, Y, CW, horaH, '#F0F9FF', 5);
     strokeRect(ML, Y, CW, horaH, '#1A6FFF', 0.5, 5);
     fillRect(ML, Y, 4, horaH, '#1A6FFF', 0);
     doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#1E40AF')
        .text('MODALIDAD: COBRO POR HORA', ML + 12, Y + 8);
     doc.font('Helvetica').fontSize(7.5).fillColor('#334155')
-       .text(horasIncl + ' horas estimadas x $' + valorHoraAd.toLocaleString('es-AR') + ' por hora = $'
-             + (horasIncl * valorHoraAd).toLocaleString('es-AR') + '.', ML + 12, Y + 20, { width: CW - 24, lineGap: 1.5 })
-       .text('Al terminar se liquidan las horas reales trabajadas a esa misma tarifa. Si se extiende, cada hora'
-             + ' adicional se cobra $' + valorHoraAd.toLocaleString('es-AR') + '; si termina antes, se cobra menos.',
+       .text('$' + tarifaHora.toLocaleString('es-AR') + ' por hora x ' + horasIncl + ' horas estimadas = $'
+             + precio.toLocaleString('es-AR') + ' (estimado).', ML + 12, Y + 20, { width: CW - 24, lineGap: 1.5 })
+       .text('Al terminar se liquidan las horas reales trabajadas a esa misma tarifa.',
              ML + 12, Y + 30, { width: CW - 24, lineGap: 1.5 });
     Y += horaH + 10;
   }
@@ -1294,6 +1308,27 @@ module.exports = async function handler(req, res) {
         }
       }
       if (propuestasNorm.length === 0) return res.status(400).json({ error: 'Falta al menos una propuesta con precio' });
+
+      // ── COBRO POR HORA: el precio guardado es el TOTAL ESTIMADO ──────────
+      // El mudancero carga UN solo numero (su tarifa por hora) mas las horas
+      // estimadas. Acá se multiplica UNA vez y el resultado queda como el precio
+      // de la cotizacion, para que TODO lo que viene despues —PDF, seña (50%),
+      // saldo, liquidacion— lea el mismo total y no haya dos numeros en danza.
+      // La tarifa queda guardada aparte (valorHoraAdicional) y CONGELADA acá: si
+      // el mudancero cambia sus precios despues, este presupuesto no se mueve.
+      // Antes el precio del pack y la tarifa por hora eran dos casillas
+      // independientes del mismo formulario y nadie las conciliaba: el PDF salia
+      // con $280.000 arriba y "3 hs x $90.000 = $270.000" abajo.
+      const esCobroPorHora = modalidad === 'hora';
+      const horasEst = parseInt(horasIncluidas) || 0;
+      const tarifaPorHora = parseInt(String(valorHoraAdicional || '').replace(/\D/g, '')) || 0;
+      if (esCobroPorHora) {
+        if (horasEst <= 0 || tarifaPorHora <= 0) {
+          return res.status(400).json({ error: 'Cobro por hora: falta la tarifa por hora o las horas estimadas' });
+        }
+        const totalEstimado = tarifaPorHora * horasEst;
+        propuestasNorm = propuestasNorm.map((p) => Object.assign({}, p, { precio: totalEstimado }));
+      }
 
       // Para compat con código existente (PDF, listados viejos, etc.):
       // El "precio principal" de la cotización es el del nivel pedido por el cliente, o la primera propuesta.
@@ -4604,7 +4639,12 @@ async function enviarEmailAceptacion(mudanza, cot) {
   // FIX: el monto del mail debe ser el precio del PERFIL del mudancero al
   // momento que el cliente lo eligió, no el cot.precio (que puede no existir
   // en flujo dirigido o estar desactualizado). Fallback defensivo a cot.precio.
-  const precioPerfil = await obtenerPrecioPerfil(cot.mudanceroEmail, mudanza);
+  // EXCEPCION cobro por hora: acá el precio del perfil es una TARIFA HORARIA,
+  // no un total — usarla como monto daria una seña calculada sobre el valor de
+  // UNA hora. En ese caso manda cot.precio, que ya viene multiplicado por las
+  // horas estimadas y congelado al cotizar (ver action 'cotizar').
+  const esCotPorHora = cot.modalidad === 'hora';
+  const precioPerfil = esCotPorHora ? 0 : await obtenerPrecioPerfil(cot.mudanceroEmail, mudanza);
   const precioTotal = precioPerfil || parseInt(cot.precio) || 0;
   const montoAnticipo = Math.round(precioTotal * 0.5); // ← 50% del precio
   const precioFmt = '$' + precioTotal.toLocaleString('es-AR');
