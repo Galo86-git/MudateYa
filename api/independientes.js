@@ -143,6 +143,20 @@ module.exports = async function handler(req, res) {
       if (!whatsapp || whatsapp.replace(/\D/g, '').length < 8) return res.status(400).json({ error: 'WhatsApp inválido.' });
       if (!inmobiliaria) return res.status(400).json({ error: 'Falta la inmobiliaria.' });
 
+      // ── Asesor que pertenece a una inmobiliaria YA DADA DE ALTA en
+      //    api/inmobiliarias.js. Viene del autocomplete de asesor-registro.html
+      //    (nunca lo tipea el asesor a mano), así que se valida server-side
+      //    contra Redis antes de confiar en él — mismo criterio que canales.js. ──
+      var inmobiliariaSlugPedido = (typeof body.inmobiliariaSlug === 'string')
+        ? body.inmobiliariaSlug.trim().toLowerCase().slice(0, 50) : '';
+      var inmobiliariaVinculada = null;
+      if (inmobiliariaSlugPedido) {
+        var inmoReg = await getJSON('inmobiliaria:' + inmobiliariaSlugPedido);
+        if (inmoReg && inmoReg.activa !== false) {
+          inmobiliariaVinculada = { slug: inmobiliariaSlugPedido, nombre: inmoReg.nombre || inmobiliariaSlugPedido };
+        }
+      }
+
       // ── No duplicar por email: si ya hay un asesor activo con ese mail,
       //    devolvemos su link existente (alta idempotente) en vez de crear otro. ──
       var emailKey = 'indep:email:' + email.toLowerCase();
@@ -150,7 +164,8 @@ module.exports = async function handler(req, res) {
       if (existenteCod) {
         var existente = await getJSON('indep:asesor:' + existenteCod);
         if (existente && existente.activo !== false) {
-          var linkExist = LINK_BASE + '?asesor=' + encodeURIComponent(existente.codigo);
+          var slugLinkExist = existente.inmobiliariaSlug || CANAL_SLUG;
+          var linkExist = 'https://mudateya.ar/inmobiliaria/' + slugLinkExist + '?asesor=' + encodeURIComponent(existente.codigo);
           return res.status(200).json({ ok: true, yaExistia: true, codigo: existente.codigo, link: linkExist, inmobiliaria: existente.inmobiliaria || '' });
         }
       }
@@ -167,11 +182,21 @@ module.exports = async function handler(req, res) {
         activo: true,
         createdAt: new Date().toISOString()
       };
+      if (inmobiliariaVinculada) {
+        asesor.inmobiliariaSlug   = inmobiliariaVinculada.slug;
+        asesor.inmobiliariaNombre = inmobiliariaVinculada.nombre;
+      }
       await setJSON('indep:asesor:' + codigo, asesor);
       await agregarAlIndice(codigo);
       await setJSON(emailKey, codigo);
 
-      var link = LINK_BASE + '?asesor=' + encodeURIComponent(codigo);
+      // El link que comparte con sus clientes usa el slug de SU inmobiliaria
+      // real si quedó vinculada (así el cliente ve la marca correcta y la
+      // mudanza se atribuye bien) — si no, el genérico "independientes" de siempre.
+      var linkSlugBase = inmobiliariaVinculada
+        ? 'https://mudateya.ar/inmobiliaria/' + inmobiliariaVinculada.slug
+        : LINK_BASE;
+      var link = linkSlugBase + '?asesor=' + encodeURIComponent(codigo);
 
       // ── Mail de bienvenida al asesor (no rompemos el alta si falla) ──
       // Sin QR: lo sacamos del mail (hacía el mensaje pesado) — el código

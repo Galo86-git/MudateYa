@@ -135,7 +135,8 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
         <div class="field">
           <label class="flabel" for="f-inmo">Inmobiliaria <span class="req">*</span></label>
-          <input id="f-inmo" class="finput" type="text" placeholder="Ej: Pérez Propiedades (o Independiente)" autocomplete="organization" maxlength="80"/>
+          <input id="f-inmo" class="finput" type="text" placeholder="Ej: Pérez Propiedades (o Independiente)" autocomplete="organization" maxlength="80" list="dl-inmos"/>
+          <datalist id="dl-inmos"></datalist>
         </div>
         <div class="field">
           <label class="flabel" for="f-nombre">Nombre y apellido <span class="req">*</span></label>
@@ -200,6 +201,29 @@ var _nombre = '';
 var _codigo = '';
 var _canalDetectado = null;
 
+// ── Autocomplete de inmobiliarias reales (además de RE/MAX, Mudafy, C21
+//    detectados por texto): si el asesor tipea el nombre EXACTO de una
+//    inmobiliaria que ya se dio de alta por el flujo instantáneo, la
+//    asociamos de una en vez de guardar el nombre como texto suelto sin
+//    ningún link real — antes esto se perdía en silencio. ──
+var _inmosPorNombre = {}; // nombre en minúscula -> slug
+fetch('/api/inmobiliarias?action=listar-publico')
+  .then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(d) {
+    if (!d || !Array.isArray(d.inmobiliarias)) return;
+    var dl = document.getElementById('dl-inmos');
+    d.inmobiliarias.forEach(function(i) {
+      if (!i.nombre || !i.slug) return;
+      _inmosPorNombre[i.nombre.toLowerCase().trim()] = i.slug;
+      if (dl) {
+        var opt = document.createElement('option');
+        opt.value = i.nombre;
+        dl.appendChild(opt);
+      }
+    });
+  })
+  .catch(function() { /* silencioso: sin autocomplete, sigue funcionando como antes */ });
+
 // ── Si el asesor escribe el nombre de una inmobiliaria que ya tiene canal
 //    propio (RE/MAX, Mudafy, Century 21), lo mandamos directo a ESE canal en
 //    vez de meterlo en "independientes" — así queda bien atribuido/segmentado
@@ -243,11 +267,16 @@ async function registrar() {
   btn.textContent = 'Generando…';
 
   _canalDetectado = detectarCanal(inmo);
+  // Inmobiliaria real (autocomplete) — solo cuenta si el texto matchea EXACTO
+  // con una de la lista (evita asociar mal por un nombre parecido pero distinto).
+  var slugInmoReal = _canalDetectado ? null : _inmosPorNombre[inmo.toLowerCase().trim()];
   var endpoint = _canalDetectado
     ? ('/api/' + _canalDetectado.slug + '?action=registrar')
     : '/api/independientes?action=registrar';
   var payload = _canalDetectado
     ? { nombre: nombre, email: email, whatsapp: wapp, origen: ORIGEN }
+    : slugInmoReal
+    ? { nombre: nombre, email: email, whatsapp: wapp, inmobiliaria: inmo, inmobiliariaSlug: slugInmoReal, origen: ORIGEN }
     : { nombre: nombre, email: email, whatsapp: wapp, inmobiliaria: inmo, origen: ORIGEN };
 
   try {

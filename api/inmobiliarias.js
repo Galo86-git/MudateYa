@@ -271,6 +271,23 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(publica);
     }
 
+    // ── PÚBLICO: listar nombres+slugs de inmobiliarias ACTIVAS ──
+    // Para el autocomplete del campo "inmobiliaria" en asesor-registro.html:
+    // si el asesor tipea el nombre de una inmobiliaria real que ya existe,
+    // que la elija de una lista en vez de escribir texto libre que no
+    // matchea con nada — así queda bien asociada desde el alta, sin
+    // depender de que entre por el link específico de su agencia.
+    // Solo nombre/slug (nada sensible: ni contacto, ni comisión).
+    if (action === 'listar-publico' && req.method === 'GET') {
+      var listaPub = (await getJSON('inmobiliarias:lista')) || [];
+      var nombresPub = [];
+      for (var iPub = 0; iPub < listaPub.length; iPub++) {
+        var inmoPub = await getJSON('inmobiliaria:' + listaPub[iPub]);
+        if (inmoPub && inmoPub.activa !== false) nombresPub.push({ nombre: inmoPub.nombre, slug: inmoPub.slug });
+      }
+      return res.status(200).json({ inmobiliarias: nombresPub });
+    }
+
     // ── ADMIN: listar todas ──
     if (action === 'listar' && req.method === 'GET') {
       if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
