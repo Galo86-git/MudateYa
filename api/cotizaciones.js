@@ -1852,6 +1852,55 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // ── MANDAR MAIL LIBRE A UNA DIRECCIÓN (admin) ────────────────────
+    // Para previews/pruebas puntuales — ej: mandarse a uno mismo el
+    // borrador de un mail antes de decidir mandarlo a todos.
+    if (action === 'admin-enviar-mail' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+      const { to, subject, html } = req.body || {};
+      if (!to || !subject || !html) return res.status(400).json({ error: 'Faltan to, subject y/o html' });
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const r = await resend.emails.send({ from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to, subject, html });
+        return res.status(200).json({ ok: true, enviado: true, id: r.data && r.data.id });
+      } catch (e) {
+        return res.status(200).json({ ok: false, error: e.message });
+      }
+    }
+
+    // ── MANDAR MAIL A TODOS LOS MUDANCEROS APROBADOS (admin) ─────────
+    // Para anuncios tipo "novedades de la plataforma". Recorre
+    // mudanceros:todos, filtra estado==='aprobado' (no tiene sentido
+    // avisarle de mejoras a alguien que ni completó el alta), y manda
+    // el mismo asunto+html a cada uno. No hay envío masivo real de
+    // Resend por lote acá: uno por uno, con una pausa corta entre cada
+    // uno para no pegarle a los límites de tasa de la cuenta.
+    if (action === 'admin-mail-mudanceros' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+      const { subject, html, soloPrueba } = req.body || {};
+      if (!subject || !html) return res.status(400).json({ error: 'Faltan subject y/o html' });
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const todosEmails = (await getJSON('mudanceros:todos')) || [];
+        const enviados = [], fallidos = [];
+        for (const email of todosEmails) {
+          const perfil = await getJSON(`mudancero:perfil:${email}`);
+          if (!perfil || perfil.estado !== 'aprobado') continue;
+          if (soloPrueba && enviados.length >= 1) break; // soloPrueba: manda solo al primero, para probar el filtro/loop sin spamear
+          try {
+            await resend.emails.send({ from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to: email, subject, html });
+            enviados.push(email);
+            await new Promise((res2) => setTimeout(res2, 250));
+          } catch (e) {
+            fallidos.push({ email, error: e.message });
+          }
+        }
+        return res.status(200).json({ ok: true, total: enviados.length, enviados, fallidos });
+      } catch (e) {
+        return res.status(200).json({ ok: false, error: e.message });
+      }
+    }
+
     // ── LIQUIDAR HORAS (solo cotizaciones por hora) ─────────────────
     //
     // No es un ajuste de precio: es aplicar la tarifa que el cliente ya aceptó
