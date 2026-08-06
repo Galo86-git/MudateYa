@@ -1324,7 +1324,17 @@ module.exports = async function handler(req, res) {
       };
       mudanza.cotizaciones.push(cotizacion);
 
-      // Cierre automatico deshabilitado para testing.
+      // Cierre automático: con 5 cotizaciones ya alcanza para que el cliente
+      // compare y elija — cotizaciones_completas lo saca de la lista de
+      // "pedidos disponibles" que ven los mudanceros (action=por-zona) y
+      // bloquea nuevos intentos de cotizar (el check de arriba exige
+      // estado==='buscando'). Estaba comentado como "deshabilitado para
+      // testing" y nunca se reactivó — sin esto un pedido podía juntar
+      // cotizaciones sin límite real hasta las 24hs.
+      if (mudanza.cotizaciones.length >= 5) {
+        mudanza.estado = 'cotizaciones_completas';
+      }
+
       // TTL de 7 días (igual que al publicar): antes se re-guardaba con 2 días,
       // lo que hacía DESAPARECER el pedido (con sus cotizaciones) antes de tiempo.
       await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
