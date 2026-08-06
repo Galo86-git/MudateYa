@@ -1982,18 +1982,31 @@ async function derivarHumano(waId, motivo, conv, opts) {
       const texto =
         `🚨 ${tipo} URGENTE — ${waId}\n\n${detalle}\n\n` +
         `Emi no lo pudo resolver y lo escaló. Tomalo cuanto antes.\nhttps://wa.me/${digitos}`;
-      // Si el que escribió es del propio equipo (caso típico probando el bot),
-      // no se avisa a sí mismo — al resto sí.
+      // A QUIÉN se le avisa. Si está seteada ALERTA_URGENTE_TEL (uno o varios
+      // teléfonos separados por coma), el aviso va SOLO a esos: es el modo de
+      // arranque, con una sola persona, para probarlo en vivo sin molestar al
+      // resto del equipo. Si NO está seteada, cae al equipo completo de
+      // EQUIPO_TELEFONOS. Para pasar de un modo al otro alcanza con poner o
+      // borrar la env var en Vercel — no hay que tocar código.
+      // Los números NO van hardcodeados acá: el repo es público.
+      const listaFija = String(process.env.ALERTA_URGENTE_TEL || '')
+        .split(',').map((t) => t.trim()).filter(Boolean);
+      const destinos = listaFija.length ? listaFija : Object.keys(EQUIPO);
       const propio = ultimos10(waId);
-      for (const tel of Object.keys(EQUIPO)) {
-        if (tel === propio) continue;
+      for (const tel of destinos) {
+        // En modo equipo no se le avisa a quien escribió el mensaje (no tiene
+        // sentido notificarlo de lo suyo). En modo lista fija sí se le manda
+        // igual: justamente se está probando desde el propio teléfono.
+        if (!listaFija.length && tel === propio) continue;
         const r = await enviarPlantilla(
           tel,
           'alerta_urgente_equipo',
           { '1': tipo, '2': waId, '3': detalle, '4': digitos },
           texto
         );
-        if (!r.enviado) console.warn('alerta urgente no entregada a', EQUIPO[tel], '-', r.motivo);
+        if (!r.enviado) {
+          console.warn('alerta urgente no entregada a', EQUIPO[ultimos10(tel)] || tel, '-', r.motivo);
+        }
       }
     }
   } catch (e) {
