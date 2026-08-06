@@ -4,7 +4,7 @@ var { esAdmin } = require('./_auth');
 var { vencimientoHabilISO } = require('./_habiles');
 // Matching por zona (mismo criterio que match-mudanceros.js) — lo usa
 // notificarMudanceros para filtrar a quién avisar en pedidos del bot.
-var { coincideZona, palabrasZona } = require('./match-mudanceros');
+var { coincideZona, palabrasZona, cubreGeo } = require('./match-mudanceros');
 
 const { Resend } = require('resend');
 
@@ -3941,7 +3941,8 @@ async function notificarMudanceros(mudanza) {
   try {
     const todosEmails = await getJSON('mudanceros:todos') || [];
     const destinatarios = [];
-    const palabrasZonaPedido = palabrasZona(`${mudanza.origen || mudanza.desde || ''} ${mudanza.destino || mudanza.hasta || ''}`);
+    const textoZonaPedido = `${mudanza.origen || mudanza.desde || ''} ${mudanza.destino || mudanza.hasta || ''}`;
+    const palabrasZonaPedido = palabrasZona(textoZonaPedido);
 
     for (const email of todosEmails) {
       try {
@@ -3952,8 +3953,18 @@ async function notificarMudanceros(mudanza) {
         if (mudanza.modoCotizacion === 'dirigido') {
           if (!(mudanza.mudancerosInvitados || []).includes(email)) continue;
         } else {
-          const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
-          if (!coincideZona(cobertura, palabrasZonaPedido)) continue;
+          // 1) GEO primero: distancia real entre el origen del pedido y la base
+          //    del mudancero. Es el criterio bueno — no se lo puede engañar con
+          //    texto ("toda Argentina", "Córdoba Capital" pareciéndose a CABA).
+          const geo = await cubreGeo(p, mudanza.origen || mudanza.desde, mudanza.origenCoords);
+          if (geo === false) continue;
+          // 2) Solo si geo no pudo decidir (geo === null) cae al texto.
+          //    ignorarComodines: un "toda Argentina" en el perfil sirve para salir
+          //    en búsquedas, no para recibir pedidos de cualquier punto del país.
+          if (geo === null) {
+            const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
+            if (!coincideZona(cobertura, palabrasZonaPedido, { ignorarComodines: true, textoPedido: textoZonaPedido })) continue;
+          }
         }
 
         destinatarios.push({ email: p.email, nombre: p.nombre || '', tel: p.telefono || '' });

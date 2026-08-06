@@ -42,6 +42,20 @@ const EQUIPO = cargarEquipo();
 function ultimos10(waId) {
   return String(waId || '').replace(/\D/g, '').slice(-10);
 }
+// ------------------------------------------------------------------
+// ALERTA_URGENTE_TEL: teléfonos (separados por coma) que se hacen cargo de los
+// pedidos URGENTES. Es UNA sola perilla que define todo el modo urgente:
+//   - SETEADA  → los urgentes son de esas personas: reciben la alerta por
+//                WhatsApp y el pedido NO se barre a los mudanceros (lo toma el
+//                equipo a mano). Es el modo de arranque, con una sola persona.
+//   - VACÍA    → comportamiento normal: la alerta va a todo EQUIPO_TELEFONOS y
+//                el urgente sale a la red como cualquier otro pedido.
+// Los números NO van en el código (repo público), van en Vercel.
+// ------------------------------------------------------------------
+function alertaUrgenteTels() {
+  return String(process.env.ALERTA_URGENTE_TEL || '')
+    .split(',').map((t) => t.trim()).filter(Boolean);
+}
 // Para mudanceros usamos los últimos 8 dígitos (número de abonado): es la parte
 // estable del celular argentino, más allá de 54 / 9 / 15 / código de área.
 function clave8(tel) {
@@ -1787,8 +1801,25 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     await setJSON('mudanzas:todos', todos);
   } catch (e) { console.warn('índice marketplace:', e.message); }
 
-  // Barrido a mudanceros reales: sigue APAGADO (no manda nada a nadie real).
-  await iniciarBarridoMudanceros(pedido);
+  // Barrido a mudanceros reales, con DOS frenos antes de salir a la red:
+  //  1) URGENTE con ALERTA_URGENTE_TEL seteada: no se barre. Ese urgente es de
+  //     quien figura en esa variable — recibe la alerta por WhatsApp y lo toma
+  //     a mano. Es la MISMA perilla para las dos cosas: si la variable se borra,
+  //     el urgente vuelve a salir a la red como cualquier pedido. Ver
+  //     alertaUrgenteTels() arriba.
+  //  2) PRUEBA: si lo creó alguien de EQUIPO_TELEFONOS desde su propio WhatsApp,
+  //     es un test por definición y NUNCA sale a mudanceros reales. Pasó el
+  //     2026-08-06: una mudanza de prueba se notificó a toda la red.
+  // OJO: el flag BARRIDO_ACTIVO ya NO está apagado — esto sale en serio.
+  const esPrueba = !!quienEscribe(waId);
+  const urgenteReservado = pedido.urgente && alertaUrgenteTels().length > 0;
+  if (urgenteReservado) {
+    console.log(`[barrido] omitido (URGENTE reservado a ALERTA_URGENTE_TEL) — pedido ${id}`);
+  } else if (esPrueba) {
+    console.log(`[barrido] omitido (PRUEBA del equipo) — pedido ${id}`);
+  } else {
+    await iniciarBarridoMudanceros(pedido);
+  }
   // Aviso al mudancero de test (mail con PDF adjunto + WhatsApp con fotos). Sale
   // directo a mudatest, SIN exigir que el perfil esté 'aprobado'. El barrido real a
   // TODOS los mudanceros (con notificarMudanceros de la web, que sí exige aprobado)
@@ -1989,8 +2020,7 @@ async function derivarHumano(waId, motivo, conv, opts) {
       // EQUIPO_TELEFONOS. Para pasar de un modo al otro alcanza con poner o
       // borrar la env var en Vercel — no hay que tocar código.
       // Los números NO van hardcodeados acá: el repo es público.
-      const listaFija = String(process.env.ALERTA_URGENTE_TEL || '')
-        .split(',').map((t) => t.trim()).filter(Boolean);
+      const listaFija = alertaUrgenteTels();
       const destinos = listaFija.length ? listaFija : Object.keys(EQUIPO);
       const propio = ultimos10(waId);
       for (const tel of destinos) {
@@ -2441,14 +2471,15 @@ async function iniciarBarridoMudanceros(pedido) {
 
 async function barridoWhatsApp(pedido) {
   const { enviarPlantilla } = require('./_plantillas');
-  const { coincideZona, palabrasZona } = require('./match-mudanceros');
+  const { coincideZona, palabrasZona, cubreGeo } = require('./match-mudanceros');
   const todos = (await getJSON('mudanceros:todos')) || [];
   const dirigido = pedido.modoCotizacion === 'dirigido';
   const invitados = pedido.mudancerosInvitados || [];
   // Pedido del bot en modo abierto: avisar a TODOS los que cubren la zona del
   // pedido, no a cualquier aprobado sin importar dónde esté (mismo criterio
   // de zona que usa match-mudanceros.js).
-  const palabrasZonaPedido = palabrasZona(`${pedido.origen || ''} ${pedido.destino || ''}`);
+  const textoZonaPedido = `${pedido.origen || ''} ${pedido.destino || ''}`;
+  const palabrasZonaPedido = palabrasZona(textoZonaPedido);
   let enviados = 0;
   for (const email of todos) {
     if (enviados >= 60) break; // tope defensivo por corrida
@@ -2457,8 +2488,14 @@ async function barridoWhatsApp(pedido) {
     if (dirigido) {
       if (!invitados.includes(email)) continue;
     } else {
-      const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
-      if (!coincideZona(cobertura, palabrasZonaPedido)) continue;
+      // Mismo criterio que el mail (ver cotizaciones.js): primero distancia real
+      // al origen; el texto es solo el respaldo si no se pudo geolocalizar.
+      const geo = await cubreGeo(p, pedido.origen, pedido.origenCoords);
+      if (geo === false) continue;
+      if (geo === null) {
+        const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
+        if (!coincideZona(cobertura, palabrasZonaPedido, { ignorarComodines: true, textoPedido: textoZonaPedido })) continue;
+      }
     }
     const nom = (p.nombre || '').split(' ')[0] || 'Hola';
     const resumen =

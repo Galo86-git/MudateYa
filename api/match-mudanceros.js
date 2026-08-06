@@ -32,6 +32,28 @@ const STOP = ['de', 'del', 'la', 'las', 'los', 'el', 'en', 'y', 'av', 'ave', 'av
 function palabrasZona(direccion) {
   return norm(direccion).split(/[\s,]+/).filter((p) => p.length > 2 && !STOP.includes(p));
 }
+// ── AMBA como UNA sola zona ─────────────────────────────────────────────────
+// Definición del negocio (2026-08-06): AMBA = Capital Federal + Provincia de
+// Buenos Aires. Resuelve un agujero real del matching por tokens: "CABA",
+// "Capital Federal" y "Ciudad Autónoma de Buenos Aires" son EL MISMO lugar y no
+// comparten ni una palabra entre sí, así que nunca matcheaban entre ellas — lo
+// tapaba el cruce por substring del final de coincideZona(), que a su vez mete
+// falsos positivos. Con esto el caso frecuente se resuelve de forma explícita.
+//
+// OJO con lo que NO está acá a propósito:
+//   - "capital" a secas: matchearía "Córdoba Capital".
+//   - "zona norte/sur/oeste": las usa también gente del interior.
+// Ambas eran justo el tipo de coincidencia boba que trajo el problema.
+const FRASES_AMBA = ['capital federal', 'ciudad autonoma', 'buenos aires',
+  'bs as', 'bsas', 'conurbano', 'gran buenos aires'];
+const SIGLAS_AMBA = ['caba', 'amba', 'gba'];
+function esAMBA(texto) {
+  const t = norm(texto);
+  if (FRASES_AMBA.some((f) => t.includes(f))) return true;
+  // Comparación EXACTA de token para las siglas: si no, "cabildo" pasaría por "caba".
+  return palabrasZona(t).some((p) => SIGLAS_AMBA.includes(p));
+}
+
 // Frases que un mudancero pone en zonasExtra para decir "cubro cualquier
 // lugar" — sin esto, "toda argentina" quedaba reducida a la palabra "toda"
 // (STOP descarta "argentina"), así que nunca matcheaba con ningún pedido real.
@@ -42,8 +64,87 @@ function esComodinNacional(cobertura) {
   const c = norm(cobertura);
   return COMODINES_ZONA.some((k) => c.includes(k));
 }
-function coincideZona(cobertura, palabras) {
-  if (esComodinNacional(cobertura)) return true;
+// opts.ignorarComodines = true → NO se aplica el atajo de "toda Argentina".
+// Se usa al NOTIFICAR un pedido (mail/push/WhatsApp): el comodín está pensado
+// para que un mudancero aparezca en BÚSQUEDAS de cualquier zona, no para que
+// le entren pedidos de todo el país. Sin esto, alguien de Córdoba con "toda
+// Argentina" en zonasExtra recibía una mudanza de Guise a Cabildo (caso real,
+// 2026-08-06). Para búsqueda/ranking se sigue llamando sin opts, igual que antes.
+// ── Alcance por GEOLOCALIZACIÓN (criterio principal para notificar) ─────────
+// El matching por texto siempre va a fallar en los bordes: "CABA" y "Ciudad
+// Autónoma" no comparten palabras, y "Córdoba Capital" se parece de más a
+// cualquier cosa. La distancia real no tiene ese problema: si el origen del
+// pedido está a 700 km de la base del mudancero, no es su pedido y punto.
+//
+// Devuelve true / false / null. **null = no se pudo decidir** (falta la key de
+// Google, no geocodificó, el perfil no tiene zona): ahí el llamador cae al
+// matching por texto de coincideZona(). A propósito falla ABIERTO — es peor
+// dejar a un mudancero sin enterarse de un pedido de su zona por un problema
+// de geocoding que mandarle uno de más.
+//
+// RADIO_NOTIFICACION_KM (env, default 100) — 100 km cubre AMBA entera con aire
+// (CABA→La Plata son ~55, CABA→Luján ~70) y deja afuera cualquier otra
+// provincia. Se sube o baja sin tocar código.
+const RADIO_KM = parseInt(process.env.RADIO_NOTIFICACION_KM || '100', 10);
+
+async function redisSet(key, valor) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  try {
+    await fetch(`${url}/SET/${encodeURIComponent(key)}/${encodeURIComponent(JSON.stringify(valor))}`,
+      { headers: { Authorization: `Bearer ${token}` } });
+  } catch (_) {}
+}
+
+// Coordenadas de un texto de zona/dirección, cacheadas en Redis por texto
+// normalizado. Las zonas se repiten muchísimo entre mudanceros ("CABA", "zona
+// norte"), así que en la práctica se le pega a Google una vez por zona, no una
+// vez por mudancero. Cachea también el fallo, para no reintentar en cada barrido.
+async function coordsDeTexto(texto) {
+  const t = norm(texto);
+  if (!t) return null;
+  const key = `geo:zona:${t}`;
+  try {
+    const cache = await getJSON(key);
+    if (cache) return cache.lat ? cache : null;
+  } catch (_) {}
+  try {
+    const { geocodificar } = require('./_geo');
+    const g = await geocodificar(`${texto}, Argentina`);
+    const coords = g && g.ok ? { lat: g.lat, lng: g.lng } : null;
+    await redisSet(key, coords || { fallo: true });
+    return coords;
+  } catch (e) {
+    console.warn('coordsDeTexto:', e.message);
+    return null;
+  }
+}
+
+// ¿La base del mudancero está dentro del radio del ORIGEN del pedido?
+async function cubreGeo(perfil, textoOrigenPedido, coordsPedido) {
+  try {
+    const cp = (coordsPedido && coordsPedido.lat) ? coordsPedido : await coordsDeTexto(textoOrigenPedido);
+    if (!cp) return null;
+    const cm = await coordsDeTexto(`${(perfil && perfil.zonaBase) || ''}`);
+    if (!cm) return null;
+    const { haversineKm } = require('./_geo');
+    const km = haversineKm(cp, cm);
+    if (!km && km !== 0) return null;
+    return km <= RADIO_KM;
+  } catch (e) {
+    console.warn('cubreGeo:', e.message);
+    return null;
+  }
+}
+
+function coincideZona(cobertura, palabras, opts) {
+  if (!(opts && opts.ignorarComodines) && esComodinNacional(cobertura)) return true;
+  // AMBA cuenta como UNA zona: si el pedido y la cobertura caen los dos ahí, es
+  // la misma zona aunque no compartan ninguna palabra ("CABA" vs "Ciudad
+  // Autónoma de Buenos Aires"). Pide el texto CRUDO del pedido porque `palabras`
+  // ya viene tokenizado y las frases de dos palabras no sobreviven al split.
+  if (opts && opts.textoPedido && esAMBA(opts.textoPedido) && esAMBA(cobertura)) return true;
   const cob = norm(cobertura);
   if (palabras.some((p) => cob.includes(p))) return true;
   const cobPal = palabrasZona(cob);
@@ -225,3 +326,5 @@ module.exports = async function handler(req, res) {
 module.exports.coincideZona = coincideZona;
 module.exports.palabrasZona = palabrasZona;
 module.exports.norm = norm;
+module.exports.cubreGeo = cubreGeo;
+module.exports.esAMBA = esAMBA;
