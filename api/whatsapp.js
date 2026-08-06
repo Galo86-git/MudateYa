@@ -511,6 +511,8 @@ FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de est
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
+PISO Y ASCENSOR: ya los venís preguntando en la charla — ahora además pasalos en los campos (*tipo_origen*, *piso_origen*, *ascensor_origen* y los tres de destino). Mencionarlos en los detalles NO alcanza: si no van en esos campos, el mudancero ve "No indicado", cotiza como si fuera planta baja, y el día de la mudanza aparece la escalera. Es de lo que más mueve el precio.
+
 NIVEL DE SERVICIO: si el cliente dice qué nivel quiere (Esencial, Integral o Llave en Mano), pasalo en el campo *nivel* al crear el pedido — 'esencial', 'integral' o 'llave'. NO alcanza con mencionarlo en los detalles: si no va en ese campo, el pedido sale como Esencial y los mudanceros cotizan un servicio sin embalaje ni armado, con el lío asegurado el día de la mudanza. Si no lo dijo, omitilo (no lo inventes ni lo preguntes de más: si describe lo que necesita, deducilo con criterio y confirmáselo en una línea).
 
 COMPARAR LOS 3 NIVELES: si el cliente quiere ver precios de Esencial, Integral y Llave en Mano para elegir entre las tres (no solo un nivel), marcá comparar_niveles:true al crear el pedido — así los mudanceros cotizan los 3 y el cliente los compara lado a lado. No lo ofrezcas de entrada como opción por defecto (la mayoría solo quiere un nivel), pero si pregunta "¿me pueden pasar los 3 precios?" o algo así, es justo para eso. No aplica a fletes (un solo precio).
@@ -732,6 +734,12 @@ const tools = [
         nombre: { type: 'string' },
         urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
         nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado de muebles) o llave (+ ubicación de muebles y cajas en destino). Si no lo dijo, omitilo. No aplica a flete.' },
+        tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento.' },
+        piso_origen: { type: 'string', description: 'Piso del que sale, si es departamento (ej "4", "PB", "8 A").' },
+        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si hay que subir/bajar por escalera. Omitilo si no lo sabés.' },
+        tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento.' },
+        piso_destino: { type: 'string', description: 'Piso al que va, si es departamento.' },
+        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Omitilo si no lo sabés.' },
         comparar_niveles: { type: 'boolean', description: 'true si el cliente quiere que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para comparar precio por operador, en vez de uno solo. No aplica a flete.' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
@@ -1798,6 +1806,13 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     ? new Date(ahora.getTime() + 3 * 60 * 60 * 1000).toISOString()
     : vencimientoHabilISO(24);
   const dirigido = !!TEST_MUDANCERO_EMAIL;
+  // Normalizadores al MISMO formato que usa el marketplace web (ver action
+  // 'publicar' en cotizaciones.js y el render de inmobiliaria.html): el tipo de
+  // lugar es 'casa'/'departamento', y el ascensor viaja como el string 'sí'/'no'
+  // — NO como booleano, o la card del mudancero lo muestra mal.
+  const _tipoLugar = (v) => (['casa', 'departamento'].indexOf(String(v || '').toLowerCase()) !== -1 ? String(v).toLowerCase() : null);
+  const _piso = (v) => String(v == null ? '' : v).trim().slice(0, 10);
+  const _asc = (v) => (v === true ? 'sí' : v === false ? 'no' : '');
   const pedido = {
     id,
     // — vista bot —
@@ -1822,6 +1837,18 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     km: kmCalc || 0, // distancia por ruta (Google) — se muestra en el PDF
     origenCoords: origenCoords,
     destinoCoords: destinoCoords,
+    // Piso y ascensor: de los factores que más mueven el precio (subir cuatro
+    // pisos por escalera no es lo mismo que planta baja). Emi YA los preguntaba
+    // en la charla, pero no tenía dónde guardarlos: quedaban sueltos en
+    // `detalles` y la card del mudancero mostraba "No indicado". Mismo agujero
+    // que tenía `nivel`, y con el mismo final: cotiza barato, el día de la
+    // mudanza aparece la escalera y termina en ajuste de precio o en reclamo.
+    tipoOrigen:  _tipoLugar(input.tipo_origen),
+    pisoOrigen:  _piso(input.piso_origen),
+    ascOrigen:   _asc(input.ascensor_origen),
+    tipoDestino: _tipoLugar(input.tipo_destino),
+    pisoDestino: _piso(input.piso_destino),
+    ascDestino:  _asc(input.ascensor_destino),
     // El nivel que pidió el cliente. Antes esto era `null` fijo para mudanzas:
     // la tool no tenía dónde guardarlo, así que Emi lo escribía en el comentario
     // y el dato estructurado quedaba vacío. Aguas abajo, `mudanza.nivel ||
