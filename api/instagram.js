@@ -195,7 +195,13 @@ async function askClaude(messages, system) {
       messages,
     }),
   });
-  return res.json();
+  const data = await res.json();
+  // Visibilidad del caché en los logs de Vercel — sin esto no hay forma de
+  // confirmar desde afuera si cache_control realmente está pegando.
+  if (data.usage) {
+    console.log('[cache]', 'creados:', data.usage.cache_creation_input_tokens || 0, '· leídos:', data.usage.cache_read_input_tokens || 0, '· sin cachear:', data.usage.input_tokens || 0);
+  }
+  return data;
 }
 
 // ------------------------------------------------------------------
