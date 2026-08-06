@@ -6185,6 +6185,27 @@ function toggleMetodoCobroPanel(){
 function setVal(id,val){ var e=document.getElementById(id); if(e) e.value=val; }
 function setSelect(id,val){ var e=document.getElementById(id); if(!e) return; for(var i=0;i<e.options.length;i++){ if(e.options[i].value===val||e.options[i].text===val){ e.selectedIndex=i; break; } } }
 
+// Valida el campo CBU/Alias según lo que parezca ser: si es todo dígitos lo
+// trata como CBU (22 dígitos), si no, como alias bancario. Reglas de alias
+// (largo 6-20, letras/números/puntos/guiones, no empieza ni termina en
+// punto/guión) son las mismas que usa el sistema bancario real, no algo
+// inventado — así se detecta un alias mal tipeado ANTES de que falle un pago,
+// no después. No valida que la cuenta EXISTA (para eso hace falta ser
+// entidad financiera/PSP), solo que el formato sea válido.
+function pfValidarCbuAlias(valor) {
+  var v = String(valor || '').trim();
+  if (!v) return null; // vacío: no bloquea, sigue siendo opcional al guardar
+  var soloDigitos = /^\d+$/.test(v);
+  if (soloDigitos) {
+    if (v.length !== 22) return 'El CBU tiene que tener 22 dígitos (tiene ' + v.length + ').';
+    return null;
+  }
+  if (v.length < 6 || v.length > 20) return 'El alias tiene que tener entre 6 y 20 caracteres.';
+  if (!/^[a-zA-Z0-9.-]+$/.test(v)) return 'El alias solo puede tener letras, números, puntos y guiones (sin espacios ni otros símbolos).';
+  if (/^[.-]|[.-]$/.test(v)) return 'El alias no puede empezar ni terminar con punto o guión.';
+  return null;
+}
+
 async function guardarPerfil(){
   var btn=document.getElementById('btnGuardar'), msg=document.getElementById('perfilMsg');
 
@@ -6211,6 +6232,17 @@ async function guardarPerfil(){
     var _tc = document.getElementById('pf-tipoCobro');
     if (_tc) _tc.scrollIntoView({ behavior:'smooth', block:'center' });
     return;
+  }
+  // Validar formato del CBU/Alias (si cargó algo) — antes de guardar, no
+  // después de que falle un pago por un alias mal tipeado.
+  if ((document.getElementById('pf-metodoCobro')||{}).value === 'cbu') {
+    var _cbuEl = document.getElementById('pf-cbu');
+    var _errCbu = pfValidarCbuAlias(_cbuEl ? _cbuEl.value : '');
+    if (_errCbu) {
+      if (msg) { msg.textContent = _errCbu; msg.style.color = '#DC2626'; }
+      if (_cbuEl) _cbuEl.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
   }
   if (msg) { msg.textContent=''; msg.style.color=''; }
 
