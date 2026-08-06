@@ -991,7 +991,7 @@ module.exports = async function handler(req, res) {
 
       const id = 'MYA-' + Date.now();
       const { modoCotizacion, mudancerosInvitados } = req.body;
-      // modoCotizacion: 'abierto' (primeros 5) | 'dirigido' (cliente elige mudanceros)
+      // modoCotizacion: 'abierto' (todos los mudanceros de la zona que quieran cotizar, sin tope) | 'dirigido' (cliente elige mudanceros)
       const modo = modoCotizacion || 'abierto';
       const MAX_COT = 50;
       // Vigencia del pedido en HORAS HÁBILES (ver api/_habiles.js):
@@ -1324,16 +1324,12 @@ module.exports = async function handler(req, res) {
       };
       mudanza.cotizaciones.push(cotizacion);
 
-      // Cierre automático: con 5 cotizaciones ya alcanza para que el cliente
-      // compare y elija — cotizaciones_completas lo saca de la lista de
-      // "pedidos disponibles" que ven los mudanceros (action=por-zona) y
-      // bloquea nuevos intentos de cotizar (el check de arriba exige
-      // estado==='buscando'). Estaba comentado como "deshabilitado para
-      // testing" y nunca se reactivó — sin esto un pedido podía juntar
-      // cotizaciones sin límite real hasta las 24hs.
-      if (mudanza.cotizaciones.length >= 5) {
-        mudanza.estado = 'cotizaciones_completas';
-      }
+      // SIN cierre automático a las 5: en modo 'abierto' el pedido tiene que
+      // recibir cotizaciones de TODOS los mudanceros que quieran, no solo los
+      // primeros 5 — decisión explícita, no lo reactives pensando que quedó
+      // a medias (existe el estado 'cotizaciones_completas' en el modelo,
+      // pero a propósito nunca se asigna acá). El único límite real sigue
+      // siendo la ventana de 24hs hábiles para recibir cotizaciones nuevas.
 
       // TTL de 7 días (igual que al publicar): antes se re-guardaba con 2 días,
       // lo que hacía DESAPARECER el pedido (con sus cotizaciones) antes de tiempo.
