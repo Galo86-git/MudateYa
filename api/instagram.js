@@ -176,6 +176,9 @@ const tools = [
 // ------------------------------------------------------------------
 // Claude
 // ------------------------------------------------------------------
+// Cache de prompts de Anthropic: system y tools son idénticos en cada
+// mensaje de una misma conversación (acá no hay hora/snapshots pegados
+// adentro como en whatsapp.js), así que se pueden cachear enteros.
 async function askClaude(messages, system) {
   const res = await fetch(ANTHROPIC, {
     method: 'POST',
@@ -187,8 +190,8 @@ async function askClaude(messages, system) {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 400,
-      system: system || SYSTEM_PROMPT,
-      tools,
+      system: [{ type: 'text', text: system || SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+      tools: tools.map((t, i) => i === tools.length - 1 ? Object.assign({}, t, { cache_control: { type: 'ephemeral' } }) : t),
       messages,
     }),
   });

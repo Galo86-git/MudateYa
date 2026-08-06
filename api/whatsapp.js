@@ -1436,7 +1436,31 @@ async function ejecutarToolInmobiliaria(name, input, inmoContacto, waId, conv) {
 // ------------------------------------------------------------------
 // Claude
 // ------------------------------------------------------------------
+// Arma el `system` en bloques para el caché de prompts de Anthropic: el
+// prefijo estático (base, con el bloque de conocimiento que solo cambia
+// 1x/día) marcado cache_control, y lo que cambia por request (hora actual,
+// snapshots de pedidos/asesores) como bloque aparte SIN cachear — así ese
+// segundo bloque puede variar en cada mensaje sin invalidar el primero.
+function construirSystemCacheado(base, dinamico) {
+  const bloques = [{ type: 'text', text: base, cache_control: { type: 'ephemeral' } }];
+  if (dinamico) bloques.push({ type: 'text', text: dinamico });
+  return bloques;
+}
+// Misma idea para `tools`: es un array estático por persona (mudancero/
+// asesor/cliente/inmobiliaria) que se repite en cada mensaje de esa
+// conversación — marcar el último tool con cache_control cachea el array
+// entero (Anthropic cachea el PREFIJO hasta ese punto).
+function conCacheDeTools(toolsArr) {
+  if (!Array.isArray(toolsArr) || !toolsArr.length) return toolsArr;
+  const copia = toolsArr.slice();
+  copia[copia.length - 1] = Object.assign({}, copia[copia.length - 1], { cache_control: { type: 'ephemeral' } });
+  return copia;
+}
+
 async function askClaude(messages, system, toolsArg) {
+  const systemFinal = typeof system === 'string'
+    ? construirSystemCacheado(system || SYSTEM_PROMPT, '')
+    : (system || construirSystemCacheado(SYSTEM_PROMPT, ''));
   const res = await fetch(ANTHROPIC, {
     method: 'POST',
     headers: {
@@ -1444,7 +1468,7 @@ async function askClaude(messages, system, toolsArg) {
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: system || SYSTEM_PROMPT, tools: toolsArg || tools, messages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: systemFinal, tools: conCacheDeTools(toolsArg || tools), messages }),
   });
   if (!res.ok) {
     const err = await res.text();
@@ -2528,7 +2552,13 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   // también esté de alta como mudancero o asesor (ej: cuentas de prueba):
   // si no, quienEscribe() nunca se llega a chequear y Emi les contesta con
   // el prompt de mudancero/asesor, que explícitamente no da datos internos.
-  let system, toolsUsados;
+  // systemDinamico acumula todo lo que cambia por request (snapshots,
+  // hora actual) — va SEPARADO de `system` (el prompt base, estático salvo
+  // por el bloque de conocimiento que se actualiza 1x/día) para que el
+  // caché de prompts de Anthropic pueda reusar `system` entre llamadas:
+  // si todo fuera un solo string con la hora pegada adentro, cambiaría en
+  // cada mensaje y el caché nunca pegaría. Ver construirSystemCacheado().
+  let system, toolsUsados, systemDinamico = '';
   if (mudancero && !persona) {
     const nombre = (mudancero.nombre || '').split(' ')[0] || 'colega';
     system = SYSTEM_PROMPT_MUDANCERO.replace('{NOMBRE}', nombre);
@@ -2548,7 +2578,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       const resumenMud = misPedidos.length
         ? misPedidos.map((p) => `- ${p.id} (${p.tipo}, ${p.ruta}), estado: ${p.estado}${p.miPrecio ? `, tu precio: $${p.miPrecio}` : ''}`).join('\n')
         : 'No tenés pedidos/cotizaciones activos ahora mismo.';
-      system += `\n\nTUS PEDIDOS/COTIZACIONES (snapshot de referencia rápida — no hace falta llamar a mis_pedidos si ya está acá; para pedidos NUEVOS disponibles en tu zona usá ver_pedidos):\n${resumenMud}`;
+      systemDinamico += `\n\nTUS PEDIDOS/COTIZACIONES (snapshot de referencia rápida — no hace falta llamar a mis_pedidos si ya está acá; para pedidos NUEVOS disponibles en tu zona usá ver_pedidos):\n${resumenMud}`;
     } catch (e) { console.warn('auto-contexto mudancero:', e.message); }
   } else if (asesor && !persona) {
     const nombre = (asesor.nombre || '').split(' ')[0] || 'colega';
@@ -2567,7 +2597,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       const resumenAse = misPedidos.length
         ? misPedidos.map((p) => `- ${p.id} (cliente: ${p.cliente || '?'}, ${p.ruta}), estado: ${p.estado}${p.anticipoPagado ? ', seña pagada' : ''}${p.saldoPagado ? ', saldo pagado' : ''}${p.tipoOperacion ? `, operación: ${p.tipoOperacion}` : ''}`).join('\n')
         : 'Todavía no le llegó ningún cliente por su link.';
-      system += `\n\nTUS PEDIDOS REFERIDOS (snapshot de referencia rápida — no hace falta llamar a ver_mis_pedidos_referidos si ya está acá):\n${resumenAse}`;
+      systemDinamico += `\n\nTUS PEDIDOS REFERIDOS (snapshot de referencia rápida — no hace falta llamar a ver_mis_pedidos_referidos si ya está acá):\n${resumenAse}`;
     } catch (e) { console.warn('auto-contexto asesor:', e.message); }
   } else if (inmoContacto && !persona) {
     const nombreInmo = inmoContacto.nombre || 'tu inmobiliaria';
@@ -2583,7 +2613,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       const resumenAsesores = misAsesores.length
         ? misAsesores.map((a) => `- ${a.nombre} (${a.email})${a.activo ? '' : ' [inactivo]'}`).join('\n')
         : 'Todavía no tenés asesores registrados.';
-      system += `\n\nTUS ASESORES (snapshot — no hace falta llamar a mis_asesores si ya está acá):\n${resumenAsesores}\n\nTUS OPERACIONES (snapshot — no hace falta llamar a mis_operaciones si ya está acá): ${resumen.total} en total (buscando: ${resumen.buscando}, cotizando: ${resumen.cotizando}, con cotización aceptada: ${resumen.cotizacion_aceptada}, en curso: ${resumen.en_curso}, completadas: ${resumen.completada}, canceladas: ${resumen.cancelada}).`;
+      systemDinamico += `\n\nTUS ASESORES (snapshot — no hace falta llamar a mis_asesores si ya está acá):\n${resumenAsesores}\n\nTUS OPERACIONES (snapshot — no hace falta llamar a mis_operaciones si ya está acá): ${resumen.total} en total (buscando: ${resumen.buscando}, cotizando: ${resumen.cotizando}, con cotización aceptada: ${resumen.cotizacion_aceptada}, en curso: ${resumen.en_curso}, completadas: ${resumen.completada}, canceladas: ${resumen.cancelada}).`;
     } catch (e) { console.warn('auto-contexto inmobiliaria:', e.message); }
   } else {
     // persona ya está calculado arriba (gana sobre mudancero/asesor).
@@ -2617,7 +2647,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
               return `- ${r.id} (${r.tipo}, ${r.origen || ''} → ${r.destino || ''}, estado: ${r.estado}${r.vence ? `, vence: ${r.vence}` : ''}): ${cots}`;
             }).join('\n')
           : 'El cliente no tiene pedidos activos ahora mismo.';
-        system += `\n\nPEDIDOS/COTIZACIONES ACTUALES DE ESTE CLIENTE (snapshot de referencia rápida — no hace falta llamar a consultar_estado_pedido si ya está acá):\n${resumenCliente}`;
+        systemDinamico += `\n\nPEDIDOS/COTIZACIONES ACTUALES DE ESTE CLIENTE (snapshot de referencia rápida — no hace falta llamar a consultar_estado_pedido si ya está acá):\n${resumenCliente}`;
       } catch (e) { console.warn('auto-contexto cliente:', e.message); }
     }
   }
@@ -2630,10 +2660,14 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
-  system += `\n\nAHORA (hora de Argentina): ${ahoraAR}. Usá esto para interpretar "hoy", "mañana", "en un rato", "a la tarde", etc. Si el cliente pide un horario que YA PASÓ hoy, avisale con onda y preguntale si lo quiere más tarde hoy o para otro día. Cuando anotes la fecha/hora del pedido, dejala clara (ej: "hoy 13:00").`;
+  systemDinamico += `\n\nAHORA (hora de Argentina): ${ahoraAR}. Usá esto para interpretar "hoy", "mañana", "en un rato", "a la tarde", etc. Si el cliente pide un horario que YA PASÓ hoy, avisale con onda y preguntale si lo quiere más tarde hoy o para otro día. Cuando anotes la fecha/hora del pedido, dejala clara (ej: "hoy 13:00").`;
+
+  // system queda como prefijo estable (cacheable); systemDinamico (hora +
+  // snapshots) va en un bloque aparte que no rompe el caché del primero.
+  const systemCacheado = construirSystemCacheado(system, systemDinamico);
 
   // Loop agéntico: Claude puede encadenar herramientas hasta dar la respuesta final.
-  let resp = await askClaude(trabajo, system, toolsUsados);
+  let resp = await askClaude(trabajo, systemCacheado, toolsUsados);
   let vueltas = 0;
   while (resp.stop_reason === 'tool_use' && vueltas < 5) {
     vueltas++;
@@ -2652,7 +2686,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       }
     }
     trabajo = trabajo.concat([{ role: 'user', content: resultados }]);
-    resp = await askClaude(trabajo, system, toolsUsados);
+    resp = await askClaude(trabajo, systemCacheado, toolsUsados);
   }
   const salida =
     (resp.content || [])
