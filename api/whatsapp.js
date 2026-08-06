@@ -581,6 +581,7 @@ TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por 
 PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
 - Ver los pedidos disponibles para cotizar → ver_pedidos.
 - Cotizar un pedido → cotizar (con el id del pedido y el precio). Interpretá la jerga de plata: "80 lucas/palos/mil"/"80k" = 80000; "una gamba" = 100; "un melón" = 1.000.000. Pasá el precio como número entero en pesos.
+- SI COBRA POR HORA, la cotización NO se carga por acá: la herramienta te va a devolver un error con un link. Pasáselo tal cual (*https://mudateya.ar/mi-cuenta*) y explicale en una línea que ahí carga su tarifa y las horas estimadas, y el sistema arma el total. No insistas con la herramienta ni le inventes un precio cerrado: el cliente vería la tarifa de una hora como si fuera el trabajo entero.
 - Pasar/rechazar un pedido que no te interesa → pasar.
 - Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo).
 - Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar).
@@ -1118,6 +1119,21 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv) {
       return JSON.stringify({ pedidos, nota: pedidos.length ? 'Pedidos disponibles para cotizar. Para cotizar uno, usá cotizar con su id.' : 'No hay pedidos disponibles en tu zona ahora.' });
     }
     if (name === 'cotizar') {
+      // COBRO POR HORA: por acá NO se puede cotizar. Esta tool manda un precio
+      // suelto, sin modalidad ni horas estimadas, así que el número entraría al
+      // sistema como PRECIO CERRADO: el mudancero pondría su TARIFA y el cliente
+      // la vería como el total del trabajo. Es exactamente la fuga que se arregló
+      // en el action 'cotizar' de cotizaciones.js, entrando por la otra puerta.
+      // mi-cuenta es el único lugar donde se cargan tarifa + horas juntas.
+      if (mudancero && mudancero.tipoCobro === 'porHora') {
+        return JSON.stringify({
+          ok: false,
+          link: `${base}/mi-cuenta`,
+          error: 'Cobrás por hora y por acá solo puedo mandar precio cerrado, así que el total le llegaría mal al cliente. '
+               + 'Esta cotización hay que cargarla desde mi-cuenta: ahí ponés tu tarifa por hora y las horas estimadas, y el sistema arma el total. '
+               + 'Pasale el link y no intentes cotizar de nuevo por acá.',
+        });
+      }
       const { ok, d } = await postJSON('cotizar', {
         mudanzaId: input.pedidoId, mudanceroEmail: email, mudanceroNombre: nombre, mudanceroTel: tel,
         precio: input.precio, nota: input.nota || '', tiempoEstimado: input.tiempo || '',
