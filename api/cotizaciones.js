@@ -1382,6 +1382,10 @@ module.exports = async function handler(req, res) {
         await actualizarPerfilMudancero(mudanceroEmail, function(_pm) { _pm.ultimaActividad = new Date().toISOString(); });
       } catch(_) {}
       try { await notificarCliente(mudanza, cotizacion); } catch(e) { console.error(e.message); }
+      if (mudanza.partnerAsesor) {
+        try { await notificarAsesorNuevaCotizacion(mudanza, cotizacion); }
+        catch(e) { console.warn('Email asesor nueva cotización:', e.message); }
+      }
       return res.status(200).json({ ok: true, cotizacion });
     }
 
@@ -2025,6 +2029,10 @@ module.exports = async function handler(req, res) {
         if (m.clienteWA) {
           try { const { avisarMudanzaIniciada } = require('./_whatsapp'); await avisarMudanzaIniciada(m); }
           catch(e) { console.warn('WhatsApp inicio error:', e.message); }
+        }
+        if (m.partnerAsesor) {
+          try { await notificarAsesorMudanzaEnCurso(m); }
+          catch(e) { console.warn('Email asesor en curso:', e.message); }
         }
       }
       await setJSON(`mudanza:${mudanzaId}`, m, 604800);
@@ -4510,6 +4518,10 @@ async function avisarVencimientoPorMail(mudanza, cots) {
       </div>
     </div>`,
   });
+  if (mudanza.partnerAsesor) {
+    try { await notificarAsesorResumenVencimiento(mudanza, cots); }
+    catch(e) { console.warn('Email asesor resumen vencimiento:', e.message); }
+  }
   return true;
 }
 module.exports.avisarVencimientoPorMail = avisarVencimientoPorMail;
@@ -5248,6 +5260,88 @@ async function notificarAsesorPedidoPublicado(mudanza) {
     enviarPlantilla(a.telefono, 'asesor_pedido_publicado', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: (mudanza.desde || '—').split(',')[0].trim(), 4: (mudanza.hasta || '—').split(',')[0].trim() }, texto)
       .catch(e => console.warn('WhatsApp asesor publicado:', e.message));
   }
+}
+
+// ── 1.b Llegó una cotización nueva ──────────────────────────────────
+async function notificarAsesorNuevaCotizacion(mudanza, cotizacion) {
+  if (!process.env.RESEND_API_KEY) return;
+  const a = await resolverAsesor(mudanza);
+  if (!a) return;
+  const precio = cotizacion.precio || (Array.isArray(cotizacion.propuestas) && cotizacion.propuestas[0] && cotizacion.propuestas[0].precio) || 0;
+  const totalCots = Array.isArray(mudanza.cotizaciones) ? mudanza.cotizaciones.length : 1;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: a.email,
+    subject: `💬 Nueva cotización para ${mudanza.clienteNombre || 'tu cliente'}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      ${_asesorHead('💬 Nueva cotización')}
+      <div style="padding:28px">
+        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+          Hola <strong>${a.nombre || ''}</strong>, a tu cliente le llegó una cotización de <strong>${cotizacion.mudanceroNombre || 'un mudancero'}</strong> por <strong>$${Number(precio).toLocaleString('es-AR')}</strong>${totalCots > 1 ? ` (ya lleva ${totalCots} en total)` : ''}.
+        </p>
+        ${_asesorRuta(mudanza)}
+      </div>
+      ${_asesorPie(mudanza)}
+    </div>`
+  });
+}
+
+// ── 1.c Mudanza en curso ─────────────────────────────────────────────
+async function notificarAsesorMudanzaEnCurso(mudanza) {
+  if (!process.env.RESEND_API_KEY) return;
+  const a = await resolverAsesor(mudanza);
+  if (!a) return;
+  const cot = mudanza.cotizacionAceptada || {};
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: a.email,
+    subject: `🚚 La mudanza de ${mudanza.clienteNombre || 'tu cliente'} está en curso`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      ${_asesorHead('🚚 Mudanza en curso')}
+      <div style="padding:28px">
+        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+          Hola <strong>${a.nombre || ''}</strong>, ${cot.mudanceroNombre || 'el mudancero'} acaba de arrancar la mudanza de tu cliente.
+        </p>
+        ${_asesorRuta(mudanza)}
+        <p style="font-size:16px;color:#475569;line-height:1.7;margin:18px 0 0">
+          Te avisamos cuando termine.
+        </p>
+      </div>
+      ${_asesorPie(mudanza)}
+    </div>`
+  });
+}
+
+// ── 1.d Venció el plazo de 24hs: resumen de presupuestos ─────────────
+// Informativo para que el asesor pueda ayudar a su cliente a elegir — no
+// lleva botón de "elegir y pagar" a propósito, esa decisión es del cliente.
+async function notificarAsesorResumenVencimiento(mudanza, cots) {
+  if (!process.env.RESEND_API_KEY || !cots || !cots.length) return;
+  const a = await resolverAsesor(mudanza);
+  if (!a) return;
+  const filas = cots.map((c) => {
+    const precio = c.precio || (Array.isArray(c.propuestas) && c.propuestas[0] && c.propuestas[0].precio) || 0;
+    return `<tr><td style="padding:9px 0;border-top:1px solid #E2E8F0;font-size:15px;color:#0F1923">${c.mudanceroNombre || 'Mudancero'}</td><td style="padding:9px 0;border-top:1px solid #E2E8F0;text-align:right;font-weight:700;color:#003580;font-size:15px">$${Number(precio).toLocaleString('es-AR')}</td></tr>`;
+  }).join('');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: a.email,
+    subject: `📋 ${mudanza.clienteNombre || 'Tu cliente'} recibió ${cots.length} presupuesto${cots.length > 1 ? 's' : ''} — ayudalo a elegir`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      ${_asesorHead('📋 Resumen de presupuestos')}
+      <div style="padding:28px">
+        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
+          Hola <strong>${a.nombre || ''}</strong>, se venció el plazo de 24hs hábiles para tu cliente. Estos son los presupuestos que recibió — capaz le sirve que lo ayudes a decidir:
+        </p>
+        ${_asesorRuta(mudanza)}
+        <table style="width:100%;border-collapse:collapse;margin-top:10px">${filas}</table>
+      </div>
+      ${_asesorPie(mudanza)}
+    </div>`
+  });
 }
 
 // ── 2. Pagó la seña ────────────────────────────────────────────────

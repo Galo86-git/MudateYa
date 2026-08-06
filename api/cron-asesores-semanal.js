@@ -120,22 +120,26 @@ async function recolectarDestinatarios() {
 function emailRecordatorio(nombre, ctaHref, canal) {
   var primerNombre = ((nombre || '').trim().split(' ')[0]) || 'Hola';
   return {
-    subject: primerNombre + ', ¿tenés alguna operación abierta esta semana?',
+    subject: primerNombre + ', ¿alguna operación por cerrar esta semana?',
     html: bodyHtml({
       canalNombre: canal && canal.canalNombre,
       color:       (canal && canal.color) || '#22C36A',
       fondoAviso:  (canal && canal.fondoAviso) || '#F5F7FA',
-      titulo: '¡Arrancá la semana, ' + primerNombre + '! 🚀',
-      lead:   '¿Tenés alguna operación abierta esta semana — alquiler o compraventa? En cuanto la cierres, proponele la mudanza a tu cliente: es un servicio premium, gratis, que te posiciona frente a él y te trae ' +
-              (canal && canal.canalNombre === 'Asesores independientes' ? 'una comisión o un regalo para tu cliente' : 'un beneficio') + ' según el tipo de operación.',
+      titulo: '¡Arrancá la semana con todo, ' + primerNombre + '! 🔑',
+      lead:   'Todo cliente que alquila o compra con vos se va a mudar tarde o temprano — la diferencia la hace CUÁNDO se lo proponés. Antes de la firma, mientras todavía sos "la persona que le resolvió todo", es el mejor momento: se lo ofrecés como un servicio más tuyo, no como una venta aparte.',
+      bulletsLabel: 'Este lunes, preguntate:',
       bullets: [
-        'Cargás los datos del cliente y de la mudanza',
-        'Elegís presupuestos de mudanceras verificadas',
-        'Se los enviás por mail y WhatsApp, a tu nombre'
+        '¿Tengo alguna operación por cerrar esta semana?',
+        '¿Ya le mencioné a ese cliente que también le resuelvo la mudanza?',
+        '¿Tengo mi link a mano para pasárselo apenas firme?'
       ],
-      cta:     'Armar un presupuesto →',
+      cta:     'Ir a mi link →',
       ctaHref: ctaHref || (SITE + '/asesores'),
-      cierre:  'Es gratis para vos y para tu cliente. Cuantos más mandás, más te recuerdan cuando llega la hora de mudarse.'
+      cierre:  (canal && canal.canalNombre === 'Asesores independientes'
+        ? 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — vos quedás como el que pensó en todo.'
+        : 'Es gratis para vos y para tu cliente — vos quedás como el que pensó en todo.'),
+      emiTitulo: '📱 ¿Preferís que lo resuelva Emi por vos?',
+      emiTexto: 'Contale los datos del cliente y ella carga el pedido directo, atribuido a tu código — el cliente recibe los presupuestos sin tener que entrar a ningún lado. O si preferís, te repite el link para mandárselo vos.'
     })
   };
 }
@@ -157,7 +161,7 @@ function bodyHtml(p) {
       '<h2 style="margin:0 0 12px;color:#0F1923;font-size:20px">' + p.titulo + '</h2>' +
       '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">' + p.lead + '</p>' +
       '<div style="background:' + p.fondoAviso + ';border-radius:12px;padding:14px 20px;margin-bottom:18px">' +
-        '<div style="font-size:12px;font-weight:700;color:' + p.color + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">En 2 minutos:</div>' +
+        '<div style="font-size:12px;font-weight:700;color:' + p.color + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">' + (p.bulletsLabel || 'En 2 minutos:') + '</div>' +
         '<ul style="margin:0;padding-left:20px;color:#0F1923;font-size:13px;line-height:1.5">' + bullets + '</ul>' +
       '</div>' +
       '<div style="text-align:center;margin:24px 0">' +
@@ -165,7 +169,8 @@ function bodyHtml(p) {
       '</div>' +
       '<p style="color:#475569;font-size:13px;line-height:1.6;margin:0">' + p.cierre + '</p>' +
       '<div style="background:#F0FFF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 16px;margin-top:20px;text-align:center">' +
-        '<div style="font-size:13px;color:#166534;font-weight:600;margin-bottom:8px">📱 Y si te resulta más rápido, hacelo por WhatsApp con Emi</div>' +
+        '<div style="font-size:13px;color:#166534;font-weight:600;margin-bottom:8px">' + (p.emiTitulo || '📱 Y si te resulta más rápido, hacelo por WhatsApp con Emi') + '</div>' +
+        (p.emiTexto ? '<div style="font-size:12px;color:#475569;line-height:1.6;margin-bottom:12px">' + p.emiTexto + '</div>' : '') +
         '<a href="' + WA_EMI + '" style="display:inline-block;background:#22C36A;color:#fff;text-decoration:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700">Escribirle a Emi →</a>' +
       '</div>' +
       '<div style="margin-top:20px;padding-top:20px;border-top:1px solid #EEF1F5;text-align:center">' +
