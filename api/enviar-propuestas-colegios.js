@@ -45,8 +45,9 @@ var CLAVE_ENVIADOS = 'colegios-propuesta:enviados';
 
 // ── Colegios de Martilleros y Corredores Públicos de la Pcia. de Bs. As. + CUCICBA (CABA) ──
 // Fuente: martillerosba.org.ar/colegio-departamentales (directorio oficial),
-// CUCICBA verificado por separado (colegioinmobiliario.org.ar). Falta
-// Avellaneda-Lanús: no tiene email público, solo Instagram — gestionar aparte.
+// CUCICBA verificado por separado (colegioinmobiliario.org.ar). Faltan:
+// Avellaneda-Lanús (no tiene email público, solo Instagram — gestionar aparte)
+// y Quilmes (ya se le mandó la propuesta por separado el 2026-08-05).
 var COLEGIOS = [
   { n: 'CUCICBA', nombreCompleto: 'Colegio Único de Corredores Inmobiliarios de la Ciudad Autónoma de Buenos Aires (CUCICBA)', e: 'info@colegioinmobiliario.org.ar' },
   { n: 'San Isidro', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de San Isidro', e: 'colegio@cmcpsi.org.ar' },
@@ -55,7 +56,6 @@ var COLEGIOS = [
   { n: 'Moreno-Gral. Rodríguez', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de Moreno-General Rodríguez', e: 'comarcomgr@yahoo.com.ar' },
   { n: 'La Matanza', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de La Matanza', e: 'secretaria.matanza@hotmail.com' },
   { n: 'Lomas de Zamora', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de Lomas de Zamora', e: 'colegio@cmcplz.com.ar' },
-  { n: 'Quilmes', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de Quilmes', e: 'cmycquilmes@outlook.com' },
   { n: 'Zárate-Campana', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de Zárate-Campana', e: 'info@cmzc.org.ar' },
   { n: 'La Plata', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de La Plata', e: 'gerencia@martilleroslp.org.ar' },
   { n: 'Mercedes', nombreCompleto: 'Colegio de Martilleros y Corredores Públicos de Mercedes', e: 'comarcomercedes@gmail.com' },

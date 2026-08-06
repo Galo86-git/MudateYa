@@ -1862,6 +1862,11 @@ module.exports = async function handler(req, res) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         const r = await resend.emails.send({ from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to, subject, html });
+        // El SDK de Resend puede devolver { data: null, error: {...} } SIN
+        // lanzar excepción — sin este chequeo, un envío que en realidad
+        // falló (dominio no verificado, rate limit, etc.) se reportaba
+        // como ok:true igual.
+        if (r.error) return res.status(200).json({ ok: false, error: r.error.message || JSON.stringify(r.error) });
         return res.status(200).json({ ok: true, enviado: true, id: r.data && r.data.id });
       } catch (e) {
         return res.status(200).json({ ok: false, error: e.message });
@@ -1888,8 +1893,9 @@ module.exports = async function handler(req, res) {
           if (!perfil || perfil.estado !== 'aprobado') continue;
           if (soloPrueba && enviados.length >= 1) break; // soloPrueba: manda solo al primero, para probar el filtro/loop sin spamear
           try {
-            await resend.emails.send({ from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to: email, subject, html });
-            enviados.push(email);
+            const rEnv = await resend.emails.send({ from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to: email, subject, html });
+            if (rEnv.error) { fallidos.push({ email, error: rEnv.error.message || JSON.stringify(rEnv.error) }); }
+            else { enviados.push(email); }
             await new Promise((res2) => setTimeout(res2, 250));
           } catch (e) {
             fallidos.push({ email, error: e.message });
