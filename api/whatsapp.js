@@ -61,6 +61,24 @@ function alertaUrgenteTels() {
 function clave8(tel) {
   return String(tel || '').replace(/\D/g, '').slice(-8);
 }
+// ------------------------------------------------------------------
+// Piso / ascensor / tipo de lugar, normalizados al MISMO formato que usa el
+// marketplace web (ver action 'publicar' en cotizaciones.js y el render de
+// inmobiliaria.html): el tipo de lugar es 'casa' o 'departamento', y el
+// ascensor viaja como el string 'sí'/'no' CON ACENTO — no como booleano, o la
+// card del mudancero lo muestra mal. Emi manda booleanos (que es lo natural
+// para ella) y acá se traducen. Los usan los dos caminos que crean pedidos:
+// el del cliente (crearPedido) y el del asesor (publicarPedidoDeAsesor).
+// ------------------------------------------------------------------
+function _tipoLugar(v) {
+  return ['casa', 'departamento'].indexOf(String(v || '').toLowerCase()) !== -1 ? String(v).toLowerCase() : null;
+}
+function _piso(v) {
+  return String(v == null ? '' : v).trim().slice(0, 10);
+}
+function _asc(v) {
+  return v === true ? 'sí' : v === false ? 'no' : '';
+}
 function quienEscribe(waId) {
   return EQUIPO[ultimos10(waId)] || null;
 }
@@ -1252,6 +1270,12 @@ const asesorTools = [
         detalles: { type: 'string', description: 'Cualquier detalle extra que haya dado el cliente (opcional)' },
         urgente: { type: 'boolean', description: 'true si el cliente necesita mudarse hoy, mañana, o en 1-2 días — el pedido queda con ventana corta (3hs) y avisa al equipo al toque, en vez de esperar el flujo normal de 24hs.' },
         nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente del asesor: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado) o llave (+ ubicación en destino). Si no lo dijo, omitilo. No aplica a flete.' },
+        tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento.' },
+        piso_origen: { type: 'string', description: 'Piso del que sale, si es departamento (ej "4", "PB", "8 A").' },
+        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si es por escalera. Omitilo si no lo sabés.' },
+        tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento.' },
+        piso_destino: { type: 'string', description: 'Piso al que va, si es departamento.' },
+        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Omitilo si no lo sabés.' },
         comparar_niveles: { type: 'boolean', description: 'true si el asesor pidió que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para poder comparar precio por operador, en vez de uno solo. No aplica a flete.' },
       },
       required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha'],
@@ -1349,8 +1373,14 @@ async function cargarPedidoReferido(input, asesor, fotos) {
         tipo: input.tipo || 'mudanza',
         tipoOperacion: input.tipo_operacion,
         urgente: !!input.urgente,
-        // Mismo criterio que el pedido del cliente: sin este campo el pedido sale
-        // como Esencial y el mudancero cotiza un servicio sin embalaje ni armado.
+        // Mismo criterio que el pedido del cliente: sin estos campos el pedido
+        // sale como Esencial y en planta baja, y el mudancero cotiza de menos.
+        tipoOrigen:  _tipoLugar(input.tipo_origen),
+        pisoOrigen:  _piso(input.piso_origen),
+        ascOrigen:   _asc(input.ascensor_origen),
+        tipoDestino: _tipoLugar(input.tipo_destino),
+        pisoDestino: _piso(input.piso_destino),
+        ascDestino:  _asc(input.ascensor_destino),
         nivel: (input.tipo || 'mudanza') === 'flete'
           ? 'flete'
           : (['esencial', 'integral', 'llave'].indexOf(String(input.nivel || '').toLowerCase()) !== -1
@@ -1806,13 +1836,6 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     ? new Date(ahora.getTime() + 3 * 60 * 60 * 1000).toISOString()
     : vencimientoHabilISO(24);
   const dirigido = !!TEST_MUDANCERO_EMAIL;
-  // Normalizadores al MISMO formato que usa el marketplace web (ver action
-  // 'publicar' en cotizaciones.js y el render de inmobiliaria.html): el tipo de
-  // lugar es 'casa'/'departamento', y el ascensor viaja como el string 'sí'/'no'
-  // — NO como booleano, o la card del mudancero lo muestra mal.
-  const _tipoLugar = (v) => (['casa', 'departamento'].indexOf(String(v || '').toLowerCase()) !== -1 ? String(v).toLowerCase() : null);
-  const _piso = (v) => String(v == null ? '' : v).trim().slice(0, 10);
-  const _asc = (v) => (v === true ? 'sí' : v === false ? 'no' : '');
   const pedido = {
     id,
     // — vista bot —
