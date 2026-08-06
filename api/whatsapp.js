@@ -511,6 +511,8 @@ FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de est
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
+NIVEL DE SERVICIO: si el cliente dice qué nivel quiere (Esencial, Integral o Llave en Mano), pasalo en el campo *nivel* al crear el pedido — 'esencial', 'integral' o 'llave'. NO alcanza con mencionarlo en los detalles: si no va en ese campo, el pedido sale como Esencial y los mudanceros cotizan un servicio sin embalaje ni armado, con el lío asegurado el día de la mudanza. Si no lo dijo, omitilo (no lo inventes ni lo preguntes de más: si describe lo que necesita, deducilo con criterio y confirmáselo en una línea).
+
 COMPARAR LOS 3 NIVELES: si el cliente quiere ver precios de Esencial, Integral y Llave en Mano para elegir entre las tres (no solo un nivel), marcá comparar_niveles:true al crear el pedido — así los mudanceros cotizan los 3 y el cliente los compara lado a lado. No lo ofrezcas de entrada como opción por defecto (la mayoría solo quiere un nivel), pero si pregunta "¿me pueden pasar los 3 precios?" o algo así, es justo para eso. No aplica a fletes (un solo precio).
 
 FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
@@ -584,6 +586,7 @@ PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
 - SI COBRA POR HORA, la cotización NO se carga por acá: la herramienta te va a devolver un error con un link. Pasáselo tal cual (*https://mudateya.ar/mi-cuenta*) y explicale en una línea que ahí carga su tarifa y las horas estimadas, y el sistema arma el total. No insistas con la herramienta ni le inventes un precio cerrado: el cliente vería la tarifa de una hora como si fuera el trabajo entero.
 - Pasar/rechazar un pedido que no te interesa → pasar.
 - Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo).
+- SI COBRA POR HORA, antes de completar preguntale CUÁNTAS HORAS trabajó y pasalas en horasTrabajadas. El sistema liquida con esas horas y recién ahí el cliente recibe el saldo con el precio corregido. Si te dice bastante más de lo que registró el sistema, preguntale por qué y mandalo en motivoHoras — no lo cuestiones ni lo trates de sospechoso, puede haber marcado el inicio tarde; solo necesitás la explicación para que quede registrada.
 - Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar).
 - Ver el estado de tus pedidos/cotizaciones → mis_pedidos.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
@@ -728,6 +731,7 @@ const tools = [
         detalles: { type: 'string' },
         nombre: { type: 'string' },
         urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
+        nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado de muebles) o llave (+ ubicación de muebles y cajas en destino). Si no lo dijo, omitilo. No aplica a flete.' },
         comparar_niveles: { type: 'boolean', description: 'true si el cliente quiere que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para comparar precio por operador, en vez de uno solo. No aplica a flete.' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
@@ -1058,8 +1062,17 @@ const mudanceroTools = [
   },
   {
     name: 'completar_mudanza',
-    description: 'Marca la mudanza/flete como COMPLETADA. Dispara el aviso al cliente para pagar el saldo (50% restante).',
-    input_schema: { type: 'object', properties: { pedidoId: { type: 'string' } }, required: ['pedidoId'] },
+    description: 'Marca la mudanza/flete como COMPLETADA. Dispara el aviso al cliente para pagar el saldo (50% restante). '
+      + 'Si el mudancero cobra POR HORA, es obligatorio mandar horasTrabajadas: se liquida antes de completar y el saldo sale con el precio ya corregido.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string' },
+        horasTrabajadas: { type: 'number', description: 'Horas reales trabajadas (solo cobro por hora). Acepta medias horas: 3.5.' },
+        motivoHoras: { type: 'string', description: 'Por qué las horas declaradas difieren de las que midió el sistema. Obligatorio si la diferencia supera 1 hora.' },
+      },
+      required: ['pedidoId'],
+    },
   },
   {
     name: 'proponer_ajuste',
@@ -1146,6 +1159,27 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv) {
     }
     if (name === 'iniciar_mudanza' || name === 'completar_mudanza') {
       const estado = name === 'iniciar_mudanza' ? 'en_curso' : 'completada';
+      // COBRO POR HORA: hay que liquidar ANTES de completar. Al pasar a
+      // 'completada' el sistema le manda al cliente el link del saldo en el
+      // acto; si la liquidacion llega despues, el cliente ya pago contra el
+      // precio viejo y el endpoint queda bloqueado por saldoPagado — esa
+      // diferencia no se puede cobrar nunca mas. Por eso primero las horas.
+      // mi-cuenta ya hace este mismo orden; esto lo replica para WhatsApp,
+      // que hasta ahora se salteaba la liquidacion entera.
+      if (name === 'completar_mudanza' && mudancero && mudancero.tipoCobro === 'porHora') {
+        const hs = parseFloat(input.horasTrabajadas);
+        if (isNaN(hs) || hs <= 0) {
+          return JSON.stringify({
+            ok: false,
+            error: 'Antes de completar necesito las horas reales que trabajaste. Preguntáselas y volvé a llamar a completar_mudanza con horasTrabajadas.',
+          });
+        }
+        const liq = await postJSON('liquidar-horas', {
+          mudanzaId: input.pedidoId, mudanceroEmail: email, horasConfirmadas: hs,
+          motivo: input.motivoHoras || '',
+        });
+        if (!liq.ok) return JSON.stringify({ ok: false, error: liq.d.error || 'No pude liquidar las horas.' });
+      }
       const { ok, d } = await postJSON('cambiar-estado', { mudanzaId: input.pedidoId, estado, mudanceroEmail: email });
       if (!ok) return JSON.stringify({ ok: false, error: d.error || 'No se pudo actualizar el estado.' });
       return JSON.stringify({ ok: true, nota: estado === 'en_curso' ? 'Marcado EN CURSO. Avisamos al cliente.' : 'Marcado COMPLETADA. Avisamos al cliente para que pague el saldo.' });
@@ -1209,6 +1243,7 @@ const asesorTools = [
         ambientes: { type: 'string', description: 'Cantidad de ambientes, si el cliente la mencionó (opcional)' },
         detalles: { type: 'string', description: 'Cualquier detalle extra que haya dado el cliente (opcional)' },
         urgente: { type: 'boolean', description: 'true si el cliente necesita mudarse hoy, mañana, o en 1-2 días — el pedido queda con ventana corta (3hs) y avisa al equipo al toque, en vez de esperar el flujo normal de 24hs.' },
+        nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente del asesor: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado) o llave (+ ubicación en destino). Si no lo dijo, omitilo. No aplica a flete.' },
         comparar_niveles: { type: 'boolean', description: 'true si el asesor pidió que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para poder comparar precio por operador, en vez de uno solo. No aplica a flete.' },
       },
       required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha'],
@@ -1306,6 +1341,13 @@ async function cargarPedidoReferido(input, asesor, fotos) {
         tipo: input.tipo || 'mudanza',
         tipoOperacion: input.tipo_operacion,
         urgente: !!input.urgente,
+        // Mismo criterio que el pedido del cliente: sin este campo el pedido sale
+        // como Esencial y el mudancero cotiza un servicio sin embalaje ni armado.
+        nivel: (input.tipo || 'mudanza') === 'flete'
+          ? 'flete'
+          : (['esencial', 'integral', 'llave'].indexOf(String(input.nivel || '').toLowerCase()) !== -1
+              ? String(input.nivel).toLowerCase()
+              : undefined),
         compararNiveles: (input.tipo || 'mudanza') !== 'flete' && !!input.comparar_niveles,
         fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [],
         // Si el asesor pertenece a una inmobiliaria real (inmobiliarias.js),
@@ -1780,7 +1822,17 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     km: kmCalc || 0, // distancia por ruta (Google) — se muestra en el PDF
     origenCoords: origenCoords,
     destinoCoords: destinoCoords,
-    nivel: input.tipo === 'flete' ? 'flete' : null,
+    // El nivel que pidió el cliente. Antes esto era `null` fijo para mudanzas:
+    // la tool no tenía dónde guardarlo, así que Emi lo escribía en el comentario
+    // y el dato estructurado quedaba vacío. Aguas abajo, `mudanza.nivel ||
+    // 'esencial'` (ver action 'cotizar') rellenaba el hueco con Esencial — o sea
+    // que un cliente que pedía Llave en Mano recibía cotizaciones de un servicio
+    // sin embalaje ni armado, y el lío aparecía el día de la mudanza.
+    nivel: input.tipo === 'flete'
+      ? 'flete'
+      : (['esencial', 'integral', 'llave'].indexOf(String(input.nivel || '').toLowerCase()) !== -1
+          ? String(input.nivel).toLowerCase()
+          : null),
     compararNiveles: input.tipo !== 'flete' && !!input.comparar_niveles,
     servicios: [],
     extras: [],

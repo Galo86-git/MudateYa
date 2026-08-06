@@ -1840,7 +1840,7 @@ module.exports = async function handler(req, res) {
     // Puede bajar el número (si tardó menos, o si se olvidó de marcar "en curso"
     // a tiempo), nunca subirlo por encima de lo que registró el sistema.
     if (action === 'liquidar-horas' && req.method === 'POST') {
-      const { mudanzaId, mudanceroEmail, horasConfirmadas } = req.body;
+      const { mudanzaId, mudanceroEmail, horasConfirmadas, motivo } = req.body;
       if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Datos inválidos' });
 
       const m = await getJSON(`mudanza:${mudanzaId}`);
@@ -1868,6 +1868,18 @@ module.exports = async function handler(req, res) {
       if (horas > 24) return res.status(400).json({ error: 'Revisá las horas: más de 24 en una mudanza no parece correcto.' });
 
       const diferencia = Math.round((horas - horasSistema) * 10) / 10;
+      // Si declara bastante mas de lo medido, el motivo es obligatorio. No se
+      // bloquea el cobro (puede haber marcado el inicio tarde), pero la
+      // explicacion queda guardada junto a las dos cifras: sin eso, el mail de
+      // alerta llega sin contexto y no hay como resolverlo despues.
+      const motivoLimpio = String(motivo || '').trim().slice(0, 300);
+      if (diferencia > 1 && motivoLimpio.length < 8) {
+        return res.status(400).json({
+          error: 'Declaraste ' + horas + ' horas y el sistema registró ' + horasSistema
+               + '. Contanos en una línea por qué, y lo liquidamos igual.',
+          necesitaMotivo: true, horasSistema: horasSistema, horasDeclaradas: horas,
+        });
+      }
       // Umbral de revision: hasta 1 hora de diferencia es normal (se marco tarde
       // el inicio o el fin). Por encima de eso queda marcado para que lo mires.
       const requiereRevision = diferencia > 1;
@@ -1891,6 +1903,7 @@ module.exports = async function handler(req, res) {
         cargo:         cargo,
         precioAnterior: precioBase,
         precioFinal:   precioNuevo,
+        motivo:        motivoLimpio,
         liquidadoEn:   new Date().toISOString()
       };
 
@@ -1930,6 +1943,9 @@ module.exports = async function handler(req, res) {
               <p style="font-size:16px;line-height:1.7">
                 Diferencia: <strong>+${diferencia} horas</strong> · Se le cobró de más al cliente:
                 <strong>$${Math.round(diferencia * tarifa).toLocaleString('es-AR')}</strong>
+              </p>
+              <p style="font-size:16px;line-height:1.7;background:#F5F5F5;padding:12px;border-radius:8px">
+                <strong>Motivo que dio:</strong> ${String(motivoLimpio || '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
               </p>
               <p style="font-size:15px;color:#64748B;line-height:1.6">
                 Puede ser legítimo (marcó el inicio tarde) o no. El cobro ya se aplicó al saldo;

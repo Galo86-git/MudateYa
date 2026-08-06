@@ -4376,9 +4376,11 @@ function renderCardCotizacion(m) {
 
 // Confirmacion de horas para cotizaciones por hora.
 //
-// El sistema calcula las horas entre el inicio y ahora; el mudancero solo
-// confirma. Puede bajar el numero (si se olvido de marcar "en curso" a tiempo
-// o termino antes), nunca subirlo: el backend rechaza cualquier valor mayor.
+// El sistema calcula las horas entre el inicio y ahora; el mudancero confirma.
+// Puede bajar el numero (termino antes) y tambien SUBIRLO (se olvido de marcar
+// "en curso" a tiempo): bloquearlo generaba mas friccion que proteccion. Si
+// declara mas de 1 hora por encima de lo medido, el motivo es obligatorio y le
+// llega un aviso al equipo — se guardan las dos cifras y la explicacion.
 //
 // No es un ajuste de precio: la tarifa ya fue aceptada por el cliente en el
 // presupuesto, asi que esto no se negocia, se liquida.
@@ -4402,6 +4404,10 @@ function confirmarHoras(m) {
       + '<label style="font-size:10px;font-weight:600;color:var(--text3,#94A3B8);text-transform:uppercase;letter-spacing:1px">Horas a liquidar</label>'
       + '<input type="number" id="hrsInput" step="0.5" min="0.5" max="24" value="' + (hs > 0 ? hs : incluidas) + '" oninput="recalcHoras(' + incluidas + ',' + tarifa + ',' + hs + ')" style="width:100%;padding:11px 14px;border:1px solid var(--border2,#E2E8F0);border-radius:10px;font-size:15px;font-family:Inter,sans-serif;margin:5px 0 14px">'
       + '<div id="hrsResumen" style="background:var(--bg2,#F8FAFC);border-radius:10px;padding:13px 15px;font-size:13px;line-height:1.9;margin-bottom:16px"></div>'
+      + '<div id="hrsMotivoBox" style="display:none;margin-bottom:16px">'
+      +   '<label style="font-size:10px;font-weight:600;color:var(--text3,#94A3B8);text-transform:uppercase;letter-spacing:1px">Contanos por qué difiere</label>'
+      +   '<textarea id="hrsMotivo" rows="2" placeholder="Ej: marqué el inicio una hora tarde" style="width:100%;padding:10px 12px;border:1px solid var(--border2,#E2E8F0);border-radius:10px;font-size:13px;font-family:Inter,sans-serif;margin-top:5px;resize:vertical"></textarea>'
+      + '</div>'
       + '<div style="display:flex;gap:8px">'
       +   '<button id="hrsCancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2,#E2E8F0);background:transparent;color:var(--text2,#64748B);font-size:13px;cursor:pointer">Cancelar</button>'
       +   '<button id="hrsOk" style="flex:2;padding:11px;border-radius:10px;border:none;background:#22C36A;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Confirmar y completar</button>'
@@ -4412,7 +4418,15 @@ function confirmarHoras(m) {
     document.getElementById('hrsOk').onclick = function () {
       var v = parseFloat(document.getElementById('hrsInput').value);
       if (isNaN(v) || v <= 0 || v > 24) { alert('Las horas tienen que estar entre 0,5 y 24.'); return; }
-      mo.remove(); resolve(v);
+      // Si declara mas de 1 hora por encima de lo que midio el sistema, el motivo
+      // es obligatorio — el backend lo exige igual (action 'liquidar-horas'), asi
+      // que sin esto el mudancero se comeria un error 400 sin saber por que.
+      var mot = ((document.getElementById('hrsMotivo') || {}).value || '').trim();
+      if (v > hs + 1 && mot.length < 8) {
+        alert('Declaraste ' + v + ' horas y el sistema registró ' + hs + '. Contanos en una línea por qué, y lo liquidamos igual.');
+        return;
+      }
+      mo.remove(); resolve({ horas: v, motivo: mot });
     };
   });
 }
@@ -4435,6 +4449,10 @@ function recalcHoras(incluidas, tarifa, hsSistema) {
     +   '<span style="font-weight:700">Se suma al saldo</span>'
     +   '<strong style="color:' + (cargo > 0 ? '#17A356' : 'var(--text2,#64748B)') + ';font-size:15px">$' + cargo.toLocaleString('es-AR') + '</strong></div>'
     + avisoDif;
+  // La cajita del motivo aparece con la misma condicion que usa el backend para
+  // exigirlo, asi el mudancero la ve antes de que le rebote el envio.
+  var box = document.getElementById('hrsMotivoBox');
+  if (box) box.style.display = (hsSistema != null && h > hsSistema + 1) ? 'block' : 'none';
 }
 
 async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
@@ -4473,7 +4491,7 @@ async function cambiarEstado(mudanzaId, nuevoEstado, btn) {
     try {
       var _r = await fetch('/api/cotizaciones?action=liquidar-horas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mudanzaId: mudanzaId, mudanceroEmail: currentUser.email, horasConfirmadas: _hrs })
+        body: JSON.stringify({ mudanzaId: mudanzaId, mudanceroEmail: currentUser.email, horasConfirmadas: _hrs.horas, motivo: _hrs.motivo || '' })
       });
       var _d = await _r.json();
       if (!_r.ok) { alert(_d.error || 'No se pudieron liquidar las horas'); return; }
