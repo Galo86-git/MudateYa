@@ -1382,10 +1382,9 @@ module.exports = async function handler(req, res) {
         await actualizarPerfilMudancero(mudanceroEmail, function(_pm) { _pm.ultimaActividad = new Date().toISOString(); });
       } catch(_) {}
       try { await notificarCliente(mudanza, cotizacion); } catch(e) { console.error(e.message); }
-      if (mudanza.partnerAsesor) {
-        try { await notificarAsesorNuevaCotizacion(mudanza, cotizacion); }
-        catch(e) { console.warn('Email asesor nueva cotización:', e.message); }
-      }
+      // OJO: a propósito NO se avisa al asesor acá, cotización por cotización
+      // — sería demasiado mail. El asesor se entera de todas juntas en el
+      // resumen que sale al vencer el plazo (notificarAsesorResumenVencimiento).
       return res.status(200).json({ ok: true, cotizacion });
     }
 
@@ -5223,13 +5222,6 @@ function _asesorRuta(m) {
       <tr><td style="color:#64748B;padding:11px 8px;font-size:16px">Hasta</td><td style="font-weight:600;color:#0F1923;font-size:16px;padding:11px 0">${m.hasta || '—'}</td></tr>
     </table>`;
 }
-// Versión corta "Palermo → Tigre" para plantillas de WhatsApp (sin HTML).
-function _asesorRutaTxt(m) {
-  const d = (m.desde || '').split(',')[0].trim();
-  const h = (m.hasta || '').split(',')[0].trim();
-  return (d || '—') + ' → ' + (h || '—');
-}
-
 // ── 1. El cliente publicó el pedido ────────────────────────────────
 async function notificarAsesorPedidoPublicado(mudanza) {
   if (!process.env.RESEND_API_KEY) return;
@@ -5250,37 +5242,6 @@ async function notificarAsesorPedidoPublicado(mudanza) {
         <p style="font-size:16px;color:#475569;line-height:1.7;margin:18px 0 0">
           Te avisamos en cada paso: cuando reserve, y cuando la mudanza esté terminada.
         </p>
-      </div>
-      ${_asesorPie(mudanza)}
-    </div>`
-  });
-  if (a.telefono) {
-    const { enviarPlantilla } = require('./_plantillas');
-    const texto = `Hola ${a.nombre || ''}, tu cliente ${mudanza.clienteNombre || ''} publicó su mudanza (${_asesorRutaTxt(mudanza)}) 📦 Ya está recibiendo cotizaciones de mudanceros verificados. Te aviso cuando reserve y cuando termine.`;
-    enviarPlantilla(a.telefono, 'asesor_pedido_publicado', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: (mudanza.desde || '—').split(',')[0].trim(), 4: (mudanza.hasta || '—').split(',')[0].trim() }, texto)
-      .catch(e => console.warn('WhatsApp asesor publicado:', e.message));
-  }
-}
-
-// ── 1.b Llegó una cotización nueva ──────────────────────────────────
-async function notificarAsesorNuevaCotizacion(mudanza, cotizacion) {
-  if (!process.env.RESEND_API_KEY) return;
-  const a = await resolverAsesor(mudanza);
-  if (!a) return;
-  const precio = cotizacion.precio || (Array.isArray(cotizacion.propuestas) && cotizacion.propuestas[0] && cotizacion.propuestas[0].precio) || 0;
-  const totalCots = Array.isArray(mudanza.cotizaciones) ? mudanza.cotizaciones.length : 1;
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
-    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-    to: a.email,
-    subject: `💬 Nueva cotización para ${mudanza.clienteNombre || 'tu cliente'}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
-      ${_asesorHead('💬 Nueva cotización')}
-      <div style="padding:28px">
-        <p style="font-size:17px;color:#0F1923;line-height:1.7;margin:0 0 18px">
-          Hola <strong>${a.nombre || ''}</strong>, a tu cliente le llegó una cotización de <strong>${cotizacion.mudanceroNombre || 'un mudancero'}</strong> por <strong>$${Number(precio).toLocaleString('es-AR')}</strong>${totalCots > 1 ? ` (ya lleva ${totalCots} en total)` : ''}.
-        </p>
-        ${_asesorRuta(mudanza)}
       </div>
       ${_asesorPie(mudanza)}
     </div>`
@@ -5317,6 +5278,58 @@ async function notificarAsesorMudanzaEnCurso(mudanza) {
 // ── 1.d Venció el plazo de 24hs: resumen de presupuestos ─────────────
 // Informativo para que el asesor pueda ayudar a su cliente a elegir — no
 // lleva botón de "elegir y pagar" a propósito, esa decisión es del cliente.
+// PDF simple con el resumen de todos los presupuestos que recibió el
+// cliente de un asesor — es lo ÚNICO que le llega al asesor por WhatsApp
+// (todo lo demás es solo mail). Sube a Vercel Blob para poder mandarlo como
+// adjunto (Twilio necesita una URL pública, no acepta base64 inline).
+async function generarPDFResumenPresupuestosUrl(mudanza, cots) {
+  try {
+    const PDFDocument = require('pdfkit');
+    const base64 = await new Promise(function(resolve, reject) {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 },
+        info: { Title: 'Presupuestos recibidos · ' + (mudanza.id || '') }
+      });
+      const chunks = [];
+      doc.on('data', c => chunks.push(c));
+      doc.on('end', function() { resolve(Buffer.concat(chunks).toString('base64')); });
+      doc.on('error', reject);
+
+      doc.fillColor('#003580').font('Helvetica-Bold').fontSize(20).text('MudateYa', { continued: true });
+      doc.fillColor('#22C36A').text('Ya', { continued: false });
+      doc.moveDown(0.3);
+      doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(14).text('Presupuestos recibidos');
+      doc.fillColor('#64748B').font('Helvetica').fontSize(10)
+         .text('Cliente: ' + (mudanza.clienteNombre || '—'))
+         .text('Ruta: ' + (mudanza.desde || '—') + '  →  ' + (mudanza.hasta || '—'));
+      doc.moveDown(1);
+
+      var y = doc.y;
+      cots.forEach(function(c) {
+        const precio = c.precio || (Array.isArray(c.propuestas) && c.propuestas[0] && c.propuestas[0].precio) || 0;
+        doc.rect(50, y, 495, 44).fillAndStroke('#F5F7FA', '#E2E8F0');
+        doc.fillColor('#0F1923').font('Helvetica-Bold').fontSize(11).text(c.mudanceroNombre || 'Mudancero', 62, y + 9);
+        if (c.tiempoEstimado) doc.fillColor('#64748B').font('Helvetica').fontSize(9).text('Tiempo estimado: ' + c.tiempoEstimado, 62, y + 25);
+        doc.fillColor('#003580').font('Helvetica-Bold').fontSize(13).text('$' + Number(precio).toLocaleString('es-AR'), 300, y + 14, { width: 235, align: 'right' });
+        y += 54;
+      });
+
+      doc.end();
+    });
+
+    const { put } = require('@vercel/blob');
+    const buffer = Buffer.from(base64, 'base64');
+    const filename = `mudateya/resumen-asesor/${mudanza.id || Date.now()}-${Date.now()}.pdf`;
+    const token = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+    const blob = await put(filename, buffer, { access: 'public', contentType: 'application/pdf', token });
+    return blob.url;
+  } catch (e) {
+    console.warn('generarPDFResumenPresupuestosUrl:', e.message);
+    return null;
+  }
+}
+
 async function notificarAsesorResumenVencimiento(mudanza, cots) {
   if (!process.env.RESEND_API_KEY || !cots || !cots.length) return;
   const a = await resolverAsesor(mudanza);
@@ -5342,6 +5355,21 @@ async function notificarAsesorResumenVencimiento(mudanza, cots) {
       ${_asesorPie(mudanza)}
     </div>`
   });
+
+  // Único aviso al asesor que también sale por WhatsApp (todo lo demás es
+  // solo mail, a pedido) — el resumen completo como PDF adjunto.
+  if (a.telefono) {
+    try {
+      const pdfUrl = await generarPDFResumenPresupuestosUrl(mudanza, cots);
+      const { enviarPlantilla } = require('./_plantillas');
+      const textoLibre = `Hola ${a.nombre || ''}, se venció el plazo de tu cliente ${mudanza.clienteNombre || ''} — recibió ${cots.length} presupuesto${cots.length > 1 ? 's' : ''}. Te mando el resumen en PDF para que lo ayudes a elegir.`;
+      await enviarPlantilla(
+        a.telefono, 'asesor_resumen_presupuestos',
+        { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: String(cots.length) },
+        textoLibre, pdfUrl || undefined
+      );
+    } catch (e) { console.warn('WhatsApp asesor resumen:', e.message); }
+  }
 }
 
 // ── 2. Pagó la seña ────────────────────────────────────────────────
@@ -5369,12 +5397,6 @@ async function notificarAsesorAnticipoPagado(mudanza) {
       ${_asesorPie(mudanza)}
     </div>`
   });
-  if (a.telefono) {
-    const { enviarPlantilla } = require('./_plantillas');
-    const texto = `Hola ${a.nombre || ''}, tu cliente ${mudanza.clienteNombre || ''} pagó la seña y la mudanza quedó confirmada con ${cot.mudanceroNombre || 'el mudancero'} ✅ Te aviso cuando esté terminada.`;
-    enviarPlantilla(a.telefono, 'asesor_sena_pagada', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: cot.mudanceroNombre || 'el mudancero' }, texto)
-      .catch(e => console.warn('WhatsApp asesor seña:', e.message));
-  }
 }
 
 // ── 3. Mudanza completada: comisión o regalo ───────────────────────
@@ -5430,27 +5452,6 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
       ${_asesorPie(mudanza)}
     </div>`
   });
-  if (a.telefono) {
-    const { enviarPlantilla } = require('./_plantillas');
-    let resumen;
-    if (esCompraventa) {
-      const regaloTxt = regaloCompraventa(precio);
-      resumen = regaloTxt
-        ? `Tu cliente accede a: ${regaloTxt}. Nos contactamos para coordinarlo.`
-        : `Esta operación no alcanza el monto mínimo para el regalo — nos contactamos si corresponde algún beneficio.`;
-    } else {
-      const pctWa = parseFloat(mudanza.comisionInmobiliariaPct) > 0 ? parseFloat(mudanza.comisionInmobiliariaPct) : COMISION_ASESOR_DEFAULT;
-      const montoWa = Math.round(precio * pctWa / 100);
-      resumen = `Tu comisión (${pctWa}%): $${montoWa.toLocaleString('es-AR')}. Nos contactamos para coordinar el pago.`;
-    }
-    const texto = `Hola ${a.nombre || ''}, la mudanza de ${mudanza.clienteNombre || 'tu cliente'} se completó 🏁 ${resumen}`;
-    // v2: Meta rechazó la original (asesor_mudanza_completada, SID HXd7f1…47fea) —
-    // esa queda rechazada para siempre, no se recupera. La corregida es una
-    // plantilla NUEVA con nombre y SID propios. Mientras Meta no la apruebe,
-    // enviarPlantilla cae sola al texto libre (fallback ya provisto acá abajo).
-    enviarPlantilla(a.telefono, 'asesor_mudanza_completada_v2', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: resumen }, texto)
-      .catch(e => console.warn('WhatsApp asesor completada:', e.message));
-  }
 }
 
 // ── 4. El cliente canceló la mudanza ────────────────────────────────
@@ -5480,12 +5481,6 @@ async function notificarAsesorPedidoCancelado(mudanza) {
         ${_asesorPie(mudanza)}
       </div>`
     }).catch(e => console.warn('Email asesor cancelado:', e.message));
-  }
-  if (a.telefono) {
-    const { enviarPlantilla } = require('./_plantillas');
-    const texto = `Hola ${a.nombre || ''}, tu cliente ${mudanza.clienteNombre || ''} canceló su mudanza (${_asesorRutaTxt(mudanza)}) ❌ Si querés, contactalo para entender el motivo y ofrecerle otra alternativa.`;
-    enviarPlantilla(a.telefono, 'asesor_pedido_cancelado', { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: (mudanza.desde || '—').split(',')[0].trim(), 4: (mudanza.hasta || '—').split(',')[0].trim() }, texto)
-      .catch(e => console.warn('WhatsApp asesor cancelado:', e.message));
   }
 }
 
