@@ -966,6 +966,38 @@ var _partnerAsesor = (_qp.get('asesor') || '').trim().slice(0, 60);
 
 var _amb = 2;
 var _busqueda = null;
+
+// Calcula km en background usando DirectionsService (sin pintar mapa). Guarda
+// el valor en _busqueda.km — se manda al backend al publicar. Mismo patrón
+// que index.html (_calcularKmBusqueda) para que TODO pedido, venga por donde
+// venga, tenga la fila de distancia. Devuelve una Promise.
+function _calcularKmBusqueda() {
+  return new Promise(function(resolve) {
+    if (!window.google || !_busqueda || !_busqueda.desde || !_busqueda.hasta) { resolve(null); return; }
+    if (_busqueda.km && _busqueda.km > 0) { resolve(_busqueda.km); return; }
+    try {
+      var ds = new google.maps.DirectionsService();
+      var resolved = false;
+      var to = setTimeout(function(){ if (!resolved) { resolved = true; resolve(_busqueda.km || null); } }, 4000);
+      ds.route({
+        origin: _busqueda.desde + ', Argentina',
+        destination: _busqueda.hasta + ', Argentina',
+        travelMode: google.maps.TravelMode.DRIVING
+      }, function(result, status) {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(to);
+        if (status === 'OK' && result && result.routes && result.routes[0] && result.routes[0].legs && result.routes[0].legs[0]) {
+          var leg = result.routes[0].legs[0];
+          if (leg.distance && leg.distance.value) {
+            _busqueda.km = Math.round(leg.distance.value / 1000);
+          }
+        }
+        resolve(_busqueda.km || null);
+      });
+    } catch(e) { resolve(null); }
+  });
+}
 var _todos = [];            // mudanceros de la zona, sin filtrar por nivel (se cachea tras el fetch)
 var _mudanceros = [];       // subconjunto de _todos que califica para el nivel elegido
 var _nivel = 'llave';       // nivel de servicio elegido. Default 'llave' = comportamiento histórico.
@@ -1420,6 +1452,9 @@ function buscar() {
     tipoOperacion: _operacion,
     tipo: 'mudanza', nivel: _nivel
   };
+  // Calcular km en background (Google Maps lado cliente) — se guarda en
+  // _busqueda.km y se manda al backend al publicar. Mismo patrón que index.html.
+  _calcularKmBusqueda();
 
   // Mostrar sección catálogo y cargar
   var cat = document.getElementById('catalogoSection');
@@ -2253,6 +2288,10 @@ function _confirmarYEnviarSolicitud() {
 async function _enviarPedido(detallesAdicionales, lugar) {
   if (!_mudanceros.length) return;
 
+  // Garantizar que el km esté calculado antes de publicar. Si ya está,
+  // resuelve instantáneo; si no, espera a Google Maps (máx 4s).
+  try { await _calcularKmBusqueda(); } catch(e) { /* silencioso */ }
+
   var destinatarios = _sel.size > 0
     ? _mudanceros.filter(function(m){ return _sel.has(m.email); })
     : _mudanceros;
@@ -2314,6 +2353,7 @@ async function _enviarPedido(detallesAdicionales, lugar) {
       horaOrigen:   horaOrigen,
       ascOrigen:   _busqueda.ascOrigen,
       ascDestino:  _busqueda.ascDestino,
+      km: _busqueda.km || null,
       // Trackeo de la inmobiliaria (slug que vino en la URL)
       partner: _inmoSlug,
       partnerAsesor: _partnerAsesor || '',

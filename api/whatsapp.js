@@ -1247,6 +1247,18 @@ async function cargarPedidoReferido(input, asesor, fotos) {
   if (!input.nombre_cliente || !input.origen || !input.destino || !input.tipo_operacion || !input.fecha) {
     return { ok: false, error: 'Me faltan datos: nombre del cliente, origen, destino, para cuándo es, o si es alquiler/compraventa.' };
   }
+  // Km por ruta (Google) — mismo cálculo que ya usa crearPedido para el
+  // cliente directo, así TODO pedido (venga por acá o por la web) tiene la
+  // fila de distancia en el mail al mudancero. Best-effort: si falla o no
+  // hay key, sigue sin km (no bloquea la carga del pedido).
+  let kmCalc = 0;
+  try {
+    const { distanciaKm, geocodificar, haversineKm } = require('./_geo');
+    const [go, gd] = await Promise.all([geocodificar(input.origen), geocodificar(input.destino)]);
+    const origenCoords = go && go.ok ? { lat: go.lat, lng: go.lng } : null;
+    const destinoCoords = gd && gd.ok ? { lat: gd.lat, lng: gd.lng } : null;
+    kmCalc = (await distanciaKm(input.origen, input.destino)) || haversineKm(origenCoords, destinoCoords) || 0;
+  } catch (_) {}
   try {
     const r = await fetch(`${SITE_URL}/api/cotizaciones?action=publicar`, {
       method: 'POST',
@@ -1260,6 +1272,7 @@ async function cargarPedidoReferido(input, asesor, fotos) {
         ambientes: input.ambientes || '',
         fecha: input.fecha,
         horaOrigen: input.horario || '',
+        km: kmCalc || null,
         tipo: input.tipo || 'mudanza',
         tipoOperacion: input.tipo_operacion,
         urgente: !!input.urgente,

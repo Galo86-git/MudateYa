@@ -3517,9 +3517,12 @@ async function generarPDFDetallesBase64(mudanza) {
   const tieneTipo = !!(mudanza.tipoOrigen || mudanza.tipoDestino);
   const tieneLados = !!(mudanza.detallesOrigen || mudanza.detallesDestino);
   const tieneCompartido = Object.keys(d).length > 0; // comentario o fotos (o flags legacy)
+  const tieneKm = parseInt(mudanza.km) > 0;
   // Generar si hay tipo (modelo nuevo siempre obligatorio), si hay detalles por lado,
-  // o si el modelo viejo tenía algo en detallesAdicionales (compat).
-  if (!tieneTipo && !tieneLados && !tieneCompartido) return null;
+  // si el modelo viejo tenía algo en detallesAdicionales (compat), o si hay km —
+  // sin esto, un pedido con distancia calculada pero sin ningún otro detalle no
+  // generaba PDF y la fila "Distancia" nunca le llegaba al mudancero.
+  if (!tieneTipo && !tieneLados && !tieneCompartido && !tieneKm) return null;
 
   const PDFDocument = require('pdfkit');
 
