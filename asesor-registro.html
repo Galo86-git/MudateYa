@@ -70,6 +70,10 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   }
   .finput::placeholder{color:var(--t3); font-weight:500}
   .finput:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(0,53,128,.12)}
+  /* El input con list="dl-inmos" (autocomplete de inmobiliarias) muestra en
+     Chrome/Edge una flechita de dropdown a la derecha, como si fuera un
+     <select> — se ve inconsistente con el resto de los campos, se oculta. */
+  input[list]::-webkit-calendar-picker-indicator{display:none !important}
   .gerror{display:none; background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; font-size:13px; font-weight:600; padding:10px 13px; border-radius:10px; margin-bottom:14px}
   .btn{
     width:100%; padding:14px; border:none; border-radius:12px; background:var(--navy); color:#fff;
