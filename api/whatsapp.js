@@ -857,8 +857,9 @@ const tools = [
       type: 'object',
       properties: {
         motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL (palabra por palabra, sin parafrasear) la frase que escribió la persona y que justifica esto. Si no hay una frase concreta que lo respalde, no uses esta herramienta — no inventes un motivo.' },
       },
-      required: ['motivo'],
+      required: ['motivo', 'cita_textual'],
     },
   },
   {
@@ -1146,14 +1147,15 @@ const mudanceroTools = [
       type: 'object',
       properties: {
         motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL (palabra por palabra, sin parafrasear) la frase que escribió la persona y que justifica esto. Si no hay una frase concreta que lo respalde, no uses esta herramienta — no inventes un motivo.' },
       },
-      required: ['motivo'],
+      required: ['motivo', 'cita_textual'],
     },
   },
 ];
 
 // Ejecuta una herramienta del MUDANCERO llamando al endpoint web correspondiente.
-async function ejecutarToolMudancero(name, input, mudancero, waId, conv) {
+async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoActual) {
   const email = mudancero && mudancero.email;
   const nombre = mudancero && mudancero.nombre;
   const tel = mudancero && mudancero.telefono;
@@ -1259,7 +1261,7 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv) {
       return JSON.stringify({ pedidos });
     }
     if (name === 'derivar_a_humano') {
-      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'mudancero', nombre }));
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'mudancero', nombre, citaTextual: input && input.cita_textual, textoActual }));
     }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
@@ -1323,8 +1325,9 @@ const asesorTools = [
       type: 'object',
       properties: {
         motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL (palabra por palabra, sin parafrasear) la frase que escribió la persona y que justifica esto. Si no hay una frase concreta que lo respalde, no uses esta herramienta — no inventes un motivo.' },
       },
-      required: ['motivo'],
+      required: ['motivo', 'cita_textual'],
     },
   },
   // Si el asesor elige mudarse ÉL MISMO por acá (en vez de por su propio
@@ -1460,7 +1463,7 @@ const NOMBRES_TOOLS_CLIENTE_PARA_ASESOR = [
 ];
 
 // Ejecuta una herramienta del ASESOR.
-async function ejecutarToolAsesor(name, input, asesor, waId, conv) {
+async function ejecutarToolAsesor(name, input, asesor, waId, conv, textoActual) {
   const nombre = asesor && asesor.nombre;
   const email = asesor && asesor.email;
   const link = asesor && asesor.link;
@@ -1469,7 +1472,7 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv) {
   // cliente (mismo waId, mismo índice cliente:pedidos:{waId}) — no queda
   // atribuido a su código de asesor, es intencional (ver prompt).
   if (NOMBRES_TOOLS_CLIENTE_PARA_ASESOR.includes(name)) {
-    return ejecutarTool(name, input, waId, conv);
+    return ejecutarTool(name, input, waId, conv, textoActual);
   }
   try {
     if (name === 'mi_link') {
@@ -1515,7 +1518,7 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv) {
       return JSON.stringify(resultado);
     }
     if (name === 'derivar_a_humano') {
-      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'asesor', nombre }));
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'asesor', nombre, citaTextual: input && input.cita_textual, textoActual }));
     }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
@@ -1547,13 +1550,14 @@ const inmobiliariaTools = [
       type: 'object',
       properties: {
         motivo: { type: 'string', description: 'Motivo breve. Para un reclamo (algo salió mal), que empiece con "RECLAMO:" seguido del detalle.' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL (palabra por palabra, sin parafrasear) la frase que escribió la persona y que justifica esto. Si no hay una frase concreta que lo respalde, no uses esta herramienta — no inventes un motivo.' },
       },
-      required: ['motivo'],
+      required: ['motivo', 'cita_textual'],
     },
   },
 ];
 
-async function ejecutarToolInmobiliaria(name, input, inmoContacto, waId, conv) {
+async function ejecutarToolInmobiliaria(name, input, inmoContacto, waId, conv, textoActual) {
   if (!inmoContacto || !inmoContacto.slug) return JSON.stringify({ error: 'No pude identificar tu inmobiliaria.' });
   try {
     if (name === 'mis_asesores') {
@@ -1569,7 +1573,7 @@ async function ejecutarToolInmobiliaria(name, input, inmoContacto, waId, conv) {
       return JSON.stringify({ ok: true, link, nota: `Pasále este link EXACTO tal cual, sin cambiarle nada: ${link}` });
     }
     if (name === 'derivar_a_humano') {
-      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'inmobiliaria', nombre: inmoContacto.nombre }));
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'inmobiliaria', nombre: inmoContacto.nombre, citaTextual: input && input.cita_textual, textoActual }));
     }
     return JSON.stringify({ error: 'herramienta desconocida' });
   } catch (e) {
@@ -2095,8 +2099,55 @@ async function cancelarPedidoCliente(waId, id) {
     return { ok: false, mensaje: 'Tuve un problema cancelando el pedido. Probá de nuevo en un momento.' };
   }
 }
+// Chequeo de base real para derivar_a_humano: el modelo puede alucinar un
+// motivo (caso real: dijo que un mudancero "quiere darse de baja" cuando
+// solo había pasado UN pedido puntual). Como el motivo es texto libre que el
+// modelo redacta, no hay forma de que el prompt lo garantice — así que acá
+// se valida en código: la cita_textual que mandó como respaldo tiene que
+// aparecer de verdad en lo que la persona escribió (mensaje actual +
+// historial), si no, no se avisa a nadie.
+const ACENTOS_CITA = { á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u', ñ: 'n' };
+function normalizarTextoCita(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[áéíóúüñ]/g, (ch) => ACENTOS_CITA[ch] || ch)
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function citaEsReal(cita, haystack) {
+  const c = normalizarTextoCita(cita);
+  if (c.length < 8) return false;
+  const h = normalizarTextoCita(haystack);
+  if (h.includes(c)) return true;
+  // Tolerancia: si la copió con algún cambio menor, alcanza con que 4
+  // palabras seguidas de la cita aparezcan tal cual en el texto real.
+  const palabras = c.split(' ');
+  if (palabras.length < 4) return false;
+  for (let i = 0; i <= palabras.length - 4; i++) {
+    if (h.includes(palabras.slice(i, i + 4).join(' '))) return true;
+  }
+  return false;
+}
+
 async function derivarHumano(waId, motivo, conv, opts) {
   opts = opts || {};
+  // citaTextual solo viene cuando la derivación la disparó el modelo por tool
+  // call (los 4 dispatchers la pasan siempre, aunque venga vacía si no la
+  // mandó). Las derivaciones armadas por código —pedido urgente, motivo
+  // 100% construido a partir de campos estructurados, no una afirmación
+  // libre sobre lo que dijo la persona— no pasan esta opción y se saltean
+  // el chequeo: no hay nada que verificar contra la charla.
+  if (opts.citaTextual !== undefined) {
+    const historialTexto = (conv.messages || [])
+      .filter((m) => m.role === 'user')
+      .map((m) => (typeof m.content === 'string' ? m.content : ''))
+      .join(' \n ');
+    const haystack = `${opts.textoActual || ''} \n ${historialTexto}`;
+    if (!citaEsReal(opts.citaTextual, haystack)) {
+      return { ok: false, mensaje: 'No encontré esa frase en lo que escribiste. No le voy a avisar al equipo sin algo concreto que lo respalde — contame de nuevo qué necesitás.' };
+    }
+  }
   const esMudancero = opts.rol === 'mudancero';
   const ROL_LABELS = { mudancero: 'mudancero/fletero', asesor: 'asesor inmobiliario', inmobiliaria: 'contacto de inmobiliaria' };
   const quienLabel = ROL_LABELS[opts.rol] || 'cliente';
@@ -2417,7 +2468,7 @@ async function calificarMudanceroCliente(waId, estrellas, comentario) {
 }
 
 // Ejecuta una herramienta y devuelve el resultado (string) que Claude interpreta.
-async function ejecutarTool(name, input, waId, conv) {
+async function ejecutarTool(name, input, waId, conv, textoActual) {
   try {
     if (name === 'crear_pedido') {
       const pedido = await crearPedido(input, waId, conv.ubicaciones, conv.fotos);
@@ -2468,7 +2519,7 @@ async function ejecutarTool(name, input, waId, conv) {
       return JSON.stringify(await calificarMudanceroCliente(waId, input && input.estrellas, input && input.comentario));
     }
     if (name === 'derivar_a_humano') {
-      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv));
+      return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { citaTextual: input && input.cita_textual, textoActual }));
     }
     if (name === 'registrar_mudancero') {
       return JSON.stringify(await registrarMudanceroCliente(waId, input));
@@ -2924,12 +2975,12 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     for (const block of resp.content || []) {
       if (block.type === 'tool_use') {
         const r = mudancero && !persona
-          ? await ejecutarToolMudancero(block.name, block.input, mudancero, waId, conv)
+          ? await ejecutarToolMudancero(block.name, block.input, mudancero, waId, conv, contenidoHistorial)
           : asesor && !persona
-          ? await ejecutarToolAsesor(block.name, block.input, asesor, waId, conv)
+          ? await ejecutarToolAsesor(block.name, block.input, asesor, waId, conv, contenidoHistorial)
           : inmoContacto && !persona
-          ? await ejecutarToolInmobiliaria(block.name, block.input, inmoContacto, waId, conv)
-          : await ejecutarTool(block.name, block.input, waId, conv);
+          ? await ejecutarToolInmobiliaria(block.name, block.input, inmoContacto, waId, conv, contenidoHistorial)
+          : await ejecutarTool(block.name, block.input, waId, conv, contenidoHistorial);
         resultados.push({ type: 'tool_result', tool_use_id: block.id, content: r });
       }
     }
