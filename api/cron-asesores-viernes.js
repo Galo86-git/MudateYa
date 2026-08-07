@@ -41,7 +41,7 @@
 
 const { Resend } = require('resend');
 const base = require('./cron-asesores-semanal');
-const { recolectarDestinatarios, SITE, WA_EMI, getJSON, redisCall, validEmail } = base;
+const { recolectarDestinatarios, SITE, WA_EMI, getJSON, redisCall, validEmail, headersListUnsub } = base;
 
 // ── Lunes 00:00 hora Argentina (UTC-3 fijo) como ISO, para filtrar "esta semana" ──
 function inicioSemanaISO() {
@@ -186,7 +186,8 @@ module.exports = async function handler(req, res) {
       var muestra = emailResumenSemanal(match ? match.nombre : 'Asesor de prueba', stats, match);
       var rt = await resend.emails.send({
         from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-        to: testTo, subject: muestra.subject, html: muestra.html
+        to: testTo, subject: muestra.subject, html: muestra.html,
+        headers: headersListUnsub(match ? match.linkBaja : null)
       });
       if (rt && rt.error) return res.status(502).json({ error: rt.error });
       return res.status(200).json({
@@ -223,7 +224,8 @@ module.exports = async function handler(req, res) {
       try {
         var r = await resend.emails.send({
           from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-          to: d.email, subject: mail.subject, html: mail.html
+          to: d.email, subject: mail.subject, html: mail.html,
+          headers: headersListUnsub(d.linkBaja)
         });
         if (r && r.error) throw new Error(typeof r.error === 'string' ? r.error : JSON.stringify(r.error));
         resumen.enviados++;

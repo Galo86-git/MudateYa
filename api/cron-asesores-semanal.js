@@ -29,6 +29,7 @@
 //                       Si ese mail es un asesor de canal, usa su link REAL.
 
 const { Resend } = require('resend');
+var crypto = require('crypto');
 
 // ── Canales con link exclusivo de cotización (?asesor={codigo}) ──
 // prefijo = prefijo de las claves en Redis · slug = canal en la URL pública.
@@ -85,6 +86,30 @@ function linkCotizacion(slug, codigo) {
   return SITE + '/inmobiliaria/' + slug + '?asesor=' + encodeURIComponent(codigo);
 }
 
+// ── HELPER: link de baja (List-Unsubscribe) de UN asesor puntual ──
+// Firma HMAC-SHA256(prefijo:codigo, ADMIN_TOKEN) — mismo secreto que ya usa
+// _auth.js para los tokens de sesión, pero esto NO da acceso admin: el
+// endpoint (api/asesor-baja.js) solo permite apagar `activo` de ESE asesor,
+// nada más. Se agrega para que los mails masivos (este cron + el de los
+// viernes) tengan un List-Unsubscribe real — Gmail/Yahoo lo pesan mucho para
+// no mandar a spam, y a partir de cierto volumen lo exigen.
+function firmarBaja(prefijo, codigo) {
+  var secreto = process.env.ADMIN_TOKEN || '';
+  return crypto.createHmac('sha256', secreto).update(prefijo + ':' + codigo).digest('hex').slice(0, 24);
+}
+function linkBaja(prefijo, codigo) {
+  return SITE + '/api/asesor-baja?canal=' + encodeURIComponent(prefijo) + '&codigo=' + encodeURIComponent(codigo) + '&sig=' + firmarBaja(prefijo, codigo);
+}
+// Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,
+// one-click de Gmail/Yahoo) para mails masivos. Si no hay link puntual
+// (ej. modo test sin match), cae al mailto solo — sigue siendo válido.
+function headersListUnsub(url) {
+  var mailto = 'mailto:hola@mudateya.ar?subject=BAJA';
+  var h = { 'List-Unsubscribe': url ? ('<' + mailto + '>, <' + url + '>') : ('<' + mailto + '>') };
+  if (url) h['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click';
+  return h;
+}
+
 // ── Recolecta los destinatarios: recorre el índice de cada canal, arma el link
 //    real de cada asesor y deduplica por email. Devuelve [{email,nombre,canal,link}]. ──
 async function recolectarDestinatarios() {
@@ -127,7 +152,8 @@ async function recolectarDestinatarios() {
         // consumidor externo (ej. cron-asesores-viernes.js) para leer el
         // índice {prefijo}:asesor:{codigo}:mudanzas armado en cotizaciones.js.
         prefijo: canal.prefijo,
-        codigo:  codigoReal
+        codigo:  codigoReal,
+        linkBaja: linkBaja(canal.prefijo, codigoReal)
       });
     }
   }
@@ -240,7 +266,8 @@ module.exports = async function handler(req, res) {
       var muestra = emailRecordatorio(match ? match.nombre : 'Asesor de prueba', match ? match.link : null, match);
       var rt = await resend.emails.send({
         from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-        to: testTo, subject: muestra.subject, html: muestra.html
+        to: testTo, subject: muestra.subject, html: muestra.html,
+        headers: headersListUnsub(match ? match.linkBaja : null)
       });
       if (rt && rt.error) return res.status(502).json({ error: rt.error });
       return res.status(200).json({
@@ -278,7 +305,8 @@ module.exports = async function handler(req, res) {
       try {
         var r = await resend.emails.send({
           from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
-          to: d.email, subject: mail.subject, html: mail.html
+          to: d.email, subject: mail.subject, html: mail.html,
+          headers: headersListUnsub(d.linkBaja)
         });
         if (r && r.error) throw new Error(typeof r.error === 'string' ? r.error : JSON.stringify(r.error));
         resumen.enviados++;
@@ -310,3 +338,4 @@ module.exports.WA_EMI = WA_EMI;
 module.exports.getJSON = getJSON;
 module.exports.redisCall = redisCall;
 module.exports.validEmail = validEmail;
+module.exports.headersListUnsub = headersListUnsub;
