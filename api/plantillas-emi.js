@@ -120,6 +120,17 @@ const CREAR = [
     } },
     variables: { '1': 'FLETE', '2': '+5491133364677', '3': 'flete hoy 17hs, heladera de Palermo a Belgrano', '4': '5491133364677' } },
 
+  // Recordatorio al MUDANCERO que marcó "en curso" y nunca cerró la mudanza.
+  // Va por plantilla porque el caso es, por definición, alguien que hace más de
+  // un día que no escribe: la ventana de 24h ya está cerrada y el texto libre
+  // no llegaría. Ver api/cron-recordar-completar.js.
+  { name: 'recordatorio_completar_mudanza', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: 'Hola {{1}}, marcaste {{2}} de {{3}} como en curso y todavía no la cerraste.\n\n'
+          + 'Si ya terminaste, respondeme este mensaje y la cierro yo — recién ahí el cliente recibe el link para pagarte el saldo. También podés hacerlo desde mudateya.ar/mi-cuenta.',
+    } },
+    variables: { '1': 'Cristian', '2': 'la mudanza', '3': 'Palermo → Tigre' } },
+
   // Confirmación al cliente apenas publica el pedido por la WEB (no existía
   // ninguna plantilla para esto — las demás cubren etapas posteriores). Al
   // ser la PRIMERA plantilla que le llega, además "abre" la conversación de

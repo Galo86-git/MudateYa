@@ -449,6 +449,10 @@
       "schedule": "0 15 * * *"
     },
     {
+      "path": "/api/cron-recordar-completar",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron-cerrar-pedidos",
       "schedule": "0 2 * * *"
     },

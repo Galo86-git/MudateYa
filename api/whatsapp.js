@@ -529,6 +529,8 @@ FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de est
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
+FECHA: al crear el pedido, la fecha va SIEMPRE como YYYY-MM-DD. Tenés la fecha de hoy en contexto: si el cliente dice "mañana", "el viernes" o "el 15", resolvelo vos y pasá la fecha real. Guardar "mañana" como texto deja el pedido sin fecha utilizable — no se puede saber después cuándo es, ni recordárselo la víspera.
+
 PISO Y ASCENSOR: ya los venís preguntando en la charla — ahora además pasalos en los campos (*tipo_origen*, *piso_origen*, *ascensor_origen* y los tres de destino). Mencionarlos en los detalles NO alcanza: si no van en esos campos, el mudancero ve "No indicado", cotiza como si fuera planta baja, y el día de la mudanza aparece la escalera. Es de lo que más mueve el precio.
 
 NIVEL DE SERVICIO: para MUDANZAS (no aplica a fletes), preguntale SIEMPRE qué nivel quiere antes de crear el pedido — no lo des por sentado ni lo dejes pasar. Contale cortito las 3 opciones, con onda, no como un catálogo: "Esencial" (vehículo + carga y descarga, el embalaje lo hacés vos), "Integral" (+ embalaje básico y desarmado/armado de muebles — el más elegido) o "Llave en Mano" (+ te ubican todo en el nuevo hogar, no solo lo dejan). Pasá lo que elija en el campo *nivel* ('esencial'/'integral'/'llave') al crear el pedido — NO alcanza con mencionarlo en los detalles: si no va en ese campo, el pedido sale como Esencial igual. Si le explicás y no se termina de decidir o te dice "lo que sea, lo más simple", usá esencial y seguí sin insistir más.
@@ -750,7 +752,7 @@ const tools = [
         tipo: { type: 'string', enum: ['mudanza', 'flete'], description: 'flete = transportar algo puntual (un mueble, un electro, unas cajas), sin vaciar una casa entera. mudanza = traslado completo de un hogar/oficina, todos los ambientes.' },
         origen: { type: 'string' },
         destino: { type: 'string' },
-        fecha: { type: 'string' },
+        fecha: { type: 'string', description: 'Fecha de la mudanza en formato YYYY-MM-DD (ej "2026-08-07"). Convertí vos lo que diga el cliente: si dice "mañana" o "el viernes", resolvelo contra la fecha de hoy que tenés en contexto y pasá la fecha real. NUNCA mandes "mañana" ni "7/8" como texto: se guarda tal cual y despues no hay forma de saber cuando es.' },
         detalles: { type: 'string' },
         nombre: { type: 'string' },
         urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
@@ -1104,6 +1106,18 @@ const mudanceroTools = [
     },
   },
   {
+    name: 'sigo_en_curso',
+    description: 'El mudancero dice que TODAVÍA está trabajando en una mudanza que ya arrancó (típicamente respondiendo al recordatorio automático de cierre). Pospone esas preguntas por unas horas para no molestarlo mientras labura.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string' },
+        horas: { type: 'number', description: 'Cuántas horas más calcula que le faltan. Si no lo dice, omitilo y se posponen 2.' },
+      },
+      required: ['pedidoId'],
+    },
+  },
+  {
     name: 'proponer_ajuste',
     description: 'Propone un reajuste de precio DESPUÉS de la seña (por algo no previsto). El cliente lo tiene que aceptar. Se permite una vez.',
     input_schema: {
@@ -1213,6 +1227,21 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv) {
       if (!ok) return JSON.stringify({ ok: false, error: d.error || 'No se pudo actualizar el estado.' });
       return JSON.stringify({ ok: true, nota: estado === 'en_curso' ? 'Marcado EN CURSO. Avisamos al cliente.' : 'Marcado COMPLETADA. Avisamos al cliente para que pague el saldo.' });
     }
+    if (name === 'sigo_en_curso') {
+      // Lo llama Emi cuando el mudancero contesta el recordatorio de cierre
+      // diciendo que sigue trabajando. Ver api/cron-recordar-completar.js.
+      const mEnCurso = await getJSON(`mudanza:${input.pedidoId}`);
+      if (!mEnCurso) return JSON.stringify({ ok: false, error: 'No encontré ese pedido.' });
+      const cotEnCurso = mEnCurso.cotizacionAceptada || {};
+      if (cotEnCurso.mudanceroEmail !== email) return JSON.stringify({ ok: false, error: 'Ese pedido no es tuyo.' });
+      if (mEnCurso.estado !== 'en_curso') return JSON.stringify({ ok: false, error: 'Esa mudanza no está en curso.' });
+      const hMas = Math.min(12, Math.max(1, parseFloat(input.horas) || 2));
+      mEnCurso.cierrePospuestoHasta = new Date(Date.now() + hMas * 3600000).toISOString();
+      // Contestó: no está ignorando los avisos, así que la escalera se reinicia.
+      mEnCurso.preguntasCompletar = 0;
+      await setJSON(`mudanza:${input.pedidoId}`, mEnCurso, 604800);
+      return JSON.stringify({ ok: true, nota: `Anotado, no le pregunto por ${hMas} hora(s) más. Deseale buen laburo y cortá.` });
+    }
     if (name === 'proponer_ajuste') {
       const { ok, d } = await postJSON('proponer-ajuste', { mudanzaId: input.pedidoId, mudanceroEmail: email, nuevoPrecio: input.nuevoPrecio, motivo: input.motivo });
       return JSON.stringify(ok ? { ok: true, nota: 'Ajuste propuesto. El cliente lo tiene que aceptar.' } : { ok: false, error: d.error || 'No se pudo proponer el ajuste.' });
@@ -1267,7 +1296,7 @@ const asesorTools = [
         tipo: { type: 'string', enum: ['mudanza', 'flete'], description: 'flete = transportar algo puntual (un mueble, un electro, unas cajas), sin vaciar una casa entera. mudanza = traslado completo de un hogar/oficina, todos los ambientes.' },
         origen: { type: 'string' },
         destino: { type: 'string' },
-        fecha: { type: 'string', description: 'Para cuándo es la mudanza (fecha u "hoy"/"mañana"). Obligatorio: los mudanceros necesitan saber cuándo para cotizar y para saber si tienen que apurarse.' },
+        fecha: { type: 'string', description: 'Para cuándo es la mudanza, en formato YYYY-MM-DD (ej "2026-08-07"). Obligatorio: los mudanceros necesitan saber cuándo para cotizar y para saber si tienen que apurarse. Si el asesor dice "mañana" o "el viernes", resolvelo vos contra la fecha de hoy y pasá la fecha real — NUNCA el texto relativo.' },
         horario: { type: 'string', description: 'Hora aproximada, si la sabés (formato HH:MM). Opcional pero recomendado, sobre todo si es urgente.' },
         ambientes: { type: 'string', description: 'Cantidad de ambientes, si el cliente la mencionó (opcional)' },
         detalles: { type: 'string', description: 'Cualquier detalle extra que haya dado el cliente (opcional)' },
