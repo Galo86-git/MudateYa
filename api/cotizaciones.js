@@ -1,7 +1,7 @@
 // api/cotizaciones.js — Upstash Redis + PDF con pdfmake
 
 var { esAdmin } = require('./_auth');
-var { vencimientoHabilISO } = require('./_habiles');
+var { vencimientoHabilISO, aHoraAR } = require('./_habiles');
 // Matching por zona (mismo criterio que match-mudanceros.js) — lo usa
 // notificarMudanceros para filtrar a quién avisar en pedidos del bot.
 var { coincideZona, palabrasZona, cubreGeo } = require('./match-mudanceros');
@@ -5729,13 +5729,21 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
   } else {
     const pct = COMISION_ASESOR_DEFAULT; // 5% flat siempre, ver nota en action=aceptar
     const monto = Math.round(precio * pct / 100);
+    // Se acredita el día hábil 10 del mes SIGUIENTE al que se completa la
+    // mudanza — mismo criterio que cron-recordar-comisiones-asesores.js
+    // (admin) y la tool mis_comisiones de Emi (whatsapp.js). Se calcula acá
+    // relativo a AHORA porque este mail sale justo cuando se paga el saldo
+    // (mudanza recién completada), que es lo que fija el mes de referencia.
+    const ahoraAR = aHoraAR(new Date());
+    const mesQueViene = new Date(Date.UTC(ahoraAR.getUTCFullYear(), ahoraAR.getUTCMonth() + 1, 1));
+    const nombreMesQueViene = mesQueViene.toLocaleString('es-AR', { month: 'long', timeZone: 'UTC' });
     bloque = `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:12px;padding:20px 22px;margin:20px 0">
         <div style="font-size:14px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:14px">💰 TU COMISIÓN</div>
         <table style="width:100%;border-collapse:collapse">
           <tr><td style="color:#475569;font-size:16px;padding:9px 0">Valor de la mudanza</td><td style="text-align:right;font-weight:600;color:#0F1923;font-size:16px;padding:9px 0">$${precio.toLocaleString('es-AR')}</td></tr>
           <tr><td style="color:#166534;font-size:17px;font-weight:700;padding:12px 0;border-top:2px solid #17A356">Tu comisión (${pct}%)</td><td style="text-align:right;color:#17A356;font-weight:800;font-size:24px;padding:12px 0;border-top:2px solid #17A356">$${monto.toLocaleString('es-AR')}</td></tr>
         </table>
-        <div style="font-size:15px;color:#475569;margin-top:14px;line-height:1.6">Nos contactamos con vos para coordinar el pago.</div>
+        <div style="font-size:15px;color:#475569;margin-top:14px;line-height:1.6">Se te acredita el día hábil 10 de ${nombreMesQueViene}, junto con el resto de lo que generes este mes.</div>
       </div>`;
   }
 
