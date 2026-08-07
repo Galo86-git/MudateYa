@@ -33,6 +33,11 @@
 //   descuenta fines de semana (y deja un warning en los logs). Es a
 //   propósito: preferimos un vencimiento un poco corto antes que romper
 //   la publicación de un pedido.
+//
+//   Esta tabla tiene que coincidir con FERIADOS_AR en admin.html (retención
+//   de mudanceros y comisiones de asesores) — si se actualiza acá, actualizar
+//   ahí también, o el día de liberación que ve el admin y el que usa el cron
+//   de avisos (cron-recordar-comisiones-asesores.js) quedan desincronizados.
 
 var OFFSET_AR_MIN = -180; // UTC-3
 
@@ -60,19 +65,25 @@ var FERIADOS = {
     '2026-12-08', // Inmaculada Concepción
     '2026-12-25'  // Navidad
   ],
-  // 2027: solo los inamovibles y los de fecha calculable. Los trasladables
-  // y los puentes se agregan cuando salga el decreto.
+  // 2027: previstos (mismos que admin.html — ver nota ahí sobre por qué las
+  // dos listas tienen que coincidir). Los trasladables/puentes que todavía no
+  // salieron por decreto quedan con la fecha más probable.
   2027: [
     '2027-01-01', // Año Nuevo
     '2027-02-08', // Carnaval
     '2027-02-09', // Carnaval
     '2027-03-24', // Día de la Memoria
+    '2027-03-25', // No laborable con fines turísticos (puente, previsto)
     '2027-03-26', // Viernes Santo
     '2027-04-02', // Malvinas
     '2027-05-01', // Día del Trabajador
     '2027-05-25', // Revolución de Mayo
+    '2027-06-15', // Güemes (trasladado, previsto)
     '2027-06-20', // Belgrano
     '2027-07-09', // Independencia
+    '2027-08-16', // San Martín (trasladado, previsto)
+    '2027-10-11', // Diversidad Cultural (trasladado, previsto)
+    '2027-11-22', // Soberanía Nacional (trasladado, previsto)
     '2027-12-08', // Inmaculada Concepción
     '2027-12-25'  // Navidad
   ]

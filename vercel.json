@@ -413,6 +413,10 @@
   },
   "crons": [
     {
+      "path": "/api/cron-recordar-comisiones-asesores",
+      "schedule": "0 10 * * 1-5"
+    },
+    {
       "path": "/api/cron-onboarding",
       "schedule": "0 13 * * *"
     },

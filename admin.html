@@ -722,13 +722,20 @@ tr:hover td{background:#F8FAFC}
       <!-- PAGO A ASESORES -->
       <div class="page" id="page-pago-asesores">
         <div class="page-title">Pago a asesores</div>
-        <div class="page-subtitle">Comisión que MudateYa le debe al asesor por cada alquiler cerrado a través de su link (en compraventa no hay comisión: el beneficio va al cliente). Los datos bancarios se cargan acá mismo la primera vez que hay que pagarle a alguien.</div>
+        <div class="page-subtitle">Comisión que MudateYa le debe al asesor por cada alquiler cerrado a través de su link (en compraventa no hay comisión: el beneficio va al cliente). Se pagan en lote el día hábil 10 de cada mes, sobre las comisiones generadas el mes anterior. Los datos bancarios se cargan acá mismo la primera vez que hay que pagarle a alguien.</div>
         <div class="table-card" style="margin-bottom:1.2rem">
           <div class="table-header">
-            <span class="table-title">Comisiones pendientes</span>
+            <span class="table-title">Listas para pagar</span>
             <span style="font-size:11px;color:#64748B;font-family:var(--mono)" id="comAsrPendResumen">—</span>
           </div>
           <div id="comisionesAsesoresPendList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+        <div class="table-card" style="margin-bottom:1.2rem">
+          <div class="table-header">
+            <span class="table-title">A la espera</span>
+            <span style="font-size:11px;color:#64748B;font-family:var(--mono)" id="comAsrEsperaResumen">Se liberan el día hábil 10 del mes siguiente a que se generaron</span>
+          </div>
+          <div id="comisionesAsesoresEsperaList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
         <div class="table-card">
           <div class="table-header"><span class="table-title">Historial de comisiones pagadas</span></div>
@@ -1983,11 +1990,16 @@ function renderPagosFull(){ renderLiquidaciones(); renderHistorialPagos(); }
 // trabajador, 25 mayo, Güemes, Belgrano, 9 julio, San Martín, Diversidad,
 // Soberanía, Inmaculada, Navidad. Se agregan feriados turísticos puente cuando
 // están definidos por decreto.
+// Debe coincidir con FERIADOS en api/_habiles.js (misma fuente, dos listas
+// separadas porque una corre en el browser y la otra en el server) — si se
+// actualiza una hay que actualizar la otra, si no el día de liberación de acá
+// (retención de mudanceros, comisiones de asesores) y el del cron de avisos
+// pueden quedar en fechas distintas para el mismo mes.
 var FERIADOS_AR = [
   // 2026
   '2026-01-01','2026-02-16','2026-02-17','2026-03-23','2026-03-24','2026-04-02',
   '2026-04-03','2026-05-01','2026-05-25','2026-06-15','2026-06-20','2026-07-09',
-  '2026-08-17','2026-10-12','2026-11-23','2026-12-08','2026-12-25',
+  '2026-07-10','2026-08-17','2026-10-12','2026-11-23','2026-12-07','2026-12-08','2026-12-25',
   // 2027 (previstos)
   '2027-01-01','2027-02-08','2027-02-09','2027-03-24','2027-03-25','2027-03-26',
   '2027-04-02','2027-05-01','2027-05-25','2027-06-15','2027-06-20','2027-07-09',
@@ -2237,6 +2249,7 @@ var comisionesAsesoresData = [];
 
 async function loadComisionesAsesores(){
   document.getElementById('comisionesAsesoresPendList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  document.getElementById('comisionesAsesoresEsperaList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   document.getElementById('comisionesAsesoresPagList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
     var r = await fetch('/api/cotizaciones?action=admin-comisiones-asesores&token=' + ADMTK());
@@ -2249,19 +2262,61 @@ async function loadComisionesAsesores(){
   renderComisionesAsesoresFull();
 }
 
+// 10º día hábil de un mes dado (mes 0-indexado, como Date.getMonth()).
+function decimoHabilDelMes(anio, mes) {
+  var d = new Date(anio, mes, 1);
+  var count = 0;
+  while (true) {
+    if (!esFeriadoOFinde(d)) {
+      count++;
+      if (count === 10) return d;
+    }
+    d.setDate(d.getDate() + 1);
+  }
+}
+
+// Regla de negocio (2026-08-07): la comisión generada en un mes se paga
+// recién el día hábil 10 del mes SIGUIENTE — misma idea que la retención de
+// 15 días hábiles de los mudanceros, pero mensual y en lote. El cron
+// api/cron-recordar-comisiones-asesores.js manda el aviso ese mismo día.
+function fechaLiberacionComision(fechaCompletada) {
+  if (!fechaCompletada) return null;
+  var f = new Date(fechaCompletada);
+  if (isNaN(f)) return null;
+  var mesSig = f.getMonth() + 1;
+  var anioSig = f.getFullYear();
+  if (mesSig > 11) { mesSig = 0; anioSig++; }
+  return decimoHabilDelMes(anioSig, mesSig);
+}
+
 function renderComisionesAsesoresFull(){
-  var pendientes = comisionesAsesoresData.filter(function(c){ return !c.pagada; });
+  var noPagadas = comisionesAsesoresData.filter(function(c){ return !c.pagada; });
   var pagadas = comisionesAsesoresData.filter(function(c){ return c.pagada; });
+  var hoy = new Date();
 
-  var totalPend = pendientes.reduce(function(s,c){ return s + (c.monto||0); }, 0);
-  document.getElementById('comAsrPendResumen').textContent = pendientes.length + ' comisiones · Total: $' + Math.round(totalPend).toLocaleString('es-AR');
+  // Separar en listas para pagar (ya pasó el día 10 hábil del mes siguiente
+  // a que se generaron) vs a la espera de esa fecha.
+  var listas = [];
+  var espera = [];
+  noPagadas.forEach(function(c){
+    var liberacion = fechaLiberacionComision(c.fechaCompletada);
+    var item = Object.assign({}, c, { fechaLiberacion: liberacion });
+    if (liberacion && liberacion > hoy) espera.push(item);
+    else listas.push(item);
+  });
+  listas.sort(function(a,b){ return new Date(a.fechaCompletada||0) - new Date(b.fechaCompletada||0); });
+  espera.sort(function(a,b){ return (a.fechaLiberacion||0) - (b.fechaLiberacion||0); });
 
-  document.getElementById('comisionesAsesoresPendList').innerHTML = pendientes.length === 0
-    ? '<div class="empty"><div class="empty-icon">✓</div>Sin comisiones pendientes</div>'
+  var totalListas = listas.reduce(function(s,c){ return s + (c.monto||0); }, 0);
+  var totalEspera = espera.reduce(function(s,c){ return s + (c.monto||0); }, 0);
+  document.getElementById('comAsrPendResumen').textContent = listas.length + ' comisiones · Total: $' + Math.round(totalListas).toLocaleString('es-AR');
+
+  document.getElementById('comisionesAsesoresPendList').innerHTML = listas.length === 0
+    ? '<div class="empty"><div class="empty-icon">✓</div>Sin comisiones listas para pagar</div>'
     : '<table><thead><tr>'
       + '<th>Asesor</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Completada</th><th>Datos bancarios</th><th></th>'
       + '</tr></thead><tbody>'
-      + pendientes.map(function(c){
+      + listas.map(function(c){
           var contacto = (c.asesorEmail ? '<a href="mailto:'+esc(c.asesorEmail)+'" style="color:var(--text3);text-decoration:none">'+esc(c.asesorEmail)+'</a>' : '')
             + (c.asesorWhatsapp ? (c.asesorEmail ? ' · ' : '') + '<a href="https://wa.me/'+esc(c.asesorWhatsapp.replace(/\D/g,''))+'" target="_blank" style="color:#22C36A;text-decoration:none">'+esc(c.asesorWhatsapp)+'</a>' : '');
           return '<tr>'
@@ -2280,7 +2335,25 @@ function renderComisionesAsesoresFull(){
             +'</tr>';
         }).join('')
       + '</tbody></table>'
-      + '<div style="padding:12px 14px;background:#F0FDF4;border-top:1px solid #BBF7D0;font-size:12px;color:#15803D;font-family:var(--mono);font-weight:600">💸 Total pendiente: $'+Math.round(totalPend).toLocaleString('es-AR')+'</div>';
+      + '<div style="padding:12px 14px;background:#F0FDF4;border-top:1px solid #BBF7D0;font-size:12px;color:#15803D;font-family:var(--mono);font-weight:600">💸 Total listo para pagar: $'+Math.round(totalListas).toLocaleString('es-AR')+'</div>';
+
+  document.getElementById('comisionesAsesoresEsperaList').innerHTML = espera.length === 0
+    ? '<div class="empty"><div class="empty-icon">✓</div>Nada en espera</div>'
+    : '<table><thead><tr>'
+      + '<th>Asesor</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Completada</th><th>Se libera</th>'
+      + '</tr></thead><tbody>'
+      + espera.map(function(c){
+          return '<tr>'
+            +'<td class="td-name">'+esc(c.asesorNombre||c.asesorCodigo||'—')+'</td>'
+            +'<td style="font-size:12px">'+esc(c.cliente||'—')+'</td>'
+            +'<td style="font-size:11px;color:var(--text2)">'+esc(c.ruta)+'</td>'
+            +'<td class="td-mono" style="color:#1A6FFF;font-weight:600">$'+Math.round(c.monto).toLocaleString('es-AR')+'</td>'
+            +'<td class="td-mono" style="font-size:11px">'+fmtFechaCorta(c.fechaCompletada)+'</td>'
+            +'<td class="td-mono" style="font-size:11px;color:#15803D;font-weight:600">'+fmtFechaCorta(c.fechaLiberacion)+'</td>'
+            +'</tr>';
+        }).join('')
+      + '</tbody></table>'
+      + '<div style="padding:12px 14px;background:#FFFBEB;border-top:1px solid #FDE68A;font-size:12px;color:#92400E;font-family:var(--mono)">⏳ Total en espera: $'+Math.round(totalEspera).toLocaleString('es-AR')+'</div>';
 
   document.getElementById('comisionesAsesoresPagList').innerHTML = pagadas.length === 0
     ? '<div class="empty"><div class="empty-icon">💳</div>Sin comisiones pagadas todavía</div>'
