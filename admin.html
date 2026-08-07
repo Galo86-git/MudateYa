@@ -528,7 +528,10 @@ tr:hover td{background:#F8FAFC}
         <span class="sidebar-badge" id="badgePendientes">0</span>
       </a>
       <a class="sidebar-item" onclick="showPage('pagos',event)" href="#">
-        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Pagos
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Pago a mudanceros
+      </a>
+      <a class="sidebar-item" onclick="showPage('pago-asesores',event)" href="#">
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> Pago a asesores
       </a>
       <a class="sidebar-item" onclick="showPage('transferencias',event)" href="#">
         <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6"/><path d="M4 9v11h16V9"/><line x1="9" y1="20" x2="9" y2="13"/><line x1="15" y1="20" x2="15" y2="13"/></svg></span> Transferencias
@@ -596,6 +599,7 @@ tr:hover td{background:#F8FAFC}
       <button onclick="showPage('fotos',event);setMobileNav('fotos');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🖼️ Fotos</button>
       <button onclick="showPage('zonas',event);setMobileNav('zonas');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🗺️ Zonas</button>
       <button onclick="showPage('transferencias',event);setMobileNav('transferencias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏦 Transferencias</button>
+      <button onclick="showPage('pago-asesores',event);setMobileNav('pago-asesores');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">💸 Pago a asesores</button>
       <button onclick="showPage('inmobiliarias',event);setMobileNav('inmobiliarias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏠 Inmobiliarias</button>
       <button onclick="showPage('mudafy',event);setMobileNav('mudafy');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🤝 Mudafy</button>
       <button onclick="showPage('remax',event);setMobileNav('remax');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🎈 RE/MAX</button>
@@ -694,7 +698,7 @@ tr:hover td{background:#F8FAFC}
 
       <!-- PAGOS -->
       <div class="page" id="page-pagos">
-        <div class="page-title">Pagos</div>
+        <div class="page-title">Pago a mudanceros</div>
         <div class="table-card" style="margin-bottom:1.2rem">
           <div class="table-header">
             <span class="table-title">Liquidables ya</span>
@@ -712,6 +716,23 @@ tr:hover td{background:#F8FAFC}
         <div class="table-card">
           <div class="table-header"><span class="table-title">Historial de pagos</span></div>
           <div id="pagosList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+      </div>
+
+      <!-- PAGO A ASESORES -->
+      <div class="page" id="page-pago-asesores">
+        <div class="page-title">Pago a asesores</div>
+        <div class="page-subtitle">Comisión que MudateYa le debe al asesor por cada alquiler cerrado a través de su link (en compraventa no hay comisión: el beneficio va al cliente). Los datos bancarios se cargan acá mismo la primera vez que hay que pagarle a alguien.</div>
+        <div class="table-card" style="margin-bottom:1.2rem">
+          <div class="table-header">
+            <span class="table-title">Comisiones pendientes</span>
+            <span style="font-size:11px;color:#64748B;font-family:var(--mono)" id="comAsrPendResumen">—</span>
+          </div>
+          <div id="comisionesAsesoresPendList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><span class="table-title">Historial de comisiones pagadas</span></div>
+          <div id="comisionesAsesoresPagList"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
       </div>
 
@@ -1352,6 +1373,7 @@ function showPage(name, e){
   if(e && e.currentTarget) e.currentTarget.classList.add('active');
   if(name === 'mudanceros') renderMudancerosFull();
   if(name === 'pagos') renderPagosFull();
+  if(name === 'pago-asesores') loadComisionesAsesores();
   if(name === 'zonas') renderZonas();
   if(name === 'transferencias') loadTransferencias();
   if(name === 'fotos') cargarFotos();
@@ -2206,6 +2228,128 @@ async function marcarLiquidado(mudanzaId, tipoPago, btn) {
     renderPagosFull();
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '✓ Liquidado'; }
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── PAGO A ASESORES PAGE ──────────────────────────────────────────────────
+var comisionesAsesoresData = [];
+
+async function loadComisionesAsesores(){
+  document.getElementById('comisionesAsesoresPendList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  document.getElementById('comisionesAsesoresPagList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
+  try {
+    var r = await fetch('/api/cotizaciones?action=admin-comisiones-asesores&token=' + ADMTK());
+    var d = await r.json();
+    comisionesAsesoresData = d.rows || [];
+  } catch(e) {
+    comisionesAsesoresData = [];
+    console.warn('Comisiones de asesores no disponibles:', e.message);
+  }
+  renderComisionesAsesoresFull();
+}
+
+function renderComisionesAsesoresFull(){
+  var pendientes = comisionesAsesoresData.filter(function(c){ return !c.pagada; });
+  var pagadas = comisionesAsesoresData.filter(function(c){ return c.pagada; });
+
+  var totalPend = pendientes.reduce(function(s,c){ return s + (c.monto||0); }, 0);
+  document.getElementById('comAsrPendResumen').textContent = pendientes.length + ' comisiones · Total: $' + Math.round(totalPend).toLocaleString('es-AR');
+
+  document.getElementById('comisionesAsesoresPendList').innerHTML = pendientes.length === 0
+    ? '<div class="empty"><div class="empty-icon">✓</div>Sin comisiones pendientes</div>'
+    : '<table><thead><tr>'
+      + '<th>Asesor</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Completada</th><th>Datos bancarios</th><th></th>'
+      + '</tr></thead><tbody>'
+      + pendientes.map(function(c){
+          var contacto = (c.asesorEmail ? '<a href="mailto:'+esc(c.asesorEmail)+'" style="color:var(--text3);text-decoration:none">'+esc(c.asesorEmail)+'</a>' : '')
+            + (c.asesorWhatsapp ? (c.asesorEmail ? ' · ' : '') + '<a href="https://wa.me/'+esc(c.asesorWhatsapp.replace(/\D/g,''))+'" target="_blank" style="color:#22C36A;text-decoration:none">'+esc(c.asesorWhatsapp)+'</a>' : '');
+          return '<tr>'
+            +'<td class="td-name">'+esc(c.asesorNombre||c.asesorCodigo||'—')+'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+contacto+'</div></td>'
+            +'<td style="font-size:12px">'+esc(c.cliente||'—')+'</td>'
+            +'<td style="font-size:11px;color:var(--text2)">'+esc(c.ruta)+'</td>'
+            +'<td class="td-mono" style="color:#1A6FFF;font-weight:700;font-size:14px">$'+Math.round(c.monto).toLocaleString('es-AR')+(c.pct?' <span style="color:var(--text3);font-weight:400;font-size:11px">('+c.pct+'%)</span>':'')+'</td>'
+            +'<td class="td-mono" style="font-size:11px">'+fmtFechaCorta(c.fechaCompletada)+'</td>'
+            +'<td style="font-size:11px">'
+              +'<input type="text" placeholder="CBU/CVU" value="'+esc(c.asesorCbu)+'" id="cbu-'+esc(c.asesorCodigo)+'" style="width:120px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:var(--mono);margin-bottom:3px;display:block"/>'
+              +'<input type="text" placeholder="Alias" value="'+esc(c.asesorAlias)+'" id="alias-'+esc(c.asesorCodigo)+'" style="width:120px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:var(--mono);margin-bottom:3px;display:block"/>'
+              +'<input type="text" placeholder="Titular" value="'+esc(c.asesorTitular)+'" id="titular-'+esc(c.asesorCodigo)+'" style="width:120px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:var(--mono);display:block"/>'
+              +'<button class="btn-sm" onclick="guardarDatosAsesor(\''+esc(c.asesorCodigo)+'\',this)" style="margin-top:4px;font-size:10px;padding:3px 8px">Guardar datos</button>'
+            +'</td>'
+            +'<td><button class="btn" style="background:#22C36A;color:#003580;padding:6px 12px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer" onclick="marcarComisionPagada(\''+c.mudanzaId+'\',this)">✓ Pagado</button></td>'
+            +'</tr>';
+        }).join('')
+      + '</tbody></table>'
+      + '<div style="padding:12px 14px;background:#F0FDF4;border-top:1px solid #BBF7D0;font-size:12px;color:#15803D;font-family:var(--mono);font-weight:600">💸 Total pendiente: $'+Math.round(totalPend).toLocaleString('es-AR')+'</div>';
+
+  document.getElementById('comisionesAsesoresPagList').innerHTML = pagadas.length === 0
+    ? '<div class="empty"><div class="empty-icon">💳</div>Sin comisiones pagadas todavía</div>'
+    : '<table><thead><tr>'
+      + '<th>Asesor</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Pagada</th>'
+      + '</tr></thead><tbody>'
+      + pagadas.slice().sort(function(a,b){ return new Date(b.pagadaEn||0) - new Date(a.pagadaEn||0); }).map(function(c){
+          return '<tr>'
+            +'<td class="td-name">'+esc(c.asesorNombre||c.asesorCodigo||'—')+'</td>'
+            +'<td style="font-size:12px">'+esc(c.cliente||'—')+'</td>'
+            +'<td style="font-size:11px;color:var(--text2)">'+esc(c.ruta)+'</td>'
+            +'<td class="td-mono" style="color:#1A6FFF">$'+Math.round(c.monto).toLocaleString('es-AR')+'</td>'
+            +'<td class="td-mono" style="font-size:11px">'+fmtFechaCorta(c.pagadaEn)+'</td>'
+            +'</tr>';
+        }).join('')
+      + '</tbody></table>';
+}
+
+async function guardarDatosAsesor(codigo, btn){
+  var cbu = document.getElementById('cbu-'+codigo).value.trim();
+  var alias = document.getElementById('alias-'+codigo).value.trim();
+  var titular = document.getElementById('titular-'+codigo).value.trim();
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  try {
+    var r = await fetch('/api/cotizaciones?action=admin-guardar-datos-asesor&token=' + ADMTK(), {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ codigo: codigo, cbu: cbu, alias: alias, titular: titular })
+    });
+    var d = await r.json();
+    if (d.error) throw new Error(d.error);
+    comisionesAsesoresData.forEach(function(c){
+      if (c.asesorCodigo === codigo) { c.asesorCbu = cbu; c.asesorAlias = alias; c.asesorTitular = titular; }
+    });
+    if (btn) { btn.textContent = '✓ Guardado'; setTimeout(function(){ btn.textContent = 'Guardar datos'; btn.disabled = false; }, 1500); }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar datos'; }
+    alert('Error: ' + e.message);
+  }
+}
+
+async function marcarComisionPagada(mudanzaId, btn) {
+  var com = comisionesAsesoresData.find(function(c){ return c.mudanzaId === mudanzaId; });
+  var detalle = '';
+  if (com) {
+    detalle = 'Asesor: '+(com.asesorNombre||com.asesorCodigo)+'\n'
+      + 'Monto: $'+Math.round(com.monto||0).toLocaleString('es-AR')+'\n\n';
+  }
+  var ok = await confirmarAccion({
+    titulo: '¿Marcar esta comisión como pagada?',
+    mensaje: detalle + 'Confirmá solo si ya transferiste la comisión al asesor. Esta acción no se puede deshacer fácilmente.',
+    textoConfirmar: '✓ Sí, ya transferí',
+    colorConfirmar: '#22C36A'
+  });
+  if (!ok) return;
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  try {
+    var r = await fetch('/api/cotizaciones?action=admin-marcar-comision-pagada&token=' + ADMTK(), {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ mudanzaId: mudanzaId })
+    });
+    var d = await r.json();
+    if (d.error) throw new Error(d.error);
+    var row = comisionesAsesoresData.find(function(c){ return c.mudanzaId === mudanzaId; });
+    if (row) { row.pagada = true; row.pagadaEn = d.pagadaEn; }
+    renderComisionesAsesoresFull();
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Pagado'; }
     alert('Error: ' + e.message);
   }
 }

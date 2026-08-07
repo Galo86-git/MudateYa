@@ -41,6 +41,26 @@ async function setJSON(key, value, exSeconds) {
   if (exSeconds) await redisCall('SET', key, str, 'EX', String(exSeconds));
   else await redisCall('SET', key, str);
 }
+// Prefijos de asesor en Redis, uno por canal — deben coincidir con el
+// `prefijo` de cada entrada de CANALES en api/canales.js. No hay forma barata
+// de importarlos desde ahí sin arrastrar ese módulo entero, así que se
+// duplican acá: si se suma un canal nuevo, hay que sumar su prefijo también.
+const PREFIJOS_ASESOR = ['remax', 'mudafy', 'indep', 'c21'];
+// La mudanza solo guarda el código del asesor (m.partnerAsesor), no de qué
+// canal es — para encontrar sus datos hay que probar los prefijos hasta
+// pegarle. Se usa tanto para leer (comisiones a pagar) como para guardar
+// datos bancarios que se cargan a mano desde el panel.
+async function buscarAsesorPorCodigo(codigo) {
+  if (!codigo) return null;
+  for (const prefijo of PREFIJOS_ASESOR) {
+    try {
+      const key = `${prefijo}:asesor:${codigo}`;
+      const a = await getJSON(key);
+      if (a) return { key, prefijo, asesor: a };
+    } catch (e) { /* sigue probando los demás prefijos */ }
+  }
+  return null;
+}
 // Lock atómico (SET NX EX): evita que dos requests concurrentes procesen la misma
 // acción crítica (aceptar cotización, registrar pago). TTL corto: se libera solo
 // si algo falla. Fail-open ante error de Redis.
@@ -2584,6 +2604,25 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, clientes, total: clientes.length });
     }
 
+    // ── Admin: marcar un pago (anticipo/saldo) como liquidado al mudancero ──
+    // El botón "✓ Liquidado" del panel de Pago a mudanceros le pega a esta
+    // acción — faltaba el handler (el frontend ya la llamaba, pero acá no
+    // existía: cualquier click tiraba error).
+    if (action === 'admin-marcar-liquidado' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { mudanzaId, tipoPago } = req.body || {};
+      if (!mudanzaId || ['anticipo', 'saldo'].indexOf(tipoPago) === -1) {
+        return res.status(400).json({ error: 'Datos inválidos' });
+      }
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      const campo = tipoPago === 'anticipo' ? 'liquidadoAnticipoEn' : 'liquidadoSaldoEn';
+      if (m[campo]) return res.status(200).json({ ok: true, liquidadoEn: m[campo], yaEstaba: true });
+      m[campo] = new Date().toISOString();
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      return res.status(200).json({ ok: true, liquidadoEn: m[campo] });
+    }
+
     // ── Admin: listar pagos ───────────────────────────────────────────
     if (action === 'admin-pagos' && req.method === 'GET') {
       const { token } = req.query;
@@ -2684,6 +2723,88 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ rows });
     }
 
+    // ── Admin: listar comisiones a pagar a asesores ───────────────────
+    // Una fila por mudanza COMPLETADA (saldo pagado) que generó comisión de
+    // asesor (alquiler de canal — en compraventa no hay comisión, el
+    // beneficio va al cliente, ver donde se calcula comisionInmobiliariaPagar
+    // más arriba). Junta los datos de contacto/bancarios del asesor buscando
+    // su código en los 4 prefijos de canal posibles.
+    if (action === 'admin-comisiones-asesores' && req.method === 'GET') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const activas = await getJSON('mudanzas:activas') || [];
+      const rows = [];
+      const cacheAsesores = {};
+      for (const id of activas) {
+        try {
+          const m = await getJSON(`mudanza:${id}`);
+          if (!m) continue;
+          if (!m.saldoPagado) continue;
+          if (!(parseInt(m.comisionInmobiliariaPagar) > 0)) continue;
+          if (m.tipoOperacion === 'compraventa') continue;
+          const codigo = m.partnerAsesor || '';
+          if (!codigo) continue;
+
+          if (!(codigo in cacheAsesores)) {
+            cacheAsesores[codigo] = await buscarAsesorPorCodigo(codigo);
+          }
+          const encontrado = cacheAsesores[codigo];
+          const asesor = encontrado ? encontrado.asesor : null;
+
+          rows.push({
+            mudanzaId:      m.id,
+            asesorCodigo:   codigo,
+            asesorNombre:   (asesor && asesor.nombre) || '',
+            asesorEmail:    (asesor && asesor.email) || '',
+            asesorWhatsapp: (asesor && asesor.whatsapp) || '',
+            asesorCbu:      (asesor && asesor.cbu) || '',
+            asesorAlias:    (asesor && asesor.alias) || '',
+            asesorTitular:  (asesor && asesor.titular) || '',
+            canal:          (encontrado && encontrado.prefijo) || m.partner || '',
+            cliente:        m.clienteNombre || '',
+            ruta:           (m.desde || '').split(',')[0] + ' → ' + (m.hasta || '').split(',')[0],
+            monto:          parseInt(m.comisionInmobiliariaPagar) || 0,
+            pct:            parseFloat(m.comisionInmobiliariaPct) || 0,
+            fechaCompletada: m.fechaCompletada || m.fechaPagoSaldo || null,
+            pagada:         !!m.comisionAsesorPagada,
+            pagadaEn:       m.comisionAsesorPagadaEn || null,
+          });
+        } catch (e) { console.warn('admin-comisiones-asesores error mudanza', id, e.message); }
+      }
+      rows.sort((a, b) => new Date(b.fechaCompletada || 0) - new Date(a.fechaCompletada || 0));
+      return res.status(200).json({ rows });
+    }
+
+    // ── Admin: marcar una comisión de asesor como pagada ───────────────
+    if (action === 'admin-marcar-comision-pagada' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { mudanzaId } = req.body || {};
+      if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (m.comisionAsesorPagada) return res.status(200).json({ ok: true, pagadaEn: m.comisionAsesorPagadaEn, yaEstaba: true });
+      m.comisionAsesorPagada = true;
+      m.comisionAsesorPagadaEn = new Date().toISOString();
+      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      return res.status(200).json({ ok: true, pagadaEn: m.comisionAsesorPagadaEn });
+    }
+
+    // ── Admin: guardar/actualizar datos bancarios de un asesor ─────────
+    // Los asesores no cargan CBU/alias al darse de alta (ese formulario no lo
+    // pide) — se completa acá a mano, desde el panel de pago de comisiones,
+    // la primera vez que hay que pagarle a alguien.
+    if (action === 'admin-guardar-datos-asesor' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { codigo, cbu, alias, titular } = req.body || {};
+      if (!codigo) return res.status(400).json({ error: 'Falta el código del asesor' });
+      const encontrado = await buscarAsesorPorCodigo(codigo);
+      if (!encontrado) return res.status(404).json({ error: 'No encontré ese asesor' });
+      const asesor = encontrado.asesor;
+      asesor.cbu     = String(cbu || '').trim().slice(0, 30);
+      asesor.alias   = String(alias || '').trim().slice(0, 40);
+      asesor.titular = String(titular || '').trim().slice(0, 80);
+      await setJSON(encontrado.key, asesor);
+      return res.status(200).json({ ok: true });
+    }
 
     // ── Admin: listar mudanceros ──────────────────────────────────────
     if (action === 'admin-mudanceros' && req.method === 'GET') {
