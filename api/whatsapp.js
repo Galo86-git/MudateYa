@@ -16,7 +16,7 @@
 //   SKIP_TWILIO_VALIDATION    -> "1" solo para debug; en prod dejar sin setear
 
 const crypto = require('crypto');
-const { vencimientoHabilISO } = require('./_habiles'); // vencimiento en horas hábiles (igual que el web)
+const { vencimientoHabilISO, aHoraAR } = require('./_habiles'); // vencimiento en horas hábiles (igual que el web)
 
 // Modo prueba: si está seteada, los pedidos del bot se publican SOLO para este
 // mudancero (modo "dirigido"), así ningún mudancero real los ve mientras testeás.
@@ -667,6 +667,7 @@ TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por 
 PODÉS HACER ESTO POR ACÁ:
 - Pasarle su link (siempre el mismo, no vence nunca) → mi_link. Por defecto lo pasás VOS ACÁ MISMO por WhatsApp (canal "whatsapp", es lo más rápido); solo lo mandás por mail (canal "mail") si te lo pide explícitamente él.
 - Contarle cómo van los clientes que le llegaron por su link (si ya publicaron la mudanza, si tienen cotizaciones, si ya eligieron, si pagaron la seña, si está en curso o completada) → ver_mis_pedidos_referidos.
+- Decirle cuánto lleva de comisiones ESTE mes (si pregunta "cuánto llevo", "cuánto cobré/voy a cobrar", etc.) → mis_comisiones. Es el monto generado en lo que va del mes, que se le acredita el día hábil 10 del mes que viene (no antes) — aclaráselo así no piensa que ya lo tiene disponible.
 - Si tiene un CLIENTE que le cerró una operación y quiere proponerle la mudanza YA MISMO, sin mandarle el link: cargale vos el pedido acá con cargar_pedido_referido. Ver más abajo el detalle.
 - Si SE QUIERE MUDAR ÉL MISMO (no un cliente suyo, él): armarle el pedido acá mismo con las mismas herramientas que usa cualquier cliente (crear_pedido, validar_direccion, consultar_estado_pedido, aceptar_cotizacion, etc. — están todas disponibles). Ver más abajo el detalle de esta opción.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
@@ -1295,6 +1296,11 @@ const asesorTools = [
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
+    name: 'mis_comisiones',
+    description: 'Cuánto lleva acumulado en comisiones el asesor en el mes calendario actual (mudanzas suyas completadas y con saldo pagado). Usala cuando pregunte "cuánto llevo", "cuánto cobré/voy a cobrar este mes" o similar — no le des un número inventado, siempre llamá a esta herramienta.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
     name: 'cargar_pedido_referido',
     description:
       'Publica el pedido de un CLIENTE del asesor (alguien que le cerró una operación y quiere el servicio de mudanza) directo acá por WhatsApp, sin que el cliente tenga que entrar por el link — queda atribuido al asesor igual que si hubiera entrado por su link. Necesitás el mail del cliente (ahí le van a llegar los presupuestos) y si tenés el WhatsApp mejor, así también puede recibir avisos ahí. Preguntá primero si es alquiler o compraventa (define si el asesor cobra comisión o si el cliente recibe un regalo).',
@@ -1371,6 +1377,34 @@ async function pedidosReferidosDelAsesor(prefijo, codigo) {
   }
   pedidos.sort((a, b) => String(b.fechaPublicacion || '').localeCompare(String(a.fechaPublicacion || '')));
   return pedidos;
+}
+
+// Comisiones que un asesor lleva acumuladas en el mes CALENDARIO en curso —
+// mismo criterio que api/cron-recordar-comisiones-asesores.js (que le avisa
+// al admin el total de TODOS los asesores del mes anterior, para pagarlo el
+// día hábil 10), pero acá escaneado para UN asesor puntual y sobre el mes
+// actual (lo que se le va a pagar recién el día hábil 10 del mes que viene).
+async function comisionesDelMes(prefijo, codigo) {
+  const ids = (await getJSON(`${prefijo}:asesor:${codigo}:mudanzas`)) || [];
+  const ahoraAR = aHoraAR(new Date());
+  const anio = ahoraAR.getUTCFullYear();
+  const mes = ahoraAR.getUTCMonth();
+  let total = 0;
+  const detalle = [];
+  for (const id of ids.slice(-80)) {
+    const m = await getJSON(`mudanza:${id}`);
+    if (!m || !m.saldoPagado) continue;
+    if (!(parseInt(m.comisionInmobiliariaPagar) > 0)) continue;
+    if (m.tipoOperacion === 'compraventa') continue; // compraventa no genera comisión, es regalo al cliente
+    const fc = m.fechaCompletada || m.fechaPagoSaldo;
+    if (!fc) continue;
+    const fcAR = aHoraAR(new Date(fc));
+    if (fcAR.getUTCFullYear() !== anio || fcAR.getUTCMonth() !== mes) continue;
+    const monto = parseInt(m.comisionInmobiliariaPagar) || 0;
+    total += monto;
+    detalle.push({ cliente: m.clienteNombre || '', monto });
+  }
+  return { total, cantidad: detalle.length, detalle };
 }
 
 // Publica el pedido de un CLIENTE del asesor directo desde WhatsApp, ya
@@ -1507,6 +1541,15 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv, textoActual) 
     if (name === 'ver_mis_pedidos_referidos') {
       const pedidos = await pedidosReferidosDelAsesor(asesor.prefijo, asesor.codigo);
       return JSON.stringify({ pedidos, nota: pedidos.length ? undefined : 'Todavía no te llegó ningún cliente por tu link.' });
+    }
+    if (name === 'mis_comisiones') {
+      const c = await comisionesDelMes(asesor.prefijo, asesor.codigo);
+      return JSON.stringify({
+        ...c,
+        nota: c.cantidad
+          ? 'Esto es lo generado en el mes calendario en curso — se acredita recién el día hábil 10 del mes que viene.'
+          : 'Todavía no tenés comisiones generadas este mes.',
+      });
     }
     if (name === 'cargar_pedido_referido') {
       const fotosConv = Array.isArray(conv.fotos) ? conv.fotos : [];
