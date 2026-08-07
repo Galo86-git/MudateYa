@@ -1083,7 +1083,11 @@ module.exports = async function handler(req, res) {
             const inmoCfg = await getJSON('inmobiliaria:' + partnerLower);
             if (inmoCfg && inmoCfg.activa !== false) {
               partnerNorm = partnerLower;
-              comisionInmobiliariaPct = parseFloat(inmoCfg.comisionInmobiliaria) || 0;
+              // El % propio que pueda tener cargado la ficha de la inmobiliaria
+              // (campo "Comisión por viaje" en Inmobiliarias) YA NO SE USA acá
+              // (decisión 2026-08-07): todo canal — inmobiliaria vinculada,
+              // asesor suelto o Mudafy/RE-MAX/C21 — cobra el mismo 5% flat, se
+              // fija más abajo junto con origenCanal.
             } else {
               // El slug llegó pero no está configurado. La mudanza IGUAL es de
               // canal (ver origenCanal abajo); lo único que no se puede calcular
@@ -1114,6 +1118,11 @@ module.exports = async function handler(req, res) {
         (typeof partnerAsesor === 'string' && partnerAsesor.trim()) ||
         refAliado || req.body.origenAsesor === true
       );
+      // Snapshot de la comisión al publicar: 5% flat para toda mudanza de
+      // canal (con o sin asesor puntual), 0 para las orgánicas. Se recalcula
+      // igual al aceptar/ajustar por si tipoOperacion cambia el régimen
+      // (compraventa no cobra comisión), pero el % en sí ya no varía.
+      if (origenCanal) comisionInmobiliariaPct = COMISION_ASESOR_DEFAULT;
       const partnerAsesorNorm    = (typeof partnerAsesor === 'string' && partnerAsesor.length < 100) ? partnerAsesor : '';
       const partnerPropiedadNorm = (typeof partnerPropiedad === 'string' && partnerPropiedad.length < 100) ? partnerPropiedad : '';
       // Tipo de operación inmobiliaria que originó la mudanza. Solo interno (NO va al PDF).
@@ -1640,14 +1649,14 @@ module.exports = async function handler(req, res) {
       // Se paga a TODA operación de canal, no solo a las que tienen la
       // inmobiliaria cargada en Redis: si el slug no estaba registrado el monto
       // quedaba en cero y el asesor no aparecía como acreedor en ningún lado.
-      // El % de la config manda si existe; si no, rige el default del canal.
+      // 5% flat siempre (decisión 2026-08-07) — ya no importa si hay un %
+      // propio cargado en la ficha de la inmobiliaria, ni si el referido
+      // quedó atribuido a un asesor puntual o a la inmobiliaria directamente.
       const _esCanalAsesor = !!(mudanza.partner || mudanza.partnerSlugCrudo || mudanza.partnerAsesor);
       if (_esCanalAsesor && mudanza.tipoOperacion !== 'compraventa') {
         const precioFinal = parseFloat(cot.precio) || 0;
-        const pctCfg = parseFloat(mudanza.comisionInmobiliariaPct);
-        const pct = pctCfg > 0 ? pctCfg : COMISION_ASESOR_DEFAULT;
-        mudanza.comisionInmobiliariaPct = pct;   // snapshot efectivo
-        mudanza.comisionInmobiliariaPagar = Math.round(precioFinal * pct / 100);
+        mudanza.comisionInmobiliariaPct = COMISION_ASESOR_DEFAULT;
+        mudanza.comisionInmobiliariaPagar = Math.round(precioFinal * COMISION_ASESOR_DEFAULT / 100);
       } else if (mudanza.tipoOperacion === 'compraventa') {
         // En compraventa no hay comisión: el cliente recibe el regalo.
         mudanza.comisionInmobiliariaPagar = 0;
@@ -2050,9 +2059,8 @@ module.exports = async function handler(req, res) {
         m.cotizacionAceptada.precio = precioNuevo;
         m.montoTotal = precioNuevo;
         if ((m.partner || m.partnerSlugCrudo || m.partnerAsesor) && m.tipoOperacion !== 'compraventa') {
-          const _pctH = parseFloat(m.comisionInmobiliariaPct) > 0 ? parseFloat(m.comisionInmobiliariaPct) : COMISION_ASESOR_DEFAULT;
-          m.comisionInmobiliariaPct = _pctH;
-          m.comisionInmobiliariaPagar = Math.round(precioNuevo * _pctH / 100);
+          m.comisionInmobiliariaPct = COMISION_ASESOR_DEFAULT;
+          m.comisionInmobiliariaPagar = Math.round(precioNuevo * COMISION_ASESOR_DEFAULT / 100);
         }
         try {
           await redisCall('DEL', `talo:pago:${mudanzaId}:saldo`);
@@ -2250,12 +2258,11 @@ module.exports = async function handler(req, res) {
       m.montoTotal = m.ajustePrecio.montoNuevo;
 
       // La comisión del asesor se calcula sobre el precio final: si el precio
-      // cambió, el monto a pagarle también. El porcentaje es el snapshot que se
-      // fijó al publicar y no se toca.
+      // cambió, el monto a pagarle también. El % es 5% flat siempre (ver nota
+      // "5% flat" en action=aceptar).
       if ((m.partner || m.partnerSlugCrudo || m.partnerAsesor) && m.tipoOperacion !== 'compraventa') {
-        const _pctAj = parseFloat(m.comisionInmobiliariaPct) > 0 ? parseFloat(m.comisionInmobiliariaPct) : COMISION_ASESOR_DEFAULT;
-        m.comisionInmobiliariaPct = _pctAj;
-        m.comisionInmobiliariaPagar = Math.round((parseFloat(m.ajustePrecio.montoNuevo) || 0) * _pctAj / 100);
+        m.comisionInmobiliariaPct = COMISION_ASESOR_DEFAULT;
+        m.comisionInmobiliariaPagar = Math.round((parseFloat(m.ajustePrecio.montoNuevo) || 0) * COMISION_ASESOR_DEFAULT / 100);
       }
 
       // Invalidar el pago de transferencia ya generado: se había creado con el
@@ -4217,7 +4224,10 @@ async function notificarMudanceros(mudanza) {
   // Bloque "Origen del lead" en el cuerpo del mail al admin.
   // Mudafy: muestra asesor + propiedad (info de CRM que viene en el URL).
   // Inmobiliaria nueva: muestra el % de comisión a liquidar.
-  const comisionInmoPct = parseFloat(mudanza.comisionInmobiliariaPct) || 0;
+  // Compraventa no paga comisión (el cliente recibe el regalo en su lugar) —
+  // sin este gate, el mail mostraba "5% del precio final" para leads que en
+  // realidad no generan ninguna comisión a liquidar.
+  const comisionInmoPct = (mudanza.tipoOperacion !== 'compraventa') ? (parseFloat(mudanza.comisionInmobiliariaPct) || 0) : 0;
   const bloqueOrigenAdmin = partnerInfo
     ? `<div style="font-size:14px;color:#E85555;font-weight:700;letter-spacing:1.5px;margin:8px 0 8px">🏠 ORIGEN DEL LEAD — ${partnerInfo.nombre.toUpperCase()}</div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:18px;background:#FFF5F5;border-radius:8px;overflow:hidden">
@@ -5459,9 +5469,14 @@ async function notificarClienteMudanzaIniciada(mudanza) {
 // Por eso el mail de cierre es distinto según el tipo de operación: mandarle
 // "tu comisión es $0" a alguien de compraventa sería un error.
 
-// Comisión por defecto del canal. La config de cada inmobiliaria en Redis puede
-// pisarla (mudanza.comisionInmobiliariaPct), pero si no está cargada el asesor
-// cobra igual: antes quedaba en 0 y no se le liquidaba nada.
+// Comisión única para TODO canal (decisión 2026-08-07): 5% flat, sea el
+// referido de un asesor independiente, de un asesor vinculado a una
+// inmobiliaria real, o de la inmobiliaria directamente sin asesor puntual.
+// El campo "Comisión por viaje (%)" que se puede cargar en la ficha de una
+// inmobiliaria (admin.html → Inmobiliarias) YA NO afecta este cálculo — las
+// inmobiliarias, como entidad, cobran 0%; el que cobra siempre es el 5%
+// puesto acá. Antes cada inmobiliaria podía tener su propio % cargado y eso
+// pisaba este default.
 const COMISION_ASESOR_DEFAULT = 5;
 
 const CLAVES_ASESOR = {
@@ -5712,9 +5727,7 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
           : `<div style="font-size:16px;color:#475569;line-height:1.7">Esta operación no alcanza el monto mínimo para el regalo. Nos ponemos en contacto con tu cliente si corresponde algún beneficio.</div>`}
       </div>`;
   } else {
-    const pct = parseFloat(mudanza.comisionInmobiliariaPct) > 0
-      ? parseFloat(mudanza.comisionInmobiliariaPct)
-      : COMISION_ASESOR_DEFAULT;
+    const pct = COMISION_ASESOR_DEFAULT; // 5% flat siempre, ver nota en action=aceptar
     const monto = Math.round(precio * pct / 100);
     bloque = `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:12px;padding:20px 22px;margin:20px 0">
         <div style="font-size:14px;color:#166534;font-weight:700;letter-spacing:1.5px;margin-bottom:14px">💰 TU COMISIÓN</div>
