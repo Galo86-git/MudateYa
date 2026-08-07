@@ -5717,6 +5717,7 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   let bloque;
+  let detalleWA; // versión corta del mismo dato, para la {{3}} de la plantilla de WhatsApp
   if (esCompraventa) {
     const regalo = regaloCompraventa(precio);
     bloque = `<div style="background:#F0FFF6;border:1px solid #BBF7D0;border-radius:12px;padding:20px 22px;margin:20px 0">
@@ -5726,6 +5727,9 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
              <div style="font-size:16px;color:#475569;line-height:1.7">Por ser una operación de compraventa, tu cliente recibe este beneficio sin costo. Nos contactamos con él para coordinarlo.</div>`
           : `<div style="font-size:16px;color:#475569;line-height:1.7">Esta operación no alcanza el monto mínimo para el regalo. Nos ponemos en contacto con tu cliente si corresponde algún beneficio.</div>`}
       </div>`;
+    detalleWA = regalo
+      ? `Tu cliente recibe: ${regalo}. Nos contactamos con él para coordinarlo.`
+      : 'Esta operación no alcanza el monto mínimo para el regalo.';
   } else {
     const pct = COMISION_ASESOR_DEFAULT; // 5% flat siempre, ver nota en action=aceptar
     const monto = Math.round(precio * pct / 100);
@@ -5745,6 +5749,7 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
         </table>
         <div style="font-size:15px;color:#475569;margin-top:14px;line-height:1.6">Se te acredita el día hábil 10 de ${nombreMesQueViene}, junto con el resto de lo que generes este mes.</div>
       </div>`;
+    detalleWA = `Tu comisión (${pct}%): $${monto.toLocaleString('es-AR')}. Se acredita el día hábil 10 de ${nombreMesQueViene}.`;
   }
 
   await resend.emails.send({
@@ -5765,6 +5770,23 @@ async function notificarAsesorMudanzaCompletada(mudanza) {
       ${_asesorPie(mudanza)}
     </div>`
   });
+
+  // También por WhatsApp (a pedido — antes esta notificación era mail-only
+  // como el resto de los avisos al asesor, pero "mudanza completada" es el
+  // aviso que más le importa cobrar/enterarse rápido). Reusa la plantilla
+  // asesor_mudanza_completada_v2 (ya creada y enviada a Meta, ver
+  // plantillas-emi.js) — su {{3}} es texto libre, sirve para comisión o regalo.
+  if (a.telefono) {
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      const textoLibre = `Hola ${a.nombre || ''}, la mudanza de ${mudanza.clienteNombre || 'tu cliente'} se completó 🏁 ${detalleWA}`;
+      await enviarPlantilla(
+        a.telefono, 'asesor_mudanza_completada_v2',
+        { 1: a.nombre || '', 2: mudanza.clienteNombre || 'tu cliente', 3: detalleWA },
+        textoLibre
+      );
+    } catch (e) { console.warn('WhatsApp asesor mudanza completada:', e.message); }
+  }
 }
 
 // ── 4. El cliente canceló la mudanza ────────────────────────────────
