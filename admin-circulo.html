@@ -189,12 +189,12 @@ window.onload = async function(){
   }catch(e){ console.error('config:', e); }
 
   var saved = sessionStorage.getItem('adminUser');
-  if(saved){
+  if(saved && sessionStorage.getItem('adminToken')){
     try{
       var parsed = JSON.parse(saved);
-      if(parsed._expires && Date.now() > parsed._expires){ sessionStorage.removeItem('adminUser'); }
+      if(parsed._expires && Date.now() > parsed._expires){ sessionStorage.removeItem('adminUser'); sessionStorage.removeItem('adminToken'); }
       else if(isAuthorized(parsed.email)){ currentUser = parsed; showApp(); return; }
-    }catch(e){ sessionStorage.removeItem('adminUser'); }
+    }catch(e){ sessionStorage.removeItem('adminUser'); sessionStorage.removeItem('adminToken'); }
   }
 
   if(GOOGLE_CLIENT_ID && window.google){
@@ -203,21 +203,45 @@ window.onload = async function(){
   }
 };
 
-function handleCredential(response){
+async function handleCredential(response){
   var payload = JSON.parse(atob(response.credential.split('.')[1]));
   if(!isAuthorized(payload.email)){ alert('Tu email (' + payload.email + ') no tiene acceso.'); return; }
+  // El chequeo de arriba es solo UX. El gate real lo hace /api/admin-sesion,
+  // que valida el id_token contra Google y recién ahí emite el token firmado
+  // que circulo.js exige ahora en guardar-pieza/cambiar-estado/eliminar --
+  // antes esas tres acciones no pedían ningún token, cualquiera que
+  // encontrara la URL podía editar o borrar el catálogo entero sin login.
+  var r, d;
+  try{
+    r = await fetch('/api/admin-sesion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ googleIdToken: response.credential })
+    });
+    d = await r.json();
+  }catch(e){
+    alert('No se pudo conectar con el servidor. Probá de nuevo.');
+    return;
+  }
+  if(!r.ok || !d || !d.token){
+    alert('⚠ ' + ((d && d.error) || 'No se pudo iniciar sesión.'));
+    return;
+  }
+  sessionStorage.setItem('adminToken', d.token);
   currentUser = { name: payload.name, email: payload.email };
-  var s = { name: currentUser.name, email: currentUser.email, _expires: Date.now() + 24*60*60*1000 };
+  var s = { name: currentUser.name, email: currentUser.email, _expires: Date.now() + (d.expiraEn || 12*60*60*1000) };
   sessionStorage.setItem('adminUser', JSON.stringify(s));
   showApp();
 }
+
+function ADMTK(){ return sessionStorage.getItem('adminToken') || ''; }
 
 function isAuthorized(email){
   if(!ADMIN_EMAILS || ADMIN_EMAILS.length === 0) return false;
   return ADMIN_EMAILS.indexOf(String(email).toLowerCase().trim()) !== -1;
 }
 
-function logout(){ sessionStorage.removeItem('adminUser'); window.location.reload(); }
+function logout(){ sessionStorage.removeItem('adminUser'); sessionStorage.removeItem('adminToken'); window.location.reload(); }
 
 function showApp(){
   document.getElementById('login').style.display = 'none';
@@ -336,7 +360,7 @@ function guardarPieza(){
   };
 
   fetch('/api/circulo?action=guardar-pieza', {
-    method:'POST', headers:{ 'Content-Type':'application/json' },
+    method:'POST', headers:{ 'Content-Type':'application/json', 'x-admin-token': ADMTK() },
     body: JSON.stringify(body)
   })
   .then(function(r){ return r.json(); })
@@ -411,7 +435,7 @@ function botonEstado(id, estado, txt, actual){
 
 function cambiarEstado(id, estado){
   fetch('/api/circulo?action=cambiar-estado', {
-    method:'POST', headers:{ 'Content-Type':'application/json' },
+    method:'POST', headers:{ 'Content-Type':'application/json', 'x-admin-token': ADMTK() },
     body: JSON.stringify({ id: id, estado: estado })
   })
   .then(function(r){ return r.json(); })
@@ -422,7 +446,7 @@ function cambiarEstado(id, estado){
 function eliminarPieza(id){
   if(!confirm('¿Eliminar esta pieza?')) return;
   fetch('/api/circulo?action=eliminar', {
-    method:'POST', headers:{ 'Content-Type':'application/json' },
+    method:'POST', headers:{ 'Content-Type':'application/json', 'x-admin-token': ADMTK() },
     body: JSON.stringify({ id: id })
   })
   .then(function(r){ return r.json(); })

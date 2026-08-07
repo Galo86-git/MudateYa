@@ -2,6 +2,8 @@
 // Catálogo de El Círculo: guardar pieza, listar drop, cambiar estado, eliminar.
 // Redis vía REST (mismo patrón que el resto de la app).
 
+var { esAdmin } = require('./_auth');
+
 // ── REDIS ────────────────────────────────────────────────────────
 async function redisCall(method) {
   var extra = Array.prototype.slice.call(arguments, 1);
@@ -53,13 +55,15 @@ module.exports = async function handler(req, res) {
   var action = req.query.action;
 
   try {
-    // ── GUARDAR PIEZA ──────────────────────────────────────────
+    // ── GUARDAR PIEZA (admin) ───────────────────────────────────
     if (action === 'guardar-pieza' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       var p = req.body || {};
       if (!p.nombre || !p.categoria) return res.status(400).json({ error: 'Faltan nombre o categoría' });
 
       var id = 'p' + Date.now().toString(36) + Math.random().toString(16).slice(2, 5);
       var drop = p.drop || dropActual();
+      var precioLimpio = Math.max(0, Number(p.precioUSD) || 0);
       var pieza = {
         id: id,
         nombre: p.nombre,
@@ -67,8 +71,8 @@ module.exports = async function handler(req, res) {
         condicion: p.condicion || '',
         material: p.material || '',
         descripcion: p.descripcion || '',
-        precioUSD: Number(p.precioUSD) || 0,
-        banda: bandaDeUSD(p.precioUSD),
+        precioUSD: precioLimpio,
+        banda: bandaDeUSD(precioLimpio),
         fotos: Array.isArray(p.fotos) ? p.fotos : [],
         estado: 'disponible',
         drop: drop,
@@ -94,8 +98,9 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ drop: dropQ, piezas: piezas });
     }
 
-    // ── CAMBIAR ESTADO ─────────────────────────────────────────
+    // ── CAMBIAR ESTADO (admin) ──────────────────────────────────
     if (action === 'cambiar-estado' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       var body = req.body || {};
       if (!body.id || ESTADOS.indexOf(body.estado) === -1) {
         return res.status(400).json({ error: 'Datos inválidos' });
@@ -107,8 +112,9 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, pieza: pieza2 });
     }
 
-    // ── ELIMINAR (para pruebas) ────────────────────────────────
+    // ── ELIMINAR (admin) ─────────────────────────────────────────
     if (action === 'eliminar' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
       var body2 = req.body || {};
       if (!body2.id) return res.status(400).json({ error: 'Falta id' });
       var pieza3 = await getJSON('circulo:pieza:' + body2.id);

@@ -857,6 +857,17 @@ function confirmarAccion(opts) {
 var currentUser = null;
 var mudanzasData = [];
 
+// Headers para acciones que operan sobre datos del cliente logueado. El
+// backend exige x-session-token en estas acciones (ver cotizaciones.js) --
+// sin esto, cualquiera que supiera el email de un cliente podía leer/borrar/
+// aceptar/calificar sus mudanzas sin haber iniciado sesión nunca.
+function authHeaders(extra) {
+  var h = { 'Content-Type': 'application/json' };
+  if (currentUser && currentUser.sessionToken) h['x-session-token'] = currentUser.sessionToken;
+  if (extra) for (var k in extra) h[k] = extra[k];
+  return h;
+}
+
 window.onload = async function(){
   try{
     var r = await fetch('/api/admin-config');
@@ -898,9 +909,25 @@ window.onload = async function(){
   }, 600);
 };
 
-function handleCredential(response){
+async function handleCredential(response){
   var payload = JSON.parse(atob(response.credential.split('.')[1]));
   currentUser = {name:payload.name, email:payload.email, picture:payload.picture};
+  // El backend re-valida este mismo id_token de Google contra la API de
+  // Google (audience + email) y recién ahí emite un session token propio,
+  // random, guardado en Redis -- es lo que habilita las acciones del cliente
+  // (ver/borrar/aceptar/calificar su mudanza) sin que alcance con saber su
+  // email. Si esto falla, seguimos igual mostrando la app (no bloqueamos el
+  // login por esto), pero las acciones que requieren sesión van a fallar
+  // hasta que se resuelva -- mejor eso que dejar al cliente afuera.
+  try {
+    var rs = await fetch('/api/cotizaciones?action=crear-sesion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentUser.email, googleIdToken: response.credential, rol: 'cliente' })
+    });
+    var ds = await rs.json();
+    if (ds && ds.sessionToken) currentUser.sessionToken = ds.sessionToken;
+  } catch(e) { console.warn('No se pudo crear la sesión:', e.message); }
   var _cs = {...currentUser, _expires: Date.now()+604800000};
   sessionStorage.setItem('clienteUser', JSON.stringify(_cs));
   sessionStorage.setItem('googleUser', JSON.stringify(_cs));
@@ -953,7 +980,7 @@ function guardarCelular() {
   // Actualizar en Redis todas las mudanzas del cliente
   fetch('/api/cotizaciones?action=update-wa', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: authHeaders(),
     body: JSON.stringify({ email: currentUser.email, clienteWA: val })
   }).catch(function(e){ console.warn('Error guardando WA:', e.message); });
   var modal = document.getElementById('celModal');
@@ -1020,7 +1047,7 @@ async function loadMudanzas(silencioso){
   try{
     var controller = new AbortController();
     var timeout = setTimeout(function(){ controller.abort(); }, 8000);
-    var r = await fetch('/api/cotizaciones?action=mis-mudanzas&email='+encodeURIComponent(currentUser.email), { signal: controller.signal });
+    var r = await fetch('/api/cotizaciones?action=mis-mudanzas&email='+encodeURIComponent(currentUser.email), { signal: controller.signal, headers: authHeaders() });
     clearTimeout(timeout);
     var d = await r.json();
     nuevas = d.mudanzas || [];
@@ -1730,16 +1757,16 @@ function renderMudanzaDetail(m) {
       })()
     + cotzHtml
     + (m.cotizacionAceptada ? '<div class="mudanza-mudancero">'
-        + '<div class="mud-avatar">'+m.cotizacionAceptada.mudanceroNombre.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)+'</div>'
+        + '<div class="mud-avatar">'+(m.cotizacionAceptada.mudanceroNombre||'').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)+'</div>'
         + '<div style="flex:1"><div class="mud-name">'+esc(m.cotizacionAceptada.mudanceroNombre)+'</div>'
         + (m.anticipoPagado
-            ? '<div class="mud-tel">📱 '+(m.cotizacionAceptada.mudanceroTel||'Sin teléfono registrado')+'</div></div>'
+            ? '<div class="mud-tel">📱 '+esc(m.cotizacionAceptada.mudanceroTel||'Sin teléfono registrado')+'</div></div>'
               + (m.cotizacionAceptada.mudanceroTel
                   ? '<a href="https://wa.me/54'+String(m.cotizacionAceptada.mudanceroTel).replace(/\D/g,'')+'?text=Hola+'+encodeURIComponent((m.cotizacionAceptada.mudanceroNombre||'').split(' ')[0])+'%2C+te+contacto+por+mi+mudanza+aceptada+en+MudateYa+%28'+encodeURIComponent(m.desde)+'+a+'+encodeURIComponent(m.hasta)+'%29+%F0%9F%9A%9B" target="_blank" rel="noopener" class="btn btn-green" style="margin-left:auto;font-size:12px;padding:8px 16px;flex-shrink:0;white-space:nowrap">💬 WhatsApp</a>'
                   : '<span style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:auto;text-align:right">Te contactará<br>por email</span>')
             : '</div><span style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:auto;text-align:right">Disponible<br>tras el pago</span>')
         + '</div>' : '')
-    + (m.extras ? '<div style="margin-bottom:8px"><span class="meta-tag">📦 '+m.extras+'</span></div>' : '')
+    + (m.extras ? '<div style="margin-bottom:8px"><span class="meta-tag">📦 '+esc(m.extras)+'</span></div>' : '')
     + (function(){
         var aj = m.ajustePrecio;
         if (!aj) return '';
@@ -1949,7 +1976,7 @@ async function eliminarMudanza(mudanzaId, btn) {
   try {
     var r = await fetch('/api/cotizaciones?action=eliminar', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: authHeaders(),
       body: JSON.stringify({ mudanzaId: mudanzaId, clienteEmail: currentUser.email })
     });
     var d = await r.json();
@@ -2002,7 +2029,7 @@ function verPresupuesto(mudanzaId, cotizacionId) {
   document.getElementById('ppto-rows').innerHTML = rows.map(function(row){
     return '<div class="ppto-row">'
       + '<span class="ppto-row-label">'+row[0]+'</span>'
-      + '<span class="ppto-row-val">'+row[2]+' '+row[1]+'</span>'
+      + '<span class="ppto-row-val">'+row[2]+' '+esc(row[1])+'</span>'
       + '</div>';
   }).join('');
 
@@ -2032,7 +2059,7 @@ async function aceptarCotizacion(mudanzaId, cotizacionId, propuestaNivel){
   // Buscar datos para el mensaje de confirmación
   var mPre = mudanzasData.find(function(x){ return x.id===mudanzaId; });
   var cPre = mPre && (mPre.cotizaciones || []).find(function(x){ return x.id===cotizacionId; });
-  var nombreMud = (cPre && (cPre.mudanceroNombre || cPre.empresa)) || 'este mudancero';
+  var nombreMud = esc((cPre && (cPre.mudanceroNombre || cPre.empresa)) || 'este mudancero');
   // Determinar precio y nombre del pack elegido
   var precioMud = '';
   var packNombre = '';
@@ -2067,11 +2094,11 @@ async function aceptarCotizacion(mudanzaId, cotizacionId, propuestaNivel){
   if (!ok) return;
   if (btn) { btn.disabled = true; btn.textContent = 'Procesando…'; }
   try{
-    var body = { mudanzaId: mudanzaId, cotizacionId: cotizacionId };
+    var body = { mudanzaId: mudanzaId, cotizacionId: cotizacionId, clienteEmail: currentUser.email };
     if (propuestaNivel) body.propuestaNivel = propuestaNivel;
     var r = await fetch('/api/cotizaciones?action=aceptar', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: authHeaders(),
       body: JSON.stringify(body)
     });
     var d = await r.json();
@@ -2100,7 +2127,7 @@ async function republicarAbierto(mudanzaId, btn){
   try {
     var r = await fetch('/api/cotizaciones?action=republicar-abierto', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: authHeaders(),
       body: JSON.stringify({ mudanzaId: mudanzaId, clienteEmail: currentUser.email })
     });
     var d = await r.json();
@@ -2319,7 +2346,7 @@ async function pagarAnticipo(m) {
   modal.innerHTML = '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:22px;padding:2rem 1.6rem;max-width:400px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.6)">'
     +'<div style="font-size:2rem;text-align:center;margin-bottom:12px">💳</div>'
     +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--text);margin-bottom:6px;text-align:center">Confirmá el anticipo</div>'
-    +'<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.4rem;text-align:center">Para reservar a <strong style="color:#0F1923">'+cot.mudanceroNombre+'</strong> necesitás abonar el 50% de anticipo.</div>'
+    +'<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.4rem;text-align:center">Para reservar a <strong style="color:#0F1923">'+esc(cot.mudanceroNombre)+'</strong> necesitás abonar el 50% de anticipo.</div>'
     +'<div style="background:var(--blue-light);border:1px solid rgba(26,111,255,.2);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.2rem">'
     +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span>Total mudanza</span><span>$'+precio.toLocaleString('es-AR')+'</span></div>'
     +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span>Anticipo (50%)</span><span style="color:var(--blue);font-weight:700">$'+anticipo.toLocaleString('es-AR')+'</span></div>'
@@ -2585,7 +2612,7 @@ async function guardarCalificacion(mudanzaId){
   try{
     var r = await fetch('/api/cotizaciones?action=calificar', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers: authHeaders(),
       body: JSON.stringify({ mudanzaId: mudanzaId, estrellas: calStars, comentario: comentario, clienteEmail: currentUser.email })
     });
     var d = await r.json();
@@ -2638,7 +2665,7 @@ async function aceptarAjusteCli(mudanzaId, btn) {
   try {
     var r = await fetch('/api/cotizaciones?action=aceptar-ajuste', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: authHeaders(),
       body: JSON.stringify({ mudanzaId: mudanzaId, clienteEmail: currentUser.email })
     });
     var d = await r.json();
@@ -2666,7 +2693,7 @@ async function rechazarAjusteCli(mudanzaId, btn) {
   try {
     var r = await fetch('/api/cotizaciones?action=rechazar-ajuste', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: authHeaders(),
       body: JSON.stringify({ mudanzaId: mudanzaId, clienteEmail: currentUser.email })
     });
     var d = await r.json();

@@ -1675,7 +1675,7 @@ function renderDashboard(){
     seccion.style.display = '';
     document.getElementById('dashTransferList').innerHTML = '<table><thead><tr><th>Cliente</th><th>Mudancero</th><th>Monto</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>'
       + pendientesTransfer.slice(0,3).map(function(t){
-          return '<tr><td class="td-name">'+( t.clienteNombre||'—')+'</td><td>'+(t.mudancero||'—')+'</td><td class="td-mono" style="color:#F59E0B">'+(t.monto||'—')+'</td><td class="td-mono">'+(t.fecha||'—')+'</td><td><button class="btn-sm primary" onclick="accionTransfer(\''+t.id+'\',\'confirmar\')">✓ Confirmar</button></td></tr>';
+          return '<tr><td class="td-name">'+esc(t.clienteNombre||'—')+'</td><td>'+esc(t.mudancero||'—')+'</td><td class="td-mono" style="color:#F59E0B">'+esc(t.monto||'—')+'</td><td class="td-mono">'+esc(t.fecha||'—')+'</td><td><button class="btn-sm primary" onclick="accionTransfer(\''+esc(t.id)+'\',\'confirmar\')">✓ Confirmar</button></td></tr>';
         }).join('')
       + '</tbody></table>';
   } else {
@@ -1691,7 +1691,7 @@ function renderDashboard(){
     ? '<div class="empty"><div class="empty-icon">✓</div>Sin pendientes</div>'
     : '<table><thead><tr><th>Nombre</th><th>Zona</th><th>Vehículo</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>'
       + pending.map(function(m){
-          return '<tr><td class="td-name">'+(m[1]||'—')+'</td><td>'+(m[5]||'—')+'</td><td>'+(m[8]||'—')+'</td><td class="td-mono">'+(m[0]||'—')+'</td><td><button class="btn-sm primary" onclick="openModal('+mudancerosData.indexOf(m)+')">Ver</button></td></tr>';
+          return '<tr><td class="td-name">'+esc(m[1]||'—')+'</td><td>'+esc(m[5]||'—')+'</td><td>'+esc(m[8]||'—')+'</td><td class="td-mono">'+esc(m[0]||'—')+'</td><td><button class="btn-sm primary" onclick="openModal('+mudancerosData.indexOf(m)+')">Ver</button></td></tr>';
         }).join('')
       + '</tbody></table>';
 
@@ -1728,7 +1728,7 @@ function renderDashboard(){
     ? '<div class="empty"><div class="empty-icon">💳</div>Sin pagos aún</div>'
     : '<table><thead><tr><th>Mudancero</th><th>Método</th><th>Monto</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>'
       + todosLosPagos.map(function(p){
-          return '<tr><td class="td-name">'+p.mudancero+'</td><td class="td-mono">'+p.metodo+'</td><td class="td-mono">$'+p.monto.toLocaleString('es-AR')+'</td><td class="td-mono">'+p.fecha+'</td><td><span class="badge paid">Pagado</span></td></tr>';
+          return '<tr><td class="td-name">'+esc(p.mudancero)+'</td><td class="td-mono">'+esc(p.metodo)+'</td><td class="td-mono">$'+p.monto.toLocaleString('es-AR')+'</td><td class="td-mono">'+esc(p.fecha)+'</td><td><span class="badge paid">Pagado</span></td></tr>';
         }).join('')
       + '</tbody></table>';
 }
@@ -1882,8 +1882,8 @@ function filterMudanceros(){
           return '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">'
             +   '<div style="min-width:0;flex:1">'
-            +     '<div style="font-size:14px;font-weight:600;color:#0F1923">'+(m[1]||'—')+'</div>'
-            +     '<div style="font-size:11px;color:#64748B;font-family:var(--mono)">'+(m[4]||'')+'</div>'
+            +     '<div style="font-size:14px;font-weight:600;color:#0F1923">'+esc(m[1]||'—')+'</div>'
+            +     '<div style="font-size:11px;color:#64748B;font-family:var(--mono)">'+esc(m[4]||'')+'</div>'
             +   '</div>'
             +   '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
             +     preReg
@@ -1896,10 +1896,10 @@ function filterMudanceros(){
             + '</div>'
             + '<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="font-size:10px;color:#64748B;font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px">Perfil</span>'+perfilCell(m)+'</div>'
             + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">'
-            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Zona</div><div style="font-size:12px;color:#475569">'+(m[5]||'—')+'</div></div>'
-            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Vehículo</div><div style="font-size:12px;color:#475569">'+(m[8]||'—')+'</div></div>'
-            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Teléfono</div><div style="font-size:12px;color:#475569">'+(m[3]||'—')+'</div></div>'
-            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Empresa</div><div style="font-size:12px;color:#475569">'+(m[2]||'Independiente')+'</div></div>'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Zona</div><div style="font-size:12px;color:#475569">'+esc(m[5]||'—')+'</div></div>'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Vehículo</div><div style="font-size:12px;color:#475569">'+esc(m[8]||'—')+'</div></div>'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Teléfono</div><div style="font-size:12px;color:#475569">'+esc(m[3]||'—')+'</div></div>'
+            +   '<div><div style="font-size:9px;color:#94A3B8;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px">Empresa</div><div style="font-size:12px;color:#475569">'+esc(m[2]||'Independiente')+'</div></div>'
             + '</div>'
             + '<button class="btn-sm primary" style="width:100%;padding:10px;border-radius:8px;font-size:13px" onclick="openModal('+idx+')">Ver perfil completo →</button>'
             + '</div>';
@@ -1921,10 +1921,10 @@ function filterMudanceros(){
           } catch(e) { fechaAltaCell = '<span style="color:#94A3B8;font-size:11px">—</span>'; }
           var preReg = m[26] === 'pre-registrado' ? '<span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:4px" title="Pre-registrado: solo cargó datos básicos, falta completar perfil">⏳ Pre-reg</span>' : '';
           return '<tr>'
-            + '<td class="td-name">'+(m[1]||'—')+'<br><span class="td-mono" style="font-size:10px;color:#94A3B8">'+(m[3]||'')+'</span></td>'
+            + '<td class="td-name">'+esc(m[1]||'—')+'<br><span class="td-mono" style="font-size:10px;color:#94A3B8">'+esc(m[3]||'')+'</span></td>'
             + '<td>'+preReg+'<span class="badge '+est.toLowerCase()+'">'+est+'</span></td>'
             + '<td>'+perfilCell(m)+'</td>'
-            + '<td>'+(m[5]||'—')+'</td>'
+            + '<td>'+esc(m[5]||'—')+'</td>'
             + '<td>'+pillTiempoRel(m[22])+'</td>'
             + '<td>'+fechaAltaCell+'</td>'
             + '<td><button class="btn-sm" onclick="openModal('+idx+')">Ver →</button></td>'
@@ -1941,23 +1941,23 @@ function renderTransferencias(){
     : '<table><thead><tr><th>Cliente</th><th>Pedido</th><th>Tramo</th><th>Monto</th><th>Referencia</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'
       + transferenciasData.map(function(t){
           return '<tr>'
-            +'<td class="td-name">'+(t.clienteNombre||'—')+'<br><span class="td-mono" style="font-size:10px">'+(t.clienteEmail||'')+'</span></td>'
-            +'<td class="td-mono" style="font-size:11px">'+(t.mudanzaId||t.mudancero||'—')+'</td>'
+            +'<td class="td-name">'+esc(t.clienteNombre||'—')+'<br><span class="td-mono" style="font-size:10px">'+esc(t.clienteEmail||'')+'</span></td>'
+            +'<td class="td-mono" style="font-size:11px">'+esc(t.mudanzaId||t.mudancero||'—')+'</td>'
         +'<td>'+(t.tipoPago==='anticipo'?'Anticipo':t.tipoPago==='saldo'?'Saldo final':'—')+'</td>'
         +'<td class="td-mono" style="font-weight:600;color:'+(t.coincide===false?'#DC2626':'#F59E0B')+'">'
-          +(t.montoDeclarado!=null ? '$'+Number(t.montoDeclarado).toLocaleString('es-AR') : (t.monto||'—'))
+          +(t.montoDeclarado!=null ? '$'+Number(t.montoDeclarado).toLocaleString('es-AR') : esc(t.monto||'—'))
           +(t.coincide===false ? '<br><span style="font-size:10px;color:#DC2626">esperado $'+Number(t.montoEsperado||0).toLocaleString('es-AR')+'</span>' : '')
         +'</td>'
-        +'<td class="td-mono" style="font-size:11px">'+(t.referencia||'—')+'</td>'
-        +'<td class="td-mono" style="font-size:11px">'+(t.fechaDeclarada? new Date(t.fechaDeclarada).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Argentina/Buenos_Aires'}) : (t.fecha||'—'))+'</td>'
+        +'<td class="td-mono" style="font-size:11px">'+esc(t.referencia||'—')+'</td>'
+        +'<td class="td-mono" style="font-size:11px">'+(t.fechaDeclarada? new Date(t.fechaDeclarada).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Argentina/Buenos_Aires'}) : esc(t.fecha||'—'))+'</td>'
             +'<td><span class="badge '+(t.estado==='confirmada'?'approved':t.estado==='rechazada'?'rejected':'pending')+'">'+(t.estado==='confirmada'?'Confirmada':t.estado==='rechazada'?'Rechazada':'Pendiente')+'</span></td>'
-            +'<td>'+(t.estado==='pendiente'?'<div style="display:flex;gap:6px"><button class="btn-sm danger" onclick="accionTransfer(\''+t.id+'\',\'rechazar\')">✗</button><button class="btn-sm primary" onclick="accionTransfer(\''+t.id+'\',\'confirmar\')">✓ Confirmar</button></div>':'—')+'</td>'
+            +'<td>'+(t.estado==='pendiente'?'<div style="display:flex;gap:6px"><button class="btn-sm danger" onclick="accionTransfer(\''+esc(t.id)+'\',\'rechazar\',this)">✗</button><button class="btn-sm primary" onclick="accionTransfer(\''+esc(t.id)+'\',\'confirmar\',this)">✓ Confirmar</button></div>':'—')+'</td>'
             +'</tr>';
         }).join('')
       + '</tbody></table>';
 }
 
-async function accionTransfer(id, accion){
+async function accionTransfer(id, accion, btn){
   // Confirmar es irreversible: marca el pago, manda los mails al mudancero y
   // arranca el conteo de 15 dias habiles para liquidarle. Se pide confirmacion
   // explicita para que no se marque de un click por error.
@@ -1970,13 +1970,21 @@ async function accionTransfer(id, accion){
             + '\nEsto marca el pago y no se puede deshacer.';
     if(!confirm(msg)) return;
   }
-  var btns = document.querySelectorAll('button');
+  // Deshabilitar los dos botones de esta fila (confirmar/rechazar) mientras
+  // el fetch está en vuelo -- sin esto, un doble click alcanzaba a mandar dos
+  // POST de una acción irreversible antes de que el primero terminara.
+  var fila = btn ? btn.closest('td') : null;
+  var botonesFila = fila ? fila.querySelectorAll('button') : [];
+  botonesFila.forEach(function(b){ b.disabled = true; });
   try{
     var r = await fetch('/api/transferencias', { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':ADMTK()}, body:JSON.stringify({ id, accion }) });
     var d = await r.json();
     if(d.error) throw new Error(d.error);
     await loadTransferencias();
-  }catch(e){ alert('Error: ' + e.message); }
+  }catch(e){
+    botonesFila.forEach(function(b){ b.disabled = false; });
+    alert('Error: ' + e.message);
+  }
 }
 
 // ── PAGOS PAGE ─────────────────────────────────────────────────────────────
@@ -2145,7 +2153,7 @@ function renderLiquidaciones(){
               + (p.tipoOperacion === 'compraventa'
                   ? '<span style="color:var(--text3)" title="Compraventa: el cliente recibe el regalo">🎁</span>'
                   : (p.comisionAsesor > 0
-                      ? '<span style="color:#B45309;font-weight:600" title="Comisi&oacute;n del asesor '+(p.asesorCodigo||'')+'">-$'+Number(p.comisionAsesor).toLocaleString('es-AR')
+                      ? '<span style="color:#B45309;font-weight:600" title="Comisi&oacute;n del asesor '+esc(p.asesorCodigo||'')+'">-$'+Number(p.comisionAsesor).toLocaleString('es-AR')
                         + (p.comisionAsesorPct ? ' <span style="color:var(--text3);font-weight:400">('+p.comisionAsesorPct+'%)</span>' : '') + '</span>'
                       : '<span style="color:var(--text3)">—</span>'))
             +'</td>'
@@ -2481,7 +2489,7 @@ function renderZonas(){
   function renderFilas(entries, areaLabel, areaColor) {
     return entries.map(function(e){
       return '<tr>'
-        +'<td class="td-name">'+e[0]+'</td>'
+        +'<td class="td-name">'+esc(e[0])+'</td>'
         +'<td class="td-mono" style="color:'+areaColor+';font-weight:600">'+areaLabel+'</td>'
         +'<td class="td-mono">'+e[1]+'</td>'
         +'<td class="td-mono">'+pct(e[1])+'</td>'
@@ -2552,11 +2560,17 @@ function fechaCompleta(iso){
 
 async function openModal(idx){
   currentMudanceroIdx = idx;
+  // Token de esta apertura del modal: si el admin hace click en "Ver" de otro
+  // mudancero antes de que resuelva este fetch, el modal.dataset lo delata y
+  // esta respuesta (obsoleta) no pisa el contenido del que se está mostrando ahora.
+  var miToken = String(Date.now()) + Math.random();
+  var modalEl = document.getElementById('mudanceroModal');
+  modalEl.dataset.loadToken = miToken;
   var m = mudancerosData[idx];
   var email = m[4];
   document.getElementById('modalNombre').textContent = m[1] || 'Mudancero';
   document.getElementById('modalContent').innerHTML = '<div style="text-align:center;padding:20px;color:#94A3B8;font-size:13px">Cargando datos…</div>';
-  document.getElementById('mudanceroModal').classList.add('open');
+  modalEl.classList.add('open');
 
   // Cargar perfil completo desde Redis
   var perfil = null;
@@ -2566,7 +2580,12 @@ async function openModal(idx){
     if (d.perfil) perfil = d.perfil;
   } catch(e) {}
 
-  // Datos básicos
+  // Si mientras esperábamos el fetch se abrió otro mudancero, esta respuesta
+  // ya es vieja — no pisar lo que se está mostrando ahora.
+  if (modalEl.dataset.loadToken !== miToken) return;
+
+  // Datos básicos — todo lo que carga el propio mudancero pasa por esc(),
+  // se muestra en el primer modal que ve el admin al revisar un alta nueva.
   var filas = [
     ['Email', email],
     ['Teléfono', m[3] || (perfil && perfil.telefono) || '—'],
@@ -2585,7 +2604,7 @@ async function openModal(idx){
   ];
 
   var html = filas.map(function(f) {
-    return '<div class="modal-row"><span class="modal-label">'+f[0]+'</span><span class="modal-val">'+f[1]+'</span></div>';
+    return '<div class="modal-row"><span class="modal-label">'+esc(f[0])+'</span><span class="modal-val">'+esc(f[1])+'</span></div>';
   }).join('');
 
   // Fotos del vehículo
@@ -2594,7 +2613,7 @@ async function openModal(idx){
     if (fotosVeh.length) {
       html += '<div class="modal-section">📸 Fotos del vehículo</div><div class="modal-fotos">';
       fotosVeh.forEach(function(url) {
-        if (url) html += '<div class="modal-foto-item"><img src="'+url+'" onclick="window.open(\''+url+'\',\'_blank\')" title="Ver foto completa"/></div>';
+        if (url) html += '<div class="modal-foto-item"><img src="'+esc(url)+'" onclick="window.open(\''+esc(url)+'\',\'_blank\')" title="Ver foto completa"/></div>';
       });
       html += '</div>';
     }
@@ -2628,8 +2647,8 @@ async function openModal(idx){
     // Fotos del DNI
     if (perfil.dniFrente || perfil.dniDorso) {
       html += '<div class="modal-section">🪪 Fotos del DNI</div><div class="modal-fotos">';
-      if (perfil.dniFrente) html += '<div class="modal-foto-item"><img src="'+perfil.dniFrente+'" onclick="window.open(\''+perfil.dniFrente+'\',\'_blank\')" title="DNI Frente"/></div>';
-      if (perfil.dniDorso)  html += '<div class="modal-foto-item"><img src="'+perfil.dniDorso+'" onclick="window.open(\''+perfil.dniDorso+'\',\'_blank\')" title="DNI Dorso"/></div>';
+      if (perfil.dniFrente) html += '<div class="modal-foto-item"><img src="'+esc(perfil.dniFrente)+'" onclick="window.open(\''+esc(perfil.dniFrente)+'\',\'_blank\')" title="DNI Frente"/></div>';
+      if (perfil.dniDorso)  html += '<div class="modal-foto-item"><img src="'+esc(perfil.dniDorso)+'" onclick="window.open(\''+esc(perfil.dniDorso)+'\',\'_blank\')" title="DNI Dorso"/></div>';
       html += '</div>';
     } else {
       html += '<div class="modal-section">🪪 DNI</div><div style="font-size:12px;color:#F59E0B;padding:8px 0">⚠ Sin fotos de DNI — verificar manualmente</div>';
@@ -2637,12 +2656,12 @@ async function openModal(idx){
 
     // Foto de perfil
     if (perfil.foto) {
-      html += '<div class="modal-section">👤 Foto de perfil</div><div class="modal-fotos"><div class="modal-foto-item"><img src="'+perfil.foto+'" onclick="window.open(\''+perfil.foto+'\',\'_blank\')"/></div></div>';
+      html += '<div class="modal-section">👤 Foto de perfil</div><div class="modal-fotos"><div class="modal-foto-item"><img src="'+esc(perfil.foto)+'" onclick="window.open(\''+esc(perfil.foto)+'\',\'_blank\')"/></div></div>';
     }
 
     // Descripción
     if (perfil.extra) {
-      html += '<div class="modal-section">📝 Descripción</div><div style="font-size:12px;color:#475569;padding:8px;background:#F8FAFC;border-radius:8px;line-height:1.5">'+perfil.extra+'</div>';
+      html += '<div class="modal-section">📝 Descripción</div><div style="font-size:12px;color:#475569;padding:8px;background:#F8FAFC;border-radius:8px;line-height:1.5">'+esc(perfil.extra)+'</div>';
     }
 
     // ── Precios cargados (modelo nuevo + legacy) ──────────────────────
@@ -2997,7 +3016,11 @@ function mostrarFotoErr(key, msg) {
 }
 
 function fotoKey(s) { return (s||'').replace(/[^a-z0-9]/gi, '_'); }
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Escapa las 5 entidades HTML (&<>"') — sirve tanto para texto como para
+// contenido dentro de atributos con comillas simples o dobles. Antes solo
+// escapaba &<> y dejaba pasar comillas, lo que permitía romper atributos
+// onclick="...'+esc(x)+'..." o value="'+esc(x)+'" si x traía una comilla.
+function esc(s) { return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 // ══════════════════════════════════════════════════
 // EXPORT A EXCEL — 22 columnas mapeadas por índice
@@ -3247,10 +3270,10 @@ function renderTabla(data) {
       html += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;cursor:pointer" onclick="abrirPedidoModal(\''+esc(p.id)+'\')">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
         +   '<div style="display:flex;align-items:center;gap:8px">'
-        +     '<span class="cot-tipo '+(p.tipo||'')+'">'+(p.tipo==='flete'?'📦 Flete':'🚛 Mudanza')+'</span>'
-        +     '<span style="font-family:var(--mono);font-size:10px;color:#94A3B8">'+(p.id||'').slice(-6)+'</span>'
+        +     '<span class="cot-tipo '+esc(p.tipo||'')+'">'+(p.tipo==='flete'?'📦 Flete':'🚛 Mudanza')+'</span>'
+        +     '<span style="font-family:var(--mono);font-size:10px;color:#94A3B8">'+esc((p.id||'').slice(-6))+'</span>'
         +   '</div>'
-        +   '<span style="background:'+estadoBg+';color:'+estadoColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px">'+estado+'</span>'
+        +   '<span style="background:'+estadoBg+';color:'+estadoColor+';font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px">'+esc(estado)+'</span>'
         + '</div>'
         + '<div style="font-size:13px;font-weight:600;color:#0F1923;margin-bottom:2px">'+esc(p.nombre||'—')+'</div>'
         + '<div style="font-size:11px;color:#64748B;margin-bottom:8px">'+esc(desde)+' → '+esc(hasta)+'</div>'
@@ -3412,15 +3435,23 @@ function filtrarUsuarios() {
 // ══════════════════════════════════════════
 async function abrirPedidoModal(pedidoId, e) {
   if (e) e.stopPropagation();
+  // Token de esta apertura: si el admin abre otro pedido antes de que resuelva
+  // este fetch, la respuesta vieja no debe pisar el título/cuerpo del que
+  // está mirando ahora (podían llegar en orden inverso al de los clicks).
+  var miToken = String(Date.now()) + Math.random();
+  var modalEl = document.getElementById('pedidoModal');
+  modalEl.dataset.loadToken = miToken;
   document.getElementById('pmTitle').textContent = 'Pedido #' + (pedidoId||'').slice(-6);
   document.getElementById('pmBody').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
-  document.getElementById('pedidoModal').classList.add('open');
+  modalEl.classList.add('open');
   try {
     var r = await fetch('/api/cotizaciones?action=admin-pedido&id='+encodeURIComponent(pedidoId)+'&token=' + ADMTK());
     var d = await r.json();
     if (!d.ok) throw new Error(d.error||'Error');
+    if (modalEl.dataset.loadToken !== miToken) return;
     renderPedidoModal(d.pedido);
   } catch(ex) {
+    if (modalEl.dataset.loadToken !== miToken) return;
     var p = _cotizacionesData.find(function(x){ return x.id === pedidoId; });
     if (p) renderPedidoModalBasic(p);
     else document.getElementById('pmBody').innerHTML = '<div class="pm-empty">Error al cargar.</div>';
@@ -3442,7 +3473,7 @@ function renderPedidoModal(p) {
     + '<div class="pm-section-title">📋 Pedido</div>'
     + '<div class="pm-row"><span class="pm-label">ID</span><span class="pm-val" style="font-family:var(--mono)">'+esc(p.id||'—')+'</span></div>'
     + '<div class="pm-row"><span class="pm-label">Tipo</span><span class="pm-val">'+(p.tipo==='flete'?'📦 Flete':'🚛 Mudanza')+'</span></div>'
-    + '<div class="pm-row"><span class="pm-label">Estado</span><span class="pm-val"><span class="cot-estado '+(p.estado||'buscando')+'">'+(p.estado||'buscando')+'</span></span></div>'
+    + '<div class="pm-row"><span class="pm-label">Estado</span><span class="pm-val"><span class="cot-estado '+esc(p.estado||'buscando')+'">'+esc(p.estado||'buscando')+'</span></span></div>'
     + '<div class="pm-row"><span class="pm-label">Publicado</span><span class="pm-val">'+esc(fecha)+'</span></div>'
     + '<div class="pm-row"><span class="pm-label">Fecha mudanza</span><span class="pm-val">'+esc(p.fecha||'—')+'</span></div>'
     + '<div class="pm-row"><span class="pm-label">Desde</span><span class="pm-val">'+esc(p.desde||'—')+'</span></div>'
@@ -3480,7 +3511,7 @@ function renderPedidoModalBasic(p) {
   document.getElementById('pmBody').innerHTML = '<div class="pm-section">'
     + '<div class="pm-section-title">📋 Datos básicos</div>'
     + '<div class="pm-row"><span class="pm-label">Cliente</span><span class="pm-val">'+esc(p.nombre||p.email||'—')+'</span></div>'
-    + '<div class="pm-row"><span class="pm-label">Estado</span><span class="pm-val"><span class="cot-estado '+(p.estado||'buscando')+'">'+(p.estado||'buscando')+'</span></span></div>'
+    + '<div class="pm-row"><span class="pm-label">Estado</span><span class="pm-val"><span class="cot-estado '+esc(p.estado||'buscando')+'">'+esc(p.estado||'buscando')+'</span></span></div>'
     + '<div class="pm-row"><span class="pm-label">Cotizaciones</span><span class="pm-val">'+(p.cotizaciones||0)+'</span></div>'
     + '</div><div class="pm-empty" style="color:#EF4444">No se pudo cargar el detalle completo.<br>Verificá que el endpoint admin-pedido esté deployado.</div>';
 }
@@ -3601,6 +3632,14 @@ function activarEdicion(){
   var m = mudancerosData[currentMudanceroIdx];
   if(!m) return;
   _perfilEditando = m;
+  // Resetear el estado de servicios/seguro activos ANTES de cargar este
+  // mudancero: son variables globales que antes se arrastraban del último
+  // mudancero editado en la misma sesión de la página. Si dos mudanceros
+  // seguidos tenían el mismo servicio activo, editar al segundo lo apagaba
+  // en silencio (el toggle hacía XOR sobre el valor viejo) y al guardar se
+  // le borraban precios reales. Ver edToggleSvc/edToggleSeguro más abajo.
+  _edSvc    = { esencial:false, integral:false, llave:false, flete:false };
+  _edSeguro = false;
 
   var ZONAS_HTML =
     '<option value="">Seleccioná tu zona principal</option>'+
@@ -4098,7 +4137,7 @@ async function cargarAltasPendientes() {
       var fecha = new Date(a.creadaEn).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
       var ico = a.tipo === 'alta_fletero' ? '🚛' : '🧑‍🔧';
       var lbl = a.tipo === 'alta_fletero' ? 'Alta fletero' : 'Alta mudancero';
-      var mudEmail = (a.mudanceroEmail || '').replace(/'/g, "\\'");
+      var mudEmail = esc(a.mudanceroEmail || '');
       h += '<div class="ali-row" style="padding:14px 16px">' +
         '<div class="ali-info" style="flex:1;min-width:0">' +
           '<div class="ali-name" style="display:flex;align-items:center;gap:6px">' +
@@ -4107,8 +4146,8 @@ async function cargarAltasPendientes() {
             '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">· $' + aliFmt(a.monto||0) + '</span>' +
           '</div>' +
           '<div class="ali-meta" style="margin-top:2px">' +
-            '<span>👤 Mudancero: <strong>' + a.mudanceroEmail + '</strong></span> ' +
-            '<span>🤝 Aliado: <strong>' + (a.aliadoNombre||'') + ' (' + a.aliadoSlug + ')</strong></span> ' +
+            '<span>👤 Mudancero: <strong>' + esc(a.mudanceroEmail) + '</strong></span> ' +
+            '<span>🤝 Aliado: <strong>' + esc(a.aliadoNombre||'') + ' (' + esc(a.aliadoSlug) + ')</strong></span> ' +
             '<span>📅 ' + fecha + '</span>' +
           '</div>' +
         '</div>' +
@@ -4266,15 +4305,21 @@ async function aliPagar(email, incluirTrim, incluirAnual) {
     colorConfirmar: '#22C36A'
   });
   if (!ok) return;
+  // Si hay ambos bonos, el backend solo acepta uno por llamada -- se hacen dos
+  // POST seguidos. Si la primera ya salió bien y la segunda falla, hay que
+  // decirlo explícito: la primera parte YA quedó registrada, reintentar todo
+  // de cero la duplicaría. No hay forma de deshacer un "marcar pagado" desde
+  // acá, así que el mensaje de error tiene que dejarlo clarísimo.
+  var primeraOk = false;
   try {
     // Obtener IDs de atribuciones acreditadas
     var detalle = await aliFetch('/api/aliados?action=admin-detalle&token=' + ALIT() + '&email=' + encodeURIComponent(email));
     var mudanzaIds = (detalle.balance.acreditadas.ops || []).map(function(op){ return op.mudanzaId; });
     var body = { email: email, mudanzaIds: mudanzaIds };
     if (incluirTrim) { body.conceptoBono = 'trimestral'; body.montoBono = bonoTrim; }
-    if (incluirAnual) { body.conceptoBono = 'anual'; body.montoBono = bonoAnual; }
-    // Nota: si hay ambos bonos, solo se paga uno por llamada. Hacemos dos si corresponde.
+    if (incluirAnual && !incluirTrim) { body.conceptoBono = 'anual'; body.montoBono = bonoAnual; }
     await aliFetch('/api/aliados?action=admin-marcar-pagado', { method:'POST', body: JSON.stringify(body) });
+    primeraOk = true;
     if (incluirTrim && incluirAnual) {
       // Segunda llamada para el otro bono
       await aliFetch('/api/aliados?action=admin-marcar-pagado', { method:'POST', body: JSON.stringify({ email: email, mudanzaIds: [], conceptoBono: 'anual', montoBono: bonoAnual }) });
@@ -4282,7 +4327,15 @@ async function aliPagar(email, incluirTrim, incluirAnual) {
     alert('✓ Pago registrado por $' + aliFmt(total));
     await cargarAliados();
     await cargarMetricasAliados();
-  } catch(e) { alert('Error: ' + e.message); }
+  } catch(e) {
+    if (primeraOk) {
+      alert('⚠ OJO: las comisiones' + (incluirTrim ? ' + el bono trimestral' : '') + ' YA quedaron registradas como pagadas.\n\nEl bono anual falló al registrarse: ' + e.message + '\n\nNO reintentes todo de cero (duplicarías el primer pago) — registrá el bono anual a mano o avisá para revisarlo.');
+    } else {
+      alert('Error: ' + e.message);
+    }
+    await cargarAliados();
+    await cargarMetricasAliados();
+  }
 }
 
 // ── LISTA COMPLETA ──
@@ -4314,9 +4367,9 @@ function renderAliadosLista() {
   for (var i=0; i<list.length; i++) {
     var a = list[i];
     var totalOps = a.balance.pagadasCount + a.balance.acreditadasCount;
-    h += '<div class="ali-row" onclick="verDetalleAliado(\'' + a.email + '\')" style="cursor:pointer">' +
+    h += '<div class="ali-row" onclick="verDetalleAliado(\'' + esc(a.email) + '\')" style="cursor:pointer">' +
       '<div class="ali-info">' +
-        '<div class="ali-name">' + esc(a.nombre) + ' <span class="ali-slug">' + a.slug + '</span> <span class="ali-badge ' + a.estado + '">' + a.estado + '</span></div>' +
+        '<div class="ali-name">' + esc(a.nombre) + ' <span class="ali-slug">' + esc(a.slug) + '</span> <span class="ali-badge ' + a.estado + '">' + a.estado + '</span></div>' +
         '<div class="ali-meta">' +
           '<span>📧 ' + esc(a.email) + '</span>' +
           '<span>📍 ' + esc((a.edificio||'').substring(0,40)) + '</span>' +
@@ -5209,14 +5262,14 @@ async function renderInmoSolicitudes() {
   }
 }
 
-// Helper de escape (puede no existir global, lo definimos local)
+// Helper de escape (puede no existir global, lo definimos local). Escapa las
+// 5 entidades siempre: usarlo solo para texto dejaba pasar comillas, que
+// rompían atributos onclick/value cuando este mismo helper se reusaba ahí.
 function escHtml(s) {
   return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-function escAttr(s) {
-  return String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
-}
+function escAttr(s) { return escHtml(s); }
 
 // Ver detalles completos de una solicitud
 window._inmoSolicitudesCache = [];
@@ -6033,14 +6086,14 @@ async function renderInmoLista() {
       h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:' + (parseFloat(i.comisionInmobiliaria) > 0 ? 'var(--text)' : 'var(--text3)') + '">' + (parseFloat(i.comisionInmobiliaria) || 0) + '%</td>';
       h += '<td style="padding:10px 12px;text-align:center">' + badge + '</td>';
       h += '<td style="padding:10px 12px;text-align:right;white-space:nowrap">';
-      h += '<button onclick="inmoEditar(\'' + i.slug + '\')" style="padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">✏️ Editar</button>';
+      h += '<button onclick="inmoEditar(\'' + _inmoEscAttr(i.slug) + '\')" style="padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">✏️ Editar</button>';
       if (i.activa) {
-        h += '<button onclick="inmoToggleActiva(\'' + i.slug + '\',false)" style="padding:5px 10px;background:transparent;border:1px solid #FECACA;color:#991B1B;border-radius:6px;font-size:12px;cursor:pointer">Desactivar</button>';
+        h += '<button onclick="inmoToggleActiva(\'' + _inmoEscAttr(i.slug) + '\',false)" style="padding:5px 10px;background:transparent;border:1px solid #FECACA;color:#991B1B;border-radius:6px;font-size:12px;cursor:pointer">Desactivar</button>';
       } else {
-        h += '<button onclick="inmoToggleActiva(\'' + i.slug + '\',true)" style="padding:5px 10px;background:transparent;border:1px solid #BBF7D0;color:#065F46;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">Reactivar</button>';
+        h += '<button onclick="inmoToggleActiva(\'' + _inmoEscAttr(i.slug) + '\',true)" style="padding:5px 10px;background:transparent;border:1px solid #BBF7D0;color:#065F46;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">Reactivar</button>';
         // Eliminar permanente: solo aparece cuando ya está desactivada.
         // Esto previene clicks accidentales en inmos activas con historial.
-        h += '<button onclick="inmoEliminarPermanente(\'' + i.slug + '\',\'' + _inmoEscAttr(i.nombre) + '\')" style="padding:5px 10px;background:#DC2626;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer" title="Eliminar permanentemente de la base de datos">🗑️ Eliminar</button>';
+        h += '<button onclick="inmoEliminarPermanente(\'' + _inmoEscAttr(i.slug) + '\',\'' + _inmoEscAttr(i.nombre) + '\')" style="padding:5px 10px;background:#DC2626;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer" title="Eliminar permanentemente de la base de datos">🗑️ Eliminar</button>';
       }
       h += '</td></tr>';
     });
@@ -6347,7 +6400,7 @@ async function renderInmoComisiones() {
       g.resultados.forEach(function(m) {
         var estadoCell = m.liquidada
           ? '<span style="font-size:10px;color:#065F46;background:#D1FAE5;padding:2px 6px;border-radius:4px;font-weight:700;font-family:monospace">PAGADA</span>'
-          : '<button onclick="inmoMarcarLiquidada(\'' + m.id + '\')" style="padding:3px 8px;background:#FEF3C7;border:1px solid #FDE68A;color:#78350F;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;font-family:monospace">MARCAR PAGADA</button>';
+          : '<button onclick="inmoMarcarLiquidada(\'' + _inmoEscAttr(m.id) + '\')" style="padding:3px 8px;background:#FEF3C7;border:1px solid #FDE68A;color:#78350F;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;font-family:monospace">MARCAR PAGADA</button>';
         h += '<tr style="border-bottom:1px solid var(--border)">';
         h += '<td style="padding:8px 10px;font-family:monospace;font-size:11px">' + _inmoEscHtml(m.id) + '</td>';
         h += '<td style="padding:8px 10px;font-size:12px">' + _inmoEscHtml(m.fechaCompletada ? new Date(m.fechaCompletada).toLocaleDateString('es-AR') : '—') + '</td>';

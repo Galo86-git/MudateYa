@@ -1826,7 +1826,7 @@ function renderCatalogo() {
     }
 
     var sel = _sel.has(m.email);
-    var emailEsc = m.email.replace(/'/g, "\\'");
+    var emailEsc = _escAttr(m.email);
     // Rating chico inline — solo lo mostramos si el mudancero tiene reseñas
     // reales (calificacion > 0). Si no, lo omitimos para mantener la fila limpia.
     var rating = parseFloat(m.calificacion) || 0;
@@ -1955,7 +1955,7 @@ function pedirATodos() {
     html += '<div class="confirm-list-item">'
       + '<div>'
       +   '<div class="confirm-list-name">' + escHtml(m.empresa || m.nombre || '—') + '</div>'
-      +   '<div class="confirm-list-meta">📍 ' + escHtml(m.zonaBase || '—') + ' · ★ ' + ((m.calificacion || 0).toFixed(1)) + '</div>'
+      +   '<div class="confirm-list-meta">📍 ' + escHtml(m.zonaBase || '—') + ' · ★ ' + (parseFloat(m.calificacion || 0) || 0).toFixed(1) + '</div>'
       + '</div>'
       + '<div class="confirm-list-precio">' + precioTxt + '</div>'
       + '</div>';

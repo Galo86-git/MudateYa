@@ -17,7 +17,7 @@
 //   GET ?token=…&apply=1      → ENVÍA a todas las pendientes (una sola corrida).
 
 const { Resend } = require('resend');
-const { esAdmin } = require('./_auth');
+const { esAdmin, esCronVercel } = require('./_auth');
 const { linkBaja } = require('./_baja');
 
 async function redisCall(method, args) {
@@ -221,7 +221,13 @@ function payloadDe(o) {
 
 module.exports = async function handler(req, res) {
   // Puede dispararlo el Vercel Cron (9am ART) o un admin con token.
-  var esVercelCron = req.headers['x-vercel-cron'] === '1';
+  // ANTES esto chequeaba el header "x-vercel-cron", que no existe de
+  // verdad (Vercel manda Authorization: Bearer CRON_SECRET) — cualquiera
+  // podía mandar ese header falso y saltarse esAdmin() Y activar el envío
+  // real (apply=true) sin token, y a la vez el cron real de vercel.json
+  // siempre daba 401 y nunca disparó el envío automático de verdad.
+  var esVercelCron = false;
+  try { esVercelCron = esCronVercel(req); } catch (e) {}
   // En previews (no producción) el cron no debe enviar nada.
   if (esVercelCron && process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
     return res.status(200).json({ ok: true, skipped: true, reason: 'no-production-env' });

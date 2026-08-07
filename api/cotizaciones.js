@@ -41,6 +41,16 @@ async function setJSON(key, value, exSeconds) {
   if (exSeconds) await redisCall('SET', key, str, 'EX', String(exSeconds));
   else await redisCall('SET', key, str);
 }
+// TTL de las mudanzas en Redis. ANTES era 604800 (7 días) en casi todos los
+// `setJSON('mudanza:...')` de este archivo, pero el negocio espera 15-40 días
+// desde el pago hasta liquidar al mudancero/asesor (ver admin.html
+// DIAS_LIQUIDACION=15, cron-recordar-comisiones-asesores.js) — sin tocar el
+// registro en el medio, se borraba solo de Redis antes de llegar a ese
+// momento, y la mudanza desaparecía en silencio de los paneles de pago. Ya se
+// había detectado una vez (webhook-mp.js tenía un TTL de 90 días propio,
+// aparte) pero el resto del archivo seguía en 7. 180 días es el mismo TTL que
+// ya usa transferencias.js para el mismo tipo de dato de reconciliación.
+const TTL_MUDANZA = 60 * 60 * 24 * 180;
 // Prefijos de asesor en Redis, uno por canal — deben coincidir con el
 // `prefijo` de cada entrada de CANALES en api/canales.js. No hay forma barata
 // de importarlos desde ahí sin arrastrar ese módulo entero, así que se
@@ -1197,7 +1207,7 @@ module.exports = async function handler(req, res) {
       if (partnerSlugCrudo && partnerSlugCrudo !== partnerNorm) {
         mudanza.partnerSlugCrudo = partnerSlugCrudo;
       }
-      await setJSON(`mudanza:${id}`, mudanza, 604800);
+      await setJSON(`mudanza:${id}`, mudanza, TTL_MUDANZA);
       // Aviso al asesor que derivo al cliente. Va despues de guardar: si el
       // mail falla, el pedido ya quedo publicado igual.
       if (mudanza.partnerAsesor) {
@@ -1388,7 +1398,7 @@ module.exports = async function handler(req, res) {
 
       // TTL de 7 días (igual que al publicar): antes se re-guardaba con 2 días,
       // lo que hacía DESAPARECER el pedido (con sus cotizaciones) antes de tiempo.
-      await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, mudanza, TTL_MUDANZA);
       const mudIdx = await getJSON(`mudancero:${mudanceroEmail}`) || [];
       if (!mudIdx.includes(mudanzaId)) mudIdx.push(mudanzaId);
       await setJSON(`mudancero:${mudanceroEmail}`, mudIdx, 2592000);
@@ -1522,13 +1532,25 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'aceptar' && req.method === 'POST') {
-      const { mudanzaId, cotizacionId, propuestaNivel } = req.body;
+      const { mudanzaId, cotizacionId, propuestaNivel, clienteEmail } = req.body;
+      if (!mudanzaId || !cotizacionId) return res.status(400).json({ error: 'Faltan datos' });
+      // clienteEmail es OPCIONAL a propósito: mi-mudanza.html (dashboard con
+      // login de Google) ahora lo manda siempre, y en ese caso SÍ exigimos
+      // sesión válida — antes no pedía nada y cualquiera podía aceptar una
+      // cotización ajena solo sabiendo mudanzaId+cotizacionId.
+      // elegir.html (el link "elegí tu mudancero" que se manda por mail) no
+      // tiene login — sigue funcionando como antes, sin este chequeo extra.
+      // Esa es una superficie distinta (magic link) que no se toca acá.
+      if (clienteEmail && !(await verificarSesionCliente(clienteEmail))) {
+        return res.status(401).json({ error: 'Sesión inválida' });
+      }
       // Lock: evita doble aceptación concurrente (doble email + doble link de pago).
       if (mudanzaId && !(await adquirirLock(`lock:aceptar:${mudanzaId}`, 25))) {
         return res.status(409).json({ error: 'Se está procesando una aceptación para este pedido. Probá de nuevo en unos segundos.' });
       }
       const mudanza = await getJSON(`mudanza:${mudanzaId}`);
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (clienteEmail && mudanza.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
       const cot = mudanza.cotizaciones.find(c => c.id === cotizacionId);
       if (!cot) return res.status(404).json({ error: 'Cotización no encontrada' });
 
@@ -1612,7 +1634,7 @@ module.exports = async function handler(req, res) {
         mudanza.comisionInmobiliariaPagar = 0;
       }
 
-      await setJSON(`mudanza:${mudanzaId}`, mudanza, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, mudanza, TTL_MUDANZA);
       try { await enviarEmailAceptacion(mudanza, cot); } catch(e) { console.error('Error email:', e.message); }
       // Avisar a los OTROS mudanceros que cotizaron que el cliente eligió a otro.
       try { await notificarMudancerosNoElegidos(mudanza, cot.mudanceroEmail); } catch(e) { console.warn('Aviso no-elegidos:', e.message); }
@@ -1636,20 +1658,19 @@ module.exports = async function handler(req, res) {
       const ganador = m.mudanceroAceptado || (m.cotizacionAceptada && m.cotizacionAceptada.mudanceroEmail);
       await notificarMudancerosNoElegidos(m, ganador);
       m.avisoNoElegidosEnviado = true;
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'mis-mudanzas' && req.method === 'GET') {
       const { email } = req.query;
       if (!email) return res.status(400).json({ error: 'Falta email' });
-      // ── Verificar sesión si viene token (soft mode hasta integrar frontend) ──
-      const token = req.headers['x-session-token'] || req.query.sessionToken;
-      if (token) {
-        const autenticado = await verificarSesionCliente(email);
-        if (!autenticado) return res.status(401).json({ error: 'Sesión inválida' });
-      }
-      // Sin token: continúa (modo legado — eliminar cuando el frontend esté integrado)
+      // Requiere sesión válida: sin esto, cualquiera que supiera el email de
+      // un cliente podía ver todas sus mudanzas (direcciones, montos,
+      // teléfono del mudancero si ya pagó la seña) sin haber iniciado sesión
+      // nunca. El frontend (mi-mudanza.html) ya manda x-session-token desde
+      // que hace login con Google — ver handleCredential/authHeaders ahí.
+      if (!(await verificarSesionCliente(email))) return res.status(401).json({ error: 'Sesión inválida' });
       try {
         const ids = await getJSON(`cliente:${email}`) || [];
         const mudanzas = [];
@@ -1794,7 +1815,7 @@ module.exports = async function handler(req, res) {
         }
       }
       m.ultimoUpdatePago = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       // ── Enviar emails ─────────────────────────────────────────────────
       try { await notificarMudanceroPago(m, tipoPago); } catch(e) { console.warn('Email mudancero pago error:', e.message); }
       // Cierre para el asesor: comision si fue alquiler, regalo si compraventa.
@@ -2019,7 +2040,7 @@ module.exports = async function handler(req, res) {
         } catch (e) { console.warn('Limpiar pago transferencia:', e.message); }
       }
 
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
 
       // Si declaro mas horas de las registradas, avisar. No se bloquea el cobro,
       // pero alguien tiene que poder revisarlo antes de liquidarle al mudancero.
@@ -2128,7 +2149,7 @@ module.exports = async function handler(req, res) {
           catch(e) { console.warn('Email asesor en curso:', e.message); }
         }
       }
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       return res.status(200).json({ ok: true, estado });
     }
 
@@ -2174,7 +2195,7 @@ module.exports = async function handler(req, res) {
         recordatoriosEnviados: 0,
         ultimoRecordatorio: null
       };
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
 
       // Alerta admin si +30%
       if (deltaPct > 30) {
@@ -2190,6 +2211,7 @@ module.exports = async function handler(req, res) {
     if (action === 'aceptar-ajuste' && req.method === 'POST') {
       const { mudanzaId, clienteEmail } = req.body;
       if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await verificarSesionCliente(clienteEmail))) return res.status(401).json({ error: 'Sesión inválida' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
@@ -2225,7 +2247,7 @@ module.exports = async function handler(req, res) {
         await redisCall('DEL', `talo:pago:${mudanzaId}:anticipo`);
         await redisCall('DEL', `talo:pago:${mudanzaId}:saldo`);
       } catch (e) { console.warn('Limpiar pago transferencia:', e.message); }
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
 
       // Email al mudancero avisando que aceptaron
       try { await notificarMudanceroAjusteAceptado(m); } catch(e) { console.warn('Email mudancero aceptado:', e.message); }
@@ -2239,6 +2261,7 @@ module.exports = async function handler(req, res) {
     if (action === 'rechazar-ajuste' && req.method === 'POST') {
       const { mudanzaId, clienteEmail } = req.body;
       if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await verificarSesionCliente(clienteEmail))) return res.status(401).json({ error: 'Sesión inválida' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
@@ -2282,7 +2305,7 @@ module.exports = async function handler(req, res) {
       }
 
       if (refundError) m.refundError = refundError;
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
 
       // Emails
       try { await notificarMudanceroAjusteRechazado(m); } catch(e) { console.warn('Email mudancero rechazado:', e.message); }
@@ -2349,7 +2372,7 @@ module.exports = async function handler(req, res) {
       }
 
       if (refundError) m.refundError = refundError;
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
 
       try {
         if (teniaSeñaPagada) await notificarClienteMudanzaCancelada(m, refundOk);
@@ -2384,7 +2407,7 @@ module.exports = async function handler(req, res) {
       }
       m.ajustePrecio.recordatoriosEnviados = (m.ajustePrecio.recordatoriosEnviados || 0) + 1;
       m.ajustePrecio.ultimoRecordatorio = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
 
       try { await notificarClienteAjustePropuesto(m, true); } catch(e) { console.warn('Email recordatorio:', e.message); }
       return res.status(200).json({ ok: true, recordatoriosEnviados: m.ajustePrecio.recordatoriosEnviados });
@@ -2394,6 +2417,7 @@ module.exports = async function handler(req, res) {
     if (action === 'calificar' && req.method === 'POST') {
       const { mudanzaId, estrellas, comentario, clienteEmail } = req.body;
       if (!mudanzaId || !estrellas || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await verificarSesionCliente(clienteEmail))) return res.status(401).json({ error: 'Sesión inválida' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
@@ -2403,7 +2427,7 @@ module.exports = async function handler(req, res) {
       m.estrellas = parseInt(estrellas);
       m.comentario = comentario || '';
       m.fechaCalificacion = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       // Guardar reseña en el perfil del mudancero (con lock: ver _perfil-mudancero.js)
       try {
         const cot = m.cotizacionAceptada;
@@ -2426,6 +2450,7 @@ module.exports = async function handler(req, res) {
     if (action === 'eliminar' && req.method === 'POST') {
       const { mudanzaId, clienteEmail } = req.body;
       if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await verificarSesionCliente(clienteEmail))) return res.status(401).json({ error: 'Sesión inválida' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'No encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
@@ -2436,7 +2461,7 @@ module.exports = async function handler(req, res) {
       // Marcar como eliminada (cualquier estado anterior)
       m.estado = 'eliminada';
       m.fechaEliminacion = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       // Sacar de la lista activa global
       const activas = await getJSON('mudanzas:activas') || [];
       await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId), 604800);
@@ -2568,7 +2593,7 @@ module.exports = async function handler(req, res) {
       const nuevos = mudancerosEmails.filter(e => !actuales.includes(e));
       m.mudancerosInvitados = [...actuales, ...nuevos];
       m.modoCotizacion = 'dirigido';
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       // Notificar a cada mudancero invitado
       for (const emailMud of nuevos) {
         try {
@@ -2661,7 +2686,7 @@ module.exports = async function handler(req, res) {
       const campo = tipoPago === 'anticipo' ? 'liquidadoAnticipoEn' : 'liquidadoSaldoEn';
       if (m[campo]) return res.status(200).json({ ok: true, liquidadoEn: m[campo], yaEstaba: true });
       m[campo] = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       return res.status(200).json({ ok: true, liquidadoEn: m[campo] });
     }
 
@@ -2826,7 +2851,7 @@ module.exports = async function handler(req, res) {
       if (m.comisionAsesorPagada) return res.status(200).json({ ok: true, pagadaEn: m.comisionAsesorPagadaEn, yaEstaba: true });
       m.comisionAsesorPagada = true;
       m.comisionAsesorPagadaEn = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       return res.status(200).json({ ok: true, pagadaEn: m.comisionAsesorPagadaEn });
     }
 
@@ -3373,7 +3398,7 @@ module.exports = async function handler(req, res) {
               nombre: (perfil && (perfil.empresa || perfil.nombre)) || mudanceroEmail.split('@')[0],
               fecha: new Date().toISOString()
             });
-            await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+            await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
           }
         }
       } catch(e) { console.warn('No pude marcar rechazo en mudanza:', e.message); }
@@ -3382,6 +3407,7 @@ module.exports = async function handler(req, res) {
     if (action === 'republicar-abierto' && req.method === 'POST') {
       const { mudanzaId, clienteEmail } = req.body;
       if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await verificarSesionCliente(clienteEmail))) return res.status(401).json({ error: 'Sesión inválida' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'No autorizado' });
@@ -3392,13 +3418,14 @@ module.exports = async function handler(req, res) {
       // Refrescar fecha de expiración 24hs más (le damos otra ventana)
       m.expira = vencimientoHabilISO(24);
       m.republicadaEn = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'update-wa' && req.method === 'POST') {
       const { email, clienteWA } = req.body;
       if (!email || !clienteWA) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await verificarSesionCliente(email))) return res.status(401).json({ error: 'Sesión inválida' });
       try {
         const ids = await getJSON(`cliente:${email}`) || [];
         for (const id of ids) {
@@ -3406,7 +3433,7 @@ module.exports = async function handler(req, res) {
           if (m) {
             m.clienteWA = clienteWA;
             if (m.cotizacionAceptada) m.cotizacionAceptada.clienteWA = clienteWA;
-            await setJSON(`mudanza:${id}`, m, 604800);
+            await setJSON(`mudanza:${id}`, m, TTL_MUDANZA);
           }
         }
         return res.status(200).json({ ok: true, updated: ids.length });
@@ -3435,14 +3462,10 @@ module.exports = async function handler(req, res) {
 
     if (action === 'mis-cotizaciones' && req.method === 'GET') {
       const { email } = req.query;
-      // ── Verificar sesión si viene token (soft mode hasta integrar frontend) ──
-      const tokenMud = req.headers['x-session-token'] || req.query.sessionToken;
-      if (email && tokenMud) {
-        const autMud = await verificarSesionMudancero(email);
-        if (!autMud) return res.status(401).json({ error: 'Sesión inválida' });
-      }
-      // Sin token: continúa (modo legado)
       if (!email) return res.status(400).json({ error: 'Falta email' });
+      // mi-cuenta.html (el panel real del mudancero) ya manda x-session-token
+      // desde el login — requerirlo acá cierra el mismo IDOR que mis-mudanzas.
+      if (!(await verificarSesionMudancero(email))) return res.status(401).json({ error: 'Sesión inválida' });
       const ids = await getJSON(`mudancero:${email}`) || [];
       const mudanzas = [];
       for (const id of ids) {
@@ -3521,7 +3544,7 @@ module.exports = async function handler(req, res) {
       if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
       // Si se forzó la completada sin pasar por el flujo normal de pago, registrar fecha
       if (!m.fechaPagoSaldo) m.fechaPagoSaldo = new Date().toISOString();
-      await setJSON(`mudanza:${mudanzaId}`, m, 604800);
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       return res.status(200).json({ ok: true, msg: 'Estado actualizado a completada', id: mudanzaId });
     }
 
