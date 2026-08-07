@@ -131,6 +131,22 @@ const CREAR = [
     } },
     variables: { '1': 'Cristian', '2': 'la mudanza', '3': 'Palermo → Tigre' } },
 
+  // Recordatorio de la víspera, a las dos partes. Van por plantilla porque a
+  // 24 h de la mudanza la ventana de 24 h de WhatsApp casi siempre está cerrada
+  // (la charla fue cuando se cotizó, no ayer). Ver api/cron-vispera-mudanza.js.
+  { name: 'vispera_cliente', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '¡Hola {{1}}! Mañana es {{2}} con {{3}} 🚚\n\n'
+          + '¿Tenés todo listo? Lo ideal es tener las cajas cerradas y los pasillos libres antes de que lleguen. Si algo cambió, respondeme y lo vemos.',
+    } },
+    variables: { '1': 'Juan', '2': 'tu mudanza', '3': 'Cristian' } },
+  { name: 'vispera_mudancero', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '¡Hola {{1}}! Mañana tenés {{2}} a las {{3}} 🚚\n\n'
+          + '¿Confirmás horario y dirección? Si surgió algo, avisame ahora así lo reacomodamos con el cliente.',
+    } },
+    variables: { '1': 'Cristian', '2': 'Palermo → Tigre', '3': '09:00' } },
+
   // Confirmación al cliente apenas publica el pedido por la WEB (no existía
   // ninguna plantilla para esto — las demás cubren etapas posteriores). Al
   // ser la PRIMERA plantilla que le llega, además "abre" la conversación de
