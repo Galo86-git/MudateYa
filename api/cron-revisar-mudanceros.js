@@ -28,11 +28,6 @@ async function redisCall(method, ...args) {
   return d.result;
 }
 async function getJSON(k) { const v = await redisCall('GET', k); return v ? JSON.parse(v) : null; }
-async function setJSON(k, v, ex) {
-  const a = ['SET', k, JSON.stringify(v)];
-  if (ex) a.push('EX', String(ex));
-  return redisCall(...a);
-}
 
 // ── Reglas de triage ─────────────────────────────────────────────
 // La clasificación y la aprobación viven en _aprobar.js (la MISMA lógica que usan el
@@ -91,11 +86,17 @@ module.exports = async function handler(req, res) {
     const pendientes = (await getJSON('mudanceros:pendientes')) || [];
 
     const aprobados = [], fraude = [], revisar = [];
-    let quedanPendientes = [...pendientes];
+    // Perfiles que ya no existen (TTL vencido, borrado manual): se sacan del
+    // índice al final, con lock (_mudanceros-pendientes.js). Los aprobados
+    // los saca `aprobarEnObjeto` en el momento, también con lock — antes este
+    // cron además reescribía el índice ENTERO al final con un snapshot tomado
+    // al principio, y esa sobreescritura podía pisar el alta de un mudancero
+    // nuevo que se registró mientras el cron corría (ver _mudanceros-pendientes.js).
+    const paraSacar = [];
 
     for (const email of pendientes) {
       const p = await getJSON(`mudancero:perfil:${email}`);
-      if (!p) { quedanPendientes = quedanPendientes.filter((e) => e !== email); continue; }
+      if (!p) { paraSacar.push(email); continue; }
 
       const { accion, motivos } = evaluar(p);
       if (accion === 'skip') continue;
@@ -109,12 +110,9 @@ module.exports = async function handler(req, res) {
           // perfil justo cuando corre este cron).
           const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
           const guardado = await actualizarPerfilMudancero(email, async function(perfilFresco) {
-            await aprobarEnObjeto(perfilFresco); // aprueba, saca de pendientes y manda el mail de alta
+            await aprobarEnObjeto(perfilFresco); // aprueba, saca de pendientes (con lock) y manda el mail de alta
           });
-          if (guardado) {
-            aprobados.push(guardado);
-            quedanPendientes = quedanPendientes.filter((e) => e !== email);
-          }
+          if (guardado) aprobados.push(guardado);
         } else {
           aprobados.push(p);
         }
@@ -125,7 +123,10 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    if (AUTO) await setJSON('mudanceros:pendientes', quedanPendientes);
+    if (paraSacar.length) {
+      try { await require('./_mudanceros-pendientes').sacarDeMudancerosPendientes(paraSacar); }
+      catch (e) { console.warn('mudanceros:pendientes (sacar):', e.message); }
+    }
 
     // Reporte al admin solo si hay algo que mostrar.
     if (aprobados.length || fraude.length || revisar.length) {

@@ -564,9 +564,8 @@ module.exports = async function handler(req, res) {
       if (_tel8.length === 8) await redisCall('HSET', 'mudanceros:tel8-idx', _tel8, email);
     } catch (e) { console.warn('idx tel8:', e.message); }
 
-    var pendientes = await getJSON('mudanceros:pendientes') || [];
-    if (!pendientes.includes(email)) pendientes.push(email);
-    await setJSON('mudanceros:pendientes', pendientes);
+    try { await require('./_mudanceros-pendientes').agregarAMudancerosPendientes(email); }
+    catch (e) { console.warn('mudanceros:pendientes (agregar):', e.message); }
 
     var todos = await getJSON('mudanceros:todos') || [];
     if (!todos.includes(email)) todos.push(email);

@@ -70,16 +70,22 @@ module.exports = async function handler(req, res) {
     const ahora = Date.now();
     const ABIERTOS = ['buscando', 'cotizando'];
     let revisados = 0, cerrados = 0, avisados = 0;
-    const quedan = []; // ids que siguen activos (reescribimos el índice al final)
+    // ids que salen del índice (vencidos, o que ya no existen en Redis por TTL).
+    // Antes reescribíamos el índice ENTERO al final con los que "quedan" —
+    // partiendo de un snapshot tomado al principio, que puede tardar varios
+    // segundos en recorrerse. Si en el medio se publicaba un pedido nuevo, esa
+    // alta quedaba pisada por el setJSON final (ver _mudanzas-activas.js).
+    // Ahora solo sacamos del índice los que efectivamente cerramos, con lock.
+    const paraSacar = [];
 
     for (const id of activas) {
       const m = await getJSON(`mudanza:${id}`);
-      if (!m) continue; // ya expiró de Redis (TTL) → lo sacamos del índice
+      if (!m) { paraSacar.push(id); continue; } // ya expiró de Redis (TTL) → lo sacamos del índice
       revisados++;
 
       const vencido = m.expira && new Date(m.expira).getTime() < ahora;
       const abierto = ABIERTOS.includes(m.estado);
-      if (!vencido || !abierto) { quedan.push(id); continue; }
+      if (!vencido || !abierto) continue;
 
       // Cerrar el pedido
       const cots = Array.isArray(m.cotizaciones) ? m.cotizaciones : [];
@@ -106,10 +112,13 @@ module.exports = async function handler(req, res) {
       }
       await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 30);
       cerrados++;
-      // no se re-agrega a `quedan` → sale del índice de activas
+      paraSacar.push(id);
     }
 
-    await setJSON('mudanzas:activas', quedan, 60 * 60 * 24 * 7);
+    if (paraSacar.length) {
+      try { await require('./_mudanzas-activas').sacarDeMudanzasActivas(paraSacar); }
+      catch (e) { console.warn('mudanzas:activas (sacar):', e.message); }
+    }
     return res.status(200).json({ ok: true, revisados, cerrados, avisados });
   } catch (e) {
     console.error('cron-cerrar-pedidos:', e.message);

@@ -1237,9 +1237,11 @@ module.exports = async function handler(req, res) {
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
       await setJSON(`cliente:${clienteEmail}`, clienteIdx, 2592000);
-      const globalIdx = await getJSON('mudanzas:activas') || [];
-      if (!globalIdx.includes(id)) globalIdx.push(id);
-      await setJSON('mudanzas:activas', globalIdx, 604800);
+      // Con lock (_mudanzas-activas.js): relee el índice justo antes de
+      // escribir, así una alta/baja concurrente (otro publicar, el cron de
+      // cierre) no se pisa por partir de una lectura vieja.
+      try { await require('./_mudanzas-activas').agregarAMudanzasActivas(id); }
+      catch (e) { console.warn('mudanzas:activas (agregar):', e.message); }
       // Índice permanente sin TTL para admin
       const todosIdx = await getJSON('mudanzas:todos') || [];
       if (!todosIdx.includes(id)) todosIdx.push(id);
@@ -2479,9 +2481,9 @@ module.exports = async function handler(req, res) {
       m.estado = 'eliminada';
       m.fechaEliminacion = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
-      // Sacar de la lista activa global
-      const activas = await getJSON('mudanzas:activas') || [];
-      await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId), 604800);
+      // Sacar de la lista activa global (con lock, ver _mudanzas-activas.js)
+      try { await require('./_mudanzas-activas').sacarDeMudanzasActivas(mudanzaId); }
+      catch (e) { console.warn('mudanzas:activas (sacar):', e.message); }
       // Sacar del índice del cliente para que no la traiga `mis-mudanzas`
       const idxCliente = await getJSON(`cliente:${clienteEmail}`) || [];
       await setJSON(`cliente:${clienteEmail}`, idxCliente.filter(id => id !== mudanzaId), 2592000);
@@ -2574,8 +2576,8 @@ module.exports = async function handler(req, res) {
       await redisCall('DEL', `mudanza:${mudanzaId}`);
       const todos = await getJSON('mudanzas:todos') || [];
       await setJSON('mudanzas:todos', todos.filter(id => id !== mudanzaId));
-      const activas = await getJSON('mudanzas:activas') || [];
-      await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId));
+      try { await require('./_mudanzas-activas').sacarDeMudanzasActivas(mudanzaId); }
+      catch (e) { console.warn('mudanzas:activas (sacar):', e.message); }
       if (m.clienteEmail) {
         const idxCliente = await getJSON(`cliente:${m.clienteEmail}`) || [];
         await setJSON(`cliente:${m.clienteEmail}`, idxCliente.filter(id => id !== mudanzaId));

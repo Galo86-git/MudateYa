@@ -1961,9 +1961,7 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
 
   // Índices del marketplace web: mudanzas:activas (lo lee por-zona) + mudanzas:todos (admin).
   try {
-    const activas = (await getJSON('mudanzas:activas')) || [];
-    if (!activas.includes(id)) activas.push(id);
-    await setJSON('mudanzas:activas', activas, 60 * 60 * 24 * 7);
+    await require('./_mudanzas-activas').agregarAMudanzasActivas(id);
     const todos = (await getJSON('mudanzas:todos')) || [];
     if (!todos.includes(id)) todos.push(id);
     await setJSON('mudanzas:todos', todos);

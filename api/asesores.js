@@ -1151,9 +1151,8 @@ module.exports = async function handler(req, res) {
       }
 
       // Índices globales
-      var globalIdx = await getJSON('mudanzas:activas') || [];
-      if (globalIdx.indexOf(mudanzaId) === -1) globalIdx.push(mudanzaId);
-      await setJSON('mudanzas:activas', globalIdx, 604800);
+      try { await require('./_mudanzas-activas').agregarAMudanzasActivas(mudanzaId); }
+      catch (e) { console.warn('mudanzas:activas (agregar):', e.message); }
 
       var todosIdx = await getJSON('mudanzas:todos') || [];
       if (todosIdx.indexOf(mudanzaId) === -1) todosIdx.push(mudanzaId);

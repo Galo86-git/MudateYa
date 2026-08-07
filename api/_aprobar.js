@@ -77,8 +77,7 @@ async function aprobarEnObjeto(p) {
   p.fechaCambioEstado = new Date().toISOString();
   p.autoAprobado = new Date().toISOString();
   try {
-    const pend = (await getJSON('mudanceros:pendientes')) || [];
-    await setJSON('mudanceros:pendientes', pend.filter((e) => e !== p.email));
+    await require('./_mudanceros-pendientes').sacarDeMudancerosPendientes(p.email);
   } catch (_) {}
   try {
     await require('./admin-aprobar').enviarEmailAltaExitosa(p);
