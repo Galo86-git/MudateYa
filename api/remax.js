@@ -29,6 +29,14 @@ var LINK_BASE = 'https://mudateya.ar/inmobiliaria/remax';
 // ── Base del sitio, para construir URLs absolutas (QR en el mail, etc.) ──
 var SITE_BASE = 'https://mudateya.ar';
 
+// Campos de texto libre del alta van directo al HTML del mail de bienvenida
+// — sin escapar, un asesor podía romper el mail que se manda a sí mismo con
+// <a href="..."> en su nombre (mismo patrón que ya se arregló en
+// inmobiliarias.js/independientes.js/registrar-mudancero.js).
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // ── Wrappers Redis (mismo patrón que cotizaciones.js / inmobiliarias.js) ──
 async function redisCall(method, args) {
   var url   = process.env.UPSTASH_REDIS_REST_URL;
@@ -242,16 +250,16 @@ module.exports = async function handler(req, res) {
                 <span style="color:#B8D4FF;font-size:13px;font-weight:600;margin-left:8px">× RE/MAX</span>
               </div>
               <div style="padding:28px">
-                <h2 style="margin:0 0 10px;color:#0F1419;font-size:21px">¡Listo, ${primerNombre}! Ya estás dado de alta 🎉</h2>
+                <h2 style="margin:0 0 10px;color:#0F1419;font-size:21px">¡Listo, ${esc(primerNombre)}! Ya estás dado de alta 🎉</h2>
                 <p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin:0 0 20px">Ya sos aliado de MudateYa a través de RE/MAX. Este es tu <strong>link único</strong>: compartilo con tus clientes cuando cierren una operación y ellos consiguen mudanceros verificados.</p>
 
                 <div style="background:#F5F8FC;border:1px solid #E5ECF6;border-radius:10px;padding:14px 18px;margin:0 0 20px">
                   <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94A3B8;margin-bottom:8px">Tus datos</div>
                   <table style="font-size:14px;color:#0F1419;line-height:1.8">
-                    <tr><td style="color:#64748B;padding-right:12px">Nombre</td><td style="font-weight:600">${nombre}</td></tr>
-                    <tr><td style="color:#64748B;padding-right:12px">Oficina</td><td style="font-weight:600">${oficina}</td></tr>
-                    <tr><td style="color:#64748B;padding-right:12px">Email</td><td style="font-weight:600">${email}</td></tr>
-                    <tr><td style="color:#64748B;padding-right:12px">WhatsApp</td><td style="font-weight:600">${whatsapp}</td></tr>
+                    <tr><td style="color:#64748B;padding-right:12px">Nombre</td><td style="font-weight:600">${esc(nombre)}</td></tr>
+                    <tr><td style="color:#64748B;padding-right:12px">Oficina</td><td style="font-weight:600">${esc(oficina)}</td></tr>
+                    <tr><td style="color:#64748B;padding-right:12px">Email</td><td style="font-weight:600">${esc(email)}</td></tr>
+                    <tr><td style="color:#64748B;padding-right:12px">WhatsApp</td><td style="font-weight:600">${esc(whatsapp)}</td></tr>
                   </table>
                 </div>
 

@@ -1491,6 +1491,13 @@ async function loadAsesoresDash(){
   }
 }
 
+// Flags de "la última carga falló" para las páginas de plata — sin esto, un
+// fetch que falla (token vencido, timeout) deja el array de datos vacío y el
+// render normal lo muestra igual que "no hay nada pendiente", indistinguible
+// de un estado realmente vacío. El admin puede creer que no hay mudanceros
+// por aprobar / comisiones por pagar cuando en realidad la carga falló.
+var _erroresCarga = { mudanceros: false, pagos: false, comisiones: false };
+
 async function loadMudanceros(){
   try{
     var r = await fetch('/api/cotizaciones?action=admin-mudanceros&token=' + ADMTK());
@@ -1539,8 +1546,10 @@ async function loadMudanceros(){
     // Sincronizar badge mobile
     var mb = document.getElementById('mnav-badge-mudanceros');
     if(mb){ mb.textContent = pendientes; mb.classList.toggle('show', pendientes > 0); }
+    _erroresCarga.mudanceros = false;
   }catch(e){
     mudancerosData = [];
+    _erroresCarga.mudanceros = true;
     console.error('Error cargando mudanceros:', e);
   }
 }
@@ -1548,11 +1557,13 @@ async function loadMudanceros(){
 async function loadPagos(){
   try{
     var r = await fetch('/api/cotizaciones?action=admin-pagos&token=' + ADMTK());
-    if (!r.ok) { pagosData = []; return; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     var d = await r.json();
     pagosData = d.rows || [];
+    _erroresCarga.pagos = false;
   }catch(e){
     pagosData = [];
+    _erroresCarga.pagos = true;
     console.warn('Pagos no disponibles:', e.message);
   }
 }
@@ -1560,6 +1571,7 @@ async function loadPagos(){
 async function loadTransferencias(){
   try{
     var r = await fetch('/api/transferencias', { headers:{ 'x-admin-token': ADMTK() } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     var d = await r.json();
     transferenciasData = d.transferencias || [];
     var pendientes = transferenciasData.filter(function(t){ return t.estado === 'pendiente'; }).length;
@@ -1568,7 +1580,12 @@ async function loadTransferencias(){
     badge.style.display = pendientes > 0 ? '' : 'none';
     renderTransferencias();
   }catch(e){
+    // Antes esto no tocaba el DOM: si fallaba (token vencido, timeout), la
+    // página de Transferencias quedaba con el spinner de "Cargando…" girando
+    // para siempre, sin ningún indicio de que la carga había fallado.
     console.error('Error cargando transferencias:', e);
+    var list = document.getElementById('transferList');
+    if (list) list.innerHTML = '<div class="empty" style="color:#DC2626"><div class="empty-icon">⚠️</div>No se pudo cargar Transferencias (' + esc(e.message) + '). <a href="#" onclick="loadTransferencias();return false" style="color:#1A6FFF">Reintentar</a></div>';
   }
 }
 
@@ -1813,6 +1830,10 @@ function perfilCell(m){
 }
 
 function filterMudanceros(){
+  if (_erroresCarga.mudanceros) {
+    document.getElementById('mudancerosList').innerHTML = '<div class="empty" style="color:#DC2626"><div class="empty-icon">⚠️</div>No se pudo cargar la lista de mudanceros — no es que no haya resultados, falló la carga. <a href="#" onclick="loadMudanceros().then(filterMudanceros);return false" style="color:#1A6FFF">Reintentar</a></div>';
+    return;
+  }
   var q = (document.getElementById('searchMudanceros').value || '').toLowerCase();
   var estado = document.getElementById('filterEstado').value;
   var fAct = (document.getElementById('filterActualizacion') || {}).value || '';
@@ -2121,6 +2142,14 @@ function tipoPagoBadge(tp) {
 }
 
 function renderLiquidaciones(){
+  if (_erroresCarga.pagos) {
+    var errHtml = '<div class="empty" style="color:#DC2626"><div class="empty-icon">⚠️</div>No se pudieron cargar los pagos — no es que no haya nada, falló la carga. <a href="#" onclick="loadPagos().then(renderPagosFull);return false" style="color:#1A6FFF">Reintentar</a></div>';
+    document.getElementById('liquidacionesList').innerHTML = errHtml;
+    document.getElementById('retencionList').innerHTML = errHtml;
+    document.getElementById('liqResumen').textContent = '—';
+    document.getElementById('retResumen').textContent = '—';
+    return;
+  }
   var data = clasificarPagos();
   var liquidables = data.liquidables;
   var retencion = data.enRetencion;
@@ -2261,10 +2290,13 @@ async function loadComisionesAsesores(){
   document.getElementById('comisionesAsesoresPagList').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando…</div>';
   try {
     var r = await fetch('/api/cotizaciones?action=admin-comisiones-asesores&token=' + ADMTK());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     var d = await r.json();
     comisionesAsesoresData = d.rows || [];
+    _erroresCarga.comisiones = false;
   } catch(e) {
     comisionesAsesoresData = [];
+    _erroresCarga.comisiones = true;
     console.warn('Comisiones de asesores no disponibles:', e.message);
   }
   renderComisionesAsesoresFull();
@@ -2298,6 +2330,14 @@ function fechaLiberacionComision(fechaCompletada) {
 }
 
 function renderComisionesAsesoresFull(){
+  if (_erroresCarga.comisiones) {
+    var errHtml = '<div class="empty" style="color:#DC2626"><div class="empty-icon">⚠️</div>No se pudieron cargar las comisiones — no es que no haya nada, falló la carga. <a href="#" onclick="loadComisionesAsesores();return false" style="color:#1A6FFF">Reintentar</a></div>';
+    document.getElementById('comisionesAsesoresPendList').innerHTML = errHtml;
+    document.getElementById('comisionesAsesoresEsperaList').innerHTML = errHtml;
+    document.getElementById('comisionesAsesoresPagList').innerHTML = errHtml;
+    document.getElementById('comAsrPendResumen').textContent = '—';
+    return;
+  }
   var noPagadas = comisionesAsesoresData.filter(function(c){ return !c.pagada; });
   var pagadas = comisionesAsesoresData.filter(function(c){ return c.pagada; });
   var hoy = new Date();

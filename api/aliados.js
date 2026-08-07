@@ -629,7 +629,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'internal-acreditar' && req.method === 'POST') {
       var internalSecret2 = req.headers['x-internal-secret'];
-      if (internalSecret2 !== process.env.INTERNAL_API_SECRET) {
+      if (!process.env.INTERNAL_API_SECRET || internalSecret2 !== process.env.INTERNAL_API_SECRET) {
         return res.status(403).json({ error: 'Sin autorización' });
       }
       var r2 = await acreditarAliado((req.body||{}).mudanzaId);
@@ -638,7 +638,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'internal-cancelar' && req.method === 'POST') {
       var internalSecret3 = req.headers['x-internal-secret'];
-      if (internalSecret3 !== process.env.INTERNAL_API_SECRET) {
+      if (!process.env.INTERNAL_API_SECRET || internalSecret3 !== process.env.INTERNAL_API_SECRET) {
         return res.status(403).json({ error: 'Sin autorización' });
       }
       var r3 = await cancelarAtribucion((req.body||{}).mudanzaId);
@@ -648,7 +648,7 @@ module.exports = async function handler(req, res) {
     // ── Altas (internal) ──
     if (action === 'internal-alta-crear' && req.method === 'POST') {
       var secA = req.headers['x-internal-secret'];
-      if (secA !== process.env.INTERNAL_API_SECRET) {
+      if (!process.env.INTERNAL_API_SECRET || secA !== process.env.INTERNAL_API_SECRET) {
         return res.status(403).json({ error: 'Sin autorización' });
       }
       var bA = req.body || {};
@@ -658,7 +658,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'internal-alta-acreditar' && req.method === 'POST') {
       var secB = req.headers['x-internal-secret'];
-      if (secB !== process.env.INTERNAL_API_SECRET) {
+      if (!process.env.INTERNAL_API_SECRET || secB !== process.env.INTERNAL_API_SECRET) {
         return res.status(403).json({ error: 'Sin autorización' });
       }
       var rB = await acreditarAlta((req.body||{}).mudanceroEmail);
@@ -667,7 +667,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'internal-alta-cancelar' && req.method === 'POST') {
       var secC = req.headers['x-internal-secret'];
-      if (secC !== process.env.INTERNAL_API_SECRET) {
+      if (!process.env.INTERNAL_API_SECRET || secC !== process.env.INTERNAL_API_SECRET) {
         return res.status(403).json({ error: 'Sin autorización' });
       }
       var rC = await cancelarAlta((req.body||{}).mudanceroEmail);

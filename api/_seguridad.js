@@ -52,7 +52,12 @@ function cors(req, res) {
 // Devuelve true si el request supera el tope y debe rechazarse con 429.
 // Si Redis falla, NO bloquea (fail-open) para no cortar el servicio por un error de infra.
 async function limitarPorIP(req, accion, maxPorMinuto) {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+  // OJO: el PRIMER valor de X-Forwarded-For es el que puso el cliente HTTP —
+  // 100% falsificable (mandá un header distinto en cada request y el rate
+  // limit nunca se acumula). Cada proxy AGREGA su propia IP al final de la
+  // lista; el último valor es el que realmente vio Vercel.
+  const xff = req.headers['x-forwarded-for'];
+  const ip = (xff ? xff.split(',').pop().trim() : '')
            || req.socket?.remoteAddress || 'unknown';
   const rlKey = `ratelimit:${accion}:${ip}`;
   try {

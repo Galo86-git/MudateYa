@@ -7,6 +7,14 @@ const { Resend } = require('resend');
 const { validarCuit: validarCuitAfip } = require('./_afip');
 const { redisPipeline } = require('./_ia');
 
+// Este es un endpoint PÚBLICO (cualquiera se registra sin login) y sus
+// campos de texto libre van directo al mail que le llega al admin — sin
+// escapar, alguien podía meter <a href="..."> en su nombre y reemplazar el
+// botón "Revisar y aprobar" por un link de phishing.
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // ── REDIS ────────────────────────────────────────────────────────
 async function redisCall(method, ...args) {
   var url   = process.env.UPSTASH_REDIS_REST_URL;
@@ -632,9 +640,9 @@ async function notificarAdmin(perfil) {
       '<div style="background:#F5F7FA;border-radius:10px;padding:12px 16px;margin:14px 0;border:1px solid #E2E8F0">' +
         '<div style="font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700">DNI</div>' +
         '<div style="font-size:13px;color:#475569">' +
-          (dni.numero_dni ? 'DNI: <strong style="color:#0F1923">' + dni.numero_dni + '</strong> · ' : '') +
-          (dni.apellido || '') + ' ' + (dni.nombres || '') + '<br>' +
-          (dni.fecha_vencimiento ? 'Vence: ' + dni.fecha_vencimiento + ' · ' : '') +
+          (dni.numero_dni ? 'DNI: <strong style="color:#0F1923">' + esc(dni.numero_dni) + '</strong> · ' : '') +
+          esc(dni.apellido || '') + ' ' + esc(dni.nombres || '') + '<br>' +
+          (dni.fecha_vencimiento ? 'Vence: ' + esc(dni.fecha_vencimiento) + ' · ' : '') +
           'Legible: <strong style="color:' + (dni.legible ? '#22C36A' : '#EF4444') + '">' + (dni.legible ? '✓ SI' : '✗ NO') + '</strong>' +
         '</div>' +
       '</div>';
@@ -644,8 +652,8 @@ async function notificarAdmin(perfil) {
     '<div style="background:#F5F7FA;border-radius:10px;padding:12px 16px;margin:14px 0;border:1px solid #E2E8F0">' +
       '<div style="font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700">Cobro</div>' +
       '<div style="font-size:13px;color:#475569">' +
-        (perfil.metodoCobro === 'cbu' ? 'CBU/Alias: ' + perfil.cbu : 'MP: ' + perfil.emailMP) +
-        (perfil.titularCuenta ? ' · ' + perfil.titularCuenta : '') +
+        (perfil.metodoCobro === 'cbu' ? 'CBU/Alias: ' + esc(perfil.cbu) : 'MP: ' + esc(perfil.emailMP)) +
+        (perfil.titularCuenta ? ' · ' + esc(perfil.titularCuenta) : '') +
       '</div>' +
     '</div>';
 
@@ -661,14 +669,14 @@ async function notificarAdmin(perfil) {
         '<span style="font-size:12px;color:rgba(255,255,255,.6);margin-left:12px">Nuevo mudancero registrado</span>' +
       '</div>' +
       '<div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:10px 28px;font-size:13px;color:#1A6FFF;font-weight:600">' +
-        '🚛 ' + perfil.id +
+        '🚛 ' + esc(perfil.id) +
       '</div>' +
       '<div style="padding:24px 28px">' +
-        '<p style="font-size:16px;font-weight:700;color:#0F1923;margin:0 0 4px">' + perfil.nombre + (perfil.empresa ? ' · <span style="font-weight:400;color:#475569">' + perfil.empresa + '</span>' : '') + '</p>' +
-        '<p style="font-size:13px;color:#64748B;margin:0 0 16px">Email: ' + perfil.email + ' · Tel: ' + perfil.telefono + '</p>' +
+        '<p style="font-size:16px;font-weight:700;color:#0F1923;margin:0 0 4px">' + esc(perfil.nombre) + (perfil.empresa ? ' · <span style="font-weight:400;color:#475569">' + esc(perfil.empresa) + '</span>' : '') + '</p>' +
+        '<p style="font-size:13px;color:#64748B;margin:0 0 16px">Email: ' + esc(perfil.email) + ' · Tel: ' + esc(perfil.telefono) + '</p>' +
         '<table style="width:100%;border-collapse:collapse;margin-bottom:16px">' +
-          '<tr><td style="color:#64748B;padding:6px 0;font-size:13px;width:35%">Zona</td><td style="font-size:13px;color:#0F1923;font-weight:600">' + perfil.zonaBase + '</td></tr>' +
-          '<tr style="background:#F5F7FA"><td style="color:#64748B;padding:6px 6px;font-size:13px">Vehículo</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:6px 0">' + perfil.vehiculo + '</td></tr>' +
+          '<tr><td style="color:#64748B;padding:6px 0;font-size:13px;width:35%">Zona</td><td style="font-size:13px;color:#0F1923;font-weight:600">' + esc(perfil.zonaBase) + '</td></tr>' +
+          '<tr style="background:#F5F7FA"><td style="color:#64748B;padding:6px 6px;font-size:13px">Vehículo</td><td style="font-size:13px;color:#0F1923;font-weight:600;padding:6px 0">' + esc(perfil.vehiculo) + '</td></tr>' +
         '</table>' +
         badgeCuil +
         bloquesFotos +
@@ -677,7 +685,7 @@ async function notificarAdmin(perfil) {
            ' style="display:inline-block;margin-top:16px;background:#22C36A;color:#003580;padding:13px 26px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px">' +
           'Revisar y aprobar →' +
         '</a>' +
-        '<p style="color:#94A3B8;font-size:11px;margin-top:16px;font-family:monospace">ID: ' + perfil.id + ' · ' + perfil.fechaRegistro + '</p>' +
+        '<p style="color:#94A3B8;font-size:11px;margin-top:16px;font-family:monospace">ID: ' + esc(perfil.id) + ' · ' + esc(perfil.fechaRegistro) + '</p>' +
       '</div>' +
       '<div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:11px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar</div>' +
       '</div>',

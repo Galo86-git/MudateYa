@@ -753,7 +753,11 @@ module.exports = async function handler(req, res) {
   // ── RATE LIMITING por IP ─────────────────────────────────────────
   const RATE_LIMITED_ACTIONS = ['publicar', 'cotizar', 'analizar-foto', 'crear-sesion', 'request-magic-link', 'request-magic-link-cliente', 'detalle-cotizacion', 'aceptar'];
   if (RATE_LIMITED_ACTIONS.includes(action)) {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    // El PRIMER valor de X-Forwarded-For lo pone el cliente HTTP y es
+    // falsificable (un header distinto en cada request salta el límite
+    // entero) — el ÚLTIMO es el que agregó Vercel, el real.
+    const xffRate = req.headers['x-forwarded-for'];
+    const ip = (xffRate ? xffRate.split(',').pop().trim() : '') || req.socket?.remoteAddress || 'unknown';
     const rlKey = `ratelimit:${action}:${ip}`;
     const MAX_PER_MINUTE = action === 'analizar-foto' ? 5 : 15;
     try {

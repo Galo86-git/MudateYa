@@ -271,6 +271,15 @@ async function registrar() {
   btn.textContent = 'Generando…';
 
   _canalDetectado = detectarCanal(inmo);
+  // RE/MAX es un caso especial: api/remax.js exige un campo "oficina" (se
+  // valida contra el padrón oficial) que este formulario genérico no tiene
+  // forma de pedir/completar. Sin este chequeo, cualquiera que escribiera
+  // algo con "remax" quedaba SIEMPRE bloqueado con un error sin sentido
+  // ("Elegí tu oficina RE/MAX") en un form que no tiene ese campo — no podía
+  // completar el alta por acá. Se trata como cualquier inmobiliaria de texto
+  // libre; si de verdad es de RE/MAX, puede darse de alta desde
+  // remax-registro.html, que sí pide la oficina.
+  if (_canalDetectado && _canalDetectado.slug === 'remax') _canalDetectado = null;
   // Inmobiliaria real (autocomplete) — solo cuenta si el texto matchea EXACTO
   // con una de la lista (evita asociar mal por un nombre parecido pero distinto).
   var slugInmoReal = _canalDetectado ? null : _inmosPorNombre[inmo.toLowerCase().trim()];

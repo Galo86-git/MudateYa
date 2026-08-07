@@ -1186,7 +1186,9 @@ module.exports = async function handler(req, res) {
     // ── INTERNAL-MARCAR-PAGADO (llamado desde cotizaciones.js vía hook) ──
     if (action === 'internal-marcar-pagado' && req.method === 'POST') {
       var intSecret = req.headers['x-internal-secret'];
-      if (intSecret !== process.env.INTERNAL_API_SECRET) {
+      // Si INTERNAL_API_SECRET no está seteado, las dos variables son
+      // undefined y `!==` da false — "pasaba" la validación sin secreto.
+      if (!process.env.INTERNAL_API_SECRET || intSecret !== process.env.INTERNAL_API_SECRET) {
         return res.status(401).json({ error: 'No autorizado' });
       }
       var impBody = req.body || {};
@@ -1226,7 +1228,7 @@ module.exports = async function handler(req, res) {
     // Cambia el estado del pedido a 'cancelado' y notifica al asesor (push + email).
     if (action === 'internal-marcar-cancelado' && req.method === 'POST') {
       var icSecret = req.headers['x-internal-secret'];
-      if (icSecret !== process.env.INTERNAL_API_SECRET) {
+      if (!process.env.INTERNAL_API_SECRET || icSecret !== process.env.INTERNAL_API_SECRET) {
         return res.status(401).json({ error: 'No autorizado' });
       }
       var icBody = req.body || {};
