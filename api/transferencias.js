@@ -591,6 +591,22 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ transferencias: todas, bancoConfigurado: bancoConfigurado() });
     }
 
+    // POST accion=borrar-permanente — hard delete de UNA declaración de
+    // transferencia. Pensado para limpiar datos de prueba: borra la key y la
+    // saca de transferencias:pendientes (que pese al nombre guarda TODOS los
+    // ids alguna vez creados, no solo los pendientes — así lee el listado de
+    // arriba). No toca la mudanza asociada, eso lo maneja
+    // admin-borrar-permanente en cotizaciones.js por separado. IRREVERSIBLE.
+    if (req.method === 'POST' && (req.body || {}).accion === 'borrar-permanente') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+      const idBorrar = (req.body || {}).id;
+      if (!idBorrar) return res.status(400).json({ error: 'Falta id' });
+      await redisCall('DEL', `transferencia:${idBorrar}`);
+      const idxBorrar = (await getJSON('transferencias:pendientes')) || [];
+      await setJSON('transferencias:pendientes', idxBorrar.filter((x) => x !== idBorrar), TTL);
+      return res.status(200).json({ ok: true, borrado: idBorrar });
+    }
+
     // POST accion=confirmar | rechazar
     if (req.method === 'POST') {
       if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
