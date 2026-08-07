@@ -29,7 +29,7 @@
 //                       Si ese mail es un asesor de canal, usa su link REAL.
 
 const { Resend } = require('resend');
-var crypto = require('crypto');
+var { linkBaja } = require('./_baja');
 
 // ── Canales con link exclusivo de cotización (?asesor={codigo}) ──
 // prefijo = prefijo de las claves en Redis · slug = canal en la URL pública.
@@ -86,21 +86,7 @@ function linkCotizacion(slug, codigo) {
   return SITE + '/inmobiliaria/' + slug + '?asesor=' + encodeURIComponent(codigo);
 }
 
-// ── HELPER: link de baja (List-Unsubscribe) de UN asesor puntual ──
-// Firma HMAC-SHA256(prefijo:codigo, ADMIN_TOKEN) — mismo secreto que ya usa
-// _auth.js para los tokens de sesión, pero esto NO da acceso admin: el
-// endpoint (api/asesor-baja.js) solo permite apagar `activo` de ESE asesor,
-// nada más. Se agrega para que los mails masivos (este cron + el de los
-// viernes) tengan un List-Unsubscribe real — Gmail/Yahoo lo pesan mucho para
-// no mandar a spam, y a partir de cierto volumen lo exigen.
-function firmarBaja(prefijo, codigo) {
-  var secreto = process.env.ADMIN_TOKEN || '';
-  return crypto.createHmac('sha256', secreto).update(prefijo + ':' + codigo).digest('hex').slice(0, 24);
-}
-function linkBaja(prefijo, codigo) {
-  return SITE + '/api/asesor-baja?canal=' + encodeURIComponent(prefijo) + '&codigo=' + encodeURIComponent(codigo) + '&sig=' + firmarBaja(prefijo, codigo);
-}
-// Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,
+// ── Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,
 // one-click de Gmail/Yahoo) para mails masivos. Si no hay link puntual
 // (ej. modo test sin match), cae al mailto solo — sigue siendo válido.
 function headersListUnsub(url) {
@@ -115,6 +101,15 @@ function headersListUnsub(url) {
 async function recolectarDestinatarios() {
   var out = [];
   var vistos = {};
+  // Suprimidos globales (mismo SET que usan enviar-propuesta-remax.js /
+  // enviar-propuestas-colegios.js vía api/_baja.js) — un asesor que se dio de
+  // baja de este mail NO se toca en su ficha (`activo` sigue intacto, sus
+  // notificaciones reales de comisión/clientes siguen andando).
+  var suprimidos = {};
+  try {
+    var listaSuprimidos = (await redisCall('smembers', ['baja:emails'])) || [];
+    for (var s = 0; s < listaSuprimidos.length; s++) suprimidos[listaSuprimidos[s]] = true;
+  } catch (e) { console.warn('No se pudo leer baja:emails:', e.message); }
   for (var c = 0; c < CANALES.length; c++) {
     var canal = CANALES[c];
     var ids = await getJSON(canal.prefijo + ':asesores') || [];
@@ -122,8 +117,8 @@ async function recolectarDestinatarios() {
       var a = await getJSON(canal.prefijo + ':asesor:' + ids[i]);
       if (!a || !validEmail(a.email)) continue;
       if (a.activo === false) continue; // asesor dado de baja de la cuenta
-      if (a.suprimidoMasivos === true) continue; // se dio de baja SOLO de estos mails (api/asesor-baja.js) — sus avisos reales siguen andando
       var k = String(a.email).toLowerCase().trim();
+      if (suprimidos[k]) continue;      // se dio de baja de este mail puntual
       if (vistos[k]) continue;          // ya listado por otro canal
       vistos[k] = true;
       var codigoReal = a.codigo || ids[i];
@@ -154,7 +149,7 @@ async function recolectarDestinatarios() {
         // índice {prefijo}:asesor:{codigo}:mudanzas armado en cotizaciones.js.
         prefijo: canal.prefijo,
         codigo:  codigoReal,
-        linkBaja: linkBaja(canal.prefijo, codigoReal)
+        linkBaja: linkBaja(a.email, 'asesores-semanal')
       });
     }
   }
