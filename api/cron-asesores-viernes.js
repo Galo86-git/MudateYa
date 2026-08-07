@@ -32,8 +32,12 @@
 //   ?dry=1            → NO envía nada; devuelve a quiénes les llegaría + sus stats.
 //   ?test=mail@x.com  → envía UN solo mail de muestra a esa dirección (con sus
 //                       stats reales si ese mail es un asesor de canal) y corta.
+//   ?verLog=1         → NO envía nada; devuelve el resultado guardado del
+//                       último envío REAL de esta semana (enviados/errores/
+//                       destinatarios). ?fecha=YYYY-MM-DD para ver una
+//                       semana anterior (hora AR, formato de fechaAR()).
 // Nunca manda al listado real salvo que dispare el propio cron de Vercel o el
-// admin explícitamente sin ?dry/?test.
+// admin explícitamente sin ?dry/?test/?verLog.
 
 const { Resend } = require('resend');
 const base = require('./cron-asesores-semanal');
@@ -156,8 +160,19 @@ module.exports = async function handler(req, res) {
   var resend = new Resend(process.env.RESEND_API_KEY);
   var esDry  = req.query && req.query.dry === '1';
   var testTo = req.query && req.query.test ? String(req.query.test).trim() : '';
+  var verLog = req.query && req.query.verLog === '1';
 
   try {
+    // ── MODO CONSULTA: leer el resultado guardado de un envío real ya hecho,
+    // sin disparar nada. ?fecha=YYYY-MM-DD (hora AR) para ver una semana
+    // anterior — default: la semana actual. ──
+    if (verLog) {
+      const fecha = (req.query && req.query.fecha) || fechaAR();
+      const log = await getJSON('asesores:resumen-viernes:log:' + fecha);
+      if (!log) return res.status(404).json({ ok: false, error: 'No hay envío real guardado para ' + fecha });
+      return res.status(200).json({ ok: true, fecha, ...log });
+    }
+
     var lista0 = await recolectarDestinatarios();
 
     // ── MODO TEST: mandar una sola muestra y cortar ──
@@ -219,6 +234,15 @@ module.exports = async function handler(req, res) {
         console.warn('Error enviando resumen semanal a ' + d.email + ':', e.message);
       }
       await new Promise(function(ok){ setTimeout(ok, 120); });
+    }
+
+    // Guardamos el resultado real (solo cuando fue un envío de verdad, no un
+    // dry-run) para poder consultar después quién recibió qué sin depender
+    // de los logs de Vercel — ver ?verLog=1 arriba. TTL 30 días.
+    if (!esDry) {
+      try {
+        await redisCall('set', ['asesores:resumen-viernes:log:' + fechaAR(), JSON.stringify(resumen), 'EX', String(30 * 24 * 60 * 60)]);
+      } catch (e) { console.warn('No se pudo guardar el log del envío:', e.message); }
     }
 
     return res.status(200).json({ ok: true, dry: esDry, ...resumen });
