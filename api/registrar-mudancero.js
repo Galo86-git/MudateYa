@@ -582,12 +582,6 @@ module.exports = async function handler(req, res) {
       autoAprobado = _r.accion === 'aprobado';
     } catch (e) { console.warn('auto-aprobar:', e.message); }
 
-    // ── HOOK ALIADOS: crear atribución de alta si vino por un ref ──
-    if (refAliado) {
-      try { await hookCrearAtribucionAlta(email, refAliado, vehiculo); }
-      catch(e) { console.warn('hookCrearAtribucionAlta:', e.message); }
-    }
-
     // ── NOTIFICAR AL ADMIN ──────────────────────────────────────
     try { await notificarAdmin(perfil); } catch(e) { console.warn('Email admin:', e.message); }
 
@@ -852,24 +846,3 @@ function paso(num, texto) {
   '</div>';
 }
 
-// ── HOOK ALIADOS: crear atribución de alta en el programa de Aliados ──
-// Si el mudancero llegó con un slug de aliado (cookie mya_ref), creamos
-// la atribución en estado 'en_curso'. Al acreditar desde el admin → 'acreditada'.
-async function hookCrearAtribucionAlta(mudanceroEmail, slug, vehiculo) {
-  try {
-    var secret = process.env.INTERNAL_API_SECRET;
-    if (!secret) return;
-    // Heurística: si el vehículo es furgón/camioneta, es "alta de fletero"
-    var tipo = /furg|camioneta|flete/i.test(String(vehiculo || '')) ? 'fletero' : 'mudancero';
-    var base = process.env.SITE_URL || 'https://mudateya.ar';
-    await fetch(base.replace(/\/$/, '') + '/api/aliados?action=internal-alta-crear', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-internal-secret': secret },
-      body: JSON.stringify({
-        mudanceroEmail: mudanceroEmail,
-        slug: String(slug).toUpperCase(),
-        tipo: tipo
-      })
-    });
-  } catch(e) { console.warn('hookCrearAtribucionAlta:', e.message); }
-}

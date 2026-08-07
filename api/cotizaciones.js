@@ -635,100 +635,6 @@ async function generarPDFBase64(datos) {
 // vieja. Ahora hay una sola función (exportada de admin-aprobar.js), usada
 // por los dos caminos de aprobación (manual y automática).
 
-// ═══════════════════════════════════════════════════════════════════
-// HELPERS PARA PROGRAMA DE ALIADOS
-// ═══════════════════════════════════════════════════════════════════
-// Llama internamente al endpoint /api/aliados con header de autenticación interna.
-// No usamos import directo para mantener los endpoints desacoplados.
-async function aliadosCall(actionName, body) {
-  try {
-    var url = 'https://mudateya.ar/api/aliados?action=' + actionName;
-    var r = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-internal-secret': process.env.INTERNAL_API_SECRET || ''
-      },
-      body: JSON.stringify(body || {})
-    });
-    if (!r.ok) return { ok:false };
-    return await r.json();
-  } catch(e) {
-    console.warn('aliadosCall error:', e.message);
-    return { ok:false };
-  }
-}
-
-// Crea atribución al publicar si el cliente viene con ref válida
-async function hookCrearAtribucion(mudanzaId, refSlug, tipo) {
-  if (!refSlug || !mudanzaId) return;
-  try {
-    await aliadosCall('internal-crear-atribucion', {
-      mudanzaId: mudanzaId,
-      slug: String(refSlug).toUpperCase().trim(),
-      tipo: tipo || 'mudanza'
-    });
-  } catch(e) { console.warn('hookCrearAtribucion:', e.message); }
-}
-
-// Acredita la atribución al completarse la mudanza (saldo pagado)
-async function hookAcreditarAliado(mudanzaId) {
-  if (!mudanzaId) return;
-  try {
-    await aliadosCall('internal-acreditar', { mudanzaId: mudanzaId });
-  } catch(e) { console.warn('hookAcreditarAliado:', e.message); }
-}
-
-// Cancela la atribución si la mudanza se elimina o cancela
-async function hookCancelarAtribucion(mudanzaId) {
-  if (!mudanzaId) return;
-  try {
-    await aliadosCall('internal-cancelar', { mudanzaId: mudanzaId });
-  } catch(e) { console.warn('hookCancelarAtribucion:', e.message); }
-}
-
-// ── Hook ASESORES (Plan Referidos) ──────────────────────────────────
-async function asesoresCall(actionName, body) {
-  try {
-    var url = 'https://mudateya.ar/api/asesores?action=' + actionName;
-    var r = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-internal-secret': process.env.INTERNAL_API_SECRET || ''
-      },
-      body: JSON.stringify(body || {})
-    });
-    if (!r.ok) return { ok:false };
-    return await r.json();
-  } catch(e) {
-    console.warn('asesoresCall error:', e.message);
-    return { ok:false };
-  }
-}
-
-// Marca un pedido-asesor como pagado (anticipo) o completado (saldo)
-async function hookAsesorPagado(pedidoAsesorId, tipoPago) {
-  if (!pedidoAsesorId) return;
-  try {
-    await asesoresCall('internal-marcar-pagado', {
-      pedidoAsesorId: pedidoAsesorId,
-      tipoPago: tipoPago || 'anticipo'
-    });
-  } catch(e) { console.warn('hookAsesorPagado:', e.message); }
-}
-
-// Marca un pedido-asesor como cancelado (cliente eliminó la mudanza).
-// El handler interno notifica al asesor (push + email).
-async function hookAsesorCancelado(pedidoAsesorId) {
-  if (!pedidoAsesorId) return;
-  try {
-    await asesoresCall('internal-marcar-cancelado', {
-      pedidoAsesorId: pedidoAsesorId
-    });
-  } catch(e) { console.warn('hookAsesorCancelado:', e.message); }
-}
-
 module.exports = async function handler(req, res) {
   // ── CORS: solo aceptar requests desde mudateya.ar ──────────────
   const allowedOrigins = [
@@ -1298,10 +1204,6 @@ module.exports = async function handler(req, res) {
           await enviarPlantilla(clienteWA, 'pedido_recibido_cliente', { 1: nomCli, 2: tipo || 'mudanza', 3: desde, 4: hasta });
         } catch (e) { console.warn('WhatsApp confirmación pedido (web):', e.message); }
       }
-      // ── Hook aliados: crear atribución si el cliente vino por un link de aliado ──
-      if (refAliado) {
-        try { await hookCrearAtribucion(id, refAliado, tipo || 'mudanza'); } catch(e) { console.warn('Hook aliado publicar:', e.message); }
-      }
       return res.status(200).json({ ok: true, id, mudanza });
     }
 
@@ -1803,10 +1705,6 @@ module.exports = async function handler(req, res) {
           const cot = m.cotizacionAceptada || {};
           m.anticipoMonto = Math.round((parseInt(cot.precio || 0)) * 0.5);
         }
-        // Hook Asesores: si la mudanza vino del Plan Referidos, marcar el pedido-asesor como pagado
-        if (m.pedidoAsesorId) {
-          try { await hookAsesorPagado(m.pedidoAsesorId, 'anticipo'); } catch(e) { console.warn('Hook asesor anticipo:', e.message); }
-        }
       }
       if (tipoPago === 'saldo') {
         m.saldoPagado = true;
@@ -1835,12 +1733,6 @@ module.exports = async function handler(req, res) {
         if (!m.fechaCompletada) m.fechaCompletada = new Date().toISOString();
         // Loguear en Sheets
         try { await logPedidoSheets(m); } catch(e) { console.warn('Sheets log error:', e.message); }
-        // ── Hook aliados: acreditar comisión (la mudanza está completa + 100% pagada) ──
-        try { await hookAcreditarAliado(mudanzaId); } catch(e) { console.warn('Hook aliado acreditar:', e.message); }
-        // Hook Asesores: si vino del Plan Referidos, marcar como completado
-        if (m.pedidoAsesorId) {
-          try { await hookAsesorPagado(m.pedidoAsesorId, 'saldo'); } catch(e) { console.warn('Hook asesor saldo:', e.message); }
-        }
       }
       m.ultimoUpdatePago = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
@@ -2509,14 +2401,6 @@ module.exports = async function handler(req, res) {
       // Sacar del índice del cliente para que no la traiga `mis-mudanzas`
       const idxCliente = await getJSON(`cliente:${clienteEmail}`) || [];
       await setJSON(`cliente:${clienteEmail}`, idxCliente.filter(id => id !== mudanzaId), 2592000);
-      // ── Hook aliados: cancelar atribución si existía ──
-      try { await hookCancelarAtribucion(mudanzaId); } catch(e) { console.warn('Hook aliado cancelar:', e.message); }
-
-      // ── Hook asesores: si la mudanza vino del Plan Referidos, marcar el pedido-asesor como cancelado ──
-      // El handler interno notifica al asesor por push + email.
-      if (m.pedidoAsesorId) {
-        try { await hookAsesorCancelado(m.pedidoAsesorId); } catch(e) { console.warn('Hook asesor cancelar:', e.message); }
-      }
       // Sistema real de asesores (link fijo independientes/mudafy/remax/c21): no usa
       // pedidoAsesorId, así que se avisa acá directo por mail + WhatsApp.
       if (m.partnerAsesor) {

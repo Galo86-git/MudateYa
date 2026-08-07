@@ -86,10 +86,6 @@
       "destination": "/relocation-vaca-muerta.html"
     },
     {
-      "source": "/asesores",
-      "destination": "/asesores.html"
-    },
-    {
       "source": "/inmobiliaria/:slug",
       "destination": "/inmobiliaria.html?slug=:slug"
     },
@@ -104,22 +100,6 @@
     {
       "source": "/research-mudanceros",
       "destination": "/research-mudanceros.html"
-    },
-    {
-      "source": "/asesor-login",
-      "destination": "/asesor-login.html"
-    },
-    {
-      "source": "/asesor-dashboard",
-      "destination": "/asesor-dashboard.html"
-    },
-    {
-      "source": "/cliente-packs",
-      "destination": "/cliente-packs.html"
-    },
-    {
-      "source": "/aliados",
-      "destination": "/aliados.html"
     },
     {
       "source": "/r/:slug",
@@ -388,7 +368,7 @@
       ]
     },
     {
-      "source": "/(admin|admin-ia|admin-circulo|aliados|asesor-dashboard|asesor-login|asesor-registro|c21-altas|c21-importar|c21-registro|mudafy-importar|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|r|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|cliente-packs|mudancero-perfil|elegir|inmo-asesor-registro)(\\.html)?",
+      "source": "/(admin|admin-ia|admin-circulo|asesor-registro|c21-altas|c21-importar|c21-registro|mudafy-importar|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|mudancero-perfil|elegir|inmo-asesor-registro)(\\.html)?",
       "headers": [
         {
           "key": "Cache-Control",
