@@ -2514,6 +2514,48 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({ ok: true });
     }
+
+    // ── Admin: borrar una mudanza PERMANENTEMENTE (hard delete) ────────
+    // Distinto de 'eliminar' de arriba: ese es el botón del CLIENTE (soft
+    // delete, bloquea si hay pagos, no toca mudanzas:todos). Este es solo
+    // para el admin, pensado para limpiar datos de prueba de la base: borra
+    // la key entera y la saca de los dos índices (activas y el permanente),
+    // sin el bloqueo de pagos — a propósito, porque una mudanza de PRUEBA
+    // puede estar marcada como pagada/completada sin que haya plata real de
+    // por medio. IRREVERSIBLE.
+    if (action === 'admin-borrar-permanente' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { mudanzaId } = req.body || {};
+      if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'No encontrada' });
+      await redisCall('DEL', `mudanza:${mudanzaId}`);
+      const todos = await getJSON('mudanzas:todos') || [];
+      await setJSON('mudanzas:todos', todos.filter(id => id !== mudanzaId));
+      const activas = await getJSON('mudanzas:activas') || [];
+      await setJSON('mudanzas:activas', activas.filter(id => id !== mudanzaId));
+      if (m.clienteEmail) {
+        const idxCliente = await getJSON(`cliente:${m.clienteEmail}`) || [];
+        await setJSON(`cliente:${m.clienteEmail}`, idxCliente.filter(id => id !== mudanzaId));
+      }
+      return res.status(200).json({ ok: true, borrado: mudanzaId });
+    }
+
+    // ── Admin: borrar un perfil de cliente PERMANENTEMENTE ──────────────
+    // Complementa admin-borrar-permanente: borra el perfil consolidado y lo
+    // saca de clientes:todos. Pensado para limpiar clientes de prueba una vez
+    // que ya no les queda ninguna mudanza asociada. IRREVERSIBLE.
+    if (action === 'admin-borrar-cliente' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { email } = req.body || {};
+      if (!email) return res.status(400).json({ error: 'Falta email' });
+      await redisCall('DEL', `cliente:perfil:${email}`);
+      await redisCall('DEL', `cliente:${email}`);
+      const todos = await getJSON('clientes:todos') || [];
+      await setJSON('clientes:todos', todos.filter(e => e !== email));
+      return res.status(200).json({ ok: true, borrado: email });
+    }
+
     // Modo dirigido: cliente invita a mudanceros específicos
     if (action === 'invitar-mudanceros' && req.method === 'POST') {
       const { mudanzaId, clienteEmail: cEmail, mudancerosEmails } = req.body;
