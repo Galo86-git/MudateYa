@@ -4,7 +4,13 @@
 //   El no-show es la principal fuente de reclamos, y casi siempre sale de lo
 //   mismo: el cliente no terminó de embalar, o el mudancero anotó mal el
 //   horario, o uno de los dos ya no cuenta con ese día y no avisó. Un mensaje
-//   la tarde anterior destapa eso cuando todavía hay margen para arreglarlo.
+//   el día anterior destapa eso cuando todavía hay margen para arreglarlo.
+//
+// CUÁNDO
+//   24 h antes del HORARIO REAL de la mudanza, no a una hora fija del día: si
+//   arranca mañana 9:00, el aviso sale hoy 9:00. Por eso el cron corre cada
+//   hora. Si la mudanza no tiene hora cargada se asume HORA_SIN_DATO — es
+//   mejor avisar a las 9 del día anterior que no avisar.
 //
 // A QUIÉN Y QUÉ
 //   Cliente:   confirmá que vas a estar, tené todo embalado y los accesos libres.
@@ -21,7 +27,7 @@
 //   en el calendario y quedan afuera — de ahí en más entran todos, porque el
 //   schema de crear_pedido ahora obliga a Emi a normalizarla.
 
-const TZ = 'America/Argentina/Buenos_Aires';
+const HORA_SIN_DATO = process.env.HORA_VISPERA_SIN_DATO || '09:00';
 // Estados en los que la mudanza está cerrada con un mudancero y todavía no pasó.
 const ESTADOS_CONFIRMADOS = ['cotizacion_aceptada', 'aceptada', 'confirmada'];
 
@@ -42,18 +48,26 @@ async function setJSON(k, v, ex) {
   return redisCall(...a);
 }
 
-// Fecha de MAÑANA en hora argentina, como YYYY-MM-DD. Vercel corre en UTC, así
-// que sin el timeZone explícito a la noche argentina el cron ya estaría mirando
-// el día equivocado. 'en-CA' devuelve justo el formato ISO corto.
-function mananaAR() {
-  return new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: TZ });
-}
 // La fecha guardada puede venir como '2026-08-07' o '2026-08-07T09:00'.
 function soloFecha(f) {
   return String(f || '').trim().split('T')[0];
 }
+function soloHora(m) {
+  const h = String(m.horaOrigen || String(m.fecha || '').split('T')[1] || '').trim().slice(0, 5);
+  return /^([01]?\d|2[0-3]):[0-5]\d$/.test(h) ? h.padStart(5, '0') : '';
+}
 
-async function avisarCliente(m, faltaSena) {
+// Momento exacto de la mudanza, en milisegundos UTC, a partir de la fecha
+// (YYYY-MM-DD) y la hora en horario argentino. Argentina es UTC-3 todo el año
+// (no mueve el reloj en verano), así que alcanza con anclar el offset en el
+// literal — más confiable que hacer malabares con toLocaleString.
+function momentoMudanzaUTC(fechaISO, hora) {
+  const h = hora || HORA_SIN_DATO;
+  const t = Date.parse(`${fechaISO}T${h}:00-03:00`);
+  return isNaN(t) ? null : t;
+}
+
+async function avisarCliente(m, faltaSena, hora) {
   if (!m.clienteWA) return false;
   const nombre = (m.clienteNombre || '').split(' ')[0] || 'Hola';
   const tipo = m.tipo === 'flete' ? 'tu flete' : 'tu mudanza';
@@ -62,7 +76,7 @@ async function avisarCliente(m, faltaSena) {
   try {
     const { enviarPlantilla } = require('./_plantillas');
     let textoLibre =
-      `¡Hola ${nombre}! Mañana es ${tipo} con ${quien} 🚚\n\n` +
+      `¡Hola ${nombre}! Mañana es ${tipo} con ${quien}${hora ? ` a las ${hora}` : ''} 🚚\n\n` +
       `¿Tenés todo listo? Lo ideal es tener las cajas cerradas y los pasillos libres antes de que lleguen. ` +
       `Si algo cambió, respondeme y lo vemos.`;
     if (faltaSena) {
@@ -76,17 +90,16 @@ async function avisarCliente(m, faltaSena) {
   } catch (e) { console.warn('avisarCliente vispera:', e.message); return false; }
 }
 
-async function avisarMudancero(m) {
+async function avisarMudancero(m, hora) {
   const cot = m.cotizacionAceptada || {};
   if (!cot.mudanceroTel) return false;
   const nombre = (cot.mudanceroNombre || '').split(' ')[0] || 'Hola';
   const ruta = `${m.desde || m.origen || ''} → ${m.hasta || m.destino || ''}`;
-  const hora = m.horaOrigen || (String(m.fecha || '').split('T')[1] || '').slice(0, 5);
   try {
     const { enviarPlantilla } = require('./_plantillas');
     const textoLibre =
       `¡Hola ${nombre}! Mañana tenés ${ruta}${hora ? ` a las ${hora}` : ''} 🚚\n\n` +
-      `¿Confirmás horario y dirección? Si surgió algo, avisame ahora así reacomodamos con el cliente.`;
+      `¿Confirmás horario y dirección? Si surgió algo, avisame ahora así lo reacomodamos con el cliente.`;
     const r = await enviarPlantilla(
       cot.mudanceroTel, 'vispera_mudancero',
       { 1: nombre, 2: ruta, 3: hora || 'a coordinar' }, textoLibre
@@ -102,11 +115,12 @@ module.exports = async function handler(req, res) {
   try { esAdminReq = require('./_auth').esAdmin(req); } catch (_) {}
   if (!esVercelCron && !esAdminReq) return res.status(401).json({ error: 'No autorizado' });
 
+  // ?dry=1 → no manda nada, solo devuelve a quién le escribiría y por qué.
   const dry = String((req.query && req.query.dry) || '') === '1';
 
   try {
     const activas = (await getJSON('mudanzas:activas')) || [];
-    const manana = mananaAR();
+    const ahora = Date.now();
     let revisadas = 0, sinFechaUtil = 0;
     const avisadas = [];
 
@@ -118,7 +132,16 @@ module.exports = async function handler(req, res) {
 
       const f = soloFecha(m.fecha);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) { sinFechaUtil++; continue; }
-      if (f !== manana) continue;
+      const hora = soloHora(m);
+      const momento = momentoMudanzaUTC(f, hora);
+      if (!momento) { sinFechaUtil++; continue; }
+
+      // Ventana: desde que faltan 24 h hasta que arranca. Como el cron corre
+      // cada hora y el flag avisoVispera impide repetir, el mensaje sale en la
+      // primera corrida después de cruzar las 24 h — y si una corrida se
+      // saltea, la siguiente lo agarra igual en vez de perderse el aviso.
+      const faltanMs = momento - ahora;
+      if (faltanMs > 24 * 3600000 || faltanMs <= 0) continue;
       if (m.avisoVispera) continue;
 
       const faltaSena = !m.anticipoPagado;
@@ -126,14 +149,16 @@ module.exports = async function handler(req, res) {
       avisadas.push({
         id: id,
         ruta: `${m.desde || m.origen || ''} → ${m.hasta || m.destino || ''}`,
+        cuando: `${f} ${hora || HORA_SIN_DATO}`,
+        faltanHoras: Math.round((faltanMs / 3600000) * 10) / 10,
         cliente: m.clienteNombre || '—',
         mudancero: cot.mudanceroNombre || cot.mudanceroEmail || '—',
         faltaSena: faltaSena,
       });
 
       if (!dry) {
-        const okCli = await avisarCliente(m, faltaSena);
-        const okMud = await avisarMudancero(m);
+        const okCli = await avisarCliente(m, faltaSena, hora);
+        const okMud = await avisarMudancero(m, hora);
         if (okCli || okMud) {
           m.avisoVispera = new Date().toISOString();
           await setJSON(`mudanza:${id}`, m, 604800);
@@ -142,7 +167,7 @@ module.exports = async function handler(req, res) {
     }
 
     return res.status(200).json({
-      ok: true, dry: dry, manana: manana,
+      ok: true, dry: dry,
       confirmadasRevisadas: revisadas,
       sinFechaUtilizable: sinFechaUtil,
       avisadas: avisadas.length,

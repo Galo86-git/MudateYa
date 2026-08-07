@@ -454,7 +454,7 @@
     },
     {
       "path": "/api/cron-vispera-mudanza",
-      "schedule": "0 20 * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron-cerrar-pedidos",

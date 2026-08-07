@@ -529,6 +529,8 @@ FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de est
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
+HORA: cuando el cliente te diga a qué hora arranca, pasala en el campo *hora* como "HH:MM". Con eso el recordatorio de la víspera le llega exactamente 24 horas antes de su horario, en vez de a una hora genérica del día.
+
 FECHA: al crear el pedido, la fecha va SIEMPRE como YYYY-MM-DD. Tenés la fecha de hoy en contexto: si el cliente dice "mañana", "el viernes" o "el 15", resolvelo vos y pasá la fecha real. Guardar "mañana" como texto deja el pedido sin fecha utilizable — no se puede saber después cuándo es, ni recordárselo la víspera.
 
 PISO Y ASCENSOR: ya los venís preguntando en la charla — ahora además pasalos en los campos (*tipo_origen*, *piso_origen*, *ascensor_origen* y los tres de destino). Mencionarlos en los detalles NO alcanza: si no van en esos campos, el mudancero ve "No indicado", cotiza como si fuera planta baja, y el día de la mudanza aparece la escalera. Es de lo que más mueve el precio.
@@ -753,6 +755,7 @@ const tools = [
         origen: { type: 'string' },
         destino: { type: 'string' },
         fecha: { type: 'string', description: 'Fecha de la mudanza en formato YYYY-MM-DD (ej "2026-08-07"). Convertí vos lo que diga el cliente: si dice "mañana" o "el viernes", resolvelo contra la fecha de hoy que tenés en contexto y pasá la fecha real. NUNCA mandes "mañana" ni "7/8" como texto: se guarda tal cual y despues no hay forma de saber cuando es.' },
+        hora: { type: 'string', description: 'Hora a la que arranca la mudanza, formato 24h "HH:MM" (ej "09:00"). Ya se la venís preguntando en la charla — pasala acá. Si no la definió todavía, omitila.' },
         detalles: { type: 'string' },
         nombre: { type: 'string' },
         urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
@@ -1898,6 +1901,9 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     // `detalles` y la card del mudancero mostraba "No indicado". Mismo agujero
     // que tenía `nivel`, y con el mismo final: cotiza barato, el día de la
     // mudanza aparece la escalera y termina en ajuste de precio o en reclamo.
+    // Hora de arranque, "HH:MM". La necesita el recordatorio de la víspera para
+    // salir 24 h antes del horario REAL y no a una hora genérica del día.
+    horaOrigen:  /^([01]?\d|2[0-3]):[0-5]\d$/.test(String(input.hora || '').trim()) ? String(input.hora).trim() : '',
     tipoOrigen:  _tipoLugar(input.tipo_origen),
     pisoOrigen:  _piso(input.piso_origen),
     ascOrigen:   _asc(input.ascensor_origen),
