@@ -16,6 +16,17 @@
 //         fallaron, sin volver a mandarle a quien ya le llegó bien.
 
 const { esAdmin } = require('./_auth');
+const { linkBaja } = require('./_baja');
+
+// Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,
+// one-click de Gmail/Yahoo) — es un anuncio broadcast, no transaccional.
+function headersListUnsub(email) {
+  const url = linkBaja(email, 'anuncio-emi-asesores');
+  return {
+    'List-Unsubscribe': `<mailto:hola@mudateya.ar?subject=BAJA>, <${url}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
 
 async function redisCall(method, ...args) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -73,12 +84,16 @@ function emailAnuncio(nombre) {
 async function calcularDestinatarios() {
   const destinatarios = [];
   const vistos = new Set(); // dedup por email: un asesor podría estar en más de un canal
+  // Suprimidos globales (mismo SET que usa enviar-propuesta-remax.js etc, ver
+  // api/_baja.js) — esto es un anuncio broadcast, no transaccional.
+  const suprimidos = new Set((await redisCall('SMEMBERS', 'baja:emails')) || []);
   for (const canalSlug of Object.keys(CANALES)) {
     const { prefijo, nombre: canalNombre } = CANALES[canalSlug];
     const codigos = (await getJSON(`${prefijo}:asesores`)) || [];
     for (const codigo of codigos) {
       const a = await getJSON(`${prefijo}:asesor:${codigo}`);
       if (!a || !a.email || a.activo === false) continue;
+      if (suprimidos.has(a.email.toLowerCase())) continue;
       const key = a.email.toLowerCase();
       if (vistos.has(key)) continue;
       vistos.add(key);
@@ -126,6 +141,7 @@ module.exports = async function handler(req, res) {
             to: d.email,
             subject: '👋 Te presentamos a Emi, tu asistente de MudateYa por WhatsApp',
             html: d.emailHtml,
+            headers: headersListUnsub(d.email),
           });
           resultados.push({ email: d.email, canal: d.canal, enviado: true });
         } catch (e) {

@@ -14,6 +14,17 @@
 // zona nuevo: usa exactamente lo mismo que ya ve el mudancero hoy.
 
 const { enviarPlantilla } = require('./_plantillas');
+const { linkBaja } = require('./_baja');
+
+// Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,
+// one-click de Gmail/Yahoo) — para la rama por mail (broadcast, no transaccional).
+function headersListUnsub(email) {
+  const url = linkBaja(email, 'recordar-cotizar');
+  return {
+    'List-Unsubscribe': `<mailto:hola@mudateya.ar?subject=BAJA>, <${url}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
 
 const WA_NUMERO = '12399462954'; // mismo número/bot que el resto del sitio (mya-mobility.html, etc.)
 
@@ -134,13 +145,22 @@ module.exports = async function handler(req, res) {
         if (!process.env.RESEND_API_KEY) return res.status(200).json({ ok: false, error: 'sin RESEND_API_KEY' });
         const { Resend } = require('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
+        // Suprimidos globales (mismo SET que usa enviar-propuesta-remax.js
+        // etc, ver api/_baja.js) — solo aplica a la rama de MAIL: es una
+        // lista de opt-out de mail, no toca el canal WhatsApp.
+        const suprimidos = new Set((await redisCall('SMEMBERS', 'baja:emails')) || []);
         for (const d of aEnviar) {
+          if (suprimidos.has(String(d.email).toLowerCase())) {
+            resultados.push({ email: d.email, cantidad: d.cantidad, enviado: false, motivo: 'suprimido (baja de mail)' });
+            continue;
+          }
           try {
             await resend.emails.send({
               from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
               to: d.email,
               subject: `Tenés ${d.cantidad} pedido${d.cantidad > 1 ? 's' : ''} esperando tu cotización en MudateYa`,
               html: d.emailHtml,
+              headers: headersListUnsub(d.email),
             });
             resultados.push({ email: d.email, cantidad: d.cantidad, enviado: true, via: 'email' });
           } catch (e) {

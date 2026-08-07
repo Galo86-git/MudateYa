@@ -58,6 +58,7 @@ async function setJSON(key, value) {
 // Validación de admin: delegada en api/_auth.js (master token o sesión
 // firmada emitida por /api/admin-sesion). Sin fallback hardcodeado.
 var { esAdmin, emailAdmin } = require('./_auth');
+var { linkBaja } = require('./_baja');
 
 // ── Slug legible a partir del nombre (a-z 0-9 y guión) ──
 function slugificar(txt) {
@@ -171,10 +172,22 @@ async function enviarBienvenida(opts) {
       + '<p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin:0 0 20px">No tenés que hacer nada para activarlo: acá abajo está tu <strong>link único</strong>. Compartilo con tus clientes cuando cierren una operación y la mudanza queda atribuida a vos.</p>'
     : '<p style="color:#4B5563;line-height:1.6;font-size:14.5px;margin:0 0 20px">Ya sos aliado de MudateYa a través de Mudafy. Este es tu <strong>link único</strong>: compartilo con tus clientes cuando cierren una operación y ellos consiguen mudanceros verificados.</p>';
 
+  // List-Unsubscribe SOLO en la variante importada: el asesor no pidió nada,
+  // se lo dio de alta Mudafy — es la rama tipo "bulk" (ver action=importar).
+  // El alta self-service (registrar) no lo necesita: el mail es transaccional,
+  // consecuencia directa de que el propio asesor se registró recién.
+  var headersMail = importado
+    ? {
+        'List-Unsubscribe': '<mailto:hola@mudateya.ar?subject=BAJA>, <' + linkBaja(destino, 'mudafy-importado') + '>',
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      }
+    : undefined;
+
   var envio = await resend.emails.send({
     from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
     to: destino,
     subject: asunto,
+    headers: headersMail,
     html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#FAFAFA">
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
         <div style="background:#003580;padding:22px 28px">

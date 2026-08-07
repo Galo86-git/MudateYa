@@ -13,6 +13,7 @@
 // POST ?token=ADMIN_TOKEN {apply:true} → fuerza el envío ahora (ignora la hora)
 
 var { esAdmin } = require('./_auth');
+var { linkBaja } = require('./_baja');
 
 var FLAG_ENVIADO = 'propuestas-garantias:enviado';
 
@@ -95,12 +96,17 @@ module.exports = async function handler(req, res) {
   for (var i = 0; i < DESTINATARIOS.length; i++) {
     var d = DESTINATARIOS[i];
     try {
+      var linkB = linkBaja(d.email, 'propuestas-garantias');
       var envio = await resend.emails.send({
         from: 'MudateYa <contacto@mudateya.ar>',
         to: d.email,
         subject: ASUNTO.replace('{EMPRESA}', d.empresa),
         html: CUERPO_HTML,
         attachments: [{ filename: d.archivo, content: d.pdfBase64 }],
+        headers: {
+          'List-Unsubscribe': '<mailto:hola@mudateya.ar?subject=BAJA>, <' + linkB + '>',
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       });
       if (envio && envio.error) throw new Error(envio.error.message || JSON.stringify(envio.error));
       resultados.push({ empresa: d.empresa, email: d.email, ok: true, id: (envio && envio.data && envio.data.id) || null });

@@ -17,6 +17,18 @@
 //   2. Se llama manualmente con ?token=ADMIN_TOKEN
 
 const { Resend } = require('resend');
+const { linkBaja } = require('./_baja');
+
+// Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,
+// one-click de Gmail/Yahoo) — es un recordatorio recurrente, no transaccional
+// puntual, así que se beneficia igual que las campañas de propuesta.
+function headersListUnsub(email, campania) {
+  var url = linkBaja(email, campania);
+  return {
+    'List-Unsubscribe': '<mailto:hola@mudateya.ar?subject=BAJA>, <' + url + '>',
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
 
 // ── Wrappers Redis (mismos patrones que el resto del proyecto) ──
 async function redisCall(method, args) {
@@ -220,6 +232,15 @@ module.exports = async function handler(req, res) {
   var resumen = { revisados: 0, enviados: { dia1: 0, dia3: 0, dia7: 0 }, errores: 0, detalle: [] };
 
   try {
+    // Suprimidos globales (mismo SET que usa enviar-propuesta-remax.js etc,
+    // ver api/_baja.js) — se chequea acá porque este cron es un recordatorio
+    // recurrente, no un mail transaccional gatillado por una acción puntual.
+    var suprimidos = {};
+    try {
+      var listaSuprimidos = (await redisCall('smembers', ['baja:emails'])) || [];
+      for (var s = 0; s < listaSuprimidos.length; s++) suprimidos[listaSuprimidos[s]] = true;
+    } catch (e) { console.warn('No se pudo leer baja:emails:', e.message); }
+
     // Recorrer todos los perfiles de mudanceros
     var keys = await scanKeys('mudancero:perfil:*');
 
@@ -227,6 +248,7 @@ module.exports = async function handler(req, res) {
       var key = keys[i];
       var perfil = await getJSON(key);
       if (!perfil || !perfil.email) continue;
+      if (suprimidos[String(perfil.email).toLowerCase().trim()]) continue;
 
       resumen.revisados++;
 
@@ -258,6 +280,7 @@ module.exports = async function handler(req, res) {
           to:      perfil.email,
           subject: mail.subject,
           html:    mail.html,
+          headers: headersListUnsub(perfil.email, 'onboarding-' + cual),
         });
         // Registrar en Redis para no duplicar (con lock: ver _perfil-mudancero.js —
         // evita pisar un guardado de perfil concurrente, ej. si el mudancero está

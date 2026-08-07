@@ -15,6 +15,18 @@
 // (plantilla onboarding_mudancero) si ONBOARDING_WA_ACTIVO=1.
 
 const { Resend } = require('resend');
+const { linkBaja } = require('./_baja');
+
+// Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,
+// one-click de Gmail/Yahoo) — es un recordatorio recurrente, no un
+// transaccional gatillado por una acción puntual del mudancero.
+function headersListUnsub(email, campania) {
+  const url = linkBaja(email, campania);
+  return {
+    'List-Unsubscribe': `<mailto:hola@mudateya.ar?subject=BAJA>, <${url}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
 
 async function redisCall(method, ...args) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -158,11 +170,20 @@ module.exports = async function handler(req, res) {
   const detalle = { enviados: [], omitidosPorPiso: [], reactivados: [], fallidos: [] };
 
   try {
+    // Suprimidos globales (mismo SET que usa enviar-propuesta-remax.js etc,
+    // ver api/_baja.js) — recordatorio recurrente, no transaccional.
+    const suprimidos = {};
+    try {
+      const listaSuprimidos = (await redisCall('SMEMBERS', 'baja:emails')) || [];
+      for (const s of listaSuprimidos) suprimidos[s] = true;
+    } catch (e) { console.warn('No se pudo leer baja:emails:', e.message); }
+
     const todos = (await getJSON('mudanceros:todos')) || [];
     for (const email of todos) {
       if (out.incompletos + out.reactivados >= MAX) break;
       const p = await getJSON(`mudancero:perfil:${email}`);
       if (!p || !p.email || p.estado === 'rechazado') continue;
+      if (suprimidos[String(p.email).toLowerCase().trim()]) continue;
       out.revisados++;
 
       const falta = faltantes(p);
@@ -182,6 +203,7 @@ module.exports = async function handler(req, res) {
                 to: p.email,
                 subject: `Te falta poco para recibir pedidos en MudateYa (${falta.length} paso${falta.length > 1 ? 's' : ''})`,
                 html: emailIncompleto(p, falta),
+                headers: headersListUnsub(p.email, 'recordar-perfil-incompleto'),
               });
             }
             const rWA = await nudgeWhatsApp(p, falta);
@@ -222,6 +244,7 @@ module.exports = async function handler(req, res) {
               to: p.email,
               subject: `${(p.nombre || '').split(' ')[0] || 'Hola'}, hace rato no te vemos — hay pedidos en tu zona`,
               html: emailReactivar(p),
+              headers: headersListUnsub(p.email, 'recordar-perfil-reactivar'),
             });
             const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
             await actualizarPerfilMudancero(email, function(perfil) {
