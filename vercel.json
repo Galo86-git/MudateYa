@@ -425,6 +425,10 @@
       "schedule": "0 12 * * 1"
     },
     {
+      "path": "/api/cron-asesores-viernes",
+      "schedule": "0 15 * * 5"
+    },
+    {
       "path": "/api/cron-plantillas",
       "schedule": "0 11 * * *"
     },

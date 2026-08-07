@@ -100,14 +100,34 @@ async function recolectarDestinatarios() {
       var k = String(a.email).toLowerCase().trim();
       if (vistos[k]) continue;          // ya listado por otro canal
       vistos[k] = true;
+      var codigoReal = a.codigo || ids[i];
+      // Asesor vinculado a una inmobiliaria real (api/inmobiliarias.js, alta
+      // via /inmobiliaria/{slug}/registro): SU marca real, no el genérico
+      // del canal — mismo criterio que ya usa Emi (whatsapp.js) y el mail
+      // de bienvenida (canales.js).
+      var canalSlug = canal.slug, canalNombre = canal.nombre, color = canal.color, fondoAviso = canal.fondoAviso;
+      if (a.inmobiliariaSlug) {
+        canalSlug = a.inmobiliariaSlug;
+        canalNombre = a.inmobiliariaNombre || canalNombre;
+        try {
+          var inmoCfg = await getJSON('inmobiliaria:' + a.inmobiliariaSlug);
+          if (inmoCfg && inmoCfg.colorPrimario) color = inmoCfg.colorPrimario;
+        } catch (e) {}
+      }
       out.push({
         email:  a.email,
         nombre: a.nombre || '',
-        canal:  canal.slug,
-        canalNombre: canal.nombre,
-        color: canal.color,
-        fondoAviso: canal.fondoAviso,
-        link:   linkCotizacion(canal.slug, a.codigo || ids[i])
+        canal:  canalSlug,
+        canalNombre: canalNombre,
+        color: color,
+        fondoAviso: fondoAviso,
+        link:   linkCotizacion(canalSlug, codigoReal),
+        // prefijo/codigo = clave REAL de registro (indep/remax/mudafy/c21 +
+        // código propio), NO la marca de arriba — es lo que necesita cualquier
+        // consumidor externo (ej. cron-asesores-viernes.js) para leer el
+        // índice {prefijo}:asesor:{codigo}:mudanzas armado en cotizaciones.js.
+        prefijo: canal.prefijo,
+        codigo:  codigoReal
       });
     }
   }
@@ -278,3 +298,15 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: e.message });
   }
 };
+
+// Reexportado para que cron-asesores-viernes.js (resumen semanal) reuse
+// exactamente la misma lista/marca de asesores en vez de duplicarla — una
+// función es un objeto en JS, esto no afecta que Vercel use module.exports
+// como handler.
+module.exports.recolectarDestinatarios = recolectarDestinatarios;
+module.exports.CANALES = CANALES;
+module.exports.SITE = SITE;
+module.exports.WA_EMI = WA_EMI;
+module.exports.getJSON = getJSON;
+module.exports.redisCall = redisCall;
+module.exports.validEmail = validEmail;
