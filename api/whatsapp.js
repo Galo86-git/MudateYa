@@ -805,8 +805,9 @@ const tools = [
       type: 'object',
       properties: {
         id: { type: 'string', description: 'ID del pedido a cancelar. Si no lo sabés, dejalo vacío y se cancela el más reciente activo.' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL la frase donde el cliente confirmó que quiere cancelar (su "sí, cancelalo" o equivalente) — no la parafrasees, y no uses esta herramienta si no hay una confirmación real y textual.' },
       },
-      required: [],
+      required: ['cita_textual'],
     },
   },
   {
@@ -1138,8 +1139,9 @@ const mudanceroTools = [
         pedidoId: { type: 'string' },
         nuevoPrecio: { type: 'integer', description: 'Nuevo precio total en pesos (entero)' },
         motivo: { type: 'string', description: 'Motivo del ajuste (mínimo unas palabras)' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL lo que el mudancero te contó que justifica el ajuste — no lo redactes ni lo mejores vos. El cliente va a ver este motivo para decidir si paga más, así que tiene que ser textual, no una versión adornada.' },
       },
-      required: ['pedidoId', 'nuevoPrecio', 'motivo'],
+      required: ['pedidoId', 'nuevoPrecio', 'motivo', 'cita_textual'],
     },
   },
   {
@@ -1256,6 +1258,12 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       return JSON.stringify({ ok: true, nota: `Anotado, no le pregunto por ${hMas} hora(s) más. Deseale buen laburo y cortá.` });
     }
     if (name === 'proponer_ajuste') {
+      // El motivo se lo muestra el cliente para decidir si paga más — no se
+      // dispara sin que el mudancero haya dicho de verdad algo que lo respalde
+      // (mismo mecanismo que derivar_a_humano, ver citaValidaEnConversacion).
+      if (!citaValidaEnConversacion(input && input.cita_textual, textoActual, conv)) {
+        return JSON.stringify({ ok: false, error: 'No encontré esa explicación en lo que me contaste. Contame de nuevo, con tus palabras, qué pasó — y con eso armo el ajuste.' });
+      }
       const { ok, d } = await postJSON('proponer-ajuste', { mudanzaId: input.pedidoId, mudanceroEmail: email, nuevoPrecio: input.nuevoPrecio, motivo: input.motivo });
       return JSON.stringify(ok ? { ok: true, nota: 'Ajuste propuesto. El cliente lo tiene que aceptar.' } : { ok: false, error: d.error || 'No se pudo proponer el ajuste.' });
     }
@@ -2124,7 +2132,12 @@ async function agregarDetallePedidoCliente(waId, detalle) {
 
   return { ok: true, id: pedido.id, mensaje: 'Listo, lo agregué a tu pedido y se lo paso al mudancero.' };
 }
-async function cancelarPedidoCliente(waId, id) {
+async function cancelarPedidoCliente(waId, id, citaTextual, textoActual, conv) {
+  // minLen=2: acá lo que importa es que haya una confirmación real, aunque
+  // sea corta ("sí", "dale") — no una narrativa larga como en derivar_a_humano.
+  if (!citaValidaEnConversacion(citaTextual, textoActual, conv, 2)) {
+    return { ok: false, mensaje: 'No encontré una confirmación real tuya para cancelar. Decime "sí, cancelalo" (o algo así) y lo hago.' };
+  }
   const pedidos = await pedidosDelCliente(waId);
   let target = id ? pedidos.find((p) => p.id === id) : null;
   if (!target) {
@@ -2171,9 +2184,13 @@ function normalizarTextoCita(s) {
     .replace(/\s+/g, ' ')
     .trim();
 }
-function citaEsReal(cita, haystack) {
+// minLen configurable: 8 por default (pensado para motivos/narrativas, donde
+// un fragmento corto podría "matchear" cualquier cosa por casualidad). Para
+// confirmaciones cortas y genuinas ("sí", "dale") un piso de 8 rechazaría
+// citas reales — cancelar_pedido pasa un piso más bajo a propósito.
+function citaEsReal(cita, haystack, minLen) {
   const c = normalizarTextoCita(cita);
-  if (c.length < 8) return false;
+  if (c.length < (minLen == null ? 8 : minLen)) return false;
   const h = normalizarTextoCita(haystack);
   if (h.includes(c)) return true;
   // Tolerancia: si la copió con algún cambio menor, alcanza con que 4
@@ -2185,6 +2202,18 @@ function citaEsReal(cita, haystack) {
   }
   return false;
 }
+// Arma el "haystack" (mensaje actual + historial de turnos del usuario) y
+// valida una cita_textual contra él — misma lógica que usa derivarHumano,
+// reutilizable para cualquier tool call que le pida al modelo respaldar una
+// afirmación con algo que la persona haya dicho de verdad. Devuelve true/false.
+function citaValidaEnConversacion(cita, textoActual, conv, minLen) {
+  const historialTexto = ((conv && conv.messages) || [])
+    .filter((m) => m.role === 'user')
+    .map((m) => (typeof m.content === 'string' ? m.content : ''))
+    .join(' \n ');
+  const haystack = `${textoActual || ''} \n ${historialTexto}`;
+  return citaEsReal(cita, haystack, minLen);
+}
 
 async function derivarHumano(waId, motivo, conv, opts) {
   opts = opts || {};
@@ -2194,15 +2223,8 @@ async function derivarHumano(waId, motivo, conv, opts) {
   // 100% construido a partir de campos estructurados, no una afirmación
   // libre sobre lo que dijo la persona— no pasan esta opción y se saltean
   // el chequeo: no hay nada que verificar contra la charla.
-  if (opts.citaTextual !== undefined) {
-    const historialTexto = (conv.messages || [])
-      .filter((m) => m.role === 'user')
-      .map((m) => (typeof m.content === 'string' ? m.content : ''))
-      .join(' \n ');
-    const haystack = `${opts.textoActual || ''} \n ${historialTexto}`;
-    if (!citaEsReal(opts.citaTextual, haystack)) {
-      return { ok: false, mensaje: 'No encontré esa frase en lo que escribiste. No le voy a avisar al equipo sin algo concreto que lo respalde — contame de nuevo qué necesitás.' };
-    }
+  if (opts.citaTextual !== undefined && !citaValidaEnConversacion(opts.citaTextual, opts.textoActual, conv)) {
+    return { ok: false, mensaje: 'No encontré esa frase en lo que escribiste. No le voy a avisar al equipo sin algo concreto que lo respalde — contame de nuevo qué necesitás.' };
   }
   const esMudancero = opts.rol === 'mudancero';
   const ROL_LABELS = { mudancero: 'mudancero/fletero', asesor: 'asesor inmobiliario', inmobiliaria: 'contacto de inmobiliaria' };
@@ -2545,7 +2567,7 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
       return JSON.stringify(await agregarDetallePedidoCliente(waId, input && input.detalle));
     }
     if (name === 'cancelar_pedido') {
-      return JSON.stringify(await cancelarPedidoCliente(waId, input && input.id));
+      return JSON.stringify(await cancelarPedidoCliente(waId, input && input.id, input && input.cita_textual, textoActual, conv));
     }
     if (name === 'validar_direccion') {
       const { geocodificar } = require('./_geo');
