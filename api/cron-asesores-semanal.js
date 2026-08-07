@@ -121,7 +121,8 @@ async function recolectarDestinatarios() {
     for (var i = 0; i < ids.length; i++) {
       var a = await getJSON(canal.prefijo + ':asesor:' + ids[i]);
       if (!a || !validEmail(a.email)) continue;
-      if (a.activo === false) continue; // asesor dado de baja
+      if (a.activo === false) continue; // asesor dado de baja de la cuenta
+      if (a.suprimidoMasivos === true) continue; // se dio de baja SOLO de estos mails (api/asesor-baja.js) — sus avisos reales siguen andando
       var k = String(a.email).toLowerCase().trim();
       if (vistos[k]) continue;          // ya listado por otro canal
       vistos[k] = true;

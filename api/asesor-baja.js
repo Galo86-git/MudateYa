@@ -7,9 +7,11 @@
 // volumen lo exigen.
 //
 // NO afecta la cuenta de asesor en sí: sigue pudiendo cotizar, recibir
-// clientes por su link y usar Emi con normalidad. Solo marca `activo:false`
-// en su ficha — recolectarDestinatarios() (cron-asesores-semanal.js) ya
-// filtra `activo === false`, así que deja de recibir estos 2 mails nomás.
+// clientes por su link, cobrar su comisión y usar Emi con normalidad — a
+// propósito NO toca `activo` (ese campo lo usa resolverAsesor() en
+// cotizaciones.js para las notificaciones REALES de sus clientes referidos).
+// Marca un campo aparte, `suprimidoMasivos:true`, que recolectarDestinatarios()
+// (cron-asesores-semanal.js) filtra — deja de recibir SOLO estos 2 mails.
 //
 // GET  → click manual desde el mail: muestra una página de confirmación.
 // POST → one-click de Gmail/Yahoo (RFC 8058, List-Unsubscribe-Post), sin
@@ -70,7 +72,12 @@ module.exports = async function handler(req, res) {
     var key = canal + ':asesor:' + codigo;
     var a = await getJSON(key);
     if (a) {
-      a.activo = false;
+      // OJO: NO tocar `a.activo` — ese campo lo usa resolverAsesor() en
+      // cotizaciones.js para decidir si le avisa sus notificaciones REALES
+      // (comisión pagada, cliente que reservó, etc.). Si un asesor se da de
+      // baja del mail semanal, tiene que seguir enterándose de eso — usa un
+      // campo aparte, solo leído por recolectarDestinatarios().
+      a.suprimidoMasivos = true;
       await setJSON(key, a);
     }
   } catch (e) {
