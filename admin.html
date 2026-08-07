@@ -5288,7 +5288,7 @@ async function renderInmoSolicitudes() {
         + '<td style="padding:12px;font-size:12px;color:var(--text3);font-family:monospace">' + fechaTxt + '</td>'
         + '<td style="padding:12px;text-align:right;min-width:240px">'
           + '<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'
-          + '<button onclick="inmoAprobarSolicitud(\'' + s.id + '\')" style="background:#22C36A;border:none;color:#fff;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:800;font-family:inherit;white-space:nowrap;box-shadow:0 2px 6px rgba(34,195,106,0.3)">✓ Aprobar y activar</button>'
+          + '<button onclick="inmoAprobarSolicitud(\'' + s.id + '\', this)" style="background:#22C36A;border:none;color:#fff;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:800;font-family:inherit;white-space:nowrap;box-shadow:0 2px 6px rgba(34,195,106,0.3)">✓ Aprobar y activar</button>'
           + '<button onclick="inmoVerSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);font-family:inherit;white-space:nowrap">👁 Ver</button>'
           + '<button onclick="inmoRechazarSolicitud(\'' + s.id + '\')" style="background:none;border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);font-family:inherit;white-space:nowrap">✕ Rechazar</button>'
           + '</div>'
@@ -5341,12 +5341,15 @@ async function inmoVerSolicitud(id) {
 // Aprobar = pre-cargar el form Nueva con los datos de la solicitud y dejar
 // que Galo elija slug/color/comisión y guarde. La solicitud queda marcada
 // como aprobada después de que se guarde la inmobiliaria.
-async function inmoAprobarSolicitud(id) {
+async function inmoAprobarSolicitud(id, btn) {
+  // Guard contra doble click: sin esto, dos clicks rápidos disparaban dos
+  // veces todo el flujo (fetch + auto-branding + marcar en proceso) en paralelo.
+  if (btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = 'Procesando…'; }
   try {
     var r = await fetch('/api/inmobiliarias?action=listar-solicitudes&token=' + ADMTK());
     var d = await r.json();
     var s = (d.solicitudes || []).find(function(x){ return x.id === id; });
-    if (!s) { alert('No se encontró la solicitud.'); return; }
+    if (!s) { alert('No se encontró la solicitud.'); if (btn) { btn.disabled = false; btn.textContent = '✓ Aprobar y activar'; } return; }
 
     // Cambiar al tab "Nueva" y pre-cargar el form.
     // IMPORTANTE: los IDs del form Nueva son inmoContactoEmail y inmoContactoNombre
@@ -5387,6 +5390,7 @@ async function inmoAprobarSolicitud(id) {
     alert('Datos cargados en el form. Completá slug, color y comisión, y dale "Guardar inmobiliaria".');
   } catch(e) {
     alert('Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Aprobar y activar'; }
   }
 }
 
@@ -5529,6 +5533,14 @@ function inmoPreviewActualizar() {
 function _inmoEscHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function _inmoEscAttr(s) { return _inmoEscHtml(s); }
 function _inmoFmt(n) { return (parseFloat(n) || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
+// $0 adeudado es ambiguo: puede ser "ya cobró todo" o "todavía no generó nada".
+// Con operaciones > 0 y nada adeudado, lo marcamos "al día" en vez de un $0 pelado.
+function _inmoCeldaAdeudado(monto, ops) {
+  var m = parseFloat(monto) || 0;
+  if (m > 0) return '$' + _inmoFmt(m);
+  if ((parseInt(ops) || 0) > 0) return '<span style="color:#166534">$0 · al día</span>';
+  return '$0';
+}
 
 // Copiar texto al portapapeles (con feedback en el botón)
 function _copiarTexto(txt, btn) {
@@ -5629,7 +5641,7 @@ async function renderMudafy() {
       h += '<td style="padding:10px 12px"><div style="font-weight:700">' + _inmoEscHtml(row.nombre || '—') + '</div>' + (row.email ? '<div style="font-size:11px;color:var(--text2)">' + _inmoEscHtml(row.email) + '</div>' : '') + '</td>';
       h += '<td style="padding:10px 12px;font-weight:700">' + row.b.ops + '</td>';
       h += '<td style="padding:10px 12px;color:var(--text2)">' + row.b.alq + ' alq · ' + row.b.cv + ' cv</td>';
-      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">$' + _inmoFmt(row.b.adeudado) + '</td>';
+      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">' + _inmoCeldaAdeudado(row.b.adeudado, row.b.ops) + '</td>';
       h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(row.b.pagado) + '</td>';
       h += '</tr>';
     }
@@ -5715,7 +5727,7 @@ async function renderRemax() {
       h += '<td style="padding:10px 12px;color:var(--text2)">' + _inmoEscHtml(row.oficina || '—') + '</td>';
       h += '<td style="padding:10px 12px;font-weight:700">' + row.b.ops + '</td>';
       h += '<td style="padding:10px 12px;color:var(--text2)">' + row.b.alq + ' alq · ' + row.b.cv + ' cv</td>';
-      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">$' + _inmoFmt(row.b.adeudado) + '</td>';
+      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">' + _inmoCeldaAdeudado(row.b.adeudado, row.b.ops) + '</td>';
       h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(row.b.pagado) + '</td>';
       h += '</tr>';
     }
@@ -5802,7 +5814,7 @@ async function renderC21() {
       h += '<td style="padding:10px 12px"><div style="font-weight:700">' + _inmoEscHtml(row.nombre || '—') + '</div>' + (row.email ? '<div style="font-size:11px;color:var(--text2)">' + _inmoEscHtml(row.email) + '</div>' : '') + '</td>';
       h += '<td style="padding:10px 12px;font-weight:700">' + row.b.ops + '</td>';
       h += '<td style="padding:10px 12px;color:var(--text2)">' + row.b.alq + ' alq · ' + row.b.cv + ' cv</td>';
-      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">$' + _inmoFmt(row.b.adeudado) + '</td>';
+      h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">' + _inmoCeldaAdeudado(row.b.adeudado, row.b.ops) + '</td>';
       h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(row.b.pagado) + '</td>';
       h += '</tr>';
     }
@@ -5988,7 +6000,7 @@ function _otrosTablaAsesor(filas) {
     h += '<td style="padding:10px 12px">' + (row.codigo ? '<code style="background:#F3F4F6;padding:2px 6px;border-radius:4px;font-size:11.5px">' + _inmoEscHtml(row.codigo) + '</code>' : '—') + '</td>';
     h += '<td style="padding:10px 12px;font-weight:700">' + row.b.ops + '</td>';
     h += '<td style="padding:10px 12px;color:var(--text2)">' + row.b.alq + ' alq · ' + row.b.cv + ' cv</td>';
-    h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">$' + _inmoFmt(row.b.adeudado) + '</td>';
+    h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">' + _inmoCeldaAdeudado(row.b.adeudado, row.b.ops) + '</td>';
     h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(row.b.pagado) + '</td>';
     h += '<td style="padding:10px 12px;white-space:nowrap">' +
          (row.codigo ? '<button class="btn-sm" onclick="otrosCopiarLink(\'' + _inmoEscHtml(row.codigo) + '\', this)">Link</button>' : '') +
@@ -6076,7 +6088,7 @@ function _otrosTablaInmo(filas) {
     h += '<td style="padding:10px 12px;font-weight:700">' + lista[i].asesores + '</td>';
     h += '<td style="padding:10px 12px;font-weight:700">' + lista[i].ops + '</td>';
     h += '<td style="padding:10px 12px;color:var(--text2)">' + lista[i].alq + ' alq · ' + lista[i].cv + ' cv</td>';
-    h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">$' + _inmoFmt(lista[i].adeudado) + '</td>';
+    h += '<td style="padding:10px 12px;text-align:right;font-weight:700;color:#92400E">' + _inmoCeldaAdeudado(lista[i].adeudado, lista[i].ops) + '</td>';
     h += '<td style="padding:10px 12px;text-align:right;color:#166534">$' + _inmoFmt(lista[i].pagado) + '</td>';
     h += '</tr>';
   }
@@ -6379,16 +6391,20 @@ async function renderInmoComisiones() {
       }];
     } else {
       grupos = data.inmobiliarias || [];
-      // Poblar selector solo una vez
+      // Repoblar el selector en cada carga — antes solo la primera vez, así
+      // que si se creaba/renombraba/desactivaba una inmobiliaria en otra
+      // pestaña, este dropdown quedaba con la lista vieja hasta refrescar
+      // toda la página. Preservamos la selección actual si sigue existiendo.
       var sel = document.getElementById('inmoComFiltro');
-      if (sel.options.length <= 1) {
-        grupos.forEach(function(g) {
-          var opt = document.createElement('option');
-          opt.value = g.slug;
-          opt.textContent = g.nombre;
-          sel.appendChild(opt);
-        });
-      }
+      var valorPrevio = sel.value;
+      sel.innerHTML = '<option value="">— Todas —</option>';
+      grupos.forEach(function(g) {
+        var opt = document.createElement('option');
+        opt.value = g.slug;
+        opt.textContent = g.nombre;
+        sel.appendChild(opt);
+      });
+      sel.value = valorPrevio;
     }
 
     var totalGlobalDeuda = 0;
@@ -6448,7 +6464,7 @@ async function renderInmoComisiones() {
         h += '<td style="padding:8px 10px">' + _inmoEscHtml(m.mudancero || '—') + '</td>';
         h += '<td style="padding:8px 10px">' + _inmoOpBadge(m.tipoOperacion) + '</td>';
         h += '<td style="padding:8px 10px;text-align:right;font-family:monospace">$' + _inmoFmt(m.precioFinal) + '</td>';
-        h += '<td style="padding:8px 10px;text-align:right;font-family:monospace;color:var(--text2)">' + m.comisionPct + '%</td>';
+        h += '<td style="padding:8px 10px;text-align:right;font-family:monospace;color:var(--text2)">' + (isFinite(parseFloat(m.comisionPct)) ? parseFloat(m.comisionPct) + '%' : '—') + '</td>';
         h += '<td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:700">$' + _inmoFmt(m.comisionPagar) + '</td>';
         h += '<td style="padding:8px 10px;text-align:center">' + estadoCell + '</td>';
         h += '</tr>';
@@ -6478,6 +6494,16 @@ async function inmoMarcarLiquidada(mudanzaId) {
 }
 
 // ── Export Excel de comisiones ──
+// Cliente/mudancero/direcciones son texto libre que carga el público (el
+// cliente al pedir la mudanza, el mudancero al registrarse) — si alguien
+// carga un valor que arranca con =, +, - o @, Excel/Sheets puede llegar a
+// interpretarlo como fórmula al abrir el archivo exportado. Antepone una
+// comilla simple para que quede forzado como texto literal.
+function _inmoCeldaSegura(v) {
+  var s = (v === null || v === undefined) ? '' : String(v);
+  return /^[=+\-@\t\r]/.test(s) ? ("'" + s) : s;
+}
+
 async function inmoExportComisiones() {
   try {
     var filtro = document.getElementById('inmoComFiltro').value;
@@ -6493,14 +6519,14 @@ async function inmoExportComisiones() {
     grupos.forEach(function(g) {
       g.resultados.forEach(function(m) {
         rows.push([
-          g.nombre,
+          _inmoCeldaSegura(g.nombre),
           m.id,
           m.fechaCompletada ? new Date(m.fechaCompletada).toLocaleDateString('es-AR') : '',
-          m.cliente,
-          m.mudancero,
+          _inmoCeldaSegura(m.cliente),
+          _inmoCeldaSegura(m.mudancero),
           (m.tipoOperacion === 'compraventa' ? 'Compraventa' : (m.tipoOperacion === 'alquiler' ? 'Alquiler' : '')),
-          m.desde,
-          m.hasta,
+          _inmoCeldaSegura(m.desde),
+          _inmoCeldaSegura(m.hasta),
           m.precioFinal,
           m.comisionPct,
           m.comisionPagar,

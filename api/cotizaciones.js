@@ -779,13 +779,13 @@ module.exports = async function handler(req, res) {
     const token = req.headers['x-session-token'] || req.query.sessionToken;
     if (!token) return false;
     const tokenGuardado = await getJSON(`session:cliente:${email}`);
-    return tokenGuardado && tokenGuardado === token;
+    return !!tokenGuardado && require('./_auth').igualSeguro(tokenGuardado, token);
   }
   async function verificarSesionMudancero(email) {
     const token = req.headers['x-session-token'] || req.query.sessionToken;
     if (!token) return false;
     const tokenGuardado = await getJSON(`session:mudancero:${email}`);
-    return tokenGuardado && tokenGuardado === token;
+    return !!tokenGuardado && require('./_auth').igualSeguro(tokenGuardado, token);
   }
   // Acción pública: crear sesión al hacer login con Google (llamada desde el frontend)
   // El frontend ya validó el token con el SDK de Google — acá solo guardamos la sesión
@@ -2392,6 +2392,8 @@ module.exports = async function handler(req, res) {
 
       if (refundError) m.refundError = refundError;
       await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+      try { await require('./_mudanzas-activas').sacarDeMudanzasActivas(mudanzaId); }
+      catch (e) { console.warn('mudanzas:activas (sacar, cancelar-pedido):', e.message); }
 
       try {
         if (teniaSeñaPagada) await notificarClienteMudanzaCancelada(m, refundOk);
@@ -3047,6 +3049,16 @@ module.exports = async function handler(req, res) {
         }
       });
       if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado' });
+
+      // Sale de la cola de pendientes (aprobado o rechazado) — antes solo la
+      // sacaba la auto-aprobación (_aprobar.js); un admin aprobando/rechazando
+      // a mano desde el panel dejaba el email pegado en mudanceros:pendientes
+      // para siempre (inofensivo funcionalmente porque el cron lo saltea al
+      // no estar ya en 'pendiente_revision', pero el índice crecía sin límite).
+      if (estadoAnterior === 'pendiente_revision' && nuevoEstado !== estadoAnterior) {
+        try { await require('./_mudanceros-pendientes').sacarDeMudancerosPendientes(email); }
+        catch (e) { console.warn('mudanceros:pendientes (sacar):', e.message); }
+      }
 
       // Si se acaba de aprobar → mandar email de alta con link de términos
       if (nuevoEstado === 'aprobado' && estadoAnterior !== 'aprobado') {
@@ -4803,6 +4815,7 @@ async function avisarVencimientoPorMail(mudanza, cots) {
   return true;
 }
 module.exports.avisarVencimientoPorMail = avisarVencimientoPorMail;
+module.exports.notificarMudanceroPedidoCancelado = notificarMudanceroPedidoCancelado;
 
 // ════════════════════════════════════════════════════
 // HELPER — Precio del PERFIL del mudancero según ambientes/tipo

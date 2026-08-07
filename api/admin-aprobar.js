@@ -1,6 +1,15 @@
 // api/admin-aprobar.js
 // Maneja la aprobación/rechazo de mudanceros desde el panel de admin
 // Cuando aprueba: actualiza Redis + Sheets + manda email de alta con link de aceptación de términos
+//
+// OJO (2026-08-07): admin.html hoy NO llama a este handler — usa
+// /api/cotizaciones?action=admin-aprobar-mudancero (ver cotizaciones.js), que
+// tiene la misma lógica pero sin el paso de Sheets. Este archivo sigue
+// deployado y sigue funcionando (requiere esAdmin), y `enviarEmailAltaExitosa`
+// de acá abajo SÍ está en uso real (la reusan cotizaciones.js y _aprobar.js).
+// Si algún día se vuelve a cablear este handler desde el front, mantené la
+// limpieza de mudanceros:pendientes de abajo — sin eso el índice se llena de
+// entradas fantasma que ya fueron resueltas a mano.
 
 
 var { esAdmin } = require('./_auth');
@@ -235,6 +244,12 @@ module.exports = async function handler(req, res) {
       }
     });
     if (!perfil) return res.status(404).json({ error: 'Mudancero no encontrado en Redis' });
+
+    // Sale de la cola de pendientes (ver nota arriba y _mudanceros-pendientes.js)
+    if (estadoAnterior === 'pendiente_revision' && perfil.estado !== estadoAnterior) {
+      try { await require('./_mudanceros-pendientes').sacarDeMudancerosPendientes(email); }
+      catch (e) { console.warn('mudanceros:pendientes (sacar):', e.message); }
+    }
 
     // 2. Actualizar en Google Sheets
     try {

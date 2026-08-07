@@ -125,5 +125,6 @@ module.exports = {
   emailAdmin: emailAdmin,
   emitirToken: emitirToken,
   verificarToken: verificarToken,
+  igualSeguro: igualSeguro,
   TTL_SESION_MS: TTL_SESION_MS
 };

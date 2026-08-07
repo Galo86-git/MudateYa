@@ -234,9 +234,9 @@ async function registrarAsesor(input) {
       return JSON.stringify({ ok: false, error: data.error || 'No se pudo registrar. Revisá los datos.' });
     }
     if (data.yaExistia) {
-      return JSON.stringify({ ok: true, existente: true, link: data.link, nota: `Ya estaba registrado con ese email. Este es su link fijo (no vence): ${data.link}` });
+      return JSON.stringify({ ok: true, existente: true, nota: 'Ya estaba registrado con ese email. Le reenviamos su link fijo (no vence) por mail.' });
     }
-    return JSON.stringify({ ok: true, existente: false, link: data.link, nota: `Registrado con éxito. Le llega un mail de bienvenida con su link. Este es su link fijo (no vence, pasáselo tal cual): ${data.link}` });
+    return JSON.stringify({ ok: true, existente: false, nota: 'Registrado con éxito. Le llega un mail de bienvenida con su link fijo (no vence) para armar presupuestos.' });
   } catch (e) {
     return JSON.stringify({ ok: false, error: 'No pudimos completar el registro ahora. Probá de nuevo en un rato.' });
   }

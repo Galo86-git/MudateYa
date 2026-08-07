@@ -109,7 +109,7 @@ async function autorizar(req, email) {
   var token = req.headers['x-session-token'] || (req.query && req.query.sessionToken);
   if (!token) return false;
   var t1 = await getJSON('session:mudancero:' + emailLow);
-  if (t1 && t1 === token) return 'mudancero';
+  if (t1 && require('./_auth').igualSeguro(t1, token)) return 'mudancero';
   return false;
 }
 

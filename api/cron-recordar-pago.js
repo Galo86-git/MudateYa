@@ -7,6 +7,17 @@
 //   - Si TPL_RECORDATORIO_PAGO_SID está seteada → plantilla (llega fuera de 24h).
 //   - Si no → texto libre con el link /pagar (solo llega dentro de la ventana 24h).
 // Solo pedidos de canal 'whatsapp' con clienteWA.
+//
+// TIMEOUT DE RESERVA (2026-08-07): antes, si el cliente aceptaba una
+// cotización y nunca pagaba la seña, el pedido quedaba en 'cotizacion_aceptada'
+// PARA SIEMPRE — no vuelve a aparecer en por-zona (no está en los estados
+// ABIERTOS que mira cron-cerrar-pedidos.js) y el mudancero elegido queda con
+// un cupo reservado que nunca se concreta ni se libera. Ahora, si pasaron más
+// de UMBRAL_LIBERAR_MS desde que se mandó el recordatorio y todavía no pagó,
+// se libera la reserva: vuelve a 'vencido_con_cotizaciones' (mismo estado que
+// usa cron-cerrar-pedidos.js para pedidos reabribles — el cliente puede
+// aceptar cualquiera de sus cotizaciones vigentes de nuevo) y se avisa a
+// ambos lados.
 
 async function redisCall(method, ...args) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -26,6 +37,25 @@ async function setJSON(k, v, ex) {
 }
 
 const fmt = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
+
+const UMBRAL_LIBERAR_MS = 48 * 60 * 60 * 1000; // 48hs desde el recordatorio de seña
+
+// Avisa al cliente por WhatsApp que se venció el tiempo para pagar la seña y
+// se liberó la reserva (mismo criterio de canal que enviarRecordatorio: solo
+// clientes con WhatsApp cargado — es el único canal donde este cron notifica).
+async function avisarLiberacionCliente(m) {
+  if (!m.clienteWA) return;
+  const nombre = (m.clienteNombre || '').split(' ')[0] || 'Hola';
+  const tipoTxt = m.tipo === 'flete' ? 'tu flete' : 'tu mudanza';
+  try {
+    const { enviarPlantilla } = require('./_plantillas');
+    const site = process.env.SITE_URL || 'https://mudateya.ar';
+    const textoLibre =
+      `¡Hola ${nombre}! Como no llegamos a recibir la seña, liberamos la reserva de ${tipoTxt}. ` +
+      `Tus presupuestos siguen disponibles: entrá a ${site}/mi-mudanza y elegí cuando quieras.`;
+    await enviarPlantilla(m.clienteWA, 'reserva_liberada_sin_pago', { 1: nombre, 2: tipoTxt }, textoLibre);
+  } catch (e) { console.warn('avisarLiberacionCliente:', e.message); }
+}
 
 async function enviarRecordatorio(m, tipoPago, monto) {
   const site = process.env.SITE_URL || 'https://mudateya.ar';
@@ -91,6 +121,31 @@ module.exports = async function handler(req, res) {
         if (monto > 0 && await enviarRecordatorio(m, 'saldo', monto)) {
           m.recordatorioPagoSaldo = new Date().toISOString();
           await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 30);
+          enviados++;
+        }
+        continue;
+      }
+
+      // 3) Liberar reserva: ya se mandó el recordatorio de seña y pasaron más
+      // de 48hs sin pagar. Ver nota "TIMEOUT DE RESERVA" arriba.
+      if (m.estado === 'cotizacion_aceptada' && !m.anticipoPagado && m.recordatorioPagoSena) {
+        const desdeRecordatorio = Date.now() - new Date(m.recordatorioPagoSena).getTime();
+        if (desdeRecordatorio > UMBRAL_LIBERAR_MS) {
+          const cotAceptada = m.cotizacionAceptada;
+          m.estado = 'vencido_con_cotizaciones';
+          m.reservaLiberadaPorFaltaDePago = new Date().toISOString();
+          delete m.cotizacionAceptada;
+          delete m.mudanceroAceptado;
+          delete m.montoTotal;
+          if (Array.isArray(m.cotizaciones) && cotAceptada) {
+            const c = m.cotizaciones.find((x) => x.id === cotAceptada.id);
+            if (c && c.estado === 'aceptada') c.estado = 'pendiente';
+          }
+          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 30);
+          try { await avisarLiberacionCliente(m); } catch (e) { console.warn('avisarLiberacionCliente:', e.message); }
+          try {
+            if (cotAceptada) await require('./cotizaciones').notificarMudanceroPedidoCancelado({ ...m, cotizacionAceptada: cotAceptada });
+          } catch (e) { console.warn('notificarMudanceroPedidoCancelado (timeout pago):', e.message); }
           enviados++;
         }
       }
