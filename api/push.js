@@ -56,30 +56,23 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 }
 
 // ── Auth ────────────────────────────────────────────────────────────────────────
-// Acepta DOS flujos:
-//   A) sessionToken válido en Redis (login magic link) — más seguro
-//   B) perfil de mudancero o cliente existente en Redis (login Google OAuth)
-// Esto cubre los dos flujos actuales de la app sin romper nada.
+// Exige sessionToken válido en Redis. ANTES tenía un segundo flujo "sin
+// token" que autorizaba con solo confirmar que EXISTÍA un perfil con ese
+// email — no que quien pedía la acción fuera esa persona. Con solo saber un
+// email registrado, cualquiera podía suscribirse a las notificaciones de
+// otro (interceptar avisos de pedidos/pagos) o desuscribirlo en silencio.
+// El único caller real (mi-cuenta.html) ya manda x-session-token siempre,
+// así que sacar el modo legado no rompe nada.
 async function autorizar(req, email) {
   if (!email) return false;
   var emailLow = email.toLowerCase();
 
-  // A) sessionToken
   var token = req.headers['x-session-token'] || (req.query && req.query.sessionToken);
-  if (token) {
-    var t1 = await getJSON('session:mudancero:' + emailLow);
-    if (t1 && t1 === token) return 'mudancero';
-    var t2 = await getJSON('session:cliente:' + emailLow);
-    if (t2 && t2 === token) return 'cliente';
-  }
-
-  // B) Sin token: validar que exista un perfil en Redis
-  // Las keys reales en MudateYa son 'mudancero:perfil:{email}' y 'cliente:perfil:{email}'
-  var perfilMud = await getJSON('mudancero:perfil:' + emailLow);
-  if (perfilMud && perfilMud.email) return 'mudancero';
-
-  var perfilCli = await getJSON('cliente:perfil:' + emailLow);
-  if (perfilCli && perfilCli.email) return 'cliente';
+  if (!token) return false;
+  var t1 = await getJSON('session:mudancero:' + emailLow);
+  if (t1 && t1 === token) return 'mudancero';
+  var t2 = await getJSON('session:cliente:' + emailLow);
+  if (t2 && t2 === token) return 'cliente';
 
   return false;
 }

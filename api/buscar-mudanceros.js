@@ -28,24 +28,48 @@ function esComodinNacional(cobertura) {
   return COMODINES_ZONA.some(function(k) { return cobertura.includes(k); });
 }
 
+// La Plata / Mar del Plata: mismo agujero y misma solución que en
+// api/match-mudanceros.js (ver ese archivo para el comentario completo) —
+// comparten la palabra "Plata" pero son ciudades reales a ~400km. Este
+// archivo hoy no lo llama nadie (confirmado en una auditoría), pero se
+// arregla igual para no dejarlo como trampa lista para el día que se reuse.
+function esLaPlataCiudad(texto) {
+  if (texto.includes('mar del plata')) return false;
+  return /(^|\s)la plata(\s|$)/.test(texto);
+}
+function esMarDelPlataCiudad(texto) {
+  return texto.includes('mar del plata');
+}
+
 // Verifica si un mudancero cubre la zona buscada
-function cubreZona(mudancero, palabrasBuscadas) {
+function cubreZona(mudancero, palabrasBuscadas, textoBusqueda) {
   var zonaBase   = norm(mudancero[5] || '');
   var zonasExtra = norm(mudancero[6] || '');
   var cobertura  = zonaBase + ' ' + zonasExtra;
 
   if (esComodinNacional(cobertura)) return true;
 
-  // Match directo: alguna palabra de la búsqueda aparece en la cobertura del mudancero
-  var matchDirecto = palabrasBuscadas.some(function(p) {
-    return cobertura.includes(p);
-  });
-  if (matchDirecto) return true;
+  if (textoBusqueda) {
+    if (esLaPlataCiudad(textoBusqueda) && esLaPlataCiudad(cobertura)) return true;
+    if (esMarDelPlataCiudad(textoBusqueda) && esMarDelPlataCiudad(cobertura)) return true;
+  }
+  var esAmbigua = function(w) { return w === 'plata'; };
 
-  // Match inverso: alguna palabra de la cobertura del mudancero aparece en la búsqueda
+  // Coincidencia EXACTA de palabra completa — antes había acá un match por
+  // substring crudo (palabra de búsqueda contra el string entero de
+  // cobertura) que hacía que "san" matcheara "Santa Fe"/"Santiago" por ser
+  // prefijo. Se saca: exact-match + fallback con longitud mínima cubren los
+  // casos legítimos sin ese agujero.
   var palabrasCobertura = extraerPalabrasZona(cobertura);
+  var matchExacto = palabrasCobertura.some(function(p) {
+    return !esAmbigua(p) && palabrasBuscadas.indexOf(p) !== -1;
+  });
+  if (matchExacto) return true;
+
+  // Fallback por substring: solo palabras largas (6+) en ambos lados.
   var matchInverso = palabrasCobertura.some(function(p) {
-    return palabrasBuscadas.some(function(b) { return b.includes(p) || p.includes(b); });
+    if (esAmbigua(p) || p.length < 6) return false;
+    return palabrasBuscadas.some(function(b) { return !esAmbigua(b) && b.length >= 6 && (b.includes(p) || p.includes(b)); });
   });
   if (matchInverso) return true;
 
@@ -74,7 +98,7 @@ module.exports = async function handler(req, res) {
     if (textoBusqueda.trim().length > 2) {
       const palabrasBuscadas = extraerPalabrasZona(textoBusqueda);
 
-      const conCobertura = aprobados.filter(r => cubreZona(r, palabrasBuscadas));
+      const conCobertura = aprobados.filter(r => cubreZona(r, palabrasBuscadas, norm(textoBusqueda)));
 
       // Si no hay ninguno con cobertura explícita, devolver vacío — NO fallback
       if (conCobertura.length === 0) {

@@ -1851,6 +1851,14 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
   const id = nuevoId();
   const ahora = new Date();
   const nombre = input.nombre || '';
+  // El detalle que cuenta el cliente (por texto o transcripción de audio) va
+  // a `detalles`/`detallesAdicionales.comentario`, que el mudancero lee antes
+  // de cotizar y antes de que se pague la seña — mismo criterio que ya se
+  // aplica al agregar detalle a un pedido abierto (agregar_detalle_pedido) y
+  // al publicar desde la web (sinContacto en cotizaciones.js). Acá faltaba:
+  // un cliente que escribía o decía su teléfono ("mejor llamame al...") lo
+  // filtraba a todos los mudanceros de la zona sin haber elegido a ninguno.
+  const detallesLimpios = sinContactoWA(input.detalles || '');
 
   // Geocodificar origen/destino con Google (best-effort): coords para geo-match y
   // km por ruta para mostrar en el PDF. Si falta la key o falla, sigue sin ello.
@@ -1882,7 +1890,7 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     origen: input.origen,
     destino: input.destino,
     fecha: input.fecha,
-    detalles: input.detalles,
+    detalles: detallesLimpios,
     cliente: { nombre, whatsapp: waId },
     ubicaciones: Array.isArray(ubicaciones) ? ubicaciones : [], // coords compartidas (geo-match)
     canal: 'whatsapp',
@@ -1895,7 +1903,7 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     desde: input.origen,
     hasta: input.destino,
     zonaBase: input.origen,
-    ambientes: parseAmbientes(input.detalles),
+    ambientes: parseAmbientes(detallesLimpios),
     km: kmCalc || 0, // distancia por ruta (Google) — se muestra en el PDF
     origenCoords: origenCoords,
     destinoCoords: destinoCoords,
@@ -1929,8 +1937,8 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     servicios: [],
     extras: [],
     fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [], // URLs de las fotos que mandó el cliente (para dimensionar)
-    detallesAdicionales: (input.detalles || (Array.isArray(fotos) && fotos.length))
-      ? { comentario: input.detalles ? String(input.detalles).slice(0, 500) : '', fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
+    detallesAdicionales: (detallesLimpios || (Array.isArray(fotos) && fotos.length))
+      ? { comentario: detallesLimpios ? detallesLimpios.slice(0, 500) : '', fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
       : null,
     modoCotizacion: dirigido ? 'dirigido' : 'abierto',
     mudancerosInvitados: dirigido ? [TEST_MUDANCERO_EMAIL] : [],
@@ -2823,9 +2831,19 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
         bloques.push({ type: 'image', source: { type: 'base64', media_type: img.tipo, data } });
         // Persistimos la foto (Blob público) para adjuntarla al pedido: el fletero/
         // mudancero la ve y dimensiona. Cap 6 fotos por pedido.
+        // Mismo chequeo de contacto que ya se usa para agregar fotos a un
+        // pedido YA abierto (línea ~2776) — acá faltaba, así que una foto con
+        // el teléfono/email del cliente visible se subía igual y quedaba
+        // pegada al pedido, filtrando el contacto a todos los mudanceros de
+        // la zona antes de que el cliente pague la seña.
         if (conv.fotos.length < 6) {
-          const url = await subirFotoBlob(data, img.tipo);
-          if (url) conv.fotos.push(url);
+          try {
+            const chequeoInicial = await chequearContactoEnFoto(data, img.tipo);
+            if (!chequeoInicial.tieneContacto) {
+              const url = await subirFotoBlob(data, img.tipo);
+              if (url) conv.fotos.push(url);
+            }
+          } catch (e) { console.warn('chequearContactoEnFoto (pedido nuevo):', e.message); }
         }
       }
     }

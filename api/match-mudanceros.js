@@ -54,6 +54,23 @@ function esAMBA(texto) {
   return palabrasZona(t).some((p) => SIGLAS_AMBA.includes(p));
 }
 
+// ── La Plata vs Mar del Plata: dos ciudades reales y distintas (~400km) que
+// comparten la palabra "Plata" ─────────────────────────────────────────────
+// Sin este chequeo explícito, un pedido a "La Plata" matcheaba con un
+// mudancero en "Mar del Plata" (y viceversa) solo por esa palabra suelta —
+// mismo tipo de agujero que resolvió esAMBA arriba, mismo criterio de
+// solución: reconocer la frase completa en vez de confiar en la palabra sola.
+// "plata" se excluye del matching genérico por palabra suelta más abajo en
+// coincideZona(); si de verdad es la misma ciudad, matchea acá.
+function esLaPlataCiudad(texto) {
+  const t = norm(texto);
+  if (t.includes('mar del plata')) return false; // "mar del plata" contiene "plata" pero NO es "La Plata"
+  return /(^|\s)la plata(\s|$)/.test(t);
+}
+function esMarDelPlataCiudad(texto) {
+  return norm(texto).includes('mar del plata');
+}
+
 // Frases que un mudancero pone en zonasExtra para decir "cubro cualquier
 // lugar" — sin esto, "toda argentina" quedaba reducida a la palabra "toda"
 // (STOP descarta "argentina"), así que nunca matcheaba con ningún pedido real.
@@ -146,9 +163,33 @@ function coincideZona(cobertura, palabras, opts) {
   // ya viene tokenizado y las frases de dos palabras no sobreviven al split.
   if (opts && opts.textoPedido && esAMBA(opts.textoPedido) && esAMBA(cobertura)) return true;
   const cob = norm(cobertura);
-  if (palabras.some((p) => cob.includes(p))) return true;
+
+  // La Plata / Mar del Plata: mismo criterio que AMBA arriba, ver comentario
+  // de esLaPlataCiudad/esMarDelPlataCiudad. Se resuelve ANTES del matching
+  // genérico para que "plata" (ambigua entre las dos) nunca sea la única
+  // razón por la que matchean o dejan de matchear.
+  if (opts && opts.textoPedido) {
+    if (esLaPlataCiudad(opts.textoPedido) && esLaPlataCiudad(cob)) return true;
+    if (esMarDelPlataCiudad(opts.textoPedido) && esMarDelPlataCiudad(cob)) return true;
+  }
+  const esAmbigua = (w) => w === 'plata';
+
+  // OJO: acá antes había un chequeo de substring crudo (palabra del pedido
+  // contra el string entero de cobertura sin tokenizar) — es justo el que
+  // hacía que "san" (de "San Isidro") matcheara "Santa Fe"/"Santiago" por
+  // ser prefijo. Se saca: el resto de los chequeos (match exacto de token +
+  // fallback por substring con longitud mínima) cubren los casos legítimos
+  // sin ese agujero.
   const cobPal = palabrasZona(cob);
-  return cobPal.some((p) => palabras.some((b) => b.includes(p) || p.includes(b)));
+  // Coincidencia EXACTA de palabra completa primero — elimina falsos
+  // positivos de substring parcial (ej. "san" de "San Isidro" ya no matchea
+  // "Santa Fe"/"Santiago" solo porque esas palabras EMPIEZAN con "san").
+  if (cobPal.some((p) => !esAmbigua(p) && palabras.includes(p))) return true;
+  // Fallback por substring: solo para palabras largas (6+ letras) en AMBOS
+  // lados — sigue reconociendo nombres compuestos/abreviaturas largas, pero
+  // ya no alcanza con una palabra corta suelta para matchear.
+  return cobPal.some((p) => !esAmbigua(p) && p.length >= 6 &&
+    palabras.some((b) => !esAmbigua(b) && b.length >= 6 && (b.includes(p) || p.includes(b))));
 }
 
 // ── Score por reglas (0..100) ────────────────────────────────────────────────
@@ -157,7 +198,8 @@ function scoreReglas(perfil, palabras, pedido) {
   const señales = [];
 
   const cobertura = `${perfil.zonaBase || ''} ${perfil.zonasExtra || ''}`;
-  if (coincideZona(cobertura, palabras)) { score += 45; señales.push('cubre la zona'); }
+  const textoPedidoZona = `${pedido.origen || ''} ${pedido.destino || ''}`;
+  if (coincideZona(cobertura, palabras, { textoPedido: textoPedidoZona })) { score += 45; señales.push('cubre la zona'); }
 
   // Días disponibles (si el perfil los declara y el pedido tiene fecha, es un plus blando)
   if (perfil.dias) { score += 8; }

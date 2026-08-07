@@ -1294,9 +1294,22 @@ module.exports = async function handler(req, res) {
       const { mudanzaId, mudanceroEmail, mudanceroNombre, mudanceroTel, precio, nota, tiempoEstimado, propuestas,
               modalidad, horasIncluidas, valorHoraAdicional } = req.body;
       if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
+      // Lock: sin esto, dos mudanceros cotizando casi al mismo tiempo podían
+      // leer el mismo array de cotizaciones, agregar la suya en memoria cada
+      // uno, y el segundo SET pisaba por completo la cotización del primero
+      // — desaparecía en silencio, sin error para nadie.
+      if (!(await adquirirLock(`lock:cotizar:${mudanzaId}`, 15))) {
+        return res.status(409).json({ error: 'Se está procesando otra cotización para este pedido. Probá de nuevo en unos segundos.' });
+      }
       const mudanza = await getJSON(`mudanza:${mudanzaId}`);
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (mudanza.estado !== 'buscando') return res.status(400).json({ error: 'No acepta más cotizaciones' });
+      // El único cron que cierra pedidos vencidos corre 2 veces al día — sin
+      // este chequeo, un pedido vencido a las 3am seguía "abierto" y
+      // aceptando cotizaciones nuevas hasta la corrida del mediodía.
+      if (mudanza.expira && new Date() > new Date(mudanza.expira)) {
+        return res.status(400).json({ error: 'Este pedido ya venció, no acepta más cotizaciones.' });
+      }
       if (mudanza.cotizaciones.find(c => c.mudanceroEmail === mudanceroEmail)) return res.status(400).json({ error: 'Ya cotizaste esta mudanza' });
 
       // Modo dirigido: solo pueden cotizar los mudanceros invitados por el cliente
