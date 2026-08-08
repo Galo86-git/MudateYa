@@ -2,7 +2,7 @@
 // ── ONE-OFF (solo admin) ──
 // Invita a empresas de mudanza/fletes de AMBA, Córdoba y Rosario (encontradas
 // por prospección web, no son clientes actuales) a sumarse como mudanceros
-// verificados en MudateYa. Mail genérico desde contacto@mudateya.ar, CTA a
+// verificados en MudateYa. Mail genérico desde hola@mudateya.ar, CTA a
 // /mudanceros.
 //
 // DEDUP contra mudanceros que YA están en la plataforma (para no invitar a
@@ -16,13 +16,17 @@
 // Redis (clave invitacion-mudanceros:enviados). Si se corre de nuevo, no
 // duplica.
 //
-// SEGURIDAD: solo admin con ?token=ADMIN_TOKEN.
+// SEGURIDAD: admin con ?token=ADMIN_TOKEN, o Vercel Cron (header Authorization
+// Bearer CRON_SECRET — mismo mecanismo que enviar-propuesta-remax.js).
 //   GET ?token=…              → DRY: cuenta pendientes/enviados/ya-mudanceros, NO envía nada.
 //   GET ?token=…&test=x@y.com → envía UNA muestra a esa dirección (no marca, no chequea dedup).
 //   GET ?token=…&apply=1      → ENVÍA a los pendientes (una sola corrida).
+//   Vercel Cron                → aplica automático (agendado para las 9AM ART del 2026-08-08,
+//                                 igual que enviar-propuesta-remax/garantías; idempotente, así
+//                                 que si el cron sigue corriendo días después no reenvía nada).
 
 const { Resend } = require('resend');
-const { esAdmin } = require('./_auth');
+const { esAdmin, esCronVercel } = require('./_auth');
 const { linkBaja } = require('./_baja');
 
 async function redisCall(method, args) {
@@ -125,7 +129,7 @@ function emailInvitacion(o) {
             '<a href="https://mudateya.ar/mudanceros" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Sumarme como mudancero →</a>' +
           '</div>' +
           '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0">Si tenés dudas, respondé este mail y te contamos más.</p>' +
-          '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:22px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">Recibís este correo porque tu empresa figura como mudancero/fletero en tu zona. <a href="' + linkB + '" style="color:#94A3B8;text-decoration:underline">Darte de baja</a>.<br>MudateYa · contacto@mudateya.ar · mudateya.ar</p>' +
+          '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:22px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">Recibís este correo porque tu empresa figura como mudancero/fletero en tu zona. <a href="' + linkB + '" style="color:#94A3B8;text-decoration:underline">Darte de baja</a>.<br>MudateYa · hola@mudateya.ar · mudateya.ar</p>' +
         '</div>' +
       '</div>'
   };
@@ -135,7 +139,7 @@ function payloadDe(o) {
   var m = emailInvitacion(o);
   var link = linkBaja(o.e, 'invitacion-mudanceros');
   return {
-    from: 'MudateYa <contacto@mudateya.ar>', to: o.e, subject: m.subject, html: m.html,
+    from: 'MudateYa <hola@mudateya.ar>', to: o.e, subject: m.subject, html: m.html,
     headers: {
       'List-Unsubscribe': '<' + link + '>',
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
@@ -156,12 +160,17 @@ async function yaEsMudancero(o) {
 }
 
 module.exports = async function handler(req, res) {
-  if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+  var esVercelCron = esCronVercel(req);
+  // En previews (no producción) el cron no debe enviar nada.
+  if (esVercelCron && process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+    return res.status(200).json({ ok: true, skipped: true, reason: 'no-production-env' });
+  }
+  if (!esVercelCron && !esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
   if (!process.env.RESEND_API_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurado' });
 
   var resend = new Resend(process.env.RESEND_API_KEY);
   var testTo = req.query && req.query.test ? String(req.query.test).trim() : '';
-  var apply  = req.query && req.query.apply === '1';
+  var apply  = esVercelCron || (req.query && req.query.apply === '1');
 
   try {
     // ── TEST: una muestra (no marca, no chequea dedup) ──
