@@ -4687,12 +4687,19 @@ async function avisarVencimientoPorMail(mudanza, cots) {
     </div>`;
   }).join('');
 
+  // OJO con el copy: las 24hs hábiles son SOLO la ventana para recibir
+  // cotizaciones nuevas — no el plazo para elegir. Cada cotización ya
+  // recibida sigue siendo válida por separado (DIAS_VALIDEZ_COTIZACION, 7
+  // días corridos desde que llegó, ver acción 'aceptar' más arriba). Antes
+  // el subject/mensaje decían "venció el plazo para elegir", lo cual es
+  // falso y podía hacer que el cliente pensara que ya no podía aceptar nada
+  // cuando en realidad todavía tenía días para hacerlo.
   const subject = cots.length
-    ? `Venció el plazo para elegir — tenías ${cots.length} presupuesto${cots.length > 1 ? 's' : ''}`
-    : 'Venció el plazo — no llegamos a conseguirte presupuestos';
+    ? `Tus presupuestos están listos — ${cots.length} para elegir`
+    : 'No llegamos a conseguirte presupuestos a tiempo';
 
   const mensaje = cots.length
-    ? `El plazo de 24hs hábiles para elegir tu ${tipoLabel} venció, pero estos son los presupuestos que llegaste a recibir. Elegí uno y te llevamos directo a pagar la seña:`
+    ? `Se cerró la ventana para sumar más presupuestos a tu ${tipoLabel}, pero los que ya recibiste siguen vigentes por unos días más. Elegí uno ahora y te llevamos directo a pagar la seña:`
     : `No llegamos a conseguirte presupuestos a tiempo para tu ${tipoLabel}.`;
 
   await resend.emails.send({
