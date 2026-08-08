@@ -181,8 +181,13 @@ async function evaluarIdentidad(cuil, dniAnalisis, nombreFormulario) {
     motivos.push({ nivel: 'rojo', texto: 'La foto del DNI no es legible.' });
   }
 
-  // 3) CRUCE DNI ↔ CUIL: el DNI son los 8 dígitos del medio del CUIL
-  if (cuilRes.valido && a.numero_dni) {
+  // 3) CRUCE DNI ↔ CUIL: el DNI son los 8 dígitos del medio del CUIL.
+  // Solo aplica a persona física — en un CUIT esos 8 dígitos son un número
+  // interno que le asigna AFIP a la empresa, no el DNI de nadie. Sin este
+  // chequeo, el representante de una empresa que sube su propio DNI
+  // (que nunca va a "coincidir" con el CUIT) se marcaba en rojo como
+  // fraude por una comparación que no correspondía.
+  if (cuilRes.valido && !cuilRes.esEmpresa && a.numero_dni) {
     var dniEnCuil = String(cuilRes.cuil).slice(2, 10).replace(/^0+/, '');
     var dniFoto   = String(a.numero_dni).replace(/\D/g, '').replace(/^0+/, '');
     if (dniEnCuil && dniFoto) {
@@ -205,7 +210,9 @@ async function evaluarIdentidad(cuil, dniAnalisis, nombreFormulario) {
     motivos.push({ nivel: 'amarillo', texto: 'No se pudo leer la fecha de vencimiento del DNI.' });
   }
 
-  // 5) Prefijo del CUIL vs sexo del DNI (20=M, 27=F; 23/24 son ambiguos)
+  // 5) Prefijo del CUIL vs sexo del DNI (20=M, 27=F; 23/24 son ambiguos).
+  // Ya queda inerte para empresas sin necesidad de excluirlas a propósito:
+  // los prefijos de CUIT (30/33/34) nunca matchean 20 ni 27.
   if (cuilRes.valido && a.sexo) {
     var pref = parseInt(String(cuilRes.cuil).slice(0, 2), 10);
     var sexo = String(a.sexo).toUpperCase().charAt(0);
