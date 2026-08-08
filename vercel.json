@@ -511,6 +511,10 @@
     {
       "path": "/api/enviar-invitacion-inmobiliarias",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/enviar-propuestas-vacamuerta",
+      "schedule": "0 12 * * *"
     }
   ]
 }
