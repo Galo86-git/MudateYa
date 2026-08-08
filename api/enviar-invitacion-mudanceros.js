@@ -105,9 +105,16 @@ var PROSPECTOS = [
   { n: 'Mudanzas España', region: 'Rosario', e: 'contacto@mudanzasrosario.online', tel: '(0341) 482-3815 / 552-2322' }
 ];
 
+var REGION_TEXTO = {
+  'AMBA': 'Buenos Aires y alrededores',
+  'Córdoba': 'Córdoba',
+  'Rosario': 'Rosario'
+};
+
 function emailInvitacion(o) {
   var nm = esc(o.n || 'equipo');
   var linkB = linkBaja(o.e, 'invitacion-mudanceros');
+  var zona = esc(REGION_TEXTO[o.region] || o.region || 'tu zona');
   return {
     subject: o.n + ': sumate a MudateYa como mudancero verificado',
     html:
@@ -119,6 +126,7 @@ function emailInvitacion(o) {
         '<div style="padding:28px">' +
           '<h2 style="margin:0 0 12px;color:#0F1923;font-size:20px">Hola, equipo de ' + nm + ' 👋</h2>' +
           '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">Te escribimos desde <strong>MudateYa</strong>, un marketplace argentino que conecta a mudanceros y fleteros verificados con clientes que están por mudarse.</p>' +
+          '<p style="color:#0F1923;font-size:14px;line-height:1.7;margin:0 0 18px;background:#F5F7FA;border-radius:10px;padding:12px 16px"><strong>Hoy nos están pidiendo mudanzas en ' + zona + ' y necesitamos cubrir esa zona con mudanceros verificados</strong> — por eso pensamos en ustedes.</p>' +
           '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">Publicás tu perfil, recibís pedidos reales de tu zona y cotizás cuando te conviene — sin obligación de aceptar todos.</p>' +
           '<div style="background:#F5F7FA;border-radius:12px;padding:14px 20px;margin-bottom:18px;text-align:center">' +
             '<span style="display:inline-block;margin:4px 8px;font-size:12px;font-weight:700;color:#003580;background:#E5ECF6;padding:6px 12px;border-radius:999px">Sin costo de alta</span>' +
