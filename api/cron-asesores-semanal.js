@@ -156,32 +156,92 @@ async function recolectarDestinatarios() {
   return out;
 }
 
+// ── VARIANTES semanales (rotan por número de semana ISO, ver varianteSemana) ──
+// {nombre} se reemplaza por el primer nombre del asesor. cierreIndep/cierre:
+// mismo patrón que antes (independientes tiene su propio cierre por el tema
+// regalo vs. comisión). emiTitulo/emiTexto opcionales, caen al default si no
+// vienen (ver bodyHtml).
+var VARIANTES = [
+  { // 1. Timing / urgencia
+    titulo: '¡Arrancá la semana con todo, {nombre}! 🔑',
+    lead: 'Todo cliente que alquila o compra con vos se va a mudar tarde o temprano — la diferencia la hace CUÁNDO se lo proponés. Antes de la firma, mientras todavía sos "la persona que le resolvió todo", es el mejor momento: se lo ofrecés como un servicio más tuyo, no como una venta aparte.',
+    bulletsLabel: 'Este lunes, preguntate:',
+    bullets: ['¿Tengo alguna operación por cerrar esta semana?', '¿Ya le mencioné a ese cliente que también le resuelvo la mudanza?', '¿Tengo mi link a mano para pasárselo apenas firme?'],
+    cierre: 'Es gratis para vos y para tu cliente — vos quedás como el que pensó en todo.',
+    cierreIndep: 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — vos quedás como el que pensó en todo.'
+  },
+  { // 2. Prueba social
+    titulo: 'Cada vez más asesores lo suman al servicio, {nombre}',
+    lead: 'No es un anuncio más — para varios ya es parte natural de cerrar una operación: lo mencionan en la firma, sin venderlo como algo aparte. El cliente lo agradece porque le resuelve algo que igual tenía que hacer.',
+    bulletsLabel: 'Este lunes, preguntate:',
+    bullets: ['¿A qué cliente se lo podría mencionar esta semana?', '¿Ya te pasó que un cliente te lo preguntó primero?', '¿Tengo mi link a mano?'],
+    cierre: 'Es gratis para vos y para tu cliente — y queda como parte natural de tu servicio, no como una venta extra.',
+    cierreIndep: 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — y queda como parte natural de tu servicio.'
+  },
+  { // 3. Lo fácil que es con Emi
+    titulo: '{nombre}, ni hace falta que mandes el link',
+    lead: 'Si esta semana tenés un cliente por cerrar, escribile a Emi los datos básicos (nombre, teléfono, de dónde a dónde) y ella carga el pedido atribuido a tu código. El cliente recibe los presupuestos directo, vos no hacés nada más.',
+    bulletsLabel: 'Este lunes, preguntate:',
+    bullets: ['¿Tengo los datos de algún cliente a mano?', '¿Le puedo escribir a Emi ahora mismo?', 'Si preferís, ella también te repite tu link'],
+    cierre: 'Las dos formas suman lo mismo para vos — elegí la que te resulte más cómoda esta semana.',
+    emiTitulo: '📱 Escribile a Emi y listo',
+    emiTexto: 'Nombre, teléfono y de dónde a dónde — ella se encarga del resto, atribuido a tu código.'
+  },
+  { // 4. El beneficio concreto
+    titulo: '{nombre}, ¿tu cliente ya sabe lo que se lleva?',
+    lead: 'En alquiler cobrás tu comisión. En compraventa, tu cliente se lleva un regalo. En los dos casos vos quedás como el que pensó en todo — sin costo para vos ni para él.',
+    bulletsLabel: 'Este lunes, preguntate:',
+    bullets: ['¿Mi cliente sabe que existe esta opción?', '¿Se lo mencioné antes de la firma?', '¿Tengo mi link a mano?'],
+    cierre: 'Cuanto antes se lo menciones, más natural se siente — no como algo de último momento.'
+  },
+  { // 5. Chequeo de cartera
+    titulo: '3 minutos para ordenar tu semana, {nombre}',
+    lead: 'Antes de arrancar con las visitas y las firmas: repasá rápido tu cartera de esta semana y fijate si hay alguien a quien todavía no le ofreciste la mudanza.',
+    bulletsLabel: 'Repasá tu cartera:',
+    bullets: ['¿Qué operaciones tengo para esta semana?', '¿A quién todavía no le mencioné esto?', '¿Está mi link a mano para cuando firme?'],
+    cierre: 'Es gratis para vos y para tu cliente — vos quedás como el que pensó en todo.',
+    cierreIndep: 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — vos quedás como el que pensó en todo.'
+  }
+];
+
+// Elige variante por número de semana ISO (misma semana → misma variante para
+// todos los asesores; rota sola cada lunes, vuelve a la 1 después de la 5).
+function numeroSemanaISO(d) {
+  var fecha = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  var dow = fecha.getUTCDay() || 7;
+  fecha.setUTCDate(fecha.getUTCDate() + 4 - dow);
+  var inicioAno = new Date(Date.UTC(fecha.getUTCFullYear(), 0, 1));
+  return Math.ceil((((fecha - inicioAno) / 86400000) + 1) / 7);
+}
+function varianteSemana() {
+  var ahora = new Date();
+  var ar = new Date(ahora.getTime() - 180 * 60 * 1000); // hora Argentina (UTC-3 fijo)
+  var semana = numeroSemanaISO(ar);
+  return VARIANTES[semana % VARIANTES.length];
+}
+
 // ── PLANTILLA DEL EMAIL ──
 // canal (opcional): { canalNombre, color, fondoAviso } — si no viene (ej. modo
 // test sin match), cae al branding genérico de MudateYa.
 function emailRecordatorio(nombre, ctaHref, canal) {
   var primerNombre = ((nombre || '').trim().split(' ')[0]) || 'Hola';
+  var v = varianteSemana();
+  var esIndep = canal && canal.canalNombre === 'Asesores independientes';
   return {
-    subject: primerNombre + ', ¿alguna operación por cerrar esta semana?',
+    subject: v.titulo.replace('{nombre}', primerNombre).replace(/\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, ' ').trim(),
     html: bodyHtml({
       canalNombre: canal && canal.canalNombre,
       color:       (canal && canal.color) || '#22C36A',
       fondoAviso:  (canal && canal.fondoAviso) || '#F5F7FA',
-      titulo: '¡Arrancá la semana con todo, ' + primerNombre + '! 🔑',
-      lead:   'Todo cliente que alquila o compra con vos se va a mudar tarde o temprano — la diferencia la hace CUÁNDO se lo proponés. Antes de la firma, mientras todavía sos "la persona que le resolvió todo", es el mejor momento: se lo ofrecés como un servicio más tuyo, no como una venta aparte.',
-      bulletsLabel: 'Este lunes, preguntate:',
-      bullets: [
-        '¿Tengo alguna operación por cerrar esta semana?',
-        '¿Ya le mencioné a ese cliente que también le resuelvo la mudanza?',
-        '¿Tengo mi link a mano para pasárselo apenas firme?'
-      ],
+      titulo: v.titulo.replace('{nombre}', primerNombre),
+      lead:   v.lead,
+      bulletsLabel: v.bulletsLabel,
+      bullets: v.bullets,
       cta:     'Ir a mi link →',
       ctaHref: ctaHref || (SITE + '/asesores'),
-      cierre:  (canal && canal.canalNombre === 'Asesores independientes'
-        ? 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — vos quedás como el que pensó en todo.'
-        : 'Es gratis para vos y para tu cliente — vos quedás como el que pensó en todo.'),
-      emiTitulo: '📱 ¿Preferís que lo resuelva Emi por vos?',
-      emiTexto: 'Contale los datos del cliente y ella carga el pedido directo, atribuido a tu código — el cliente recibe los presupuestos sin tener que entrar a ningún lado. O si preferís, te repite el link para mandárselo vos.'
+      cierre:  (esIndep && v.cierreIndep) ? v.cierreIndep : v.cierre,
+      emiTitulo: v.emiTitulo || '📱 ¿Preferís que lo resuelva Emi por vos?',
+      emiTexto: v.emiTexto || 'Contale los datos del cliente y ella carga el pedido directo, atribuido a tu código — el cliente recibe los presupuestos sin tener que entrar a ningún lado. O si preferís, te repite el link para mandárselo vos.'
     })
   };
 }
