@@ -227,7 +227,7 @@ async function claudeTexto(system, userText, maxTokens) {
 // genérico de IA — reusa exactamente el estilo que ya está probado en Emi.
 const ESTILO_SEMILLA = `Cómo funciona: 1) Cargás el pedido (origen, destino, fecha, detalles). 2) Va a mudanceros verificados de tu zona. 3) Recibís hasta 5 presupuestos. 4) Elegís y pagás la seña. 5) Coordinás con el mudancero.
 Los 3 niveles de mudanza: Esencial (vehículo+chofer, carga y descarga), Integral (+ embalaje básico, desarmado/armado de muebles), Llave en Mano (+ armado en el nuevo hogar: te ubican los muebles/cajas en destino). La limpieza post-mudanza NO es parte de Llave en Mano para clientes del marketplace — solo aplica en compraventas coordinadas por asesores inmobiliarios (otro flujo, no lo menciones acá salvo que la fuente lo confirme).
-Pagos: 50% de seña al reservar + 50% al completar. Protegido (Mercado Pago o transferencia con CVU único). Cada presupuesto vale 7 días.
+Pagos: 50% de seña al reservar + 50% al completar. Protegido (Mercado Pago o transferencia con CVU único). Cada presupuesto vale 15 días.
 Cobertura: CABA y Gran Buenos Aires; interior (Rosario, Córdoba, Mendoza) según disponibilidad.`;
 
 // ── Genera y guarda el bloque de conocimiento sincronizado ──

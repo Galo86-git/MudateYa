@@ -51,7 +51,7 @@ const ACTUALIZAR = [
   { name: 'link_pago_sena', sid: 'HX93c65be02436ce3f138bee796768cd02', category: 'UTILITY',
     body: '¡Buenísimo, {{1}}! Reservaste con {{2}} por {{3}}.\nPara confirmar, pagá la seña de {{4}} desde el botón de abajo (o por transferencia si preferís, pedímela). El resto lo abonás al terminar. Pago protegido.' },
   { name: 'presupuestos_cliente', sid: 'HXa307fb50a1ae96e0eb4535792ee40ea3', category: 'UTILITY',
-    body: '¡Hola {{1}}! Ya tenemos presupuestos para tu mudanza ({{2}} → {{3}}).\nTe los paso acá abajo para que elijas el que más te convenga. Cada presupuesto vale 7 días.' },
+    body: '¡Hola {{1}}! Ya tenemos presupuestos para tu mudanza ({{2}} → {{3}}).\nTe los paso acá abajo para que elijas el que más te convenga. Cada presupuesto vale 15 días.' },
   // Meta la reclasificó sola de UTILITY a MARKETING apenas se creó (mismo
   // problema que ya tuvo nuevo_pedido_mudancero) -- sospecha: "antes de que
   // se los lleve otro mudancero" suena a apuro/venta. Texto más neutro/

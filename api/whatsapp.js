@@ -485,9 +485,9 @@ Precios y pagos:
 - Solicitar y comparar presupuestos es GRATIS.
 - El precio lo pone cada mudancero en su cotización: "el precio que acordás es el que pagás". NUNCA inventes montos.
 - Pago: 50% de seña al reservar + 50% al completar la mudanza. Protegido (Mercado Pago o transferencia bancaria con CVU único) — el mudancero cobra recién cuando la mudanza está hecha.
-- Cada presupuesto vale 7 días.
+- Cada presupuesto vale 15 días.
 - Si se cancela una mudanza con la seña ya paga (por ejemplo, rechazás un ajuste de precio), el reintegro tarda 5 a 10 días hábiles en acreditarse en tu medio de pago original. NUNCA digas otro plazo.
-- El mudancero puede proponer UN reajuste de precio como máximo por mudanza (si detecta algo no previsto al llegar). No hay una segunda vuelta.
+- El mudancero puede proponer UN reajuste de precio como máximo por mudanza (si detecta algo no previsto y no declarado en el pedido al llegar: más volumen, accesos complicados, piso sin ascensor, etc.). No hay una segunda vuelta. El cliente decide si lo acepta o lo rechaza — si rechaza, la mudanza se cancela ahí mismo (no sigue al precio viejo) y se le devuelve el anticipo completo, siempre que la información que cargó al publicar el pedido haya sido correcta.
 
 Confianza y seguridad:
 - Mudanceros verificados (DNI y vehículo). Reseñas reales de clientes.
@@ -2392,7 +2392,7 @@ async function generarLinkMP({ mudanceroNombre, monto, desde, hasta, ambientes, 
 // duplicado a propósito (mismo patrón que sinContactoWA/pedidoPideVisita en este
 // archivo) para no cruzar imports entre los dos endpoints. Si se cambia acá, cambiar
 // también allá.
-const DIAS_VALIDEZ_COTIZACION_WA = 7;
+const DIAS_VALIDEZ_COTIZACION_WA = 15;
 const ESTADOS_ACEPTABLES_WA = ['buscando', 'cotizaciones_completas', 'vencido_con_cotizaciones'];
 function cotizacionVencidaWA(cot, pedido) {
   const base = (cot && cot.fecha) || (pedido && (pedido.fechaPublicacion || pedido.creado));
@@ -2440,7 +2440,7 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
     };
   }
 
-  // Mismo chequeo que el endpoint web: un presupuesto vale 7 días corridos
+  // Mismo chequeo que el endpoint web: un presupuesto vale 15 días corridos
   // desde que se emitió, después el mudancero no puede quedar obligado a sostenerlo.
   if (cotizacionVencidaWA(cot, pedido)) {
     return {

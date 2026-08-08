@@ -202,14 +202,16 @@ function fmtFechaAR(fecha) {
 // ════════════════════════════════════════════════════
 // VALIDEZ DEL PRESUPUESTO
 //
-// Una cotización vale 7 días CORRIDOS desde que el mudancero la emitió
+// Una cotización vale 15 días CORRIDOS desde que el mudancero la emitió
 // (cot.fecha). Pasado ese plazo el cliente ya no la puede aceptar: el
 // precio quedó viejo y el mudancero no puede quedar obligado a sostenerlo.
+// (Subido de 7 a 15 el 2026-08-08, decisión de negocio — ver también
+// DIAS_VALIDEZ_COTIZACION_WA en whatsapp.js, que hay que mantener igual a mano.)
 //
 // El número está acá y en ningún otro lado. El PDF, el bot y la validación
 // del backend leen todos de la misma constante, para que no vuelva a pasar
-// que un documento diga 7 días y otro diga 24 horas.
-const DIAS_VALIDEZ_COTIZACION = 7;
+// que un documento diga un número y otro diga otro.
+const DIAS_VALIDEZ_COTIZACION = 15;
 
 // Estados de la mudanza en los que TODAVÍA se puede aceptar una cotización.
 // Única fuente de verdad para action=aceptar y action=detalle-cotizacion —
@@ -581,7 +583,9 @@ async function generarPDFBase64(datos) {
   // Cuadro celeste informando que el mudancero puede proponer ajuste si detecta
   // condiciones no previstas durante el relevamiento.
   const ajusteY = Y;
-  const ajusteH = 38;
+  const ajusteH = 52; // subido de 38: el texto creció al aclarar "no declaradas en el pedido"
+                       // y la cancelacion+devolucion (antes decia solo "recuperas tu anticipo"),
+                       // medido con doc.heightOfString real antes de fijar el numero.
   fillRect(ML, ajusteY, CW, ajusteH, '#EFF6FF', 5);
   strokeRect(ML, ajusteY, CW, ajusteH, '#93C5FD', 0.5, 5);
   fillRect(ML, ajusteY, 4, ajusteH, '#1A6FFF', 0);
@@ -589,7 +593,7 @@ async function generarPDFBase64(datos) {
 
   doc.text('PRECIO SUJETO A AJUSTE', ML + 14, ajusteY + 6, { lineBreak: false });
   doc.font('Helvetica').fontSize(7).fillColor('#1E3A8A');
-  doc.text('Si al dia de la mudanza hubiera condiciones no previstas (mas volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidis si lo aceptas; si rechazas, recuperas tu anticipo completo.', ML + 14, ajusteY + 18, { width: CW - 28, lineGap: 1 });
+  doc.text('Si al dia de la mudanza hubiera condiciones no previstas y no declaradas en el pedido (mas volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidis si lo aceptas; si rechazas, la mudanza se cancela ahi mismo y te devolvemos el anticipo completo (siempre que la informacion que cargaste al publicar el pedido haya sido correcta).', ML + 14, ajusteY + 18, { width: CW - 28, lineGap: 1 });
 
   Y += ajusteH + 8;
 
@@ -1490,7 +1494,7 @@ module.exports = async function handler(req, res) {
       // anticipo del primer mudancero ya se cobró.
       // OJO: 'vencido_con_cotizaciones' SÍ se puede aceptar — las 24hs son
       // solo la ventana para RECIBIR cotizaciones nuevas; cada cotización ya
-      // recibida sigue siendo válida por DIAS_VALIDEZ_COTIZACION (7 días
+      // recibida sigue siendo válida por DIAS_VALIDEZ_COTIZACION (15 días
       // corridos, chequeado abajo con cotizacionVencida). Sin esto, un
       // cliente que tardó más de 24hs en elegir quedaba bloqueado aunque el
       // presupuesto que quería aceptar todavía estuviera vigente.
@@ -4307,7 +4311,7 @@ module.exports.notificarMudanceros = notificarMudanceros;
 // de prueba a mudatest, que no exige que el perfil esté 'aprobado').
 module.exports.generarPDFDetallesBase64 = generarPDFDetallesBase64;
 // Exportados para los tests automáticos (tests/cotizaciones-validez.test.js) —
-// la ventana de validez de 7 días de una cotización, ver DIAS_VALIDEZ_COTIZACION.
+// la ventana de validez de una cotización, ver DIAS_VALIDEZ_COTIZACION.
 module.exports.cotizacionVencida = cotizacionVencida;
 module.exports.vencimientoCotizacion = vencimientoCotizacion;
 module.exports.DIAS_VALIDEZ_COTIZACION = DIAS_VALIDEZ_COTIZACION;
@@ -4689,7 +4693,7 @@ async function avisarVencimientoPorMail(mudanza, cots) {
 
   // OJO con el copy: las 24hs hábiles son SOLO la ventana para recibir
   // cotizaciones nuevas — no el plazo para elegir. Cada cotización ya
-  // recibida sigue siendo válida por separado (DIAS_VALIDEZ_COTIZACION, 7
+  // recibida sigue siendo válida por separado (DIAS_VALIDEZ_COTIZACION, 15
   // días corridos desde que llegó, ver acción 'aceptar' más arriba). Antes
   // el subject/mensaje decían "venció el plazo para elegir", lo cual es
   // falso y podía hacer que el cliente pensara que ya no podía aceptar nada
