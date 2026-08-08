@@ -491,6 +491,10 @@
     {
       "path": "/api/cron-resumen-instagram",
       "schedule": "0 12 * * 1"
+    },
+    {
+      "path": "/api/enviar-propuestas-embajadas",
+      "schedule": "0 12 * * 1-5"
     }
   ]
 }
