@@ -487,6 +487,10 @@
     {
       "path": "/api/enviar-propuesta-remax",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron-resumen-instagram",
+      "schedule": "0 12 * * 1"
     }
   ]
 }
