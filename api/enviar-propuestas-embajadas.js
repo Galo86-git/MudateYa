@@ -13,18 +13,20 @@
 // relevado 2026-08-07/08. 169 destinatarios (86 Lista A + 83 Lista B) — el
 // resto de países no tenía email institucional publicado.
 //
-// CADENCIA: cada 3 meses, el 1er día hábil del mes, 9am ART. Como Vercel no
-// soporta "cada 3 meses" directo, el cron corre TODOS los días hábiles a las
-// 9am (vercel.json: "0 12 * * 1-5", 12 UTC = 9 AR) y el handler decide: si
-// HOY es el 1er hábil del mes Y pasaron >=3 meses desde el último envío
-// exitoso (clave Redis abajo), manda. Si no, no hace nada — mismo patrón que
+// CADENCIA: cada 3 meses, el 1er día hábil del mes, 9am ART — 100% automático,
+// no requiere ninguna acción manual. Como Vercel no soporta "cada 3 meses"
+// directo, el cron corre TODOS los días hábiles a las 9am (vercel.json:
+// "0 12 * * 1-5", 12 UTC = 9 AR) y el handler decide si corresponde mandar:
+//   - Si NUNCA se mandó (clave Redis de abajo vacía) → manda hoy mismo, sin
+//     esperar a que caiga el 1er hábil del mes. Cubre el primer envío
+//     (2026-08-08, no es 1er hábil de agosto, pero es el arranque del ciclo).
+//   - Si ya se mandó antes → solo vuelve a mandar cuando HOY es el 1er hábil
+//     del mes Y ya pasaron >=3 meses desde el último envío exitoso.
+// Mismo patrón de "corre seguido, decide internamente" que
 // cron-recordar-comisiones-asesores.js.
 //
-// El primer envío (2026-08-08) fue disparado a mano porque no cae en 1er
-// hábil del mes — a partir de ahí el ciclo trimestral queda automático.
-//
 // GET  ?token=ADMIN_TOKEN              → preview: cuenta destinatarios, no manda nada.
-// POST ?token=ADMIN_TOKEN {apply:true} → manda AHORA, sin esperar la fecha (uso: primer envío).
+// POST ?token=ADMIN_TOKEN {apply:true} → fuerza el envío ahora, salteando el chequeo de fecha (uso manual excepcional).
 
 var { esAdmin, esCronVercel } = require('./_auth');
 var { esDiaHabil, aHoraAR } = require('./_habiles');
@@ -296,7 +298,8 @@ module.exports = async function handler(req, res) {
 
   var apply = false, motivo = '';
   if (esVercelCron) {
-    if (esPrimerHabilDelMes(hoyAR) && (!ultimoEnvio || mesesDesde(ultimoEnvio, hoyAR) >= 3)) { apply = true; motivo = 'cron-trimestral'; }
+    if (!ultimoEnvio) { apply = true; motivo = 'cron-primer-envio'; }
+    else if (esPrimerHabilDelMes(hoyAR) && mesesDesde(ultimoEnvio, hoyAR) >= 3) { apply = true; motivo = 'cron-trimestral'; }
   } else if (admin && req.method === 'POST' && req.body && req.body.apply === true) {
     apply = true; motivo = 'manual';
   }
