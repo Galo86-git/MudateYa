@@ -40,8 +40,15 @@ async function getJSON(k) { var v = await redisCall('get', [k]); if (!v) return 
 async function setJSON(k, v) { return redisCall('set', [k, JSON.stringify(v)]); }
 function esc(s) { return String(s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
 
-// ── 24 clubes con mail institucional confirmado en su sitio oficial (2026-08-08) ──
-// Afuera: Talleres de Córdoba y Newell's Old Boys (sin mail publicado, solo formulario/página caída).
+// ── 16 clubes del AMBA (CABA + GBA) con mail institucional confirmado en su
+// sitio oficial (2026-08-08). Se achicó de 24 a esto: se sacaron los que no
+// son AMBA (Rosario Central, Godoy Cruz, Instituto, Belgrano, Central
+// Córdoba SdE, Unión, Colón, Sarmiento de Junín) — a pedido, se dejaron los
+// 2 de La Plata (Estudiantes, Gimnasia) aunque el AMBA oficial (INDEC) no
+// incluye Gran La Plata, por la cercanía práctica.
+// Afuera además por no tener mail institucional publicado (solo
+// formulario web o página de prensa dada de baja): Talleres de Córdoba,
+// Newell's Old Boys.
 var CLUBES = [
   { n: 'River Plate', nombreCompleto: 'Club Atlético River Plate', e: 'club@cariverplate.com.ar' },
   { n: 'Boca Juniors', nombreCompleto: 'Club Atlético Boca Juniors', e: 'infosocios@bocajuniors.com.ar' },
@@ -50,20 +57,12 @@ var CLUBES = [
   { n: 'San Lorenzo', nombreCompleto: 'Club Atlético San Lorenzo de Almagro', e: 'socios@sanlorenzo.com.ar' },
   { n: 'Vélez Sarsfield', nombreCompleto: 'Club Atlético Vélez Sarsfield', e: 'rrpp@velezsarsfield.com.ar' },
   { n: 'Estudiantes de La Plata', nombreCompleto: 'Club Estudiantes de La Plata', e: 'consultas@estudiantesdelaplata.com' },
-  { n: 'Rosario Central', nombreCompleto: 'Club Atlético Rosario Central', e: 'socios@rosariocentral.com' },
   { n: 'Argentinos Juniors', nombreCompleto: 'Asociación Atlética Argentinos Juniors', e: 'info@argentinosjuniors.com.ar' },
   { n: 'Huracán', nombreCompleto: 'Club Atlético Huracán', e: 'socios@cahuracan.com' },
   { n: 'Banfield', nombreCompleto: 'Club Atlético Banfield', e: 'socios@clubabanfield.com.ar' },
   { n: 'Lanús', nombreCompleto: 'Club Atlético Lanús', e: 'contacto@clublanus.com' },
   { n: 'Defensa y Justicia', nombreCompleto: 'Club Social y Deportivo Defensa y Justicia', e: 'prensa@defensayjusticia.org.ar' },
-  { n: 'Godoy Cruz', nombreCompleto: 'Club Deportivo Godoy Cruz Antonio Tomba', e: 'secretariaclub@clubgodoycruz.com.ar' },
   { n: 'Platense', nombreCompleto: 'Club Atlético Platense', e: 'prensa@cap.org.ar' },
-  { n: 'Instituto', nombreCompleto: 'Instituto Atlético Central Córdoba', e: 'info@institutoacc.com.ar' },
-  { n: 'Belgrano', nombreCompleto: 'Club Atlético Belgrano', e: 'prensa@belgrano.com.ar' },
-  { n: 'Central Córdoba (SdE)', nombreCompleto: 'Club Atlético Central Córdoba (S.D.E.)', e: 'info@cacentralcordoba.com' },
-  { n: 'Unión', nombreCompleto: 'Club Atlético Unión', e: 'contacto@clubaunion.com.ar' },
-  { n: 'Colón', nombreCompleto: 'Club Atlético Colón', e: 'prensa@clubcolon.com.ar' },
-  { n: 'Sarmiento (Junín)', nombreCompleto: 'Club Atlético Sarmiento', e: 'sarmientoprensa@mail.com' },
   { n: 'Tigre', nombreCompleto: 'Club Atlético Tigre', e: 'info@catigre.com.ar' },
   { n: 'Barracas Central', nombreCompleto: 'Club Atlético Barracas Central', e: 'info@barracascentral.com' },
   { n: 'Gimnasia La Plata', nombreCompleto: 'Club de Gimnasia y Esgrima La Plata', e: 'mesadeentrada@gimnasia.org.ar' },
