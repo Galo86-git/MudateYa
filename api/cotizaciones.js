@@ -6197,7 +6197,7 @@ async function notificarReprogramacionResuelta(mudanza, decision) {
       if (mudanza.clienteWA) {
         try {
           const { enviarPlantilla } = require('./_plantillas');
-          await enviarPlantilla(mudanza.clienteWA, 'reprogramacion_resuelta',
+          await enviarPlantilla(mudanza.clienteWA, 'reprogramacion_resuelta_v2',
             { 1: nomCli, 2: aceptada ? 'aceptada' : 'rechazada', 3: fechaNuevaFmt }, `${nomCli}, ${textoResultado}`);
         } catch (e) { console.warn('notificarReprogramacionResuelta WhatsApp cliente:', e.message); }
       }
@@ -6217,7 +6217,7 @@ async function notificarReprogramacionResuelta(mudanza, decision) {
         try {
           const { enviarPlantilla } = require('./_plantillas');
           const nomMud = (cot.mudanceroNombre || '').split(' ')[0] || '';
-          await enviarPlantilla(cot.mudanceroTel, 'reprogramacion_resuelta',
+          await enviarPlantilla(cot.mudanceroTel, 'reprogramacion_resuelta_v2',
             { 1: nomMud, 2: aceptada ? 'aceptada' : 'rechazada', 3: fechaNuevaFmt }, `${nomMud}, ${textoResultado}`);
         } catch (e) { console.warn('notificarReprogramacionResuelta WhatsApp mudancero:', e.message); }
       }

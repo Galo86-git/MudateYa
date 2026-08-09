@@ -180,9 +180,21 @@ const CREAR = [
   // Resultado de una propuesta de reprogramación (aceptada o rechazada) —
   // va a quien propuso (ver action=responder-reprogramacion). Si se aceptó,
   // también se le manda a la otra parte para que ambos tengan la confirmación.
+  //
+  // v2: Meta rechazó 'reprogramacion_resuelta' (SID original, motivo 2388299
+  // "Variables can't be at the start or end of the template" — {{3}} quedaba
+  // pegado al final) — queda rechazada para siempre, Twilio no permite
+  // reenviar a aprobación la misma plantilla. Esta es una plantilla NUEVA con
+  // nombre propio (SID HX1d117c1bcab2e792b5d60b9eb30baead), ya creada y
+  // enviada a revisión — si Meta la aprueba, no hace falta tocar código de
+  // nuevo (cotizaciones.js ya apunta acá). Si la rechaza también, corregir
+  // el texto de vuelta acá y crear una _v3 (mismo patrón).
   { name: 'reprogramacion_resuelta', category: 'UTILITY',
     types: { 'twilio/text': { body: 'Hola {{1}}, tu propuesta de cambiar la fecha de la mudanza fue {{2}}.\n\nFecha: {{3}}.' } },
     variables: { '1': 'Juan', '2': 'aceptada', '3': '22/08/2026' } },
+  { name: 'reprogramacion_resuelta_v2', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, tu propuesta para cambiar la fecha de la mudanza fue {{2}}.\n\nFecha: {{3}}. Cualquier duda, quedamos a tu disposición.' } },
+    variables: { '1': 'Juan', '2': 'aceptada', '3': '15 de agosto' } },
 
   // Cuando un mudancero cotiza pidiendo un relevamiento/visita presencial para
   // dar el precio final. Le sugerimos al cliente mandar fotos por acá como
