@@ -1,0 +1,1138 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>MudateYa — Compare quotes from verified movers in Argentina</title>
+  <meta name="description" content="Compare prices from verified moving companies in Argentina and choose with no obligation. Secure payment. It's free for customers."/>
+  <meta property="og:title" content="MudateYa — Compare quotes from verified movers in Argentina"/>
+  <meta property="og:description" content="Compare prices from verified moving companies in Argentina and choose with no obligation. Secure payment. It's free for customers."/>
+  <meta property="og:url" content="https://mudateya.ar/en/"/>
+  <meta property="og:type" content="website"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="MudateYa — Compare quotes from verified movers in Argentina"/>
+  <meta name="twitter:description" content="Compare prices from verified moving companies in Argentina and choose with no obligation. It's free for customers."/>
+<link rel="canonical" href="https://mudateya.ar/en/"/>
+<link rel="alternate" hreflang="en" href="https://mudateya.ar/en/"/>
+<link rel="alternate" hreflang="es-AR" href="https://mudateya.ar/"/>
+<link rel="alternate" hreflang="x-default" href="https://mudateya.ar/"/>
+<meta name="theme-color" content="#003580"/>
+<meta property="og:site_name" content="MudateYa"/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:image" content="https://mudateya.ar/og-image_2.jpg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:image" content="https://mudateya.ar/og-image_2.jpg"/>
+<link rel="icon" href="/favicon.ico" sizes="any"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<link rel="manifest" href="/manifest.json"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"MudateYa","url":"https://mudateya.ar/","logo":"https://mudateya.ar/icon-512.png","description":"Marketplace for verified moving and freight companies in Argentina.","areaServed":{"@type":"Country","name":"Argentina"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"MudateYa","url":"https://mudateya.ar/en/"}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --blue:#1A6FFF;
+    --blue-dark:#0F52CC;
+    --blue-light:#EEF4FF;
+    --blue-mid:rgba(26,111,255,.12);
+    --green:#22C36A;
+    --green-light:rgba(34,195,106,.1);
+    --green-dark:#17A356;
+    --bg:#FFFFFF;
+    --bg2:#F5F7FA;
+    --bg3:#EEF1F5;
+    --surface:#FFFFFF;
+    --border:#E2E8F0;
+    --border2:#CBD5E1;
+    --text:#0F1923;
+    --text2:#475569;
+    --text3:#64748B;
+    --shadow:0 2px 8px rgba(0,0,0,.08);
+    --shadow-md:0 4px 20px rgba(0,0,0,.1);
+    --shadow-lg:0 8px 40px rgba(0,0,0,.12);
+    --mono:'DM Mono',monospace;
+    --r:8px;--r2:12px;--r3:16px;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden}
+
+  /* ══ NAV ══ */
+  nav{
+    background:#003580;
+    height:56px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 1.5rem;position:sticky;top:0;z-index:500;
+  }
+  .nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;text-decoration:none}
+  .nav-logo span{color:var(--green)}
+  .nav-links{display:flex;gap:1.2rem;list-style:none}
+  .nav-links a{font-size:13px;color:rgba(255,255,255,.9);text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:#fff}
+  .nav-right{display:flex;gap:8px;align-items:center}
+  .btn-nav-outline{background:none;border:1.5px solid rgba(255,255,255,.6);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap}
+  .btn-nav-outline:hover{background:rgba(255,255,255,.15);border-color:#fff}
+  .btn-nav-solid{background:#fff;color:#003580;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:none;transition:all .2s}
+  .btn-nav-solid:hover{background:#f0f4ff}
+  .nav-user-name{font-size:12px;color:rgba(255,255,255,.85)}
+  .nav-avatar{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,.4)}
+  .nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+  .nav-burger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px;transition:all .3s}
+  .mobile-menu{display:none;position:fixed;top:56px;left:0;right:0;z-index:490;background:#003580;padding:1rem 1.5rem 1.5rem;flex-direction:column;gap:2px;border-top:1px solid rgba(255,255,255,.15)}
+  .mobile-menu.open{display:flex}
+  .mobile-menu a{font-size:14px;color:rgba(255,255,255,.85);text-decoration:none;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+  .mobile-menu a:last-child{border-bottom:none}
+
+  /* ══ HERO ══ */
+  .hero{background:#003580;padding:2rem 1.5rem 3rem}
+  .hero-inner{max-width:900px;margin:0 auto}
+  .hero h1{font-family:'Inter',sans-serif;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;color:#fff;margin-bottom:.25rem;line-height:1.25;letter-spacing:-.3px}
+  .hero-sub{font-size:14px;color:rgba(255,255,255,.8);margin-bottom:1.4rem;font-weight:400;letter-spacing:-.1px}
+
+  /* ══ SEARCH BAR ══ */
+  .search-bar{
+    background:#fff;
+    border-radius:var(--r2);
+    border:3px solid #22C36A;
+    display:flex;align-items:stretch;
+    overflow:visible;
+    position:relative;
+    box-shadow:0 4px 20px rgba(0,0,0,.2);
+  }
+  .search-segment{
+    flex:1;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:.65rem 1rem;
+    border-right:1px solid var(--border);
+    cursor:pointer;
+    position:relative;
+    min-width:0;
+  }
+  .search-segment:last-of-type{border-right:none}
+  .search-segment:hover{background:var(--bg2)}
+  .search-segment.active{background:#f0f7ff}
+  .seg-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px}
+  .seg-label svg{opacity:.6}
+  .seg-val{font-size:15px;font-weight:400;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.1px}
+  .seg-val.ph{color:#64748B;font-weight:400}
+  .seg-input{
+    background:none;border:none;outline:none;
+    font-size:15px;font-weight:400;color:var(--text);
+    font-family:'Inter',sans-serif;width:100%;padding:0;letter-spacing:-.1px;
+  }
+  .seg-input::placeholder{color:#94A3B8;font-weight:400}
+  .btn-search-bar{
+    background:var(--blue);color:#fff;
+    border:none;padding:0 1.8rem;
+    border-radius:0 var(--r) var(--r) 0;
+    font-size:16px;font-weight:700;
+    cursor:pointer;font-family:'Inter',sans-serif;
+    transition:background .2s;white-space:nowrap;
+    display:flex;align-items:center;gap:6px;flex-shrink:0;
+    letter-spacing:-.2px;
+  }
+  .btn-search-bar:hover{background:var(--blue-dark)}
+  .hero-wa{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px;text-align:center}
+  .hero-wa a{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;color:rgba(255,255,255,.92);font-size:13px;font-weight:600;text-decoration:none;font-family:'Inter',sans-serif}
+  .hero-wa a:hover{text-decoration:underline}
+  .hero-wa svg{width:16px;height:16px;flex-shrink:0}
+  .hero-wa .tag{background:rgba(34,195,106,.18);color:#22C36A;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:20px}
+  @media(max-width:600px){.hero-wa a{font-size:12px}}
+  .swap-btn{
+    width:32px;height:32px;flex-shrink:0;
+    background:var(--bg2);border:1px solid var(--border);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:all .2s;align-self:center;font-size:13px;color:var(--text2);
+    margin:0 -4px;z-index:2;
+  }
+  .swap-btn:hover{border-color:var(--blue);color:var(--blue);transform:rotate(180deg)}
+
+  /* Tabs tipo servicio */
+  .truck-scene{
+    position:absolute;bottom:0;left:0;right:0;height:80px;
+    pointer-events:none;overflow:hidden;opacity:.13;
+  }
+  .truck-anim{
+    position:absolute;bottom:8px;
+    animation:truckRide 18s linear infinite;
+    will-change:transform;
+  }
+  @keyframes truckRide{
+    0%   {transform:translateX(-320px)}
+    100% {transform:translateX(calc(100vw + 50px))}
+  }
+  .truck-anim2{
+    position:absolute;bottom:8px;
+    animation:truckRide2 26s linear infinite;
+    animation-delay:-11s;
+    will-change:transform;
+    opacity:.7;
+  }
+  @keyframes truckRide2{
+    0%   {transform:translateX(-200px) scaleX(1)}
+    100% {transform:translateX(calc(100vw + 50px)) scaleX(1)}
+  }
+  .service-tabs{display:flex;gap:0;margin-bottom:1.2rem}
+  .service-tab{
+    padding:.55rem 1.1rem;font-size:13px;font-weight:500;
+    color:rgba(255,255,255,.85);cursor:pointer;
+    border-bottom:3px solid transparent;
+    transition:all .2s;display:flex;align-items:center;gap:6px;
+    user-select:none;
+  }
+  .service-tab:hover{color:#fff}
+  .service-tab.active{color:#fff;border-bottom-color:#22C36A}
+
+  /* Ambientes popup */
+  .amb-popup{
+    display:none;position:absolute;top:calc(100% + 8px);left:0;
+    background:#fff;border:1px solid var(--border2);border-radius:var(--r2);
+    padding:1.2rem;z-index:300;box-shadow:var(--shadow-lg);min-width:240px;
+  }
+  .amb-popup.open{display:block}
+  .amb-popup-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:6px}
+  .amb-popup-label{font-size:14px;color:var(--text)}
+  .amb-ctrl{display:flex;align-items:center;gap:8px}
+  .amb-btn{
+    width:30px;height:30px;border-radius:50%;
+    border:1.5px solid var(--border2);background:#fff;
+    color:var(--text2);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+  }
+  .amb-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .amb-btn:disabled{opacity:.35;cursor:not-allowed}
+  .amb-num{font-weight:700;font-size:16px;color:var(--text);min-width:20px;text-align:center}
+
+  /* Fecha chips */
+  .fecha-popup{
+    display:none;position:absolute;top:calc(100% + 8px);left:0;
+    background:#fff;border:1px solid var(--border2);border-radius:var(--r2);
+    padding:1rem;z-index:300;box-shadow:var(--shadow-lg);min-width:260px;
+  }
+  .fecha-popup.open{display:block}
+  .fecha-popup input[type=date]{
+    width:100%;padding:8px 10px;border:1px solid var(--border2);
+    border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;
+    color:var(--text);background:#fff;outline:none;margin-bottom:8px;
+  }
+  .fecha-popup input[type=date]:focus{border-color:var(--blue)}
+  .chip-grid{display:flex;flex-wrap:wrap;gap:5px}
+  .fecha-chip{
+    padding:5px 10px;border-radius:20px;
+    border:1px solid var(--border2);background:#fff;
+    font-size:11px;color:var(--text2);cursor:pointer;
+    transition:all .2s;user-select:none;
+  }
+  .fecha-chip:hover{border-color:var(--blue);color:var(--blue)}
+  .fecha-chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
+  .fecha-tip{
+    margin-top:9px;font-size:11px;color:var(--green-dark);background:var(--green-light);
+    border-radius:8px;padding:6px 9px;line-height:1.4;
+  }
+
+  /* Popover altura — aparece anclado al segment cuando la dirección elegida no incluye número */
+  .altura-pop{
+    display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;
+    background:#fff;border:1.5px solid var(--blue);border-radius:var(--r2);
+    padding:12px;z-index:400;box-shadow:var(--shadow-lg);min-width:240px;
+  }
+  .altura-pop.open{display:block}
+  .altura-pop-label{
+    font-size:12px;font-weight:700;color:var(--blue-dark);
+    margin-bottom:8px;display:flex;align-items:center;gap:6px;
+  }
+  .altura-pop-label::before{content:'🔢';font-size:13px}
+  .altura-pop-row{display:flex;gap:6px;align-items:stretch}
+  .altura-pop input{
+    flex:1;padding:9px 11px;border:1.5px solid var(--border2);
+    border-radius:8px;font-size:14px;font-weight:600;
+    font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none;
+  }
+  .altura-pop input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-mid)}
+  .altura-pop-btn{
+    padding:0 14px;background:var(--blue);color:#fff;
+    border:none;border-radius:8px;font-size:13px;font-weight:700;
+    font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;
+  }
+  .altura-pop-btn:hover{background:var(--blue-dark)}
+  .altura-pop-hint{font-size:11px;color:var(--text2);margin-top:6px}
+
+  /* Objetos (flete) */
+  .obj-row{padding:.7rem 1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .obj-chip{
+    padding:5px 11px;border-radius:20px;
+    border:1px solid var(--border2);background:#fff;
+    font-size:12px;color:var(--text2);cursor:pointer;
+    transition:all .2s;user-select:none;display:flex;align-items:center;gap:4px;
+  }
+  .obj-chip:hover{border-color:var(--blue)}
+  .obj-chip.sel{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+  .obj-chip-label{font-size:11px;font-weight:600;color:var(--text2);font-family:var(--mono);white-space:nowrap}
+
+  /* Autocomplete */
+  .ac-drop{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;
+    background:#fff;border:1px solid var(--border2);border-radius:var(--r2);
+    box-shadow:var(--shadow-lg);overflow:hidden;z-index:9999;display:none;
+    list-style:none;
+  }
+  .ac-drop.open{display:block}
+  .ac-item{
+    padding:11px 14px;font-size:13px;color:var(--text2);
+    cursor:pointer;border-top:1px solid var(--border);transition:background .15s;
+  }
+  .ac-item:first-child{border-top:none}
+  .ac-item:hover,.ac-item.kb{background:var(--blue-light);color:var(--blue)}
+
+  /* ══ TRUST BAR ══ */
+  .trust-bar{
+    background:var(--bg2);border-bottom:1px solid var(--border);
+    padding:.7rem 1.5rem;
+    display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;
+  }
+  .trust-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+  .trust-icon{font-size:14px}
+
+  /* ══ RESULTADOS ══ */
+  #resultados{display:none}
+  #resultados.show{display:block}
+
+  /* Sticky search bar en resultados */
+  .res-search-bar{
+    background:#003580;
+    padding:.45rem 1.5rem;
+    position:sticky;top:56px;z-index:100;
+    border-bottom:3px solid #22C36A;
+  }
+  .res-search-inner{
+    max-width:1500px;margin:0 auto;
+    display:flex;align-items:center;gap:6px;
+  }
+  .res-seg{
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;padding:.3rem .7rem;
+    font-size:11px;color:#fff;cursor:pointer;
+    transition:all .2s;display:flex;align-items:center;gap:4px;
+    white-space:nowrap;
+  }
+  .res-seg:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4)}
+  .res-seg-label{font-size:8px;color:rgba(255,255,255,.65);font-family:var(--mono);text-transform:uppercase;display:block;letter-spacing:.3px;margin-bottom:1px}
+  .res-seg-val{font-size:11px;font-weight:600;color:#fff}
+  .btn-res-search{
+    background:#22C36A;color:#fff;
+    border:none;padding:6px 14px;border-radius:6px;
+    font-size:12px;font-weight:700;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;
+    margin-left:auto;
+  }
+  .btn-res-search:hover{background:#1DAF5C}
+  .btn-filtros-sticky{
+    display:none;align-items:center;gap:5px;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;padding:6px 12px;
+    font-size:12px;font-weight:600;color:#fff;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;
+  }
+  .btn-filtros-sticky:hover{background:rgba(255,255,255,.22)}
+  .btn-filtros-sticky .flt-badge2{
+    background:#22C36A;color:#003580;font-size:10px;font-weight:700;
+    padding:1px 5px;border-radius:8px;display:none;
+  }
+  .btn-filtros-sticky .flt-badge2.show{display:inline}
+
+  /* Body de resultados */
+  .res-body{
+    max-width:1500px;margin:0 auto;
+    display:grid;grid-template-columns:260px 1fr;
+    align-items:start;
+    padding:1.2rem 2rem;gap:1.5rem;
+  }
+
+  /* Mapa mini */
+  .mapa-mini{
+    width:100%;height:180px;border-radius:var(--r2);
+    overflow:hidden;border:1px solid var(--border);
+    margin-bottom:.8rem;background:var(--bg3);
+    position:relative;
+  }
+  .mapa-mini-btn{
+    position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+    background:#fff;border:1px solid var(--border2);border-radius:20px;
+    padding:5px 12px;font-size:11px;font-weight:600;color:var(--text2);
+    cursor:pointer;box-shadow:var(--shadow);white-space:nowrap;
+  }
+
+  /* Panel filtros */
+  .filtros{background:#fff}
+  .filtro-section{border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1rem}
+  .filtro-section:last-child{border-bottom:none;margin-bottom:0}
+  /* Sección sticky (Tipo de mudanza) - se queda fija arriba al scrollear el panel */
+  .filtro-section-sticky{
+    position:sticky;top:80px;z-index:50;
+    background:#fff;
+    margin:0 -8px 1rem;padding:.7rem 8px 1rem;
+    border-bottom:2px solid var(--border);
+    box-shadow:0 2px 6px rgba(0,0,0,.04);
+  }
+  .filtro-h{font-size:13px;font-weight:700;color:var(--text);margin-bottom:.7rem}
+  .filtro-opt{
+    display:flex;align-items:center;gap:8px;padding:5px 0;
+    cursor:pointer;font-size:13px;color:var(--text2);
+    transition:color .15s;user-select:none;
+  }
+  .filtro-opt:hover{color:var(--text)}
+  .filtro-opt label{cursor:pointer;display:flex;align-items:center;gap:8px;width:100%}
+  .filtro-opt input[type=checkbox]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+  .filtro-opt input[type=radio]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+  .filtro-count{font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto}
+  .btn-clear{background:none;border:none;font-size:12px;color:var(--blue);cursor:pointer;padding:0;font-family:'Inter',sans-serif;text-decoration:underline;margin-top:6px;display:block}
+
+  /* Filtros mobile top bar */
+  .filtros-mobile-bar{
+    display:none;
+    background:#fff;border-bottom:1px solid var(--border);
+    padding:.6rem 1rem;gap:6px;overflow-x:auto;
+    scrollbar-width:none;
+    position:sticky;top:100px;z-index:99;
+  }
+  .filtros-mobile-bar::-webkit-scrollbar{display:none}
+  .filtro-pill{
+    padding:6px 12px;border-radius:20px;border:1px solid var(--border2);
+    font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap;
+    background:#fff;transition:all .2s;flex-shrink:0;
+  }
+  .filtro-pill:hover{border-color:var(--blue);color:var(--blue)}
+  .filtro-pill.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:600}
+
+  /* Botón filtros mobile */
+  .btn-filtros-mobile{
+    display:none;align-items:center;gap:6px;
+    background:#fff;border:1.5px solid var(--border2);border-radius:20px;
+    padding:7px 14px;font-size:13px;font-weight:600;color:var(--text);
+    cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;
+  }
+  .btn-filtros-mobile:hover{border-color:var(--blue);color:var(--blue)}
+  .btn-filtros-mobile .flt-badge{
+    background:var(--blue);color:#fff;font-size:10px;font-weight:700;
+    padding:1px 6px;border-radius:10px;display:none;
+  }
+  .btn-filtros-mobile .flt-badge.show{display:inline}
+
+  /* Drawer filtros mobile */
+  .filtros-drawer-ov{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
+  .filtros-drawer-ov.open{display:block}
+  .filtros-drawer{
+    position:fixed;bottom:0;left:0;right:0;z-index:601;
+    background:#fff;border-radius:20px 20px 0 0;
+    padding:0;max-height:85vh;overflow-y:auto;
+    transform:translateY(100%);transition:transform .3s ease;
+  }
+  .filtros-drawer.open{transform:translateY(0)}
+  .drawer-handle{width:40px;height:4px;background:#E2E8F0;border-radius:2px;margin:12px auto 0}
+  .drawer-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem .8rem;border-bottom:1px solid var(--border)}
+  .drawer-title{font-size:15px;font-weight:700;color:var(--text)}
+  .drawer-close{background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;padding:0}
+  .drawer-body{padding:1rem 1.2rem 2rem}
+  .drawer-section{margin-bottom:1.4rem}
+  .drawer-section-h{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.7rem;font-family:var(--mono)}
+  .drawer-opts{display:flex;flex-direction:column;gap:6px}
+  .drawer-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text);transition:background .15s}
+  .drawer-opt:hover{background:#F8FAFC}
+  .drawer-opt input{accent-color:var(--blue);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+  .drawer-serv-dest{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;
+    border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;
+    border:1.5px solid var(--border);background:#fff;transition:all .2s;margin-bottom:8px;
+  }
+  .drawer-serv-dest.guardamuebles{border-color:#7C3AED;color:#7C3AED;background:#F5F3FF}
+  .drawer-serv-dest.premium{border-color:#F59E0B;color:#B45309;background:#FFFBEB}
+  .drawer-serv-dest input{accent-color:currentColor;width:16px;height:16px;cursor:pointer;flex-shrink:0}
+  .drawer-footer{padding:1rem 1.2rem;border-top:1px solid var(--border);display:flex;gap:8px;background:#fff;position:sticky;bottom:0}
+  .drawer-btn-apply{flex:1;background:var(--blue);color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+  .drawer-btn-clear{background:#fff;color:var(--text2);border:1px solid var(--border2);padding:12px 16px;border-radius:10px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+
+  /* Servicios destacados en panel desktop */
+  .filtro-serv-dest{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;
+    border-radius:8px;border:1.5px solid var(--border);
+    cursor:pointer;font-size:12px;font-weight:600;margin-bottom:6px;transition:all .2s;
+  }
+  .filtro-serv-dest.guardamuebles{border-color:#7C3AED;color:#7C3AED;background:#F5F3FF}
+  .filtro-serv-dest.premium{border-color:#F59E0B;color:#B45309;background:#FFFBEB}
+  .filtro-serv-dest input{accent-color:currentColor;width:14px;height:14px;cursor:pointer;flex-shrink:0}
+
+  /* ── Toggle switch iOS-style (para checkboxes binarios) ── */
+  .tg-row{display:flex;align-items:center;gap:10px;padding:8px 4px;cursor:pointer;font-size:13px;color:var(--text);user-select:none}
+  .tg-row:hover{color:var(--blue)}
+  .tg-row.is-on{color:var(--blue);font-weight:500}
+  .tg-row .tg-lbl{flex:1;line-height:1.3}
+  .tg-row input[type="checkbox"]{position:absolute;opacity:0;pointer-events:none}
+  .tg-switch{
+    position:relative;width:36px;height:20px;
+    background:#E2E8F0;border-radius:999px;
+    transition:background .2s;flex-shrink:0;
+  }
+  .tg-switch::after{
+    content:'';position:absolute;
+    top:2px;left:2px;
+    width:16px;height:16px;
+    background:#fff;border-radius:50%;
+    box-shadow:0 1px 3px rgba(0,0,0,.15);
+    transition:transform .2s;
+  }
+  .tg-row.is-on .tg-switch{background:var(--blue)}
+  .tg-row.is-on .tg-switch::after{transform:translateX(16px)}
+  /* Variantes destacadas (Guardamuebles violeta, Premium ámbar) */
+  .tg-row.is-on.tg-guardamuebles .tg-switch{background:#7C3AED}
+  .tg-row.is-on.tg-guardamuebles{color:#7C3AED}
+  .tg-row.is-on.tg-premium .tg-switch{background:#F59E0B}
+  .tg-row.is-on.tg-premium{color:#B45309}
+
+  /* ══ Barra mobile de niveles (pills horizontales en 2 filas) ══ */
+  .nivel-bar-mobile{
+    display:none; /* solo en mobile */
+    flex-direction:column;
+    gap:6px;padding:8px 12px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    /* Sticky pegado al nav. La info de búsqueda (Desde/Hasta/etc) queda arriba y se esconde con el scroll */
+    position:sticky;top:56px;z-index:98;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+  }
+  .nivel-bar-row{
+    display:flex;gap:6px;align-items:center;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .nivel-bar-row::-webkit-scrollbar{display:none}
+  .nivel-bar-row-filtros{justify-content:flex-start;overflow:visible;padding-left:2px}
+  .btn-filtros-mobile-pill{
+    flex-shrink:0;
+    display:inline-flex;align-items:center;gap:5px;
+    padding:6px 16px;border-radius:999px;
+    background:#003580;color:#fff;border:1.5px solid #003580;
+    font-size:12px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;
+  }
+  .btn-filtros-mobile-pill:active{transform:scale(.97)}
+  .btn-filtros-mobile-pill .flt-badge3{
+    background:#22C36A;color:#003580;font-size:10px;font-weight:700;
+    padding:1px 5px;border-radius:8px;display:none;
+    min-width:14px;text-align:center;
+  }
+  .btn-filtros-mobile-pill .flt-badge3.show{display:inline-block}
+  .nivel-bar-divider{
+    width:1px;height:22px;background:var(--border);
+    flex-shrink:0;margin:0 2px;
+  }
+  .nivel-bar-mobile::-webkit-scrollbar{display:none}
+  .nivel-pill{
+    flex-shrink:0;
+    display:inline-flex;align-items:center;gap:5px;
+    padding:6px 12px;border-radius:999px;
+    background:#fff;border:1.5px solid var(--border);
+    font-size:12px;font-weight:600;color:var(--text2);
+    cursor:pointer;transition:all .2s;white-space:nowrap;
+    font-family:'Inter',sans-serif;
+  }
+  .nivel-pill:active{transform:scale(.97)}
+  .nivel-pill.is-on{
+    background:var(--blue);color:#fff;border-color:var(--blue);
+    box-shadow:0 2px 8px rgba(26,111,255,.25);
+  }
+  /* Llave en mano: siempre destacada en amarillo */
+  .nivel-pill-llave{
+    background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);
+    border-color:#FCD34D;color:#B45309;
+  }
+  .nivel-pill-llave.is-on{
+    background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);
+    color:#fff;border-color:#D97706;
+    box-shadow:0 3px 12px rgba(245,158,11,.4);
+  }
+  .nivel-pill-llave .nivel-llave-badge{
+    font-size:8px;padding:2px 5px;
+  }
+  .nivel-pill-llave.is-on .nivel-llave-badge{
+    background:#fff;color:#D97706;
+  }
+  @media(max-width:900px){
+    .nivel-bar-mobile{display:flex}
+  }
+
+  /* Toggle Llave en mano: SIEMPRE destacado para que llame la atención */
+  .tg-row.tg-nivel-llave{
+    background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);
+    border:1px solid #FCD34D;
+    border-radius:10px;
+    padding:10px 12px;
+    margin:6px 0 2px;
+    color:#B45309;
+    font-weight:600;
+    position:relative;
+    box-shadow:0 1px 3px rgba(245,158,11,.15);
+    transition:all .2s;
+  }
+  .tg-row.tg-nivel-llave:hover{
+    box-shadow:0 3px 10px rgba(245,158,11,.25);
+    transform:translateY(-1px);
+  }
+  .tg-row.tg-nivel-llave .tg-lbl{color:#B45309}
+  .tg-row.tg-nivel-llave .tg-switch{background:#FCD34D}
+  .tg-row.is-on.tg-nivel-llave{
+    background:linear-gradient(135deg,#FEF3C7 0%,#FDE68A 100%);
+    border-color:#F59E0B;
+    box-shadow:0 4px 14px rgba(245,158,11,.3);
+  }
+  .tg-row.is-on.tg-nivel-llave .tg-switch{background:#F59E0B}
+  /* Badge PREMIUM dentro del label */
+  .nivel-llave-badge{
+    display:inline-block;font-size:9px;font-weight:700;
+    background:#F59E0B;color:#fff;
+    padding:2px 6px;border-radius:4px;
+    margin-left:6px;letter-spacing:.5px;
+    font-family:var(--mono);vertical-align:middle;
+  }
+
+  /* Badge de nivel en card mudancero */
+  .mud-nivel-badge{
+    display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;
+    padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.4px;
+    font-family:var(--mono);
+  }
+  .mud-nivel-badge.esencial{background:var(--blue-light);color:var(--blue-dark)}
+  .mud-nivel-badge.integral{background:var(--green-light);color:var(--green-dark)}
+  .mud-nivel-badge.llave{background:#FFFBEB;color:#B45309;border:1px solid #FCD34D}
+
+  /* Header resultados */
+  .res-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:1rem;flex-wrap:wrap;gap:8px;
+  }
+  .res-titulo{font-size:16px;font-weight:700;color:var(--text)}
+  .res-ruta{font-size:12px;color:var(--text2);margin-top:1px}
+  .res-count{font-size:13px;color:var(--text2)}
+  .res-count strong{color:var(--text)}
+  .buscador-nombre{
+    display:flex;align-items:center;gap:8px;
+    background:#F8FAFC;border:1.5px solid var(--border2);border-radius:10px;
+    padding:8px 12px;transition:border-color .2s;
+  }
+  .buscador-nombre:focus-within{border-color:var(--blue);background:#fff}
+  .buscador-nombre input{
+    border:none;background:none;outline:none;font-size:13px;
+    font-family:'Inter',sans-serif;color:var(--text);width:100%;min-width:0;
+  }
+  .buscador-nombre input::placeholder{color:var(--text3)}
+
+  /* Opción rápida card */
+  .card-rapida{
+    background:linear-gradient(135deg,#EEF4FF 0%,#F0FFF6 100%);
+    border:1.5px solid var(--blue);border-radius:var(--r);
+    padding:8px 10px 8px 14px;display:flex;align-items:center;gap:10px;
+    cursor:pointer;transition:all .2s;margin-bottom:10px;
+  }
+  .card-rapida:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+  .cr-title{font-size:13px;font-weight:700;color:var(--blue);flex:1;line-height:1.3}
+  .btn-cr{
+    background:var(--blue);color:#fff;
+    border:none;padding:7px 14px;border-radius:6px;
+    font-size:12.5px;font-weight:700;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;
+    white-space:nowrap;flex-shrink:0;
+  }
+  .btn-cr:hover{background:var(--blue-dark)}
+
+  /* ── Grid de mudanceros (3 columnas desktop) ── */
+  .mud-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  @media(max-width:1400px){.mud-grid{grid-template-columns:repeat(4,1fr);gap:12px}}
+  @media(max-width:1100px){.mud-grid{grid-template-columns:repeat(3,1fr);gap:10px}}
+  @media(max-width:820px){.mud-grid{grid-template-columns:repeat(2,1fr);gap:8px}}
+  @media(max-width:640px){.mud-grid{grid-template-columns:repeat(2,1fr);gap:8px}}
+
+  /* ── Card mudancero estilo MercadoLibre (vertical) ── */
+  .mud-card{
+    background:#fff;border:1px solid var(--border);border-radius:var(--r2);
+    display:flex;flex-direction:column;
+    overflow:hidden;cursor:pointer;transition:all .2s;
+    box-shadow:var(--shadow);position:relative;
+  }
+  .mud-card:hover{border-color:var(--blue);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+  .mud-card.sel{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue),var(--shadow-md)}
+
+  /* Foto arriba del card */
+  .mud-card-foto{
+    width:100%;aspect-ratio:4/3;
+    background:var(--bg3);display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;position:relative;overflow:hidden;
+  }
+  .mud-card-foto img{width:100%;height:100%;object-fit:cover;display:block}
+  .mud-foto-ph{
+    width:100%;height:100%;
+    background:linear-gradient(135deg,#EEF4FF,#E8F5FF);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  }
+  .mud-foto-initials{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--blue);letter-spacing:2px}
+  .mud-foto-truck{font-size:1.5rem}
+
+  /* Badge "Más contratado" tipo ML */
+  .mud-top-badge{
+    position:absolute;top:10px;left:10px;z-index:2;
+    background:#FE6B00;color:#fff;
+    padding:4px 10px;border-radius:3px;
+    font-size:10.5px;font-weight:700;font-family:var(--mono);
+    letter-spacing:.4px;text-transform:uppercase;
+    box-shadow:0 2px 6px rgba(254,107,0,.35);
+  }
+  .mud-top-badge.t1{background:#FE6B00}
+  .mud-top-badge.t2{background:#0C2D7B}
+  .mud-top-badge.t3{background:#535A64}
+
+  /* Check de selección (esquina sup der de la foto) */
+  .mud-sel-check{
+    position:absolute;top:10px;right:10px;z-index:2;
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid #fff;background:rgba(255,255,255,.9);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;box-shadow:var(--shadow);
+  }
+  .mud-card.sel .mud-sel-check{background:var(--blue);border-color:var(--blue)}
+  .mud-sel-check svg{display:none}
+  .mud-card.sel .mud-sel-check svg{display:block}
+
+  /* Body del card */
+  .mud-card-body{padding:10px 12px 0;flex:1;display:flex;flex-direction:column;gap:5px}
+  .mud-card-empresa{
+    font-size:15px;font-weight:700;color:#003580;
+    line-height:1.25;letter-spacing:-.2px;cursor:pointer;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .mud-card-empresa:hover{color:#1A6FFF}
+  .mud-tags{display:flex;flex-wrap:wrap;gap:4px}
+  .mud-tag{
+    display:inline-flex;align-items:center;gap:3px;
+    padding:2px 7px;border-radius:3px;
+    font-size:10.5px;font-family:var(--mono);white-space:nowrap;
+  }
+  .mud-tag-green{background:var(--green-light);color:var(--green-dark);border:1px solid rgba(34,195,106,.25)}
+  .mud-tag-blue{background:var(--blue-light);color:var(--blue);border:1px solid rgba(26,111,255,.2)}
+  .mud-tag-gray{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+  .mud-card-zona{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px}
+
+  /* Rating compacto inline */
+  .mud-rating-inline{
+    display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);
+  }
+  .mud-rating-inline .star{color:#F59E0B;font-size:13px}
+  .mud-rating-inline b{color:var(--text);font-weight:700}
+
+  .mud-card-trabajos{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+  /* Precio (grande, estilo ML) */
+  .mud-card-precio{padding:3px 12px 8px;margin-top:auto}
+  .mud-precio-desde{font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+  .mud-precio-num{font-size:24px;font-weight:400;color:var(--text);line-height:1;letter-spacing:-.5px}
+  .mud-precio-sub{font-size:10.5px;color:var(--text2);margin-top:2px}
+
+  /* CTAs abajo */
+  .mud-card-actions{padding:0 12px 10px;display:flex;gap:6px}
+  .btn-ver{
+    background:var(--blue);color:#fff;border:none;
+    padding:10px 14px;border-radius:var(--r);
+    font-size:13px;font-weight:700;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;
+    flex:1;text-align:center;
+  }
+  .btn-ver:hover{background:var(--blue-dark)}
+  .btn-sel-toggle{
+    background:#fff;color:var(--blue);
+    border:1.5px solid var(--blue);padding:9px 14px;border-radius:var(--r);
+    font-size:12px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;
+    flex:1;text-align:center;white-space:nowrap;
+  }
+  .mud-card.sel .btn-sel-toggle{background:var(--blue-light)}
+
+  /* Barra seleccionados fija */
+  .sel-bar{
+    display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;
+    background:#003580;
+    border-top:3px solid #22C36A;
+    padding:.9rem 1.5rem;
+    align-items:center;justify-content:space-between;gap:12px;
+  }
+  .sel-bar.show{display:flex}
+  .sel-bar-info{font-size:14px;color:#fff}
+  .sel-bar-info strong{color:#22C36A}
+  .btn-pedir{
+    background:var(--green);color:#fff;
+    border:none;padding:11px 28px;border-radius:var(--r);
+    font-size:14px;font-weight:700;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .2s;
+    display:flex;align-items:center;gap:8px;white-space:nowrap;
+  }
+  .btn-pedir:hover{background:var(--green-dark);box-shadow:0 4px 16px rgba(34,195,106,.35)}
+
+  /* No results */
+  .no-results{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
+
+  /* ══ SECCIONES ABAJO ══ */
+  .stats-bar{
+    background:#003580;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid rgba(255,255,255,.15);
+  }
+  .stat-item{padding:1.4rem 1rem;text-align:center;border-right:1px solid rgba(255,255,255,.15)}
+  .stat-item:last-child{border-right:none}
+  .stat-n{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#22C36A;letter-spacing:1px;line-height:1}
+  .stat-l{font-size:11px;color:rgba(255,255,255,.8);margin-top:4px;font-family:var(--mono);letter-spacing:.2px}
+
+  .section{padding:2.5rem 1.5rem;background:#fff}
+  .section.alt{background:var(--bg2)}
+  .sec-inner{max-width:1300px;margin:0 auto}
+  .sec-eyebrow{font-size:11px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--mono);margin-bottom:6px}
+  .sec-title{font-size:clamp(1.2rem,2.2vw,1.7rem);font-weight:800;color:var(--text);margin-bottom:.3rem;line-height:1.15;letter-spacing:-.4px}
+  .sec-sub{font-size:13px;color:var(--text2);font-weight:300;line-height:1.6;max-width:500px}
+
+  .steps-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border);margin-top:1.5rem;border-radius:var(--r2);overflow:hidden}
+  .step-block{background:#fff;padding:1.2rem 1.1rem;transition:background .2s}
+  .step-block:hover{background:var(--bg2)}
+  .step-num{font-size:2rem;font-weight:900;color:#1A6FFF;font-family:'Bebas Neue',sans-serif;margin-bottom:.4rem;line-height:1}
+  .step-block h3{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text)}
+  .step-block p{font-size:12px;color:var(--text2);line-height:1.55;font-weight:300}
+
+  .aud-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);margin-top:1.5rem;border-radius:var(--r2);overflow:hidden}
+  .aud-card{background:#fff;padding:1.3rem 1.2rem;transition:background .2s}
+  .aud-card:hover{background:var(--bg2)}
+  .aud-icon{font-size:1.5rem;margin-bottom:.5rem;display:block}
+  .aud-title{font-size:1.1rem;font-weight:800;margin-bottom:.3rem}
+  .aud-card.cl .aud-title{color:var(--blue)}
+  .aud-card.mud .aud-title{color:#003580}
+  .aud-card.inmo .aud-title{color:#22C36A}
+  .aud-desc{font-size:12px;color:var(--text2);font-weight:300;line-height:1.55;margin-bottom:.7rem}
+  .aud-list{list-style:none;display:flex;flex-direction:column;gap:4px}
+  .aud-list li{font-size:12px;color:var(--text2);display:flex;align-items:flex-start;gap:6px}
+  .aud-arr{font-weight:700;flex-shrink:0}
+  .aud-card.cl .aud-arr{color:var(--blue)}
+  .aud-card.mud .aud-arr{color:#003580}
+  .aud-card.inmo .aud-arr{color:#22C36A}
+
+  /* Alianzas: grid 2 columnas siempre (incluso mobile) */
+  .partners-grid{
+    display:grid;grid-template-columns:repeat(2,1fr);
+    gap:.8rem;align-items:center;justify-items:center;
+    max-width:560px;margin:1.5rem auto 0;
+  }
+  .partner-card{
+    display:flex;align-items:center;justify-content:center;
+    padding:.5rem;transition:transform .2s;width:100%;
+  }
+  .partner-card:hover{transform:translateY(-2px)}
+  .partner-card img{max-width:100%;max-height:50px;width:auto;height:auto;object-fit:contain}
+
+  footer{background:#003580;padding:1.5rem}
+  .footer-inner{max-width:1300px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  .footer-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#fff;letter-spacing:1px}
+  .footer-logo span{color:var(--green)}
+  .footer-links{display:flex;gap:1.2rem}
+  .footer-links a{font-size:11px;color:rgba(255,255,255,.75);text-decoration:none;font-family:var(--mono);transition:color .2s}
+  .footer-links a:hover{color:#fff}
+  .footer-copy{font-size:10px;color:rgba(255,255,255,.65);font-family:var(--mono)}
+
+  /* Modales */
+  .modal-ov{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
+  .modal-ov.open{display:flex}
+  .modal-box{background:#fff;border-radius:var(--r3);padding:1.8rem;max-width:420px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+  .modal-close{position:absolute;top:1rem;right:1rem;background:var(--bg2);border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+  .modal-close:hover{background:var(--bg3)}
+
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* RESPONSIVE */
+  @media(max-width:900px){
+    .search-bar{flex-direction:column;border-radius:var(--r2);overflow:visible}
+    .search-segment{border-right:none;border-bottom:1px solid var(--border)}
+    .search-segment:last-of-type{border-bottom:none}
+    .btn-search-bar{border-radius:0 0 var(--r) var(--r);padding:14px;justify-content:center}
+    .swap-btn{display:none}
+    .res-body{grid-template-columns:1fr;padding:.8rem 1rem}
+    .filtros{display:none}
+    .filtros-mobile-bar{display:none!important}
+    .btn-filtros-sticky{display:none} /* el botón Filtros ahora vive en .nivel-bar-mobile */
+    .btn-filtros-mobile{display:none}
+    /* En mobile, el search bar deja de ser sticky: se esconde al scrollear.
+       Solo queda sticky la barra de niveles (con el botón Filtros adentro). */
+    .res-search-bar{position:static}
+  }
+  @media(max-width:600px){
+    nav{padding:0 1rem}
+    .nav-links,.nav-right{display:none}
+    .nav-burger{display:flex}
+    .hero{padding:1.5rem 1rem 2.5rem}
+    .res-search-inner{flex-wrap:wrap;gap:6px}
+    .res-seg{font-size:11px;padding:.4rem .7rem}
+    .res-seg-label{font-size:8px}
+    .res-seg-val{font-size:11px}
+    .btn-res-search{padding:7px 14px;font-size:12px}
+    .stats-bar{grid-template-columns:repeat(2,1fr)}
+    .stat-item{border-bottom:1px solid rgba(255,255,255,.15)}
+    .stat-item:nth-child(odd){border-right:1px solid rgba(255,255,255,.15)}
+    .stat-item:nth-child(even){border-right:none}
+    .steps-grid,.aud-grid{grid-template-columns:1fr}
+    .dif-grid{grid-template-columns:1fr}
+    .section{padding:1.8rem 1rem}
+    .step-block{padding:1rem .9rem}
+    .step-num{font-size:1.7rem}
+    .aud-card{padding:1.1rem 1rem}
+    /* Alianzas: 2 columnas también en mobile, pero más chiquito */
+    .partners-grid{gap:.4rem;margin-top:1rem}
+    .partner-card{padding:.3rem}
+    .partner-card img{max-height:32px}
+    .footer-inner{flex-direction:column;align-items:flex-start}
+    /* Card rápida compacta también en mobile - se mantiene en 1 fila */
+    .card-rapida{padding:7px 8px 7px 12px;gap:8px;margin-bottom:8px}
+    .cr-title{font-size:11.5px;line-height:1.25}
+    .btn-cr{padding:6px 12px;font-size:11.5px}
+    /* Cards de mudancero estilo Mercado Libre en mobile (compactas, casi 4 por pantalla) */
+    .mud-card{border-radius:8px}
+    .mud-card-foto{aspect-ratio:16/10} /* foto baja, formato apaisado */
+    .mud-card-body{padding:8px 8px 0;gap:3px}
+    .mud-card-empresa{
+      font-size:12.5px;line-height:1.2;font-weight:600;
+      -webkit-line-clamp:1; /* 1 sola línea, truncado */
+    }
+    /* Tags: solo dejamos visible el badge de nivel, ocultamos el resto */
+    .mud-tags{gap:3px}
+    .mud-tag{display:none} /* oculta verificado, camión, etc */
+    .mud-nivel-badge{font-size:8.5px;padding:1px 5px;letter-spacing:.2px}
+    /* Rating compacto: solo estrella + número */
+    .mud-rating-inline{font-size:11px;gap:3px}
+    .mud-rating-inline .star{font-size:11px}
+    .mud-rating-inline span:not(.star){display:none} /* oculta "· 102 reseñas" */
+    /* Ocultar info no esencial en mobile */
+    .mud-card-zona{display:none}
+    .mud-card-trabajos{display:none}
+    /* Precio compacto */
+    .mud-card-precio{padding:2px 8px 8px}
+    .mud-precio-desde{display:none} /* sacamos "Desde" arriba del precio */
+    .mud-precio-num{font-size:16px;letter-spacing:-.3px}
+    .mud-precio-sub{display:none} /* sacamos "precio estimado" */
+    /* Excepción: si es tarifa por hora (Córdoba), mostramos siempre el badge */
+    .mud-precio-sub[style*="B45309"]{display:block!important;font-size:9.5px;line-height:1.2}
+    /* Botones: ocultar Ver perfil, hacer Elegir más angosto */
+    .mud-card-actions{padding:0 6px 8px;gap:4px;justify-content:flex-end}
+    .btn-ver{display:none} /* oculto en mobile */
+    .btn-sel-toggle{
+      flex:0 0 auto;width:auto;
+      padding:11px 16px;font-size:12.5px;font-weight:600;
+      border-radius:8px;min-height:40px;
+    }
+    /* Top badge más chico */
+    .mud-top-badge{font-size:8.5px;padding:2px 6px;top:4px;left:4px;letter-spacing:.2px}
+    .mud-sel-check{width:20px;height:20px;top:5px;right:5px}
+    /* Compactar más el contenedor */
+    .res-body{padding:.4rem .5rem}
+    .mud-grid{gap:6px!important} /* refuerzo */
+  }
+  </style>
+  </head>
+  <body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/en/" class="nav-logo">Mudate<span>Ya</span></a>
+    <ul class="nav-links">
+      <li><a href="#who-its-for">Who it's for</a></li>
+      <li><a href="/blog">Blog</a></li>
+      <li><a href="/mya-mobility" style="color:#C6A464;font-weight:700">MYA Mobility</a></li>
+      <li><a href="/" style="opacity:.75">ES</a></li>
+    </ul>
+    <div class="nav-right" id="navRight">
+      <div style="display:flex;gap:8px">
+        <a href="/mi-cuenta" class="btn-nav-outline">Moving Company</a>
+        <a href="https://mudateya.ar/" class="btn-nav-solid">Get a Quote →</a>
+      </div>
+    </div>
+    <button class="nav-burger" id="navBurger" onclick="toggleMenu()" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#who-its-for" onclick="closeMenu()">Who it's for</a>
+    <a href="/blog" onclick="closeMenu()">Blog</a>
+    <a href="/mya-mobility" onclick="closeMenu()" style="color:#C6A464;font-weight:700">MYA Mobility</a>
+    <a href="/" onclick="closeMenu()">ES — Español</a>
+    <a href="https://mudateya.ar/" style="color:#22C36A;font-weight:700;font-size:15px">🚛 Get a Quote</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="heroSection" style="position:relative">
+    <div class="hero-inner">
+      <h1>Get moving quotes from Argentina's best movers</h1>
+      <p class="hero-sub">Compare real prices from verified moving companies and choose with no obligation. It's free.</p>
+
+      <!-- CTA card in place of the interactive search bar (the live search & booking tool is on our Spanish site) -->
+      <div class="search-bar" style="flex-direction:column;padding:1.4rem;gap:.9rem;align-items:flex-start">
+        <div style="font-size:14px;color:var(--text2);line-height:1.5">
+          Our live quote comparison tool is on <strong>mudateya.ar</strong> (in Spanish — Argentina's moving companies operate in Spanish, but our team can help you in English over WhatsApp).
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;width:100%">
+          <a href="https://mudateya.ar/" class="btn-search-bar" style="border-radius:var(--r);text-decoration:none">
+            Compare quotes now →
+          </a>
+        </div>
+      </div>
+
+      <!-- WhatsApp CTA -->
+      <div class="hero-wa">
+        <a href="https://wa.me/12399462954?text=Hi%2C%20I%27d%20like%20a%20quote%20for%20my%20move%20(English%20please)" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="#22C36A" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.47 3.47 1.29 4.94L2 22l5.29-1.39a9.87 9.87 0 0 0 4.75 1.21h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.02c-.24.68-1.38 1.3-1.9 1.34-.49.04-.98.23-3.29-.69-2.78-1.11-4.55-3.93-4.69-4.11-.14-.18-1.12-1.49-1.12-2.84 0-1.35.71-2.01.96-2.28.25-.27.55-.34.73-.34.18 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.15.12.32.02.5-.1.19-.15.3-.29.46-.14.16-.3.36-.43.48-.14.14-.29.29-.13.57.17.28.75 1.25 1.62 2.02 1.12.99 2.05 1.3 2.34 1.44.29.14.46.12.62-.07.17-.19.72-.83.91-1.12.19-.29.38-.24.63-.15.26.1 1.63.77 1.91.91.28.14.47.21.53.33.07.12.07.68-.17 1.36z"/></svg>
+          Prefer WhatsApp? Message our team →
+          <span class="tag">No forms</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- WHO IT'S FOR -->
+  <section class="section" id="who-its-for">
+    <div class="sec-inner">
+      <div class="sec-eyebrow">For everyone</div>
+      <div class="sec-title">Built for every side of the move</div>
+      <div class="aud-grid">
+        <div class="aud-card cl">
+          <span class="aud-icon">🏠</span>
+          <div class="aud-title">I'm moving</div>
+          <p class="aud-desc">Compare real prices without calling anyone. It's free.</p>
+          <ul class="aud-list">
+            <li><span class="aud-arr">→</span>Movers with verified ID and vehicle</li>
+            <li><span class="aud-arr">→</span>The price you agree on is the price you pay</li>
+            <li><span class="aud-arr">→</span>Protected payment (Mercado Pago or bank transfer)</li>
+          </ul>
+          <a href="https://mudateya.ar/" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:var(--blue);color:#fff;transition:opacity .2s">Compare quotes →</a>
+        </div>
+        <div class="aud-card mud">
+          <span class="aud-icon">🚛</span>
+          <div class="aud-title">Moving Company</div>
+          <p class="aud-desc">Customers who are ready to hire, without having to chase them down.</p>
+          <ul class="aud-list">
+            <li><span class="aud-arr">→</span>Requests in your area, ready to quote</li>
+            <li><span class="aud-arr">→</span>No monthly fee — you only pay when you work</li>
+            <li><span class="aud-arr">→</span>Real reviews that build your reputation</li>
+          </ul>
+          <a href="/mudanceros" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:#003580;color:#fff;transition:opacity .2s">Join as a Moving Company →</a>
+        </div>
+        <div class="aud-card inmo">
+          <span class="aud-icon">🔑</span>
+          <div class="aud-title">Real Estate Agencies</div>
+          <p class="aud-desc">Add a valuable perk to your service and win exclusivity.</p>
+          <ul class="aud-list">
+            <li><span class="aud-arr">→</span>One more reason to close the deal</li>
+            <li><span class="aud-arr">→</span>Verified moving companies that take care of your brand</li>
+            <li><span class="aud-arr">→</span>Simple integration, no friction for your team</li>
+          </ul>
+          <a href="https://mudateya.ar/inmobiliarias-registro" style="display:inline-flex;align-items:center;gap:6px;margin-top:1.2rem;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-decoration:none;background:#22C36A;color:#fff;transition:opacity .2s">See the plan →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MUDATEYA MOBILITY -->
+  <section class="myab">
+    <style>
+      .myab{background:#0F2440;padding:2.6rem 1.5rem;border-top:1px solid rgba(198,164,100,.28);border-bottom:1px solid rgba(198,164,100,.28)}
+      .myab-inner{max-width:1300px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:2.5rem;flex-wrap:wrap}
+      .myab-main{flex:1 1 520px;min-width:280px}
+      .myab-lockup{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+      .myab-badge{width:28px;height:28px;border-radius:6px;background:#C6A464;color:#142C4C;font-family:'Bebas Neue',sans-serif;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;flex:0 0 auto}
+      .myab-wm{font-size:13px;letter-spacing:.4px;color:#fff;font-weight:600}
+      .myab-wm b{color:#C6A464;font-weight:700}
+      .myab-eyebrow{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C6A464;margin-bottom:8px}
+      .myab-title{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:clamp(1.9rem,4vw,2.9rem);letter-spacing:.5px;color:#fff;line-height:1;margin-bottom:0}
+      .myab-title span{color:#C6A464}
+      .myab-cta{flex:0 0 auto}
+      .myab-btn{display:inline-flex;align-items:center;gap:8px;background:#C6A464;color:#142C4C;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;letter-spacing:.3px;text-decoration:none;border-radius:3px;padding:14px 26px;white-space:nowrap;transition:background .18s ease}
+      .myab-btn:hover{background:#E0C488}
+      @media(max-width:760px){
+        .myab{padding:2rem 1rem}
+        .myab-inner{gap:1.4rem}
+        .myab-cta{flex:1 1 100%}
+        .myab-btn{width:100%;justify-content:center}
+      }
+    </style>
+    <div class="myab-inner">
+      <div class="myab-main">
+        <div class="myab-lockup"><span class="myab-badge">M</span><span class="myab-wm">MudateYa <b>Mobility</b></span></div>
+        <div class="myab-eyebrow">New · B2B Relocation</div>
+        <h2 class="myab-title">Discover <span>MudateYa Mobility</span></h2>
+      </div>
+      <div class="myab-cta"><a href="/mya-mobility" class="myab-btn">Explore Mobility →</a></div>
+    </div>
+  </section>
+
+  <footer>
+    <style>.foot-zonas a{font-size:12px;color:rgba(255,255,255,.72);text-decoration:none;transition:color .2s}.foot-zonas a:hover{color:#fff}</style>
+    <div class="footer-inner" style="display:block;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid rgba(255,255,255,.15)">
+      <div style="font-size:11px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:12px;letter-spacing:.8px">MOVING BY AREA</div>
+      <div class="foot-zonas" style="display:flex;flex-wrap:wrap;gap:10px 18px">
+        <a href="/mudanza-urgente" style="color:var(--green);font-weight:600">⚡ Urgent move</a>
+        <a href="/mudanzas-en-caba">CABA (Buenos Aires City)</a>
+        <a href="/mudanzas-en-palermo">Palermo</a>
+        <a href="/mudanzas-en-belgrano">Belgrano</a>
+        <a href="/mudanzas-en-recoleta">Recoleta</a>
+        <a href="/mudanzas-en-caballito">Caballito</a>
+        <a href="/mudanzas-en-nunez">Núñez</a>
+        <a href="/mudanzas-en-flores">Flores</a>
+        <a href="/mudanzas-en-villa-urquiza">Villa Urquiza</a>
+        <a href="/mudanzas-en-san-isidro">San Isidro</a>
+        <a href="/mudanzas-en-vicente-lopez">Vicente López</a>
+        <a href="/mudanzas-en-tigre">Tigre</a>
+        <a href="/mudanzas-en-quilmes">Quilmes</a>
+        <a href="/mudanzas-en-lomas-de-zamora">Lomas de Zamora</a>
+        <a href="/mudanzas-en-rosario">Rosario</a>
+        <a href="/mudanzas-en-cordoba">Córdoba</a>
+        <a href="/mudanzas-en-mendoza">Mendoza</a>
+        <a href="/mudanceros" style="color:rgba(255,255,255,.9);font-weight:600">Join as a mover →</a>
+      </div>
+    </div>
+    <div class="footer-inner">
+      <div class="footer-logo">Mudate<span>Ya</span></div>
+      <div class="footer-links">
+        <a href="/blog">Blog</a>
+        <a href="/terminos">Terms</a>
+        <a href="/privacidad">Privacy</a>
+        <a href="/contacto">Contact</a>
+        <a href="https://www.instagram.com/mudateya.ar" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:5px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          @mudateya.ar
+        </a>
+      </div>
+      <div class="footer-copy">© 2026 MudateYa · Argentina 🇦🇷</div>
+    </div>
+  </footer>
+
+  <script>
+  function toggleMenu() { document.getElementById('navBurger').classList.toggle('open'); document.getElementById('mobileMenu').classList.toggle('open'); }
+  function closeMenu()  { document.getElementById('navBurger').classList.remove('open'); document.getElementById('mobileMenu').classList.remove('open'); }
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script src="https://www.googletagmanager.com/gtag/js?id=AW-18095175887" async></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18095175887');
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href*="wa.me"],a[href*="api.whatsapp.com"]');
+    if (a) gtag('event', 'conversion', {send_to: 'AW-18095175887/DcirCJ3byd4cEM_xubRD'});
+  });
+  </script>
+  </body>
+  </html>
