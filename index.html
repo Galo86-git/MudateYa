@@ -1412,6 +1412,18 @@
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJwvI7R_CLVclDMxSL8uCKwRdrKQF1Oo8&libraries=places&language=es&region=AR&loading=async&callback=initMaps" async defer></script>
     <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Google Ads: tag base + conversión "Click WhatsApp" (cualquier link a wa.me / api.whatsapp.com) -->
+  <script src="https://www.googletagmanager.com/gtag/js?id=AW-18095175887" async></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18095175887');
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href*="wa.me"],a[href*="api.whatsapp.com"]');
+    if (a) gtag('event', 'conversion', {send_to: 'AW-18095175887/DcirCJ3byd4cEM_xubRD'});
+  });
+  </script>
 </head>
   <body>
 
@@ -3599,7 +3611,7 @@
     try { await _calcularKmBusqueda(); } catch(e) { /* silencioso */ }
 
     try {
-      await fetch('/api/cotizaciones?action=publicar', {
+      var _rPublicar = await fetch('/api/cotizaciones?action=publicar', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           clienteEmail:_currentUser.email, clienteNombre:_currentUser.name, clienteWA:clienteWA||'',
@@ -3633,6 +3645,10 @@
           horaOrigen:   lugar && lugar.horaOrigen   || ''
         })
       });
+      // Google Ads: conversión "cotización enviada" — solo si el pedido se publicó de verdad.
+      if (_rPublicar && _rPublicar.ok && typeof gtag === 'function') {
+        gtag('event', 'conversion', {send_to: 'AW-18095175887/8k2xCJrbyd4cEM_xubRD'});
+      }
     } catch(e) { console.warn(e.message); }
     document.getElementById('pub-ing').style.display='none';
     document.getElementById('pub-ok').style.display='block';

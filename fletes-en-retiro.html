@@ -62,6 +62,18 @@ footer{background:#0a1b33;color:#9fb3d1;padding:34px 0;font-size:14px}footer a{c
 .breadcrumb{font-size:13px;color:#9fb3d1;margin:0 0 14px}.breadcrumb a{color:#cfe0ff}
 </style>
   <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Google Ads: tag base + conversión "Click WhatsApp" (cualquier link a wa.me / api.whatsapp.com) -->
+  <script src="https://www.googletagmanager.com/gtag/js?id=AW-18095175887" async></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18095175887');
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href*="wa.me"],a[href*="api.whatsapp.com"]');
+    if (a) gtag('event', 'conversion', {send_to: 'AW-18095175887/DcirCJ3byd4cEM_xubRD'});
+  });
+  </script>
 </head>
 <body>
 <header class="nav"><div class="wrap"><a class="brand" href="/">MUDATE<span>YA</span></a><a href="/blog" style="text-decoration:none;color:#0b1b33;font-weight:600;font-size:15px;margin-right:16px">Blog</a><a class="btn nav-cta" href="https://wa.me/12399462954?text=Hola%20Emi!%20Quiero%20un%20flete%20en%20Retiro">Pedir por WhatsApp →</a></div></header>

@@ -50,6 +50,18 @@
   @media (prefers-reduced-motion:reduce){ .spin{animation:none} }
 </style>
   <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Google Ads: tag base + conversión "Click WhatsApp" (cualquier link a wa.me / api.whatsapp.com) -->
+  <script src="https://www.googletagmanager.com/gtag/js?id=AW-18095175887" async></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18095175887');
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href*="wa.me"],a[href*="api.whatsapp.com"]');
+    if (a) gtag('event', 'conversion', {send_to: 'AW-18095175887/DcirCJ3byd4cEM_xubRD'});
+  });
+  </script>
 </head>
 <body>
 <div>

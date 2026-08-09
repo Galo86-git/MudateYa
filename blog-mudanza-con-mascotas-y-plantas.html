@@ -85,6 +85,18 @@ footer{background:#0a1b33;color:#9fb3d1;padding:34px 0;font-size:14px}
 footer a{color:#cfe0ff;text-decoration:none}
 </style>
   <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Google Ads: tag base + conversión "Click WhatsApp" (cualquier link a wa.me / api.whatsapp.com) -->
+  <script src="https://www.googletagmanager.com/gtag/js?id=AW-18095175887" async></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18095175887');
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href*="wa.me"],a[href*="api.whatsapp.com"]');
+    if (a) gtag('event', 'conversion', {send_to: 'AW-18095175887/DcirCJ3byd4cEM_xubRD'});
+  });
+  </script>
 </head>
 <body>
 <header class="nav"><div class="wrap-wide"><a class="brand" href="/">MUDATE<span>YA</span></a><div class="nav-links"><a class="txt" href="/blog">Blog</a><a class="btn nav-cta" href="/">Cotizar gratis →</a></div></div></header>
