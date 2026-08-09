@@ -947,6 +947,8 @@
   var fleteOtrosTexto = '';
   var _fleteFotoB64 = null;
   var _fleteFotoMime = '';
+  var _fleteFotosUrls = [];      // URLs subidas a Blob — estas SÍ viajan con el pedido
+  var _fleteHeroCarpeta = '';
 
   function selFleteObj(el, tipo) {
     document.querySelectorAll('#sb-flete .obj-chip').forEach(function(c){ c.classList.remove('sel'); });
@@ -967,22 +969,100 @@
     }
   }
 
-  function onFleteFoto(input) {
-    var file = input.files[0];
-    if (!file) return;
+  function _fleteActualizarTexto() {
     var txtEl = document.getElementById('flete-foto-txt');
+    if (!txtEl) return;
+    var n = _fleteFotosUrls.filter(Boolean).length;
+    txtEl.textContent = n > 0
+      ? ('\u2713 ' + n + ' foto' + (n > 1 ? 's' : '') + ' cargada' + (n > 1 ? 's' : ''))
+      : 'Subir o arrastrar foto/s de lo que hay que fletar *';
+  }
+
+  function onFleteFoto(input) {
+    _fleteProcesarArchivos(input.files);
+    input.value = '';
+  }
+
+  function _fleteProcesarArchivos(fileList) {
+    if (!fileList || !fileList.length) return;
+    if (!_fleteHeroCarpeta) _fleteHeroCarpeta = 'flete-hero/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    if (_fleteFotosUrls.length + fileList.length > 5) {
+      alert('Pod\u00e9s subir hasta 5 fotos en total.');
+      return;
+    }
+    var grid = document.getElementById('flete-fotos-grid');
     var estadoEl = document.getElementById('flete-ia-estado');
     var resultEl = document.getElementById('flete-ia-result');
-    if (txtEl) txtEl.textContent = '\u2713 ' + file.name;
-    if (estadoEl) estadoEl.style.display = 'flex';
-    if (resultEl) resultEl.style.display = 'none';
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      _fleteFotoB64 = e.target.result.split(',')[1];
-      _fleteFotoMime = file.type || 'image/jpeg';
-      if (typeof analizarFleteFoto === 'function') analizarFleteFoto();
-    };
-    reader.readAsDataURL(file);
+    Array.from(fileList).filter(function(f){ return f.type && f.type.indexOf('image/') === 0; }).forEach(function(file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Una de las fotos pesa m\u00e1s de 5MB.');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        // An\u00e1lisis con IA (solo cartelito en pantalla) sobre la \u00faltima foto agregada
+        _fleteFotoB64 = e.target.result.split(',')[1];
+        _fleteFotoMime = file.type || 'image/jpeg';
+        if (estadoEl) estadoEl.style.display = 'flex';
+        if (resultEl) resultEl.style.display = 'none';
+        if (typeof analizarFleteFoto === 'function') analizarFleteFoto();
+
+        // Miniatura + subida real a Blob (esta es la que viaja con el pedido)
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:48px;height:48px';
+        var thumb = document.createElement('img');
+        thumb.src = e.target.result;
+        thumb.style.cssText = 'width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,.4);opacity:.6';
+        var ov = document.createElement('div');
+        ov.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(0,0,0,.25);font-size:16px';
+        ov.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span>';
+        wrap.appendChild(thumb);
+        wrap.appendChild(ov);
+        if (grid) grid.appendChild(wrap);
+
+        var idx = _fleteFotosUrls.length;
+        _fleteFotosUrls.push(null);
+        subirFotoBlobGenerico(file, 'foto-' + idx, _fleteHeroCarpeta)
+          .then(function(url) {
+            _fleteFotosUrls[idx] = url;
+            thumb.style.opacity = '1';
+            ov.remove();
+            var x = document.createElement('button');
+            x.type = 'button';
+            x.innerHTML = '\u2715';
+            x.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#0F1923;color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;padding:0';
+            x.onclick = function(ev) {
+              ev.stopPropagation();
+              _fleteFotosUrls[idx] = null;
+              wrap.remove();
+              _fleteActualizarTexto();
+            };
+            wrap.appendChild(x);
+            _fleteActualizarTexto();
+          })
+          .catch(function() {
+            ov.innerHTML = '<span style="color:#fff;font-size:14px">\u26a0</span>';
+            _fleteFotosUrls[idx] = null;
+          });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Drag & drop sobre el label de subir foto
+  function _fleteDragOver(ev) {
+    ev.preventDefault();
+    var lbl = document.getElementById('flete-foto-label');
+    if (lbl) { lbl.style.background = 'rgba(255,255,255,.3)'; lbl.style.borderColor = '#22C36A'; }
+  }
+  function _fleteDragLeave(ev) {
+    var lbl = document.getElementById('flete-foto-label');
+    if (lbl) { lbl.style.background = 'rgba(255,255,255,.15)'; lbl.style.borderColor = 'rgba(255,255,255,.4)'; }
+  }
+  function _fleteDrop(ev) {
+    ev.preventDefault();
+    _fleteDragLeave(ev);
+    if (ev.dataTransfer && ev.dataTransfer.files) _fleteProcesarArchivos(ev.dataTransfer.files);
   }
 
   function setTipo(t) {
@@ -1493,11 +1573,11 @@
               style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);background:#fff;color:#0F1923;font-size:13px;font-family:'Inter',sans-serif;outline:none;"
               oninput="fleteOtrosTexto=this.value"/>
           </div>
-          <!-- Upload foto -->
+          <!-- Upload foto (obligatorio, permite varias) -->
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <label id="flete-foto-label" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px dashed rgba(255,255,255,.4);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.85);font-family:'Inter',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
-              📷 <span id="flete-foto-txt">Subir foto del objeto</span>
-              <input type="file" id="flete-foto-input" accept="image/*" style="display:none" onchange="onFleteFoto(this)"/>
+            <label id="flete-foto-label" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px dashed rgba(255,255,255,.4);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.85);font-family:'Inter',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.15)'" ondragover="_fleteDragOver(event)" ondragleave="_fleteDragLeave(event)" ondrop="_fleteDrop(event)">
+              📷 <span id="flete-foto-txt">Subir o arrastrar foto/s de lo que hay que fletar *</span>
+              <input type="file" id="flete-foto-input" accept="image/*" multiple style="display:none" onchange="onFleteFoto(this)"/>
             </label>
             <!-- Badge estático "Analizado con IA" -->
             <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.8);font-family:var(--mono)">
@@ -1511,6 +1591,7 @@
             </div>
             <div id="flete-ia-result" style="display:none;font-size:11px;color:#22C36A;font-family:var(--mono)"></div>
           </div>
+          <div id="flete-fotos-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
         </div>
       </div>
 
@@ -2321,32 +2402,31 @@
       }
       return;
     }
-    // Validar objeto/foto en flete
+    // Validar foto en flete (obligatoria — el objeto/chip es solo un plus, ya no bloquea)
     if (_tipo === 'flete') {
-      var tieneObj = !!_fleteObj;
-      var tieneFoto = !!_fleteFotoB64;
+      var fotosListas = _fleteFotosUrls.every(function(u){ return u !== null; });
+      var tieneFoto = _fleteFotosUrls.filter(Boolean).length > 0;
       var otrosInput = document.getElementById('flete-otros-input');
       var otrosTexto = otrosInput ? otrosInput.value.trim() : '';
       var tieneOtros = otrosTexto.length > 2;
 
-      // No eligió nada
-      if (!tieneObj && !tieneFoto) {
+      // Sin foto (o todavía subiendo)
+      if (!tieneFoto || !fotosListas) {
         var errObj = document.getElementById('flete-obj-err');
         if (!errObj) {
           errObj = document.createElement('div');
           errObj.id = 'flete-obj-err';
           errObj.style.cssText = 'font-size:11px;color:#FF5252;font-family:Inter,sans-serif;margin-top:4px;display:flex;align-items:center;gap:4px';
-          errObj.innerHTML = '⚠ Seleccioná qué objeto querés fletar para continuar';
-          var objRow = document.querySelector('#sb-flete [style*="¿Qué objeto?"]');
-          if (!objRow) objRow = document.querySelector('#sb-flete .obj-chip[onclick*="selFleteObj"]').closest('div').parentElement;
-          objRow.parentElement.insertBefore(errObj, objRow.nextSibling);
+          errObj.innerHTML = !fotosListas
+            ? '⚠ Esperá a que termine de subir la foto'
+            : '⚠ Subí al menos 1 foto de lo que hay que fletar para continuar';
+          var fotoRow = document.getElementById('flete-foto-label').closest('div');
+          fotoRow.parentElement.insertBefore(errObj, fotoRow.nextSibling);
         }
-        document.querySelectorAll('#sb-flete .obj-chip').forEach(function(ch){ ch.style.borderColor='#FF5252'; ch.style.color='#FF5252'; });
         var fotoLabel = document.getElementById('flete-foto-label');
         if (fotoLabel) fotoLabel.style.borderColor = '#FF5252';
         setTimeout(function(){
           if (errObj && errObj.parentElement) errObj.remove();
-          document.querySelectorAll('#sb-flete .obj-chip').forEach(function(ch){ ch.style.borderColor=''; ch.style.color=''; });
           if (fotoLabel) fotoLabel.style.borderColor = '';
         }, 3000);
         return;
@@ -3192,10 +3272,12 @@
     }
     // Flete: al menos 1 foto obligatoria (y ninguna subida pendiente) — así el
     // fletero cotiza sabiendo qué hay que llevar. En mudanza sigue opcional.
+    // Cuentan tanto las fotos de este paso como las que ya subió en el buscador
+    // (normalmente ya hay al menos 1, porque el buscador la exige antes de mostrar ofertas).
     var faltaFoto = false;
     if (ok && _busqueda.tipo === 'flete') {
-      var fotosListas = _pdFotosUrls.every(function(u){ return u !== null; });
-      var tieneFoto = _pdFotosUrls.filter(Boolean).length > 0;
+      var fotosListas = _pdFotosUrls.every(function(u){ return u !== null; }) && _fleteFotosUrls.every(function(u){ return u !== null; });
+      var tieneFoto = (_pdFotosUrls.filter(Boolean).length + _fleteFotosUrls.filter(Boolean).length) > 0;
       if (!fotosListas || !tieneFoto) { ok = false; faltaFoto = true; }
     }
     btn.disabled = !ok;
@@ -3217,12 +3299,12 @@
     }
   }
 
-  async function pdSubirFotoBlob(file, nombre) {
+  async function subirFotoBlobGenerico(file, nombre, carpeta) {
     var res = await fetch('/api/upload-foto', {
       method: 'POST',
       headers: {
         'Content-Type': file.type || 'image/jpeg',
-        'x-carpeta':    _pdCarpetaTmp,
+        'x-carpeta':    carpeta,
         'x-nombre':     nombre
       },
       body: file
@@ -3230,6 +3312,9 @@
     var json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Error subiendo foto');
     return json.url;
+  }
+  function pdSubirFotoBlob(file, nombre) {
+    return subirFotoBlobGenerico(file, nombre, _pdCarpetaTmp);
   }
 
   function pdOnFotos(input) {
@@ -3314,7 +3399,8 @@
     var detO = _armarDetallesLado('origen');
     var detD = _armarDetallesLado('destino');
     var coment = (document.getElementById('pd-comentario').value || '').trim();
-    var fotos  = _pdFotosUrls.filter(Boolean);
+    // Fotos del paso de detalles + las que ya se subieron en el buscador de flete (hero)
+    var fotos  = _pdFotosUrls.filter(Boolean).concat(_fleteFotosUrls.filter(Boolean));
     var out = {};
     if (detO)         out.detallesOrigen  = detO;
     if (detD)         out.detallesDestino = detD;
