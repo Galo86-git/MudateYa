@@ -789,6 +789,7 @@ const tools = [
         ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
         comparar_niveles: { type: 'boolean', description: 'true si el cliente quiere que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para comparar precio por operador, en vez de uno solo. No aplica a flete.' },
         confirmado: { type: 'boolean', description: 'Dejalo en false u omitilo la primera vez que llamás con estos datos: la herramienta te va a devolver un resumen (campo "resumen") para mostrarle al cliente TAL CUAL, sin publicar nada todavía. Solo poné true cuando el cliente ya vio ese resumen y confirmó explícitamente que está todo bien — ahí sí se publica de verdad y sale a mudanceros reales.' },
+        cita_textual: { type: 'string', description: 'OBLIGATORIO cuando confirmado:true. Copiá LITERAL (en el idioma que sea, palabra por palabra, sin parafrasear) la frase real donde el cliente confirmó que está todo bien (su "sí, dale" o equivalente). Si no hay una confirmación real y textual, no pongas confirmado:true.' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
     },
@@ -1417,6 +1418,7 @@ const asesorTools = [
         ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
         comparar_niveles: { type: 'boolean', description: 'true si el asesor pidió que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para poder comparar precio por operador, en vez de uno solo. No aplica a flete.' },
         confirmado: { type: 'boolean', description: 'Dejalo en false u omitilo la primera vez que llamás con estos datos: la herramienta te va a devolver un resumen (campo "resumen") para mostrarle al asesor TAL CUAL, sin publicar nada todavía. Solo poné true cuando el asesor ya vio ese resumen y confirmó explícitamente que está todo bien — ahí sí se publica de verdad y sale a mudanceros reales.' },
+        cita_textual: { type: 'string', description: 'OBLIGATORIO cuando confirmado:true. Copiá LITERAL (en el idioma que sea, palabra por palabra, sin parafrasear) la frase real donde el asesor confirmó que está todo bien (su "sí, dale" o equivalente). Si no hay una confirmación real y textual, no pongas confirmado:true.' },
       },
       required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha'],
     },
@@ -1506,7 +1508,7 @@ async function comisionesDelMes(prefijo, codigo) {
 function emailValido(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim());
 }
-async function cargarPedidoReferido(input, asesor, fotos) {
+async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
   input = input || {};
   const email = String(input.email_cliente || '').trim();
   if (!emailValido(email)) return { ok: false, error: 'Necesito un mail válido del cliente para poder cargar el pedido.' };
@@ -1557,6 +1559,13 @@ async function cargarPedidoReferido(input, asesor, fotos) {
         ? 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale al asesor por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
         : 'No se pudo armar el PDF, así que mostrale ESTE resumen al asesor tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
     };
+  }
+  // confirmado:true: no alcanza con el booleano solo — se valida que la
+  // cita_textual sea una confirmación REAL, textual, del asesor (mismo
+  // mecanismo que cancelar_pedido/derivar_a_humano). Si el modelo mandó
+  // confirmado:true sin respaldo real en la charla, se frena acá.
+  if (!citaValidaEnConversacion(input.cita_textual, textoActual, conv, 2)) {
+    return { ok: false, error: 'No encontré esa confirmación en lo que escribiste. Antes de publicar necesito una frase real del asesor confirmando que está todo bien — contame de nuevo si querés seguir.' };
   }
   try {
     const r = await fetch(`${SITE_URL}/api/cotizaciones?action=publicar`, {
@@ -1676,7 +1685,7 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv, textoActual) 
     }
     if (name === 'cargar_pedido_referido') {
       const fotosConv = Array.isArray(conv.fotos) ? conv.fotos : [];
-      const resultado = await cargarPedidoReferido(input, asesor, fotosConv);
+      const resultado = await cargarPedidoReferido(input, asesor, fotosConv, textoActual, conv);
       // El PDF de preview va DIRECTO al asesor (es quien está cargando el
       // pedido acá) — Claude no puede adjuntar archivos por su cuenta, así
       // que lo mandamos acá y el texto de Emi llega aparte, como siempre.
@@ -2075,7 +2084,7 @@ function armarResumenPedido(input) {
   return lineas.join('\n');
 }
 
-async function crearPedido(input, waId, ubicaciones, fotos) {
+async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // Gate 1: campos críticos para que el pedido sea real (ver arriba). Sin
   // esto, nada se crea todavía.
   const faltanCriticos = camposCriticosFaltantes(input);
@@ -2205,6 +2214,13 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
         ? 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
         : 'No se pudo armar el PDF, así que mostrale ESTE resumen al cliente tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
     };
+  }
+  // confirmado:true: no alcanza con el booleano solo — se valida que la
+  // cita_textual sea una confirmación REAL, textual, del cliente (mismo
+  // mecanismo que cancelar_pedido/derivar_a_humano). Si el modelo mandó
+  // confirmado:true sin respaldo real en la charla, se frena acá.
+  if (!citaValidaEnConversacion(input.cita_textual, textoActual, conv, 2)) {
+    return { ok: false, error: 'No encontré esa confirmación en lo que escribiste. Antes de publicar necesito una frase real tuya confirmando que está todo bien — contame de nuevo si querés seguir.' };
   }
 
   // TTL de 180 días (no 7) — mismo bug ya corregido en cotizaciones.js
@@ -2819,7 +2835,7 @@ async function calificarMudanceroCliente(waId, estrellas, comentario) {
 async function ejecutarTool(name, input, waId, conv, textoActual) {
   try {
     if (name === 'crear_pedido') {
-      const resultado = await crearPedido(input, waId, conv.ubicaciones, conv.fotos);
+      const resultado = await crearPedido(input, waId, conv.ubicaciones, conv.fotos, textoActual, conv);
       // Todavía no se creó nada: faltan campos críticos, o falta que la
       // persona confirme el resumen — devolvemos tal cual, sin tocar fotos/ubicaciones.
       // Si se pudo armar el PDF de preview, se lo mandamos ACÁ (Claude no puede
