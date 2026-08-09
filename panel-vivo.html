@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>MudateYa · Panel en vivo</title>
+<link rel="icon" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#F5F7FA;--surface:#FFFFFF;--border:#E2E8F0;--border2:#CBD5E1;
+  --blue:#1A6FFF;--blue-dark:#0F52CC;--blue-light:#EEF4FF;
+  --green:#22C36A;--green-light:rgba(34,195,106,.1);
+  --red:#EF4444;--red-light:rgba(239,68,68,.1);--amber:#F59E0B;--amber-light:rgba(245,158,11,.1);
+  --text:#0F1923;--text2:#475569;--text3:#64748B;--navy:#003580;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;flex-direction:column;gap:1.4rem;background:radial-gradient(120% 120% at 50% 0%,#EAF1FF 0%,#F5F7FA 45%,#EEF6F0 100%)}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:1px}
+.logo span{color:var(--green)}
+.sub{font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase}
+.note{font-size:11px;color:var(--text3);font-family:var(--mono);max-width:320px;text-align:center;margin-top:.4rem}
+.nav{position:sticky;top:0;z-index:50;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;height:56px;box-shadow:0 1px 0 rgba(34,195,106,.9),0 2px 12px rgba(0,20,60,.18)}
+.nav .logo{font-size:20px;color:#fff}
+.nav .logo small{display:block;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.6);letter-spacing:1.5px;text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:.8rem}
+.nav-user{font-size:12px;color:rgba(255,255,255,.85)}
+.btn-out{font-size:11px;color:rgba(255,255,255,.8);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);padding:6px 12px;border-radius:7px;cursor:pointer;font-family:var(--mono)}
+.upd{font-size:10.5px;color:rgba(255,255,255,.55);font-family:var(--mono)}
+.wrap{max-width:1180px;margin:0 auto;padding:1.4rem 1rem 4rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem;box-shadow:0 1px 3px rgba(0,20,60,.04)}
+.card h2{font-size:14.5px;display:flex;align-items:center;gap:8px;margin-bottom:.9rem;color:var(--text)}
+.card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.card h2 .dot.warn{background:var(--amber)}
+.card h2 .dot.bad{background:var(--red)}
+.card h2 .dot.off{background:var(--border2)}
+.scoreRow{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem}
+.score{flex:1;min-width:70px;text-align:center;background:var(--bg);border-radius:10px;padding:.6rem .3rem}
+.score b{display:block;font-size:20px;color:var(--navy);font-variant-numeric:tabular-nums}
+.score span{font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.list{max-height:220px;overflow-y:auto}
+.item{padding:7px 0;border-top:1px solid var(--border);font-size:12.5px}
+.item:first-child{border-top:none}
+.item .row1{display:flex;justify-content:space-between;gap:8px}
+.item b{font-weight:600}
+.tag{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+.tag.urgente{background:var(--red-light);color:#b91c1c}
+.tag.reclamo{background:var(--amber-light);color:#96690a}
+.tag.bug{background:var(--blue-light);color:var(--blue-dark)}
+.tag.otro{background:var(--bg);color:var(--text3)}
+.muted{color:var(--text3);font-size:12px}
+.empty{color:var(--text3);font-size:12.5px;font-style:italic;padding:.6rem 0}
+.note-off{background:var(--bg);border:1px dashed var(--border2);border-radius:9px;padding:.7rem .8rem;font-size:11.5px;color:var(--text3);line-height:1.5}
+.subtle{font-size:11px;color:var(--text3);margin-top:.5rem}
+a{color:var(--blue)}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div style="text-align:center">
+    <div class="logo">Mudate<span>Ya</span></div>
+    <div class="sub">Panel en vivo</div>
+  </div>
+  <div id="googleBtn"></div>
+  <div class="note">Acceso solo para el equipo. Iniciá sesión con tu cuenta de Google autorizada.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="nav">
+    <div class="logo">Mudate<span>Ya</span><small>Panel en vivo</small></div>
+    <div class="nav-right">
+      <span class="upd" id="upd">—</span>
+      <span class="nav-user" id="navUser"></span>
+      <button class="btn-out" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="grid" id="grid">
+      <div class="card"><h2><span class="dot off"></span>Operativo del día</h2><div id="c-operativo"><span class="spin"></span></div></div>
+      <div class="card"><h2><span class="dot off"></span>Escalaciones de Emi</h2><div id="c-escalaciones"><span class="spin"></span></div></div>
+      <div class="card"><h2><span class="dot off"></span>Salud técnica</h2><div id="c-salud"><span class="spin"></span></div></div>
+      <div class="card"><h2><span class="dot off"></span>Asesores esta semana</h2><div id="c-asesores"><span class="spin"></span></div></div>
+      <div class="card"><h2><span class="dot off"></span>Mudanceros / oferta</h2><div id="c-mudanceros"><span class="spin"></span></div></div>
+      <div class="card"><h2><span class="dot off"></span>Social</h2><div id="c-social"><span class="spin"></span></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var GOOGLE_CLIENT_ID='', currentUser=null, timer=null;
+var REFRESH_MS = 30000;
+
+function TK(){ return sessionStorage.getItem('adminToken')||''; }
+
+window.onload=async function(){
+  try{ var cfg=await (await fetch('/api/admin-config')).json(); GOOGLE_CLIENT_ID=cfg.googleClientId; }catch(e){}
+  var saved=sessionStorage.getItem('adminUser');
+  if(saved){
+    try{ var p=JSON.parse(saved);
+      if(p._expires && Date.now()>p._expires){ sessionStorage.removeItem('adminUser'); }
+      else if(TK()){ currentUser=p; showApp(); return; }
+    }catch(e){}
+  }
+  if(GOOGLE_CLIENT_ID && window.google){
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID, callback:onCred});
+    google.accounts.id.renderButton(document.getElementById('googleBtn'),{theme:'filled_black',size:'large',text:'signin_with',width:280});
+  } else {
+    document.getElementById('googleBtn').innerHTML='<div class="note" style="color:#b91c1c">No se pudo cargar el login de Google.</div>';
+  }
+};
+
+async function onCred(resp){
+  var payload={}; try{ payload=JSON.parse(atob(resp.credential.split('.')[1])); }catch(e){}
+  var r,d;
+  try{
+    r=await fetch('/api/admin-sesion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({googleIdToken:resp.credential})});
+    d=await r.json();
+  }catch(e){ alert('No se pudo conectar con el servidor.'); return; }
+  if(!r.ok||!d||!d.token){ alert('⚠ '+((d&&d.error)||'No se pudo iniciar sesión.')); return; }
+  sessionStorage.setItem('adminToken',d.token);
+  currentUser={name:payload.name||d.email,email:d.email};
+  sessionStorage.setItem('adminUser',JSON.stringify({name:currentUser.name,email:currentUser.email,_expires:Date.now()+(d.expiraEn||12*3600*1000)}));
+  showApp();
+}
+function showApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('navUser').textContent=currentUser.name||currentUser.email;
+  cargarTodo();
+  timer=setInterval(cargarTodo, REFRESH_MS);
+}
+function logout(){ if(timer)clearInterval(timer); sessionStorage.removeItem('adminUser'); sessionStorage.removeItem('adminToken'); location.reload(); }
+
+function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]}); }
+function num(n){ return (n==null?'—':Number(n).toLocaleString('es-AR')); }
+function tiempoRelativo(ts){
+  var min = Math.floor((Date.now()-ts)/60000);
+  if(min<1) return 'recién';
+  if(min<60) return 'hace '+min+'min';
+  var h = Math.floor(min/60);
+  if(h<24) return 'hace '+h+'h';
+  return 'hace '+Math.floor(h/24)+'d';
+}
+async function getAdmin(url){
+  var r=await fetch(url,{headers:{'x-admin-token':TK()}});
+  var d=await r.json().catch(function(){return{};});
+  if(!r.ok) throw new Error((d&&d.error)||('Error '+r.status));
+  return d;
+}
+function dotEnCard(elId, cls){
+  var card = document.getElementById(elId).closest('.card');
+  var dot = card.querySelector('.dot');
+  dot.className = 'dot '+(cls||'');
+}
+
+async function cargarTodo(){
+  document.getElementById('upd').textContent = 'actualizado ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  await Promise.all([cargarOperativo(), cargarPanel()]);
+}
+
+async function cargarOperativo(){
+  try{
+    var d = await getAdmin('/api/cron-resumen-diario');
+    var r = d.resumen || {};
+    var html = '<div class="scoreRow">' +
+      '<div class="score"><b>'+num(r.pedidosNuevos)+'</b><span>Pedidos</span></div>' +
+      '<div class="score"><b>'+num(r.cotizacionesRecibidas)+'</b><span>Cotiz.</span></div>' +
+      '<div class="score"><b>'+num(r.mudancerosNuevos)+'</b><span>Mud. nuevos</span></div>' +
+      '<div class="score"><b>'+num(r.cancelaciones)+'</b><span>Cancel.</span></div>' +
+      '</div>' +
+      '<div class="subtle">Emi habló hoy con '+num(r.emiHablóConClientes)+' clientes · '+num(r.emiHablóConMudanceros)+' mudanceros · '+num(r.emiHablóConAsesores)+' asesores</div>';
+    if(r.cancelacionesConProblema) html += '<div class="subtle" style="color:#b91c1c">⚠ '+r.cancelacionesConProblema+' cancelación(es) con reembolso pendiente</div>';
+    document.getElementById('c-operativo').innerHTML = html;
+    dotEnCard('c-operativo', r.cancelacionesConProblema ? 'bad' : '');
+  }catch(e){ document.getElementById('c-operativo').innerHTML = '<div class="empty">'+esc(e.message)+'</div>'; dotEnCard('c-operativo','off'); }
+}
+
+async function cargarPanel(){
+  try{
+    var d = await getAdmin('/api/admin-panel');
+    var s = d.data || {};
+    renderEscalaciones(s.escalaciones);
+    renderSalud(s.salud);
+    renderAsesores(s.asesores);
+    renderMudanceros(s.mudanceros);
+    renderSocial(s.social);
+  }catch(e){
+    ['c-escalaciones','c-salud','c-asesores','c-mudanceros','c-social'].forEach(function(id){
+      document.getElementById(id).innerHTML = '<div class="empty">'+esc(e.message)+'</div>';
+      dotEnCard(id,'off');
+    });
+  }
+}
+
+function renderEscalaciones(e){
+  if(!e){ document.getElementById('c-escalaciones').innerHTML='<div class="empty">Sin datos.</div>'; return; }
+  var html = '<div class="scoreRow">' +
+    '<div class="score"><b>'+num(e.ultimas24h)+'</b><span>Últimas 24h</span></div>' +
+    '<div class="score"><b>'+num(e.porTipo24h.urgente)+'</b><span>Urgentes</span></div>' +
+    '<div class="score"><b>'+num(e.porTipo24h.reclamo)+'</b><span>Reclamos</span></div>' +
+    '</div>';
+  if(!e.items.length){ html += '<div class="empty">Sin escalaciones registradas todavía.</div>'; }
+  else {
+    html += '<div class="list">' + e.items.slice(0,20).map(function(it){
+      return '<div class="item"><div class="row1"><span class="tag '+esc(it.tipo)+'">'+esc(it.tipo)+'</span><span class="muted">'+tiempoRelativo(it.ts)+'</span></div>' +
+        '<div style="margin-top:3px"><b>'+esc(it.nombre||it.rol)+'</b> — '+esc((it.motivo||'').slice(0,90))+'</div></div>';
+    }).join('') + '</div>';
+  }
+  document.getElementById('c-escalaciones').innerHTML = html;
+  dotEnCard('c-escalaciones', e.porTipo24h.urgente>0 ? 'bad' : (e.ultimas24h>0 ? 'warn' : ''));
+}
+
+function renderSalud(s){
+  if(!s || !s.actual){ document.getElementById('c-salud').innerHTML='<div class="empty">Sin corridas registradas todavía (corre cada 2hs).</div>'; dotEnCard('c-salud','off'); return; }
+  var a = s.actual;
+  function pill(nombre, ok){
+    var cls = ok===false ? 'bad' : ok===true ? '' : 'off';
+    var txt = ok===false ? 'CAÍDO' : ok===true ? 'OK' : 'sin config.';
+    return '<div class="score"><b style="font-size:13px;color:'+(ok===false?'#b91c1c':'#0F1923')+'">'+txt+'</b><span>'+nombre+'</span></div>';
+  }
+  var html = '<div class="scoreRow">' + pill('Redis', a.redis) + pill('Resend', a.resend) + pill('Merc. Pago', a.mercadopago) + '</div>';
+  html += '<div class="subtle">'+s.corridas7d+' chequeos en 7 días · caídas: Redis '+s.caidasUltimos7d.redis+', Resend '+s.caidasUltimos7d.resend+', MP '+s.caidasUltimos7d.mercadopago+'</div>';
+  html += '<div class="subtle">Última corrida: '+tiempoRelativo(a.ts)+'</div>';
+  document.getElementById('c-salud').innerHTML = html;
+  var hayCaido = a.redis===false || a.resend===false || a.mercadopago===false;
+  dotEnCard('c-salud', hayCaido ? 'bad' : '');
+}
+
+function renderAsesores(a){
+  if(!a){ document.getElementById('c-asesores').innerHTML='<div class="empty">Sin datos.</div>'; return; }
+  var html = '<div class="scoreRow">' +
+    '<div class="score"><b>'+num(a.clientesDerivados)+'</b><span>Derivados</span></div>' +
+    '<div class="score"><b>'+num(a.conPresupuestos)+'</b><span>Con presup.</span></div>' +
+    '<div class="score"><b>'+num(a.conSenia)+'</b><span>Con seña</span></div>' +
+    '<div class="score"><b>'+num(a.completadas)+'</b><span>Completadas</span></div>' +
+    '</div><div class="subtle">Desde el lunes de esta semana</div>';
+  document.getElementById('c-asesores').innerHTML = html;
+  dotEnCard('c-asesores','');
+}
+
+function renderMudanceros(m){
+  if(!m){ document.getElementById('c-mudanceros').innerHTML='<div class="empty">Sin datos.</div>'; return; }
+  var html = '<div class="scoreRow">' +
+    '<div class="score"><b>'+num(m.activos)+'</b><span>Activos (≤2d)</span></div>' +
+    '<div class="score"><b>'+num(m.tibios)+'</b><span>Tibios (3-14d)</span></div>' +
+    '<div class="score"><b>'+num(m.dormidos)+'</b><span>Dormidos (>14d)</span></div>' +
+    '</div>';
+  if(m.masDormidos && m.masDormidos.length){
+    html += '<div class="subtle" style="margin-bottom:.3rem">Los más silenciosos:</div><div class="list">' +
+      m.masDormidos.map(function(p){ return '<div class="item row1" style="display:flex;justify-content:space-between"><span>'+esc(p.nombre||p.email)+'</span><span class="muted">'+p.dias+'d</span></div>'; }).join('') +
+      '</div>';
+  }
+  document.getElementById('c-mudanceros').innerHTML = html;
+  dotEnCard('c-mudanceros', m.dormidos > (m.activos+m.tibios) ? 'warn' : '');
+}
+
+function renderSocial(s){
+  if(!s){ document.getElementById('c-social').innerHTML='<div class="empty">Sin datos.</div>'; return; }
+  var html = '';
+  if(s.web && s.web.disponible){
+    html += '<div class="scoreRow">' +
+      '<div class="score"><b>'+num(s.web.visitors7d)+'</b><span>Visitantes 7d</span></div>' +
+      '<div class="score"><b>'+num(s.web.pageviews7d)+'</b><span>Vistas 7d</span></div>' +
+      '</div>';
+    if(s.web.topReferrers && s.web.topReferrers.length){
+      html += '<div class="subtle" style="margin-bottom:.3rem">Top fuentes:</div><div class="list">' +
+        s.web.topReferrers.map(function(r){ return '<div class="item row1" style="display:flex;justify-content:space-between"><span>'+esc(r.fuente)+'</span><span class="muted">'+num(r.visitas)+'</span></div>'; }).join('') +
+        '</div>';
+    }
+  } else {
+    html += '<div class="note-off">Tráfico web no disponible: '+esc((s.web&&s.web.motivo)||'—')+'</div>';
+  }
+  html += '<div style="height:10px"></div>';
+  if(s.instagram && s.instagram.disponible){
+    var ig = s.instagram.snapshot;
+    html += '<div class="scoreRow">' +
+      '<div class="score"><b>'+num(ig.seguidores)+'</b><span>Seguidores</span></div>' +
+      '<div class="score"><b>'+num(ig.reach7d)+'</b><span>Alcance 7d</span></div>' +
+      '<div class="score"><b>'+num(ig.profileViews7d)+'</b><span>Visitas perfil</span></div>' +
+      '</div><div class="subtle">Último snapshot: '+esc(ig.fecha)+'</div>';
+  } else {
+    html += '<div class="note-off">Instagram no disponible: '+esc((s.instagram&&s.instagram.motivo)||'—')+'</div>';
+  }
+  document.getElementById('c-social').innerHTML = html;
+  dotEnCard('c-social', (s.web&&s.web.disponible)||(s.instagram&&s.instagram.disponible) ? '' : 'off');
+}
+</script>
+</body>
+</html>

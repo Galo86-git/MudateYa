@@ -111,6 +111,20 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // Historial para el panel en vivo (api/admin-panel.js) — a diferencia del
+  // healthcheck:estado:{nombre} de arriba (que se pisa y solo sirve para
+  // detectar transiciones), esto guarda cada corrida para poder mostrar una
+  // línea de tiempo. Capado a 200 (a cada 2hs, ~16 días de historial).
+  try {
+    await redisCall('LPUSH', 'panel:salud-historial', JSON.stringify({
+      ts: Date.now(),
+      redis: servicios.redis.ok,
+      resend: servicios.resend.ok,
+      mercadopago: servicios.mercadopago.ok,
+    }));
+    await redisCall('LTRIM', 'panel:salud-historial', 0, 199);
+  } catch (e) { console.warn('cron-healthcheck: no se pudo guardar historial:', e.message); }
+
   if (cambios.length && process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
     try {
       const { Resend } = require('resend');

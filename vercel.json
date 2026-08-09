@@ -10,6 +10,10 @@
       "destination": "/admin-ia.html"
     },
     {
+      "source": "/panel-vivo",
+      "destination": "/panel-vivo.html"
+    },
+    {
       "source": "/c21-importar",
       "destination": "/c21-importar.html"
     },
@@ -368,7 +372,7 @@
       ]
     },
     {
-      "source": "/(admin|admin-ia|admin-circulo|asesor-registro|c21-altas|c21-importar|c21-registro|mudafy-importar|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|mudancero-perfil|elegir|inmo-asesor-registro)(\\.html)?",
+      "source": "/(admin|admin-ia|admin-circulo|panel-vivo|asesor-registro|c21-altas|c21-importar|c21-registro|mudafy-importar|cobrar|mi-cuenta|mi-mudanza|mudafy-altas|mudafy-registro|registro|remax-altas|remax-registro|research-mudanceros|aceptar-terminos|inmobiliarias-registro|pago-exitoso|servicios|mudancero-perfil|elegir|inmo-asesor-registro)(\\.html)?",
       "headers": [
         {
           "key": "Cache-Control",

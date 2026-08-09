@@ -2314,6 +2314,20 @@ async function derivarHumano(waId, motivo, conv, opts) {
   const ROL_LABELS = { mudancero: 'mudancero/fletero', asesor: 'asesor inmobiliario', inmobiliaria: 'contacto de inmobiliaria' };
   const quienLabel = ROL_LABELS[opts.rol] || 'cliente';
   const quienConNombre = opts.nombre ? `${quienLabel} ${opts.nombre}` : quienLabel;
+
+  // Registro para el panel en vivo (api/admin-panel.js) — lista corta y
+  // acotada, no es el historial de negocio (eso sigue siendo el mail a
+  // ADMIN_EMAIL de abajo). Nunca debe tirar la derivación si falla.
+  try {
+    const esUrgenteLog = /urgente/i.test(motivo || '');
+    const esReclamoLog = !esUrgenteLog && /^reclamo/i.test(String(motivo || '').trim());
+    const esBugLog = !esUrgenteLog && !esReclamoLog && /^bug/i.test(String(motivo || '').trim());
+    const tipoLog = esUrgenteLog ? 'urgente' : esReclamoLog ? 'reclamo' : esBugLog ? 'bug' : 'otro';
+    await redisCall('LPUSH', 'panel:escalaciones', JSON.stringify({
+      ts: Date.now(), waId, rol: opts.rol || 'cliente', nombre: opts.nombre || '', tipo: tipoLog, motivo: motivo || '',
+    }));
+    await redisCall('LTRIM', 'panel:escalaciones', 0, 199);
+  } catch (e) { console.warn('derivarHumano: no se pudo loguear para el panel:', e.message); }
   try {
     const { Resend } = require('resend');
     const adminMail = process.env.ADMIN_EMAIL;
