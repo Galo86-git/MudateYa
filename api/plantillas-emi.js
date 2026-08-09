@@ -239,6 +239,29 @@ const CREAR = [
     types: { 'twilio/text': { body: 'Hola {{1}}, tu cliente {{2}} canceló su mudanza ({{3}} → {{4}}) ❌ Si querés, contactalo para entender el motivo y ofrecerle otra alternativa.' } },
     variables: { '1': 'Marina', '2': 'Juan', '3': 'Palermo', '4': 'Tigre' } },
 
+  // ── Reemplazo urgente: el mudancero cancela con seña ya pagada y menos de
+  // 24hs de margen (ver action=cancelar-mudancero/confirmar-reemplazo-urgente
+  // en cotizaciones.js). El cliente es pasivo en todo esto — solo recibe estos
+  // dos avisos. Van por plantilla porque puede no haber ventana de 24h abierta
+  // (la charla con el cliente puede ser de semanas atrás, cuando cotizó).
+  { name: 'reemplazo_urgente_buscando', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, te aviso algo: al mudancero que tenías asignado le surgió un imprevisto y no va a poder hacer tu {{2}}.\n\nYa estamos buscando un reemplazo con otro mudancero verificado, al mismo precio ya acordado. No tenés que hacer nada, te aviso apenas lo consigamos.' } },
+    variables: { '1': 'Juan', '2': 'mudanza' } },
+  { name: 'reemplazo_urgente_confirmado', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Buenas noticias, {{1}}! Ya conseguimos reemplazo para tu {{2}}: {{3}}. Mismo precio, mismo horario coordinado. Te va a contactar para coordinar los detalles.' } },
+    variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian' } },
+  // Al mudancero candidato (broadcast). Tono informativo, sin apuro/venta —
+  // "antes de que se lo lleve otro" ya causó que Meta reclasificara otra
+  // plantilla de UTILITY a MARKETING (ver nota en recordatorio_pedido_sin_cotizar
+  // más arriba); acá directamente no se usa esa framing. Tampoco termina en
+  // variable (otro motivo típico de rechazo, ver nota en reprogramacion_resuelta).
+  { name: 'reemplazo_urgente_mudancero', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Aviso, {{1}}: se liberó un viaje ya coordinado, {{2}} a {{3}}, {{4}}. Precio ya acordado con el cliente: ${{5}}. La seña ya está paga. Si podés tomarlo, respondeme por acá.' } },
+    variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Tigre', '4': '09/08/2026', '5': '150.000' } },
+  { name: 'reemplazo_urgente_ganado', category: 'UTILITY',
+    types: { 'twilio/text': { body: '¡Confirmado, {{1}}! Te quedó el reemplazo urgente: {{2}} a {{3}}, ${{4}} (seña ya paga). Este viaje va sin comisión de MudateYa — te queda el 100%. Coordiná directo con el cliente por acá.' } },
+    variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Tigre', '4': '150.000' } },
+
 ];
 
 module.exports = async function handler(req, res) {

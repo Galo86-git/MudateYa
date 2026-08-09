@@ -624,6 +624,8 @@ PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
 - Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar).
 - Cambiar la fecha de una mudanza YA CONFIRMADA (seña pagada) → proponer_reprogramacion (nueva fecha + motivo; el cliente lo tiene que aceptar, no cambia sola). Si el CLIENTE le propuso a él una fecha nueva, usá responder_reprogramacion para aceptarla o rechazarla — rechazar no cancela nada, solo mantiene la fecha original.
 - Ver el estado de tus pedidos/cotizaciones → mis_pedidos.
+- Cancelar un trabajo YA CONFIRMADO (seña pagada) por un imprevisto de último momento → cancelar_trabajo_confirmado (motivo + cita_textual). Si faltan MENOS de 24hs para el horario agendado, el sistema sale a buscar reemplazo solo (mismo precio, el cliente no hace nada) y ese viaje queda sin comisión para quien lo tome — no le prometas nada de esto vos, dejá que la herramienta te confirme qué pasó. Si faltan 24hs o más, la herramienta va a devolver que contactes al equipo (usá derivar_a_humano en ese caso) — no es una emergencia, no insistas.
+- Ver si hay algún reemplazo urgente disponible (otro mudancero canceló de último momento, precio ya cerrado con el cliente) → ofertas_urgentes. Para tomarlo → tomar_reemplazo_urgente con su id — se lo lleva el primero que confirma, sin cotizar de nuevo.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
 
 APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere ver pedidos?, ¿cotizar?, ¿le pasa algo con uno en curso?, ¿tiene un reclamo/problema (ver abajo)?, ¿en realidad quiere mudarse ÉL MISMO o necesita un flete para sí (como cliente, no como mudancero)? Para este último caso ver la regla de abajo ("Si te pide algo de CLIENTE") — no te quedes solo en "yo atiendo pedidos de mudanceros, no de clientes" sin decirle adónde ir. Andá directo a lo que corresponda, no lo hagas repetir ni le preguntes cosas que ya te dijo.
@@ -1217,6 +1219,33 @@ const mudanceroTools = [
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
+    name: 'cancelar_trabajo_confirmado',
+    description: 'El mudancero cancela un trabajo YA CONFIRMADO (seña pagada) por un imprevisto de último momento. Si faltan menos de 24hs para el horario agendado, el sistema dispara SOLO la búsqueda de reemplazo entre otros mudanceros (mismo precio ya acordado, el cliente no hace nada) y ese viaje puntual queda sin comisión de plataforma. Si faltan 24hs o más, el sistema rechaza la cancelación automática (no es una emergencia) — en ese caso usá derivar_a_humano.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string' },
+        motivo: { type: 'string', description: 'Qué le pasó (mínimo unas palabras).' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL lo que el mudancero te contó que justifica la cancelación — no lo redactes ni lo mejores vos.' },
+      },
+      required: ['pedidoId', 'motivo', 'cita_textual'],
+    },
+  },
+  {
+    name: 'ofertas_urgentes',
+    description: 'Lista los reemplazos urgentes disponibles ahora mismo (otro mudancero canceló de último momento, precio ya cerrado con el cliente). Para tomar uno, usá tomar_reemplazo_urgente con su id.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'tomar_reemplazo_urgente',
+    description: 'Confirma que el mudancero toma un reemplazo urgente (de ofertas_urgentes). Se lo lleva el primero que confirma, al precio ya acordado con el cliente — no hace falta cotizar de nuevo. Este viaje puntual va sin comisión de plataforma.',
+    input_schema: {
+      type: 'object',
+      properties: { pedidoId: { type: 'string' } },
+      required: ['pedidoId'],
+    },
+  },
+  {
     name: 'derivar_a_humano',
     description:
       'Derivá al equipo un RECLAMO o problema que tus otras herramientas no resuelven (el cliente no paga el saldo, canceló sin avisar, una discrepancia con lo acordado, etc.) o cuando el mudancero pide hablar con una persona. Avisa al equipo por email con el motivo y el historial reciente.',
@@ -1360,6 +1389,34 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
         miPrecio: (m.miCotizacion && m.miCotizacion.precio) || (m.cotizacionAceptada && m.cotizacionAceptada.precio) || null,
       }));
       return JSON.stringify({ pedidos });
+    }
+    if (name === 'cancelar_trabajo_confirmado') {
+      // Mismo mecanismo anti-invención que proponer_ajuste/derivar_a_humano:
+      // no se cancela nada sin una explicación real y textual de por medio.
+      if (!citaValidaEnConversacion(input && input.cita_textual, textoActual, conv)) {
+        return JSON.stringify({ ok: false, error: 'No encontré esa explicación en lo que me contaste. Contame de nuevo, con tus palabras, qué pasó.' });
+      }
+      const { ok, d } = await postJSON('cancelar-mudancero', { mudanzaId: input.pedidoId, mudanceroEmail: email, motivo: input.motivo });
+      if (!ok) {
+        return JSON.stringify({ ok: false, error: d.error || 'No se pudo cancelar.', requiereHumano: !!d.requiereHumano });
+      }
+      return JSON.stringify({
+        ok: true,
+        nota: `Cancelado. Ya avisamos al cliente y salimos a buscar reemplazo urgente entre ${d.candidatosAvisados || 0} mudancero(s) de la zona — no tenés que hacer nada más, esto se resuelve solo.`,
+      });
+    }
+    if (name === 'ofertas_urgentes') {
+      const r = await fetch(`${base}/api/cotizaciones?action=ofertas-urgentes&email=${encodeURIComponent(email)}`);
+      const d = await r.json().catch(() => ({}));
+      const ofertas = d.ofertas || [];
+      return JSON.stringify({ ofertas, nota: ofertas.length ? 'Reemplazos urgentes disponibles. Para tomar uno, usá tomar_reemplazo_urgente con su id.' : 'No hay reemplazos urgentes disponibles ahora mismo.' });
+    }
+    if (name === 'tomar_reemplazo_urgente') {
+      const { ok, d } = await postJSON('confirmar-reemplazo-urgente', { mudanzaId: input.pedidoId, mudanceroEmail: email });
+      if (!ok) {
+        return JSON.stringify({ ok: false, error: d.error || 'No se pudo confirmar.', yaCubierto: !!d.yaCubierto });
+      }
+      return JSON.stringify({ ok: true, nota: `¡Listo, es tuyo! $${(d.precio || 0).toLocaleString('es-AR')}, seña ya pagada por el cliente. Los datos de contacto ya te llegan por WhatsApp.` });
     }
     if (name === 'derivar_a_humano') {
       return JSON.stringify(await derivarHumano(waId, input && input.motivo, conv, { rol: 'mudancero', nombre, citaTextual: input && input.cita_textual, textoActual }));

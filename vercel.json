@@ -1115,6 +1115,10 @@
       "schedule": "0 * * * *"
     },
     {
+      "path": "/api/cron-escalar-reemplazo-urgente",
+      "schedule": "30 * * * *"
+    },
+    {
       "path": "/api/cron-cerrar-pedidos",
       "schedule": "0 2 * * *"
     },

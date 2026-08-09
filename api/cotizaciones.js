@@ -218,6 +218,26 @@ const DIAS_VALIDEZ_COTIZACION = 15;
 // si divergen, el mail muestra un botón "Elegir y pagar" que la API rechaza.
 const ESTADOS_ACEPTABLES = ['buscando', 'cotizaciones_completas', 'vencido_con_cotizaciones'];
 
+// Umbral para el flujo de "reemplazo urgente" (ver action=cancelar-mudancero):
+// si al mudancero le quedan menos de estas horas para el horario agendado,
+// cancelar dispara el barrido automático de reemplazo. Con más margen, se
+// cancela a mano con el equipo (no es una emergencia).
+const UMBRAL_URGENTE_HORAS = 24;
+
+// Horas reales que faltan hasta el horario agendado de la mudanza (negativo
+// si ya pasó), o null si no hay fecha utilizable. Mismo criterio de fecha/hora
+// que cron-vispera-mudanza.js (Argentina es UTC-3 todo el año, sin horario de
+// verano, así que alcanza con anclar el offset en el literal).
+function horasHastaMudanza(m) {
+  const f = String((m && m.fecha) || '').trim().split('T')[0];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return null;
+  const hCruda = String((m && m.horaOrigen) || String((m && m.fecha) || '').split('T')[1] || '').trim().slice(0, 5);
+  const hora = /^([01]?\d|2[0-3]):[0-5]\d$/.test(hCruda) ? hCruda.padStart(5, '0') : '09:00';
+  const t = Date.parse(`${f}T${hora}:00-03:00`);
+  if (isNaN(t)) return null;
+  return (t - Date.now()) / 3600000;
+}
+
 // Devuelve el Date en que vence una cotización, o null si no se puede saber.
 function vencimientoCotizacion(cot, mudanza) {
   const base = (cot && cot.fecha) || (mudanza && mudanza.fechaPublicacion);
@@ -2344,6 +2364,180 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, refundOk: refundOk, teniaSeñaPagada: teniaSeñaPagada });
     }
 
+    // 3c. El MUDANCERO cancela un trabajo YA CONFIRMADO (seña pagada). Si le
+    // quedan menos de UMBRAL_URGENTE_HORAS para el horario agendado, es un
+    // "reemplazo urgente": el pedido vuelve a salir a los demás mudanceros AL
+    // MISMO precio ya acordado (gana el primero que confirma, no se vuelve a
+    // cotizar), el cliente no hace nada — solo recibe los dos avisos (buscando
+    // / resuelto) — y ese viaje puntual queda SIN la comisión de plataforma:
+    // es lo que hace que tomarlo de urgencia convenga, no un castigo para
+    // nadie. Con más margen no aplica: se cancela a mano con el equipo, no es
+    // una emergencia (evita que esto se use como atajo para bajarse de
+    // cualquier trabajo sin repercusión).
+    if (action === 'cancelar-mudancero' && req.method === 'POST') {
+      const { mudanzaId, mudanceroEmail, motivo } = req.body;
+      if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await adquirirLock(`lock:cancelar-mudancero:${mudanzaId}`, 25))) {
+        return res.status(409).json({ error: 'Se está procesando otra acción sobre este pedido. Probá de nuevo en unos segundos.' });
+      }
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (!m.cotizacionAceptada || m.mudanceroAceptado !== mudanceroEmail) {
+        return res.status(403).json({ error: 'Este pedido no está asignado a tu cuenta.' });
+      }
+      if (!m.anticipoPagado) {
+        return res.status(400).json({ error: 'Todavía no se pagó la seña de este pedido. Si no lo podés tomar, contactá al equipo.', requiereHumano: true });
+      }
+      if (['en_curso', 'completada', 'cancelado', 'cancelada_por_ajuste'].includes(m.estado)) {
+        return res.status(400).json({ error: 'Este pedido ya está en curso o cerrado — no se puede cancelar así. Si hay un problema, contactá al equipo.', requiereHumano: true });
+      }
+
+      const horas = horasHastaMudanza(m);
+      const esUrgente = horas === null || horas < UMBRAL_URGENTE_HORAS;
+      if (!esUrgente) {
+        return res.status(400).json({
+          error: `Todavía faltan más de ${UMBRAL_URGENTE_HORAS}hs para esta mudanza — este flujo automático es solo para cancelaciones de último momento. Contactá al equipo para cancelar con anticipación.`,
+          requiereHumano: true,
+        });
+      }
+
+      const cotAnterior = m.cotizacionAceptada;
+      const precioLock = parseFloat(cotAnterior.precio) || parseFloat(m.montoTotal) || 0;
+
+      m.mudanceroQueCancelo = {
+        email: mudanceroEmail,
+        nombre: cotAnterior.mudanceroNombre || '',
+        canceladoEn: new Date().toISOString(),
+        motivo: motivo || '',
+        horasAntes: horas === null ? null : Math.round(horas * 10) / 10,
+      };
+      m.estado = 'buscando_reemplazo_urgente';
+      m.precioReemplazoUrgente = precioLock;
+      m.cotizacionAnteriorCancelada = cotAnterior;
+      delete m.cotizacionAceptada;
+      delete m.mudanceroAceptado;
+      // Comisión de plataforma en 0 para el mudancero de REEMPLAZO (no para el
+      // que canceló, que no cobra nada de este viaje). Ver los 3 sitios que
+      // calculan el fee: admin-pagos, logPedidoSheets, notificarMudanceroPago.
+      m.sinComisionPlataforma = true;
+      m.motivoSinComision = 'reemplazo_urgente_mudancero';
+
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+
+      // Contador en el perfil del que canceló — no bloquea nada hoy, queda
+      // guardado para poder usarlo en ranking o baja de la plataforma después.
+      try {
+        const perfil = await getJSON(`mudancero:perfil:${mudanceroEmail}`);
+        if (perfil) {
+          perfil.cancelacionesTardias = (perfil.cancelacionesTardias || 0) + 1;
+          perfil.ultimaCancelacionTardia = new Date().toISOString();
+          await setJSON(`mudancero:perfil:${mudanceroEmail}`, perfil);
+        }
+      } catch (e) { console.warn('cancelacionesTardias:', e.message); }
+
+      try { await avisarClienteBuscandoReemplazo(m); } catch (e) { console.warn('avisarClienteBuscandoReemplazo:', e.message); }
+      let candidatos = 0;
+      try { candidatos = await dispararReemplazoUrgente(m, mudanceroEmail); } catch (e) { console.warn('dispararReemplazoUrgente:', e.message); }
+      // Guardado para que cron-escalar-reemplazo-urgente lo pueda mostrar en
+      // la alerta al equipo si nadie confirma a tiempo ("se avisó a N y nadie
+      // contestó" da más contexto que solo "sin reemplazo").
+      try {
+        m.candidatosAvisadosReemplazo = candidatos;
+        await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+      } catch (e) { console.warn('guardar candidatosAvisadosReemplazo:', e.message); }
+
+      return res.status(200).json({ ok: true, urgente: true, candidatosAvisados: candidatos });
+    }
+
+    // 3d. Otro mudancero CONFIRMA que toma el reemplazo urgente. Primero que
+    // confirma se lo lleva, al precio ya acordado (no se vuelve a cotizar).
+    // Lock para que dos confirmaciones simultáneas no se pisen.
+    if (action === 'confirmar-reemplazo-urgente' && req.method === 'POST') {
+      const { mudanzaId, mudanceroEmail } = req.body;
+      if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
+      if (!(await adquirirLock(`lock:aceptar:${mudanzaId}`, 25))) {
+        return res.status(409).json({ error: 'Se está procesando esto ahora mismo, probá de nuevo en unos segundos.' });
+      }
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (m.estado !== 'buscando_reemplazo_urgente') {
+        return res.status(409).json({ error: 'Ese reemplazo ya se cubrió (o ya no está disponible). ¡Gracias igual!', yaCubierto: true });
+      }
+      if (m.mudanceroQueCancelo && m.mudanceroQueCancelo.email === mudanceroEmail) {
+        return res.status(403).json({ error: 'No podés tomar el reemplazo de un pedido que vos mismo cancelaste.' });
+      }
+      const perfil = await getJSON(`mudancero:perfil:${mudanceroEmail}`);
+      if (!perfil || perfil.estado !== 'aprobado') {
+        return res.status(403).json({ error: 'Tu cuenta no está aprobada para tomar pedidos.' });
+      }
+
+      const precio = m.precioReemplazoUrgente || 0;
+      m.estado = 'cotizacion_aceptada';
+      m.cotizacionAceptada = {
+        id: 'reemplazo-' + Date.now(),
+        mudanceroEmail: mudanceroEmail,
+        mudanceroNombre: perfil.nombre || '',
+        mudanceroTel: perfil.telefono || '',
+        precio: precio,
+        nota: 'Reemplazo urgente por cancelación del mudancero original — mismo precio ya acordado con el cliente.',
+        estado: 'aceptada',
+        clienteNombre: m.clienteNombre,
+        clienteEmail: m.clienteEmail,
+      };
+      m.mudanceroAceptado = mudanceroEmail;
+      m.montoTotal = precio;
+      // sinComisionPlataforma sigue en true (se fijó en cancelar-mudancero):
+      // es el mismo viaje de emergencia, el mudancero de reemplazo no paga
+      // comisión sobre él.
+      // Resetear el aviso de víspera: si ya se había mandado para el mudancero
+      // ANTERIOR, el cron no lo repetiría para este — y el nuevo mudancero se
+      // quedaría sin el recordatorio del día antes.
+      delete m.avisoVispera;
+
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+
+      // El mudancero de reemplazo nunca pasó por action=cotizar, así que su
+      // índice mudancero:{email} (el que alimenta mis-cotizaciones — o sea
+      // mis_pedidos por WhatsApp y el panel de mi-cuenta.html) no tiene este
+      // id todavía. Sin esto, Emi le confirma que ganó el pedido pero después
+      // no se lo puede mostrar si pregunta "mis pedidos". Mismo TTL que usa
+      // action=cotizar para este mismo índice.
+      try {
+        const mudIdx = await getJSON(`mudancero:${mudanceroEmail}`) || [];
+        if (!mudIdx.includes(mudanzaId)) mudIdx.push(mudanzaId);
+        await setJSON(`mudancero:${mudanceroEmail}`, mudIdx, 2592000);
+      } catch (e) { console.warn('indexar mudancero (reemplazo urgente):', e.message); }
+
+      try { await avisarClienteReemplazoConfirmado(m); } catch (e) { console.warn('avisarClienteReemplazoConfirmado:', e.message); }
+      try { await avisarMudanceroReemplazoConfirmado(m); } catch (e) { console.warn('avisarMudanceroReemplazoConfirmado:', e.message); }
+
+      return res.status(200).json({ ok: true, precio: precio });
+    }
+
+    // 3e. Lectura: reemplazos urgentes disponibles ahora mismo (para que Emi
+    // se los pueda ofrecer a un mudancero que pregunta o que responde a la
+    // notificación del barrido). No filtra por zona/geo a propósito — mismo
+    // criterio que action=por-zona, que tampoco filtra en la lectura (el
+    // filtro geo ya se aplicó al elegir a quién avisarle en el barrido).
+    if (action === 'ofertas-urgentes' && req.method === 'GET') {
+      const { email } = req.query;
+      const ids = await getJSON('mudanzas:activas') || [];
+      const ofertas = [];
+      for (const id of ids) {
+        const m = await getJSON(`mudanza:${id}`);
+        if (!m || m.estado !== 'buscando_reemplazo_urgente') continue;
+        if (email && m.mudanceroQueCancelo && m.mudanceroQueCancelo.email === email) continue;
+        ofertas.push({
+          id: m.id,
+          tipo: m.tipo || 'mudanza',
+          ruta: `${m.desde || m.origen || ''} → ${m.hasta || m.destino || ''}`,
+          fecha: m.fecha || '',
+          precio: m.precioReemplazoUrgente || 0,
+        });
+      }
+      return res.status(200).json({ ofertas });
+    }
+
     // 4. Mudancero manda recordatorio al cliente
     if (action === 'recordar-ajuste' && req.method === 'POST') {
       const { mudanzaId, mudanceroEmail } = req.body;
@@ -2756,8 +2950,10 @@ module.exports = async function handler(req, res) {
           // canal (25%) solo se aplica a mudanzas. esPlanReferidos igual queda
           // como estaba (marca el origen para reporting), lo que cambia es
           // cuál gana en el cálculo del %.
-          const feePct = esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15);
-          const feePctLabel = (feePct * 100).toFixed(0) + '%';
+          // Reemplazo urgente (ver action=cancelar-mudancero): el mudancero que
+          // toma un viaje de emergencia no paga comisión de plataforma sobre él.
+          const feePct = m.sinComisionPlataforma ? 0 : (esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15));
+          const feePctLabel = m.sinComisionPlataforma ? '0% (reemplazo urgente)' : (feePct * 100).toFixed(0) + '%';
           const cot = m.cotizacionAceptada || {};
           const precioBase = parseInt(cot.precio || m.precio_estimado || 0);
           const baseRow = {
@@ -3523,6 +3719,18 @@ module.exports = async function handler(req, res) {
         if (!m) continue;
         // Gate de contacto: clienteWA solo si ganó el pedido y pagó el anticipo
         const seguro = sanitizarParaMudancero(m, email);
+        // El mudancero que canceló este trabajo (reemplazo urgente, ver
+        // action=cancelar-mudancero) ya no tiene cotizacionAceptada acá, pero
+        // m.anticipoPagado sigue en true (la plata del cliente no se movió) —
+        // el panel usa ese flag como atajo para "esto está aceptado/pago" en
+        // varios lados, y sin este override el mudancero vería su propio
+        // trabajo cancelado marcado como "Listo para iniciar". Se corrige
+        // SOLO en la copia que ve él, nunca en el registro real.
+        if (m.mudanceroQueCancelo && m.mudanceroQueCancelo.email === email) {
+          seguro.estado = 'cancelada';
+          seguro.anticipoPagado = false;
+          seguro.motivoCierre = 'cancelaste_este_trabajo';
+        }
         mudanzas.push({ ...seguro, miCotizacion: (seguro.cotizaciones || []).find(c => c.mudanceroEmail === email) });
       }
       return res.status(200).json({ mudanzas });
@@ -5214,7 +5422,8 @@ async function logPedidoSheets(mudanza) {
   // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
   const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor || mudanza.partnerSlugCrudo);
   // Flete siempre 20%, venga o no de un canal — ver misma nota en la sección de liquidaciones.
-  const feePct = esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15);
+  // Reemplazo urgente (ver action=cancelar-mudancero): sin comisión de plataforma.
+  const feePct = mudanza.sinComisionPlataforma ? 0 : (esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15));
   const precio = parseInt(cot.precio || 0);
   const fee = Math.round(precio * feePct);
   const neto = precio - fee;
@@ -5272,7 +5481,8 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   // 25% para toda mudanza de canal, 15%/20% solo para las orgánicas.
   const esPlanReferidos = !!(mudanza.origenCanal === true || mudanza.origenAsesor === true || mudanza.refAliado || mudanza.partner || mudanza.partnerAsesor || mudanza.partnerSlugCrudo);
   // Flete siempre 20%, venga o no de un canal — ver misma nota en la sección de liquidaciones.
-  const comisionPct = esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15);
+  // Reemplazo urgente (ver action=cancelar-mudancero): sin comisión de plataforma.
+  const comisionPct = mudanza.sinComisionPlataforma ? 0 : (esFlete ? 0.20 : (esPlanReferidos ? 0.25 : 0.15));
   // Usar el monto REAL cobrado guardado por el webhook (fuente de verdad).
   // Fallback al 50% del precio solo si por algún motivo no se guardó (compat con pagos viejos).
   // El saldo NO es la mitad del precio cuando hubo un ajuste: es el precio
@@ -6102,6 +6312,102 @@ async function notificarClienteMudanzaCancelada(mudanza, refundOk) {
       </div>
     </div>`,
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// REEMPLAZO URGENTE — el mudancero cancela con seña pagada y <24hs de margen
+// (ver action=cancelar-mudancero / confirmar-reemplazo-urgente más arriba).
+// ══════════════════════════════════════════════════════════════════════
+
+// Avisa al cliente que salimos a buscar reemplazo. A propósito NO le pide que
+// haga nada — el sistema se encarga solo, el cliente es pasivo en todo esto.
+async function avisarClienteBuscandoReemplazo(mudanza) {
+  if (!mudanza.clienteWA) return;
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+  const tipo = mudanza.tipo || 'mudanza';
+  const texto =
+    `Hola ${nomCli}, te aviso algo: al mudancero que tenías asignado le surgió un imprevisto y no va a poder hacer tu ${tipo}.\n\n` +
+    `Ya estamos buscando un reemplazo con otro mudancero verificado de la zona, al MISMO precio que ya tenías acordado — no tenés que hacer nada, te aviso apenas lo consigamos.`;
+  try {
+    const { enviarPlantilla } = require('./_plantillas');
+    await enviarPlantilla(mudanza.clienteWA, 'reemplazo_urgente_buscando', { 1: nomCli, 2: tipo }, texto);
+  } catch (e) { console.warn('avisarClienteBuscandoReemplazo:', e.message); }
+}
+
+// Avisa al cliente que ya se resolvió, con el mudancero de reemplazo.
+async function avisarClienteReemplazoConfirmado(mudanza) {
+  if (!mudanza.clienteWA) return;
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+  const cot = mudanza.cotizacionAceptada || {};
+  const tipo = mudanza.tipo || 'mudanza';
+  const texto =
+    `¡Buenas noticias, ${nomCli}! Ya conseguimos reemplazo para tu ${tipo}: ${cot.mudanceroNombre || 'un mudancero verificado'} 🎉\n` +
+    `Mismo precio, mismo horario coordinado.` +
+    (cot.mudanceroTel ? ` Te va a contactar por acá o al ${cot.mudanceroTel}.` : ' Te va a contactar para coordinar los detalles.');
+  try {
+    const { enviarPlantilla } = require('./_plantillas');
+    await enviarPlantilla(mudanza.clienteWA, 'reemplazo_urgente_confirmado', { 1: nomCli, 2: tipo, 3: cot.mudanceroNombre || 'un mudancero verificado' }, texto);
+  } catch (e) { console.warn('avisarClienteReemplazoConfirmado:', e.message); }
+}
+
+// Avisa al mudancero de reemplazo con los datos de contacto. A diferencia de
+// un pedido nuevo (que oculta el contacto hasta que se paga la seña), acá se
+// comparte directo porque la seña de ESTE pedido ya está paga desde antes.
+async function avisarMudanceroReemplazoConfirmado(mudanza) {
+  const cot = mudanza.cotizacionAceptada || {};
+  if (!cot.mudanceroTel) return;
+  const nomMud = (cot.mudanceroNombre || '').split(' ')[0] || 'Hola';
+  const desde = mudanza.desde || mudanza.origen || '';
+  const hasta = mudanza.hasta || mudanza.destino || '';
+  const precioFmt = (cot.precio || 0).toLocaleString('es-AR');
+  const texto =
+    `¡Confirmado, ${nomMud}! Te quedó el reemplazo urgente: ${desde} → ${hasta}, $${precioFmt} (seña ya paga por el cliente).\n` +
+    `Este viaje puntual va SIN comisión de MudateYa — te queda el 100%.\n` +
+    (mudanza.clienteNombre ? `Cliente: ${mudanza.clienteNombre}` : 'Cliente') +
+    (mudanza.clienteWA ? ` (${mudanza.clienteWA})` : '') + '. Coordiná directo por acá.';
+  try {
+    const { enviarPlantilla } = require('./_plantillas');
+    await enviarPlantilla(cot.mudanceroTel, 'reemplazo_urgente_ganado', { 1: nomMud, 2: desde, 3: hasta, 4: precioFmt }, texto);
+  } catch (e) { console.warn('avisarMudanceroReemplazoConfirmado:', e.message); }
+}
+
+// Sale a avisar a los mudanceros que cubren la zona del pedido (mismo criterio
+// de match que el barrido normal, ver whatsapp.js:barridoWhatsApp), excluyendo
+// al que canceló. Devuelve cuántos candidatos fueron avisados.
+async function dispararReemplazoUrgente(mudanza, mudanceroExcluidoEmail) {
+  const { enviarPlantilla } = require('./_plantillas');
+  const todos = (await getJSON('mudanceros:todos')) || [];
+  const desde = mudanza.desde || mudanza.origen || '';
+  const hasta = mudanza.hasta || mudanza.destino || '';
+  const textoZona = `${desde} ${hasta}`;
+  const palabras = palabrasZona(textoZona);
+  const precioFmt = (mudanza.precioReemplazoUrgente || 0).toLocaleString('es-AR');
+  let avisados = 0;
+  for (const email of todos) {
+    if (avisados >= 60) break;
+    if (String(email).toLowerCase() === String(mudanceroExcluidoEmail || '').toLowerCase()) continue;
+    const p = await getJSON(`mudancero:perfil:${email}`);
+    if (!p || p.estado !== 'aprobado' || !p.telefono) continue;
+    const geo = await cubreGeo(p, desde, mudanza.origenCoords);
+    if (geo === false) continue;
+    if (geo === null) {
+      const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
+      if (!coincideZona(cobertura, palabras, { ignorarComodines: true, textoPedido: textoZona })) continue;
+    }
+    const nom = (p.nombre || '').split(' ')[0] || 'Hola';
+    const texto =
+      `Aviso, ${nom}: se liberó un viaje ya coordinado (${mudanza.tipo || 'mudanza'}), ${desde} a ${hasta}, ${mudanza.fecha || 'a coordinar'}.\n` +
+      `Precio ya acordado con el cliente: $${precioFmt}. La seña ya está paga. Si podés tomarlo, respondeme por acá — se lo lleva el primero que confirme, sin volver a cotizar.`;
+    try {
+      await enviarPlantilla(
+        p.telefono, 'reemplazo_urgente_mudancero',
+        { 1: nom, 2: desde, 3: hasta, 4: mudanza.fecha || 'a coordinar', 5: precioFmt },
+        texto
+      );
+      avisados++;
+    } catch (e) { console.warn('[reemplazo-urgente] wa', email, e.message); }
+  }
+  return avisados;
 }
 
 // ══════════════════════════════════════════════════════════════════════

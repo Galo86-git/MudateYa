@@ -3682,7 +3682,9 @@ function renderRowPedido(m, tipo) {
       pillCls = 'pd-esp-pago'; pillTxt = '⏳ Esperando pago';
     }
   } else if (tipo === 'expirados') {
-    if (m.estado === 'eliminada' || m.estado === 'cancelada') {
+    if (m.motivoCierre === 'cancelaste_este_trabajo') {
+      pillCls = 'pd-exp'; pillTxt = '🔄 Cancelaste — buscamos reemplazo';
+    } else if (m.estado === 'eliminada' || m.estado === 'cancelada') {
       pillCls = 'pd-exp'; pillTxt = '❌ Cancelada por el cliente';
     } else if (m.estado === 'cotizacion_aceptada') {
       pillCls = 'pd-exp'; pillTxt = 'No elegido';
