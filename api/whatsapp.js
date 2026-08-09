@@ -1533,6 +1533,9 @@ async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
     const destinoCoords = gd && gd.ok ? { lat: gd.lat, lng: gd.lng } : null;
     kmCalc = (await distanciaKm(input.origen, input.destino)) || haversineKm(origenCoords, destinoCoords) || 0;
   } catch (_) {}
+  // Traducido UNA sola vez acá (se reusa en el PDF de preview y en la
+  // publicación final) — ver traducirDetallesParaMudancero.
+  const detallesTraducidos = await traducirDetallesParaMudancero(input.detalles || '');
 
   // Gate 2: confirmación explícita. Sin confirmado:true se arma el PDF de
   // detalles (MISMA función y misma forma de objeto que arma action=publicar
@@ -1546,8 +1549,8 @@ async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
         tipo: input.tipo || 'mudanza', origen: input.origen, destino: input.destino, km: kmCalc || 0,
         tipoOrigen: _tipoLugar(input.tipo_origen), pisoOrigen: _piso(input.piso_origen), ascOrigen: _asc(input.ascensor_origen),
         tipoDestino: _tipoLugar(input.tipo_destino), pisoDestino: _piso(input.piso_destino), ascDestino: _asc(input.ascensor_destino),
-        detallesAdicionales: (input.detalles || (Array.isArray(fotos) && fotos.length))
-          ? { comentario: input.detalles ? String(input.detalles).slice(0, 500) : '', fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
+        detallesAdicionales: (detallesTraducidos || (Array.isArray(fotos) && fotos.length))
+          ? { comentario: detallesTraducidos.slice(0, 500), fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
           : null,
       };
       const pdfBase64 = typeof generarPDFDetallesBase64 === 'function' ? await generarPDFDetallesBase64(draft) : null;
@@ -1609,8 +1612,8 @@ async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
         // el PDF que se adjunta al mail de aviso a los mudanceros
         // (generarPDFDetallesBase64) solo lee detallesAdicionales.fotos, no
         // el campo fotos top-level de la mudanza.
-        detallesAdicionales: (input.detalles || (Array.isArray(fotos) && fotos.length))
-          ? { comentario: input.detalles ? String(input.detalles).slice(0, 500) : '', fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
+        detallesAdicionales: (detallesTraducidos || (Array.isArray(fotos) && fotos.length))
+          ? { comentario: detallesTraducidos.slice(0, 500), fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
           : undefined,
       }),
     });
@@ -2084,6 +2087,43 @@ function armarResumenPedido(input) {
   return lineas.join('\n');
 }
 
+// Si el texto libre del pedido (lo que cuenta el cliente de lo que hay que
+// mudar) no está en español, lo traduce — la mayoría de los mudanceros de
+// Argentina solo leen español, y antes ese texto le llegaba tal cual lo
+// escribió/dictó el cliente en cualquier idioma. Además deja anotado el
+// idioma original, para que el mudancero sepa que puede tener que coordinar
+// con alguien que no habla español fluido. Best-effort: si falla (sin
+// ANTHROPIC_API_KEY, error de red), sigue con el texto original en vez de
+// bloquear la creación del pedido.
+async function traducirDetallesParaMudancero(texto) {
+  const limpio = String(texto || '').trim();
+  if (!limpio) return '';
+  try {
+    const { claudeJSON, MODEL_LIGHT } = require('./_ia');
+    const schema = {
+      type: 'object',
+      properties: {
+        esEspanol: { type: 'boolean' },
+        idioma: { type: 'string', description: 'Nombre del idioma en español (ej "ruso", "chino mandarín", "inglés"). Vacío si ya está en español.' },
+        traduccion: { type: 'string', description: 'El texto traducido al español rioplatense, natural y directo. Si ya está en español, repetilo tal cual.' },
+      },
+      required: ['esEspanol', 'idioma', 'traduccion'],
+    };
+    const r = await claudeJSON({
+      model: MODEL_LIGHT,
+      system: 'Detectás el idioma de un texto corto y lo traducís al español rioplatense, natural, sin agregar ni sacar información.',
+      content: limpio,
+      schema,
+      maxTokens: 400,
+    });
+    if (r.esEspanol || !r.traduccion) return limpio;
+    return `[Pedido armado en ${r.idioma || 'otro idioma'} — puede no hablar español fluido]\n${r.traduccion}`;
+  } catch (e) {
+    console.warn('traducirDetallesParaMudancero:', e.message);
+    return limpio;
+  }
+}
+
 async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // Gate 1: campos críticos para que el pedido sea real (ver arriba). Sin
   // esto, nada se crea todavía.
@@ -2101,7 +2141,7 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // al publicar desde la web (sinContacto en cotizaciones.js). Acá faltaba:
   // un cliente que escribía o decía su teléfono ("mejor llamame al...") lo
   // filtraba a todos los mudanceros de la zona sin haber elegido a ninguno.
-  const detallesLimpios = sinContactoWA(input.detalles || '');
+  const detallesLimpios = await traducirDetallesParaMudancero(sinContactoWA(input.detalles || ''));
 
   // Geocodificar origen/destino con Google (best-effort): coords para geo-match y
   // km por ruta para mostrar en el PDF. Si falta la key o falla, sigue sin ello.
