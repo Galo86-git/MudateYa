@@ -250,6 +250,90 @@
       "destination": "/fletes-en-cordoba.html"
     },
     {
+      "source": "/fletes-en-almagro",
+      "destination": "/fletes-en-almagro.html"
+    },
+    {
+      "source": "/fletes-en-boedo",
+      "destination": "/fletes-en-boedo.html"
+    },
+    {
+      "source": "/fletes-en-devoto",
+      "destination": "/fletes-en-devoto.html"
+    },
+    {
+      "source": "/fletes-en-flores",
+      "destination": "/fletes-en-flores.html"
+    },
+    {
+      "source": "/fletes-en-liniers",
+      "destination": "/fletes-en-liniers.html"
+    },
+    {
+      "source": "/fletes-en-nunez",
+      "destination": "/fletes-en-nunez.html"
+    },
+    {
+      "source": "/fletes-en-recoleta",
+      "destination": "/fletes-en-recoleta.html"
+    },
+    {
+      "source": "/fletes-en-san-telmo",
+      "destination": "/fletes-en-san-telmo.html"
+    },
+    {
+      "source": "/fletes-en-villa-crespo",
+      "destination": "/fletes-en-villa-crespo.html"
+    },
+    {
+      "source": "/fletes-en-villa-urquiza",
+      "destination": "/fletes-en-villa-urquiza.html"
+    },
+    {
+      "source": "/fletes-en-avellaneda",
+      "destination": "/fletes-en-avellaneda.html"
+    },
+    {
+      "source": "/fletes-en-lanus",
+      "destination": "/fletes-en-lanus.html"
+    },
+    {
+      "source": "/fletes-en-lomas-de-zamora",
+      "destination": "/fletes-en-lomas-de-zamora.html"
+    },
+    {
+      "source": "/fletes-en-merlo",
+      "destination": "/fletes-en-merlo.html"
+    },
+    {
+      "source": "/fletes-en-moreno",
+      "destination": "/fletes-en-moreno.html"
+    },
+    {
+      "source": "/fletes-en-moron",
+      "destination": "/fletes-en-moron.html"
+    },
+    {
+      "source": "/fletes-en-quilmes",
+      "destination": "/fletes-en-quilmes.html"
+    },
+    {
+      "source": "/fletes-en-san-martin",
+      "destination": "/fletes-en-san-martin.html"
+    },
+    {
+      "source": "/fletes-en-tigre",
+      "destination": "/fletes-en-tigre.html"
+    },
+    {
+      "source": "/fletes-en-vicente-lopez",
+      "destination": "/fletes-en-vicente-lopez.html"
+    },
+    {
+      "source": "/fletes-en-mendoza",
+      "destination": "/fletes-en-mendoza.html"
+    },
+    {
       "source": "/mudanzas-en-mendoza",
       "destination": "/mudanzas-en-mendoza.html"
     },
@@ -392,7 +476,9 @@
   ],
   "functions": {
     "api/registrar-mudancero.js": {
-      "regions": ["gru1"]
+      "regions": [
+        "gru1"
+      ]
     }
   },
   "crons": [
