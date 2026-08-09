@@ -537,7 +537,9 @@ HORA: cuando el cliente te diga a qué hora arranca, pasala en el campo *hora* c
 
 FECHA: al crear el pedido, la fecha va SIEMPRE como YYYY-MM-DD. Tenés la fecha de hoy en contexto: si el cliente dice "mañana", "el viernes" o "el 15", resolvelo vos y pasá la fecha real. Guardar "mañana" como texto deja el pedido sin fecha utilizable — no se puede saber después cuándo es, ni recordárselo la víspera.
 
-PISO Y ASCENSOR: ya los venís preguntando en la charla — ahora además pasalos en los campos (*tipo_origen*, *piso_origen*, *ascensor_origen* y los tres de destino). Mencionarlos en los detalles NO alcanza: si no van en esos campos, el mudancero ve "No indicado", cotiza como si fuera planta baja, y el día de la mudanza aparece la escalera. Es de lo que más mueve el precio.
+PISO Y ASCENSOR: ya los venís preguntando en la charla — ahora además pasalos en los campos (*tipo_origen*, *piso_origen*, *ascensor_origen* y los tres de destino). Mencionarlos en los detalles NO alcanza: si no van en esos campos, el mudancero ve "No indicado", cotiza como si fuera planta baja, y el día de la mudanza aparece la escalera. Es de lo que más mueve el precio. tipo_origen y tipo_destino (casa o depto) son OBLIGATORIOS, y el piso es obligatorio si es depto — si crear_pedido te dice que falta alguno, pedíselo al cliente con buena onda, no como un trámite ("me falta un dato: ¿el depto de destino tiene ascensor... digo, en qué piso está? así el mudancero no se lleva una sorpresa el día de la mudanza").
+
+RESUMEN Y CONFIRMACIÓN ANTES DE PUBLICAR: cuando ya tengas todo, crear_pedido (sin confirmado) te devuelve un PDF con el detalle — mandaselo tal cual llegó y preguntale con onda si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo a los mudanceros. Si el cliente todavía te viene contando todo de a poquito por texto, es un buen momento para ofrecerle el audio: "si querés, mandame un audio contándome todo junto y te lo armo yo de una — más rápido para los dos". La idea es que TODO el proceso (juntar los datos + mostrarle el resumen + que confirme) no tarde más de 5 minutos si te da un audio bien contado. Recién cuando diga que sí, volvés a llamar a crear_pedido con los mismos datos más confirmado:true.
 
 NIVEL DE SERVICIO: para MUDANZAS (no aplica a fletes), preguntale SIEMPRE qué nivel quiere antes de crear el pedido — no lo des por sentado ni lo dejes pasar. Contale cortito las 3 opciones, con onda, no como un catálogo: "Esencial" (vehículo + carga y descarga, el embalaje lo hacés vos), "Integral" (+ embalaje básico y desarmado/armado de muebles — el más elegido) o "Llave en Mano" (+ te ubican todo en el nuevo hogar, no solo lo dejan). Pasá lo que elija en el campo *nivel* ('esencial'/'integral'/'llave') al crear el pedido — NO alcanza con mencionarlo en los detalles: si no va en ese campo, el pedido sale como Esencial igual. Si le explicás y no se termina de decidir o te dice "lo que sea, lo más simple", usá esencial y seguí sin insistir más.
 
@@ -1517,14 +1519,6 @@ async function cargarPedidoReferido(input, asesor, fotos) {
   if (faltanCriticos.length) {
     return { ok: false, error: `Antes de seguir, preguntale al asesor: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` };
   }
-  // Gate 2: confirmación explícita. Sin confirmado:true se devuelve el
-  // resumen y no se publica nada todavía — mismo patrón que crearPedido.
-  if (!input.confirmado) {
-    return {
-      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input),
-      nota: 'Mostrale ESTE resumen al asesor tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.',
-    };
-  }
   // Km por ruta (Google) — mismo cálculo que ya usa crearPedido para el
   // cliente directo, así TODO pedido (venga por acá o por la web) tiene la
   // fila de distancia en el mail al mudancero. Best-effort: si falla o no
@@ -1537,6 +1531,33 @@ async function cargarPedidoReferido(input, asesor, fotos) {
     const destinoCoords = gd && gd.ok ? { lat: gd.lat, lng: gd.lng } : null;
     kmCalc = (await distanciaKm(input.origen, input.destino)) || haversineKm(origenCoords, destinoCoords) || 0;
   } catch (_) {}
+
+  // Gate 2: confirmación explícita. Sin confirmado:true se arma el PDF de
+  // detalles (MISMA función y misma forma de objeto que arma action=publicar
+  // más abajo, así es el PDF real, no uno aproximado) y se devuelve para
+  // mostrarlo — no se publica nada todavía. Mismo patrón que crearPedido.
+  if (!input.confirmado) {
+    let pdfUrl = null;
+    try {
+      const { generarPDFDetallesBase64 } = require('./cotizaciones');
+      const draft = {
+        tipo: input.tipo || 'mudanza', origen: input.origen, destino: input.destino, km: kmCalc || 0,
+        tipoOrigen: _tipoLugar(input.tipo_origen), pisoOrigen: _piso(input.piso_origen), ascOrigen: _asc(input.ascensor_origen),
+        tipoDestino: _tipoLugar(input.tipo_destino), pisoDestino: _piso(input.piso_destino), ascDestino: _asc(input.ascensor_destino),
+        detallesAdicionales: (input.detalles || (Array.isArray(fotos) && fotos.length))
+          ? { comentario: input.detalles ? String(input.detalles).slice(0, 500) : '', fotos: Array.isArray(fotos) ? fotos.slice(0, 6) : [] }
+          : null,
+      };
+      const pdfBase64 = typeof generarPDFDetallesBase64 === 'function' ? await generarPDFDetallesBase64(draft) : null;
+      if (pdfBase64) pdfUrl = await subirFotoBlob(pdfBase64, 'application/pdf'); // nombre genérico, sirve para cualquier archivo
+    } catch (e) { console.warn('cargarPedidoReferido: no se pudo armar el PDF de preview:', e.message); }
+    return {
+      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input), pdfUrl,
+      nota: pdfUrl
+        ? 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale al asesor por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
+        : 'No se pudo armar el PDF, así que mostrale ESTE resumen al asesor tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
+    };
+  }
   try {
     const r = await fetch(`${SITE_URL}/api/cotizaciones?action=publicar`, {
       method: 'POST',
@@ -1656,6 +1677,15 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv, textoActual) 
     if (name === 'cargar_pedido_referido') {
       const fotosConv = Array.isArray(conv.fotos) ? conv.fotos : [];
       const resultado = await cargarPedidoReferido(input, asesor, fotosConv);
+      // El PDF de preview va DIRECTO al asesor (es quien está cargando el
+      // pedido acá) — Claude no puede adjuntar archivos por su cuenta, así
+      // que lo mandamos acá y el texto de Emi llega aparte, como siempre.
+      if (resultado.pendienteConfirmar && resultado.pdfUrl) {
+        try {
+          const { enviarWhatsAppTexto } = require('./_whatsapp');
+          await enviarWhatsAppTexto(waId, '📄 Así quedaría el pedido:', resultado.pdfUrl);
+        } catch (e) { console.warn('cargar_pedido_referido: no se pudo mandar el PDF de preview:', e.message); }
+      }
       // pendienteConfirmar: todavía no se publicó nada (falta que el asesor
       // confirme el resumen) — no tocar fotos ni avisar urgente hasta que
       // se vuelva a llamar con confirmado:true y esto sea false/undefined.
@@ -2052,17 +2082,6 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
   if (faltanCriticos.length) {
     return { ok: false, faltanCriticos, nota: `Antes de seguir, preguntale al cliente: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` };
   }
-  // Gate 2: confirmación explícita. La primera vez que se llega hasta acá
-  // (sin confirmado:true) se devuelve el resumen y NO se publica nada — el
-  // pedido recién se crea cuando esta misma función se vuelve a llamar con
-  // los mismos datos más confirmado:true, después de que la persona lo vio
-  // y dijo que sí.
-  if (!input.confirmado) {
-    return {
-      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input),
-      nota: 'Mostrale ESTE resumen al cliente tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.',
-    };
-  }
   const id = nuevoId();
   const ahora = new Date();
   const nombre = input.nombre || '';
@@ -2165,6 +2184,29 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     cotizaciones: [],
     creado: ahora.toISOString(),
   };
+
+  // Gate 2: confirmación explícita. La primera vez que se llega hasta acá
+  // (sin confirmado:true) se arma el PDF de detalles (MISMA función que ve
+  // el mudancero, ver generarPDFDetallesBase64 en cotizaciones.js) y se
+  // devuelve para mostrarlo — nada se persiste ni se publica todavía. El
+  // pedido recién se crea cuando esta misma función se vuelve a llamar con
+  // los mismos datos más confirmado:true, después de que la persona lo vio
+  // y dijo que sí.
+  if (!input.confirmado) {
+    let pdfUrl = null;
+    try {
+      const { generarPDFDetallesBase64 } = require('./cotizaciones');
+      const pdfBase64 = typeof generarPDFDetallesBase64 === 'function' ? await generarPDFDetallesBase64(pedido) : null;
+      if (pdfBase64) pdfUrl = await subirFotoBlob(pdfBase64, 'application/pdf'); // nombre genérico, sirve para cualquier archivo
+    } catch (e) { console.warn('crearPedido: no se pudo armar el PDF de preview:', e.message); }
+    return {
+      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input), pdfUrl,
+      nota: pdfUrl
+        ? 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
+        : 'No se pudo armar el PDF, así que mostrale ESTE resumen al cliente tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
+    };
+  }
+
   // TTL de 180 días (no 7) — mismo bug ya corregido en cotizaciones.js
   // (TTL_MUDANZA): 7 días borraba el registro antes de que el negocio llegue
   // a liquidar (15-40 días desde el pago). Acá se había quedado en 7.
@@ -2780,6 +2822,15 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
       const resultado = await crearPedido(input, waId, conv.ubicaciones, conv.fotos);
       // Todavía no se creó nada: faltan campos críticos, o falta que la
       // persona confirme el resumen — devolvemos tal cual, sin tocar fotos/ubicaciones.
+      // Si se pudo armar el PDF de preview, se lo mandamos ACÁ (Claude no puede
+      // adjuntar archivos por su cuenta, solo texto) — el texto que Emi termine
+      // escribiendo llega aparte, como respuesta normal del webhook.
+      if (resultado.pendienteConfirmar && resultado.pdfUrl) {
+        try {
+          const { enviarWhatsAppTexto } = require('./_whatsapp');
+          await enviarWhatsAppTexto(waId, '📄 Así quedaría tu pedido:', resultado.pdfUrl);
+        } catch (e) { console.warn('crear_pedido: no se pudo mandar el PDF de preview:', e.message); }
+      }
       if (!resultado.ok || resultado.pendienteConfirmar) return JSON.stringify(resultado);
       const pedido = resultado.pedido;
       // Limpiar fotos/ubicaciones para que el PRÓXIMO pedido no arrastre las de este.
