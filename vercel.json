@@ -250,6 +250,318 @@
       "destination": "/fletes-en-cordoba.html"
     },
     {
+      "source": "/mudanzas-en-la-plata",
+      "destination": "/mudanzas-en-la-plata.html"
+    },
+    {
+      "source": "/fletes-en-la-plata",
+      "destination": "/fletes-en-la-plata.html"
+    },
+    {
+      "source": "/mudanzas-en-pilar",
+      "destination": "/mudanzas-en-pilar.html"
+    },
+    {
+      "source": "/fletes-en-pilar",
+      "destination": "/fletes-en-pilar.html"
+    },
+    {
+      "source": "/mudanzas-en-escobar",
+      "destination": "/mudanzas-en-escobar.html"
+    },
+    {
+      "source": "/fletes-en-escobar",
+      "destination": "/fletes-en-escobar.html"
+    },
+    {
+      "source": "/mudanzas-en-ramos-mejia",
+      "destination": "/mudanzas-en-ramos-mejia.html"
+    },
+    {
+      "source": "/fletes-en-ramos-mejia",
+      "destination": "/fletes-en-ramos-mejia.html"
+    },
+    {
+      "source": "/mudanzas-en-caseros",
+      "destination": "/mudanzas-en-caseros.html"
+    },
+    {
+      "source": "/fletes-en-caseros",
+      "destination": "/fletes-en-caseros.html"
+    },
+    {
+      "source": "/mudanzas-en-hurlingham",
+      "destination": "/mudanzas-en-hurlingham.html"
+    },
+    {
+      "source": "/fletes-en-hurlingham",
+      "destination": "/fletes-en-hurlingham.html"
+    },
+    {
+      "source": "/mudanzas-en-ituzaingo",
+      "destination": "/mudanzas-en-ituzaingo.html"
+    },
+    {
+      "source": "/fletes-en-ituzaingo",
+      "destination": "/fletes-en-ituzaingo.html"
+    },
+    {
+      "source": "/mudanzas-en-san-miguel",
+      "destination": "/mudanzas-en-san-miguel.html"
+    },
+    {
+      "source": "/fletes-en-san-miguel",
+      "destination": "/fletes-en-san-miguel.html"
+    },
+    {
+      "source": "/mudanzas-en-martinez",
+      "destination": "/mudanzas-en-martinez.html"
+    },
+    {
+      "source": "/fletes-en-martinez",
+      "destination": "/fletes-en-martinez.html"
+    },
+    {
+      "source": "/mudanzas-en-olivos",
+      "destination": "/mudanzas-en-olivos.html"
+    },
+    {
+      "source": "/fletes-en-olivos",
+      "destination": "/fletes-en-olivos.html"
+    },
+    {
+      "source": "/mudanzas-en-nordelta",
+      "destination": "/mudanzas-en-nordelta.html"
+    },
+    {
+      "source": "/fletes-en-nordelta",
+      "destination": "/fletes-en-nordelta.html"
+    },
+    {
+      "source": "/mudanzas-en-adrogue",
+      "destination": "/mudanzas-en-adrogue.html"
+    },
+    {
+      "source": "/fletes-en-adrogue",
+      "destination": "/fletes-en-adrogue.html"
+    },
+    {
+      "source": "/mudanzas-en-monte-grande",
+      "destination": "/mudanzas-en-monte-grande.html"
+    },
+    {
+      "source": "/fletes-en-monte-grande",
+      "destination": "/fletes-en-monte-grande.html"
+    },
+    {
+      "source": "/mudanzas-en-berazategui",
+      "destination": "/mudanzas-en-berazategui.html"
+    },
+    {
+      "source": "/fletes-en-berazategui",
+      "destination": "/fletes-en-berazategui.html"
+    },
+    {
+      "source": "/mudanzas-en-san-justo",
+      "destination": "/mudanzas-en-san-justo.html"
+    },
+    {
+      "source": "/fletes-en-san-justo",
+      "destination": "/fletes-en-san-justo.html"
+    },
+    {
+      "source": "/mudanzas-en-san-fernando",
+      "destination": "/mudanzas-en-san-fernando.html"
+    },
+    {
+      "source": "/fletes-en-san-fernando",
+      "destination": "/fletes-en-san-fernando.html"
+    },
+    {
+      "source": "/mudanzas-en-florencio-varela",
+      "destination": "/mudanzas-en-florencio-varela.html"
+    },
+    {
+      "source": "/fletes-en-florencio-varela",
+      "destination": "/fletes-en-florencio-varela.html"
+    },
+    {
+      "source": "/mudanzas-en-jose-c-paz",
+      "destination": "/mudanzas-en-jose-c-paz.html"
+    },
+    {
+      "source": "/fletes-en-jose-c-paz",
+      "destination": "/fletes-en-jose-c-paz.html"
+    },
+    {
+      "source": "/mudanzas-en-colegiales",
+      "destination": "/mudanzas-en-colegiales.html"
+    },
+    {
+      "source": "/fletes-en-colegiales",
+      "destination": "/fletes-en-colegiales.html"
+    },
+    {
+      "source": "/mudanzas-en-chacarita",
+      "destination": "/mudanzas-en-chacarita.html"
+    },
+    {
+      "source": "/fletes-en-chacarita",
+      "destination": "/fletes-en-chacarita.html"
+    },
+    {
+      "source": "/mudanzas-en-saavedra",
+      "destination": "/mudanzas-en-saavedra.html"
+    },
+    {
+      "source": "/fletes-en-saavedra",
+      "destination": "/fletes-en-saavedra.html"
+    },
+    {
+      "source": "/mudanzas-en-villa-del-parque",
+      "destination": "/mudanzas-en-villa-del-parque.html"
+    },
+    {
+      "source": "/fletes-en-villa-del-parque",
+      "destination": "/fletes-en-villa-del-parque.html"
+    },
+    {
+      "source": "/mudanzas-en-barracas",
+      "destination": "/mudanzas-en-barracas.html"
+    },
+    {
+      "source": "/fletes-en-barracas",
+      "destination": "/fletes-en-barracas.html"
+    },
+    {
+      "source": "/mudanzas-en-once",
+      "destination": "/mudanzas-en-once.html"
+    },
+    {
+      "source": "/fletes-en-once",
+      "destination": "/fletes-en-once.html"
+    },
+    {
+      "source": "/mudanzas-en-barrio-norte",
+      "destination": "/mudanzas-en-barrio-norte.html"
+    },
+    {
+      "source": "/fletes-en-barrio-norte",
+      "destination": "/fletes-en-barrio-norte.html"
+    },
+    {
+      "source": "/mudanzas-en-puerto-madero",
+      "destination": "/mudanzas-en-puerto-madero.html"
+    },
+    {
+      "source": "/fletes-en-puerto-madero",
+      "destination": "/fletes-en-puerto-madero.html"
+    },
+    {
+      "source": "/mudanzas-en-parque-chacabuco",
+      "destination": "/mudanzas-en-parque-chacabuco.html"
+    },
+    {
+      "source": "/fletes-en-parque-chacabuco",
+      "destination": "/fletes-en-parque-chacabuco.html"
+    },
+    {
+      "source": "/mudanzas-en-mataderos",
+      "destination": "/mudanzas-en-mataderos.html"
+    },
+    {
+      "source": "/fletes-en-mataderos",
+      "destination": "/fletes-en-mataderos.html"
+    },
+    {
+      "source": "/mudanzas-en-floresta",
+      "destination": "/mudanzas-en-floresta.html"
+    },
+    {
+      "source": "/fletes-en-floresta",
+      "destination": "/fletes-en-floresta.html"
+    },
+    {
+      "source": "/mudanzas-en-villa-pueyrredon",
+      "destination": "/mudanzas-en-villa-pueyrredon.html"
+    },
+    {
+      "source": "/fletes-en-villa-pueyrredon",
+      "destination": "/fletes-en-villa-pueyrredon.html"
+    },
+    {
+      "source": "/mudanzas-en-coghlan",
+      "destination": "/mudanzas-en-coghlan.html"
+    },
+    {
+      "source": "/fletes-en-coghlan",
+      "destination": "/fletes-en-coghlan.html"
+    },
+    {
+      "source": "/mudanzas-en-paternal",
+      "destination": "/mudanzas-en-paternal.html"
+    },
+    {
+      "source": "/fletes-en-paternal",
+      "destination": "/fletes-en-paternal.html"
+    },
+    {
+      "source": "/mudanzas-en-monserrat",
+      "destination": "/mudanzas-en-monserrat.html"
+    },
+    {
+      "source": "/fletes-en-monserrat",
+      "destination": "/fletes-en-monserrat.html"
+    },
+    {
+      "source": "/mudanzas-en-retiro",
+      "destination": "/mudanzas-en-retiro.html"
+    },
+    {
+      "source": "/fletes-en-retiro",
+      "destination": "/fletes-en-retiro.html"
+    },
+    {
+      "source": "/mudanzas-en-la-boca",
+      "destination": "/mudanzas-en-la-boca.html"
+    },
+    {
+      "source": "/fletes-en-la-boca",
+      "destination": "/fletes-en-la-boca.html"
+    },
+    {
+      "source": "/mudanzas-en-parque-patricios",
+      "destination": "/mudanzas-en-parque-patricios.html"
+    },
+    {
+      "source": "/fletes-en-parque-patricios",
+      "destination": "/fletes-en-parque-patricios.html"
+    },
+    {
+      "source": "/mudanzas-en-villa-ortuzar",
+      "destination": "/mudanzas-en-villa-ortuzar.html"
+    },
+    {
+      "source": "/fletes-en-villa-ortuzar",
+      "destination": "/fletes-en-villa-ortuzar.html"
+    },
+    {
+      "source": "/mudanzas-en-villa-lugano",
+      "destination": "/mudanzas-en-villa-lugano.html"
+    },
+    {
+      "source": "/fletes-en-villa-lugano",
+      "destination": "/fletes-en-villa-lugano.html"
+    },
+    {
+      "source": "/mudanza-de-caba-a-cordoba",
+      "destination": "/mudanza-de-caba-a-cordoba.html"
+    },
+    {
+      "source": "/mudanza-de-caba-a-rosario",
+      "destination": "/mudanza-de-caba-a-rosario.html"
+    },
+    {
       "source": "/fletes-en-almagro",
       "destination": "/fletes-en-almagro.html"
     },
