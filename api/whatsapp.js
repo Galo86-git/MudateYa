@@ -584,7 +584,7 @@ Si quien te escribe se presenta como inmobiliaria, desarrolladora, club, colegio
 Si te preguntan algo que no está en esta info (condiciones legales, detalles de seguro, un caso raro), NO inventes: usá derivar_a_humano.
 
 HERRAMIENTAS QUE TENÉS:
-- crear_pedido: cuando ya juntaste los datos del pedido.
+- crear_pedido: cuando ya juntaste los datos del pedido. Va en DOS PASOS — llamala una primera vez sin confirmado: si te faltan datos críticos (tipo de lugar, piso si es depto) te va a decir qué preguntar; si ya está todo, te devuelve un resumen para mostrarle al cliente TAL CUAL y esperar que diga que sí. Recién ahí la volvés a llamar con confirmado:true para publicar de verdad. No la llames dos veces seguidas sin que el cliente haya confirmado en el medio.
 - consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio). Si alguna cotización pidió relevamiento/visita presencial para el precio final (lo ves en la nota), ofrecele mandar fotos por acá (se guardan solas) o contarte más por escrito (usá agregar_detalle_pedido) para evitarse la visita.
 - agregar_detalle_pedido: cuando un mudancero pidió relevamiento/visita y el cliente, en vez de mandar fotos, te cuenta por escrito más sobre lo que hay que mudar. Guardalo con esta herramienta — se lo pasamos al mudancero por vos.
 - aceptar_cotizacion: cuando el cliente ELIGE una cotización. Devuelve la SEÑA (50%), el link de Mercado Pago y los datos de transferencia: pasáselos y explicale que puede pagar por cualquiera de los dos medios (ambos igual de seguros y protegidos), que el 50% restante lo paga al terminar y que la seña queda protegida. Si hay varias cotizaciones, confirmá cuál elige antes de aceptar.
@@ -683,7 +683,7 @@ PODÉS HACER ESTO POR ACÁ:
 
 APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus clientes?, ¿tiene un cliente para cargar ahora?, ¿se quiere mudar él?, ¿tiene un reclamo/problema? Andá directo a eso.
 
-SI TIENE UN CLIENTE PARA CARGAR (cargar_pedido_referido): esto es una ALTERNATIVA a pasarle el link — en vez de que el asesor reenvíe el link y el cliente publique por su cuenta, el asesor te da los datos y vos publicás el pedido ya atribuido a él. Pedile, en orden: nombre del cliente, si la operación es alquiler o compraventa, origen y destino de la mudanza, PARA CUÁNDO es (obligatorio: sin fecha el mudancero no puede cotizar bien ni saber si tiene que apurarse), y el MAIL del cliente (imprescindible: ahí le llegan los presupuestos — sin mail no se puede cargar). El WhatsApp del cliente es opcional pero recomendalo ("¿tenés también el WhatsApp? así tu cliente puede recibir avisos ahí también").
+SI TIENE UN CLIENTE PARA CARGAR (cargar_pedido_referido): esto es una ALTERNATIVA a pasarle el link — en vez de que el asesor reenvíe el link y el cliente publique por su cuenta, el asesor te da los datos y vos publicás el pedido ya atribuido a él. Pedile, en orden: nombre del cliente, si la operación es alquiler o compraventa, origen y destino de la mudanza, PARA CUÁNDO es (obligatorio: sin fecha el mudancero no puede cotizar bien ni saber si tiene que apurarse), si el origen/destino es casa o depto (y el piso si es depto), y el MAIL del cliente (imprescindible: ahí le llegan los presupuestos — sin mail no se puede cargar). El WhatsApp del cliente es opcional pero recomendalo ("¿tenés también el WhatsApp? así tu cliente puede recibir avisos ahí también"). Esta herramienta va en DOS PASOS — llamala primero sin confirmado: te va a decir qué falta o te va a devolver un resumen para mostrarle al asesor y preguntarle si está todo bien o quiere aclarar algo más (por texto o audio). Recién con su OK explícito la volvés a llamar con confirmado:true.
 
 Si es hoy, mañana, o en 1-2 días, marcá urgente:true — igual se publica normal, pero ADEMÁS avisamos al equipo al toque para que se ocupen ellos de conseguir un mudancero rápido, sin esperar el flujo normal de 24hs hábiles, y el pedido se destaca como urgente para los mudanceros de la zona. En ese caso pedile también la hora aproximada si la sabe (campo horario), y contale al asesor que el equipo se contacta directo a la brevedad.
 
@@ -766,7 +766,7 @@ const tools = [
   {
     name: 'crear_pedido',
     description:
-      'Crea el pedido de mudanza/flete cuando ya tenés los datos: tipo, origen, destino, fecha y detalles. Marcá urgente=true si el cliente necesita mudarse hoy/mañana o es una emergencia.',
+      'Crea el pedido de mudanza/flete cuando ya tenés los datos: tipo, origen, destino, fecha y detalles. Marcá urgente=true si el cliente necesita mudarse hoy/mañana o es una emergencia. FUNCIONA EN DOS PASOS: la primera vez (sin confirmado) te devuelve un resumen para mostrarle al cliente en vez de publicar — recién publica cuando la volvés a llamar con confirmado:true. Ver el campo confirmado.',
     input_schema: {
       type: 'object',
       properties: {
@@ -779,13 +779,14 @@ const tools = [
         nombre: { type: 'string' },
         urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
         nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado de muebles) o llave (+ ubicación de muebles y cajas en destino). Si no lo dijo, omitilo. No aplica a flete.' },
-        tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento.' },
-        piso_origen: { type: 'string', description: 'Piso del que sale, si es departamento (ej "4", "PB", "8 A").' },
-        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si hay que subir/bajar por escalera. Omitilo si no lo sabés.' },
-        tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento.' },
-        piso_destino: { type: 'string', description: 'Piso al que va, si es departamento.' },
-        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Omitilo si no lo sabés.' },
+        tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento. OBLIGATORIO antes de publicar — preguntalo si no lo sabés, igual que en el formulario web.' },
+        piso_origen: { type: 'string', description: 'Piso del que sale — OBLIGATORIO si tipo_origen es departamento (ej "4", "PB", "8 A").' },
+        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si hay que subir/bajar por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
+        tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento. OBLIGATORIO antes de publicar, mismo criterio que tipo_origen.' },
+        piso_destino: { type: 'string', description: 'Piso al que va — OBLIGATORIO si tipo_destino es departamento.' },
+        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
         comparar_niveles: { type: 'boolean', description: 'true si el cliente quiere que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para comparar precio por operador, en vez de uno solo. No aplica a flete.' },
+        confirmado: { type: 'boolean', description: 'Dejalo en false u omitilo la primera vez que llamás con estos datos: la herramienta te va a devolver un resumen (campo "resumen") para mostrarle al cliente TAL CUAL, sin publicar nada todavía. Solo poné true cuando el cliente ya vio ese resumen y confirmó explícitamente que está todo bien — ahí sí se publica de verdad y sale a mudanceros reales.' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
     },
@@ -1389,7 +1390,7 @@ const asesorTools = [
   {
     name: 'cargar_pedido_referido',
     description:
-      'Publica el pedido de un CLIENTE del asesor (alguien que le cerró una operación y quiere el servicio de mudanza) directo acá por WhatsApp, sin que el cliente tenga que entrar por el link — queda atribuido al asesor igual que si hubiera entrado por su link. Necesitás el mail del cliente (ahí le van a llegar los presupuestos) y si tenés el WhatsApp mejor, así también puede recibir avisos ahí. Preguntá primero si es alquiler o compraventa (define si el asesor cobra comisión o si el cliente recibe un regalo).',
+      'Publica el pedido de un CLIENTE del asesor (alguien que le cerró una operación y quiere el servicio de mudanza) directo acá por WhatsApp, sin que el cliente tenga que entrar por el link — queda atribuido al asesor igual que si hubiera entrado por su link. Necesitás el mail del cliente (ahí le van a llegar los presupuestos) y si tenés el WhatsApp mejor, así también puede recibir avisos ahí. Preguntá primero si es alquiler o compraventa (define si el asesor cobra comisión o si el cliente recibe un regalo). FUNCIONA EN DOS PASOS: la primera vez (sin confirmado) te devuelve un resumen para mostrarle al asesor en vez de publicar — recién publica cuando la volvés a llamar con confirmado:true. Ver el campo confirmado.',
     input_schema: {
       type: 'object',
       properties: {
@@ -1406,13 +1407,14 @@ const asesorTools = [
         detalles: { type: 'string', description: 'Cualquier detalle extra que haya dado el cliente (opcional)' },
         urgente: { type: 'boolean', description: 'true si el cliente necesita mudarse hoy, mañana, o en 1-2 días — el pedido queda con ventana corta (3hs) y avisa al equipo al toque, en vez de esperar el flujo normal de 24hs.' },
         nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente del asesor: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado) o llave (+ ubicación en destino). Si no lo dijo, omitilo. No aplica a flete.' },
-        tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento.' },
-        piso_origen: { type: 'string', description: 'Piso del que sale, si es departamento (ej "4", "PB", "8 A").' },
-        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si es por escalera. Omitilo si no lo sabés.' },
-        tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento.' },
-        piso_destino: { type: 'string', description: 'Piso al que va, si es departamento.' },
-        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Omitilo si no lo sabés.' },
+        tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento. OBLIGATORIO antes de publicar — preguntalo si no lo sabés, igual que en el formulario web.' },
+        piso_origen: { type: 'string', description: 'Piso del que sale — OBLIGATORIO si tipo_origen es departamento (ej "4", "PB", "8 A").' },
+        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
+        tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento. OBLIGATORIO antes de publicar, mismo criterio que tipo_origen.' },
+        piso_destino: { type: 'string', description: 'Piso al que va — OBLIGATORIO si tipo_destino es departamento.' },
+        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
         comparar_niveles: { type: 'boolean', description: 'true si el asesor pidió que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para poder comparar precio por operador, en vez de uno solo. No aplica a flete.' },
+        confirmado: { type: 'boolean', description: 'Dejalo en false u omitilo la primera vez que llamás con estos datos: la herramienta te va a devolver un resumen (campo "resumen") para mostrarle al asesor TAL CUAL, sin publicar nada todavía. Solo poné true cuando el asesor ya vio ese resumen y confirmó explícitamente que está todo bien — ahí sí se publica de verdad y sale a mudanceros reales.' },
       },
       required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha'],
     },
@@ -1508,6 +1510,20 @@ async function cargarPedidoReferido(input, asesor, fotos) {
   if (!emailValido(email)) return { ok: false, error: 'Necesito un mail válido del cliente para poder cargar el pedido.' };
   if (!input.nombre_cliente || !input.origen || !input.destino || !input.tipo_operacion || !input.fecha) {
     return { ok: false, error: 'Me faltan datos: nombre del cliente, origen, destino, para cuándo es, o si es alquiler/compraventa.' };
+  }
+  // Gate 1: campos críticos para que el pedido sea real (mismo criterio que
+  // el formulario web — ver camposCriticosFaltantes).
+  const faltanCriticos = camposCriticosFaltantes(input);
+  if (faltanCriticos.length) {
+    return { ok: false, error: `Antes de seguir, preguntale al asesor: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` };
+  }
+  // Gate 2: confirmación explícita. Sin confirmado:true se devuelve el
+  // resumen y no se publica nada todavía — mismo patrón que crearPedido.
+  if (!input.confirmado) {
+    return {
+      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input),
+      nota: 'Mostrale ESTE resumen al asesor tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.',
+    };
   }
   // Km por ruta (Google) — mismo cálculo que ya usa crearPedido para el
   // cliente directo, así TODO pedido (venga por acá o por la web) tiene la
@@ -1640,11 +1656,15 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv, textoActual) 
     if (name === 'cargar_pedido_referido') {
       const fotosConv = Array.isArray(conv.fotos) ? conv.fotos : [];
       const resultado = await cargarPedidoReferido(input, asesor, fotosConv);
-      if (resultado.ok) conv.fotos = []; // mismo patrón que crear_pedido: se consumen al publicar
+      // pendienteConfirmar: todavía no se publicó nada (falta que el asesor
+      // confirme el resumen) — no tocar fotos ni avisar urgente hasta que
+      // se vuelva a llamar con confirmado:true y esto sea false/undefined.
+      const yaPublicado = resultado.ok && !resultado.pendienteConfirmar;
+      if (yaPublicado) conv.fotos = []; // mismo patrón que crear_pedido: se consumen al publicar
       // Urgente: además de publicar el pedido normal, avisamos al equipo YA
       // (mismo mecanismo que usa crear_pedido con clientes directos) para que
       // se ocupen ellos en vez de esperar el flujo normal de 24hs hábiles.
-      if (resultado.ok && input && input.urgente) {
+      if (yaPublicado && input && input.urgente) {
         try {
           const detalleOp = input.tipo_operacion === 'compraventa' ? 'compraventa' : 'alquiler';
           const motivoUrg = `URGENTE: pedido referido por asesor ${nombre || asesor.codigo} — ${detalleOp}, ${input.tipo === 'flete' ? 'flete' : 'mudanza'} de ${input.origen} a ${input.destino}. Cliente: ${input.nombre_cliente} (${input.email_cliente}${input.whatsapp_cliente ? ', WhatsApp ' + input.whatsapp_cliente : ''}). Pedido ${resultado.id}.`;
@@ -1983,7 +2003,66 @@ async function avisarMudanceroFotosOTexto(pedido, motivo) {
   }
 }
 
+// Mismos campos obligatorios que exige el formulario web antes de dejar
+// publicar (ver pdValidar() en index.html): tipo de lugar (casa/depto)
+// siempre, piso solo si es departamento. Ascensor queda afuera a propósito
+// — en la web tampoco bloquea el envío, es una característica más, no un
+// dato crítico. Compartido entre crear_pedido (cliente) y
+// cargar_pedido_referido (asesor): los dos usan los mismos nombres de campo.
+function camposCriticosFaltantes(input) {
+  const falta = [];
+  const tOrigen = String((input && input.tipo_origen) || '').toLowerCase();
+  const tDestino = String((input && input.tipo_destino) || '').toLowerCase();
+  if (!tOrigen) falta.push('si el origen es casa o departamento');
+  else if (tOrigen === 'departamento' && !String(input.piso_origen || '').trim()) falta.push('el piso del origen');
+  if (!tDestino) falta.push('si el destino es casa o departamento');
+  else if (tDestino === 'departamento' && !String(input.piso_destino || '').trim()) falta.push('el piso del destino');
+  return falta;
+}
+
+// Resumen en texto plano de lo que se va a publicar — se le muestra a quien
+// está cargando el pedido (cliente o asesor) para que confirme ANTES de que
+// salga a mudanceros reales. No incluye km/geocoding (eso es para el PDF que
+// ya recibe el mudancero después, acá alcanza con lo que la persona puede
+// chequear a ojo).
+function armarResumenPedido(input) {
+  const lineas = [];
+  lineas.push((input.tipo === 'flete' ? 'Flete' : 'Mudanza') + ': ' + input.origen + ' → ' + input.destino);
+  const hora = input.hora || input.horario || '';
+  lineas.push('Fecha: ' + input.fecha + (hora ? ' a las ' + hora : ''));
+  if (input.tipo_origen) {
+    const asc = input.ascensor_origen === true ? ', con ascensor' : input.ascensor_origen === false ? ', sin ascensor' : '';
+    lineas.push('Origen: ' + input.tipo_origen + (input.piso_origen ? ', piso ' + input.piso_origen : '') + asc);
+  }
+  if (input.tipo_destino) {
+    const asc = input.ascensor_destino === true ? ', con ascensor' : input.ascensor_destino === false ? ', sin ascensor' : '';
+    lineas.push('Destino: ' + input.tipo_destino + (input.piso_destino ? ', piso ' + input.piso_destino : '') + asc);
+  }
+  if (input.nivel) lineas.push('Nivel de servicio: ' + input.nivel);
+  if (input.ambientes) lineas.push('Ambientes: ' + input.ambientes);
+  if (input.detalles) lineas.push('Detalle: ' + input.detalles);
+  if (input.urgente) lineas.push('⚡ Urgente');
+  return lineas.join('\n');
+}
+
 async function crearPedido(input, waId, ubicaciones, fotos) {
+  // Gate 1: campos críticos para que el pedido sea real (ver arriba). Sin
+  // esto, nada se crea todavía.
+  const faltanCriticos = camposCriticosFaltantes(input);
+  if (faltanCriticos.length) {
+    return { ok: false, faltanCriticos, nota: `Antes de seguir, preguntale al cliente: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` };
+  }
+  // Gate 2: confirmación explícita. La primera vez que se llega hasta acá
+  // (sin confirmado:true) se devuelve el resumen y NO se publica nada — el
+  // pedido recién se crea cuando esta misma función se vuelve a llamar con
+  // los mismos datos más confirmado:true, después de que la persona lo vio
+  // y dijo que sí.
+  if (!input.confirmado) {
+    return {
+      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input),
+      nota: 'Mostrale ESTE resumen al cliente tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.',
+    };
+  }
   const id = nuevoId();
   const ahora = new Date();
   const nombre = input.nombre || '';
@@ -2130,7 +2209,7 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
   // TODOS los mudanceros (con notificarMudanceros de la web, que sí exige aprobado)
   // se prende aparte cuando vayas a vivo.
   await notificarMudanceroTest(pedido);
-  return pedido;
+  return { ok: true, pendienteConfirmar: false, pedido };
 }
 
 // ------------------------------------------------------------------
@@ -2698,7 +2777,11 @@ async function calificarMudanceroCliente(waId, estrellas, comentario) {
 async function ejecutarTool(name, input, waId, conv, textoActual) {
   try {
     if (name === 'crear_pedido') {
-      const pedido = await crearPedido(input, waId, conv.ubicaciones, conv.fotos);
+      const resultado = await crearPedido(input, waId, conv.ubicaciones, conv.fotos);
+      // Todavía no se creó nada: faltan campos críticos, o falta que la
+      // persona confirme el resumen — devolvemos tal cual, sin tocar fotos/ubicaciones.
+      if (!resultado.ok || resultado.pendienteConfirmar) return JSON.stringify(resultado);
+      const pedido = resultado.pedido;
       // Limpiar fotos/ubicaciones para que el PRÓXIMO pedido no arrastre las de este.
       conv.fotos = [];
       conv.ubicaciones = [];
