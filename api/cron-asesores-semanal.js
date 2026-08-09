@@ -216,7 +216,7 @@ var VARIANTE_ANUNCIO = {
   bullets: [
     'Si tu cliente prefiere resolverlo por WhatsApp en vez del formulario, Emi ya reconoce que viene de tu link y el pedido le queda atribuido a vos igual — misma comisión, mismo regalo.',
     'Antes de publicar, Emi le muestra al cliente el PDF del pedido y le pregunta si está todo bien — llegan más precisos al mudancero, con menos sorpresas el día de la mudanza.',
-    'Si tu cliente escribe en otro idioma, Emi lo traduce antes de que le llegue al mudancero.'
+    'Si tu cliente es extranjero y te escribe en otro idioma, Emi lo traduce antes de que le llegue al mudancero.'
   ],
   cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
 };
