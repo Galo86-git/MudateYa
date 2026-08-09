@@ -204,6 +204,25 @@ var VARIANTES = [
   }
 ];
 
+// ── Anuncio de producto: reemplaza la rotación UNA sola semana (ver
+// SEMANA_ANUNCIO abajo). No es parte del ciclo de 5 — es un aviso puntual de
+// mejoras nuevas. Se puede borrar este bloque (y la constante) después de
+// que salga; si algún año se repite la misma semana ISO no importa, ya no
+// va a ser noticia.
+var VARIANTE_ANUNCIO = {
+  titulo: 'Novedades para vos, {nombre} 📣',
+  lead: 'Esta semana metimos tres mejoras en Emi que te pueden servir directo — sin que tengas que cambiar nada de cómo laburás hoy.',
+  bulletsLabel: 'Lo que sumamos:',
+  bullets: [
+    'Si tu cliente prefiere resolverlo por WhatsApp en vez del formulario, Emi ya reconoce que viene de tu link y el pedido le queda atribuido a vos igual — misma comisión, mismo regalo.',
+    'Antes de publicar, Emi le muestra al cliente el PDF del pedido y le pregunta si está todo bien — llegan más precisos al mudancero, con menos sorpresas el día de la mudanza.',
+    'Si tu cliente escribe en otro idioma, Emi lo traduce antes de que le llegue al mudancero.'
+  ],
+  cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
+};
+// ISO semana del lunes 2026-08-10 (calculado con numeroSemanaISO más abajo).
+var SEMANA_ANUNCIO = 33;
+
 // Elige variante por número de semana ISO (misma semana → misma variante para
 // todos los asesores; rota sola cada lunes, vuelve a la 1 después de la 5).
 function numeroSemanaISO(d) {
@@ -217,6 +236,7 @@ function varianteSemana() {
   var ahora = new Date();
   var ar = new Date(ahora.getTime() - 180 * 60 * 1000); // hora Argentina (UTC-3 fijo)
   var semana = numeroSemanaISO(ar);
+  if (semana === SEMANA_ANUNCIO) return VARIANTE_ANUNCIO;
   return VARIANTES[semana % VARIANTES.length];
 }
 
