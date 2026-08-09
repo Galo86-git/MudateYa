@@ -1987,7 +1987,7 @@
           <textarea id="pd-comentario" rows="2" placeholder="Ej: piano, caja fuerte, mueble pesado, mascota grande, horarios especiales..."
             style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--r);font-family:'Inter',sans-serif;font-size:13px;outline:none;resize:vertical;line-height:1.5;box-sizing:border-box;background:#fff"></textarea>
 
-          <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;font-family:var(--mono)">¿Querés agregar fotos? (opcional)</div>
+          <div id="pd-fotos-label" style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;font-family:var(--mono)">¿Querés agregar fotos? (opcional)</div>
           <div id="pd-fotos-wrap" style="border:2px dashed var(--border);border-radius:var(--r);padding:12px;text-align:center;cursor:pointer;background:#fff;transition:all .2s"
             onclick="document.getElementById('pd-fotos-input').click()">
             <div style="font-size:20px;margin-bottom:2px">📷</div>
@@ -3126,6 +3126,9 @@
     var co = document.getElementById('pd-comentario'); if (co) co.value = '';
     var grid = document.getElementById('pd-fotos-grid'); if (grid) grid.innerHTML = '';
     var txtF = document.getElementById('pd-fotos-text'); if (txtF) txtF.textContent = 'Subir fotos';
+    // Flete: la foto pasa a ser obligatoria (se lo aclaramos en la etiqueta)
+    var lblF = document.getElementById('pd-fotos-label');
+    if (lblF) lblF.textContent = (_busqueda.tipo === 'flete') ? '¿Qué hay que fletar? Subí una foto (obligatorio)' : '¿Querés agregar fotos? (opcional)';
     // Comparar los 3 niveles: solo tiene sentido para mudanza (no para flete, que es un solo precio)
     var cmpNiv = document.getElementById('pd-comparar-niveles'); if (cmpNiv) cmpNiv.checked = false;
     var cmpNivWrap = document.getElementById('pd-comparar-niveles-wrap');
@@ -3187,9 +3190,22 @@
       var pdd = (document.getElementById('pd-piso-destino').value || '').trim();
       if (!pdd) ok = false;
     }
+    // Flete: al menos 1 foto obligatoria (y ninguna subida pendiente) — así el
+    // fletero cotiza sabiendo qué hay que llevar. En mudanza sigue opcional.
+    var faltaFoto = false;
+    if (ok && _busqueda.tipo === 'flete') {
+      var fotosListas = _pdFotosUrls.every(function(u){ return u !== null; });
+      var tieneFoto = _pdFotosUrls.filter(Boolean).length > 0;
+      if (!fotosListas || !tieneFoto) { ok = false; faltaFoto = true; }
+    }
     btn.disabled = !ok;
     btn.style.opacity = ok ? '1' : '.5';
-    if (msg) msg.style.display = ok ? 'none' : '';
+    if (msg) {
+      msg.textContent = faltaFoto
+        ? 'Subí al menos 1 foto de lo que hay que fletar para poder cotizarte.'
+        : 'Completá el tipo de lugar (origen y destino). Si es depto, también el piso.';
+      msg.style.display = ok ? 'none' : '';
+    }
   }
 
   function pdOnToggle(lado, opId) {
@@ -3224,7 +3240,6 @@
       return;
     }
     var grid = document.getElementById('pd-fotos-grid');
-    var btn  = document.getElementById('pd-btn-enviar');
     Array.from(input.files).forEach(function(file) {
       if (file.size > 5 * 1024 * 1024) {
         alert('Una de las fotos pesa más de 5MB.');
@@ -3244,7 +3259,7 @@
         wrap.appendChild(ov);
         grid.appendChild(wrap);
 
-        if (btn) btn.disabled = true;
+        pdValidar(); // hay una subida en curso: revalida (bloquea el botón mientras tanto)
         var idx = _pdFotosUrls.length;
         _pdFotosUrls.push(null);
         pdSubirFotoBlob(file, 'foto-' + idx)
@@ -3263,14 +3278,16 @@
               if (_pdFotosUrls.filter(Boolean).length === 0) {
                 document.getElementById('pd-fotos-text').textContent = 'Subir fotos';
               }
+              pdValidar(); // si era la última foto y es flete, vuelve a bloquear el botón
             };
             wrap.appendChild(x);
             document.getElementById('pd-fotos-text').textContent = _pdFotosUrls.filter(Boolean).length + ' foto(s) cargada(s) ✓';
-            if (btn && _pdFotosUrls.every(function(u){ return u !== null; })) btn.disabled = false;
+            pdValidar();
           })
           .catch(function() {
             ov.innerHTML = '<span style="color:#fff;font-size:18px">⚠</span>';
-            if (btn) btn.disabled = false;
+            _pdFotosUrls[idx] = null;
+            pdValidar();
           });
       };
       reader.readAsDataURL(file);
