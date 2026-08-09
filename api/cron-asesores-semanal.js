@@ -156,76 +156,33 @@ async function recolectarDestinatarios() {
   return out;
 }
 
-// ── VARIANTES semanales (rotan por número de semana ISO, ver varianteSemana) ──
-// {nombre} se reemplaza por el primer nombre del asesor. cierreIndep/cierre:
-// mismo patrón que antes (independientes tiene su propio cierre por el tema
-// regalo vs. comisión). emiTitulo/emiTexto opcionales, caen al default si no
+// ── Contenido semanal: se revisa y se carga a mano, semana por semana,
+// junto con el usuario — no hay rotación automática de variantes pre-
+// escritas (se sacó a propósito: se prefiere revisar antes de mandar cada
+// vez). {nombre} se reemplaza por el primer nombre del asesor. cierreIndep/
+// cierre: independientes tiene su propio cierre por el tema regalo vs.
+// comisión (opcional). emiTitulo/emiTexto opcionales, caen al default si no
 // vienen (ver bodyHtml).
-var VARIANTES = [
-  { // 1. Timing / urgencia
-    titulo: '¡Arrancá la semana con todo, {nombre}! 🔑',
-    lead: 'Todo cliente que alquila o compra con vos se va a mudar tarde o temprano — la diferencia la hace CUÁNDO se lo proponés. Antes de la firma, mientras todavía sos "la persona que le resolvió todo", es el mejor momento: se lo ofrecés como un servicio más tuyo, no como una venta aparte.',
-    bulletsLabel: 'Este lunes, preguntate:',
-    bullets: ['¿Tengo alguna operación por cerrar esta semana?', '¿Ya le mencioné a ese cliente que también le resuelvo la mudanza?', '¿Tengo mi link a mano para pasárselo apenas firme?'],
-    cierre: 'Es gratis para vos y para tu cliente — vos quedás como el que pensó en todo.',
-    cierreIndep: 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — vos quedás como el que pensó en todo.'
-  },
-  { // 2. Prueba social
-    titulo: 'Cada vez más asesores lo suman al servicio, {nombre}',
-    lead: 'No es un anuncio más — para varios ya es parte natural de cerrar una operación: lo mencionan en la firma, sin venderlo como algo aparte. El cliente lo agradece porque le resuelve algo que igual tenía que hacer.',
-    bulletsLabel: 'Este lunes, preguntate:',
-    bullets: ['¿A qué cliente se lo podría mencionar esta semana?', '¿Ya te pasó que un cliente te lo preguntó primero?', '¿Tengo mi link a mano?'],
-    cierre: 'Es gratis para vos y para tu cliente — y queda como parte natural de tu servicio, no como una venta extra.',
-    cierreIndep: 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — y queda como parte natural de tu servicio.'
-  },
-  { // 3. Lo fácil que es con Emi
-    titulo: '{nombre}, ni hace falta que mandes el link',
-    lead: 'Si esta semana tenés un cliente por cerrar, escribile a Emi los datos básicos (nombre, teléfono, de dónde a dónde) y ella carga el pedido atribuido a tu código. El cliente recibe los presupuestos directo, vos no hacés nada más.',
-    bulletsLabel: 'Este lunes, preguntate:',
-    bullets: ['¿Tengo los datos de algún cliente a mano?', '¿Le puedo escribir a Emi ahora mismo?', 'Si preferís, ella también te repite tu link'],
-    cierre: 'Las dos formas suman lo mismo para vos — elegí la que te resulte más cómoda esta semana.',
-    emiTitulo: '📱 Escribile a Emi y listo',
-    emiTexto: 'Nombre, teléfono y de dónde a dónde — ella se encarga del resto, atribuido a tu código.'
-  },
-  { // 4. El beneficio concreto
-    titulo: '{nombre}, ¿tu cliente ya sabe lo que se lleva?',
-    lead: 'En alquiler cobrás tu comisión. En compraventa, tu cliente se lleva un regalo. En los dos casos vos quedás como el que pensó en todo — sin costo para vos ni para él.',
-    bulletsLabel: 'Este lunes, preguntate:',
-    bullets: ['¿Mi cliente sabe que existe esta opción?', '¿Se lo mencioné antes de la firma?', '¿Tengo mi link a mano?'],
-    cierre: 'Cuanto antes se lo menciones, más natural se siente — no como algo de último momento.'
-  },
-  { // 5. Chequeo de cartera
-    titulo: '3 minutos para ordenar tu semana, {nombre}',
-    lead: 'Antes de arrancar con las visitas y las firmas: repasá rápido tu cartera de esta semana y fijate si hay alguien a quien todavía no le ofreciste la mudanza.',
-    bulletsLabel: 'Repasá tu cartera:',
-    bullets: ['¿Qué operaciones tengo para esta semana?', '¿A quién todavía no le mencioné esto?', '¿Está mi link a mano para cuando firme?'],
-    cierre: 'Es gratis para vos y para tu cliente — vos quedás como el que pensó en todo.',
-    cierreIndep: 'En alquiler cobrás tu comisión, en compraventa tu cliente se lleva un regalo — vos quedás como el que pensó en todo.'
+//
+// Se indexa por número de semana ISO (ver numeroSemanaISO más abajo) —
+// agregar acá la entrada de la semana que sigue cuando se defina el
+// contenido con el usuario. Si una semana no tiene entrada, el cron NO
+// manda nada esa semana (ver handler: se frena antes de tocar Redis/Resend).
+var CONTENIDO_SEMANAS = {
+  33: { // lunes 2026-08-10 — anuncio de producto (novedades de Emi)
+    titulo: 'Novedades para vos, {nombre} 📣',
+    lead: 'Esta semana metimos tres mejoras en Emi que te pueden servir directo — sin que tengas que cambiar nada de cómo laburás hoy.',
+    bulletsLabel: 'Lo que sumamos:',
+    bullets: [
+      'Si tu cliente prefiere resolverlo por WhatsApp en vez del formulario, Emi ya reconoce que viene de tu link y el pedido le queda atribuido a vos igual — misma comisión, mismo regalo.',
+      'Antes de publicar, Emi le muestra al cliente el PDF del pedido y le pregunta si está todo bien — llegan más precisos al mudancero, con menos sorpresas el día de la mudanza.',
+      'Si tu cliente no habla español, no hay drama — Emi traduce todo antes de que le llegue al mudancero.',
+      'Recordá que Emi también recibe fotos y audios — tu cliente no necesita escribir todo, le puede mandar una nota de voz contándole y listo.'
+    ],
+    cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   }
-];
-
-// ── Anuncio de producto: reemplaza la rotación UNA sola semana (ver
-// SEMANA_ANUNCIO abajo). No es parte del ciclo de 5 — es un aviso puntual de
-// mejoras nuevas. Se puede borrar este bloque (y la constante) después de
-// que salga; si algún año se repite la misma semana ISO no importa, ya no
-// va a ser noticia.
-var VARIANTE_ANUNCIO = {
-  titulo: 'Novedades para vos, {nombre} 📣',
-  lead: 'Esta semana metimos tres mejoras en Emi que te pueden servir directo — sin que tengas que cambiar nada de cómo laburás hoy.',
-  bulletsLabel: 'Lo que sumamos:',
-  bullets: [
-    'Si tu cliente prefiere resolverlo por WhatsApp en vez del formulario, Emi ya reconoce que viene de tu link y el pedido le queda atribuido a vos igual — misma comisión, mismo regalo.',
-    'Antes de publicar, Emi le muestra al cliente el PDF del pedido y le pregunta si está todo bien — llegan más precisos al mudancero, con menos sorpresas el día de la mudanza.',
-    'Si tu cliente es extranjero y te escribe en otro idioma, Emi lo traduce antes de que le llegue al mudancero.',
-    'Recordá que Emi también recibe fotos y audios — tu cliente no necesita escribir todo, le puede mandar una nota de voz contándole y listo.'
-  ],
-  cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
 };
-// ISO semana del lunes 2026-08-10 (calculado con numeroSemanaISO más abajo).
-var SEMANA_ANUNCIO = 33;
 
-// Elige variante por número de semana ISO (misma semana → misma variante para
-// todos los asesores; rota sola cada lunes, vuelve a la 1 después de la 5).
 function numeroSemanaISO(d) {
   var fecha = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   var dow = fecha.getUTCDay() || 7;
@@ -233,12 +190,13 @@ function numeroSemanaISO(d) {
   var inicioAno = new Date(Date.UTC(fecha.getUTCFullYear(), 0, 1));
   return Math.ceil((((fecha - inicioAno) / 86400000) + 1) / 7);
 }
+// Devuelve el contenido cargado para la semana actual, o null si todavía no
+// se definió nada — el handler tiene que chequear esto antes de mandar.
 function varianteSemana() {
   var ahora = new Date();
   var ar = new Date(ahora.getTime() - 180 * 60 * 1000); // hora Argentina (UTC-3 fijo)
   var semana = numeroSemanaISO(ar);
-  if (semana === SEMANA_ANUNCIO) return VARIANTE_ANUNCIO;
-  return VARIANTES[semana % VARIANTES.length];
+  return CONTENIDO_SEMANAS[semana] || null;
 }
 
 // ── PLANTILLA DEL EMAIL ──
@@ -247,6 +205,7 @@ function varianteSemana() {
 function emailRecordatorio(nombre, ctaHref, canal) {
   var primerNombre = ((nombre || '').trim().split(' ')[0]) || 'Hola';
   var v = varianteSemana();
+  if (!v) return null; // sin contenido cargado para esta semana — el caller decide qué hacer
   var esIndep = canal && canal.canalNombre === 'Asesores independientes';
   return {
     subject: v.titulo.replace('{nombre}', primerNombre).replace(/\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, ' ').trim(),
@@ -301,7 +260,7 @@ function bodyHtml(p) {
         '<a href="https://www.instagram.com/mudateya.ar/" style="color:#003580;font-weight:700;font-size:14px;text-decoration:none">@mudateya.ar</a>' +
       '</div>' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">' +
-        'Recibís este recordatorio porque sos Asesor de MudateYa. ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
+        'Recibís este recordatorio porque sos asesor' + (p.canalNombre ? ' de ' + p.canalNombre : '') + '. ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
       '</p>' +
     '</div>' +
   '</div>';
@@ -331,6 +290,15 @@ module.exports = async function handler(req, res) {
   var testTo = req.query && req.query.test ? String(req.query.test).trim() : '';
 
   try {
+    // ── SIN CONTENIDO CARGADO PARA ESTA SEMANA: no manda nada, ni de prueba.
+    // Se revisa y se agrega a CONTENIDO_SEMANAS junto con el usuario antes de
+    // cada envío — no hay contenido por defecto que salga solo. No consume
+    // la marca de idempotencia (así, si más tarde en la semana se carga el
+    // contenido y se dispara a mano, todavía puede mandar).
+    if (!varianteSemana()) {
+      return res.status(200).json({ ok: true, skipped: true, reason: 'sin-contenido-cargado-esta-semana' });
+    }
+
     // ── MODO TEST: mandar una sola muestra y cortar ──
     if (testTo) {
       if (!validEmail(testTo)) return res.status(400).json({ error: 'Email de test inválido' });
