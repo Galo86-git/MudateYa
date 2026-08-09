@@ -533,11 +533,13 @@ FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de est
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
 la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
-HORA: cuando el cliente te diga a qué hora arranca, pasala en el campo *hora* como "HH:MM". Con eso el recordatorio de la víspera le llega exactamente 24 horas antes de su horario, en vez de a una hora genérica del día.
+HORA: OBLIGATORIA antes de publicar — preguntala si no la tenés ("¿más o menos a qué hora?"). Pasala en el campo *hora* como "HH:MM". Con eso el recordatorio de la víspera le llega exactamente 24 horas antes de su horario, en vez de a una hora genérica del día.
+
+QUÉ HAY QUE MUDAR (campo *detalles*): OBLIGATORIO. Pedíselo con onda, explicando el motivo — algo como "contame brevemente qué hay que mudar, así el mudancero cotiza mejor y no se lleva sorpresas" — y ofrecele mandarlo por audio si le resulta más cómodo, vos lo transcribís igual.
 
 FECHA: al crear el pedido, la fecha va SIEMPRE como YYYY-MM-DD. Tenés la fecha de hoy en contexto: si el cliente dice "mañana", "el viernes" o "el 15", resolvelo vos y pasá la fecha real. Guardar "mañana" como texto deja el pedido sin fecha utilizable — no se puede saber después cuándo es, ni recordárselo la víspera.
 
-PISO Y ASCENSOR: ya los venís preguntando en la charla — ahora además pasalos en los campos (*tipo_origen*, *piso_origen*, *ascensor_origen* y los tres de destino). Mencionarlos en los detalles NO alcanza: si no van en esos campos, el mudancero ve "No indicado", cotiza como si fuera planta baja, y el día de la mudanza aparece la escalera. Es de lo que más mueve el precio. tipo_origen y tipo_destino (casa o depto) son OBLIGATORIOS, y el piso es obligatorio si es depto — si crear_pedido te dice que falta alguno, pedíselo al cliente con buena onda, no como un trámite ("me falta un dato: ¿el depto de destino tiene ascensor... digo, en qué piso está? así el mudancero no se lleva una sorpresa el día de la mudanza").
+PISO Y ASCENSOR: ya los venís preguntando en la charla — ahora además pasalos en los campos (*tipo_origen*, *piso_origen*, *ascensor_origen* y los tres de destino). Mencionarlos en los detalles NO alcanza: si no van en esos campos, el mudancero ve "No indicado", cotiza como si fuera planta baja, y el día de la mudanza aparece la escalera. Es de lo que más mueve el precio. tipo_origen y tipo_destino (casa o depto) son OBLIGATORIOS siempre, y si es depto TAMBIÉN son obligatorios el piso y si tiene ascensor — si crear_pedido te dice que falta alguno, pedíselo al cliente con buena onda, no como un trámite ("me falta un dato: el depto de destino, ¿en qué piso está y tiene ascensor? así el mudancero no se lleva una sorpresa el día de la mudanza").
 
 RESUMEN Y CONFIRMACIÓN ANTES DE PUBLICAR: cuando ya tengas todo, crear_pedido (sin confirmado) te devuelve un PDF con el detalle — mandaselo tal cual llegó y preguntale con onda si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo a los mudanceros. Si el cliente todavía te viene contando todo de a poquito por texto, es un buen momento para ofrecerle el audio: "si querés, mandame un audio contándome todo junto y te lo armo yo de una — más rápido para los dos". La idea es que TODO el proceso (juntar los datos + mostrarle el resumen + que confirme) no tarde más de 5 minutos si te da un audio bien contado. Recién cuando diga que sí, volvés a llamar a crear_pedido con los mismos datos más confirmado:true.
 
@@ -685,7 +687,7 @@ PODÉS HACER ESTO POR ACÁ:
 
 APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere su link?, ¿quiere saber cómo van sus clientes?, ¿tiene un cliente para cargar ahora?, ¿se quiere mudar él?, ¿tiene un reclamo/problema? Andá directo a eso.
 
-SI TIENE UN CLIENTE PARA CARGAR (cargar_pedido_referido): esto es una ALTERNATIVA a pasarle el link — en vez de que el asesor reenvíe el link y el cliente publique por su cuenta, el asesor te da los datos y vos publicás el pedido ya atribuido a él. Pedile, en orden: nombre del cliente, si la operación es alquiler o compraventa, origen y destino de la mudanza, PARA CUÁNDO es (obligatorio: sin fecha el mudancero no puede cotizar bien ni saber si tiene que apurarse), si el origen/destino es casa o depto (y el piso si es depto), y el MAIL del cliente (imprescindible: ahí le llegan los presupuestos — sin mail no se puede cargar). El WhatsApp del cliente es opcional pero recomendalo ("¿tenés también el WhatsApp? así tu cliente puede recibir avisos ahí también"). Esta herramienta va en DOS PASOS — llamala primero sin confirmado: te va a decir qué falta o te va a devolver un resumen para mostrarle al asesor y preguntarle si está todo bien o quiere aclarar algo más (por texto o audio). Recién con su OK explícito la volvés a llamar con confirmado:true.
+SI TIENE UN CLIENTE PARA CARGAR (cargar_pedido_referido): esto es una ALTERNATIVA a pasarle el link — en vez de que el asesor reenvíe el link y el cliente publique por su cuenta, el asesor te da los datos y vos publicás el pedido ya atribuido a él. Pedile, en orden: nombre del cliente, si la operación es alquiler o compraventa, origen y destino de la mudanza, PARA CUÁNDO es y A QUÉ HORA (obligatorio: sin eso el mudancero no puede cotizar bien ni saber si tiene que apurarse), si el origen/destino es casa o depto (y el piso y si tiene ascensor, si es depto), una descripción breve de qué hay que mudar (obligatorio, puede ser por audio — "así el mudancero cotiza mejor"), y el MAIL del cliente (imprescindible: ahí le llegan los presupuestos — sin mail no se puede cargar). El WhatsApp del cliente es opcional pero recomendalo ("¿tenés también el WhatsApp? así tu cliente puede recibir avisos ahí también"). Esta herramienta va en DOS PASOS — llamala primero sin confirmado: te va a decir qué falta o te va a devolver un resumen para mostrarle al asesor y preguntarle si está todo bien o quiere aclarar algo más (por texto o audio). Recién con su OK explícito la volvés a llamar con confirmado:true.
 
 Si es hoy, mañana, o en 1-2 días, marcá urgente:true — igual se publica normal, pero ADEMÁS avisamos al equipo al toque para que se ocupen ellos de conseguir un mudancero rápido, sin esperar el flujo normal de 24hs hábiles, y el pedido se destaca como urgente para los mudanceros de la zona. En ese caso pedile también la hora aproximada si la sabe (campo horario), y contale al asesor que el equipo se contacta directo a la brevedad.
 
@@ -776,23 +778,23 @@ const tools = [
         origen: { type: 'string' },
         destino: { type: 'string' },
         fecha: { type: 'string', description: 'Fecha de la mudanza en formato YYYY-MM-DD (ej "2026-08-07"). Convertí vos lo que diga el cliente: si dice "mañana" o "el viernes", resolvelo contra la fecha de hoy que tenés en contexto y pasá la fecha real. NUNCA mandes "mañana" ni "7/8" como texto: se guarda tal cual y despues no hay forma de saber cuando es.' },
-        hora: { type: 'string', description: 'Hora a la que arranca la mudanza, formato 24h "HH:MM" (ej "09:00"). Ya se la venís preguntando en la charla — pasala acá. Si no la definió todavía, omitila.' },
-        detalles: { type: 'string' },
+        hora: { type: 'string', description: 'OBLIGATORIO. Hora a la que arranca la mudanza, formato 24h "HH:MM" (ej "09:00"). Preguntala si no la tenés — con eso el recordatorio de la víspera le llega justo 24hs antes de su horario real, no a una hora genérica.' },
+        detalles: { type: 'string', description: 'OBLIGATORIO. Descripción breve de todo lo que hay que mudar y cualquier particularidad (muebles grandes, electro, cajas, algo delicado). Pedísela con onda explicando el motivo: "contame brevemente qué hay que mudar, así el mudancero tiene con qué cotizar mejor" — y ofrecele mandarlo por audio si le resulta más fácil, vos lo transcribís igual.' },
         nombre: { type: 'string' },
         urgente: { type: 'boolean', description: 'true si es hoy/mañana o emergencia' },
         nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado de muebles) o llave (+ ubicación de muebles y cajas en destino). Si no lo dijo, omitilo. No aplica a flete.' },
         tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento. OBLIGATORIO antes de publicar — preguntalo si no lo sabés, igual que en el formulario web.' },
         piso_origen: { type: 'string', description: 'Piso del que sale — OBLIGATORIO si tipo_origen es departamento (ej "4", "PB", "8 A").' },
-        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si hay que subir/bajar por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
+        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si hay que subir/bajar por escalera. OBLIGATORIO si tipo_origen es departamento — más estricto que el formulario web a propósito, para que el mudancero cotice bien desde el primer mensaje.' },
         tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento. OBLIGATORIO antes de publicar, mismo criterio que tipo_origen.' },
         piso_destino: { type: 'string', description: 'Piso al que va — OBLIGATORIO si tipo_destino es departamento.' },
-        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
+        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. OBLIGATORIO si tipo_destino es departamento, mismo criterio que ascensor_origen.' },
         comparar_niveles: { type: 'boolean', description: 'true si el cliente quiere que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para comparar precio por operador, en vez de uno solo. No aplica a flete.' },
         confirmado: { type: 'boolean', description: 'Dejalo en false u omitilo la primera vez que llamás con estos datos: la herramienta te va a devolver un resumen (campo "resumen") para mostrarle al cliente TAL CUAL, sin publicar nada todavía. Solo poné true cuando el cliente ya vio ese resumen y confirmó explícitamente que está todo bien — ahí sí se publica de verdad y sale a mudanceros reales.' },
         cita_textual: { type: 'string', description: 'OBLIGATORIO cuando confirmado:true. Copiá LITERAL (en el idioma que sea, palabra por palabra, sin parafrasear) la frase real donde el cliente confirmó que está todo bien (su "sí, dale" o equivalente). Si no hay una confirmación real y textual, no pongas confirmado:true.' },
         tipo_operacion: { type: 'string', enum: ['alquiler', 'compraventa'], description: 'Solo si el contexto te dice que este cliente VINO POR EL LINK DE UN ASESOR: preguntale si su mudanza es por un alquiler o una compra-venta (define si el asesor cobra comisión o si el cliente recibe un regalo) y pasalo acá antes de publicar. Si no vino por un link de asesor, omitilo.' },
       },
-      required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
+      required: ['tipo', 'origen', 'destino', 'fecha', 'hora', 'detalles'],
     },
   },
   {
@@ -1406,22 +1408,22 @@ const asesorTools = [
         origen: { type: 'string' },
         destino: { type: 'string' },
         fecha: { type: 'string', description: 'Para cuándo es la mudanza, en formato YYYY-MM-DD (ej "2026-08-07"). Obligatorio: los mudanceros necesitan saber cuándo para cotizar y para saber si tienen que apurarse. Si el asesor dice "mañana" o "el viernes", resolvelo vos contra la fecha de hoy y pasá la fecha real — NUNCA el texto relativo.' },
-        horario: { type: 'string', description: 'Hora aproximada, si la sabés (formato HH:MM). Opcional pero recomendado, sobre todo si es urgente.' },
+        horario: { type: 'string', description: 'OBLIGATORIO. Hora a la que arranca, formato HH:MM. Preguntala si no la tenés — con eso el recordatorio de la víspera le llega justo 24hs antes del horario real.' },
         ambientes: { type: 'string', description: 'Cantidad de ambientes, si el cliente la mencionó (opcional)' },
-        detalles: { type: 'string', description: 'Cualquier detalle extra que haya dado el cliente (opcional)' },
+        detalles: { type: 'string', description: 'OBLIGATORIO. Descripción breve de todo lo que hay que mudar y cualquier particularidad. Pedísela con onda explicando el motivo: "contame brevemente qué hay que mudar, así el mudancero tiene con qué cotizar mejor" — el asesor también puede mandarlo por audio, lo transcribís igual.' },
         urgente: { type: 'boolean', description: 'true si el cliente necesita mudarse hoy, mañana, o en 1-2 días — el pedido queda con ventana corta (3hs) y avisa al equipo al toque, en vez de esperar el flujo normal de 24hs.' },
         nivel: { type: 'string', enum: ['esencial', 'integral', 'llave'], description: 'Nivel de servicio que pidió el cliente del asesor: esencial (vehículo + carga y descarga), integral (+ embalaje y desarmado/armado) o llave (+ ubicación en destino). Si no lo dijo, omitilo. No aplica a flete.' },
         tipo_origen: { type: 'string', enum: ['casa', 'departamento'], description: 'Si sale de una casa o de un departamento. OBLIGATORIO antes de publicar — preguntalo si no lo sabés, igual que en el formulario web.' },
         piso_origen: { type: 'string', description: 'Piso del que sale — OBLIGATORIO si tipo_origen es departamento (ej "4", "PB", "8 A").' },
-        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
+        ascensor_origen: { type: 'boolean', description: 'true si el edificio de origen tiene ascensor, false si es por escalera. OBLIGATORIO si tipo_origen es departamento — más estricto que el formulario web a propósito, para que el mudancero cotice bien desde el primer mensaje.' },
         tipo_destino: { type: 'string', enum: ['casa', 'departamento'], description: 'Si va a una casa o a un departamento. OBLIGATORIO antes de publicar, mismo criterio que tipo_origen.' },
         piso_destino: { type: 'string', description: 'Piso al que va — OBLIGATORIO si tipo_destino es departamento.' },
-        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. Preguntalo si es departamento, pero no bloquea si no lo sabés.' },
+        ascensor_destino: { type: 'boolean', description: 'true si el edificio de destino tiene ascensor, false si es por escalera. OBLIGATORIO si tipo_destino es departamento, mismo criterio que ascensor_origen.' },
         comparar_niveles: { type: 'boolean', description: 'true si el asesor pidió que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para poder comparar precio por operador, en vez de uno solo. No aplica a flete.' },
         confirmado: { type: 'boolean', description: 'Dejalo en false u omitilo la primera vez que llamás con estos datos: la herramienta te va a devolver un resumen (campo "resumen") para mostrarle al asesor TAL CUAL, sin publicar nada todavía. Solo poné true cuando el asesor ya vio ese resumen y confirmó explícitamente que está todo bien — ahí sí se publica de verdad y sale a mudanceros reales.' },
         cita_textual: { type: 'string', description: 'OBLIGATORIO cuando confirmado:true. Copiá LITERAL (en el idioma que sea, palabra por palabra, sin parafrasear) la frase real donde el asesor confirmó que está todo bien (su "sí, dale" o equivalente). Si no hay una confirmación real y textual, no pongas confirmado:true.' },
       },
-      required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha'],
+      required: ['nombre_cliente', 'email_cliente', 'tipo_operacion', 'origen', 'destino', 'fecha', 'horario', 'detalles'],
     },
   },
   {
@@ -2046,20 +2048,28 @@ async function avisarMudanceroFotosOTexto(pedido, motivo) {
   }
 }
 
-// Mismos campos obligatorios que exige el formulario web antes de dejar
-// publicar (ver pdValidar() en index.html): tipo de lugar (casa/depto)
-// siempre, piso solo si es departamento. Ascensor queda afuera a propósito
-// — en la web tampoco bloquea el envío, es una característica más, no un
-// dato crítico. Compartido entre crear_pedido (cliente) y
+// Campos obligatorios antes de publicar — más estrictos que el formulario
+// web a propósito (ver pdValidar() en index.html, que deja ascensor como
+// opcional): acá se decidió pedir también ascensor y una nota mínima, para
+// que el mudancero/fletero tenga con qué cotizar bien desde el primer
+// mensaje, sin ida y vuelta. Compartido entre crear_pedido (cliente) y
 // cargar_pedido_referido (asesor): los dos usan los mismos nombres de campo.
 function camposCriticosFaltantes(input) {
   const falta = [];
   const tOrigen = String((input && input.tipo_origen) || '').toLowerCase();
   const tDestino = String((input && input.tipo_destino) || '').toLowerCase();
   if (!tOrigen) falta.push('si el origen es casa o departamento');
-  else if (tOrigen === 'departamento' && !String(input.piso_origen || '').trim()) falta.push('el piso del origen');
+  else if (tOrigen === 'departamento') {
+    if (!String(input.piso_origen || '').trim()) falta.push('el piso del origen');
+    if (input.ascensor_origen !== true && input.ascensor_origen !== false) falta.push('si el origen tiene ascensor');
+  }
   if (!tDestino) falta.push('si el destino es casa o departamento');
-  else if (tDestino === 'departamento' && !String(input.piso_destino || '').trim()) falta.push('el piso del destino');
+  else if (tDestino === 'departamento') {
+    if (!String(input.piso_destino || '').trim()) falta.push('el piso del destino');
+    if (input.ascensor_destino !== true && input.ascensor_destino !== false) falta.push('si el destino tiene ascensor');
+  }
+  if (!String((input && input.detalles) || '').trim()) falta.push('una descripción breve de lo que hay que mudar (puede ser por texto o audio)');
+  if (!String((input && (input.hora || input.horario)) || '').trim()) falta.push('a qué hora arranca');
   return falta;
 }
 
