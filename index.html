@@ -1084,6 +1084,13 @@
       if (title) title.textContent = 'Cotiz\u00e1 tu mudanza con los mejores de Argentina';
       if (sub)   sub.textContent   = 'Compar\u00e1s precios reales de mudanceros verificados y eleg\u00eds sin compromiso. Public\u00e1 gratis.';
     }
+    // Link de WhatsApp a Emi: el texto precargado cambia seg\u00fan la pesta\u00f1a activa
+    var waLink = document.getElementById('hero-wa-link');
+    if (waLink) {
+      waLink.href = t === 'flete'
+        ? 'https://wa.me/12399462954?text=Hola%2C%20quiero%20cotizar%20un%20flete'
+        : 'https://wa.me/12399462954?text=Hola%2C%20quiero%20cotizar%20mi%20mudanza';
+    }
     // ── Flete NO tiene packs (Esencial/Integral/Llave) → ocultar selector ──
     var esFlete = (t === 'flete');
     // Mobile: barra de pills arriba
@@ -1615,7 +1622,7 @@
 
       <!-- Opción de hacerlo por WhatsApp con Emi, en vez del buscador -->
       <div class="hero-wa">
-        <a href="https://wa.me/12399462954?text=Hola%2C%20quiero%20cotizar%20mi%20mudanza" target="_blank" rel="noopener">
+        <a id="hero-wa-link" href="https://wa.me/12399462954?text=Hola%2C%20quiero%20cotizar%20mi%20mudanza" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="#22C36A" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.47 3.47 1.29 4.94L2 22l5.29-1.39a9.87 9.87 0 0 0 4.75 1.21h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.02c-.24.68-1.38 1.3-1.9 1.34-.49.04-.98.23-3.29-.69-2.78-1.11-4.55-3.93-4.69-4.11-.14-.18-1.12-1.49-1.12-2.84 0-1.35.71-2.01.96-2.28.25-.27.55-.34.73-.34.18 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.15.12.32.02.5-.1.19-.15.3-.29.46-.14.16-.3.36-.43.48-.14.14-.29.29-.13.57.17.28.75 1.25 1.62 2.02 1.12.99 2.05 1.3 2.34 1.44.29.14.46.12.62-.07.17-.19.72-.83.91-1.12.19-.29.38-.24.63-.15.26.1 1.63.77 1.91.91.28.14.47.21.53.33.07.12.07.68-.17 1.36z"/></svg>
           ¿Preferís por WhatsApp? Escribile a Emi →
           <span class="tag">Sin formularios</span>
