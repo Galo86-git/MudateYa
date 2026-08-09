@@ -3199,16 +3199,24 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
 
   // Si el cliente entró por el link de un asesor y le escribió a Emi con la
   // referencia embebida ([ref:{codigo}], ver el link "Escribile a Emi" en
-  // inmobiliaria.html), guardamos a qué asesor atribuir el pedido — una sola
-  // vez, la primera vez que aparece en la charla. Solo aplica a
-  // conversaciones de CLIENTE (no mudancero/asesor/inmobiliaria/fundador).
-  if (!mudancero && !asesor && !inmoContacto && !persona && !conv.refAsesor) {
+  // inmobiliaria.html), guardamos a qué asesor atribuir el pedido. Gana el
+  // ÚLTIMO link que clickeó, no el primero: si ya había uno guardado de una
+  // charla anterior y ahora entra por el link de otro asesor, este lo pisa —
+  // a propósito, es la política elegida (decisión del usuario, no un
+  // descuido). Solo aplica a conversaciones de CLIENTE (no mudancero/asesor/
+  // inmobiliaria/fundador). No atribuye a un asesor dado de baja (activo:false).
+  // codigoRefAntes: para saber más abajo si la referencia CAMBIÓ recién en
+  // este mensaje (así Emi saluda de nuevo aunque no sea el primer mensaje
+  // de la charla — puede pasar a mitad de una relación ya arrancada, ver
+  // política "gana el último" arriba).
+  const codigoRefAntes = conv.refAsesor ? conv.refAsesor.codigo : null;
+  if (!mudancero && !asesor && !inmoContacto && !persona) {
     const refMatch = String(texto || '').match(/\[ref:([A-Za-z0-9_-]+)\]/);
     if (refMatch) {
       try {
         const { buscarAsesorPorCodigo } = require('./cotizaciones');
         const encontrado = typeof buscarAsesorPorCodigo === 'function' ? await buscarAsesorPorCodigo(refMatch[1]) : null;
-        if (encontrado && encontrado.asesor) {
+        if (encontrado && encontrado.asesor && encontrado.asesor.activo !== false) {
           conv.refAsesor = {
             codigo: refMatch[1],
             nombre: encontrado.asesor.nombre || '',
@@ -3218,6 +3226,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       } catch (e) { console.warn('[ref] lookup asesor:', e.message); }
     }
   }
+  const refAsesorCambioAhora = !!(conv.refAsesor && conv.refAsesor.codigo !== codigoRefAntes);
 
   // ── Fotos para un pedido YA ABIERTO (relevamiento remoto) ──────────────────
   // Si el cliente O EL ASESOR (no mudancero) manda fotos y ya tiene un pedido
@@ -3451,9 +3460,12 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       } catch (e) { console.warn('auto-contexto cliente:', e.message); }
 
       // Vino por el link de un asesor (ver arriba, [ref:...]) — saludalo
-      // mencionando quién lo mandó, en el primer mensaje de la charla.
+      // mencionando quién lo mandó. refAsesorCambioAhora (calculado arriba)
+      // es true tanto en el primer mensaje de la charla como si a mitad de
+      // una relación ya arrancada entra por el link de OTRO asesor (política
+      // "gana el último") — en los dos casos corresponde saludar de nuevo.
       if (conv.refAsesor && conv.refAsesor.nombre) {
-        systemDinamico += `\n\nVINO POR EL LINK DE UN ASESOR: este cliente llegó por el link de ${conv.refAsesor.nombre}. Si es tu PRIMER mensaje en esta charla, saludalo mencionándolo con onda ("¡Hola! Venís de parte de ${conv.refAsesor.nombre}, un gusto — ¿en qué te ayudo?") antes de seguir. Si ya te contó algo del pedido en su mismo primer mensaje (ej. ya dijo que se muda, de dónde a dónde), no hace falta el saludo formal aparte: solo mencioná de pasada que ves que viene de parte de ${conv.refAsesor.nombre} y seguí directo con la charla. Antes de publicar (crear_pedido), preguntale si su mudanza es por un alquiler o una compra-venta y pasalo en tipo_operacion — define si ${conv.refAsesor.nombre} cobra comisión o el cliente recibe un regalo, así que no lo omitas. El pedido que termines armando queda atribuido a ${conv.refAsesor.nombre} automáticamente, no hace falta que hagas nada especial para eso más allá de preguntar tipo_operacion.`;
+        systemDinamico += `\n\nVINO POR EL LINK DE UN ASESOR: este cliente está atribuido a ${conv.refAsesor.nombre}. ${refAsesorCambioAhora ? `Esta referencia es NUEVA (recién detectada en este mensaje) — saludalo mencionándolo con onda ("¡Hola! Venís de parte de ${conv.refAsesor.nombre}, un gusto — ¿en qué te ayudo?") antes de seguir, aunque ya hayan hablado antes de otra cosa. Si ya te contó algo del pedido en el mismo mensaje (ej. ya dijo que se muda, de dónde a dónde), no hace falta el saludo formal aparte: solo mencioná de pasada que ves que viene de parte de ${conv.refAsesor.nombre} y seguí directo con la charla.` : `Ya se lo mencionaste antes en esta charla, no hace falta repetirlo de nuevo ahora.`} Antes de publicar (crear_pedido), preguntale si su mudanza es por un alquiler o una compra-venta y pasalo en tipo_operacion — define si ${conv.refAsesor.nombre} cobra comisión o el cliente recibe un regalo, así que no lo omitas. El pedido que termines armando queda atribuido a ${conv.refAsesor.nombre} automáticamente, no hace falta que hagas nada especial para eso más allá de preguntar tipo_operacion.`;
       }
     }
   }
