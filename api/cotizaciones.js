@@ -685,13 +685,33 @@ module.exports = async function handler(req, res) {
   // ── AUTH HELPERS ────────────────────────────────────────────────
   // Acciones que requieren que el email del body/query coincida con
   // el token de sesión guardado en Redis (clienteToken o mudanceroToken)
+  //
+  // BUG ENCONTRADO 2026-08-09: estas dos funciones exigen x-session-token,
+  // que solo existe en el flujo WEB (login por navegador). whatsapp.js llama
+  // a aceptar-ajuste/rechazar-ajuste/calificar/mis-cotizaciones server-to-
+  // server (Emi respondiendo por WhatsApp), sin ese header — esas llamadas
+  // devolvían 401 SIEMPRE, silenciosamente (Emi solo decía "no pude
+  // registrar tu respuesta, probá de nuevo", y el reintento fallaba igual).
+  // Confirmado con un test real antes de tocar esto.
+  //
+  // FIX: mismo mecanismo de confianza servidor-a-servidor que ya usa
+  // registrar-pago más abajo (x-internal-secret contra INTERNAL_API_SECRET)
+  // — así whatsapp.js puede probar que es el backend, no un browser
+  // cualquiera, sin bajar la exigencia de sesión real para la web.
+  function llamadaInternaConfiable() {
+    const secreto = req.headers['x-internal-secret'];
+    const valido = process.env.INTERNAL_API_SECRET;
+    return !!valido && !!secreto && require('./_auth').igualSeguro(secreto, valido);
+  }
   async function verificarSesionCliente(email) {
+    if (llamadaInternaConfiable()) return true;
     const token = req.headers['x-session-token'] || req.query.sessionToken;
     if (!token) return false;
     const tokenGuardado = await getJSON(`session:cliente:${email}`);
     return !!tokenGuardado && require('./_auth').igualSeguro(tokenGuardado, token);
   }
   async function verificarSesionMudancero(email) {
+    if (llamadaInternaConfiable()) return true;
     const token = req.headers['x-session-token'] || req.query.sessionToken;
     if (!token) return false;
     const tokenGuardado = await getJSON(`session:mudancero:${email}`);
@@ -2350,6 +2370,97 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, recordatoriosEnviados: m.ajustePrecio.recordatoriosEnviados });
     }
     // ══ FIN AJUSTE DE PRECIO ═════════════════════════════════════════════
+
+    // ══ REPROGRAMACIÓN DE FECHA ══════════════════════════════════════════
+    // Mismo patrón que AJUSTE DE PRECIO, pero SIMÉTRICA: la puede proponer
+    // el cliente o el mudancero, y responde el otro. A diferencia del ajuste
+    // (una sola vez por mudanza), acá sí se permite volver a proponer después
+    // de un rechazo — coordinar una fecha nueva es más benigno que
+    // renegociar precio, y una propuesta rechazada no debería cerrar la
+    // puerta a ofrecer otra fecha.
+    //
+    // AUTENTICACIÓN A PROPÓSITO POR EMAIL DIRECTO, no verificarSesionCliente/
+    // Mudancero: esto lo dispara Emi por WhatsApp de los dos lados (cliente Y
+    // mudancero), sin sesión de navegador de por medio — un session-token no
+    // existe en ese flujo. (Ver responderAjusteCliente en whatsapp.js, que sí
+    // llama a aceptar-ajuste/rechazar-ajuste — ESOS dos SÍ exigen
+    // verificarSesionCliente y por lo tanto probablemente fallan siempre que
+    // se disparan desde WhatsApp, porque ese fetch no manda x-session-token.
+    // No lo toco acá — queda señalado aparte — pero no repito el mismo error.)
+    if (action === 'proponer-reprogramacion' && req.method === 'POST') {
+      const { mudanzaId, email, rol, nuevaFecha, motivo } = req.body;
+      if (!mudanzaId || !email || !rol || !nuevaFecha) {
+        return res.status(400).json({ error: 'Faltan datos (mudanzaId, email, rol, nuevaFecha)' });
+      }
+      if (rol !== 'cliente' && rol !== 'mudancero') return res.status(400).json({ error: 'rol inválido' });
+      if (isNaN(new Date(nuevaFecha).getTime())) return res.status(400).json({ error: 'Fecha inválida' });
+
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (rol === 'cliente' && m.clienteEmail !== email) return res.status(403).json({ error: 'Sin permiso' });
+      if (rol === 'mudancero' && (!m.cotizacionAceptada || m.cotizacionAceptada.mudanceroEmail !== email)) {
+        return res.status(403).json({ error: 'Sin permiso' });
+      }
+      if (!m.anticipoPagado) return res.status(400).json({ error: 'Solo se puede reprogramar después de que el cliente pagó el anticipo' });
+      if (!['cotizacion_aceptada', 'en_curso'].includes(m.estado)) {
+        return res.status(400).json({ error: 'Esta mudanza no está en un estado que permita reprogramar' });
+      }
+      if (m.reprogramacion && m.reprogramacion.estado === 'pendiente_aprobacion') {
+        return res.status(400).json({ error: 'Ya hay una propuesta de reprogramación esperando respuesta' });
+      }
+
+      m.reprogramacion = {
+        fechaAnterior: m.fecha || null,
+        fechaPropuesta: nuevaFecha,
+        propuestoPor: rol,
+        motivo: motivo ? String(motivo).slice(0, 500) : '',
+        propuestoEn: new Date().toISOString(),
+        estado: 'pendiente_aprobacion',
+        respondidoEn: null,
+      };
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+
+      try { await notificarReprogramacionPropuesta(m); } catch (e) { console.warn('notificarReprogramacionPropuesta:', e.message); }
+
+      return res.status(200).json({ ok: true, reprogramacion: m.reprogramacion });
+    }
+
+    // La parte que NO propuso acepta o rechaza.
+    if (action === 'responder-reprogramacion' && req.method === 'POST') {
+      const { mudanzaId, email, rol, decision } = req.body;
+      if (!mudanzaId || !email || !rol || !decision) return res.status(400).json({ error: 'Faltan datos' });
+      const dec = decision === 'aceptar' ? 'aceptar' : (decision === 'rechazar' ? 'rechazar' : null);
+      if (!dec) return res.status(400).json({ error: 'decision inválida' });
+
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      if (!m.reprogramacion || m.reprogramacion.estado !== 'pendiente_aprobacion') {
+        return res.status(400).json({ error: 'No hay ninguna reprogramación pendiente de respuesta' });
+      }
+      if (rol === m.reprogramacion.propuestoPor) {
+        return res.status(400).json({ error: 'Esta propuesta la hiciste vos — esperá la respuesta de la otra parte' });
+      }
+      if (rol === 'cliente' && m.clienteEmail !== email) return res.status(403).json({ error: 'Sin permiso' });
+      if (rol === 'mudancero' && (!m.cotizacionAceptada || m.cotizacionAceptada.mudanceroEmail !== email)) {
+        return res.status(403).json({ error: 'Sin permiso' });
+      }
+
+      m.reprogramacion.estado = dec === 'aceptar' ? 'aceptada' : 'rechazada';
+      m.reprogramacion.respondidoEn = new Date().toISOString();
+      // Historial completo — queda constancia de cada propuesta resuelta,
+      // no solo la última (a diferencia de ajustePrecio, acá puede haber
+      // varias rondas en la misma mudanza).
+      m.historialReprogramaciones = Array.isArray(m.historialReprogramaciones) ? m.historialReprogramaciones : [];
+      m.historialReprogramaciones.push(Object.assign({}, m.reprogramacion));
+
+      if (dec === 'aceptar') m.fecha = m.reprogramacion.fechaPropuesta;
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+
+      try { await notificarReprogramacionResuelta(m, dec); } catch (e) { console.warn('notificarReprogramacionResuelta:', e.message); }
+
+      return res.status(200).json({ ok: true, fecha: m.fecha, estado: m.reprogramacion.estado });
+    }
+    // ══ FIN REPROGRAMACIÓN DE FECHA ══════════════════════════════════════
 
     if (action === 'calificar' && req.method === 'POST') {
       const { mudanzaId, estrellas, comentario, clienteEmail } = req.body;
@@ -4621,7 +4732,7 @@ async function notificarCliente(mudanza, cotizacion) {
         <div style="background:#EFF6FF;border:1px solid #93C5FD;border-left:4px solid #1A6FFF;border-radius:10px;padding:14px 18px;margin:0 0 20px">
           <div style="font-size:14px;color:#1E40AF;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:6px;font-family:monospace">💡 Precio sujeto a ajuste</div>
           <div style="color:#1E3A8A;font-size:12.5px;line-height:1.55">
-            Si al día de la mudanza hubiera condiciones no previstas (más volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidís si lo aceptás; si rechazás, <strong>recuperás tu anticipo completo</strong>.
+            Si al día de la mudanza hubiera condiciones no previstas y no declaradas en el pedido (más volumen, accesos complicados, piso sin ascensor, etc.), el mudancero puede proponerte un ajuste justificado. Vos decidís si lo aceptás; si rechazás, <strong>la mudanza se cancela ahí mismo y te devolvemos el anticipo completo</strong> (siempre que la información que cargaste al publicar el pedido haya sido correcta).
           </div>
         </div>
         <p style="color:#64748B;font-size:16px;margin-bottom:20px">El detalle completo está adjunto en PDF.</p>
@@ -5988,6 +6099,141 @@ async function notificarClienteMudanzaCancelada(mudanza, refundOk) {
       </div>
     </div>`,
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// EMAILS/WHATSAPP — Reprogramación de fecha
+// ══════════════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Avisa a la parte que NO propuso que hay una fecha nueva esperando respuesta.
+async function notificarReprogramacionPropuesta(mudanza) {
+  const r = mudanza.reprogramacion || {};
+  const cot = mudanza.cotizacionAceptada || {};
+  const esParaCliente = r.propuestoPor === 'mudancero'; // si propuso el mudancero, le avisamos al cliente
+  const quienPropone = esParaCliente ? (cot.mudanceroNombre || 'Tu mudancero') : (mudanza.clienteNombre || 'El cliente');
+  const fechaAnteriorFmt = fmtFechaAR(r.fechaAnterior);
+  const fechaNuevaFmt = fmtFechaAR(r.fechaPropuesta);
+  const motivoTxt = r.motivo ? ` Motivo: "${r.motivo}".` : '';
+
+  if (esParaCliente) {
+    const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+    const texto =
+      `📅 ${quienPropone} propuso cambiar la fecha de tu ${mudanza.tipo || 'mudanza'} del ${fechaAnteriorFmt} al ${fechaNuevaFmt}.${motivoTxt}\n` +
+      `Respondeme si te sirve o no.`;
+    if (mudanza.clienteWA) {
+      try {
+        const { enviarPlantilla } = require('./_plantillas');
+        await enviarPlantilla(mudanza.clienteWA, 'reprogramacion_propuesta',
+          { 1: nomCli, 2: quienPropone, 3: fechaAnteriorFmt, 4: fechaNuevaFmt }, texto);
+      } catch (e) { console.warn('notificarReprogramacionPropuesta WhatsApp cliente:', e.message); }
+    }
+    if (process.env.RESEND_API_KEY && mudanza.clienteEmail) {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+          to: mudanza.clienteEmail,
+          subject: `📅 Propuesta de nueva fecha para tu mudanza — ${fechaNuevaFmt}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#14202B">
+            <p>${esc(quienPropone)} propuso cambiar la fecha de tu ${esc(mudanza.tipo || 'mudanza')} del <strong>${fechaAnteriorFmt}</strong> al <strong>${fechaNuevaFmt}</strong>.${motivoTxt ? ' ' + esc(motivoTxt.trim()) : ''}</p>
+            <p>Escribinos por WhatsApp para aceptar o rechazar.</p>
+            </div>`,
+        });
+      } catch (e) { console.warn('notificarReprogramacionPropuesta email cliente:', e.message); }
+    }
+    return;
+  }
+
+  // Le avisamos al MUDANCERO (propuso el cliente).
+  if (cot.mudanceroTel) {
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      const nomMud = (cot.mudanceroNombre || '').split(' ')[0] || '';
+      const texto =
+        `📅 ${quienPropone} propuso cambiar la fecha de la ${mudanza.tipo || 'mudanza'} (${mudanza.desde || ''} → ${mudanza.hasta || ''}) del ${fechaAnteriorFmt} al ${fechaNuevaFmt}.${motivoTxt}\n` +
+        `Respondeme si te sirve o no.`;
+      await enviarPlantilla(cot.mudanceroTel, 'reprogramacion_propuesta',
+        { 1: nomMud, 2: quienPropone, 3: fechaAnteriorFmt, 4: fechaNuevaFmt }, texto);
+    } catch (e) { console.warn('notificarReprogramacionPropuesta WhatsApp mudancero:', e.message); }
+  }
+  if (process.env.RESEND_API_KEY && cot.mudanceroEmail) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+        to: cot.mudanceroEmail,
+        subject: `📅 Propuesta de nueva fecha — ${fechaNuevaFmt}`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#14202B">
+          <p>${esc(quienPropone)} propuso cambiar la fecha de la mudanza (${esc(mudanza.desde || '')} → ${esc(mudanza.hasta || '')}) del <strong>${fechaAnteriorFmt}</strong> al <strong>${fechaNuevaFmt}</strong>.${motivoTxt ? ' ' + esc(motivoTxt.trim()) : ''}</p>
+          <p>Escribinos por WhatsApp para aceptar o rechazar.</p>
+          </div>`,
+      });
+    } catch (e) { console.warn('notificarReprogramacionPropuesta email mudancero:', e.message); }
+  }
+}
+
+// Avisa el resultado (aceptada/rechazada). Si se aceptó, a los DOS — el
+// cambio de fecha les afecta a ambos por igual. Si se rechazó, solo a quien
+// propuso (el que respondió ya sabe lo que contestó).
+async function notificarReprogramacionResuelta(mudanza, decision) {
+  const r = mudanza.reprogramacion || {};
+  const cot = mudanza.cotizacionAceptada || {};
+  const aceptada = decision === 'aceptar';
+  const fechaNuevaFmt = fmtFechaAR(r.fechaPropuesta);
+  const fechaAnteriorFmt = fmtFechaAR(r.fechaAnterior);
+
+  const destinatarios = aceptada ? ['cliente', 'mudancero'] : [r.propuestoPor];
+
+  for (const rol of destinatarios) {
+    const textoResultado = aceptada
+      ? `✅ Confirmado: la nueva fecha de tu ${mudanza.tipo || 'mudanza'} es el ${fechaNuevaFmt}.`
+      : `❌ La propuesta de cambiar la fecha al ${fechaNuevaFmt} fue rechazada. Sigue el ${fechaAnteriorFmt}.`;
+
+    if (rol === 'cliente') {
+      const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+      if (mudanza.clienteWA) {
+        try {
+          const { enviarPlantilla } = require('./_plantillas');
+          await enviarPlantilla(mudanza.clienteWA, 'reprogramacion_resuelta',
+            { 1: nomCli, 2: aceptada ? 'aceptada' : 'rechazada', 3: fechaNuevaFmt }, `${nomCli}, ${textoResultado}`);
+        } catch (e) { console.warn('notificarReprogramacionResuelta WhatsApp cliente:', e.message); }
+      }
+      if (process.env.RESEND_API_KEY && mudanza.clienteEmail) {
+        try {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          await resend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+            to: mudanza.clienteEmail,
+            subject: `${aceptada ? '✅' : '❌'} Reprogramación ${aceptada ? 'confirmada' : 'rechazada'}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#14202B"><p>${esc(textoResultado)}</p></div>`,
+          });
+        } catch (e) { console.warn('notificarReprogramacionResuelta email cliente:', e.message); }
+      }
+    } else {
+      if (cot.mudanceroTel) {
+        try {
+          const { enviarPlantilla } = require('./_plantillas');
+          const nomMud = (cot.mudanceroNombre || '').split(' ')[0] || '';
+          await enviarPlantilla(cot.mudanceroTel, 'reprogramacion_resuelta',
+            { 1: nomMud, 2: aceptada ? 'aceptada' : 'rechazada', 3: fechaNuevaFmt }, `${nomMud}, ${textoResultado}`);
+        } catch (e) { console.warn('notificarReprogramacionResuelta WhatsApp mudancero:', e.message); }
+      }
+      if (process.env.RESEND_API_KEY && cot.mudanceroEmail) {
+        try {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          await resend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+            to: cot.mudanceroEmail,
+            subject: `${aceptada ? '✅' : '❌'} Reprogramación ${aceptada ? 'confirmada' : 'rechazada'}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#14202B"><p>${esc(textoResultado)}</p></div>`,
+          });
+        } catch (e) { console.warn('notificarReprogramacionResuelta email mudancero:', e.message); }
+      }
+    }
+  }
 }
 
 // Alerta al admin cuando hay un ajuste muy alto (+30%)

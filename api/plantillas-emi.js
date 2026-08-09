@@ -169,6 +169,21 @@ const CREAR = [
     types: { 'twilio/text': { body: '¡Hola {{1}}! Cancelamos tu {{2}} con {{3}} como solicitaste.\n\n{{4}}\n\n¿Necesitás una nueva mudanza? Entrá a mudateya.ar cuando quieras.' } },
     variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian', '4': 'Procesamos el reintegro de $25.000. Vas a verlo acreditado en 5 a 10 días hábiles.' } },
 
+  // Aviso a la parte que NO propuso: alguien pidió cambiar la fecha de la
+  // mudanza y está esperando su respuesta (ver api/cotizaciones.js,
+  // action=proponer-reprogramacion). Sirve para cliente O mudancero según
+  // quién reciba el mensaje.
+  { name: 'reprogramacion_propuesta', category: 'UTILITY',
+    types: { 'twilio/text': { body: '📅 ¡Hola {{1}}! {{2}} propuso cambiar la fecha de tu mudanza del {{3}} al {{4}}.\n\nRespondeme si te sirve o no.' } },
+    variables: { '1': 'Juan', '2': 'Cristian', '3': '15/08/2026', '4': '22/08/2026' } },
+
+  // Resultado de una propuesta de reprogramación (aceptada o rechazada) —
+  // va a quien propuso (ver action=responder-reprogramacion). Si se aceptó,
+  // también se le manda a la otra parte para que ambos tengan la confirmación.
+  { name: 'reprogramacion_resuelta', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, tu propuesta de cambiar la fecha de la mudanza fue {{2}}.\n\nFecha: {{3}}.' } },
+    variables: { '1': 'Juan', '2': 'aceptada', '3': '22/08/2026' } },
+
   // Cuando un mudancero cotiza pidiendo un relevamiento/visita presencial para
   // dar el precio final. Le sugerimos al cliente mandar fotos por acá como
   // alternativa, para no perder el pedido por la fricción de coordinar una visita.

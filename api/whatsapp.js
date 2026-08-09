@@ -488,6 +488,7 @@ Precios y pagos:
 - Cada presupuesto vale 15 días.
 - Si se cancela una mudanza con la seña ya paga (por ejemplo, rechazás un ajuste de precio), el reintegro tarda 5 a 10 días hábiles en acreditarse en tu medio de pago original. NUNCA digas otro plazo.
 - El mudancero puede proponer UN reajuste de precio como máximo por mudanza (si detecta algo no previsto y no declarado en el pedido al llegar: más volumen, accesos complicados, piso sin ascensor, etc.). No hay una segunda vuelta. El cliente decide si lo acepta o lo rechaza — si rechaza, la mudanza se cancela ahí mismo (no sigue al precio viejo) y se le devuelve el anticipo completo, siempre que la información que cargó al publicar el pedido haya sido correcta.
+- Si el cliente con una mudanza YA CONFIRMADA (seña pagada) necesita cambiar la fecha, usá proponer_reprogramacion — se lo mandamos al mudancero, que tiene que aceptarlo (no cambia sola). Si el mudancero le propuso a él una fecha nueva, usá responder_reprogramacion para que la acepte o rechace. Rechazar NO cancela la mudanza, solo mantiene la fecha original — es distinto del rechazo de un ajuste de precio.
 
 Confianza y seguridad:
 - Mudanceros verificados (DNI y vehículo). Reseñas reales de clientes.
@@ -617,6 +618,7 @@ PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
 - Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo).
 - SI COBRA POR HORA, antes de completar preguntale CUÁNTAS HORAS trabajó y pasalas en horasTrabajadas. El sistema liquida con esas horas y recién ahí el cliente recibe el saldo con el precio corregido. Si te dice bastante más de lo que registró el sistema, preguntale por qué y mandalo en motivoHoras — no lo cuestiones ni lo trates de sospechoso, puede haber marcado el inicio tarde; solo necesitás la explicación para que quede registrada.
 - Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar).
+- Cambiar la fecha de una mudanza YA CONFIRMADA (seña pagada) → proponer_reprogramacion (nueva fecha + motivo; el cliente lo tiene que aceptar, no cambia sola). Si el CLIENTE le propuso a él una fecha nueva, usá responder_reprogramacion para aceptarla o rechazarla — rechazar no cancela nada, solo mantiene la fecha original.
 - Ver el estado de tus pedidos/cotizaciones → mis_pedidos.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
 
@@ -848,6 +850,30 @@ const tools = [
     name: 'responder_ajuste',
     description:
       'El cliente responde a un AJUSTE DE PRECIO que propuso el mudancero: lo acepta o lo rechaza. Si rechaza, la mudanza se cancela y se le devuelve la seña. Usalo cuando el cliente diga que acepta o rechaza el nuevo precio.',
+    input_schema: {
+      type: 'object',
+      properties: { decision: { type: 'string', enum: ['aceptar', 'rechazar'] } },
+      required: ['decision'],
+    },
+  },
+  {
+    name: 'proponer_reprogramacion',
+    description:
+      'El cliente pide cambiar la fecha de su mudanza YA CONFIRMADA (seña pagada). Se lo proponemos al mudancero, que tiene que aceptar o rechazar — no cambia la fecha sola. Usala cuando el cliente pida posponer, adelantar, o cambiar la fecha de una mudanza que ya reservó.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nuevaFecha: { type: 'string', description: 'Nueva fecha en formato YYYY-MM-DD. Resolvé vos lo que diga el cliente (ej "el 22" o "la semana que viene") contra la fecha de hoy que tenés en contexto — nunca mandes texto relativo.' },
+        motivo: { type: 'string', description: 'Motivo breve del cambio, opcional.' },
+        pedidoId: { type: 'string', description: 'ID del pedido; si no lo sabés, se usa la mudanza confirmada más reciente.' },
+      },
+      required: ['nuevaFecha'],
+    },
+  },
+  {
+    name: 'responder_reprogramacion',
+    description:
+      'El cliente responde (acepta o rechaza) una propuesta de CAMBIO DE FECHA que hizo el mudancero. Si acepta, la mudanza queda con la fecha nueva. Si rechaza, sigue la fecha original — no se cancela nada. Usala cuando el cliente conteste sobre esa propuesta puntual.',
     input_schema: {
       type: 'object',
       properties: { decision: { type: 'string', enum: ['aceptar', 'rechazar'] } },
@@ -1154,6 +1180,31 @@ const mudanceroTools = [
     },
   },
   {
+    name: 'proponer_reprogramacion',
+    description: 'El mudancero pide cambiar la fecha de una mudanza YA CONFIRMADA (seña pagada). Se lo proponemos al cliente, que tiene que aceptar o rechazar — no cambia la fecha sola.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string' },
+        nuevaFecha: { type: 'string', description: 'Nueva fecha en formato YYYY-MM-DD. Resolvé vos lo que diga el mudancero contra la fecha de hoy.' },
+        motivo: { type: 'string', description: 'Motivo breve del cambio, opcional.' },
+      },
+      required: ['pedidoId', 'nuevaFecha'],
+    },
+  },
+  {
+    name: 'responder_reprogramacion',
+    description: 'El mudancero responde (acepta o rechaza) una propuesta de CAMBIO DE FECHA que hizo el cliente. Si acepta, la mudanza queda con la fecha nueva. Si rechaza, sigue la fecha original.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string' },
+        decision: { type: 'string', enum: ['aceptar', 'rechazar'] },
+      },
+      required: ['pedidoId', 'decision'],
+    },
+  },
+  {
     name: 'mis_pedidos',
     description: 'Muestra el estado de los pedidos/cotizaciones del mudancero (enviados, aceptados, en curso, completados).',
     input_schema: { type: 'object', properties: {}, required: [] },
@@ -1263,7 +1314,10 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       mEnCurso.cierrePospuestoHasta = new Date(Date.now() + hMas * 3600000).toISOString();
       // Contestó: no está ignorando los avisos, así que la escalera se reinicia.
       mEnCurso.preguntasCompletar = 0;
-      await setJSON(`mudanza:${input.pedidoId}`, mEnCurso, 604800);
+      // TTL de 180 días (no 7): mismo bug ya corregido en cotizaciones.js
+      // (TTL_MUDANZA) — el negocio espera 15-40 días entre pago y liquidación,
+      // un TTL de 7 borraba el registro de Redis antes de llegar a ese punto.
+      await setJSON(`mudanza:${input.pedidoId}`, mEnCurso, 60 * 60 * 24 * 180);
       return JSON.stringify({ ok: true, nota: `Anotado, no le pregunto por ${hMas} hora(s) más. Deseale buen laburo y cortá.` });
     }
     if (name === 'proponer_ajuste') {
@@ -1276,8 +1330,23 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       const { ok, d } = await postJSON('proponer-ajuste', { mudanzaId: input.pedidoId, mudanceroEmail: email, nuevoPrecio: input.nuevoPrecio, motivo: input.motivo });
       return JSON.stringify(ok ? { ok: true, nota: 'Ajuste propuesto. El cliente lo tiene que aceptar.' } : { ok: false, error: d.error || 'No se pudo proponer el ajuste.' });
     }
+    if (name === 'proponer_reprogramacion') {
+      const rp = await postJSON('proponer-reprogramacion', { mudanzaId: input.pedidoId, email, rol: 'mudancero', nuevaFecha: input.nuevaFecha, motivo: input.motivo || '' });
+      return JSON.stringify(rp.ok ? { ok: true, nota: 'Propuesta de nueva fecha enviada. El cliente tiene que aceptarla.' } : { ok: false, error: (rp.d && rp.d.error) || 'No se pudo proponer el cambio de fecha.' });
+    }
+    if (name === 'responder_reprogramacion') {
+      const decMud = input.decision === 'aceptar' ? 'aceptar' : (input.decision === 'rechazar' ? 'rechazar' : null);
+      if (!decMud) return JSON.stringify({ ok: false, error: 'Decisión inválida.' });
+      const rr = await postJSON('responder-reprogramacion', { mudanzaId: input.pedidoId, email, rol: 'mudancero', decision: decMud });
+      if (!rr.ok) return JSON.stringify({ ok: false, error: (rr.d && rr.d.error) || 'No se pudo registrar la respuesta.' });
+      return JSON.stringify({ ok: true, nota: decMud === 'aceptar' ? `Nueva fecha confirmada: ${rr.d.fecha}.` : 'Rechazaste el cambio de fecha. Sigue la fecha original.' });
+    }
     if (name === 'mis_pedidos') {
-      const r = await fetch(`${base}/api/cotizaciones?action=mis-cotizaciones&email=${encodeURIComponent(email)}`);
+      // x-internal-secret: mis-cotizaciones exige sesión web (verificarSesionMudancero)
+      // y sin este header devolvía 401 siempre — ver nota en cotizaciones.js.
+      const r = await fetch(`${base}/api/cotizaciones?action=mis-cotizaciones&email=${encodeURIComponent(email)}`, {
+        headers: { 'x-internal-secret': process.env.INTERNAL_API_SECRET || '' },
+      });
       const d = await r.json().catch(() => ({}));
       const pedidos = (d.mudanzas || []).map((m) => ({
         id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`, estado: m.estado,
@@ -2017,7 +2086,10 @@ async function crearPedido(input, waId, ubicaciones, fotos) {
     cotizaciones: [],
     creado: ahora.toISOString(),
   };
-  await setJSON(`mudanza:${id}`, pedido, 60 * 60 * 24 * 7);
+  // TTL de 180 días (no 7) — mismo bug ya corregido en cotizaciones.js
+  // (TTL_MUDANZA): 7 días borraba el registro antes de que el negocio llegue
+  // a liquidar (15-40 días desde el pago). Acá se había quedado en 7.
+  await setJSON(`mudanza:${id}`, pedido, 60 * 60 * 24 * 180);
 
   // Índice de pedidos por cliente WA (para consultar_estado_pedido / cancelar_pedido).
   try {
@@ -2136,7 +2208,10 @@ async function agregarDetallePedidoCliente(waId, detalle) {
   pedido.detallesAdicionales.comentario = pedido.detallesAdicionales.comentario
     ? pedido.detallesAdicionales.comentario + '\n' + textoLimpio
     : textoLimpio;
-  try { await setJSON(`mudanza:${pedido.id}`, pedido); } catch (e) { console.warn('guardar detalle pedido:', e.message); }
+  // TTL explícito: un SET sin EX borra el TTL que ya tenía la clave y la deja
+  // persistiendo para siempre en Redis (mismo bug de fondo que el TTL de 7
+  // días, pero al revés — acá el registro no vencía NUNCA).
+  try { await setJSON(`mudanza:${pedido.id}`, pedido, 60 * 60 * 24 * 180); } catch (e) { console.warn('guardar detalle pedido:', e.message); }
   try { await avisarMudanceroFotosOTexto(pedido, 'más información'); } catch (e) { console.warn('avisar mudancero detalle:', e.message); }
 
   return { ok: true, id: pedido.id, mensaje: 'Listo, lo agregué a tu pedido y se lo paso al mudancero.' };
@@ -2455,7 +2530,8 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
   pedido.mudanceroAceptado = cot.mudanceroEmail;
   pedido.montoTotal = cot.precio;
   cot.estado = 'aceptada';
-  await setJSON(`mudanza:${pedido.id}`, pedido, 60 * 60 * 24 * 7);
+  // TTL de 180 días (no 7) — mismo bug ya corregido en cotizaciones.js.
+  await setJSON(`mudanza:${pedido.id}`, pedido, 60 * 60 * 24 * 180);
 
   // Avisar a los OTROS mudanceros que cotizaron que el cliente eligió a otro (best-effort).
   try {
@@ -2508,8 +2584,12 @@ async function responderAjusteCliente(waId, decision) {
   if (!m) return { ok: false, mensaje: 'No tenés ningún ajuste de precio pendiente para responder.' };
   try {
     const action = dec === 'aceptar' ? 'aceptar-ajuste' : 'rechazar-ajuste';
+    // x-internal-secret: aceptar-ajuste/rechazar-ajuste exigen sesión web
+    // (x-session-token), que no existe en este flujo por WhatsApp — sin este
+    // header, esta llamada devolvía 401 siempre (bug real, encontrado y
+    // confirmado el 2026-08-09). Ver llamadaInternaConfiable en cotizaciones.js.
     const r = await fetch(`${SITE_URL}/api/cotizaciones?action=${action}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-internal-secret': process.env.INTERNAL_API_SECRET || '' },
       body: JSON.stringify({ mudanzaId: m.id, clienteEmail: m.clienteEmail }),
     });
     const d = await r.json().catch(() => ({}));
@@ -2521,6 +2601,50 @@ async function responderAjusteCliente(waId, decision) {
     return { ok: true, mensaje: 'Listo, rechazaste el ajuste. La mudanza se cancela y te devolvemos la seña. Lamentamos que no haya salido.' };
   } catch (e) {
     console.warn('responderAjusteCliente:', e.message);
+    return { ok: false, mensaje: 'Tuve un problema registrando tu respuesta, probá de nuevo.' };
+  }
+}
+
+// El cliente propone cambiar la fecha de su mudanza confirmada. Reusa
+// proponer-reprogramacion del web — el mudancero tiene que aceptarla.
+async function proponerReprogramacionCliente(waId, nuevaFecha, motivo, pedidoId) {
+  if (!nuevaFecha) return { ok: false, mensaje: 'Decime a qué fecha querés cambiar la mudanza.' };
+  const pedidos = await pedidosDelCliente(waId);
+  let m = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
+  if (!m) m = pedidos.slice().reverse().find((p) => p.anticipoPagado && ['cotizacion_aceptada', 'en_curso'].includes(p.estado));
+  if (!m) return { ok: false, mensaje: 'No encontré una mudanza confirmada tuya para reprogramar.' };
+  try {
+    const r = await fetch(`${SITE_URL}/api/cotizaciones?action=proponer-reprogramacion`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: m.id, email: m.clienteEmail, rol: 'cliente', nuevaFecha, motivo: motivo || '' }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false) return { ok: false, mensaje: (d && d.error) || 'No pude proponer el cambio de fecha.' };
+    return { ok: true, mensaje: `Listo, le mandé la propuesta a tu mudancero (nueva fecha: ${nuevaFecha}). Te aviso cuando responda.` };
+  } catch (e) {
+    console.warn('proponerReprogramacionCliente:', e.message);
+    return { ok: false, mensaje: 'Tuve un problema mandando la propuesta, probá de nuevo.' };
+  }
+}
+
+// El cliente acepta/rechaza una propuesta de cambio de fecha del mudancero.
+async function responderReprogramacionCliente(waId, decision) {
+  const dec = decision === 'rechazar' ? 'rechazar' : (decision === 'aceptar' ? 'aceptar' : null);
+  if (!dec) return { ok: false, mensaje: 'Decime si aceptás o rechazás la nueva fecha.' };
+  const pedidos = await pedidosDelCliente(waId);
+  const m = pedidos.slice().reverse().find((p) => p.reprogramacion && p.reprogramacion.estado === 'pendiente_aprobacion' && p.reprogramacion.propuestoPor === 'mudancero');
+  if (!m) return { ok: false, mensaje: 'No tenés ninguna propuesta de cambio de fecha pendiente.' };
+  try {
+    const r = await fetch(`${SITE_URL}/api/cotizaciones?action=responder-reprogramacion`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mudanzaId: m.id, email: m.clienteEmail, rol: 'cliente', decision: dec }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false) return { ok: false, mensaje: (d && d.error) || 'No pude registrar tu respuesta.' };
+    if (dec === 'aceptar') return { ok: true, mensaje: `¡Listo! Quedó confirmada la nueva fecha: ${d.fecha}.` };
+    return { ok: true, mensaje: 'Listo, rechazaste el cambio de fecha. Sigue la fecha original.' };
+  } catch (e) {
+    console.warn('responderReprogramacionCliente:', e.message);
     return { ok: false, mensaje: 'Tuve un problema registrando tu respuesta, probá de nuevo.' };
   }
 }
@@ -2539,9 +2663,11 @@ async function calificarMudanceroCliente(waId, estrellas, comentario) {
     return { ok: false, mensaje: 'Para calificar, la mudanza tiene que estar completada y con el saldo pagado.' };
   }
   try {
+    // x-internal-secret: ver nota en responderAjusteCliente — 'calificar'
+    // también exige sesión web y sin este header devolvía 401 siempre.
     const r = await fetch(`${SITE_URL}/api/cotizaciones?action=calificar`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-internal-secret': process.env.INTERNAL_API_SECRET || '' },
       body: JSON.stringify({ mudanzaId: m.id, estrellas: n, comentario: comentario || '', clienteEmail: m.clienteEmail }),
     });
     const d = await r.json().catch(() => ({}));
@@ -2601,6 +2727,12 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
     }
     if (name === 'responder_ajuste') {
       return JSON.stringify(await responderAjusteCliente(waId, input && input.decision));
+    }
+    if (name === 'proponer_reprogramacion') {
+      return JSON.stringify(await proponerReprogramacionCliente(waId, input && input.nuevaFecha, input && input.motivo, input && input.pedidoId));
+    }
+    if (name === 'responder_reprogramacion') {
+      return JSON.stringify(await responderReprogramacionCliente(waId, input && input.decision));
     }
     if (name === 'calificar_mudancero') {
       return JSON.stringify(await calificarMudanceroCliente(waId, input && input.estrellas, input && input.comentario));
@@ -2868,7 +3000,9 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
         if (agregadas > 0 || rechazadasPorContacto > 0) {
           pedido.detallesAdicionales = pedido.detallesAdicionales || {};
           pedido.detallesAdicionales.fotos = fotosActuales;
-          try { await setJSON(`mudanza:${pedido.id}`, pedido); } catch (e) { console.warn('guardar fotos pedido:', e.message); }
+          // TTL explícito: ver nota en agregarDetallePedidoCliente (un SET sin
+          // EX borraba el TTL y dejaba el registro persistiendo para siempre).
+          try { await setJSON(`mudanza:${pedido.id}`, pedido, 60 * 60 * 24 * 180); } catch (e) { console.warn('guardar fotos pedido:', e.message); }
           if (agregadas > 0) {
             try { await avisarMudanceroFotosOTexto(pedido, 'fotos'); } catch (e) { console.warn('avisar mudancero fotos:', e.message); }
           }
@@ -2965,7 +3099,14 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     // turno — si necesita algo más fresco a mitad de charla (recién cotizó
     // otro), igual puede llamar a mis_pedidos/ver_pedidos.
     try {
-      const rMis = await fetch(`${SITE_URL}/api/cotizaciones?action=mis-cotizaciones&email=${encodeURIComponent(mudancero.email)}`);
+      // x-internal-secret: ver nota arriba en ejecutarToolMudancero — esta
+      // llamada corre en CADA turno del mudancero (no solo al llamar
+      // mis_pedidos) y sin este header devolvía 401 siempre, así que este
+      // auto-contexto nunca tuvo datos reales desde que se agregó el chequeo
+      // de sesión en mis-cotizaciones.
+      const rMis = await fetch(`${SITE_URL}/api/cotizaciones?action=mis-cotizaciones&email=${encodeURIComponent(mudancero.email)}`, {
+        headers: { 'x-internal-secret': process.env.INTERNAL_API_SECRET || '' },
+      });
       const dMis = await rMis.json().catch(() => ({}));
       const misPedidos = (dMis.mudanzas || []).map((m) => ({
         id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`, estado: m.estado,
