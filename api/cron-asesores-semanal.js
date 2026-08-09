@@ -174,10 +174,10 @@ var CONTENIDO_SEMANAS = {
     lead: 'Esta semana metimos tres mejoras en Emi que te pueden servir directo — sin que tengas que cambiar nada de cómo laburás hoy.',
     bulletsLabel: 'Lo que sumamos:',
     bullets: [
-      'Si tu cliente prefiere resolverlo por WhatsApp en vez del formulario, Emi ya reconoce que viene de tu link y el pedido le queda atribuido a vos igual — misma comisión.',
-      'Antes de publicar, Emi le muestra al cliente el PDF del pedido y le pregunta si está todo bien — llegan más precisos al mudancero, con menos sorpresas el día de la mudanza.',
-      'Si tu cliente no habla español, no hay drama — Emi traduce todo antes de que le llegue al mudancero.',
-      'Recordá que Emi también recibe fotos y audios — tu cliente no necesita escribir todo, le puede mandar una nota de voz contándole y listo.'
+      'Si tu cliente prefiere resolverlo por WhatsApp en vez del formulario, Emi ya reconoce que viene de tu link y el pedido le queda atribuido a vos igual — <strong>misma comisión</strong>.',
+      'Antes de publicar, Emi le muestra al cliente el PDF del pedido y le pregunta si está todo bien — llegan más precisos al mudancero, con <strong>menos sorpresas el día de la mudanza</strong>.',
+      'Si tu cliente no habla español, no hay drama — <strong>Emi traduce todo</strong> antes de que le llegue al mudancero.',
+      'Recordá que Emi también recibe fotos y audios — tu cliente no necesita escribir todo, le puede mandar una <strong>nota de voz</strong> contándole y listo.'
     ],
     cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   }
