@@ -1057,7 +1057,7 @@
   }
   function _fleteDragLeave(ev) {
     var lbl = document.getElementById('flete-foto-label');
-    if (lbl) { lbl.style.background = 'rgba(255,255,255,.15)'; lbl.style.borderColor = 'rgba(255,255,255,.4)'; }
+    if (lbl) { lbl.style.background = 'rgba(255,255,255,.12)'; lbl.style.borderColor = 'rgba(255,255,255,.45)'; }
   }
   function _fleteDrop(ev) {
     ev.preventDefault();
@@ -1360,14 +1360,20 @@
     if (fp) fp.classList.remove('open');
   }
 
+  function _fleteActualizarDisplayFechaHora() {
+    var disp = document.getElementById('flete-fecha-display');
+    if (!disp) return;
+    var txt = _fechaFlete + (_horaFlete ? ' · ' + _horaFlete + 'hs' : '');
+    disp.textContent = txt;
+    disp.classList.remove('ph');
+  }
+
   function setFechaFlete(el, val) {
     document.querySelectorAll('#fechaFletePopup .fecha-chip').forEach(function(c){ c.classList.remove('sel'); });
     el.classList.add('sel');
     _fechaFlete = val;
-    var disp = document.getElementById('flete-fecha-display');
-    if (disp) { disp.textContent = val; disp.classList.remove('ph'); }
-    var fp = document.getElementById('fechaFletePopup');
-    if (fp) fp.classList.remove('open');
+    _fleteActualizarDisplayFechaHora();
+    // No cerramos el popup: falta cargar la hora, que está justo debajo.
   }
 
   function onFechaFlete() {
@@ -1377,10 +1383,18 @@
     var d = new Date(inp.value + 'T12:00:00');
     var label = d.toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'});
     _fechaFlete = label;
-    var disp = document.getElementById('flete-fecha-display');
-    if (disp) { disp.textContent = label; disp.classList.remove('ph'); }
-    var fp = document.getElementById('fechaFletePopup');
-    if (fp) fp.classList.remove('open');
+    _fleteActualizarDisplayFechaHora();
+    // No cerramos el popup: falta cargar la hora, que está justo debajo.
+  }
+
+  function onHoraFlete() {
+    var inp = document.getElementById('input-flete-hora');
+    _horaFlete = inp ? (inp.value || '') : '';
+    _fleteActualizarDisplayFechaHora();
+    if (_horaFlete) {
+      var fp = document.getElementById('fechaFletePopup');
+      if (fp) fp.classList.remove('open');
+    }
   }
 
   var _buscarFn = null;
@@ -1552,6 +1566,8 @@
               <div class="chip-grid">
                 <div class="fecha-chip sel" onclick="setFechaFlete(this,'Hoy')">⚡ Hoy</div>
               </div>
+              <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 5px;font-family:var(--mono)">Hora aproximada *</div>
+              <input type="time" id="input-flete-hora" onchange="onHoraFlete()" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none"/>
             </div>
           </div>
           <button class="btn-search-bar" onclick="buscar()">
@@ -1573,12 +1589,14 @@
               style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);background:#fff;color:#0F1923;font-size:13px;font-family:'Inter',sans-serif;outline:none;"
               oninput="fleteOtrosTexto=this.value"/>
           </div>
-          <!-- Upload foto (obligatorio, permite varias) -->
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <label id="flete-foto-label" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px dashed rgba(255,255,255,.4);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.85);font-family:'Inter',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.15)'" ondragover="_fleteDragOver(event)" ondragleave="_fleteDragLeave(event)" ondrop="_fleteDrop(event)">
-              📷 <span id="flete-foto-txt">Subir o arrastrar foto/s de lo que hay que fletar *</span>
-              <input type="file" id="flete-foto-input" accept="image/*" multiple style="display:none" onchange="onFleteFoto(this)"/>
-            </label>
+          <!-- Upload foto (obligatorio, permite varias) — zona de drop grande -->
+          <label id="flete-foto-label" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.45);border-radius:10px;padding:18px 14px;cursor:pointer;text-align:center;font-family:'Inter',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.12)'" ondragover="_fleteDragOver(event)" ondragleave="_fleteDragLeave(event)" ondrop="_fleteDrop(event)">
+            <span style="font-size:22px">📷</span>
+            <span id="flete-foto-txt" style="font-size:13px;font-weight:600;color:#fff">Subir o arrastrar foto/s de lo que hay que fletar *</span>
+            <span style="font-size:11px;color:rgba(255,255,255,.7);font-family:var(--mono)">Hasta 5 fotos · 5MB c/u</span>
+            <input type="file" id="flete-foto-input" accept="image/*" multiple style="display:none" onchange="onFleteFoto(this)"/>
+          </label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
             <!-- Badge estático "Analizado con IA" -->
             <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.8);font-family:var(--mono)">
               <span style="width:7px;height:7px;border-radius:50%;background:#22C36A;display:inline-block;flex-shrink:0"></span>
@@ -2137,6 +2155,7 @@
   var _amb = 2;
   var _fechaLabel = '';
   var _fechaFlete = 'Hoy';
+  var _horaFlete = '';
   var _busqueda = {};
   var _todos = [];
   var _sel = new Set();
@@ -2402,6 +2421,19 @@
       }
       return;
     }
+    // Validar hora obligatoria en flete (fecha ya está validada arriba)
+    if (_tipo === 'flete' && !_horaFlete) {
+      var fsHora = document.querySelector('#sb-flete [onclick*="toggleFechaPopup"]');
+      var fpHora = document.getElementById('fechaFletePopup');
+      if (fsHora) {
+        fsHora.style.border = '2px solid #FF5252';
+        setTimeout(function(){ fsHora.style.border=''; }, 3000);
+      }
+      if (fpHora) fpHora.classList.add('open'); // abrir siempre (no toggle: puede ya estar abierto)
+      var inpHora = document.getElementById('input-flete-hora');
+      if (inpHora) setTimeout(function(){ inpHora.focus(); }, 50);
+      return;
+    }
     // Validar foto en flete (obligatoria — el objeto/chip es solo un plus, ya no bloquea)
     if (_tipo === 'flete') {
       var fotosListas = _fleteFotosUrls.every(function(u){ return u !== null; });
@@ -2451,7 +2483,7 @@
       }
     }
 
-    var fecha = _tipo==='mudanza' ? (_fechaLabel||'A definir') : _fechaFlete;
+    var fecha = _tipo==='mudanza' ? (_fechaLabel||'A definir') : (_fechaFlete + (_horaFlete ? ' · ' + _horaFlete + 'hs' : ''));
     _busqueda = { tipo:_tipo, desde, hasta, fecha, ambientes:_amb };
     // Calcular km en background (Google Maps lado cliente — la API key del frontend SÍ funciona).
     // Se guarda en _busqueda.km y luego se manda al backend al publicar.
