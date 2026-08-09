@@ -4421,6 +4421,9 @@ module.exports.notificarMudanceros = notificarMudanceros;
 // El bot también usa el generador de PDF de detalles directamente (para su aviso
 // de prueba a mudatest, que no exige que el perfil esté 'aprobado').
 module.exports.generarPDFDetallesBase64 = generarPDFDetallesBase64;
+// El bot lo usa para resolver el asesor de un link [ref:{codigo}] compartido
+// por WhatsApp (ver whatsapp.js) antes de atribuirle un pedido.
+module.exports.buscarAsesorPorCodigo = buscarAsesorPorCodigo;
 // Exportados para los tests automáticos (tests/cotizaciones-validez.test.js) —
 // la ventana de validez de una cotización, ver DIAS_VALIDEZ_COTIZACION.
 module.exports.cotizacionVencida = cotizacionVencida;

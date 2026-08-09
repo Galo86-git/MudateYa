@@ -80,6 +80,10 @@
   .hero-title { font-size: 28px; font-weight: 800; color: var(--md-text); line-height: 1.15; letter-spacing: -0.6px; margin-bottom: 6px; }
   .hero-title .accent { color: var(--md-coral); }
   .hero-subtitle { font-size: 14px; color: var(--md-text-2); font-weight: 500; max-width: 540px; margin: 0 auto; }
+  .hero-wa { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+  .hero-wa a { display: inline-flex; align-items: center; gap: 6px; color: var(--md-text-2); font-size: 13px; font-weight: 600; text-decoration: none; padding: 8px 14px; border: 1px solid var(--md-border); border-radius: 999px; background: var(--md-bg-card); }
+  .hero-wa a:hover { border-color: var(--md-border-2); }
+  .hero-wa svg { width: 15px; height: 15px; flex-shrink: 0; }
 
   /* ── 2 COLUMNAS ARRIBA ──────────────────────── */
   .top-grid {
@@ -582,6 +586,12 @@
   <div class="hero">
     <span class="hero-pill" id="heroPill">Mudate con la confianza de tu inmobiliaria</span>
     <h1 class="hero-title">Coordiná <span class="accent">tu mudanza</span></h1>
+    <div class="hero-wa">
+      <a id="heroWaLink" href="https://wa.me/12399462954?text=Hola%2C%20quiero%20cotizar%20mi%20mudanza" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="#25D366" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.47 3.47 1.29 4.94L2 22l5.29-1.39a9.87 9.87 0 0 0 4.75 1.21h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.02c-.24.68-1.38 1.3-1.9 1.34-.49.04-.98.23-3.29-.69-2.78-1.11-4.55-3.93-4.69-4.11-.14-.18-1.12-1.49-1.12-2.84 0-1.35.71-2.01.96-2.28.25-.27.55-.34.73-.34.18 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.15.12.32.02.5-.1.19-.15.3-.29.46-.14.16-.3.36-.43.48-.14.14-.29.29-.13.57.17.28.75 1.25 1.62 2.02 1.12.99 2.05 1.3 2.34 1.44.29.14.46.12.62-.07.17-.19.72-.83.91-1.12.19-.29.38-.24.63-.15.26.1 1.63.77 1.91.91.28.14.47.21.53.33.07.12.07.68-.17 1.36z"/></svg>
+        <span id="heroWaTexto">¿Preferís por WhatsApp? Escribile a Emi →</span>
+      </a>
+    </div>
   </div>
 
   <!-- ═════ 2 COLUMNAS ARRIBA ═════ -->
@@ -1167,6 +1177,20 @@ function aplicarMarcaAsesor(a) {
   linea.textContent = a.nombre;
   logoBox.appendChild(linea);
   logoBox.className = 'logo-inmo con-asesor';
+
+  // Personalizar el link de WhatsApp con el nombre del asesor — el [ref:...]
+  // al final es lo que Emi lee para atribuirle el pedido (ver whatsapp.js),
+  // no hace falta que la persona lo entienda o lo edite.
+  var primerNombre = (a.nombre || '').trim().split(' ')[0];
+  if (primerNombre && _partnerAsesor) {
+    var link = document.getElementById('heroWaLink');
+    var texto = document.getElementById('heroWaTexto');
+    if (link) {
+      var msj = 'Hola! Vengo de parte de ' + primerNombre + ' 🙂 [ref:' + _partnerAsesor + ']';
+      link.href = 'https://wa.me/12399462954?text=' + encodeURIComponent(msj);
+    }
+    if (texto) texto.textContent = 'Escribile a Emi de parte de ' + primerNombre + ' →';
+  }
 }
 
 function cargarMarcaAsesor() {

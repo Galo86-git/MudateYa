@@ -790,6 +790,7 @@ const tools = [
         comparar_niveles: { type: 'boolean', description: 'true si el cliente quiere que los mudanceros coticen los 3 niveles (Esencial, Integral, Llave en mano) para comparar precio por operador, en vez de uno solo. No aplica a flete.' },
         confirmado: { type: 'boolean', description: 'Dejalo en false u omitilo la primera vez que llamás con estos datos: la herramienta te va a devolver un resumen (campo "resumen") para mostrarle al cliente TAL CUAL, sin publicar nada todavía. Solo poné true cuando el cliente ya vio ese resumen y confirmó explícitamente que está todo bien — ahí sí se publica de verdad y sale a mudanceros reales.' },
         cita_textual: { type: 'string', description: 'OBLIGATORIO cuando confirmado:true. Copiá LITERAL (en el idioma que sea, palabra por palabra, sin parafrasear) la frase real donde el cliente confirmó que está todo bien (su "sí, dale" o equivalente). Si no hay una confirmación real y textual, no pongas confirmado:true.' },
+        tipo_operacion: { type: 'string', enum: ['alquiler', 'compraventa'], description: 'Solo si el contexto te dice que este cliente VINO POR EL LINK DE UN ASESOR: preguntale si su mudanza es por un alquiler o una compra-venta (define si el asesor cobra comisión o si el cliente recibe un regalo) y pasalo acá antes de publicar. Si no vino por un link de asesor, omitilo.' },
       },
       required: ['tipo', 'origen', 'destino', 'fecha', 'detalles'],
     },
@@ -2263,16 +2264,52 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
     return { ok: false, error: 'No encontré esa confirmación en lo que escribiste. Antes de publicar necesito una frase real tuya confirmando que está todo bien — contame de nuevo si querés seguir.' };
   }
 
+  // Vino por el link de un asesor (conv.refAsesor, ver generarRespuesta):
+  // publicar por el MISMO camino que ya usa cargar_pedido_referido
+  // (action=publicar) — reusa toda la lógica de atribución ya probada
+  // (índice {prefijo}:asesor:{codigo}:mudanzas, aviso al asesor, comisión/
+  // regalo) en vez de reimplementarla acá. NO sigue al camino directo de
+  // abajo: ese no atribuye nada.
+  if (conv && conv.refAsesor && conv.refAsesor.codigo) {
+    if (input.tipo_operacion !== 'alquiler' && input.tipo_operacion !== 'compraventa') {
+      return { ok: false, error: 'Antes de publicar necesito que le preguntes al cliente si su mudanza es por un alquiler o una compra-venta (define la comisión del asesor que lo mandó) y pases eso en tipo_operacion.' };
+    }
+    try {
+      const r = await fetch(`${SITE_URL}/api/cotizaciones?action=publicar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteEmail: pedido.clienteEmail, clienteNombre: pedido.clienteNombre, clienteWA: waId,
+          desde: pedido.origen, hasta: pedido.destino, fecha: pedido.fecha, horaOrigen: pedido.horaOrigen,
+          km: pedido.km || null, tipo: pedido.tipo, tipoOperacion: input.tipo_operacion, urgente: pedido.urgente,
+          tipoOrigen: pedido.tipoOrigen, pisoOrigen: pedido.pisoOrigen, ascOrigen: pedido.ascOrigen,
+          tipoDestino: pedido.tipoDestino, pisoDestino: pedido.pisoDestino, ascDestino: pedido.ascDestino,
+          nivel: pedido.nivel, compararNiveles: pedido.compararNiveles,
+          fotos: pedido.fotos, detallesAdicionales: pedido.detallesAdicionales,
+          partner: conv.refAsesor.partner, partnerAsesor: conv.refAsesor.codigo,
+        }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data.ok) return { ok: false, error: data.error || 'No se pudo publicar el pedido, probá de nuevo.' };
+      return { ok: true, pendienteConfirmar: false, pedido: { id: data.id, tipo: pedido.tipo, estado: 'buscando', urgente: pedido.urgente } };
+    } catch (e) {
+      console.error('crearPedido (atribuido a asesor):', e.message);
+      return { ok: false, error: 'No pude publicar el pedido ahora, probá de nuevo en un rato.' };
+    }
+  }
+
   // TTL de 180 días (no 7) — mismo bug ya corregido en cotizaciones.js
   // (TTL_MUDANZA): 7 días borraba el registro antes de que el negocio llegue
   // a liquidar (15-40 días desde el pago). Acá se había quedado en 7.
   await setJSON(`mudanza:${id}`, pedido, 60 * 60 * 24 * 180);
 
   // Índice de pedidos por cliente WA (para consultar_estado_pedido / cancelar_pedido).
+  // Mismo TTL que la mudanza (180 días): si caducaba antes (30 días), un
+  // pedido viejo pero todavía vivo en Redis se volvía invisible para Emi.
   try {
     const ids = (await getJSON(`cliente:pedidos:${waId}`)) || [];
     ids.push(id);
-    await setJSON(`cliente:pedidos:${waId}`, ids, 60 * 60 * 24 * 30);
+    await setJSON(`cliente:pedidos:${waId}`, ids, 60 * 60 * 24 * 180);
   } catch (_) {}
 
   // Índices del marketplace web: mudanzas:activas (lo lee por-zona) + mudanzas:todos (admin).
@@ -3160,6 +3197,28 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     : `wa:conv:${waId}`;
   const conv = (await getJSON(key)) || { messages: [] };
 
+  // Si el cliente entró por el link de un asesor y le escribió a Emi con la
+  // referencia embebida ([ref:{codigo}], ver el link "Escribile a Emi" en
+  // inmobiliaria.html), guardamos a qué asesor atribuir el pedido — una sola
+  // vez, la primera vez que aparece en la charla. Solo aplica a
+  // conversaciones de CLIENTE (no mudancero/asesor/inmobiliaria/fundador).
+  if (!mudancero && !asesor && !inmoContacto && !persona && !conv.refAsesor) {
+    const refMatch = String(texto || '').match(/\[ref:([A-Za-z0-9_-]+)\]/);
+    if (refMatch) {
+      try {
+        const { buscarAsesorPorCodigo } = require('./cotizaciones');
+        const encontrado = typeof buscarAsesorPorCodigo === 'function' ? await buscarAsesorPorCodigo(refMatch[1]) : null;
+        if (encontrado && encontrado.asesor) {
+          conv.refAsesor = {
+            codigo: refMatch[1],
+            nombre: encontrado.asesor.nombre || '',
+            partner: encontrado.asesor.inmobiliariaSlug || encontrado.prefijo,
+          };
+        }
+      } catch (e) { console.warn('[ref] lookup asesor:', e.message); }
+    }
+  }
+
   // ── Fotos para un pedido YA ABIERTO (relevamiento remoto) ──────────────────
   // Si el cliente O EL ASESOR (no mudancero) manda fotos y ya tiene un pedido
   // buscando/cotizando, se las adjuntamos DIRECTO a ese pedido (así el
@@ -3390,6 +3449,12 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
           : 'El cliente no tiene pedidos activos ahora mismo.';
         systemDinamico += `\n\nPEDIDOS/COTIZACIONES ACTUALES DE ESTE CLIENTE (snapshot de referencia rápida — no hace falta llamar a consultar_estado_pedido si ya está acá):\n${resumenCliente}`;
       } catch (e) { console.warn('auto-contexto cliente:', e.message); }
+
+      // Vino por el link de un asesor (ver arriba, [ref:...]) — saludalo
+      // mencionando quién lo mandó, en el primer mensaje de la charla.
+      if (conv.refAsesor && conv.refAsesor.nombre) {
+        systemDinamico += `\n\nVINO POR EL LINK DE UN ASESOR: este cliente llegó por el link de ${conv.refAsesor.nombre}. Si es tu PRIMER mensaje en esta charla, saludalo mencionándolo con onda ("¡Hola! Venís de parte de ${conv.refAsesor.nombre}, un gusto — ¿en qué te ayudo?") antes de seguir. Si ya te contó algo del pedido en su mismo primer mensaje (ej. ya dijo que se muda, de dónde a dónde), no hace falta el saludo formal aparte: solo mencioná de pasada que ves que viene de parte de ${conv.refAsesor.nombre} y seguí directo con la charla. Antes de publicar (crear_pedido), preguntale si su mudanza es por un alquiler o una compra-venta y pasalo en tipo_operacion — define si ${conv.refAsesor.nombre} cobra comisión o el cliente recibe un regalo, así que no lo omitas. El pedido que termines armando queda atribuido a ${conv.refAsesor.nombre} automáticamente, no hace falta que hagas nada especial para eso más allá de preguntar tipo_operacion.`;
+      }
     }
   }
 
