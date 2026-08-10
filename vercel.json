@@ -38,6 +38,10 @@
       "destination": "/mudancero-perfil.html"
     },
     {
+      "source": "/asesores",
+      "destination": "/asesor-registro.html"
+    },
+    {
       "source": "/mi-cuenta",
       "destination": "/mi-cuenta.html"
     },
