@@ -1,18 +1,16 @@
 // api/recordatorio-c21.js
 // ── ONE-OFF (solo admin) ──
-// Recordatorio a las oficinas CENTURY 21 de AMBA + Córdoba + Rosario (84) que
-// ya recibieron la propuesta de MudateYa (enviar-propuesta-c21.js) y todavía no
-// se sumaron ningún asesor. Copy más corto y directo ("che, ¿lo viste?"), mismo
-// link a /c21-registro.html. Calcado de recordatorio-remax.js (mismo patrón,
-// mismo generador de PDF), adaptado a CENTURY 21.
-//
-// A diferencia de RE/MAX, acá TODAS las oficinas ya recibieron la propuesta
-// original el mismo día (10/8) — no hay distinción "nueva" vs "recordatorio",
-// es recordatorio para las 84.
+// Segundo mail a las oficinas CENTURY 21 de AMBA + Córdoba + Rosario (84), ~10
+// minutos después de la propuesta (enviar-propuesta-c21.js) — NO es un
+// recordatorio de "días después a quien no respondió": va a las 84 igual,
+// como segunda parte del mismo envío del día. El primer mail avisa; este trae
+// la propuesta completa en PDF. Copy corto, sin repetir los beneficios (ya
+// están en el mail 1) — el único punto de este mail es entregar el PDF.
+// Mismo generador de PDF que recordatorio-remax.js (calcado y adaptado).
 //
 // EXCLUIR: dejar cargadas a mano las oficinas con las que ya haya charla directa
 // por mail (respondieron y alguien del equipo les está contestando 1 a 1) — no
-// tiene sentido mandarles un recordatorio genérico en medio de esa conversación.
+// tiene sentido mandarles este segundo mail genérico en medio de esa conversación.
 //
 // ENVÍO: batch de Resend (hasta 100 por llamada).
 // IDEMPOTENCIA: Redis (clave c21-recordatorio:enviados) — propia, separada de
@@ -68,9 +66,9 @@ function emailRecordatorio(o) {
   var nm = esc(o.n || 'tu oficina');
   var linkB = linkBaja(o.e, 'c21-recordatorio');
   var linkP = linkPDF(o.e);
-  var subject = nm + ': ¿ya le contaste a tus asesores sobre MudateYa?';
-  var introHtml = '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">Hace unos días te contamos sobre <strong>MudateYa</strong> como un beneficio extra para tus asesores. Como no tuvimos noticias, te lo volvemos a acercar por si se pasó entre tantos mails.</p>';
-  var introText = 'Hace unos días te contamos sobre MudateYa como un beneficio extra para tus asesores. Como no tuvimos noticias, te lo volvemos a acercar por si se pasó entre tantos mails.\n\n';
+  var subject = nm + ': te mandamos la propuesta completa de MudateYa';
+  var introHtml = '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">Hace un rato te escribimos avisándote sobre <strong>MudateYa</strong>. Como prometimos, ahora te mandamos la propuesta completa.</p>';
+  var introText = 'Hace un rato te escribimos avisándote sobre MudateYa. Como prometimos, ahora te mandamos la propuesta completa.\n\n';
   return {
     subject: subject,
     html:
@@ -82,18 +80,10 @@ function emailRecordatorio(o) {
         '<div style="padding:28px">' +
           '<h2 style="margin:0 0 12px;color:#0F1923;font-size:20px">Hola, equipo de ' + nm + ' 👋</h2>' +
           introHtml +
-          '<div style="background:#F5F7FA;border-radius:12px;padding:14px 20px;margin-bottom:18px">' +
-            '<div style="font-size:12px;font-weight:700;color:#003580;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">En resumen:</div>' +
-            '<ul style="margin:0;padding-left:20px;color:#0F1923;font-size:13px;line-height:1.6">' +
-              '<li style="margin:6px 0">Cada asesor cobra <strong>5% de comisión</strong> por cada mudanza que su cliente concrete, se liquida todos los meses.</li>' +
-              '<li style="margin:6px 0">Sin costo para la oficina ni para el cliente.</li>' +
-              '<li style="margin:6px 0">El registro es individual, <strong>30 segundos</strong>, con el link de abajo.</li>' +
-            '</ul>' +
-          '</div>' +
           '<div style="text-align:center;margin:20px 0">' +
-            '<a href="https://mudateya.ar/c21-registro.html" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Sumar a mis asesores →</a>' +
+            '<a href="' + linkP + '" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">📄 Ver la propuesta completa →</a>' +
           '</div>' +
-          '<p style="text-align:center;margin:0 0 18px"><a href="' + linkP + '" style="color:#003580;font-size:13px;font-weight:600;text-decoration:underline">📄 Ver la propuesta completa en PDF →</a></p>' +
+          '<p style="text-align:center;margin:0 0 18px"><a href="https://mudateya.ar/c21-registro.html" style="color:#003580;font-size:13px;font-weight:600;text-decoration:underline">Sumar a mis asesores →</a></p>' +
           '<p style="color:#475569;font-size:13px;line-height:1.7;margin:0">Cualquier duda, respondan a este mismo mail.</p>' +
           '<div style="text-align:center;margin:22px 0 4px">' +
             '<a href="https://instagram.com/mudateya.ar" style="display:inline-block;color:#003580;font-size:13px;font-weight:700;text-decoration:none">📸 Seguinos en Instagram &#64;mudateya.ar</a>' +
@@ -104,11 +94,8 @@ function emailRecordatorio(o) {
     text:
       'Hola equipo de ' + nm + ',\n\n' +
       introText +
-      'En resumen:\n' +
-      '- Cada asesor cobra 5% de comisión por cada mudanza que su cliente concrete, se liquida todos los meses.\n' +
-      '- Sin costo para la oficina ni para el cliente.\n' +
-      '- El registro es individual, 30 segundos: https://mudateya.ar/c21-registro.html\n\n' +
-      'Propuesta completa en PDF: ' + linkP + '\n\n' +
+      'Ver la propuesta completa: ' + linkP + '\n\n' +
+      'Sumar a mis asesores: https://mudateya.ar/c21-registro.html\n\n' +
       'Cualquier duda, respondan a este mismo mail.\n\n' +
       'Seguinos en Instagram: https://instagram.com/mudateya.ar\n\n' +
       '—\nMudateYa · mudateya.ar\n' +
