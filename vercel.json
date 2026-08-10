@@ -1175,10 +1175,6 @@
       "schedule": "0 12 * * 1-5"
     },
     {
-      "path": "/api/enviar-invitacion-mudanceros",
-      "schedule": "0 12 * * *"
-    },
-    {
       "path": "/api/enviar-propuestas-clubes",
       "schedule": "0 12 * * *"
     },

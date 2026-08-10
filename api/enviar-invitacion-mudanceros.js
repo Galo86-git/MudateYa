@@ -21,9 +21,11 @@
 //   GET ?token=…              → DRY: cuenta pendientes/enviados/ya-mudanceros, NO envía nada.
 //   GET ?token=…&test=x@y.com → envía UNA muestra a esa dirección (no marca, no chequea dedup).
 //   GET ?token=…&apply=1      → ENVÍA a los pendientes (una sola corrida).
-//   Vercel Cron                → aplica automático (agendado para las 9AM ART del 2026-08-08,
-//                                 igual que enviar-propuesta-remax/garantías; idempotente, así
-//                                 que si el cron sigue corriendo días después no reenvía nada).
+//   SIN cron de Vercel a propósito (se sacó de vercel.json el 2026-08-10 al sumar la tanda
+//   de 105 prospectos AMBA) — así no se manda nada solo al deployar; el envío es siempre manual
+//   vía ?apply=1. Si en algún momento se quiere volver a automatizar, agregar de nuevo la entrada
+//   { "path": "/api/enviar-invitacion-mudanceros", "schedule": "..." } en vercel.json (idempotente,
+//   no reenvía a quien ya se le mandó).
 
 const { Resend } = require('resend');
 const { esAdmin, esCronVercel } = require('./_auth');
@@ -102,7 +104,100 @@ var PROSPECTOS = [
   { n: 'Fletes Rosario', region: 'Rosario', e: 'miguelpulidook@gmail.com', tel: '341-209-3808' },
   { n: 'Fletes E&M', region: 'Rosario', e: 'fleteseymrosario@gmail.com', tel: '(0341) 155954223 / 156894869' },
   { n: 'Fletes Zona Norte', region: 'Rosario', e: 'info@fletes-zonanorte.com.ar', tel: '4793-1436 / 15-6802-8251' },
-  { n: 'Mudanzas España', region: 'Rosario', e: 'contacto@mudanzasrosario.online', tel: '(0341) 482-3815 / 552-2322' }
+  { n: 'Mudanzas España', region: 'Rosario', e: 'contacto@mudanzasrosario.online', tel: '(0341) 482-3815 / 552-2322' },
+  // ── AMBA — barrida exhaustiva 2026-08-10 (92 nuevos, dedupeados contra los de arriba) ──
+  { n: 'Mudanzas Palmo', region: 'AMBA', e: 'contacto@palmomudanzas.com', tel: '11-6629-2391', zona: 'Palermo y Chacarita' },
+  { n: 'Fletes André', region: 'AMBA', e: 'contacto@fletesandre.com.ar', tel: '11-6935-6292', zona: '' },
+  { n: 'Fletes y Mudanzas Pedro', region: 'AMBA', e: 'mudanzasencapitalfederal@gmail.com', tel: '011 3874-5405', zona: 'Palermo' },
+  { n: 'Empresa de Mudanzas La Fuerza', region: 'AMBA', e: 'mudanzapablodiaz@gmail.com', tel: '11 6751-4176', zona: 'Palermo y Belgrano' },
+  { n: 'Fletes.net.ar', region: 'AMBA', e: 'info@fletes.net.ar', tel: '11 7080-0313', zona: '' },
+  { n: 'Abel Flet Transportes', region: 'AMBA', e: 'info@abeltransportes.com.ar', tel: '11-4757-1274', zona: '' },
+  { n: 'Fletes y Mudanzas El Milenio', region: 'AMBA', e: 'cargaselmilenio@hotmail.com', tel: '', zona: 'Monserrat' },
+  { n: 'Fletes Independencia', region: 'AMBA', e: 'mudanzascapitalfederal@gmail.com', tel: '4931-7208', zona: 'Boedo y Almagro' },
+  { n: 'Miniflete', region: 'AMBA', e: 'info@miniflete.com.ar', tel: '+54 9 11 6962 0764', zona: 'Saavedra y Belgrano' },
+  { n: 'Mudanzas Los Castillos', region: 'AMBA', e: 'mudanzasloscastillos@gmail.com', tel: '11 3139-4320', zona: 'Belgrano y Nuñez' },
+  { n: 'Rapiflet', region: 'AMBA', e: 'info@rapiflet.com', tel: '', zona: 'Villa Crespo y Villa del Parque' },
+  { n: 'Mudanzas y Fletes 2001', region: 'AMBA', e: 'fletesymudanzas2001@yahoo.com.ar', tel: '011 4304-1393', zona: 'San Telmo y Barracas' },
+  { n: 'Minifletes.net', region: 'AMBA', e: 'info@minifletes.net', tel: '11-2774-2927', zona: '' },
+  { n: 'Fletes CABA (fletescaba.com.ar)', region: 'AMBA', e: 'info@fletescaba.com.ar', tel: '+54 9 11 4991-9813', zona: '' },
+  { n: 'Palermo Express', region: 'AMBA', e: 'administracion@palermoexpress.com.ar', tel: '+5491133912022', zona: 'Palermo' },
+  { n: 'Fletes y Mudanzas Ricardo', region: 'AMBA', e: 'consultas@fletesymudanzasricardo.com', tel: '011 15 4940 5668', zona: 'Caballito' },
+  { n: 'Caballito Mudanzas', region: 'AMBA', e: 'mudanzascaballito@gmail.com', tel: '011 15 35967724', zona: 'Caballito' },
+  { n: 'Fletes - Transportes y Mudanzas Perales', region: 'AMBA', e: 'transporteperales617@gmail.com', tel: '011 4166-6033', zona: 'Flores' },
+  { n: 'Fletes y Mudanzas CABA (Home Mover)', region: 'AMBA', e: 'sebtrincheri@gmail.com', tel: '+54 11 3065-6869', zona: 'Flores' },
+  { n: 'Fletes Zona Norte', region: 'AMBA', e: 'info@fletes-zonanorte.com.ar', tel: '15-6802-8251', zona: 'San Isidro' },
+  { n: 'Mudanzas Sanchez', region: 'AMBA', e: 'consultas@mudanzas-sanchez.com', tel: '11-2354-7155', zona: 'San Isidro' },
+  { n: 'AlmaFlet', region: 'AMBA', e: 'info@almaflet.com.ar', tel: '+54 9 11 3936-4929', zona: 'Vicente López' },
+  { n: 'Fletes y Mudanzas Julio', region: 'AMBA', e: 'fletesjulio@hotmail.com', tel: '011 15-3547-8407', zona: 'Escobar' },
+  { n: 'Fletes Olivos', region: 'AMBA', e: 'info@fletesolivos.com.ar', tel: '011-4797-1073', zona: 'Olivos y Vicente López' },
+  { n: 'Mudanzas Martinz Hnos S.A.', region: 'AMBA', e: 'martinzmudanzas@gmail.com', tel: '11 4078-2767', zona: 'Martínez y Olivos' },
+  { n: 'Armenia Mudanzas', region: 'AMBA', e: 'info@mudanzasarmenia.com.ar', tel: '4756-6669', zona: 'Munro y Vicente López' },
+  { n: 'Fletes Fleche', region: 'AMBA', e: 'fletesfleche@gmail.com', tel: '4459-8960', zona: 'Hurlingham' },
+  { n: 'Hurling-Fleet (Fletes Me)', region: 'AMBA', e: 'fletesme@hotmail.com', tel: '15-5932-4391', zona: 'Hurlingham' },
+  { n: 'Minifletes Franco', region: 'AMBA', e: 'transportefranco@live.com.ar', tel: '15-3927-6294', zona: 'San Miguel y Bella Vista' },
+  { n: 'Mudarte', region: 'AMBA', e: 'consultas@mudarte.com.ar', tel: '11 3200-2023', zona: 'Olivos y Vicente López' },
+  { n: 'Fletes San Isidro (fletes-sanisidro.com.ar)', region: 'AMBA', e: 'zonanortefletes@gmail.com', tel: '+54 911 6802-8251', zona: 'San Isidro y Olivos' },
+  { n: 'Transporte San Isidro (fletesanisidro.com.ar)', region: 'AMBA', e: 'fletesanisidro@gmail.com', tel: '2153-0674', zona: 'San Isidro y Victoria' },
+  { n: 'Full Express Mensajería y Minifletes', region: 'AMBA', e: 'fullexpress.pilar@gmail.com', tel: '+54 9 11 5185-3339', zona: 'Pilar' },
+  { n: 'Boxes Pilar (Guardamuebles y Fletes)', region: 'AMBA', e: 'guardaboxespilar@hotmail.com', tel: '02304-424775', zona: 'Pilar' },
+  { n: 'Logística Integral Ariel', region: 'AMBA', e: 'logistica.oscariz17@gmail.com', tel: '11 2216-0942', zona: 'Pilar' },
+  { n: 'La Mudanza', region: 'AMBA', e: 'lamudanzamudanzas@gmail.com', tel: '11-2553-5500', zona: 'Pilar y Del Viso' },
+  { n: 'Fletes San Fernando', region: 'AMBA', e: 'fletessanfernandook@hotmail.com', tel: '11 4528-7983', zona: 'San Fernando' },
+  { n: 'Transgrama S.A.', region: 'AMBA', e: 'transgramasa@live.com.ar', tel: '011 4651-3919', zona: 'San Justo' },
+  { n: 'Mudanzas Loza', region: 'AMBA', e: 'transporte.loza22@gmail.com', tel: '(11) 2738-9589', zona: 'Tres de Febrero y San Martín' },
+  { n: 'Cassandra Moving', region: 'AMBA', e: 'cassandramooving@gmail.com', tel: '11-4162-4460', zona: '' },
+  { n: 'Fletes de Morón', region: 'AMBA', e: 'fletesdemoron@gmail.com', tel: '', zona: 'Morón' },
+  { n: 'Transporte Sena', region: 'AMBA', e: 'transportesena.ok@gmail.com', tel: '+54 9 11 5935-4309', zona: 'Ituzaingó' },
+  { n: 'Fletes y Mudanzas Moreno', region: 'AMBA', e: 'edubarreto_125_@hotmail.com', tel: '', zona: 'Moreno' },
+  { n: 'Fletes Andrés', region: 'AMBA', e: 'fletesandres@hotmail.com.ar', tel: '11-3274-2154', zona: 'General Rodríguez' },
+  { n: 'Tesei Fletes', region: 'AMBA', e: 'tesei_fletes@hotmail.com', tel: '4459-0694', zona: 'Villa Tesei' },
+  { n: 'Fletes fletes (Merlo)', region: 'AMBA', e: 'mg.v2008@hotmail.com', tel: '+54 9 11 6758-1496', zona: 'Merlo' },
+  { n: 'Mini Fletes Fernando', region: 'AMBA', e: 'miniflete.fernando@gmail.com', tel: '', zona: '' },
+  { n: 'Mini Fletes Ramos Mejía', region: 'AMBA', e: 'alejobrandsen1009@gmail.com', tel: '+54 9 11 6105-7718', zona: 'Ramos Mejía y San Justo' },
+  { n: 'Fletes Constitución', region: 'AMBA', e: 'fletes@fletesconstitucion.com.ar', tel: '7700-0027', zona: 'Constitución' },
+  { n: 'Mudanzas Atenas', region: 'AMBA', e: 'info@mudanzasatenas.com.ar', tel: '011 4942-4899', zona: 'Caballito y Belgrano' },
+  { n: 'PedidosFletes.com', region: 'AMBA', e: 'hola@pedidosfletes.com', tel: '7530-7197', zona: '' },
+  { n: 'Fletes Pablo (Villa Devoto)', region: 'AMBA', e: 'dominguez_logistica@hotmail.com', tel: '+54 11 5029-6214', zona: 'Villa Devoto' },
+  { n: 'Fletes Whitys', region: 'AMBA', e: 'fleteswhitys@gmail.com', tel: '+54 11-2341-1735', zona: '' },
+  { n: 'Verga Hnos SRL', region: 'AMBA', e: 'contacto@vergahnos.com.ar', tel: '(011) 4862-6866', zona: 'Almagro' },
+  { n: 'TuSenvios', region: 'AMBA', e: 'tusenviosok@hotmail.com', tel: '15-5990-3718', zona: 'Abasto y Almagro' },
+  { n: 'Mudanzas Gaston', region: 'AMBA', e: 'info@mudanzasgaston.com.ar', tel: '+54 9 11 5141-8195', zona: '' },
+  { n: 'Abad Mudanzas SRL', region: 'AMBA', e: 'info@abadmudanzas.com.ar', tel: '(011) 4854-0470', zona: '' },
+  { n: 'Mudanzas Balvanera (independiente)', region: 'AMBA', e: 'mudanzasbalvanera@gmail.com', tel: '11 3366-0318', zona: 'Balvanera' },
+  { n: 'Transporte Almagro', region: 'AMBA', e: 'info@transportealmagro.com.ar', tel: '011 4982-8128', zona: 'Almagro' },
+  { n: 'Art Fletes al Instante', region: 'AMBA', e: 'consultas@artfletes.com', tel: '(011) 4574-0604', zona: 'Villa Pueyrredón' },
+  { n: 'Transporte Nikita', region: 'AMBA', e: 'camionesxhora@gmail.com', tel: '011 4583-6492', zona: 'Agronomía y Villa General Mitre' },
+  { n: 'Fletes Falcón', region: 'AMBA', e: 'martinez00gladis@gmail.com', tel: '+54 9 11 3227-1399', zona: 'Lomas de Zamora' },
+  { n: 'Fletes y Mudanzas Lucio', region: 'AMBA', e: 'fletesymudanzaslucio@gmail.com', tel: '+54 11 3848-4293', zona: 'Avellaneda y Quilmes' },
+  { n: 'Fletes Zona Sur', region: 'AMBA', e: 'fletesymudanzaszonasur@gmail.com', tel: '', zona: 'Lanús' },
+  { n: 'Fletes Galassi (Transporte HyL)', region: 'AMBA', e: 'galassihyl@hotmail.com', tel: '', zona: 'Lomas de Zamora' },
+  { n: 'Fletes y Mudanzas Rodo', region: 'AMBA', e: 'fletesrodo@gmail.com', tel: '+54 9 11 6988-3339', zona: 'Berazategui' },
+  { n: 'Transporte Nesci', region: 'AMBA', e: 'transportenesci@hotmail.com', tel: '11-6639-2699', zona: 'Ezeiza' },
+  { n: 'Fletes Pico', region: 'AMBA', e: 'rosylombar_do@hotmail.com', tel: '+54 11 5943-7974', zona: 'Adrogué' },
+  { n: 'Fletes Sur (Burzaco)', region: 'AMBA', e: 'info@fletessur.com', tel: '+54 9 11 3045-0618', zona: 'Burzaco y Almirante Brown' },
+  { n: 'El Poco a Poco', region: 'AMBA', e: 'consultas@elpocoapoco.com.ar', tel: '(011) 4242-4182', zona: 'Banfield' },
+  { n: 'Adrogué Antonio Mudanzas', region: 'AMBA', e: 'mudanzasantonio2013@gmail.com', tel: '(011) 4294-9780', zona: 'Adrogué' },
+  { n: 'Mudanzas Integrales (Fletes y Mudanzas del Sur)', region: 'AMBA', e: 'fletesymudanzasdelsur@gmail.com', tel: '(011) 15-2362-5334', zona: 'Almirante Brown' },
+  { n: 'Agencia de Fletes Quilmes', region: 'AMBA', e: 'fletesquilmes@gmail.com', tel: '+54 11 4257-6622', zona: 'Quilmes' },
+  { n: 'Transpato Mudanzas', region: 'AMBA', e: 'alejandroriscino@yahoo.com.ar', tel: '', zona: 'Adrogué y Almirante Brown' },
+  { n: 'Mudadora Fletes Argentina', region: 'AMBA', e: 'fletesargentinaok@gmail.com', tel: '0221 618-7887', zona: 'La Plata y alrededores' },
+  { n: 'Fletes Capital', region: 'AMBA', e: 'info@fletes-capital.com.ar', tel: '011 3874-5405', zona: '' },
+  { n: 'FleteBA', region: 'AMBA', e: 'contacto@fleteba.com', tel: '+54 9 11 3341 4606', zona: '' },
+  { n: 'Movar Group', region: 'AMBA', e: 'moving@movargroup.com', tel: '+54 11 2008-3420', zona: 'San Isidro' },
+  { n: 'Logistica Torito', region: 'AMBA', e: 'logisticatorito@gmail.com', tel: '+54 11 5693-2292', zona: 'Quilmes Oeste' },
+  { n: 'Fletex', region: 'AMBA', e: 'fletexarg@gmail.com', tel: '+54 9 11 6028-2620', zona: '' },
+  { n: 'Fletes Pachy', region: 'AMBA', e: 'fletespachy@gmail.com', tel: '11 3042-7778', zona: '' },
+  { n: 'Fletes Ariel', region: 'AMBA', e: 'mudanzasariel2025@gmail.com', tel: '11 2005-2968', zona: '' },
+  { n: 'BeraExpress', region: 'AMBA', e: 'clientes@beraexpress.com', tel: '11 6062-6490', zona: 'Berazategui y Ranelagh' },
+  { n: 'Rapiflete', region: 'AMBA', e: 'info@rapiflete.ar', tel: '115 327-1226', zona: '' },
+  { n: 'Fletes Benjamin', region: 'AMBA', e: 'fletesbenjamin@hotmail.com.ar', tel: '+54 9 11 5657-0330', zona: '' },
+  { n: 'Gaona Fletes', region: 'AMBA', e: 'fletes@gaonafletes.com.ar', tel: '4005-4149', zona: '' },
+  { n: 'Nahuel Flet', region: 'AMBA', e: 'info@nahuelflet.com.ar', tel: '011 4864-8417', zona: '' },
+  { n: 'TuFlete', region: 'AMBA', e: 'contacto@tuflete.com.ar', tel: '+54 9 11 6689-2228', zona: 'Villa Lugano' },
+  { n: '24 Baires', region: 'AMBA', e: 'mudanzasencaba@gmail.com', tel: '+54 9 11 2540-1208', zona: '' },
+  { n: 'Medrano Flet', region: 'AMBA', e: 'leyvarafael_01@hotmail.com', tel: '4958-4036', zona: '' },
+  { n: 'Fletes Kairos', region: 'AMBA', e: 'contacto@mudanzaskairos.com', tel: '+54 9 11 2474-4416', zona: '' },
+  { n: 'Durand Logistica', region: 'AMBA', e: 'info@durandlogistica.com.ar', tel: '11 7228-8238', zona: '' }
 ];
 
 var REGION_TEXTO = {
@@ -114,7 +209,7 @@ var REGION_TEXTO = {
 function emailInvitacion(o) {
   var nm = esc(o.n || 'equipo');
   var linkB = linkBaja(o.e, 'invitacion-mudanceros');
-  var zona = esc(REGION_TEXTO[o.region] || o.region || 'tu zona');
+  var zona = esc((o.zona && o.zona.trim()) || REGION_TEXTO[o.region] || o.region || 'tu zona');
   return {
     subject: o.n + ': sumate a MudateYa como mudancero verificado',
     html:
