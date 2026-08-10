@@ -1,0 +1,27 @@
+# MudateYa
+
+> Marketplace argentino de mudanzas y fletes. Los usuarios cotizan gratis y comparan precios reales de mudanceros y empresas de mudanza verificadas (DNI y vehículo verificado), eligen sin compromiso y pagan de forma protegida (Mercado Pago o transferencia). Opera en CABA, Gran Buenos Aires y otras ciudades de Argentina (Córdoba, Rosario, La Plata, Mendoza, entre otras), incluyendo mudanzas dentro de la misma ciudad y entre provincias.
+
+## Para quién es
+
+- Personas y familias que necesitan mudarse o hacer un flete y quieren comparar precios sin llamar a nadie.
+- Empresas de mudanza y fleteros que buscan pedidos de clientes en su zona, sin abono mensual (pagan solo cuando trabajan).
+- Inmobiliarias que quieren ofrecer mudanceros verificados como beneficio a sus clientes.
+- Empresas, clubes, colegios y cuerpo diplomático que gestionan relocations (MudateYa Mobility).
+
+## Páginas principales
+
+- [Cotizar mudanza o flete](https://mudateya.ar/): formulario de cotización gratis, sin registro.
+- [Blog](https://mudateya.ar/blog): guías sobre precios, organización, embalaje y checklist de mudanza.
+- [¿Cuánto cuesta una mudanza en 2026?](https://mudateya.ar/blog/cuanto-cuesta-una-mudanza): factores de precio y cómo pagar menos.
+- [Checklist de mudanza](https://mudateya.ar/blog/checklist-mudanza): plan día por día.
+- [Qué preguntar antes de contratar una empresa de mudanzas](https://mudateya.ar/blog/que-preguntar-empresa-de-mudanzas)
+- [Sumarse como empresa de mudanzas](https://mudateya.ar/mudanceros.html): cómo recibir pedidos sin abono mensual.
+- [Plan para inmobiliarias](https://mudateya.ar/inmobiliaria.html): mudanceros verificados como beneficio para sus clientes.
+- [MudateYa Mobility](https://mudateya.ar/mya-mobility.html): relocation B2B para empresas, colegios, clubes de fútbol y cuerpo diplomático.
+- [Fletes y mudanzas por barrio/ciudad](https://mudateya.ar/sitemap.xml): páginas locales para CABA, GBA, Córdoba, Rosario, La Plata, Mendoza y otras ciudades.
+
+## Notas
+
+- Los precios y condiciones exactos se obtienen cotizando en el sitio; MudateYa no publica tarifas fijas porque varían por mudancero, zona, piso y fecha.
+- Cobertura geográfica: Argentina.
