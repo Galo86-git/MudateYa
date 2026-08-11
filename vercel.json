@@ -1193,6 +1193,26 @@
     {
       "path": "/api/cron-seo-auditoria",
       "schedule": "0 18 * * 1"
+    },
+    {
+      "path": "/api/cron-seguimiento-remax",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron-seguimiento-c21",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron-seguimiento-keller",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron-seguimiento-coldwell",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron-seguimiento-mudanceros",
+      "schedule": "0 12 * * *"
     }
   ]
 }

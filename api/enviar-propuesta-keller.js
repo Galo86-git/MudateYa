@@ -5,6 +5,14 @@
 // Market Center nuclea a muchos asesores — el mail pide que lo compartan
 // con su red, no es un alta individual de oficina chica.
 //
+// ALTA: igual que Coldwell Banker (no como asesor individual) — el CTA manda
+// a inmobiliarias-registro.html, así el Market Center se da de alta UNA vez
+// como partner con su propio slug (inmobiliaria:{slug}) y de ahí reparte el
+// link puertas adentro. Antes (hasta 2026-08-11) mandaba a
+// asesor-registro.html, que daba de alta asesores sueltos bajo el canal
+// "independientes" — cron-seguimiento-keller.js chequea los dos lugares por
+// las dudas de que algún Market Center ya haya usado el flujo viejo.
+//
 // ENVÍO: Resend, uno por uno (son solo 10, no hace falta batch).
 // IDEMPOTENCIA: Redis (clave keller-propuesta:enviados).
 //
@@ -57,17 +65,18 @@ function emailPropuesta(o) {
         '</div>' +
         '<div style="padding:28px">' +
           '<h2 style="margin:0 0 12px;color:#0F1923;font-size:20px">Hola, equipo de ' + nm + ' 👋</h2>' +
-          '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">Te escribimos desde <strong>MudateYa</strong>, la plataforma argentina de mudanzas con mudanceros verificados. Queríamos presentarles un beneficio de posventa para que puedan compartir con los asesores de ' + nm + '.</p>' +
+          '<p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px">Te escribimos desde <strong>MudateYa</strong>, la plataforma argentina de mudanzas con mudanceros verificados. Queríamos presentarles un beneficio de posventa para que puedan sumar a todo el equipo de asesores de ' + nm + '.</p>' +
           '<div style="background:#F5F7FA;border-radius:12px;padding:14px 20px;margin-bottom:18px">' +
             '<div style="font-size:12px;font-weight:700;color:#003580;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">En resumen:</div>' +
             '<ul style="margin:0;padding-left:20px;color:#0F1923;font-size:13px;line-height:1.6">' +
               '<li style="margin:6px 0">Cada asesor cobra <strong>5% de comisión</strong> por cada mudanza que su cliente concrete en alquiler, se liquida todos los meses.</li>' +
               '<li style="margin:6px 0">En compraventa, un regalo para el cliente que escala con el valor de la mudanza.</li>' +
-              '<li style="margin:6px 0">Sin costo para el Market Center ni para sus asesores. Alta individual, 30 segundos.</li>' +
+              '<li style="margin:6px 0">Sin costo para el Market Center ni para sus asesores.</li>' +
             '</ul>' +
           '</div>' +
+          '<p style="color:#475569;font-size:13px;line-height:1.7;margin:0 0 16px">Se dan de alta una sola vez como Market Center y les generamos un link propio (<code>mudateya.ar/inmobiliaria/tu-oficina</code>) para que después lo compartan puertas adentro — cada asesor se suma con ese link en 30 segundos.</p>' +
           '<div style="text-align:center;margin:20px 0">' +
-            '<a href="https://mudateya.ar/asesor-registro.html" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Registro para asesores →</a>' +
+            '<a href="https://mudateya.ar/inmobiliarias-registro.html" style="display:inline-block;background:#22C36A;color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">Dar de alta el Market Center →</a>' +
           '</div>' +
           '<p style="text-align:center;margin:0 0 18px"><a href="' + linkP + '" style="color:#003580;font-size:13px;font-weight:600;text-decoration:underline">📄 Ver la propuesta completa en PDF →</a></p>' +
           '<p style="color:#475569;font-size:13px;line-height:1.7;margin:0">Si les interesa mostrárselo a su equipo con más detalle, con gusto coordinamos una llamada corta. Cualquier duda, respondan a este mismo mail.</p>' +
@@ -79,11 +88,12 @@ function emailPropuesta(o) {
       '</div>',
     text:
       'Hola equipo de ' + nm + ',\n\n' +
-      'Te escribimos desde MudateYa, la plataforma argentina de mudanzas con mudanceros verificados. Queríamos presentarles un beneficio de posventa para que puedan compartir con los asesores de ' + nm + '.\n\n' +
+      'Te escribimos desde MudateYa, la plataforma argentina de mudanzas con mudanceros verificados. Queríamos presentarles un beneficio de posventa para que puedan sumar a todo el equipo de asesores de ' + nm + '.\n\n' +
       'En resumen:\n' +
       '- Cada asesor cobra 5% de comisión por cada mudanza que su cliente concrete en alquiler, se liquida todos los meses.\n' +
       '- En compraventa, un regalo para el cliente que escala con el valor de la mudanza.\n' +
-      '- Sin costo para el Market Center ni para sus asesores. Alta individual, 30 segundos: https://mudateya.ar/asesor-registro.html\n\n' +
+      '- Sin costo para el Market Center ni para sus asesores.\n\n' +
+      'Se dan de alta una sola vez como Market Center y les generamos un link propio para que después lo compartan puertas adentro — cada asesor se suma con ese link en 30 segundos: https://mudateya.ar/inmobiliarias-registro.html\n\n' +
       'Propuesta completa en PDF: ' + linkP + '\n\n' +
       'Si les interesa mostrárselo a su equipo con más detalle, con gusto coordinamos una llamada corta. Cualquier duda, respondan a este mismo mail.\n\n' +
       'Seguinos en Instagram: https://instagram.com/mudateya.ar\n\n' +
@@ -145,7 +155,7 @@ function generarPDFOficinaBase64(o) {
         'Comisión del 5% para el asesor por cada mudanza que su cliente concrete en alquiler, liquidada mensualmente.',
         'En operaciones de compraventa: un obsequio para el cliente que escala con el valor de la mudanza, sin comisión asociada.',
         'Sin costo de adhesión para el Market Center ni para sus asesores.',
-        'Alta individual por asesor, con link de derivación propio para hacer seguimiento de sus operaciones.'
+        'Alta una vez como Market Center, con link propio para compartir puertas adentro con todo el equipo.'
       ];
       doc.moveDown(0.2);
       bullets.forEach(function(b){
