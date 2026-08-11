@@ -2665,29 +2665,59 @@ async function derivarHumano(waId, motivo, conv, opts) {
     console.warn('derivarHumano email:', e.message);
   }
 
-  // Aviso EXTRA al equipo por WhatsApp, SOLO para urgentes. Hasta acá el único
-  // canal era el mail a ADMIN_EMAIL, que para un flete que sale en dos horas
-  // llega tarde (queda enterrado entre las otras notificaciones del día). Va
-  // por plantilla `alerta_urgente_equipo` porque el equipo casi nunca está
-  // dentro de la ventana de 24h de WhatsApp: sin plantilla aprobada el aviso
-  // falla justo cuando más se necesita. El texto libre queda de fallback para
-  // cuando sí está abierta. Los números salen de EQUIPO_TELEFONOS — si no está
-  // seteada, esto no hace nada. Nunca rompe la respuesta a quien escribió.
+  // Aviso EXTRA al equipo por WhatsApp. Hasta acá el único canal era el mail a
+  // ADMIN_EMAIL, que para un flete que sale en dos horas llega tarde (queda
+  // enterrado entre las otras notificaciones del día). Va por plantilla porque
+  // el equipo casi nunca está dentro de la ventana de 24h de WhatsApp: sin
+  // plantilla aprobada el aviso falla justo cuando más se necesita. El texto
+  // libre queda de fallback para cuando sí está abierta.
+  //
+  // Dispara para DOS de los cuatro tipos de escalación, con plantillas
+  // DISTINTAS a propósito:
+  //   🚨 URGENTE (alerta_urgente_equipo) → sale hoy, hay que tomarlo ya.
+  //   ⚠️ RECLAMO (alerta_reclamo_equipo) → algo salió mal; hay que mirarlo el
+  //      mismo día, pero no es del día. Con el mismo formato que el urgente,
+  //      el 🚨 se vuelve ruido y se deja de mirar.
+  // Los "pide atención humana" y los "bug" siguen yendo SOLO por mail: son los
+  // más frecuentes y los menos apremiantes, y meterlos acá convierte el canal
+  // en ruido de fondo. Si algún día hay que sumarlos, el patrón ya está.
+  // Nunca rompe la respuesta a quien escribió.
   try {
-    if (/urgente/i.test(motivo || '')) {
+    const esUrgenteWA = /urgente/i.test(motivo || '');
+    const esReclamoWA = !esUrgenteWA && /^reclamo/i.test(String(motivo || '').trim());
+    if (esUrgenteWA || esReclamoWA) {
       const { enviarPlantilla } = require('./_plantillas');
-      const tipo = /\bflete/i.test(motivo || '') ? 'FLETE' : 'MUDANZA';
       const digitos = String(waId).replace(/\D/g, '');
-      const detalle = String(motivo || '').replace(/^\s*urgente:\s*/i, '').trim().slice(0, 300) || 'sin detalle';
-      const texto =
-        `🚨 ${tipo} URGENTE — ${waId}\n\n${detalle}\n\n` +
-        `Emi no lo pudo resolver y lo escaló. Tomalo cuanto antes.\nhttps://wa.me/${digitos}`;
+      const detalle = String(motivo || '')
+        .replace(/^\s*(urgente|reclamo)\s*:\s*/i, '').trim().slice(0, 300) || 'sin detalle';
+      let plantilla, variables, texto;
+      if (esUrgenteWA) {
+        const tipo = /\bflete/i.test(motivo || '') ? 'FLETE' : 'MUDANZA';
+        plantilla = 'alerta_urgente_equipo';
+        variables = { '1': tipo, '2': waId, '3': detalle, '4': digitos };
+        texto =
+          `🚨 ${tipo} URGENTE — ${waId}\n\n${detalle}\n\n` +
+          `Emi no lo pudo resolver y lo escaló. Tomalo cuanto antes.\nhttps://wa.me/${digitos}`;
+      } else {
+        // quienLabel ya distingue cliente / mudancero-fletero / asesor /
+        // inmobiliaria: en un reclamo, de qué lado viene cambia por completo
+        // qué hay que hacer, así que va en el aviso y no solo en el mail.
+        plantilla = 'alerta_reclamo_equipo';
+        variables = { '1': quienLabel, '2': waId, '3': detalle, '4': digitos };
+        texto =
+          `⚠️ RECLAMO — ${quienLabel} ${waId}\n\n${detalle}\n\n` +
+          `Emi no lo pudo resolver y lo escaló. Miralo hoy.\nhttps://wa.me/${digitos}`;
+      }
       // A QUIÉN se le avisa. Si está seteada ALERTA_URGENTE_TEL (uno o varios
       // teléfonos separados por coma), el aviso va SOLO a esos: es el modo de
       // arranque, con una sola persona, para probarlo en vivo sin molestar al
       // resto del equipo. Si NO está seteada, cae al equipo completo de
       // EQUIPO_TELEFONOS. Para pasar de un modo al otro alcanza con poner o
       // borrar la env var en Vercel — no hay que tocar código.
+      // Los reclamos usan la MISMA lista a propósito: son pocos por día y
+      // sumar una env var propia significaría que el aviso no sale hasta que
+      // alguien se acuerde de cargarla. Si algún día el volumen justifica
+      // separar quién atiende reclamos de quién toma urgentes, se parte acá.
       // Los números NO van hardcodeados acá: el repo es público.
       const listaFija = alertaUrgenteTels();
       const destinos = listaFija.length ? listaFija : Object.keys(EQUIPO);
@@ -2697,19 +2727,14 @@ async function derivarHumano(waId, motivo, conv, opts) {
         // sentido notificarlo de lo suyo). En modo lista fija sí se le manda
         // igual: justamente se está probando desde el propio teléfono.
         if (!listaFija.length && tel === propio) continue;
-        const r = await enviarPlantilla(
-          tel,
-          'alerta_urgente_equipo',
-          { '1': tipo, '2': waId, '3': detalle, '4': digitos },
-          texto
-        );
+        const r = await enviarPlantilla(tel, plantilla, variables, texto);
         if (!r.enviado) {
-          console.warn('alerta urgente no entregada a', EQUIPO[ultimos10(tel)] || tel, '-', r.motivo);
+          console.warn(`alerta ${esUrgenteWA ? 'urgente' : 'reclamo'} no entregada a`, EQUIPO[ultimos10(tel)] || tel, '-', r.motivo);
         }
       }
     }
   } catch (e) {
-    console.warn('derivarHumano alerta urgente:', e.message);
+    console.warn('derivarHumano alerta equipo:', e.message);
   }
 
   return { ok: true, mensaje: 'Avisé al equipo. Alguien te va a contactar a la brevedad.' };
