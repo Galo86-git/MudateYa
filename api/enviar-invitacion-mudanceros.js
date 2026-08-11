@@ -263,13 +263,18 @@ var PROSPECTOS = [
   { n: 'Lift Van International', region: 'AMBA', e: 'sales@liftvan.com', tel: '', zona: 'Don Torcuato' },
   { n: 'Transportes Mitre', region: 'AMBA', e: 'contacto@transportesmitre.com', tel: '', zona: 'Villa Lugano' },
   { n: 'Mudanzas Urquiza', region: 'AMBA', e: 'mudanzasurquiza@gmail.com', tel: '', zona: 'Olivos' },
-  { n: 'El Neutral', region: 'AMBA', e: 'info@mudanzaselneutral.com.ar', tel: '', zona: 'Paternal' }
+  { n: 'El Neutral', region: 'AMBA', e: 'info@mudanzaselneutral.com.ar', tel: '', zona: 'Paternal' },
+  // ── Mendoza — barrida 2026-08-10 (solo con email confirmado en su propia web) ──
+  { n: 'Fletes Mendoza', region: 'Mendoza', e: 'contacto@fletesmendoza.com.ar', tel: '261 609-0153', zona: 'Mendoza Capital y Gran Mendoza' },
+  { n: 'Mudanzas Mendoza (MDS)', region: 'Mendoza', e: 'mdsfletes@hotmail.com', tel: '0261 472-4985', zona: 'Las Heras y Gran Mendoza' },
+  { n: 'Mudanzas Stocco e Hijos', region: 'Mendoza', e: 'mudanzas-stocco@hotmail.com', tel: '0261 425-3344', zona: 'Mendoza Capital' }
 ];
 
 var REGION_TEXTO = {
   'AMBA': 'Buenos Aires y alrededores',
   'Córdoba': 'Córdoba',
-  'Rosario': 'Rosario'
+  'Rosario': 'Rosario',
+  'Mendoza': 'Mendoza y Gran Mendoza'
 };
 
 function emailInvitacion(o) {

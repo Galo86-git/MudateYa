@@ -124,7 +124,10 @@ var PROSPECTOS = [
   { n: 'Jumito Inmobiliaria SRL', region: 'Rosario', e: 'jumitoinmobiliaria@gmail.com' },
   { n: 'Fontana Inmobiliaria SRL', region: 'Rosario', e: 'info@fontanainmobiliaria.com.ar' },
   { n: 'Rondeau Propiedades', region: 'Rosario', e: 'rondeaupropiedades@gmail.com' },
-  { n: 'Pérez Hernández Negocios Inmobiliarios', region: 'Rosario', e: 'inmobiliaria@perezhernandez.com.ar' }
+  { n: 'Pérez Hernández Negocios Inmobiliarios', region: 'Rosario', e: 'inmobiliaria@perezhernandez.com.ar' },
+  // ── Mendoza — barrida 2026-08-10 (solo con email confirmado en su propia web) ──
+  { n: 'Irrera Inmobiliaria', region: 'Mendoza', e: 'irrerainmobiliaria@yahoo.com.ar' },
+  { n: 'Fernando Puebla Inmobiliaria', region: 'Mendoza', e: 'info@fpinmobiliaria.com.ar' }
 ];
 
 function emailInvitacion(o) {
