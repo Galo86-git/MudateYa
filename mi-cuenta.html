@@ -1259,6 +1259,19 @@ body{background:var(--bg2)!important;-webkit-font-smoothing:antialiased;-moz-osx
   // Función global para suscribirse manualmente desde consola: await pushSubscribe()
   window.pushSubscribe = suscribir;
 
+  // ── Trackear instalación de la PWA (Add to Home Screen). El browser
+  //    dispara esto una sola vez, cuando la instalación se confirma —
+  //    no cuando se ofrece, cuando se completa. ──
+  window.addEventListener('appinstalled', function(){
+    var ses = getSesion();
+    if (!ses || !ses.email) return;
+    var headers = { 'Content-Type': 'application/json' };
+    if (ses.sessionToken) headers['x-session-token'] = ses.sessionToken;
+    fetch('/api/push?action=track-install&email=' + encodeURIComponent(ses.email), {
+      method: 'POST', headers: headers, body: JSON.stringify({ email: ses.email })
+    }).catch(function(){});
+  });
+
   if (document.readyState === 'complete') {
     evaluarBanner();
   } else {
@@ -2829,6 +2842,7 @@ async function loadPedidos(silencioso){
       return;
     }
     renderPedidos();
+    if (!silencioso) _abrirPedidoDesdeURL();
   }catch(e){
     if (!silencioso) {
       mudanzasDisponibles = [];
@@ -3816,6 +3830,25 @@ function renderRowPedido(m, tipo) {
     + (precioTxt ? '<span class="pd-precio-line">'+precioTxt+'</span>' : '<span class="pd-precio-line" style="color:var(--text3)">—</span>')
     + '<span class="pd-arrow">›</span>'
     + '</div>';
+}
+
+// ── Deep-link desde push: /mi-cuenta?pedido=ID abre ese pedido directo,
+//    en vez de dejar al mudancero a buscarlo a mano en la lista. Busca en
+//    las dos listas (no sabemos de antemano en cuál va a estar) y limpia el
+//    parámetro de la URL para que no se reabra solo en el próximo refresh. ──
+function _abrirPedidoDesdeURL() {
+  var id;
+  try { id = new URLSearchParams(window.location.search).get('pedido'); } catch(e) { return; }
+  if (!id) return;
+  try {
+    var url = new URL(window.location.href);
+    url.searchParams.delete('pedido');
+    window.history.replaceState({}, '', url);
+  } catch(e) {}
+  var enDisponibles = mudanzasDisponibles.some(function(x){ return x.id === id; });
+  var tipo = enDisponibles ? 'disponibles' : 'mias';
+  if (!enDisponibles && !misCotizaciones.some(function(x){ return x.id === id; })) return; // no está en ninguna, no hacer nada
+  seleccionarPedido(id, tipo);
 }
 
 // ── Seleccionar un pedido → mostrar detalle en panel lateral ──

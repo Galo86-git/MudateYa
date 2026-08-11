@@ -2734,7 +2734,7 @@ module.exports = async function handler(req, res) {
             enviarPush(emailMud, {
               titulo: '❌ Mudanza cancelada',
               cuerpo: `El cliente canceló: ${rutaTxt}`,
-              link: '/mi-cuenta'
+              link: '/mi-cuenta?pedido=' + mudanzaId
             }).catch(e => console.warn('Push cancelación error:', emailMud, e && e.message))
           )).catch(()=>{});
           // Email simple a cada uno
@@ -4612,7 +4612,7 @@ async function notificarMudanceros(mudanza) {
       return enviarPush(dest.email, {
         titulo: tituloPush,
         cuerpo: cuerpoPush,
-        link: '/mi-cuenta'
+        link: '/mi-cuenta?pedido=' + mudanza.id
       }).catch(function(e){ console.error('Push mudancero error:', dest.email, e && e.message); });
     }));
 
@@ -5166,7 +5166,7 @@ async function notificarMudancerosNoElegidos(mudanza, emailGanador) {
       enviarPush(emailMud, {
         titulo: 'Pedido adjudicado a otro mudancero',
         cuerpo: `El cliente eligió otra propuesta: ${rutaTxt}`,
-        link: '/mi-cuenta'
+        link: '/mi-cuenta?pedido=' + mudanza.id
       }).catch(()=>{})
     )).catch(()=>{});
     // Email + WhatsApp a cada uno
@@ -5390,7 +5390,7 @@ async function notificarMudanceroInvitado(mudanza, perfil) {
   enviarPush(perfil.email, {
     titulo: '⭐ Un cliente te eligió',
     cuerpo: `${mudanza.clienteNombre || 'Un cliente'}: ${mudanza.desde?.split(',')[0] || mudanza.desde} → ${mudanza.hasta?.split(',')[0] || mudanza.hasta}`,
-    link: '/mi-cuenta'
+    link: '/mi-cuenta?pedido=' + mudanza.id
   }).catch(function(e){ console.error('Push invitado error:', perfil.email, e && e.message); });
 
   await resend.emails.send({
@@ -5541,7 +5541,7 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   enviarPush(cot.mudanceroEmail, {
     titulo: tituloPush,
     cuerpo: cuerpoPush,
-    link: '/mi-cuenta'
+    link: '/mi-cuenta?pedido=' + mudanza.id
   }).catch(function(e){ console.error('Push pago error:', cot.mudanceroEmail, e && e.message); });
 
   const subject = esAnticipo
