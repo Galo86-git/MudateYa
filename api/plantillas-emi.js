@@ -120,6 +120,21 @@ const CREAR = [
     } },
     variables: { '1': 'FLETE', '2': '+5491133364677', '3': 'flete hoy 17hs, heladera de Palermo a Belgrano', '4': '5491133364677' } },
 
+  // Alerta al EQUIPO cuando Emi escala un RECLAMO (no-show, daños, pago no
+  // acreditado, disputa). Es una plantilla SEPARADA de alerta_urgente_equipo a
+  // propósito: un reclamo hay que mirarlo el mismo día, pero no es un flete que
+  // sale en dos horas. Si los dos avisos llegaran con el mismo 🚨 y el mismo
+  // "tomalo cuanto antes", el urgente se vuelve ruido y se deja de mirar —
+  // que es exactamente el problema que este canal vino a resolver.
+  // Mismas precauciones anti-rechazo que la de urgentes: sin botón de URL (el
+  // link va en el cuerpo, WhatsApp lo hace clickeable igual) y sin terminar en
+  // variable.
+  { name: 'alerta_reclamo_equipo', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '⚠️ RECLAMO — {{1}} {{2}}\n\n{{3}}\n\nAbrir chat: https://wa.me/{{4}}\n\nEmi no lo pudo resolver y lo escaló. Miralo hoy.',
+    } },
+    variables: { '1': 'cliente', '2': '+5491133364677', '3': 'contrató para el sábado y el mudancero no apareció', '4': '5491133364677' } },
+
   // Recordatorio al MUDANCERO que marcó "en curso" y nunca cerró la mudanza.
   // Va por plantilla porque el caso es, por definición, alguien que hace más de
   // un día que no escribe: la ventana de 24h ya está cerrada y el texto libre
