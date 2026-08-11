@@ -3596,14 +3596,14 @@ function activarEdicion(){
   form += '<div class="edit-field"><label>Equipo (personas)</label><select id="ed-equipo"><option>Solo yo</option><option>2 personas</option><option>3 personas</option><option>4 o más personas</option></select></div>';
   form += '</div>';
 
-  // Toggle: tipo de cobro (caso especial Córdoba y similares)
+  // Tipo de cobro: el mudancero ya lo elige de forma obligatoria en mi-cuenta
+  // (sin opción "Auto"); acá se edita ese mismo valor explícito.
   form += '<div class="edit-field"><label>Tipo de cobro <span style="color:#94A3B8;font-weight:400;font-size:11px">— cómo aparece el precio en el sitio</span></label>';
   form += '<select id="ed-tipoCobro" style="font-family:inherit">';
-  form += '<option value="">Auto (según zona)</option>';
+  form += '<option value="">Elegí una opción…</option>';
   form += '<option value="fijo">💰 Fijo — precio total por mudanza</option>';
   form += '<option value="porHora">⏱ Por hora — tarifa horaria</option>';
   form += '</select>';
-  form += '<div style="font-size:11px;color:#64748B;margin-top:6px;line-height:1.5">Si dejás <em>"Auto"</em>, los mudanceros de Córdoba aparecen como por hora y el resto como fijo. Solo cambiá esto si el mudancero quiere algo distinto.</div>';
   form += '</div>';
 
   form += '<div class="edit-section-title">Servicios y precios</div>';
@@ -3752,7 +3752,8 @@ function activarEdicion(){
     if (p.vehiculo)      { var v=document.getElementById('ed-vehiculo');      if(v) v.value=p.vehiculo; }
     if (p.cantVehiculos) { var cv=document.getElementById('ed-cantVehiculos');if(cv) cv.value=p.cantVehiculos; }
     if (p.equipo)        { var eq=document.getElementById('ed-equipo');       if(eq) eq.value=p.equipo; }
-    // Tipo de cobro: "" = auto/fallback heurístico, "fijo" o "porHora" = override explícito
+    // Tipo de cobro: "" = todavía sin elegir (perfiles viejos, de antes de que
+    // mi-cuenta lo pidiera obligatorio), "fijo" o "porHora" = valor explícito.
     var tc = document.getElementById('ed-tipoCobro');
     if (tc) tc.value = (p.tipoCobro === 'fijo' || p.tipoCobro === 'porHora') ? p.tipoCobro : '';
     if (p.anticipacion)  { var an=document.getElementById('ed-anticipacion'); if(an) an.value=p.anticipacion; }
