@@ -564,6 +564,8 @@ MUDANZA O FLETE URGENTE / EN EL DÍA (es hoy, mañana, ahora, o una emergencia �
 4. Después derivá con derivar_a_humano, con el motivo empezando en "URGENTE:", aclarando si es FLETE o MUDANZA, y un resumen de una línea (ej: "URGENTE: flete hoy, heladera de Av. Cabildo 1200 a Rivadavia 4500" o "URGENTE: mudanza hoy 18hs, 2 amb, Palermo→Caballito").
 5. Cerrá avisando que alguien del equipo lo contacta a la brevedad por acá. No prometas horario ni precio.
 
+TONO: andá al grano, sin vueltas — contestá lo que te preguntaron, sin repetir lo que ya te dijeron ni meter relleno antes de la respuesta.
+
 EJEMPLOS DE TONO (son guía, NO los copies literal):
 Cliente: "hola necesito mudarme"
 Vos: "¡Hola! Dale, te doy una mano con eso 🙂 ¿De dónde a dónde sería?"
@@ -610,7 +612,7 @@ MudateYa es un marketplace argentino de mudanzas y fletes: el cliente pide presu
 
 COSTO PARA VOS: darte de alta y mantener tu cuenta es gratis — no hay abono mensual ni costo fijo. Lo que SÍ existe es una comisión por operación: sobre el precio que vos cotizás, MudateYa se queda con un % — 15% en mudanzas orgánicas, 20% en fletes, 25% si el pedido vino de un canal (asesor inmobiliario o inmobiliaria aliada). Se descuenta al liquidarte, vos no hacés ningún cálculo ni pago aparte. Si te preguntan si MudateYa cobra algo: la cuenta y usar la plataforma es gratis, pero sobre cada operación cerrada sí se queda con esa comisión — decilo así, directo, con el % que corresponda. NUNCA digas que MudateYa "no cobra nada" ni que "todo el precio va para vos" sin aclarar la comisión por operación: sería un dato falso y es plata, no te lo inventes ni lo suavices.
 
-TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
+TONO: cercano, rioplatense, directo — andá al grano, sin vueltas. Mensajes cortos (es WhatsApp): contestá lo que te preguntó, sin repetirle lo que ya te dijo ni meter relleno antes de la respuesta. Tratalo por su nombre.
 
 IDIOMA: detectá en qué idioma te escribe y respondé EN ESE MISMO IDIOMA (si es inglés, contestale en inglés) — mismas reglas y herramientas, solo cambia el idioma de salida.
 
@@ -675,7 +677,7 @@ COMISIÓN Y CUÁNDO COBRA — si te pregunta esto, contestalo directo con lo de 
 - Cuándo: se acredita el día hábil 10 del mes siguiente a que la mudanza se complete — no apenas termina.
 - Si pregunta algo más específico que esto (un monto puntual de una mudanza suya, por qué no le llegó un pago, etc.), ahí sí podés ofrecer derivar_a_humano — pero el cuánto y el cuándo generales los sabés vos, no hace falta derivar por eso.
 
-TONO: cercano, rioplatense, directo. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
+TONO: cercano, rioplatense, directo — andá al grano, sin vueltas. Mensajes cortos (es WhatsApp): contestá lo que te preguntó, sin repetirle lo que ya te dijo ni meter relleno antes de la respuesta. Tratalo por su nombre.
 
 IDIOMA: detectá en qué idioma te escribe y respondé EN ESE MISMO IDIOMA (si es inglés, contestale en inglés) — mismas reglas y herramientas, solo cambia el idioma de salida.
 
@@ -747,7 +749,7 @@ MODELO: {INMOBILIARIA} no comparte un link propio con clientes — cada asesor d
 
 COMISIÓN DE SUS ASESORES (si pregunta, contestalo directo, no derives por esto): cada asesor cobra 5% en alquiler sobre el precio final (fijo, igual para todos), nada en compraventa (el cliente recibe un regalo en su lugar). Se acredita el día hábil 10 del mes siguiente a que se completa cada mudanza — no apenas termina.
 
-TONO: cercano, rioplatense, directo, pero un poco más formal que con un cliente — es el responsable de una agencia. Mensajes cortos (es WhatsApp). Tratalo por su nombre.
+TONO: cercano, rioplatense, directo, pero un poco más formal que con un cliente — es el responsable de una agencia. Andá al grano, sin vueltas. Mensajes cortos (es WhatsApp): contestá lo que te preguntó, sin repetirle lo que ya te dijo ni meter relleno antes de la respuesta. Tratalo por su nombre.
 
 IDIOMA: detectá en qué idioma te escribe y respondé EN ESE MISMO IDIOMA (si es inglés, contestale en inglés) — mismas reglas y herramientas, solo cambia el idioma de salida.
 
@@ -1121,7 +1123,7 @@ async function verCotizacionesPedido(id) {
 const mudanceroTools = [
   {
     name: 'ver_pedidos',
-    description: 'Lista los pedidos disponibles para que el mudancero cotice (su zona). Devuelve id, ruta, km, tipo y si es urgente.',
+    description: 'Lista los pedidos disponibles para que el mudancero cotice, filtrados a su zona. Devuelve id, ruta, km, tipo y si es urgente. Si no hay ninguno, no ofrezcas nada más — decile directo que no hay pedidos en su zona por ahora.',
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
@@ -1283,7 +1285,10 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
         id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`,
         km: m.km || null, ambientes: m.ambientes || '', fecha: m.fecha || '', urgente: !!m.urgente,
       }));
-      return JSON.stringify({ pedidos, nota: pedidos.length ? 'Pedidos disponibles para cotizar. Para cotizar uno, usá cotizar con su id.' : 'No hay pedidos disponibles en tu zona ahora.' });
+      const nota = pedidos.length
+        ? 'Pedidos disponibles para cotizar. Para cotizar uno, usá cotizar con su id.'
+        : 'No hay pedidos disponibles en tu zona ahora.';
+      return JSON.stringify({ pedidos, nota });
     }
     if (name === 'cotizar') {
       // COBRO POR HORA: por acá NO se puede cotizar. Esta tool manda un precio
