@@ -427,7 +427,7 @@ module.exports = async function handler(req, res) {
         nombre: nombre, slug: slugFinal, logo: '', colorPrimario: '#003580',
         comisionInmobiliaria: 0, contactoEmail: email, contactoNombre: contacto,
         contactoWhatsapp: wapp, activa: true, fechaAlta: new Date(ts).toISOString(),
-        colegio: colegio, matricula: matricula
+        colegio: colegio, matricula: matricula, origen: origen
       };
       await setJSON('inmobiliaria:' + slugFinal, dataInmo);
       await agregarAlIndice(slugFinal);
