@@ -528,7 +528,8 @@ async function enviarForm(e) {
         colegio: colegio,
         matricula: matricula,
         email: email,
-        whatsapp: wapp
+        whatsapp: wapp,
+        origen: (new URLSearchParams(location.search).get('origen') || '')
       })
     });
     // Parsear response con manejo seguro: si no es JSON valido, mostrar texto

@@ -212,7 +212,10 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 </div>
 
 <script>
-var ORIGEN = 'asesores-generico';
+var ORIGEN = (function(){
+  try { return new URLSearchParams(location.search).get('origen') || 'asesores-generico'; }
+  catch(e) { return 'asesores-generico'; }
+})();
 var _link = '';
 var _inmo = '';
 var _nombre = '';

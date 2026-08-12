@@ -331,6 +331,9 @@ module.exports = async function handler(req, res) {
       var opsMes   = (body.operacionesPorMes || '').toString().trim().slice(0, 20);
       var sitio    = (body.sitio || '').toString().trim().slice(0, 120);
       var logoUrl  = (body.logoUrl || '').toString().trim().slice(0, 500);
+      // De dónde vino el registro (ej. "expo-realestate-2026") — puramente
+      // informativo, no bloquea ni valida nada si no viene.
+      var origen   = (body.origen || '').toString().trim().slice(0, 60);
 
       // Validaciones mínimas — devolvemos cada faltante en castellano legible
       var faltan = [];
@@ -403,6 +406,7 @@ module.exports = async function handler(req, res) {
         operacionesPorMes: opsMes,
         sitio: sitio,
         logoUrl: logoUrl,
+        origen: origen,
         fechaSolicitud: new Date(ts).toISOString(),
         estado: 'auto-aprobada',  // 'auto-aprobada' | 'rechazada' (ya no hay 'pendiente': se activa sola)
         slugAsignado: slugFinal
