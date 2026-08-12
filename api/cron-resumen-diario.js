@@ -102,6 +102,11 @@ module.exports = async function handler(req, res) {
     var asesoresGeneralesHoy = asesoresGenerales.filter(function (a) { return fechaAR(a.creadoEn) === hoy; });
     var asesoresCanalHoy = await asesoresPorCanalHoy(hoy);
 
+    // Inmobiliarias dadas de alta hoy (api/inmobiliarias.js — índice
+    // 'inmobiliarias:lista', ver el modelo ahí).
+    var inmobiliarias = await ultimosObjetos('inmobiliarias:lista', 'inmobiliaria:', 200);
+    var inmobiliariasNuevasHoy = inmobiliarias.filter(function (i) { return fechaAR(i.fechaAlta) === hoy; });
+
     // Con cuánta gente distinta habló Emi hoy (registrarInteraccionDiaria en whatsapp.js).
     var hablaronClientes = (await redisCall('SCARD', 'emi:hablo:cliente:' + hoy)) || 0;
     var hablaronMudanceros = (await redisCall('SCARD', 'emi:hablo:mudancero:' + hoy)) || 0;
@@ -118,6 +123,7 @@ module.exports = async function handler(req, res) {
       cotizacionesRecibidas: cotizacionesHoy.length,
       mudancerosNuevos: mudancerosNuevosHoy.length,
       asesoresNuevos: asesoresGeneralesHoy.length + asesoresCanalHoy.length,
+      inmobiliariasNuevas: inmobiliariasNuevasHoy.length,
       cancelaciones: canceladasHoy.length,
       cancelacionesConProblema: canceladasConProblema.length,
       emiHablóConClientes: Number(hablaronClientes),
@@ -132,7 +138,7 @@ module.exports = async function handler(req, res) {
     // &enviar=1 a la misma URL — sigue exigiendo el token de admin.
     var forzarEnvio = req.query.enviar === '1';
     if (req.method === 'GET' && !esVercelCron && !forzarEnvio) {
-      return res.status(200).json({ ok: true, resumen: resumen, detalle: { pedidosHoy, cotizacionesHoy, canceladasHoy, mudancerosNuevosHoy, asesoresGeneralesHoy, asesoresCanalHoy } });
+      return res.status(200).json({ ok: true, resumen: resumen, detalle: { pedidosHoy, cotizacionesHoy, canceladasHoy, mudancerosNuevosHoy, asesoresGeneralesHoy, asesoresCanalHoy, inmobiliariasNuevasHoy } });
     }
 
     // ── Mandar el mail (cron o admin forzándolo) ──
@@ -181,6 +187,9 @@ module.exports = async function handler(req, res) {
       }).concat(asesoresCanalHoy.map(function (a) {
         return { nombre: a.nombre || '', sub: a.canal, valor: 'alta hoy' };
       }));
+      var filasInmo = inmobiliariasNuevasHoy.slice(0, 15).map(function (i) {
+        return { nombre: i.nombre || '', sub: i.contactoEmail || '', valor: 'alta hoy' };
+      });
       var filasCancel = canceladasHoy.slice(0, 15).map(function (m) {
         var problema = (m.anticipoPagado && !m.refundAnticipoId);
         var sub = m.anticipoPagado ? (problema ? 'seña pagada, sin reintegrar' : 'seña reintegrada') : 'sin seña pagada';
@@ -222,6 +231,7 @@ module.exports = async function handler(req, res) {
                 scoreCelda(resumen.cotizacionesRecibidas, 'Cotizaciones', false, false) +
                 scoreCelda(resumen.mudancerosNuevos, 'Mudanceros', false, false) +
                 scoreCelda(resumen.asesoresNuevos, 'Asesores', false, false) +
+                scoreCelda(resumen.inmobiliariasNuevas, 'Inmobiliarias', false, false) +
                 scoreCelda(resumen.cancelaciones, 'Cancelaciones', true, canceladasConProblema.length > 0) +
               '</tr></table>' +
             '</div>' +
@@ -230,6 +240,7 @@ module.exports = async function handler(req, res) {
               seccion('Cotizaciones recibidas', resumen.cotizacionesRecibidas, filasCots, 'Sin cotizaciones nuevas hoy.') +
               seccion('Mudanceros nuevos', resumen.mudancerosNuevos, filasMud, 'Sin mudanceros nuevos hoy.') +
               seccion('Asesores nuevos', resumen.asesoresNuevos, filasAsesores, 'Sin asesores nuevos hoy.') +
+              seccion('Inmobiliarias nuevas', resumen.inmobiliariasNuevas, filasInmo, 'Sin inmobiliarias nuevas hoy.') +
               seccion('Cancelaciones', resumen.cancelaciones, filasCancel, 'Sin cancelaciones hoy.') +
               seccion('Emi habló hoy con', null, [
                 { nombre: 'Clientes', valor: String(resumen.emiHablóConClientes) },
