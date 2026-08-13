@@ -152,8 +152,9 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
         <div class="field">
           <label class="flabel" for="f-inmo">Inmobiliaria <span class="req">*</span></label>
-          <input id="f-inmo" class="finput" type="text" placeholder="Ej: Pérez Propiedades (o Independiente)" autocomplete="organization" maxlength="80" list="dl-inmos"/>
+          <input id="f-inmo" class="finput" type="text" placeholder="Ej: Pérez Propiedades" autocomplete="organization" maxlength="80" list="dl-inmos"/>
           <datalist id="dl-inmos"></datalist>
+          <div style="font-size:11.5px;color:#94A3B8;margin-top:5px">¿Sos independiente, sin inmobiliaria? Escribí "Independiente".</div>
         </div>
         <div class="field">
           <label class="flabel" for="f-nombre">Nombre y apellido <span class="req">*</span></label>
@@ -211,7 +212,10 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 </div>
 
 <script>
-var ORIGEN = 'asesores-generico';
+var ORIGEN = (function(){
+  try { return new URLSearchParams(location.search).get('origen') || 'asesores-generico'; }
+  catch(e) { return 'asesores-generico'; }
+})();
 var _link = '';
 var _inmo = '';
 var _nombre = '';

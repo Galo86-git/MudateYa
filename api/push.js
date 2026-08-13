@@ -19,6 +19,7 @@
 //   require('./push').enviarPush(email, { titulo, cuerpo, link, icono })
 
 var webpush = require('web-push');
+var { esAdmin } = require('./_auth');
 
 // ── Redis (Upstash REST) ───────────────────────────────────────────────────────
 var REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
@@ -141,6 +142,33 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ publicKey: VAPID_PUBLIC });
   }
 
+  // GET ?action=stats&token=ADMIN_TOKEN — admin. Cuántos mudanceros
+  // aprobados tienen push activo ahora mismo (push:subs:{email} no vacío) y
+  // cuántos instalaron la PWA (set pwa:instalados, ver action=track-install
+  // más abajo — solo cuenta desde que se agregó ese tracking, no hay forma
+  // de saber instalaciones previas).
+  if (action === 'stats' && req.method === 'GET') {
+    if (!esAdmin(req)) return res.status(401).json({ error: 'No autorizado' });
+    var todosEmails = (await getJSON('mudanceros:todos')) || [];
+    var aprobados = 0, conPush = 0;
+    for (var i = 0; i < todosEmails.length; i++) {
+      var perfil = await getJSON('mudancero:perfil:' + todosEmails[i]);
+      if (!perfil || perfil.estado !== 'aprobado') continue;
+      aprobados++;
+      var subs = await getJSON('push:subs:' + String(todosEmails[i]).toLowerCase());
+      if (subs && Array.isArray(subs) && subs.length > 0) conPush++;
+    }
+    var instalados = (await redisCmd(['SMEMBERS', 'pwa:instalados'])) || [];
+    return res.status(200).json({
+      ok: true,
+      mudancerosAprobados: aprobados,
+      conPushActivo: conPush,
+      porcentajePush: aprobados ? Math.round(conPush / aprobados * 100) : 0,
+      appInstalada: instalados.length,
+      porcentajeApp: aprobados ? Math.round(instalados.length / aprobados * 100) : 0
+    });
+  }
+
   // El resto requiere email + auth
   var email = (req.query && req.query.email) || (req.body && req.body.email) || '';
   email = (email + '').toLowerCase().trim();
@@ -201,6 +229,14 @@ module.exports = async function handler(req, res) {
       await delKey(key2);
     }
 
+    return res.status(200).json({ ok: true });
+  }
+
+  // POST ?action=track-install — el front lo llama en el evento 'appinstalled'
+  // (agregó la PWA a la pantalla de inicio). Set en Redis, así que agregar el
+  // mismo mudancero de nuevo no duplica nada.
+  if (action === 'track-install' && req.method === 'POST') {
+    await redisCmd(['SADD', 'pwa:instalados', email]);
     return res.status(200).json({ ok: true });
   }
 

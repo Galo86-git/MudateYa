@@ -2734,7 +2734,7 @@ module.exports = async function handler(req, res) {
             enviarPush(emailMud, {
               titulo: '❌ Mudanza cancelada',
               cuerpo: `El cliente canceló: ${rutaTxt}`,
-              link: '/mi-cuenta'
+              link: '/mi-cuenta?pedido=' + mudanzaId
             }).catch(e => console.warn('Push cancelación error:', emailMud, e && e.message))
           )).catch(()=>{});
           // Email simple a cada uno
@@ -3690,6 +3690,14 @@ module.exports = async function handler(req, res) {
       const { email } = req.query;
       const ids = await getJSON('mudanzas:activas') || [];
       const rechazados = email ? (await getJSON(`rechazados:${email}`) || []) : [];
+      // Perfil del mudancero — mismo criterio de zona que el barrido (avisos
+      // de pedido nuevo, ver whatsapp.js:barridoWhatsApp): geo primero, texto
+      // como fallback. Antes este endpoint no filtraba nada acá (confiaba en
+      // que el barrido ya había avisado solo a los que cubrían la zona), pero
+      // Emi (ver_pedidos) lo usa para responder "qué pedidos hay" on-demand,
+      // y ahí sí hace falta filtrar — si no, ofrece pedidos de cualquier
+      // punto del país como si fueran "disponibles" para ese mudancero.
+      const perfil = email ? (await getJSON(`mudancero:perfil:${email}`)) : null;
       const disponibles = [];
       const ahora = new Date();
       for (const id of ids) {
@@ -3699,6 +3707,18 @@ module.exports = async function handler(req, res) {
         if (m.modoCotizacion === 'dirigido' && email && !(m.mudancerosInvitados||[]).includes(email)) continue; // modo dirigido: solo invitados
         if (email && m.cotizaciones.find(c => c.mudanceroEmail === email)) continue;
         if (rechazados.includes(id)) continue; // ocultar rechazados
+        if (perfil) {
+          const desde = m.desde || m.origen || '';
+          const hasta = m.hasta || m.destino || '';
+          const geo = await cubreGeo(perfil, desde, m.origenCoords);
+          let cubre = geo;
+          if (geo === null) {
+            const cobertura = `${perfil.zonaBase || ''} ${perfil.zonasExtra || ''}`;
+            const palabras = palabrasZona(`${desde} ${hasta}`);
+            cubre = coincideZona(cobertura, palabras, { ignorarComodines: true, textoPedido: `${desde} ${hasta}` });
+          }
+          if (!cubre) continue; // no le queda en zona, no se lo ofrece
+        }
         // Gate de contacto: acá el pedido siempre está en 'buscando', así que
         // el celular del cliente nunca sale. Se sanitiza igual por defensa.
         disponibles.push(sanitizarParaMudancero(m, email));
@@ -4592,7 +4612,7 @@ async function notificarMudanceros(mudanza) {
       return enviarPush(dest.email, {
         titulo: tituloPush,
         cuerpo: cuerpoPush,
-        link: '/mi-cuenta'
+        link: '/mi-cuenta?pedido=' + mudanza.id
       }).catch(function(e){ console.error('Push mudancero error:', dest.email, e && e.message); });
     }));
 
@@ -5146,7 +5166,7 @@ async function notificarMudancerosNoElegidos(mudanza, emailGanador) {
       enviarPush(emailMud, {
         titulo: 'Pedido adjudicado a otro mudancero',
         cuerpo: `El cliente eligió otra propuesta: ${rutaTxt}`,
-        link: '/mi-cuenta'
+        link: '/mi-cuenta?pedido=' + mudanza.id
       }).catch(()=>{})
     )).catch(()=>{});
     // Email + WhatsApp a cada uno
@@ -5370,7 +5390,7 @@ async function notificarMudanceroInvitado(mudanza, perfil) {
   enviarPush(perfil.email, {
     titulo: '⭐ Un cliente te eligió',
     cuerpo: `${mudanza.clienteNombre || 'Un cliente'}: ${mudanza.desde?.split(',')[0] || mudanza.desde} → ${mudanza.hasta?.split(',')[0] || mudanza.hasta}`,
-    link: '/mi-cuenta'
+    link: '/mi-cuenta?pedido=' + mudanza.id
   }).catch(function(e){ console.error('Push invitado error:', perfil.email, e && e.message); });
 
   await resend.emails.send({
@@ -5521,7 +5541,7 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   enviarPush(cot.mudanceroEmail, {
     titulo: tituloPush,
     cuerpo: cuerpoPush,
-    link: '/mi-cuenta'
+    link: '/mi-cuenta?pedido=' + mudanza.id
   }).catch(function(e){ console.error('Push pago error:', cot.mudanceroEmail, e && e.message); });
 
   const subject = esAnticipo

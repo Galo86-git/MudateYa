@@ -1181,6 +1181,7 @@ body{background:var(--bg2)!important;-webkit-font-smoothing:antialiased;-moz-osx
       if (ses && ses.email && appVisible) {
         clearInterval(iv);
         banner.style.display = 'flex';
+        window._pushBannerVisible = true;
       }
       if (intentos > 20) clearInterval(iv);
     }, 2000);
@@ -1197,6 +1198,7 @@ body{background:var(--bg2)!important;-webkit-font-smoothing:antialiased;-moz-osx
       var permiso = await Notification.requestPermission();
       if (permiso !== 'granted') {
         if (banner) banner.style.display = 'none';
+        window._pushBannerVisible = false;
         return;
       }
 
@@ -1226,10 +1228,12 @@ body{background:var(--bg2)!important;-webkit-font-smoothing:antialiased;-moz-osx
       }
 
       if (banner) banner.style.display = 'none';
+      window._pushBannerVisible = false;
       console.log('[push] suscripto OK');
     } catch (err) {
       console.warn('[push] error suscribiendo:', err.message);
       if (banner) banner.style.display = 'none';
+      window._pushBannerVisible = false;
     }
   }
 
@@ -1237,6 +1241,7 @@ body{background:var(--bg2)!important;-webkit-font-smoothing:antialiased;-moz-osx
   if (btnDismiss) {
     btnDismiss.addEventListener('click', function(){
       if (banner) banner.style.display = 'none';
+      window._pushBannerVisible = false;
       try { localStorage.setItem('pushBannerDismissed', String(Date.now())); } catch(e){}
     });
   }
@@ -1258,6 +1263,19 @@ body{background:var(--bg2)!important;-webkit-font-smoothing:antialiased;-moz-osx
 
   // Función global para suscribirse manualmente desde consola: await pushSubscribe()
   window.pushSubscribe = suscribir;
+
+  // ── Trackear instalación de la PWA (Add to Home Screen). El browser
+  //    dispara esto una sola vez, cuando la instalación se confirma —
+  //    no cuando se ofrece, cuando se completa. ──
+  window.addEventListener('appinstalled', function(){
+    var ses = getSesion();
+    if (!ses || !ses.email) return;
+    var headers = { 'Content-Type': 'application/json' };
+    if (ses.sessionToken) headers['x-session-token'] = ses.sessionToken;
+    fetch('/api/push?action=track-install&email=' + encodeURIComponent(ses.email), {
+      method: 'POST', headers: headers, body: JSON.stringify({ email: ses.email })
+    }).catch(function(){});
+  });
 
   if (document.readyState === 'complete') {
     evaluarBanner();
@@ -1531,15 +1549,23 @@ function confirmarAccion(opts) {
     try { dismissedAt = parseInt(localStorage.getItem('passkeyBannerDismissed') || '0'); } catch(e){}
     if (Date.now() - dismissedAt < 7*24*3600*1000) return;
 
-    // Esperar a que la app esté visible y mostrar
+    // Esperar a que la app esté visible Y que el banner de push no esté
+    // ocupando el mismo lugar en pantalla (mismo bottom:16px) — antes esto
+    // era un delay fijo de 2s que en la práctica dejaba a los dos banners
+    // visibles a la vez, con el de passkey tapando al de push por venir
+    // después en el DOM. Ahora espera de verdad a que el de push se resuelva
+    // (se muestre y lo cierren, o directamente no aplique) antes de salir.
     var intentos = 0;
     var iv = setInterval(function(){
       intentos++;
       var appScreen = document.getElementById('appScreen');
-      if (appScreen && appScreen.style.display !== 'none' && appScreen.style.display !== '') {
+      var appVisible = appScreen && appScreen.style.display !== 'none' && appScreen.style.display !== '';
+      var pushOcupado = window._pushBannerVisible === true;
+      // Mínimo 2 vueltas (4s) para darle tiempo al banner de push a decidir
+      // si se va a mostrar antes de asumir que no lo va a hacer.
+      if (appVisible && !pushOcupado && intentos >= 2) {
         clearInterval(iv);
-        // Esperar 2 seg después del banner push para no saturar
-        setTimeout(function(){ banner.style.display = 'flex'; }, 2000);
+        banner.style.display = 'flex';
       }
       if (intentos > 30) clearInterval(iv);
     }, 2000);
@@ -2829,6 +2855,7 @@ async function loadPedidos(silencioso){
       return;
     }
     renderPedidos();
+    if (!silencioso) _abrirPedidoDesdeURL();
   }catch(e){
     if (!silencioso) {
       mudanzasDisponibles = [];
@@ -3816,6 +3843,25 @@ function renderRowPedido(m, tipo) {
     + (precioTxt ? '<span class="pd-precio-line">'+precioTxt+'</span>' : '<span class="pd-precio-line" style="color:var(--text3)">—</span>')
     + '<span class="pd-arrow">›</span>'
     + '</div>';
+}
+
+// ── Deep-link desde push: /mi-cuenta?pedido=ID abre ese pedido directo,
+//    en vez de dejar al mudancero a buscarlo a mano en la lista. Busca en
+//    las dos listas (no sabemos de antemano en cuál va a estar) y limpia el
+//    parámetro de la URL para que no se reabra solo en el próximo refresh. ──
+function _abrirPedidoDesdeURL() {
+  var id;
+  try { id = new URLSearchParams(window.location.search).get('pedido'); } catch(e) { return; }
+  if (!id) return;
+  try {
+    var url = new URL(window.location.href);
+    url.searchParams.delete('pedido');
+    window.history.replaceState({}, '', url);
+  } catch(e) {}
+  var enDisponibles = mudanzasDisponibles.some(function(x){ return x.id === id; });
+  var tipo = enDisponibles ? 'disponibles' : 'mias';
+  if (!enDisponibles && !misCotizaciones.some(function(x){ return x.id === id; })) return; // no está en ninguna, no hacer nada
+  seleccionarPedido(id, tipo);
 }
 
 // ── Seleccionar un pedido → mostrar detalle en panel lateral ──
