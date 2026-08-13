@@ -10,7 +10,7 @@
 // por Instagram queda 100% igual que uno hecho por la web: mismo esquema en
 // Redis, mismo mail, mismo panel. Si el día de mañana cambia algún flujo de
 // alta, este bot lo hereda solo, sin tocar nada acá.
-//   - registrar_asesor        -> api/asesores.js?action=register (asesor-registro.html)
+//   - registrar_asesor        -> api/canales.js?action=registrar&canal=independientes (link fijo, mismo sistema que WhatsApp)
 //   - registrar_inmobiliaria  -> api/inmobiliarias.js?action=solicitar-alta (inmobiliarias-registro.html)
 //   - registrar_mudancero     -> api/registrar-mudancero.js, tipoRegistro:'corto' (mudanceros.html)
 //
