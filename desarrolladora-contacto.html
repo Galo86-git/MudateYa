@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sumate a MudateYa · Programa para Desarrolladoras</title>
+<meta name="description" content="Dejá tu contacto y te mandamos la propuesta de MudateYa para desarrolladoras: una opción para tus compradores al momento de la entrega."/>
+<meta name="robots" content="noindex"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --navy:#003580; --green:#22C36A; --gold:#C6A464; --coral:#FF6B6B;
+    --ink:#0F1923; --t2:#475569; --t3:#94A3B8;
+    --line:#E5E9F0; --bg:#FFFFFF; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.55;
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+    display:flex; align-items:flex-start; justify-content:center; padding:24px 16px;
+  }
+  .wrap{width:100%; max-width:480px}
+
+  .cobrand{display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:18px}
+  .cobrand .mya{font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:1px; color:var(--navy)}
+  .cobrand .mya span{color:var(--green)}
+  .cobrand .chip{font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#8A6416; background:#FBF0DE; border:1px solid #EFDCB3; border-radius:999px; padding:5px 10px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 12px 40px rgba(15,25,35,.06)}
+
+  .hero{background:var(--navy); color:#fff; padding:30px 24px 26px; text-align:center}
+  .hero .icon{font-size:40px; margin-bottom:6px}
+  .hero h1{font-size:19px; font-weight:800}
+  .hero p{font-size:13px; color:#B8D4FF; margin-top:4px}
+
+  .body{padding:22px 24px 26px}
+  .body h2{font-size:15px; font-weight:800; margin-bottom:3px}
+  .body .sub{font-size:13px; color:var(--t2); margin-bottom:16px}
+  .field{margin-bottom:13px}
+  .flabel{display:block; font-size:12.5px; font-weight:700; color:var(--ink); margin-bottom:5px}
+  .flabel .req{color:var(--coral)}
+  .flabel .opt{color:var(--t3); font-weight:500}
+  .finput{
+    width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:11px;
+    font-size:14.5px; font-weight:500; font-family:inherit; color:var(--ink); background:#fff; transition:border-color .15s, box-shadow .15s;
+  }
+  .finput::placeholder{color:var(--t3); font-weight:500}
+  .finput:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(0,53,128,.12)}
+  .gerror{display:none; background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; font-size:13px; font-weight:600; padding:10px 13px; border-radius:10px; margin-bottom:14px}
+  .btn{
+    width:100%; padding:14px; border:none; border-radius:12px; background:var(--navy); color:#fff;
+    font-size:15px; font-weight:800; font-family:inherit; cursor:pointer; transition:transform .12s, opacity .15s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn:disabled{opacity:.6; cursor:not-allowed; transform:none}
+  .btn svg{width:18px; height:18px}
+  .legal{font-size:11px; color:var(--t3); text-align:center; margin-top:12px; line-height:1.5}
+
+  #successState{display:none}
+  .succ{padding:28px 24px 26px; text-align:center}
+  .succ .check{width:56px; height:56px; border-radius:50%; background:#DCFCE7; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:28px}
+  .succ h2{font-size:21px; font-weight:900; margin-bottom:6px}
+  .succ .lead{font-size:14px; color:var(--t2); margin-bottom:20px}
+  .succ-actions{display:flex; flex-direction:column; gap:10px}
+  .btn-outline{background:#fff; color:var(--navy); border:1.5px solid var(--navy)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="cobrand">
+    <span class="mya">Mudate<span>Ya</span></span>
+    <span class="chip">Programa para Desarrolladoras</span>
+  </div>
+
+  <div class="card">
+
+    <!-- ═══════════ ESTADO FORM ═══════════ -->
+    <div id="formState">
+      <div class="hero">
+        <div class="icon">🏗️</div>
+        <h1>Una opción para tus compradores<br>al momento de la entrega</h1>
+        <p>Dejanos tu contacto y te mandamos la propuesta</p>
+      </div>
+
+      <div class="body">
+        <h2>Contanos de tu empresa</h2>
+        <div class="sub">Te llega un mail con el PDF de la propuesta y un link para agendar una charla.</div>
+
+        <div class="gerror" id="gerror"></div>
+
+        <div class="field">
+          <label class="flabel" for="f-empresa">Empresa / desarrolladora <span class="req">*</span></label>
+          <input id="f-empresa" class="finput" type="text" placeholder="Ej: Grupo Constructora S.A." autocomplete="organization" maxlength="80"/>
+        </div>
+        <div class="field">
+          <label class="flabel" for="f-nombre">Nombre y apellido <span class="req">*</span></label>
+          <input id="f-nombre" class="finput" type="text" placeholder="Ej: María Fernández" autocomplete="name" maxlength="80"/>
+        </div>
+        <div class="field">
+          <label class="flabel" for="f-email">Email <span class="req">*</span></label>
+          <input id="f-email" class="finput" type="email" placeholder="maria@ejemplo.com" autocomplete="email" maxlength="120"/>
+        </div>
+        <div class="field">
+          <label class="flabel" for="f-tel">Teléfono <span class="opt">(opcional)</span></label>
+          <input id="f-tel" class="finput" type="tel" placeholder="+54 9 11 1234-5678" autocomplete="tel" inputmode="tel" maxlength="40"/>
+        </div>
+
+        <button type="button" class="btn" id="btnEnviar" onclick="enviar()">
+          Quiero la propuesta
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+        <div class="legal">Al enviar aceptás recibir un mail con la propuesta de MudateYa para desarrolladoras.</div>
+      </div>
+    </div>
+
+    <!-- ═══════════ ESTADO ÉXITO ═══════════ -->
+    <div id="successState">
+      <div class="succ">
+        <div class="check">✅</div>
+        <h2 id="succTitle">¡Listo!</h2>
+        <div class="lead">Te va a llegar un mail con el PDF de la propuesta y un link para coordinar una charla. Si preferís, también podés escribirnos directo.</div>
+        <div class="succ-actions">
+          <a class="btn btn-outline" href="mailto:contacto@mudateya.ar?subject=Programa%20para%20Desarrolladoras" style="text-decoration:none">Escribir a contacto@mudateya.ar</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var ORIGEN = (function(){
+  try { return new URLSearchParams(location.search).get('origen') || 'desarrolladoras-generico'; }
+  catch(e) { return 'desarrolladoras-generico'; }
+})();
+
+function _mostrarError(msg) {
+  var e = document.getElementById('gerror');
+  e.textContent = msg;
+  e.style.display = 'block';
+  e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function enviar() {
+  var e = document.getElementById('gerror');
+  e.style.display = 'none';
+
+  var empresa = (document.getElementById('f-empresa').value || '').trim();
+  var nombre  = (document.getElementById('f-nombre').value || '').trim();
+  var email   = (document.getElementById('f-email').value || '').trim();
+  var tel     = (document.getElementById('f-tel').value || '').trim();
+
+  if (!empresa || empresa.length < 2) { _mostrarError('Ingresá el nombre de la empresa.'); document.getElementById('f-empresa').focus(); return; }
+  if (!nombre) { _mostrarError('Ingresá tu nombre y apellido.'); document.getElementById('f-nombre').focus(); return; }
+  if (!email)  { _mostrarError('Ingresá tu email.'); document.getElementById('f-email').focus(); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _mostrarError('El email no parece válido.'); document.getElementById('f-email').focus(); return; }
+
+  var btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try {
+    var r = await fetch('/api/desarrolladoras?action=solicitar-contacto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empresa: empresa, nombre: nombre, email: email, telefono: tel, origen: ORIGEN })
+    });
+    var data;
+    var txt = await r.text();
+    try { data = txt ? JSON.parse(txt) : {}; }
+    catch (perr) { throw new Error('Respuesta inesperada del servidor (' + r.status + ').'); }
+    if (!r.ok) throw new Error(data.error || ('Error ' + r.status));
+
+    mostrarExito(nombre);
+  } catch (err) {
+    _mostrarError(err.message || 'No pudimos enviar tu contacto. Probá de nuevo.');
+    btn.disabled = false;
+    btn.innerHTML = 'Quiero la propuesta <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+  }
+}
+
+function mostrarExito(nombre) {
+  document.getElementById('formState').style.display = 'none';
+  document.getElementById('successState').style.display = 'block';
+  var primerNombre = nombre.split(' ')[0];
+  document.getElementById('succTitle').textContent = '¡Gracias, ' + primerNombre + '!';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
