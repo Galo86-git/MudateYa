@@ -432,6 +432,16 @@ module.exports = async function handler(req, res) {
       await setJSON('inmobiliaria:' + slugFinal, dataInmo);
       await agregarAlIndice(slugFinal);
 
+      // Índice teléfono→inmobiliaria (últimos 8 dígitos) para que Emi (WhatsApp)
+      // reconozca al contacto al instante, sin esperar el backfill de 24hs
+      // (asegurarIndiceInmobiliarias en whatsapp.js). Mismo patrón que
+      // mudanceros:tel8-idx en registrar-mudancero.js. En try/catch: si
+      // falla, no afecta el alta.
+      try {
+        var _tel8Inmo = wapp.replace(/\D/g, '').slice(-8);
+        if (_tel8Inmo.length === 8) await redisCall('hset', ['inmocontacto:tel8-idx', _tel8Inmo, slugFinal]);
+      } catch (e) { console.warn('idx tel8 inmo:', e.message); }
+
       var urlRegistroAsesores = 'https://mudateya.ar/inmobiliaria/' + slugFinal + '/registro';
 
       // ── Mails (no rompemos el flow si fallan: la inmobiliaria ya quedó activa) ──
