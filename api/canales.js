@@ -330,6 +330,16 @@ module.exports = async function handler(req, res) {
       await agregarAlIndice(canal, codigo);
       await setJSON(emailKey, codigo);
 
+      // Índice teléfono→asesor (últimos 8 dígitos) para que Emi (WhatsApp)
+      // reconozca al asesor al instante, sin esperar el backfill de 24hs
+      // (asegurarIndiceAsesoresCanal en whatsapp.js). Mismo patrón que
+      // mudanceros:tel8-idx en registrar-mudancero.js. En try/catch: si
+      // falla, no afecta el alta.
+      try {
+        var _tel8Asesor = whatsapp.replace(/\D/g, '').slice(-8);
+        if (_tel8Asesor.length === 8) await redisCall('hset', ['asesorescanal:tel8-idx', _tel8Asesor, canal.slug + ':' + codigo]);
+      } catch (e) { console.warn('idx tel8 asesor:', e.message); }
+
       // Índice inverso por inmobiliaria — para que Emi (WhatsApp) pueda
       // listar "mis asesores" de una agencia sin escanear TODO el pool de
       // independientes cada vez. Guarda {codigo, canal} porque el asesor
