@@ -5148,8 +5148,8 @@ async function renderInmoComisiones() {
         slug: filtro,
         nombre: filtro,
         resultados: data.resultados || [],
-        totalAdeudado: data.totalAdeudado || 0,
-        totalPagado:   data.totalPagado   || 0,
+        totalAdeudadoDirecto: data.totalAdeudadoDirecto || 0,
+        totalPagadoDirecto:   data.totalPagadoDirecto   || 0,
         cantidad:      (data.resultados || []).length
       }];
     } else {
@@ -5170,13 +5170,15 @@ async function renderInmoComisiones() {
       sel.value = valorPrevio;
     }
 
+    // Solo lo que es plata de la inmobiliaria misma (sin asesor puntual) — lo
+    // que tiene asesor se paga y se cuenta desde Pago a asesores/inmos.
     var totalGlobalDeuda = 0;
-    grupos.forEach(function(g) { totalGlobalDeuda += g.totalAdeudado || 0; });
+    grupos.forEach(function(g) { totalGlobalDeuda += g.totalAdeudadoDirecto || 0; });
 
     var h = '';
     if (totalGlobalDeuda > 0) {
       h += '<div style="background:#FEF3C7;border-left:3px solid #F59E0B;padding:12px 16px;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
-      h += '<div><strong style="color:#78350F">Total adeudado a inmobiliarias:</strong></div>';
+      h += '<div><strong style="color:#78350F">Total adeudado directo a inmobiliarias:</strong></div>';
       h += '<div style="font-size:18px;font-weight:800;color:#78350F">$' + _inmoFmt(totalGlobalDeuda) + '</div>';
       h += '</div>';
     }
@@ -5202,7 +5204,7 @@ async function renderInmoComisiones() {
       h += '<div style="margin-bottom:24px">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:8px 12px;background:#F8FAFC;border-radius:6px">';
       h += '<div style="font-weight:700;font-size:14px">' + _inmoEscHtml(g.nombre) + '</div>';
-      h += '<div style="font-size:12px;color:var(--text2)">' + g.cantidad + ' viajes' + opResumen + ' · adeudado: <strong style="color:#78350F">$' + _inmoFmt(g.totalAdeudado) + '</strong>' + (g.totalPagado > 0 ? ' · pagado: <strong style="color:#065F46">$' + _inmoFmt(g.totalPagado) + '</strong>' : '') + '</div>';
+      h += '<div style="font-size:12px;color:var(--text2)">' + g.cantidad + ' viajes' + opResumen + ' · adeudado directo: <strong style="color:#78350F">$' + _inmoFmt(g.totalAdeudadoDirecto) + '</strong>' + (g.totalPagadoDirecto > 0 ? ' · pagado directo: <strong style="color:#065F46">$' + _inmoFmt(g.totalPagadoDirecto) + '</strong>' : '') + '</div>';
       h += '</div>';
       h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:800px;font-size:13px">';
       h += '<thead><tr style="background:#fff;border-bottom:1px solid var(--border)">';
@@ -5217,8 +5219,15 @@ async function renderInmoComisiones() {
       h += '<th style="text-align:center;padding:8px 10px;font-weight:600;color:var(--text2);font-size:11px">Estado</th>';
       h += '</tr></thead><tbody>';
       g.resultados.forEach(function(m) {
+        // Si esta mudanza tiene un asesor puntual, esos $ son del asesor —
+        // se pagan y se marcan desde "Pago a asesores", no acá. Mostrar el
+        // botón acá también dejaría marcar la MISMA comisión como pagada por
+        // dos caminos independientes (comisionAsesorPagada vs
+        // comisionInmobiliariaLiquidada), con riesgo real de pagarla dos veces.
         var estadoCell = m.liquidada
           ? '<span style="font-size:10px;color:#065F46;background:#D1FAE5;padding:2px 6px;border-radius:4px;font-weight:700;font-family:monospace">PAGADA</span>'
+          : m.partnerAsesor
+          ? '<span title="Es del asesor ' + _inmoEscAttr(m.partnerAsesor) + ' — se paga desde Pago a asesores/inmos" style="font-size:10px;color:#64748B;background:#F1F5F9;padding:2px 6px;border-radius:4px;font-weight:700;font-family:monospace;cursor:help">SE PAGA AL ASESOR</span>'
           : '<button onclick="inmoMarcarLiquidada(\'' + _inmoEscAttr(m.id) + '\')" style="padding:3px 8px;background:#FEF3C7;border:1px solid #FDE68A;color:#78350F;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;font-family:monospace">MARCAR PAGADA</button>';
         h += '<tr style="border-bottom:1px solid var(--border)">';
         h += '<td style="padding:8px 10px;font-family:monospace;font-size:11px">' + _inmoEscHtml(m.id) + '</td>';
@@ -5278,9 +5287,13 @@ async function inmoExportComisiones() {
     var grupos = filtro
       ? [{ slug: filtro, nombre: filtro, resultados: data.resultados || [] }]
       : (data.inmobiliarias || []);
-    var rows = [['Inmobiliaria','ID Mudanza','Fecha','Cliente','Mudancero','Operación','Desde','Hasta','Precio final','% Comisión','Comisión a pagar','Estado','Fecha liquidación']];
+    var rows = [['Inmobiliaria','ID Mudanza','Fecha','Cliente','Mudancero','Operación','Desde','Hasta','Precio final','% Comisión','Comisión a pagar','Asesor','Estado','Fecha liquidación']];
     grupos.forEach(function(g) {
       g.resultados.forEach(function(m) {
+        // Con asesor puntual, esta fila es plata del asesor: no se liquida
+        // desde acá (ver Pago a asesores/inmos), así que nunca va a decir
+        // PAGADA en esta planilla aunque ya se le haya pagado al asesor.
+        var estado = m.partnerAsesor ? 'SE PAGA AL ASESOR' : (m.liquidada ? 'PAGADA' : 'PENDIENTE');
         rows.push([
           _inmoCeldaSegura(g.nombre),
           m.id,
@@ -5293,7 +5306,8 @@ async function inmoExportComisiones() {
           m.precioFinal,
           m.comisionPct,
           m.comisionPagar,
-          m.liquidada ? 'PAGADA' : 'PENDIENTE',
+          _inmoCeldaSegura(m.partnerAsesor),
+          estado,
           m.fechaLiquidacion ? new Date(m.fechaLiquidacion).toLocaleDateString('es-AR') : ''
         ]);
       });

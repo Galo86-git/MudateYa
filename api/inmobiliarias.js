@@ -202,8 +202,19 @@ async function agregarAlIndice(slug) {
 async function comisionesPendientes(slug) {
   var ids = (await getJSON('mudanzas:todos')) || [];
   var resultados = [];
+  // totalAdeudado/totalPagado: TODO lo generado por el canal (con o sin
+  // asesor puntual) — lo usan los dashboards por canal (Mudafy, RE/MAX, C21,
+  // Independientes) para mostrar la comisión total del canal.
   var totalAdeudado = 0;
   var totalPagado   = 0;
+  // totalAdeudadoDirecto/totalPagadoDirecto: SOLO lo que es plata de la
+  // inmobiliaria misma (sin asesor puntual) — lo que el panel "Inmobiliarias
+  // → Comisiones" puede efectivamente marcar pagada acá. Si se usara el total
+  // de arriba ahí, inflaría "lo que le debo a la inmobiliaria" con comisiones
+  // que en realidad hay que girarle a un asesor (se pagan desde Pago a
+  // asesores/inmos, ver el chequeo de m.partnerAsesor más abajo).
+  var totalAdeudadoDirecto = 0;
+  var totalPagadoDirecto   = 0;
   for (var i = 0; i < ids.length; i++) {
     var m = await getJSON('mudanza:' + ids[i]);
     if (!m) continue;
@@ -215,6 +226,10 @@ async function comisionesPendientes(slug) {
     var liquidada = m.comisionInmobiliariaLiquidada === true;
     if (liquidada) totalPagado += comisionPagar;
     else           totalAdeudado += comisionPagar;
+    if (!m.partnerAsesor) {
+      if (liquidada) totalPagadoDirecto += comisionPagar;
+      else           totalAdeudadoDirecto += comisionPagar;
+    }
     resultados.push({
       id: m.id,
       fecha: m.fecha || '',
@@ -236,7 +251,7 @@ async function comisionesPendientes(slug) {
   resultados.sort(function(a, b) {
     return (new Date(b.fechaCompletada).getTime() || 0) - (new Date(a.fechaCompletada).getTime() || 0);
   });
-  return { resultados, totalAdeudado, totalPagado };
+  return { resultados, totalAdeudado, totalPagado, totalAdeudadoDirecto, totalPagadoDirecto };
 }
 
 // ── HANDLER ──
@@ -865,6 +880,8 @@ module.exports = async function handler(req, res) {
           nombre: (inmo && inmo.nombre) || lista[j],
           totalAdeudado: d.totalAdeudado,
           totalPagado: d.totalPagado,
+          totalAdeudadoDirecto: d.totalAdeudadoDirecto,
+          totalPagadoDirecto: d.totalPagadoDirecto,
           cantidad: d.resultados.length,
           resultados: d.resultados
         });
@@ -880,6 +897,15 @@ module.exports = async function handler(req, res) {
       if (!id) return res.status(400).json({ error: 'mudanzaId requerido' });
       var mudanza = await getJSON('mudanza:' + id);
       if (!mudanza) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      // Defensa en profundidad: si esta mudanza tiene un asesor puntual, esa
+      // comisión es del asesor y se paga/marca desde "Pago a asesores"
+      // (cotizaciones.js, comisionAsesorPagada) — no acá. El panel ya no
+      // ofrece el botón para este caso, pero esto evita que la misma
+      // comisión quede marcada como pagada por los dos caminos si se llama
+      // a este endpoint igual (a mano, con un id viejo, etc.).
+      if (mudanza.partnerAsesor) {
+        return res.status(400).json({ error: 'Esta comisión es del asesor ' + mudanza.partnerAsesor + ', se marca pagada desde Pago a asesores/inmos' });
+      }
       mudanza.comisionInmobiliariaLiquidada = true;
       mudanza.fechaLiquidacionInmobiliaria = new Date().toISOString();
       await setJSON('mudanza:' + id, mudanza);

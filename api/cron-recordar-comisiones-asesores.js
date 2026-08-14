@@ -92,6 +92,12 @@ module.exports = async function handler(req, res) {
       if (!(parseInt(m.comisionInmobiliariaPagar) > 0)) continue;
       if (m.tipoOperacion === 'compraventa') continue;
       if (m.comisionAsesorPagada) continue;
+      // Comisión directa a una inmobiliaria (sin asesor puntual) que ya se
+      // marcó pagada desde el panel Inmobiliarias → Comisiones — mismo dinero,
+      // otro flag (ver admin.html renderInmoComisiones / api/inmobiliarias.js
+      // action=marcar-liquidada). Sin este chequeo, el recordatorio mensual
+      // la seguía sumando para siempre aunque ya estuviera pagada.
+      if (m.comisionInmobiliariaLiquidada) continue;
       var fc = m.fechaCompletada || m.fechaPagoSaldo;
       if (!fc) continue;
       var fcAR = aHoraAR(new Date(fc));
