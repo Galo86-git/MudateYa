@@ -63,11 +63,17 @@ function fechaAR() {
     String(ar.getUTCDate()).padStart(2, '0');
 }
 
-// ── Stats de la semana de UN asesor, a partir de su índice de pedidos referidos ──
-async function statsSemana(prefijo, codigo) {
+// ── Stats de la semana de UN asesor (prefijo+codigo) o de UNA inmobiliaria
+// directa (inmobiliariaSlug, referidos sin asesor puntual — ver el índice
+// inmobiliaria:{slug}:mudanzas armado en cotizaciones.js), a partir de su
+// índice de pedidos referidos ──
+async function statsSemana(prefijo, codigo, inmobiliariaSlug) {
   var stats = { clientesDerivados: 0, conPresupuestos: 0, conSenia: 0, completadas: 0 };
-  if (!prefijo || !codigo) return stats;
-  var ids = (await getJSON(prefijo + ':asesor:' + codigo + ':mudanzas')) || [];
+  var idxKey = inmobiliariaSlug
+    ? ('inmobiliaria:' + inmobiliariaSlug + ':mudanzas')
+    : (prefijo && codigo ? (prefijo + ':asesor:' + codigo + ':mudanzas') : null);
+  if (!idxKey) return stats;
+  var ids = (await getJSON(idxKey)) || [];
   var desde = inicioSemanaISO();
   // Tope defensivo: un asesor con cientos de referidos no debería hacer que
   // esto escanee todo — los últimos 80 alcanzan de sobra para una semana.
@@ -91,6 +97,7 @@ function emailResumenSemanal(nombre, stats, canal) {
     subject: primerNombre + ', así cerraste la semana 📊',
     html: bodyHtml({
       canalNombre: canal && canal.canalNombre,
+      esInmobiliaria: !!(canal && canal.inmobiliariaSlug),
       color:       (canal && canal.color) || '#22C36A',
       fondoAviso:  (canal && canal.fondoAviso) || '#F5F7FA',
       nombre: primerNombre,
@@ -135,7 +142,10 @@ function bodyHtml(p) {
         '<a href="https://www.instagram.com/mudateya.ar/" style="color:#003580;font-weight:700;font-size:14px;text-decoration:none">@mudateya.ar</a>' +
       '</div>' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">' +
-        'Recibís este resumen porque sos Asesor de MudateYa. ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
+        (p.esInmobiliaria
+          ? 'Recibís este resumen porque ' + (p.canalNombre || 'tu inmobiliaria') + ' es inmobiliaria aliada de MudateYa.'
+          : 'Recibís este resumen porque sos Asesor de MudateYa.') +
+        ' ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
       '</p>' +
     '</div>' +
   '</div>';
@@ -182,7 +192,7 @@ module.exports = async function handler(req, res) {
       for (var m = 0; m < lista0.length; m++) {
         if (lista0[m].email.toLowerCase() === testTo.toLowerCase()) { match = lista0[m]; break; }
       }
-      var stats = match ? await statsSemana(match.prefijo, match.codigo) : { clientesDerivados: 3, conPresupuestos: 2, conSenia: 1, completadas: 1 };
+      var stats = match ? await statsSemana(match.prefijo, match.codigo, match.inmobiliariaSlug) : { clientesDerivados: 3, conPresupuestos: 2, conSenia: 1, completadas: 1 };
       var muestra = emailResumenSemanal(match ? match.nombre : 'Asesor de prueba', stats, match);
       var rt = await resend.emails.send({
         from: 'MudateYa Asesores <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
@@ -212,7 +222,7 @@ module.exports = async function handler(req, res) {
 
     for (var i = 0; i < lista0.length; i++) {
       var d = lista0[i];
-      var st = await statsSemana(d.prefijo, d.codigo);
+      var st = await statsSemana(d.prefijo, d.codigo, d.inmobiliariaSlug);
 
       if (esDry) {
         resumen.destinatarios.push({ email: d.email, canal: d.canal, stats: st });
