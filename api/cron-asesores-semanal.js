@@ -1,12 +1,19 @@
 // api/cron-asesores-semanal.js
 //
 // Recordatorio SEMANAL a los asesores de CANAL (Remax, C21, Mudafy,
-// Independientes). Corre todos los lunes 09:00 hora Argentina (12:00 UTC) —
-// schedule "0 12 * * 1" en vercel.json.
+// Independientes) Y a las INMOBILIARIAS dadas de alta (api/inmobiliarias.js),
+// aunque no tengan ningún asesor cargado. Corre todos los lunes 09:00 hora
+// Argentina (12:00 UTC) — schedule "0 12 * * 1" en vercel.json.
 //
 // A cada asesor le manda su LINK EXCLUSIVO de cotización ya existente:
 //   https://mudateya.ar/inmobiliaria/{canal}?asesor={codigo}
-// No se inventa ningún link: se usa el codigo propio de cada asesor.
+// A cada inmobiliaria (el contacto de la agencia) le manda SU PROPIO link
+// directo, sin código de asesor: https://mudateya.ar/inmobiliaria/{slug}
+// Desde la decisión 2026-08-07 la inmobiliaria cobra ella misma el 5% cuando
+// un cliente entra por ese link directo sin pasar por un asesor puntual — por
+// eso le interesa este mail igual que a un asesor, tenga o no tenga asesores.
+// No se inventa ningún link: se usa el codigo propio de cada asesor, o el
+// slug propio de cada inmobiliaria.
 //
 // QUIÉN NO RECIBE (por decisión de producto):
 //   - Asesores del registro genérico (indice asesores:todos): no tienen link
@@ -153,6 +160,42 @@ async function recolectarDestinatarios() {
       });
     }
   }
+
+  // ── Inmobiliarias (la agencia en sí, api/inmobiliarias.js) — reciben el
+  // mismo mail con SU PROPIO link directo (sin código de asesor), tengan o no
+  // tengan asesores cargados: desde el 2026-08-07 cobran el 5% ellas mismas
+  // cuando un cliente entra directo por ese link. Antes quedaban afuera por
+  // completo si no tenían ningún asesor. Si el contacto de la inmobiliaria ya
+  // recibió el mail como asesor (mismo email), no se le duplica.
+  try {
+    var slugsInmo = (await getJSON('inmobiliarias:lista')) || [];
+    for (var si = 0; si < slugsInmo.length; si++) {
+      var inmo = await getJSON('inmobiliaria:' + slugsInmo[si]);
+      if (!inmo || inmo.activa === false) continue;
+      if (!validEmail(inmo.contactoEmail)) continue;
+      var kInmo = String(inmo.contactoEmail).toLowerCase().trim();
+      if (suprimidos[kInmo]) continue;
+      if (vistos[kInmo]) continue;
+      vistos[kInmo] = true;
+      out.push({
+        email:  inmo.contactoEmail,
+        nombre: inmo.contactoNombre || inmo.nombre || '',
+        canal:  slugsInmo[si],
+        canalNombre: inmo.nombre || slugsInmo[si],
+        color: inmo.colorPrimario || '#003580',
+        fondoAviso: '#F5F8FC',
+        link:   SITE + '/inmobiliaria/' + slugsInmo[si],
+        // Sin prefijo/codigo (no es un asesor de canal) — cron-asesores-viernes.js
+        // usa inmobiliariaSlug para leer inmobiliaria:{slug}:mudanzas en vez del
+        // índice {prefijo}:asesor:{codigo}:mudanzas.
+        prefijo: null,
+        codigo:  null,
+        inmobiliariaSlug: slugsInmo[si],
+        linkBaja: linkBaja(inmo.contactoEmail, 'asesores-semanal')
+      });
+    }
+  } catch (e) { console.warn('No se pudieron sumar inmobiliarias al mail semanal:', e.message); }
+
   return out;
 }
 
@@ -211,6 +254,7 @@ function emailRecordatorio(nombre, ctaHref, canal) {
     subject: v.titulo.replace('{nombre}', primerNombre).replace(/\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, ' ').trim(),
     html: bodyHtml({
       canalNombre: canal && canal.canalNombre,
+      esInmobiliaria: !!(canal && canal.inmobiliariaSlug),
       color:       (canal && canal.color) || '#22C36A',
       fondoAviso:  (canal && canal.fondoAviso) || '#F5F7FA',
       titulo: v.titulo.replace('{nombre}', primerNombre),
@@ -260,7 +304,10 @@ function bodyHtml(p) {
         '<a href="https://www.instagram.com/mudateya.ar/" style="color:#003580;font-weight:700;font-size:14px;text-decoration:none">@mudateya.ar</a>' +
       '</div>' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">' +
-        'Recibís este recordatorio porque sos asesor' + (p.canalNombre ? ' de ' + p.canalNombre : '') + '. ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
+        (p.esInmobiliaria
+          ? 'Recibís este recordatorio porque ' + (p.canalNombre || 'tu inmobiliaria') + ' es inmobiliaria aliada de MudateYa.'
+          : 'Recibís este recordatorio porque sos asesor' + (p.canalNombre ? ' de ' + p.canalNombre : '') + '.') +
+        ' ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
       '</p>' +
     '</div>' +
   '</div>';

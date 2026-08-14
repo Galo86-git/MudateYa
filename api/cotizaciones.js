@@ -1192,6 +1192,24 @@ module.exports = async function handler(req, res) {
             }
           }
         } catch(e) { console.warn('Índice mudanzas asesor:', e.message); }
+      } else if (mudanza.partner) {
+        // Cliente que entró DIRECTO por el link de la inmobiliaria (sin código
+        // de asesor puntual) — desde la decisión 2026-08-07 la inmobiliaria
+        // cobra ella misma el 5% cuando no hay un asesor puntual atribuido
+        // (ver COMISION_ASESOR_DEFAULT). Índice inverso propio, mismo patrón
+        // que el de arriba, para que el resumen semanal (cron-asesores-
+        // viernes.js) le pueda mostrar sus referidos igual que a un asesor.
+        try {
+          const inmoCfg = await getJSON('inmobiliaria:' + mudanza.partner);
+          if (inmoCfg && inmoCfg.activa !== false) {
+            const idxKeyInmo = `inmobiliaria:${mudanza.partner}:mudanzas`;
+            const idxInmo = await getJSON(idxKeyInmo) || [];
+            if (!idxInmo.includes(id)) {
+              idxInmo.push(id);
+              await setJSON(idxKeyInmo, idxInmo);
+            }
+          }
+        } catch(e) { console.warn('Índice mudanzas inmobiliaria:', e.message); }
       }
       const clienteIdx = await getJSON(`cliente:${clienteEmail}`) || [];
       if (!clienteIdx.includes(id)) clienteIdx.push(id);
