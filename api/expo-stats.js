@@ -49,14 +49,25 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    var idsDesarrolladoras = (await getJSON('desarrolladoras:contactos')) || [];
+    var desarrolladoras = [];
+    for (var k = 0; k < idsDesarrolladoras.length; k++) {
+      var d = await getJSON('desarrolladora:contacto:' + idsDesarrolladoras[k]);
+      if (d && d.origen === origen) {
+        desarrolladoras.push({ empresa: d.empresa, nombre: d.nombre, email: d.email, createdAt: d.createdAt });
+      }
+    }
+
     return res.status(200).json({
       ok: true,
       origen: origen,
       totalInmobiliarias: inmobiliarias.length,
       totalAsesores: asesores.length,
-      total: inmobiliarias.length + asesores.length,
+      totalDesarrolladoras: desarrolladoras.length,
+      total: inmobiliarias.length + asesores.length + desarrolladoras.length,
       inmobiliarias: inmobiliarias,
-      asesores: asesores
+      asesores: asesores,
+      desarrolladoras: desarrolladoras
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });

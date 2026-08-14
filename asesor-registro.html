@@ -94,7 +94,7 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
   .succ .inmo-tag{font-size:12px; font-weight:700; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; margin:-2px 0 12px}
   .linkbox{background:#F8FAFC; border:1.5px dashed var(--line); border-radius:12px; padding:13px 14px; margin-bottom:16px}
   .linkbox .lk-label{font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--t3); margin-bottom:5px}
-  .linkbox .lk-url{font-size:13.5px; font-weight:700; color:var(--navy); word-break:break-all; font-family:'Inter',monospace}
+  .linkbox .lk-url{font-size:13.5px; font-weight:700; color:var(--navy); word-break:break-all; font-family:'Inter',monospace; text-decoration:underline; text-underline-offset:3px; cursor:pointer; display:inline-block}
   .qr-wrap{margin:6px auto 18px; width:172px; height:172px; padding:10px; background:#fff; border:1px solid var(--line); border-radius:14px}
   .qr-wrap canvas{width:150px !important; height:150px !important; display:block}
   .succ-actions{display:flex; flex-direction:column; gap:10px}
@@ -187,7 +187,7 @@ Based on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License
 
         <div class="linkbox">
           <div class="lk-label">Tu link único</div>
-          <div class="lk-url" id="succLink">—</div>
+          <a class="lk-url" id="succLink" href="#" target="_blank" rel="noopener">—</a>
         </div>
 
         <div class="qr-wrap"><canvas id="qrCanvas"></canvas></div>
@@ -341,7 +341,9 @@ function mostrarExito() {
   document.getElementById('succInmo').textContent = _canalDetectado
     ? ('✅ Te dimos de alta directo en el canal ' + _canalDetectado.nombre)
     : (_inmo || '');
-  document.getElementById('succLink').textContent = _link.replace(/^https?:\/\//, '');
+  var succLinkEl = document.getElementById('succLink');
+  succLinkEl.textContent = _link.replace(/^https?:\/\//, '');
+  succLinkEl.href = _link;
 
   try {
     new QRious({ element: document.getElementById('qrCanvas'), value: _link, size: 300, level: 'M', background: '#ffffff', foreground: '#003580' });
