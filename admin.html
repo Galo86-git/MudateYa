@@ -462,7 +462,7 @@ tr:hover td{background:#F8FAFC}
         <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span> Pago a mudanceros
       </a>
       <a class="sidebar-item" onclick="showPage('pago-asesores',event)" href="#">
-        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> Pago a asesores
+        <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> Pago a asesores/inmos
       </a>
       <a class="sidebar-item" onclick="showPage('transferencias',event)" href="#">
         <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6"/><path d="M4 9v11h16V9"/><line x1="9" y1="20" x2="9" y2="13"/><line x1="15" y1="20" x2="15" y2="13"/></svg></span> Transferencias
@@ -530,7 +530,7 @@ tr:hover td{background:#F8FAFC}
       <button onclick="showPage('fotos',event);setMobileNav('fotos');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🖼️ Fotos</button>
       <button onclick="showPage('zonas',event);setMobileNav('zonas');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🗺️ Zonas</button>
       <button onclick="showPage('transferencias',event);setMobileNav('transferencias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏦 Transferencias</button>
-      <button onclick="showPage('pago-asesores',event);setMobileNav('pago-asesores');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">💸 Pago a asesores</button>
+      <button onclick="showPage('pago-asesores',event);setMobileNav('pago-asesores');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">💸 Pago a asesores/inmos</button>
       <button onclick="showPage('inmobiliarias',event);setMobileNav('inmobiliarias');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🏠 Inmobiliarias</button>
       <button onclick="showPage('mudafy',event);setMobileNav('mudafy');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">🤝 Mudafy</button>
       <button onclick="showPage('remax',event);setMobileNav('remax');toggleMobileMenu()" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 20px;background:none;border:none;color:#fff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:1px solid rgba(255,255,255,.08)">🎈 RE/MAX</button>
@@ -652,8 +652,8 @@ tr:hover td{background:#F8FAFC}
 
       <!-- PAGO A ASESORES -->
       <div class="page" id="page-pago-asesores">
-        <div class="page-title">Pago a asesores</div>
-        <div class="page-subtitle">Comisión que MudateYa le debe al asesor por cada alquiler cerrado a través de su link (en compraventa no hay comisión: el beneficio va al cliente). Se pagan en lote el día hábil 10 de cada mes, sobre las comisiones generadas el mes anterior. Los datos bancarios se cargan acá mismo la primera vez que hay que pagarle a alguien.</div>
+        <div class="page-title">Pago a asesores/inmos</div>
+        <div class="page-subtitle">Comisión que MudateYa debe por cada alquiler cerrado a través de un link de canal (en compraventa no hay comisión: el beneficio va al cliente). Va al asesor puntual que derivó al cliente; si vino del link genérico de una inmobiliaria sin pasar por ningún asesor, se le paga a la inmobiliaria misma. Se pagan en lote el día hábil 10 de cada mes, sobre las comisiones generadas el mes anterior. Los datos bancarios se cargan acá mismo la primera vez que hay que pagarle a alguien.</div>
         <div class="table-card" style="margin-bottom:1.2rem">
           <div class="table-header">
             <span class="table-title">Listas para pagar</span>
@@ -2234,7 +2234,7 @@ function renderComisionesAsesoresFull(){
   document.getElementById('comisionesAsesoresPendList').innerHTML = listas.length === 0
     ? '<div class="empty"><div class="empty-icon">✓</div>Sin comisiones listas para pagar</div>'
     : '<table><thead><tr>'
-      + '<th>Asesor</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Completada</th><th>Datos bancarios</th><th></th>'
+      + '<th>Asesor/Inmo</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Completada</th><th>Datos bancarios</th><th></th>'
       + '</tr></thead><tbody>'
       + listas.map(function(c){
           var contacto = (c.asesorEmail ? '<a href="mailto:'+esc(c.asesorEmail)+'" style="color:var(--text3);text-decoration:none">'+esc(c.asesorEmail)+'</a>' : '')
@@ -2260,7 +2260,7 @@ function renderComisionesAsesoresFull(){
   document.getElementById('comisionesAsesoresEsperaList').innerHTML = espera.length === 0
     ? '<div class="empty"><div class="empty-icon">✓</div>Nada en espera</div>'
     : '<table><thead><tr>'
-      + '<th>Asesor</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Completada</th><th>Se libera</th>'
+      + '<th>Asesor/Inmo</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Completada</th><th>Se libera</th>'
       + '</tr></thead><tbody>'
       + espera.map(function(c){
           return '<tr>'
@@ -2278,7 +2278,7 @@ function renderComisionesAsesoresFull(){
   document.getElementById('comisionesAsesoresPagList').innerHTML = pagadas.length === 0
     ? '<div class="empty"><div class="empty-icon">💳</div>Sin comisiones pagadas todavía</div>'
     : '<table><thead><tr>'
-      + '<th>Asesor</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Pagada</th>'
+      + '<th>Asesor/Inmo</th><th>Cliente</th><th>Ruta</th><th>Comisión</th><th>Pagada</th>'
       + '</tr></thead><tbody>'
       + pagadas.slice().sort(function(a,b){ return new Date(b.pagadaEn||0) - new Date(a.pagadaEn||0); }).map(function(c){
           return '<tr>'
