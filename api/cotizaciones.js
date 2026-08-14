@@ -62,25 +62,6 @@ const PREFIJOS_ASESOR = ['remax', 'mudafy', 'indep', 'c21'];
 // datos bancarios que se cargan a mano desde el panel.
 async function buscarAsesorPorCodigo(codigo) {
   if (!codigo) return null;
-  // Comisión directa a la inmobiliaria (sin asesor puntual, ver
-  // admin-comisiones-asesores): el "código" es 'inmo:{slug}' en vez de un
-  // código de asesor real. Mismo shape de retorno para que el resto del
-  // panel (guardar CBU/alias/titular, listar, marcar pagada) no tenga que
-  // distinguir el caso.
-  if (codigo.indexOf('inmo:') === 0) {
-    const slug = codigo.slice(5);
-    if (!slug) return null;
-    const key = `inmobiliaria:${slug}`;
-    const inmo = await getJSON(key);
-    if (!inmo) return null;
-    return {
-      key, prefijo: 'inmo',
-      asesor: {
-        nombre: inmo.nombre, email: inmo.contactoEmail, whatsapp: inmo.contactoWhatsapp,
-        cbu: inmo.cbu || '', alias: inmo.alias || '', titular: inmo.titular || ''
-      }
-    };
-  }
   for (const prefijo of PREFIJOS_ASESOR) {
     try {
       const key = `${prefijo}:asesor:${codigo}`;
@@ -3051,11 +3032,6 @@ module.exports = async function handler(req, res) {
     // beneficio va al cliente, ver donde se calcula comisionInmobiliariaPagar
     // más arriba). Junta los datos de contacto/bancarios del asesor buscando
     // su código en los 4 prefijos de canal posibles.
-    //
-    // Si la mudanza vino del link genérico de una inmobiliaria (sin asesor
-    // puntual, m.partnerAsesor vacío) pero SÍ hay m.partner (la inmobiliaria
-    // está registrada), el 5% no queda huérfano: se le paga a la inmobiliaria
-    // misma, con el código sintético 'inmo:{slug}' (ver buscarAsesorPorCodigo).
     if (action === 'admin-comisiones-asesores' && req.method === 'GET') {
       if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
       const activas = await getJSON('mudanzas:activas') || [];
@@ -3068,7 +3044,7 @@ module.exports = async function handler(req, res) {
           if (!m.saldoPagado) continue;
           if (!(parseInt(m.comisionInmobiliariaPagar) > 0)) continue;
           if (m.tipoOperacion === 'compraventa') continue;
-          const codigo = m.partnerAsesor || (m.partner ? ('inmo:' + m.partner) : '');
+          const codigo = m.partnerAsesor || '';
           if (!codigo) continue;
 
           if (!(codigo in cacheAsesores)) {
@@ -3125,23 +3101,11 @@ module.exports = async function handler(req, res) {
       if (!codigo) return res.status(400).json({ error: 'Falta el código del asesor' });
       const encontrado = await buscarAsesorPorCodigo(codigo);
       if (!encontrado) return res.status(404).json({ error: 'No encontré ese asesor' });
-      const cbuNorm = String(cbu || '').trim().slice(0, 30);
-      const aliasNorm = String(alias || '').trim().slice(0, 40);
-      const titularNorm = String(titular || '').trim().slice(0, 80);
-      if (encontrado.prefijo === 'inmo') {
-        // encontrado.asesor es una vista normalizada (nombre/email/whatsapp),
-        // no la ficha completa de la inmobiliaria — guardarla tal cual pisaría
-        // slug/activa/logo/etc. Se vuelve a leer la ficha completa y se le
-        // suman solo los 3 campos bancarios.
-        const inmo = await getJSON(encontrado.key);
-        if (!inmo) return res.status(404).json({ error: 'No encontré esa inmobiliaria' });
-        inmo.cbu = cbuNorm; inmo.alias = aliasNorm; inmo.titular = titularNorm;
-        await setJSON(encontrado.key, inmo);
-      } else {
-        const asesor = encontrado.asesor;
-        asesor.cbu = cbuNorm; asesor.alias = aliasNorm; asesor.titular = titularNorm;
-        await setJSON(encontrado.key, asesor);
-      }
+      const asesor = encontrado.asesor;
+      asesor.cbu     = String(cbu || '').trim().slice(0, 30);
+      asesor.alias   = String(alias || '').trim().slice(0, 40);
+      asesor.titular = String(titular || '').trim().slice(0, 80);
+      await setJSON(encontrado.key, asesor);
       return res.status(200).json({ ok: true });
     }
 
