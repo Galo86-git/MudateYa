@@ -408,8 +408,7 @@ async function asesoresDeInmobiliaria(slug) {
 
 // "Mis operaciones" de una inmobiliaria — cuenta mudanzas con partner===slug
 // (el mismo campo que ya usa action=publicar/inmobiliarias.js para atribuir).
-// Liviano a propósito (solo conteos por estado, no montos): la agencia cobra
-// 0% en este modelo, lo que le importa es el volumen, no la plata.
+// Solo conteos por estado, no montos — para la plata está comisionesDirectasDelMes.
 async function operacionesDeInmobiliaria(slug) {
   const ids = (await getJSON('mudanzas:todos')) || [];
   const resumen = { total: 0, buscando: 0, cotizando: 0, cotizacion_aceptada: 0, en_curso: 0, completada: 0, cancelada: 0, otros: 0 };
@@ -426,6 +425,37 @@ async function operacionesDeInmobiliaria(slug) {
   }
   recientes.sort((a, b) => String(b.fechaPublicacion || '').localeCompare(String(a.fechaPublicacion || '')));
   return { resumen, recientes: recientes.slice(0, 15) };
+}
+
+// Comisión directa que lleva acumulada UNA INMOBILIARIA en el mes calendario
+// en curso — mismo criterio y misma ventana que comisionesDelMes (asesores),
+// pero para sus referidos SIN asesor puntual (índice inmobiliaria:{slug}:mudanzas,
+// armado en cotizaciones.js SOLO cuando no hay partnerAsesor — ver el índice
+// de arriba). El !m.partnerAsesor de acá es defensa extra, no debería hacer
+// falta, pero evita mostrarle a la inmobiliaria plata que en realidad es de
+// un asesor si el índice alguna vez quedara desalineado.
+async function comisionesDirectasDelMes(slug) {
+  const ids = (await getJSON(`inmobiliaria:${slug}:mudanzas`)) || [];
+  const ahoraAR = aHoraAR(new Date());
+  const anio = ahoraAR.getUTCFullYear();
+  const mes = ahoraAR.getUTCMonth();
+  let total = 0;
+  const detalle = [];
+  for (const id of ids.slice(-80)) {
+    const m = await getJSON(`mudanza:${id}`);
+    if (!m || !m.saldoPagado) continue;
+    if (m.partnerAsesor) continue;
+    if (!(parseInt(m.comisionInmobiliariaPagar) > 0)) continue;
+    if (m.tipoOperacion === 'compraventa') continue; // compraventa no genera comisión, es regalo al cliente
+    const fc = m.fechaCompletada || m.fechaPagoSaldo;
+    if (!fc) continue;
+    const fcAR = aHoraAR(new Date(fc));
+    if (fcAR.getUTCFullYear() !== anio || fcAR.getUTCMonth() !== mes) continue;
+    const monto = parseInt(m.comisionInmobiliariaPagar) || 0;
+    total += monto;
+    detalle.push({ cliente: m.clienteNombre || '', monto });
+  }
+  return { total, cantidad: detalle.length, detalle };
 }
 
 // ------------------------------------------------------------------
@@ -757,9 +787,10 @@ PODÉS HACER ESTO POR ACÁ:
 - Contarle qué asesores tiene registrados (nombre, mail, si están activos) → mis_asesores.
 - Contarle cuántas operaciones lleva el equipo y en qué estado (buscando presupuestos, con seña, en curso, completadas) → mis_operaciones. Podés dar el resumen y, si pide detalle, las últimas operaciones puntuales.
 - Pasarle de nuevo el link de registro para sumar un asesor nuevo (por si lo perdió) → link_registro_asesores.
+- Decirle cuánto lleva de comisión DIRECTA este mes (si pregunta "cuánto llevo yo", "cuánto cobro yo", "y mi comisión?", etc. — distinto de lo que generan sus asesores) → mis_comisiones. Es lo generado en lo que va del mes, se acredita el día hábil 10 del mes que viene (no antes) — aclaráselo así no piensa que ya lo tiene disponible.
 - Reclamos o lo que no puedas resolver con lo de arriba → derivar_a_humano.
 
-APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere ver sus asesores?, ¿quiere saber cómo van las operaciones?, ¿necesita el link para sumar un asesor?, ¿tiene un reclamo/problema? Andá directo a eso.
+APENAS TE ESCRIBE, UBICATE RÁPIDO: ¿quiere ver sus asesores?, ¿quiere saber cómo van las operaciones?, ¿necesita el link para sumar un asesor?, ¿quiere saber cuánto lleva de comisión propia?, ¿tiene un reclamo/problema? Andá directo a eso.
 
 PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola"): no asumas qué quiere — saludalo corto por su nombre, con onda, y dejá que te diga qué necesita.
 
@@ -1807,6 +1838,11 @@ const inmobiliariaTools = [
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
+    name: 'mis_comisiones',
+    description: 'Cuánto lleva acumulado ESTE mes calendario la inmobiliaria por sus referidos DIRECTOS (clientes que entraron por su propio link, sin pasar por ningún asesor puntual — esa plata es de la inmobiliaria misma). No incluye lo que generaron sus asesores, eso es de cada asesor.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
     name: 'derivar_a_humano',
     description: 'Derivá al equipo un RECLAMO o problema que tus otras herramientas no resuelven, o cuando el contacto pide hablar con una persona.',
     input_schema: {
@@ -1830,6 +1866,15 @@ async function ejecutarToolInmobiliaria(name, input, inmoContacto, waId, conv, t
     if (name === 'mis_operaciones') {
       const { resumen, recientes } = await operacionesDeInmobiliaria(inmoContacto.slug);
       return JSON.stringify({ resumen, recientes });
+    }
+    if (name === 'mis_comisiones') {
+      const c = await comisionesDirectasDelMes(inmoContacto.slug);
+      return JSON.stringify({
+        ...c,
+        nota: c.cantidad
+          ? 'Esto es lo generado en el mes calendario en curso por tus referidos directos (sin asesor) — se acredita recién el día hábil 10 del mes que viene. No incluye lo que generaron tus asesores, eso es de cada uno.'
+          : 'Todavía no tenés comisión directa generada este mes (sin contar lo de tus asesores, que es aparte).',
+      });
     }
     if (name === 'link_registro_asesores') {
       const link = `${SITE_URL}/inmobiliaria/${inmoContacto.slug}/registro`;
