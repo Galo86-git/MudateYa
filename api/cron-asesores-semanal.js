@@ -61,7 +61,12 @@ var WA_EMI = 'https://wa.me/12399462954?text=' + encodeURIComponent('Hola Emi!')
 // cron-asesores-viernes.js reusa recolectarDestinatarios() SIN pasarle este
 // array. Se cargan a mano acá, mismo criterio que CONTENIDO_SEMANAS.
 var SUSCRIPTOS_EXTRA = [
-  { email: 'maria.franco@mudafy.com', nombre: 'Mery', canalNombre: 'Mudafy', color: '#FF5A5F', fondoAviso: '#FFF5F5' }
+  {
+    email: 'maria.franco@mudafy.com', nombre: 'Mery',
+    canalNombre: 'Mudafy', color: '#FF5A5F', fondoAviso: '#FFF5F5',
+    tituloOverride: 'Hola {nombre}, esto le llega a los asesores hoy 👀',
+    footerNota: 'Te llega este mail para que estés al tanto de lo que reciben los asesores de Mudafy — no hace falta que hagas nada con el link.'
+  }
 ];
 
 // ── Wrappers Redis (mismo patrón que cron-onboarding.js) ──
@@ -261,6 +266,17 @@ var CONTENIDO_SEMANAS = {
       'Recordá que Emi también recibe fotos y audios — tu cliente no necesita escribir todo, le puede mandar una <strong>nota de voz</strong> contándole y listo.'
     ],
     cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
+  },
+  34: { // lunes 2026-08-17 — regalo personalizado en compraventa
+    titulo: 'Tu cliente ahora recibe un regalo pensado para él, {nombre} 🎁',
+    lead: 'Simplificamos el beneficio de compraventa: antes escalaba según el tamaño de la operación, ahora es directamente un regalo personalizado para tu cliente.',
+    bulletsLabel: 'Lo que cambió:',
+    bullets: [
+      'Menos para explicar en la primera charla — ya no hay que entrar en escalas ni tramos, es "tu cliente tiene un regalo pensado para él".',
+      'Sigue siendo en vez de comisión para vos en compraventa, como siempre — eso no cambió.',
+      'Tu link y tu forma de derivar son exactamente iguales.'
+    ],
+    cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   }
 };
 
@@ -281,27 +297,32 @@ function varianteSemana() {
 }
 
 // ── PLANTILLA DEL EMAIL ──
-// canal (opcional): { canalNombre, color, fondoAviso } — si no viene (ej. modo
-// test sin match), cae al branding genérico de MudateYa.
+// canal (opcional): { canalNombre, color, fondoAviso, tituloOverride, footerNota }
+// — si no viene (ej. modo test sin match), cae al branding genérico de MudateYa.
+// tituloOverride/footerNota: para SUSCRIPTOS_EXTRA que no son asesores (ej.
+// alguien que solo quiere estar al tanto) — reemplazan el título y el pie
+// pensados para un asesor real, sin tocar el resto del contenido de la semana.
 function emailRecordatorio(nombre, ctaHref, canal) {
   var primerNombre = ((nombre || '').trim().split(' ')[0]) || 'Hola';
   var v = varianteSemana();
   if (!v) return null; // sin contenido cargado para esta semana — el caller decide qué hacer
   var esIndep = canal && canal.canalNombre === 'Asesores independientes';
+  var tituloFinal = ((canal && canal.tituloOverride) ? canal.tituloOverride : v.titulo).replace('{nombre}', primerNombre);
   return {
-    subject: v.titulo.replace('{nombre}', primerNombre).replace(/\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, ' ').trim(),
+    subject: tituloFinal.replace(/\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, ' ').trim(),
     html: bodyHtml({
       canalNombre: canal && canal.canalNombre,
       esInmobiliaria: !!(canal && canal.inmobiliariaSlug),
       color:       (canal && canal.color) || '#22C36A',
       fondoAviso:  (canal && canal.fondoAviso) || '#F5F7FA',
-      titulo: v.titulo.replace('{nombre}', primerNombre),
+      titulo: tituloFinal,
       lead:   v.lead,
       bulletsLabel: v.bulletsLabel,
       bullets: v.bullets,
       cta:     'Ir a mi link →',
       ctaHref: ctaHref || (SITE + '/asesores'),
       cierre:  (esIndep && v.cierreIndep) ? v.cierreIndep : v.cierre,
+      footerNota: canal && canal.footerNota,
       emiTitulo: v.emiTitulo || '📱 ¿Preferís que lo resuelva Emi por vos?',
       emiTexto: v.emiTexto || 'Contale los datos del cliente y ella carga el pedido directo, atribuido a tu código — el cliente recibe los presupuestos sin tener que entrar a ningún lado. O si preferís, te repite el link para mandárselo vos.'
     })
@@ -342,9 +363,11 @@ function bodyHtml(p) {
         '<a href="https://www.instagram.com/mudateya.ar/" style="color:#003580;font-weight:700;font-size:14px;text-decoration:none">@mudateya.ar</a>' +
       '</div>' +
       '<p style="color:#94A3B8;font-size:11px;text-align:center;margin:24px 0 0;border-top:1px solid #E2E8F0;padding-top:16px">' +
-        (p.esInmobiliaria
-          ? 'Recibís este recordatorio porque ' + (p.canalNombre || 'tu inmobiliaria') + ' es inmobiliaria aliada de MudateYa.'
-          : 'Recibís este recordatorio porque sos asesor' + (p.canalNombre ? ' de ' + p.canalNombre : '') + '.') +
+        (p.footerNota
+          ? p.footerNota
+          : (p.esInmobiliaria
+            ? 'Recibís este recordatorio porque ' + (p.canalNombre || 'tu inmobiliaria') + ' es inmobiliaria aliada de MudateYa.'
+            : 'Recibís este recordatorio porque sos asesor' + (p.canalNombre ? ' de ' + p.canalNombre : '') + '.')) +
         ' ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
       '</p>' +
     '</div>' +
