@@ -53,6 +53,17 @@ var CANALES = [
 var SITE = 'https://mudateya.ar';
 var WA_EMI = 'https://wa.me/12399462954?text=' + encodeURIComponent('Hola Emi!');
 
+// ── Suscriptos extra al newsletter de los lunes que NO son asesores: no
+// entran a ningún índice {prefijo}:asesores, así que no tienen link de
+// cotización propio (les llega el CTA genérico a /asesores), no aparecen en
+// action=listar de ningún canal, y — a diferencia de cargarlos como asesor —
+// NO les llega el resumen de comisiones de los viernes, porque
+// cron-asesores-viernes.js reusa recolectarDestinatarios() SIN pasarle este
+// array. Se cargan a mano acá, mismo criterio que CONTENIDO_SEMANAS.
+var SUSCRIPTOS_EXTRA = [
+  { email: 'maria.franco@mudafy.com', nombre: 'Mery', canalNombre: 'Mudafy', color: '#FF5A5F', fondoAviso: '#FFF5F5' }
+];
+
 // ── Wrappers Redis (mismo patrón que cron-onboarding.js) ──
 async function redisCall(method, args) {
   var url   = process.env.UPSTASH_REDIS_REST_URL;
@@ -104,8 +115,11 @@ function headersListUnsub(url) {
 }
 
 // ── Recolecta los destinatarios: recorre el índice de cada canal, arma el link
-//    real de cada asesor y deduplica por email. Devuelve [{email,nombre,canal,link}]. ──
-async function recolectarDestinatarios() {
+//    real de cada asesor y deduplica por email. Devuelve [{email,nombre,canal,link}].
+//    extras (opcional) = SUSCRIPTOS_EXTRA — solo lo pasa cron-asesores-semanal.js
+//    para su propio envío; cron-asesores-viernes.js llama a esta función sin
+//    argumentos, así que nunca les llega el resumen de comisiones. ──
+async function recolectarDestinatarios(extras) {
   var out = [];
   var vistos = {};
   // Suprimidos globales (mismo SET que usan enviar-propuesta-remax.js /
@@ -195,6 +209,30 @@ async function recolectarDestinatarios() {
       });
     }
   } catch (e) { console.warn('No se pudieron sumar inmobiliarias al mail semanal:', e.message); }
+
+  // ── Suscriptos extra (no asesores, no inmobiliarias) — ver SUSCRIPTOS_EXTRA
+  // más arriba. Mismo filtro de baja y de dedupe que todo lo demás; sin link
+  // propio (cae al CTA genérico /asesores).
+  for (var ex = 0; ex < (extras || []).length; ex++) {
+    var e2 = extras[ex];
+    if (!e2 || !validEmail(e2.email)) continue;
+    var kEx = String(e2.email).toLowerCase().trim();
+    if (suprimidos[kEx]) continue;
+    if (vistos[kEx]) continue;
+    vistos[kEx] = true;
+    out.push({
+      email:  e2.email,
+      nombre: e2.nombre || '',
+      canal:  null,
+      canalNombre: e2.canalNombre || null,
+      color: e2.color || '#22C36A',
+      fondoAviso: e2.fondoAviso || '#F5F7FA',
+      link:   null,
+      prefijo: null,
+      codigo:  null,
+      linkBaja: linkBaja(e2.email, 'asesores-semanal')
+    });
+  }
 
   return out;
 }
@@ -350,7 +388,7 @@ module.exports = async function handler(req, res) {
     if (testTo) {
       if (!validEmail(testTo)) return res.status(400).json({ error: 'Email de test inválido' });
       // Si el mail de test es un asesor de canal, usamos su link REAL de cotización.
-      var lista0 = await recolectarDestinatarios();
+      var lista0 = await recolectarDestinatarios(SUSCRIPTOS_EXTRA);
       var match = null;
       for (var m = 0; m < lista0.length; m++) {
         if (lista0[m].email.toLowerCase() === testTo.toLowerCase()) { match = lista0[m]; break; }
@@ -381,7 +419,7 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Recolectar destinatarios (canales) y enviar ──
-    var lista = await recolectarDestinatarios();
+    var lista = await recolectarDestinatarios(SUSCRIPTOS_EXTRA);
     var resumen = { total: lista.length, enviados: 0, errores: 0, destinatarios: [], fallidos: [] };
 
     for (var i = 0; i < lista.length; i++) {
