@@ -267,14 +267,14 @@ var CONTENIDO_SEMANAS = {
     ],
     cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   },
-  34: { // lunes 2026-08-17 — regalo personalizado en compraventa
-    titulo: 'Tu cliente ahora recibe un regalo pensado para él, {nombre} 🎁',
-    lead: 'Simplificamos el beneficio de compraventa: antes escalaba según el tamaño de la operación, ahora es directamente un regalo personalizado para tu cliente.',
-    bulletsLabel: 'Lo que cambió:',
+  34: { // lunes 2026-08-17 — estacional: arranca septiembre
+    titulo: '{nombre}, septiembre es de los meses más fuertes 📅',
+    lead: 'Todos los años se repite: apenas arranca septiembre se dispara la demanda de mudanzas. Si tenés algún cliente dando vueltas hace semanas sin decidirse, este es el momento de empujarlo.',
+    bulletsLabel: 'Para no perder el envión:',
     bullets: [
-      'Menos para explicar en la primera charla — ya no hay que entrar en escalas ni tramos, es "tu cliente tiene un regalo pensado para él".',
-      'Sigue siendo en vez de comisión para vos en compraventa, como siempre — eso no cambió.',
-      'Tu link y tu forma de derivar son exactamente iguales.'
+      'Si tenés un cliente "casi seguro" que todavía no cerró, mandale tu link ahora — mejor que llegue con tiempo, antes de que se le complique la agenda.',
+      'Contale que en septiembre los mudanceros buenos se agendan rápido: cuanto antes pida presupuesto, más opciones de fecha y precio tiene.',
+      'Si tenés un cliente que ya cerró con vos, no hace falta que le mandes el link — le contás a Emi los datos y ella carga el pedido directo, atribuido a vos.'
     ],
     cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   }
