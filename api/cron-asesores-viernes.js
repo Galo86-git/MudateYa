@@ -101,7 +101,8 @@ function emailResumenSemanal(nombre, stats, canal) {
       color:       (canal && canal.color) || '#22C36A',
       fondoAviso:  (canal && canal.fondoAviso) || '#F5F7FA',
       nombre: primerNombre,
-      stats: stats || { clientesDerivados: 0, conPresupuestos: 0, conSenia: 0, completadas: 0 }
+      stats: stats || { clientesDerivados: 0, conPresupuestos: 0, conSenia: 0, completadas: 0 },
+      linkBaja: canal && canal.linkBaja
     })
   };
 }
@@ -145,7 +146,9 @@ function bodyHtml(p) {
         (p.esInmobiliaria
           ? 'Recibís este resumen porque ' + (p.canalNombre || 'tu inmobiliaria') + ' es inmobiliaria aliada de MudateYa.'
           : 'Recibís este resumen porque sos Asesor de MudateYa.') +
-        ' ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
+        (p.linkBaja
+          ? ' ¿No querés recibirlos más? <a href="' + p.linkBaja + '" style="color:#94A3B8;text-decoration:underline">Darte de baja</a>.'
+          : ' ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.') +
       '</p>' +
     '</div>' +
   '</div>';
