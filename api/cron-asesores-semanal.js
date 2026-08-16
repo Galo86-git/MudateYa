@@ -323,6 +323,7 @@ function emailRecordatorio(nombre, ctaHref, canal) {
       ctaHref: ctaHref || (SITE + '/asesores'),
       cierre:  (esIndep && v.cierreIndep) ? v.cierreIndep : v.cierre,
       footerNota: canal && canal.footerNota,
+      linkBaja: canal && canal.linkBaja,
       emiTitulo: v.emiTitulo || '📱 ¿Preferís que lo resuelva Emi por vos?',
       emiTexto: v.emiTexto || 'Contale los datos del cliente y ella carga el pedido directo, atribuido a tu código — el cliente recibe los presupuestos sin tener que entrar a ningún lado. O si preferís, te repite el link para mandárselo vos.'
     })
@@ -368,7 +369,9 @@ function bodyHtml(p) {
           : (p.esInmobiliaria
             ? 'Recibís este recordatorio porque ' + (p.canalNombre || 'tu inmobiliaria') + ' es inmobiliaria aliada de MudateYa.'
             : 'Recibís este recordatorio porque sos asesor' + (p.canalNombre ? ' de ' + p.canalNombre : '') + '.')) +
-        ' ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.' +
+        (p.linkBaja
+          ? ' ¿No querés recibirlos más? <a href="' + p.linkBaja + '" style="color:#94A3B8;text-decoration:underline">Darte de baja</a>.'
+          : ' ¿No querés recibirlos más? Respondé este mail con <strong>BAJA</strong>.') +
       '</p>' +
     '</div>' +
   '</div>';
