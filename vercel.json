@@ -1091,6 +1091,10 @@
       "schedule": "0 15 * * 5"
     },
     {
+      "path": "/api/cron-recordar-contenido-asesores",
+      "schedule": "0 22 * * 0"
+    },
+    {
       "path": "/api/cron-plantillas",
       "schedule": "0 11 * * *"
     },

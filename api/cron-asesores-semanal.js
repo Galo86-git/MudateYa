@@ -492,3 +492,10 @@ module.exports.getJSON = getJSON;
 module.exports.redisCall = redisCall;
 module.exports.validEmail = validEmail;
 module.exports.headersListUnsub = headersListUnsub;
+// Reexportado para cron-recordar-contenido-asesores.js (aviso de los
+// domingos): necesita saber si YA hay contenido cargado para el lunes que
+// viene, y si lo hay, armar el mismo preview que recibiría un asesor real —
+// sin duplicar el template acá.
+module.exports.numeroSemanaISO = numeroSemanaISO;
+module.exports.CONTENIDO_SEMANAS = CONTENIDO_SEMANAS;
+module.exports.emailRecordatorio = emailRecordatorio;
