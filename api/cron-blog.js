@@ -74,6 +74,9 @@ function parseJSON(txt) {
   return JSON.parse(m[0]);
 }
 const fmt = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
+// Los promedios salen con centavos de precisión falsa ($376.433). En una nota se
+// escriben redondeados ("alrededor de $376.000"): esto es lo esperado, no un error.
+const redondear = (n) => Math.round(Number(n || 0) / 1000) * 1000;
 
 // ── Datos REALES para anclar la nota (nada inventado) ──
 async function datosReales() {
@@ -121,7 +124,8 @@ async function generar(tema, datos) {
     `- Estructurada con subtítulos <h2> y <h3>, párrafos <p> y alguna lista <ul><li>.\n` +
     `- Tono MudateYa: práctico, honesto, argentino. Sin promesas exageradas.\n` +
     `- Cerrá invitando a cotizar gratis en MudateYa (sin ser insistente).\n` +
-    `- NO uses <h1> (el título va aparte). NO incluyas <html>, <head> ni <body>.\n\n` +
+    `- NO uses <h1> (el título va aparte). NO incluyas <html>, <head> ni <body>.\n` +
+    `- El título tiene que entrar en 50 caracteres: después le agregamos " — MudateYa" y Google corta cerca de los 65.\n\n` +
     `Devolvé SOLO un JSON con esta forma (sin texto adicional):\n` +
     `{"titulo": "...", "metaDescripcion": "máx 155 caracteres", "resumen": "1 frase para la card del índice", "cuerpoHtml": "<h2>...</h2><p>...</p>..."}`;
   const txt = await claude(system, user, 3500);
@@ -150,7 +154,7 @@ async function proponerTemaNuevo(usados) {
     const txt = await claude(
       'Proponés temas de blog SEO para MudateYa (marketplace argentino de mudanzas y fletes). Español rioplatense.',
       'Proponé UN tema NUEVO de blog sobre mudanzas o fletes en Argentina, útil y con búsqueda en Google, que NO se solape con estos slugs ya usados: ' + previos + '.\n' +
-      'Devolvé SOLO un JSON: {"titulo":"...", "slug":"kebab-sin-acentos", "tag":"1-2 palabras"}',
+      'Devolvé SOLO un JSON: {"titulo":"máx 50 caracteres", "slug":"kebab-sin-acentos", "tag":"1-2 palabras"}',
       400
     );
     const t = parseJSON(txt);

@@ -18,6 +18,14 @@ async function getJSON(k) { const v = await redisCall('GET', k); return v ? JSON
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+// El <title> lleva la marca al final, pero solo si entra: Google corta cerca de
+// los 65 caracteres y la auditoría semanal marca cualquier title más largo.
+const LARGO_MAX_TITLE = 65;
+const SUFIJO_MARCA = ' — MudateYa';
+function tituloSeo(titulo) {
+  const t = String(titulo || '').trim();
+  return t.length + SUFIJO_MARCA.length <= LARGO_MAX_TITLE ? t + SUFIJO_MARCA : t;
+}
 function fechaLarga(iso) {
   try {
     return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' });
@@ -81,7 +89,7 @@ function render(post) {
     ],
   };
   return `<!doctype html><html lang="es"><head>
-<title>${esc(post.titulo)} — MudateYa</title>
+<title>${esc(tituloSeo(post.titulo))}</title>
 <meta name="description" content="${esc(desc)}"/>
 <link rel="canonical" href="${url}"/>
 <meta charset="UTF-8"/>
