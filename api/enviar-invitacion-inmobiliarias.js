@@ -9,10 +9,12 @@
 //
 // Mail genérico desde hola@mudateya.ar.
 //
-// DEDUP contra inmobiliarias que YA están en la plataforma: reusa el mismo
-// índice que usa el propio /api/inmobiliarias?action=solicitar-alta para
-// evitar altas duplicadas — GET solicitud-inmo:email:{email}. Si existe,
-// se saltea (no se manda).
+// DEDUP contra inmobiliarias que YA están en la plataforma: por email (mismo
+// índice que usa /api/inmobiliarias?action=solicitar-alta, solicitud-inmo:
+// email:{email}) o por teléfono (últimos 8 dígitos, inmocontacto:tel8-idx,
+// mismo índice que usa Emi por WhatsApp) — ver ./_inmobiliarias-dedupe.js,
+// mismo patrón que ./_mudanceros-dedupe.js. Si cualquiera de los dos
+// matchea, se saltea (no se manda).
 //
 // IDEMPOTENCIA propia de esta campaña: guarda los emails ya invitados en
 // Redis (clave invitacion-inmobiliarias:enviados). Si se corre de nuevo, no
@@ -30,6 +32,7 @@
 const { Resend } = require('resend');
 const { esAdmin, esCronVercel } = require('./_auth');
 const { linkBaja } = require('./_baja');
+const { yaEsInmobiliaria } = require('./_inmobiliarias-dedupe');
 
 async function redisCall(method, args) {
   var url = process.env.UPSTASH_REDIS_REST_URL;
@@ -125,6 +128,60 @@ var PROSPECTOS = [
   { n: 'Fontana Inmobiliaria SRL', region: 'Rosario', e: 'info@fontanainmobiliaria.com.ar' },
   { n: 'Rondeau Propiedades', region: 'Rosario', e: 'rondeaupropiedades@gmail.com' },
   { n: 'Pérez Hernández Negocios Inmobiliarios', region: 'Rosario', e: 'inmobiliaria@perezhernandez.com.ar' },
+  // ── Barrida 2026-08-17 (Google Maps, AMBA/Córdoba/Rosario) — 45 nuevas,
+  // dedupeadas contra las de arriba por email (5 resultaron ser la misma
+  // inmobiliaria ya cargada con otro nombre: Taiana, Caffaratti, Costamagna,
+  // Uno Propiedades, Echesortu — no se repiten). Cada una con email
+  // confirmado en su propio sitio/redes (mismo criterio que el resto de la
+  // lista). Se excluyeron a propósito las que ya son parte de una red con
+  // flujo propio (2 oficinas RE/MAX que aparecieron en la búsqueda). Se
+  // suma tel para el dedup por teléfono (ver _inmobiliarias-dedupe.js) —
+  // las entradas viejas no lo tenían. ──
+  { n: 'Pablo Hyland Asesor Inmobiliario', region: 'AMBA', e: 'info@pablohyland.com', tel: '011 3654-0110' },
+  { n: 'Baigun Realty | Negocios Inmobiliarios', region: 'AMBA', e: 'info@baigunrealty.com', tel: '011 5263-3332' },
+  { n: 'GODOY Asesores Inmobiliarios', region: 'AMBA', e: 'info@godoyasesores.com', tel: '011 4793-1900' },
+  { n: 'BUENOS AIRES Inmobiliaria', region: 'AMBA', e: 'buenosairesinmobiliaria@yahoo.com.ar', tel: '011 5373-4000' },
+  { n: 'Central Real Estate Argentina', region: 'AMBA', e: 'central@maxre.com.ar', tel: '4789-3700' },
+  { n: 'Hamra Propiedades', region: 'AMBA', e: 'hamrapropiedades@gmail.com', tel: '011 4963-9333' },
+  { n: 'Fauro Propiedades - Recoleta', region: 'AMBA', e: 'info@fauropropiedades.com.ar', tel: '011 4807-9301' },
+  { n: 'NARVAEZ Inmobiliaria', region: 'AMBA', e: 'Info@narvaez.com.ar', tel: '011 4743-2090' },
+  { n: 'MGNI (M. Götz Negocios Inmobiliarios)', region: 'AMBA', e: 'info@mgotz.com', tel: '011 5329-7248' },
+  { n: 'YM Real Estate', region: 'AMBA', e: 'Bienesraices@ym.com.ar', tel: '011 2460-4007' },
+  { n: 'VINELLI INMOBILIARIA', region: 'AMBA', e: 'oli@vinelli.com.ar', tel: '011 3137-1501' },
+  { n: 'Martín Fonseca Propiedades', region: 'AMBA', e: 'info@martinfonsecaprop.com', tel: '011 4793-9039' },
+  { n: 'ZARATE Gestión Inmobiliaria', region: 'AMBA', e: 'info@zaratepropiedades.com.ar', tel: '011 4793-2605' },
+  { n: 'Lareu Propiedades', region: 'AMBA', e: 'info@lareupropiedades.com', tel: '011 15-6708-7718' },
+  { n: 'Rosana Moyano Negocios Inmobiliarios', region: 'AMBA', e: 'info@rosanamoyano.com.ar', tel: '011 4747-9420' },
+  { n: 'Noguero Propiedades', region: 'AMBA', e: 'nogueropropiedades@gmail.com', tel: '011 5180-7180' },
+  { n: 'NOVOA PROPIEDADES', region: 'AMBA', e: 'info@novoaprop.com', tel: '011 4743-2552' },
+  { n: 'FARINA Propiedades', region: 'AMBA', e: 'info@farinaprop.com.ar', tel: '011 6009-0101' },
+  { n: 'Viramonte Noguer Propiedades', region: 'AMBA', e: 'info@viramontenoguer.com.ar', tel: '011 15-5852-1395' },
+  { n: 'Reynolds Propiedades', region: 'AMBA', e: 'info@reynoldspropiedades.com', tel: '011 4794-4100' },
+  { n: 'Oberti Busso Inmobiliaria', region: 'Córdoba', e: 'oberti.busso@gmail.com', tel: '0351 510-7888' },
+  { n: 'JB SRUR | Inmobiliaria + Desarrollista', region: 'Córdoba', e: 'recepcion@jbsrur.com.ar', tel: '0351 460-8800' },
+  { n: 'Maristany Servicios Inmobiliarios', region: 'Córdoba', e: 'maristany.inmobiliaria@gmail.com', tel: '0351 650-4749' },
+  { n: 'Inmobiliaria Cordoba', region: 'Córdoba', e: 'cbainmob@gmail.com', tel: '0351 241-5056' },
+  { n: 'Propuestas Inmobiliarias S.A', region: 'Córdoba', e: 'info@propuestas-inmobiliarias.com', tel: '0351 651-2008' },
+  { n: 'Inmobiliaria Ballesteros (Nueva Córdoba)', region: 'Córdoba', e: 'inmobiliariaballesteros@gmail.com', tel: '0351 15-511-2648' },
+  { n: 'VAES Propiedades - Inmobiliaria de Córdoba', region: 'Córdoba', e: 'consultas@vaespropiedades.com.ar', tel: '0351 423-0066' },
+  { n: 'Conexar Inmuebles', region: 'Córdoba', e: 'info@conexarinmuebles.com', tel: '03537 15-31-9704' },
+  { n: 'Aldo Peppino - Servicios Inmobiliarios', region: 'Córdoba', e: 'info@aldopeppino.com.ar', tel: '0351 429-0055' },
+  { n: 'NOBLES RAICES', region: 'Córdoba', e: 'info@noblesraices.com', tel: '0351 425-4060' },
+  { n: 'López Baena Propiedades', region: 'Córdoba', e: 'maximilianol@lopezbaena.com.ar', tel: '0351 396-2652' },
+  { n: 'Prisma Propiedades', region: 'Córdoba', e: 'consultas.prismapropiedades@gmail.com', tel: '0351 863-8624' },
+  { n: 'Meade Inmobiliaria', region: 'Córdoba', e: 'info@meade.com.ar', tel: '0351 424-4444' },
+  { n: 'COSA Propiedades Inmobiliaria Rosario', region: 'Rosario', e: 'contacto@cosapropiedades.com', tel: '0341 426-2550' },
+  { n: 'Imperia Propiedades', region: 'Rosario', e: 'alvaro@imperiapropiedades.com', tel: '0341 625-8588' },
+  { n: 'Inmobiliaria Escala Propiedades', region: 'Rosario', e: 'contacto@escalapropiedades.com.ar', tel: '0341 372-4336' },
+  { n: 'Bassini Negocios Inmobiliarios', region: 'Rosario', e: 'contacto@bassiniinmobiliaria.com', tel: '0341 550-7167' },
+  { n: 'Banchio Propiedades', region: 'Rosario', e: 'ventas@banchio.com', tel: '0341 440-0618' },
+  { n: 'GARGARELLA INMOBILIARIA', region: 'Rosario', e: 'info@gargarella.com.ar', tel: '0341 449-4637' },
+  { n: 'Sebastian Ramasco Padilla Negocios Inmobiliarios', region: 'Rosario', e: 'ventas@sramascopadilla.com.ar', tel: '0341 528-0028' },
+  { n: 'Inmobiliaria Piazza', region: 'Rosario', e: 'info@piazzainmobiliaria.com.ar', tel: '0341 838-5120' },
+  { n: 'Adrián Giaganti Negocios Inmobiliarios', region: 'Rosario', e: 'info@giaganti.com.ar', tel: '0341 438-1111' },
+  { n: 'Ducler Inmobiliaria | Alquileres y Ventas en Rosario', region: 'Rosario', e: 'info@ducler.com.ar', tel: '0341 654-8008' },
+  { n: 'Alsedá Inmuebles', region: 'Rosario', e: 'info@alseda.com.ar', tel: '0341 558-0638' },
+  { n: 'Excellence Servicios Inmobiliarios', region: 'Rosario', e: 'mragusa@inmobiliariaexcellence.com', tel: '0341 311-2022' },
   // ── Mendoza — barrida 2026-08-10 (solo con email confirmado en su propia web) ──
   { n: 'Irrera Inmobiliaria', region: 'Mendoza', e: 'irrerainmobiliaria@yahoo.com.ar' },
   { n: 'Fernando Puebla Inmobiliaria', region: 'Mendoza', e: 'info@fpinmobiliaria.com.ar' }
@@ -170,14 +227,6 @@ function payloadDe(o) {
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
     }
   };
-}
-
-// true si ese email ya corresponde a una inmobiliaria registrada/solicitada
-// en MudateYa (mismo índice que usa /api/inmobiliarias?action=solicitar-alta
-// para no crear altas duplicadas).
-async function yaEsInmobiliaria(o) {
-  var existente = await redisCall('get', ['solicitud-inmo:email:' + o.e.toLowerCase()]);
-  return !!existente;
 }
 
 module.exports = async function handler(req, res) {
