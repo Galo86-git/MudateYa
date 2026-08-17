@@ -1212,6 +1212,10 @@
       "schedule": "0 12 * * *"
     },
     {
+      "path": "/api/enviar-invitacion-mudanceros",
+      "schedule": "0 12 * * *"
+    },
+    {
       "path": "/api/enviar-propuestas-vacamuerta",
       "schedule": "0 12 * * *"
     },

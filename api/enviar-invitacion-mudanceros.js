@@ -21,11 +21,11 @@
 //   GET ?token=…              → DRY: cuenta pendientes/enviados/ya-mudanceros, NO envía nada.
 //   GET ?token=…&test=x@y.com → envía UNA muestra a esa dirección (no marca, no chequea dedup).
 //   GET ?token=…&apply=1      → ENVÍA a los pendientes (una sola corrida).
-//   SIN cron de Vercel a propósito (se sacó de vercel.json el 2026-08-10 al sumar la tanda
-//   de 105 prospectos AMBA) — así no se manda nada solo al deployar; el envío es siempre manual
-//   vía ?apply=1. Si en algún momento se quiere volver a automatizar, agregar de nuevo la entrada
-//   { "path": "/api/enviar-invitacion-mudanceros", "schedule": "..." } en vercel.json (idempotente,
-//   no reenvía a quien ya se le mandó).
+//   Vercel Cron (2026-08-17)  → aplica automático todos los días 9AM ART ("0 12 * * *" en
+//   vercel.json), mismo patrón que enviar-invitacion-inmobiliarias.js. Es idempotente: si ya
+//   se le mandó a un prospecto, no se repite aunque el cron siga corriendo — así que sumar
+//   prospectos nuevos a PROSPECTOS (ver ./_mudanceros-prospectos.js) alcanza para que salgan
+//   solos en la próxima corrida, sin tocar este archivo ni correr nada a mano.
 
 const { Resend } = require('resend');
 const { esAdmin, esCronVercel } = require('./_auth');
