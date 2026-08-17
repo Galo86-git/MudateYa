@@ -205,12 +205,13 @@ window.onload = async function(){
 
 async function handleCredential(response){
   var payload = JSON.parse(atob(response.credential.split('.')[1]));
-  if(!isAuthorized(payload.email)){ alert('Tu email (' + payload.email + ') no tiene acceso.'); return; }
-  // El chequeo de arriba es solo UX. El gate real lo hace /api/admin-sesion,
-  // que valida el id_token contra Google y recién ahí emite el token firmado
-  // que circulo.js exige ahora en guardar-pieza/cambiar-estado/eliminar --
-  // antes esas tres acciones no pedían ningún token, cualquiera que
-  // encontrara la URL podía editar o borrar el catálogo entero sin login.
+  // Sin pre-chequeo contra ADMIN_EMAILS acá: decide el servidor, igual que en
+  // admin.html. /api/admin-sesion valida el id_token contra Google y lo compara
+  // contra ADMIN_EMAILS del entorno; si el mail no tiene acceso devuelve 403 y
+  // el alert de más abajo muestra ese mismo mensaje. El gate real de cada acción
+  // sigue siendo esAdmin() en circulo.js (guardar-pieza/cambiar-estado/eliminar)
+  // -- antes esas tres no pedían ningún token y cualquiera que encontrara la URL
+  // podía editar o borrar el catálogo entero sin login.
   var r, d;
   try{
     r = await fetch('/api/admin-sesion', {
