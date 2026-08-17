@@ -1,0 +1,49 @@
+{
+  "_leeme": "Excepciones ya revisadas de la auditoría diaria (scripts/auditoria-seguridad.mjs). Lo que está acá NO vuelve a reportarse. Agregar algo es una decisión consciente: significa 'lo miré y está bien así'. El motivo de cada uno está en _motivos.",
+
+  "endpointsPublicos": [
+    "blog-lista.js",
+    "blog-post.js",
+    "sitemap-blog.js",
+    "contacto.js",
+    "crear-preferencia.js",
+    "pagar.js",
+    "qr-expo.js",
+    "webhook-mp.js"
+  ],
+
+  "cronsPublicos": [],
+
+  "corsAceptado": [],
+
+  "secretosAceptados": [
+    "index.html:clave Google API",
+    "inmobiliaria.html:clave Google API"
+  ],
+
+  "headersAceptados": [],
+
+  "clavesMapsAceptadas": [],
+
+  "cvesAceptadas": [],
+
+  "sondasPublicas": [],
+
+  "sondas": [
+    "/api/admin-panel",
+    "/api/admin-config",
+    "/api/admin-uso-proveedores",
+    "/api/admin-ver-conversacion",
+    "/api/admin-fotos"
+  ],
+
+  "_motivos": {
+    "blog-lista.js / blog-post.js / sitemap-blog.js": "Contenido público del blog: son las URLs que sirven las notas y el sitemap.",
+    "contacto.js": "Formulario de contacto de la web: por definición lo usa gente sin cuenta.",
+    "crear-preferencia.js / pagar.js": "Arrancan el pago en Mercado Pago. El cliente todavía no está logueado; la plata se valida después contra la API de MP.",
+    "qr-expo.js": "Genera el QR público de las expos.",
+    "webhook-mp.js": "Webhook de Mercado Pago: MP no manda firma verificable acá, pero el handler no confía en el payload — vuelve a consultar el pago contra la API de MP antes de acreditar nada.",
+    "index.html / inmobiliaria.html: clave Google API": "Es la clave de Google Maps JS: por diseño viaja al navegador y no se puede ocultar, así que no cuenta como 'secreto filtrado'. Lo que sí importa es que esté restringida, y de eso se encarga el chequeo 'clave-maps', que la prueba contra Google sin referrer todos los días. No tocar esta entrada.",
+    "clavesMapsAceptadas": "Solo para silenciar el chequeo de restricción de una clave puntual (primeros 12 caracteres). Vaciar salvo que haya una razón muy concreta: silenciarlo es aceptar que cualquiera pueda gastar contra la cuenta de Google."
+  }
+}

@@ -1,0 +1,48 @@
+# Auditoría de seguridad diaria de MudateYa.
+#
+# Corre en GitHub (no depende de que la laptop esté prendida) y manda mail SOLO
+# si encuentra algo nuevo. Lo ya revisado y aceptado vive en
+# scripts/seguridad-allowlist.json.
+#
+# Secrets que necesita (Settings → Secrets and variables → Actions):
+#   RESEND_API_KEY  — la misma clave de Resend que ya usa el sitio
+#   MAIL_SEGURIDAD  — a qué dirección avisar (podés poner varias separadas por coma)
+
+name: Seguridad diaria
+
+on:
+  schedule:
+    # 11:00 UTC = 08:00 en Argentina. GitHub usa siempre UTC.
+    - cron: '0 11 * * *'
+  workflow_dispatch: # botón para correrla a mano cuando quieras
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seguridad-diaria
+  cancel-in-progress: false
+
+jobs:
+  auditoria:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # npm audit necesita un lockfile. Si todavía no está versionado, se arma
+      # uno al vuelo (sin instalar ni ejecutar nada de los paquetes).
+      - name: Preparar lockfile
+        run: test -f package-lock.json || npm install --package-lock-only --ignore-scripts
+
+      - name: Correr auditoría
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_SEGURIDAD: ${{ secrets.MAIL_SEGURIDAD }}
+          SITE_URL: https://mudateya.ar
+        run: node scripts/auditoria-seguridad.mjs
