@@ -106,8 +106,15 @@ function bloqueDatos(d) {
   if (d.amb1) l.push(`- Mudanza chica (1 ambiente/monoambiente): alrededor de ${fmt(d.amb1)}`);
   if (d.amb2) l.push(`- Mudanza de 2 ambientes: alrededor de ${fmt(d.amb2)}`);
   if (d.amb3) l.push(`- Mudanza de 3 ambientes: alrededor de ${fmt(d.amb3)}`);
+  const ej = d.amb1 || d.amb2 || d.amb3;
   return `PRECIOS REALES DE REFERENCIA (promedio de mudanceros de MudateYa, ${d.muestras} perfiles). ` +
-    `Si mencionás precios, usá SOLO estos como referencia aproximada (aclarando que varían según distancia, piso, etc.):\n` + l.join('\n');
+    `Si mencionás precios, usá SOLO estos como referencia aproximada (aclarando que varían según distancia, piso, etc.):\n` +
+    l.join('\n') +
+    `\n\nSOBRE EL REDONDEO: estos promedios tienen precisión falsa (salen de un cálculo). ` +
+    `Está BIEN y es lo preferible redondearlos al millar más cercano acompañados de una expresión aproximativa ` +
+    `("alrededor de", "cerca de", "aproximadamente", "en torno a", "desde")` +
+    (ej ? `; por ejemplo, ${fmt(ej)} se escribe "alrededor de ${fmt(redondear(ej))}"` : '') + `. ` +
+    `Lo que NO se puede es inventar cifras, dar un monto como exacto, o apartarse más de un 10% del valor de referencia.`;
 }
 
 async function generar(tema, datos) {
@@ -135,11 +142,20 @@ async function generar(tema, datos) {
 async function revisar(nota, datos) {
   const system =
     `Sos editor de calidad de MudateYa. Revisás notas de blog antes de publicarlas en el sitio real. ` +
-    `Sos estricto: rechazás si hay datos o precios inventados/contradictorios con los de referencia, ` +
-    `errores de hecho, español no argentino, tono de folleto/spam, o contenido inútil o riesgoso.`;
+    `Rechazás si hay datos o precios inventados/contradictorios con los de referencia, ` +
+    `errores de hecho, español no argentino, tono de folleto/spam, o contenido inútil o riesgoso.\n` +
+    `Rechazás por problemas REALES, no por preferencias de estilo: la nota no tiene que ser perfecta, ` +
+    `tiene que ser publicable. Ante una duda menor, aprobás.`;
   const user =
     `Datos de precios de referencia que la nota DEBERÍA respetar:\n${bloqueDatos(datos)}\n\n` +
     `NOTA A REVISAR:\nTítulo: ${nota.titulo}\nMeta: ${nota.metaDescripcion}\n\n${nota.cuerpoHtml}\n\n` +
+    `NO son motivo de rechazo (esto es contenido correcto, no lo marques):\n` +
+    `- Redondear un precio de referencia al millar más cercano cuando va con "alrededor de", "cerca de", ` +
+    `"aproximadamente", "en torno a" o similar. Ej: si la referencia es $376.433, escribir ` +
+    `"alrededor de $376.000" está BIEN. Solo es error si el número se presenta como exacto, ` +
+    `o si se aparta más de un 10% de la referencia.\n` +
+    `- Que unos precios se redondeen y otros no, o que se redondeen a distinto nivel.\n` +
+    `- Elecciones de estilo, largo, orden de las secciones o qué temas cubre la nota.\n\n` +
     `¿Se puede publicar tal cual en el sitio real de MudateYa? Devolvé SOLO un JSON: ` +
     `{"aprobado": true/false, "motivos": ["..."]}`;
   const txt = await claude(system, user, 500);
