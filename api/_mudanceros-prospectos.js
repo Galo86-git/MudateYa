@@ -204,7 +204,33 @@ var PROSPECTOS = [
   // ── Mendoza — barrida 2026-08-10 (solo con email confirmado en su propia web) ──
   { n: 'Fletes Mendoza', region: 'Mendoza', e: 'contacto@fletesmendoza.com.ar', tel: '261 609-0153', zona: 'Mendoza Capital y Gran Mendoza' },
   { n: 'Mudanzas Mendoza (MDS)', region: 'Mendoza', e: 'mdsfletes@hotmail.com', tel: '0261 472-4985', zona: 'Las Heras y Gran Mendoza' },
-  { n: 'Mudanzas Stocco e Hijos', region: 'Mendoza', e: 'mudanzas-stocco@hotmail.com', tel: '0261 425-3344', zona: 'Mendoza Capital' }
+  { n: 'Mudanzas Stocco e Hijos', region: 'Mendoza', e: 'mudanzas-stocco@hotmail.com', tel: '0261 425-3344', zona: 'Mendoza Capital' },
+  // ── Barrida 2026-08-17 (Google Maps, AMBA/Córdoba/Rosario) — 25 nuevos,
+  // dedupeados contra los de arriba por teléfono y nombre. Cada uno con
+  // email confirmado en su propio sitio/Facebook/Instagram (mismo criterio
+  // que el resto de la lista, ver header del archivo). Quedaron afuera ~36
+  // negocios más de la misma barrida por no tener mail publicado en
+  // ningún lado (solo WhatsApp/formulario) — no se les inventó ninguno. ──
+  { n: 'MUDADORAS.COM.AR', region: 'AMBA', e: 'Contacto@mudadoras.com.ar', tel: '011 15-5923-0618' },
+  { n: 'Mudanzas en Capital Federal (Palmo)', region: 'AMBA', e: 'palmomudanzas@gmail.com', tel: '011 4772-7244' },
+  { n: 'Mudanzas Martin', region: 'AMBA', e: 'info@mudadoramartin.com.ar', tel: '011 2005-2146' },
+  { n: 'Mudanzas Cezar', region: 'AMBA', e: 'presupuestos@mudanzascezar.com.ar', tel: '011 3783-7789' },
+  { n: 'Fletes Santa Milonguita', region: 'AMBA', e: 'info@transportesantamilonguita.com', tel: '011 2379-7027' },
+  { n: 'Fletes, Mudanzas, Transporte Logística San Isidro', region: 'AMBA', e: 'juliors27@hotmail.com', tel: '011 15-5249-2528' },
+  { n: 'Mudanzas y Fletes Rio Express', region: 'AMBA', e: 'info@rioexpress.com.ar', tel: '011 6416-3264' },
+  { n: 'EasyBox Self Storage', region: 'Córdoba', e: 'hola@easybox.ar', tel: '0351 15-867-3612' },
+  { n: 'Cruz del Sur (sucursal Córdoba)', region: 'Córdoba', e: 'info-cordoba@cruzdelsur.com', tel: '0351 15-537-7809' },
+  { n: 'Accion Mudanzas en Córdoba', region: 'Córdoba', e: 'contacto@accionmudanzas.com.ar', tel: '0351 456-0822' },
+  { n: 'Mudanzas Todo Córdoba', region: 'Córdoba', e: 'mudanzastodocordoba@gmail.com', tel: '0351 625-8401' },
+  { n: 'Fletes Pereira Córdoba', region: 'Córdoba', e: 'presupuestos@fletespereira.com', tel: '0351 813-0243' },
+  { n: 'Mudanzas Avellaneda (Córdoba)', region: 'Córdoba', e: 'mudanza.avellaneda@gmail.com', tel: '0351 812-9659' },
+  { n: 'Abana Mudanzas', region: 'Rosario', e: 'abanamudanzas@hotmail.com', tel: '0341 15-310-6556' },
+  { n: 'Mudanzas Abril Rosario', region: 'Rosario', e: 'fabiofusari@hotmail.com', tel: '0341 15-658-5589' },
+  { n: 'Mudanzas Guerrero Rosario', region: 'Rosario', e: 'guerreromudanzas@hotmail.com', tel: '0341 301-3526' },
+  { n: 'Fletes Rosario Mudanzas', region: 'Rosario', e: 'contacto@fletesrosario.com', tel: '0341 637-6795' },
+  { n: 'Fletes Mudanzas Rosario', region: 'Rosario', e: 'fletesmudanzasrosario@gmail.com', tel: '0341 15-388-9017' },
+  { n: 'Aba Mudanzas', region: 'Rosario', e: 'mudanzasaba@hotmail.com', tel: '0341 649-3401' },
+  { n: 'Mudanzas BAY', region: 'Rosario', e: 'fletebay@gmail.com', tel: '0341 654-1371' }
 ];
 
 var REGION_TEXTO = {
