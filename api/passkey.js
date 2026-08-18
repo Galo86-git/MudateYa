@@ -83,6 +83,23 @@ async function delKey(key) {
   return redisCmd(['DEL', key]);
 }
 
+// Token de sesión: si el mudancero ya tiene una sesión viva, la reutilizamos y
+// solo le renovamos el TTL. Emitir uno nuevo pisaba el anterior (hay una sola
+// clave por email) y le mataba las otras pestañas/dispositivos en el acto —
+// seguían mostrando el panel pero cualquier guardado moría con "No autorizado".
+// Mismo criterio que tokenDeSesion() en api/cotizaciones.js.
+async function tokenDeSesion(email, ttl) {
+  var clave = 'session:mudancero:' + email;
+  var vigente = await getJSON(clave);
+  if (vigente && typeof vigente === 'string') {
+    await setJSON(clave, vigente, ttl); // mismo token, TTL renovado
+    return vigente;
+  }
+  var nuevo = generarSessionToken();
+  await setJSON(clave, nuevo, ttl);
+  return nuevo;
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────────
 // Convertir Buffer/Uint8Array a base64url (lo que usa WebAuthn)
 function toBase64Url(buf) {
@@ -341,9 +358,8 @@ module.exports = async function handler(req, res) {
         return res.status(404).json({ error: 'Perfil no encontrado' });
       }
 
-      // Crear sessionToken nuevo (mismo patrón que magic link)
-      var sessionToken = generarSessionToken();
-      await setJSON('session:mudancero:' + email, sessionToken, SESSION_TTL);
+      // Token de sesión: reusa el vigente si lo hay (mismo patrón que magic link)
+      var sessionToken = await tokenDeSesion(email, SESSION_TTL);
 
       return res.status(200).json({
         ok: true,

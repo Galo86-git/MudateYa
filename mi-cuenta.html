@@ -2316,6 +2316,64 @@ function cerrarSesionYReloguear(){
   currentUser = null;
   location.replace('/mi-cuenta');
 }
+
+// ── Perfil pendiente: no perder lo que el mudancero acababa de cargar ──────
+// Un 401 al guardar el perfil (sesión vencida, o un login nuevo en otro
+// dispositivo que invalidó este token) antes terminaba en "⚠ Error: No
+// autorizado" y ahí moría: el mudancero volvía a intentar, volvía a fallar y
+// perdía CBU/precios/datos de cobro. Ahora dejamos el payload en localStorage,
+// lo mandamos a re-loguear y al volver lo reintentamos solo.
+var PERFIL_PENDIENTE_TTL = 24 * 60 * 60 * 1000; // más viejo que esto se descarta
+
+function _kPerfilPendiente(email){ return 'perfilPendiente_' + email; }
+
+function guardarPerfilPendiente(datos){
+  try { localStorage.setItem(_kPerfilPendiente(datos.email), JSON.stringify({ datos: datos, ts: Date.now() })); } catch(e){}
+}
+
+// Sesión vencida guardando el perfil: avisamos, guardamos y re-logueamos.
+async function sesionVencidaGuardando(datos){
+  guardarPerfilPendiente(datos);
+  await confirmarAccion({
+    titulo: 'Tu sesión venció',
+    mensaje: 'Guardamos tus cambios en este dispositivo. Volvé a entrar (te mandamos un link por email) y los subimos solos, no tenés que cargarlos de nuevo.',
+    textoConfirmar: 'Volver a entrar',
+    textoCancelar: 'Ahora no',
+    colorConfirmar: '#1A6FFF'
+  });
+  cerrarSesionYReloguear();
+}
+
+// Al volver a entrar: si quedó un perfil sin guardar, lo mandamos solo.
+async function reintentarPerfilPendiente(){
+  if (!currentUser || !currentUser.email) return;
+  var raw = null;
+  try { raw = localStorage.getItem(_kPerfilPendiente(currentUser.email)); } catch(e){ return; }
+  if (!raw) return;
+  var pend = null;
+  try { pend = JSON.parse(raw); } catch(e){}
+  if (!pend || !pend.datos || (Date.now() - (pend.ts || 0)) > PERFIL_PENDIENTE_TTL) {
+    try { localStorage.removeItem(_kPerfilPendiente(currentUser.email)); } catch(e){}
+    return;
+  }
+  try {
+    var r = await fetch('/api/actualizar-mudancero', {
+      method: 'POST',
+      headers: authHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify(pend.datos)
+    });
+    if (!r.ok) return; // lo dejamos guardado para el próximo intento
+    var d = await r.json();
+    if (d && d.error) return;
+    try { localStorage.removeItem(_kPerfilPendiente(currentUser.email)); } catch(e){}
+    var msgPf = document.getElementById('perfilMsg');
+    if (msgPf) {
+      msgPf.style.color = '#22C36A';
+      msgPf.textContent = '✓ Subimos los cambios de tu perfil que habían quedado pendientes';
+      setTimeout(function(){ msgPf.textContent=''; msgPf.style.color='#64748B'; }, 6000);
+    }
+  } catch(e){}
+}
 var mudanceroData = null;
 var mudanceroPerfilRedis = null; // perfil completo de Redis (incluye precios.porKm, preciosLeads, etc.)
 var mudanzasDisponibles = [];
@@ -2580,6 +2638,8 @@ async function initApp(){
 
   loadPedidos();
   loadPerfil();
+  // Si la sesión se venció mientras guardaba el perfil, lo subimos ahora.
+  reintentarPerfilPendiente();
   // Iniciar auto-update (polling cada 10s) — solo se inicia una vez por sesión
   iniciarAutoUpdate();
 }
@@ -5652,6 +5712,9 @@ function loadPerfil(){
 async function cargarPreciosLeads(){
   try {
     var r = await fetch('/api/actualizar-mudancero?email=' + encodeURIComponent(currentUser.email), { headers: authHeaders() });
+    // 401 = sesión vencida. Antes se tragaba el error y el mudancero veía el
+    // perfil a medias ("no se cargan los datos") sin entender por qué.
+    if (r.status === 401) { cerrarSesionYReloguear(); return; }
     var d = await r.json();
     if (!d.ok || !d.perfil) return;
     mudanceroPerfilRedis = d.perfil; // disponible globalmente
@@ -6401,6 +6464,13 @@ async function guardarPerfil(){
   localStorage.setItem('banking_'+currentUser.email, JSON.stringify({metodoCobro:document.getElementById('pf-metodoCobro').value,cbu:document.getElementById('pf-cbu').value.trim(),emailMP:document.getElementById('pf-emailMP').value.trim(),titular:document.getElementById('pf-titular').value.trim()}));
   try{
     var r=await fetch('/api/actualizar-mudancero',{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(datos)});
+    // Sesión vencida: no mostramos "No autorizado" a secas (callejón sin salida).
+    // Guardamos lo cargado y lo re-mandamos apenas vuelva a entrar.
+    if (r.status === 401) {
+      btn.disabled=false; btn.innerHTML='Guardar cambios';
+      await sesionVencidaGuardando(datos);
+      return;
+    }
     var d=await r.json();
     if(d.error) throw new Error(d.error);
     btn.disabled=false; btn.innerHTML='✓ Guardado';

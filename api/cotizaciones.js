@@ -41,6 +41,36 @@ async function setJSON(key, value, exSeconds) {
   if (exSeconds) await redisCall('SET', key, str, 'EX', String(exSeconds));
   else await redisCall('SET', key, str);
 }
+
+// Token de sesión de login: si el usuario YA tiene una sesión viva, la
+// reutilizamos y solo le refrescamos el TTL, en vez de emitir un token nuevo.
+//
+// Por qué: hay UNA sola clave por email (`session:{rol}:{email}`), así que cada
+// token nuevo pisaba el anterior y mataba en el acto las demás sesiones del
+// mismo usuario. Como el magic link es multi-uso por 15 min, alcanzaba con abrir
+// el mail dos veces (o entrar del celu y después de la compu) para que la pestaña
+// donde estaba cargando el perfil quedara con un token muerto: seguía viendo todo
+// en pantalla y recién explotaba al guardar, con "No autorizado". Reutilizar el
+// token mantiene vivas todas las pestañas y dispositivos del mismo usuario.
+//
+// Buscamos también la variante en minúsculas porque, según el flujo de login, la
+// sesión pudo haberse guardado con el email tal cual lo tipeó el usuario.
+async function tokenDeSesion(prefix, email, ttl) {
+  const claves = [`session:${prefix}:${email}`];
+  const norm = String(email).trim().toLowerCase();
+  if (norm !== String(email)) claves.push(`session:${prefix}:${norm}`);
+  for (const k of claves) {
+    let vigente = null;
+    try { vigente = await getJSON(k); } catch (e) {}
+    if (vigente && typeof vigente === 'string') {
+      await setJSON(k, vigente, ttl); // mismo token, TTL renovado
+      return vigente;
+    }
+  }
+  const nuevo = require('crypto').randomBytes(32).toString('hex');
+  await setJSON(claves[0], nuevo, ttl);
+  return nuevo;
+}
 // TTL de las mudanzas en Redis. ANTES era 604800 (7 días) en casi todos los
 // `setJSON('mudanza:...')` de este archivo, pero el negocio espera 15-40 días
 // desde el pago hasta liquidar al mudancero/asesor (ver admin.html
@@ -748,11 +778,10 @@ module.exports = async function handler(req, res) {
     const verifyData = await verifyRes.json();
     if (verifyData.email !== email) return res.status(401).json({ error: 'Token inválido' });
     if (verifyData.aud !== process.env.GOOGLE_CLIENT_ID) return res.status(401).json({ error: 'Token inválido' });
-    // Generar token de sesión
-    const sessionToken = require('crypto').randomBytes(32).toString('hex');
+    // Token de sesión: reusa el vigente si lo hay (no mata las otras sesiones)
     const ttl = 60 * 60 * 24 * 7; // 7 días
     const prefix = rol === 'mudancero' ? 'mudancero' : 'cliente';
-    await setJSON(`session:${prefix}:${email}`, sessionToken, ttl);
+    const sessionToken = await tokenDeSesion(prefix, email, ttl);
     return res.status(200).json({ ok: true, sessionToken, ttl });
   }
 
@@ -923,12 +952,11 @@ module.exports = async function handler(req, res) {
 
     const emailNorm = data.email;
     const tipo = data.tipo || 'mudancero'; // tokens viejos = mudancero por default
-    const sessionToken = require('crypto').randomBytes(32).toString('hex');
     const ttl = 60 * 60 * 24 * 7; // 7 días
 
     if (tipo === 'cliente') {
       // Login de cliente: NO requiere perfil previo
-      await setJSON(`session:cliente:${emailNorm}`, sessionToken, ttl);
+      const sessionToken = await tokenDeSesion('cliente', emailNorm, ttl);
       return res.status(200).json({
         ok: true,
         sessionToken,
@@ -944,7 +972,7 @@ module.exports = async function handler(req, res) {
     if (!perfil) {
       return res.status(401).json({ error: 'No encontramos tu perfil. Contactanos.' });
     }
-    await setJSON(`session:mudancero:${emailNorm}`, sessionToken, ttl);
+    const sessionToken = await tokenDeSesion('mudancero', emailNorm, ttl);
     return res.status(200).json({
       ok: true,
       sessionToken,
