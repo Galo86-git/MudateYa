@@ -104,6 +104,20 @@ const CREAR = [
     } },
     variables: { '1': 'Cristian', '2': 'te falta un pasito para activar tu cuenta' } },
 
+  // Variante URGENTE de nuevo_pedido_mudancero: la original siempre dice "el
+  // pedido queda abierto 24 hs", pero un pedido urgente (mudanza.urgente)
+  // en realidad vence a las 3hs corridas (ver action=publicar en
+  // cotizaciones.js) — decirle al mudancero que tiene 24hs cuando en
+  // realidad tiene 3 lo hace perder la mudanza por responder tarde. El
+  // email ya tenía su propio banner 🚨 URGENTE (bannerUrgente en
+  // notificarMudanceros); esto le da el mismo aviso al WhatsApp, que hasta
+  // ahora era idéntico venga o no venga urgente.
+  { name: 'nuevo_pedido_mudancero_urgente', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '🚨 {{1}}, tenés un pedido URGENTE para cotizar en MudateYa.\n\nMudanza: {{2}} → {{3}}\nFecha: {{4}}\n\nEs para hoy — respondé este WhatsApp cuanto antes con tu presupuesto para participar.',
+    } },
+    variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Belgrano', '4': 'Hoy · 18:00hs' } },
+
   // Alerta al EQUIPO (no a un cliente) cuando Emi escala un caso URGENTE — un
   // flete del día no puede esperar a que alguien abra el mail a ADMIN_EMAIL,
   // que hasta ahora era el único canal de aviso (ver derivarHumano en

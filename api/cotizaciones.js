@@ -4667,10 +4667,18 @@ async function notificarMudanceros(mudanza) {
     // manda si la plantilla está 'approved'. Mientras esté pending NO manda nada
     // (el aviso sigue por email + push). Cuando Meta la apruebe, se activa solo.
     // Respeta modo dirigido (destinatarios ya viene filtrado).
+    //
+    // Si el pedido es urgente (mudanza.urgente — vence a las 3hs corridas, no
+    // a las 24hs hábiles normales, ver action=publicar) se manda la variante
+    // nuevo_pedido_mudancero_urgente en vez de la normal: la plantilla base
+    // dice literal "el pedido queda abierto 24 hs", que para un pedido de
+    // HOY es información falsa y le puede hacer perder la mudanza al
+    // mudancero por responder tarde pensando que tiene todo el día.
     try {
       const { enviarPlantilla } = require('./_plantillas');
       const conTel = destinatarios.filter(function(d){ return d.tel; });
       const fechaTxt = fmtFechaAR(mudanza.fecha) || 'a coordinar';
+      const plantillaPedido = mudanza.urgente ? 'nuevo_pedido_mudancero_urgente' : 'nuevo_pedido_mudancero';
       for (let i = 0; i < conTel.length; i += 5) {
         const lote = conTel.slice(i, i + 5);
         await Promise.all(lote.map(function(dest){
@@ -4679,7 +4687,7 @@ async function notificarMudanceros(mudanza) {
           // enviarPlantilla no hace ninguna llamada a Twilio (gate limpio). Se activa
           // sola cuando Meta la apruebe.
           return enviarPlantilla(
-            dest.tel, 'nuevo_pedido_mudancero',
+            dest.tel, plantillaPedido,
             { 1: nom, 2: mudanza.desde, 3: mudanza.hasta, 4: fechaTxt }
           ).catch(function(e){ console.error('WhatsApp mudancero error:', dest.tel, e && e.message); });
         }));
