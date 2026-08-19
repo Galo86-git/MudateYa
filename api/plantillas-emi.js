@@ -40,8 +40,13 @@ function varsIn(body) {
 
 // ── Las 6 existentes: SOLO cambia el body a voz Emi (se preservan botones/variables) ──
 const ACTUALIZAR = [
+  // "Ruta:" y no "Mudanza:" a propósito — esta plantilla se manda igual para
+  // fletes que para mudanzas (mudanza.tipo), y "Mudanza:" quedaba mal en un
+  // flete. Sin agregar una 5ta variable (el tipo mudanza/flete) porque
+  // ACTUALIZAR solo permite reusar variables que la plantilla YA tiene
+  // aprobadas — ver el chequeo de `faltan` más abajo.
   { name: 'nuevo_pedido_mudancero', sid: 'HX5f39381013f9e1880d6f69afc7fe3b79', category: 'UTILITY',
-    body: 'Hola {{1}}, tenés un pedido nuevo para cotizar en MudateYa.\n\nMudanza: {{2}} → {{3}}\nFecha: {{4}}\n\nRespondé este WhatsApp con tu presupuesto para participar. El pedido queda abierto 24 hs.' },
+    body: 'Hola {{1}}, tenés un pedido nuevo para cotizar en MudateYa.\n\nRuta: {{2}} → {{3}}\nFecha: {{4}}\n\nRespondé este WhatsApp con tu presupuesto para participar. El pedido queda abierto 24 hs.' },
   { name: 'recordatorio_pedido_incompleto', sid: 'HX2ebc4cb3b32221059b9d013a212bbbda', category: 'MARKETING',
     body: 'Hola {{1}}, quedó a medias tu pedido de mudanza en MudateYa. ¿Lo retomamos? Respondé este mensaje y en un minuto te consigo los presupuestos.' },
   { name: 'mudancero_elegido', sid: 'HX4b32834b2e7a07da7b5ac52dc8bdc853', category: 'UTILITY',
@@ -114,7 +119,7 @@ const CREAR = [
   // ahora era idéntico venga o no venga urgente.
   { name: 'nuevo_pedido_mudancero_urgente', category: 'UTILITY',
     types: { 'twilio/text': {
-      body: '🚨 {{1}}, tenés un pedido URGENTE para cotizar en MudateYa.\n\nMudanza: {{2}} → {{3}}\nFecha: {{4}}\n\nEs para hoy — respondé este WhatsApp cuanto antes con tu presupuesto para participar.',
+      body: '🚨 {{1}}, tenés un pedido URGENTE para cotizar en MudateYa.\n\nRuta: {{2}} → {{3}}\nFecha: {{4}}\n\nEs para hoy — respondé este WhatsApp cuanto antes con tu presupuesto para participar.',
     } },
     variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Belgrano', '4': 'Hoy · 18:00hs' } },
 
