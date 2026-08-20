@@ -1066,7 +1066,6 @@ tr:hover td{background:#F8FAFC}
 
 <script>
 var GOOGLE_CLIENT_ID = '';
-var ADMIN_EMAILS = [];
 
 // ════════════════════════════════════════════════════════════════════════
 // TABLAS RESPONSIVE EN MOBILE — sin tocar cada función de renderizado.
@@ -1189,7 +1188,8 @@ function confirmarAccion(opts) {
 
 // ── Token de admin ────────────────────────────────────────────────
 // El token ya NO viaja en el HTML. Lo emite /api/admin-sesion despues de
-// validar el login de Google contra ADMIN_EMAILS, y vive solo en
+// validar el login de Google server-side (contra Google + ADMIN_EMAILS, que
+// tampoco viaja al cliente — ver api/admin-config.js), y vive solo en
 // sessionStorage (se borra al cerrar la pestana).
 function ADMTK(){
   try{
@@ -1215,16 +1215,20 @@ window.onload = async function(){
     var r = await fetch('/api/admin-config');
     var cfg = await r.json();
     GOOGLE_CLIENT_ID = cfg.googleClientId;
-    ADMIN_EMAILS = cfg.adminEmails || [];
   }catch(e){ console.error('Error cargando config:', e); }
 
+  // Restaurar sesión guardada: alcanza con que no haya vencido y que exista
+  // el token firmado por el servidor — ya no hay lista de emails del lado
+  // del cliente contra la cual chequear (ver nota en api/admin-config.js).
+  // Si el token fuera inválido igual, cualquier llamada real lo va a
+  // rechazar server-side (esAdmin en api/_auth.js).
   var saved = sessionStorage.getItem('adminUser');
   if(saved){
     try{
       var parsed = JSON.parse(saved);
       if(parsed._expires && Date.now() > parsed._expires){
         sessionStorage.removeItem('adminUser');
-      } else if(isAuthorized(parsed.email) && sessionStorage.getItem('adminToken')){
+      } else if(sessionStorage.getItem('adminToken')){
         currentUser = parsed;
         showAdmin(); return;
       }
@@ -1241,8 +1245,8 @@ async function handleCredential(response){
   var payload = {};
   try{ payload = JSON.parse(atob(response.credential.split('.')[1])); }catch(e){}
 
-  // El chequeo contra ADMIN_EMAILS del lado del cliente es solo UX.
-  // El gate real lo hace /api/admin-sesion, que valida el id_token contra
+  // No hay chequeo de ADMIN_EMAILS del lado del cliente (nunca viaja al
+  // browser). El gate real lo hace /api/admin-sesion, que valida el id_token contra
   // Google (aud + email_verified) y recien ahi emite el token firmado.
   var r, d;
   try{
@@ -1271,12 +1275,6 @@ async function handleCredential(response){
     _expires: Date.now() + (d.expiraEn || 12*60*60*1000)
   }));
   showAdmin();
-}
-
-function isAuthorized(email){
-  // Nunca dar acceso si la lista no cargó — fail closed
-  if(!ADMIN_EMAILS || ADMIN_EMAILS.length === 0) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase().trim());
 }
 
 function showAdmin(){
