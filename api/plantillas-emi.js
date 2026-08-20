@@ -272,6 +272,14 @@ const CREAR = [
   { name: 'asesor_pedido_cancelado', category: 'UTILITY',
     types: { 'twilio/text': { body: 'Hola {{1}}, tu cliente {{2}} canceló su mudanza ({{3}} → {{4}}) ❌ Si querés, contactalo para entender el motivo y ofrecerle otra alternativa.' } },
     variables: { '1': 'Marina', '2': 'Juan', '3': 'Palermo', '4': 'Tigre' } },
+    // Faltaba: notificarAsesorResumenVencimiento (cotizaciones.js) la usa desde
+    // siempre pero nunca se agregó acá — por eso jamás se creó/aprobó en Meta y
+    // el envío dependía 100% de la ventana de 24hs (texto libre), fallando con
+    // error 63016 cuando el asesor estaba fuera de ventana. El PDF adjunto solo
+    // viaja por el fallback de texto libre (enviarWhatsApp no soporta media).
+  { name: 'asesor_resumen_presupuestos', category: 'UTILITY',
+       types: { 'twilio/text': { body: 'Hola {{1}}, se venció el plazo de tu cliente {{2}} — recibió {{3}} presupuesto(s). Te mando el resumen para que lo ayudes a elegir.' } },
+       variables: { '1': 'Marina', '2': 'Juan', '3': '3' } },
 
   // ── Reemplazo urgente: el mudancero cancela con seña ya pagada y menos de
   // 24hs de margen (ver action=cancelar-mudancero/confirmar-reemplazo-urgente
