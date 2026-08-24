@@ -1101,7 +1101,7 @@
     },
     {
       "path": "/api/cron-asesores-semanal",
-      "schedule": "0 12 * * 1"
+      "schedule": "0 13 * * 1"
     },
     {
       "path": "/api/cron-asesores-viernes",

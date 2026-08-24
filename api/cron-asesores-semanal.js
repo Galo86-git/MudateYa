@@ -2,8 +2,8 @@
 //
 // Recordatorio SEMANAL a los asesores de CANAL (Remax, C21, Mudafy,
 // Independientes) Y a las INMOBILIARIAS dadas de alta (api/inmobiliarias.js),
-// aunque no tengan ningún asesor cargado. Corre todos los lunes 09:00 hora
-// Argentina (12:00 UTC) — schedule "0 12 * * 1" en vercel.json.
+// aunque no tengan ningún asesor cargado. Corre todos los lunes 10:00 hora
+// Argentina (13:00 UTC) — schedule "0 13 * * 1" en vercel.json.
 //
 // A cada asesor le manda su LINK EXCLUSIVO de cotización ya existente:
 //   https://mudateya.ar/inmobiliaria/{canal}?asesor={codigo}
@@ -275,6 +275,17 @@ var CONTENIDO_SEMANAS = {
       'Si tenés un cliente "casi seguro" que todavía no cerró, mandale tu link ahora — mejor que llegue con tiempo, antes de que se le complique la agenda.',
       'Contale que en septiembre los mudanceros buenos se agendan rápido: cuanto antes pida presupuesto, más opciones de fecha y precio tiene.',
       'Si tenés un cliente que ya cerró con vos, no hace falta que le mandes el link — le contás a Emi los datos y ella carga el pedido directo, atribuido a vos.'
+    ],
+    cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
+  },
+  35: { // lunes 2026-08-24 — adopción de Emi (cargar el pedido por WhatsApp en vez de mandar el link)
+    titulo: '{nombre}, ¿probaste cargar un pedido vos mismo con Emi?',
+    lead: 'Si todavía le mandás el link al cliente y esperás que él lo complete, hay un camino más corto.',
+    bulletsLabel: 'Así de simple:',
+    bullets: [
+      'Le escribís a Emi por WhatsApp con los datos de tu cliente (origen, destino, fecha) y ella carga el pedido directo, atribuido a tu código.',
+      'Tu cliente no tiene que entrar a ningún lado ni completar ningún formulario — le llegan los presupuestos directo a él.',
+      'Misma comisión, la mitad del ida y vuelta.'
     ],
     cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   }
