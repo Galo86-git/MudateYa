@@ -457,14 +457,15 @@ module.exports = async function handler(req, res) {
         if (_tel8Inmo.length === 8) await redisCall('hset', ['inmocontacto:tel8-idx', _tel8Inmo, slugFinal]);
       } catch (e) { console.warn('idx tel8 inmo:', e.message); }
 
-      var urlRegistroAsesores = 'https://mudateya.ar/inmobiliaria/' + slugFinal + '/registro';
+      var urlInmo = 'https://mudateya.ar/inmobiliaria/' + slugFinal;
+      var urlRegistroAsesores = urlInmo + '/registro';
 
       // ── Mails (no rompemos el flow si fallan: la inmobiliaria ya quedó activa) ──
       try {
         const { Resend } = require('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
 
-        // (1) Bienvenida instantánea, con el link para repartir entre sus asesores
+        // (1) Bienvenida instantánea, con su link propio y el link para repartir entre sus asesores
         await resend.emails.send({
           from: 'MudateYa <noreply@mudateya.ar>', reply_to:'contacto@mudateya.ar',
           to: email,
@@ -476,7 +477,14 @@ module.exports = async function handler(req, res) {
               </div>
               <div style="padding:28px">
                 <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">Cuenta activada</h1>
-                <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${nombre} ya es parte de MudateYa. Cada asesor de tu equipo va a tener su propio link, con tu marca, para que sus clientes consigan mudanceros verificados.</p>
+                <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${nombre} ya es parte de MudateYa. Tenés tu propio link para compartir directamente, y cada asesor de tu equipo va a tener el suyo, con tu marca, para que sus clientes consigan mudanceros verificados.</p>
+
+                <div style="background:linear-gradient(135deg,#0F8A4C 0%,#22C36A 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
+                  <div style="color:#D1FAE5;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Tu link propio</div>
+                  <div style="color:#fff;font-size:16px;font-weight:800;font-family:'Courier New',monospace;word-break:break-all;margin-bottom:6px">${urlInmo}</div>
+                  <div style="color:#D1FAE5;font-size:12px;margin-bottom:14px">Compartilo vos directamente — en tu sitio, redes o con tus clientes.</div>
+                  <a href="${urlInmo}" style="display:inline-block;background:#fff;color:#0F8A4C;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Ver mi página →</a>
+                </div>
 
                 <div style="background:linear-gradient(135deg,#003580 0%,#0055B8 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
                   <div style="color:#B8D4FF;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Link de registro para tus asesores</div>
@@ -713,7 +721,15 @@ module.exports = async function handler(req, res) {
                 <!-- Body -->
                 <div style="padding:28px">
                   <h1 style="margin:0 0 10px;color:#0F1419;font-size:24px;font-weight:800;line-height:1.2">Cuenta activada</h1>
-                  <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${data.nombre} ya es parte de MudateYa. Cada asesor de tu equipo va a tener su propio link, con tu marca, para que sus clientes consigan mudanceros verificados.</p>
+                  <p style="color:#4B5563;line-height:1.6;font-size:15px;margin-bottom:22px">${data.nombre} ya es parte de MudateYa. Tenés tu propio link para compartir directamente, y cada asesor de tu equipo va a tener el suyo, con tu marca, para que sus clientes consigan mudanceros verificados.</p>
+
+                  <!-- Link propio de la inmobiliaria -->
+                  <div style="background:linear-gradient(135deg,#0F8A4C 0%,#22C36A 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
+                    <div style="color:#D1FAE5;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Tu link propio</div>
+                    <div style="color:#fff;font-size:16px;font-weight:800;font-family:'Courier New',monospace;word-break:break-all;margin-bottom:6px">${urlInmo}</div>
+                    <div style="color:#D1FAE5;font-size:12px;margin-bottom:14px">Compartilo vos directamente — en tu sitio, redes o con tus clientes.</div>
+                    <a href="${urlInmo}" style="display:inline-block;background:#fff;color:#0F8A4C;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Ver mi página →</a>
+                  </div>
 
                   <!-- Link de registro para asesores -->
                   <div style="background:linear-gradient(135deg,#003580 0%,#0055B8 100%);border-radius:14px;padding:22px;margin:20px 0;text-align:center">
