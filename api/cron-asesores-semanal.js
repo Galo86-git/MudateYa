@@ -288,6 +288,17 @@ var CONTENIDO_SEMANAS = {
       'Misma comisión, la mitad del ida y vuelta.'
     ],
     cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
+  },
+  36: { // lunes 2026-08-31 — retomar septiembre + timing de comisión
+    titulo: '{nombre}, arrancó septiembre — momento de cerrar lo que quedó pendiente',
+    lead: 'La semana pasada te contamos que septiembre es fuerte. Ya arrancó — es un buen momento para retomar esas conversaciones que quedaron en veremos en agosto.',
+    bulletsLabel: 'Para no dejarlo pasar:',
+    bullets: [
+      'Repasá tu lista de clientes de las últimas semanas: ¿quedó alguno sin cerrar? Un mensaje corto con tu link puede reactivarlo.',
+      'Recordá: lo que se genera este mes se liquida el 10 de octubre — cuanto antes cierren, antes te llega.',
+      'Si preferís no mandar el link, contale los datos a Emi por WhatsApp y ella carga el pedido por vos.'
+    ],
+    cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   }
 };
 
