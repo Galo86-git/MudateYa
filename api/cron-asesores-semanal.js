@@ -299,6 +299,17 @@ var CONTENIDO_SEMANAS = {
       'Si preferís no mandar el link, contale los datos a Emi por WhatsApp y ella carga el pedido por vos.'
     ],
     cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
+  },
+  37: { // lunes 2026-09-07 — qué esperar después de publicar (24hs hábiles / 7 días)
+    titulo: '{nombre}, ¿cuánto tarda tu cliente en tener presupuestos?',
+    lead: 'A veces el asesor no sabe bien qué esperar después de mandar el link, y no sabe qué contarle al cliente. Esto es lo que pasa en la práctica.',
+    bulletsLabel: 'Así funciona:',
+    bullets: [
+      'Apenas tu cliente publica, los mudanceros de su zona ya pueden empezar a cotizar — no hay espera de aprobación de nuestro lado.',
+      'Tiene hasta 24 horas hábiles para juntar cotizaciones, y después todavía 7 días corridos para elegir con cuál quedarse.',
+      'Cuantos más datos cargue (fotos, pisos, ascensor), más precisos llegan los presupuestos — menos sorpresas el día de la mudanza.'
+    ],
+    cierre: 'Como siempre, tu link es el mismo — no cambia nada de tu lado.'
   }
 };
 
