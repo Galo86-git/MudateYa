@@ -23,6 +23,7 @@
 // paga", gane la carrera quien gane.
 
 const { MercadoPagoConfig, Payment } = require('mercadopago');
+const { alertarEquipo } = require('./_alerta-equipo');
 
 module.exports = async function handler(req, res) {
 
@@ -51,17 +52,21 @@ module.exports = async function handler(req, res) {
     const paymentClient = new Payment(client);
     const pago = await paymentClient.get({ id: data.id });
 
-    const { status, status_detail, metadata } = pago;
+    const { status, status_detail, metadata, external_reference } = pago;
     console.log(`[Webhook MP] Pago ${data.id} — ${status} (${status_detail})`);
 
     if (status !== 'approved') {
       return res.status(200).json({ status: 'no_aprobado', pago_status: status });
     }
 
-    const mudanzaId = metadata?.mudanzaId;
-    const tipoPago  = metadata?.tipoPago; // 'anticipo' | 'saldo'
+    const { mudanzaId, tipoPago } = extraerReferencia(metadata, external_reference);
     if (!mudanzaId || !tipoPago) {
-      console.warn('[Webhook MP] Sin mudanzaId o tipoPago en metadata');
+      console.warn('[Webhook MP] Sin mudanzaId o tipoPago (metadata ni external_reference)', JSON.stringify({ metadata, external_reference }));
+      await alertarEquipo(
+        'Pago de MP aprobado SIN registrar (no se pudo asociar a un pedido)',
+        'Mercado Pago acreditó un pago pero el webhook no pudo saber a qué pedido corresponde. Hay que registrarlo a mano.',
+        { 'Pago MP': data.id, 'Monto': pago.transaction_amount, 'Pagador': pago.payer && pago.payer.email, 'external_reference': external_reference, 'metadata': JSON.stringify(metadata || {}) }
+      );
       return res.status(200).json({ status: 'sin_metadata' });
     }
 
@@ -77,6 +82,11 @@ module.exports = async function handler(req, res) {
     const d = await r.json().catch(() => ({}));
     if (!r.ok) {
       console.error(`[Webhook MP] registrar-pago devolvió ${r.status}:`, d.error);
+      await alertarEquipo(
+        'Pago de MP aprobado que NO se pudo registrar',
+        'Mercado Pago acreditó el pago pero registrar-pago lo rechazó. El mudancero y el cliente no fueron notificados.',
+        { 'Pedido': mudanzaId, 'Tramo': tipoPago, 'Pago MP': data.id, 'Monto': pago.transaction_amount, 'Error': d.error || r.status }
+      );
       // Devolvemos 200 igual: si devolviéramos error, MP reintentaría este
       // mismo webhook en loop, y si el motivo del fallo es permanente (ej. el
       // pago no corresponde a la mudanza) reintentar no lo arregla.
@@ -88,7 +98,35 @@ module.exports = async function handler(req, res) {
 
   } catch (error) {
     console.error('[Webhook MP] Error:', error.message);
+    await alertarEquipo(
+      'Error procesando el webhook de Mercado Pago',
+      'El webhook falló antes de poder registrar un pago. Revisá en MP si hay un pago aprobado sin registrar.',
+      { 'Pago MP': req.body && req.body.data && req.body.data.id, 'Error': error.message }
+    );
     // MP reintenta si devolvés error — siempre devolver 200
     return res.status(200).json({ status: 'error_procesado', error: error.message });
   }
 };
+
+// MP suele devolver las claves del metadata en snake_case (mudanza_id) aunque
+// se hayan cargado en camelCase (mudanzaId): se aceptan las dos. Si no hay
+// metadata, se intenta con external_reference, que tiene dos formatos:
+//   crear-preferencia.js → {mudanzaId}-{anticipo|saldo}-{cotizacionId}
+//   cotizaciones.js      → {mudanzaId}-COT-{n}-{anticipo|saldo}
+// registrar-pago vuelve a verificar que el pago corresponda a ese pedido.
+function extraerReferencia(metadata, externalReference) {
+  const md = metadata || {};
+  let mudanzaId = md.mudanzaId || md.mudanza_id || '';
+  let tipoPago  = md.tipoPago  || md.tipo_pago  || '';
+  if (!mudanzaId || !tipoPago) {
+    const ref = String(externalReference || '');
+    const m = ref.match(/^(MYA-\d+|[a-z0-9]+)-(anticipo|saldo)-/i) ||
+              ref.match(/^(MYA-\d+|[a-z0-9]+)-COT-\d+-(anticipo|saldo)$/i);
+    if (m) {
+      mudanzaId = mudanzaId || m[1];
+      tipoPago  = tipoPago  || m[2].toLowerCase();
+    }
+  }
+  return { mudanzaId, tipoPago };
+}
+module.exports.extraerReferencia = extraerReferencia;

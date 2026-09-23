@@ -137,11 +137,17 @@ async function avisarSenaConfirmada(mudanza) {
       `${desde} → ${hasta}${fecha ? ' · ' + fecha : ''}\n` +
       (cot.mudanceroTel ? `Coordinás con ${mud}: ${cot.mudanceroTel}\n` : '') +
       `El 50% restante lo pagás al completar. ¡Cualquier cosa escribime por acá!`;
-    try { await enviarPlantilla(mudanza.clienteWA, 'pago_confirmado_cliente', { 1: nomCli, 2: mud, 3: fecha || 'la fecha coordinada' }, texto); }
+    try {
+      const r = await enviarPlantilla(mudanza.clienteWA, 'pago_confirmado_cliente', { 1: nomCli, 2: mud, 3: fecha || 'la fecha coordinada' }, texto);
+      if (!r || !r.enviado) console.warn('avisarSenaConfirmada cliente NO enviado:', mudanza.id, r && r.motivo);
+    }
     catch (e) { console.warn('avisarSenaConfirmada cliente:', e.message); }
   }
 
   // 2) Mudancero elegido → plantilla mudancero_elegido.
+  // Si no se le pudo avisar por ningún camino, se alerta al equipo: el mudancero
+  // ganó el pedido y el cliente ya pagó, no puede enterarse por casualidad.
+  let motivoFalloMudancero = '';
   if (cot.mudanceroTel) {
     const nomMud = (cot.mudanceroNombre || '').split(' ')[0] || 'Hola';
     const texto =
@@ -150,8 +156,23 @@ async function avisarSenaConfirmada(mudanza) {
       (mudanza.clienteNombre ? `Cliente: ${mudanza.clienteNombre}` : 'Cliente') +
       (mudanza.clienteWA ? ` (${mudanza.clienteWA})` : '') + '\n' +
       `Escribile para coordinar. ¡Éxitos! 🚚`;
-    try { await enviarPlantilla(cot.mudanceroTel, 'mudancero_elegido', { 1: nomMud, 2: desde, 3: hasta, 4: fecha || 'a coordinar', 5: mudanza.clienteNombre || 'el cliente', 6: mudanza.clienteWA || '—' }, texto); }
-    catch (e) { console.warn('avisarSenaConfirmada mudancero:', e.message); }
+    try {
+      const r = await enviarPlantilla(cot.mudanceroTel, 'mudancero_elegido', { 1: nomMud, 2: desde, 3: hasta, 4: fecha || 'a coordinar', 5: mudanza.clienteNombre || 'el cliente', 6: mudanza.clienteWA || '—' }, texto);
+      if (!r || !r.enviado) motivoFalloMudancero = (r && r.motivo) || 'no se pudo enviar';
+    }
+    catch (e) { motivoFalloMudancero = e.message; }
+  } else {
+    motivoFalloMudancero = 'la cotización aceptada no tiene teléfono del mudancero';
+  }
+  if (motivoFalloMudancero) {
+    console.warn('avisarSenaConfirmada mudancero NO enviado:', mudanza.id, motivoFalloMudancero);
+    try {
+      await require('./_alerta-equipo').alertarEquipo(
+        'Seña pagada: el mudancero NO recibió el WhatsApp',
+        'El cliente pagó la seña pero no se le pudo avisar por WhatsApp al mudancero elegido. Avisale a mano.',
+        { 'Pedido': mudanza.id, 'Mudancero': cot.mudanceroNombre, 'Teléfono': cot.mudanceroTel, 'Email': cot.mudanceroEmail, 'Motivo': motivoFalloMudancero }
+      );
+    } catch (_) {}
   }
 }
 

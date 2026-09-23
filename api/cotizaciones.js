@@ -1827,7 +1827,16 @@ module.exports = async function handler(req, res) {
       m.ultimoUpdatePago = new Date().toISOString();
       await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       // ── Enviar emails ─────────────────────────────────────────────────
-      try { await notificarMudanceroPago(m, tipoPago); } catch(e) { console.warn('Email mudancero pago error:', e.message); }
+      try { await notificarMudanceroPago(m, tipoPago); } catch(e) {
+        console.warn('Email mudancero pago error:', e.message);
+        try {
+          await require('./_alerta-equipo').alertarEquipo(
+            'Pago registrado: falló el mail al mudancero',
+            'Se registró un pago pero el mail al mudancero falló. Avisale a mano.',
+            { 'Pedido': m.id, 'Tramo': tipoPago, 'Mudancero': m.cotizacionAceptada && m.cotizacionAceptada.mudanceroNombre, 'Error': e.message }
+          );
+        } catch (_) {}
+      }
       // Cierre para el asesor: comision si fue alquiler, regalo si compraventa.
       if (tipoPago === 'saldo' && m.partnerAsesor) {
         try { await notificarAsesorMudanzaCompletada(m); }
@@ -5544,7 +5553,17 @@ async function notificarMudanceroPago(mudanza, tipoPago) {
   if (!process.env.RESEND_API_KEY) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const cot = mudanza.cotizacionAceptada;
-  if (!cot || !cot.mudanceroEmail) return;
+  if (!cot || !cot.mudanceroEmail) {
+    console.warn('notificarMudanceroPago: sin mudanceroEmail, no se avisó:', mudanza.id, tipoPago);
+    try {
+      await require('./_alerta-equipo').alertarEquipo(
+        'Pago registrado: el mudancero NO recibió el mail',
+        'Se registró un pago pero la cotización aceptada no tiene email del mudancero, así que no se le mandó el mail ni el push. Avisale a mano.',
+        { 'Pedido': mudanza.id, 'Tramo': tipoPago, 'Mudancero': cot && cot.mudanceroNombre, 'Teléfono': cot && cot.mudanceroTel }
+      );
+    } catch (_) {}
+    return;
+  }
 
   const esAnticipo = tipoPago === 'anticipo';
   const precioTotal = cot.precio || 0;
