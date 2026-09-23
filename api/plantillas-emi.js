@@ -123,6 +123,18 @@ const CREAR = [
     } },
     variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Belgrano', '4': 'Hoy · 18:00hs' } },
 
+  // Igual que mudancero_elegido pero con "Flete:" en vez de "Mudanza:". Se creó
+  // aparte (en vez de editar la existente) porque actualizar una plantilla
+  // aprobada borra la vieja al instante y hasta que Meta re-aprueba el aviso
+  // de "ganaste un pedido" no llegaría a nadie fuera de la ventana de 24h.
+  // avisarSenaConfirmada usa esta solo para fletes y solo si ya está aprobada;
+  // si no, sigue con mudancero_elegido.
+  { name: 'mudancero_elegido_flete', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '¡Te eligieron, {{1}}! 🙌 El cliente reservó tu presupuesto y pagó la seña.\n\nFlete: {{2}} → {{3}}\nFecha: {{4}}\nContacto: {{5}} — {{6}}\n\nCoordiná directo con el cliente. ¡Éxitos!',
+    } },
+    variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Belgrano', '4': 'Sábado 3/10', '5': 'María', '6': '+5491100000000' } },
+
   // Alerta al EQUIPO (no a un cliente) cuando Emi escala un caso URGENTE — un
   // flete del día no puede esperar a que alguien abra el mail a ADMIN_EMAIL,
   // que hasta ahora era el único canal de aviso (ver derivarHumano en

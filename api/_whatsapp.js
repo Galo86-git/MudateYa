@@ -119,7 +119,7 @@ async function enviarWhatsAppTexto(to, body, mediaUrl) {
 // los webhooks de pago (MP y Talo). OJO ventana 24h para texto libre.
 async function avisarSenaConfirmada(mudanza) {
   if (!mudanza) return;
-  const { enviarPlantilla } = require('./_plantillas');
+  const { enviarPlantilla, resolver } = require('./_plantillas');
   const cot   = mudanza.cotizacionAceptada || {};
   const desde = mudanza.desde || mudanza.origen || '';
   const hasta = mudanza.hasta || mudanza.destino || '';
@@ -157,7 +157,15 @@ async function avisarSenaConfirmada(mudanza) {
       (mudanza.clienteWA ? ` (${mudanza.clienteWA})` : '') + '\n' +
       `Escribile para coordinar. ¡Éxitos! 🚚`;
     try {
-      const r = await enviarPlantilla(cot.mudanceroTel, 'mudancero_elegido', { 1: nomMud, 2: desde, 3: hasta, 4: fecha || 'a coordinar', 5: mudanza.clienteNombre || 'el cliente', 6: mudanza.clienteWA || '—' }, texto);
+      // Para fletes, la plantilla que dice "Flete:" — pero solo si Meta ya la
+      // aprobó; mientras tanto (o si la rechaza) sigue la de siempre, así el
+      // aviso nunca queda sin plantilla.
+      let plantillaMud = 'mudancero_elegido';
+      if (String(tipo).toLowerCase() === 'flete') {
+        const pf = await resolver('mudancero_elegido_flete');
+        if (pf && pf.status === 'approved') plantillaMud = 'mudancero_elegido_flete';
+      }
+      const r = await enviarPlantilla(cot.mudanceroTel, plantillaMud, { 1: nomMud, 2: desde, 3: hasta, 4: fecha || 'a coordinar', 5: mudanza.clienteNombre || 'el cliente', 6: mudanza.clienteWA || '—' }, texto);
       if (!r || !r.enviado) motivoFalloMudancero = (r && r.motivo) || 'no se pudo enviar';
     }
     catch (e) { motivoFalloMudancero = e.message; }
