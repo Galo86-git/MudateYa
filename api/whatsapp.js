@@ -579,6 +579,8 @@ COMPARAR LOS 3 NIVELES: si el cliente quiere ver precios de Esencial, Integral y
 
 FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
 
+VIDEOS: por este canal NO se pueden recibir videos — no los ves y no llegan al pedido ni al mudancero. Si el cliente dice que te mandó un video, o el sistema te avisa que llegó uno, explicale con claridad que no lo pudiste ver y que no le va a llegar al mudancero, y pedile fotos (o que te describa por escrito lo que muestra el video, ej. cómo es el acceso, los pisos, si hay que subir algo con sogas). NUNCA escribas en el pedido (detalles, comentario) que hay un video adjunto ni que "el video muestra..." algo: solo podés cargar lo que el cliente te dijo por escrito o lo que se ve en las fotos.
+
 TIP ENTRE SEMANA: si NO es urgente y el cliente todavía no cerró un día fijo (dice "el finde", "el sábado", o pregunta "¿cuándo me conviene?"), mencioná una vez, con onda y sin insistir, que entre semana suele ser más barato y hay más mudanceros libres — algo en la línea de "Dato: si tenés margen, entre semana (mar-jue) sueles conseguir mejores precios y más mudanceros libres — ¿te cierra alguno de esos días, o va sí o sí el finde?". Si ya te dijo que tiene que ser un día puntual (por lo que sea), no insistas ni lo repitas.
 
 TIP DE AUDIO: podés recibir audios perfectamente (los transcribís vos sola). NO lo menciones en el primer mensaje — recién a partir del segundo o tercer intercambio, si seguís juntando datos y todo viene por texto, mencionalo una vez con onda: algo como "Che, si te resulta más cómodo también me podés mandar un audio contándome todo — te entiendo igual 🎙️". Una sola vez por conversación, nunca lo repitas.
@@ -2024,6 +2026,14 @@ async function notificarMudanceroTest(pedido) {
       }
     }
   } catch (e) { console.warn('notificarMudanceroTest WhatsApp:', e.message); }
+}
+
+// Texto que se le suma al mensaje cuando la persona mandó video(s). Lleva la
+// instrucción adentro para que valga con cualquier rol (cliente, mudancero,
+// asesor, inmobiliaria), no solo donde el prompt tiene la regla VIDEOS.
+function avisoVideoNoSoportado(cantidad) {
+  const que = cantidad > 1 ? `${cantidad} videos` : 'un video';
+  return `[Aviso del sistema, no lo escribió la persona: adjuntó ${que}, pero por este canal NO se pueden recibir videos, así que no lo ves ni le llega al mudancero. Decíselo con claridad y pedile fotos o una descripción escrita. No afirmes que hay un video adjunto ni lo cargues como adjunto en un pedido.]`;
 }
 
 // Sube una foto (base64) a Vercel Blob y devuelve su URL pública, para adjuntarla
@@ -3721,12 +3731,14 @@ module.exports = async function handler(req, res) {
     const numMedia = parseInt(body.NumMedia || '0', 10) || 0;
     const imagenes = [];
     const audios = [];
-    let hayOtro = false; // video u otro adjunto no soportado
+    let hayOtro = false; // adjunto no soportado que no es video
+    let videos = 0;
     for (let i = 0; i < numMedia; i++) {
       const url = body[`MediaUrl${i}`];
       const tipo = body[`MediaContentType${i}`] || '';
       if (url && TIPOS_IMG.includes(tipo)) imagenes.push({ url, tipo });
       else if (url && tipo.startsWith('audio/')) audios.push({ url, tipo });
+      else if (url && tipo.startsWith('video/')) videos++;
       else if (url) hayOtro = true;
     }
 
@@ -3739,6 +3751,14 @@ module.exports = async function handler(req, res) {
         if (t) partes.push(t);
       }
       if (partes.length) textoFinal = (textoFinal ? textoFinal + ' ' : '') + partes.join(' ');
+    }
+
+    // Los videos no se pueden recibir (no se guardan ni llegan al mudancero).
+    // Antes se descartaban en silencio y Emi cargaba "video adjunto" en el
+    // pedido igual: el mudancero cotizaba sin ver nada. Ahora Emi se entera y
+    // se lo dice al cliente (ver regla VIDEOS en el prompt).
+    if (videos) {
+      textoFinal = (textoFinal ? textoFinal + ' ' : '') + avisoVideoNoSoportado(videos);
     }
 
     if (!textoFinal && imagenes.length === 0 && !ubicacion) {
@@ -3763,3 +3783,5 @@ module.exports = async function handler(req, res) {
     return res.status(200).send(twiml('Uy, tuve un problemita. Probá de nuevo en un momento 🙏'));
   }
 };
+
+module.exports.avisoVideoNoSoportado = avisoVideoNoSoportado;
