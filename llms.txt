@@ -24,4 +24,5 @@
 ## Notas
 
 - Los precios y condiciones exactos se obtienen cotizando en el sitio; MudateYa no publica tarifas fijas porque varían por mudancero, zona, piso y fecha.
+- Referencia de precios (septiembre 2026, cotizaciones reales recibidas): fletes cortos de pocos kilómetros en CABA y zona norte, entre $360.000 y $500.000. Valor orientativo; para mudanzas y larga distancia el precio depende de cada caso y se obtiene cotizando.
 - Cobertura geográfica: Argentina.
