@@ -138,7 +138,18 @@ async function avisarSenaConfirmada(mudanza) {
       (cot.mudanceroTel ? `Coordinás con ${mud}: ${cot.mudanceroTel}\n` : '') +
       `El 50% restante lo pagás al completar. ¡Cualquier cosa escribime por acá!`;
     try {
-      const r = await enviarPlantilla(mudanza.clienteWA, 'pago_confirmado_cliente', { 1: nomCli, 2: mud, 3: fecha || 'la fecha coordinada' }, texto);
+      // v2 lleva el teléfono del mudancero en el cuerpo: se usa solo si Meta ya
+      // la aprobó y hay teléfono. Si no, la original + contacto en texto libre.
+      let usaV2 = false;
+      if (cot.mudanceroTel) {
+        try {
+          const p2 = await resolver('pago_confirmado_cliente_v2');
+          usaV2 = !!(p2 && p2.status === 'approved' && p2.sid);
+        } catch (_) {}
+      }
+      const r = usaV2
+        ? await enviarPlantilla(mudanza.clienteWA, 'pago_confirmado_cliente_v2', { 1: nomCli, 2: mud, 3: fecha || 'la fecha coordinada', 4: cot.mudanceroTel }, texto)
+        : await enviarPlantilla(mudanza.clienteWA, 'pago_confirmado_cliente', { 1: nomCli, 2: mud, 3: fecha || 'la fecha coordinada' }, texto);
       if (!r || !r.enviado) console.warn('avisarSenaConfirmada cliente NO enviado:', mudanza.id, r && r.motivo);
       // La plantilla aprobada NO lleva el contacto del mudancero ("te va a
       // escribir para coordinar"): el teléfono solo estaba en el texto libre,
@@ -146,7 +157,7 @@ async function avisarSenaConfirmada(mudanza) {
       // pagó nunca recibía el contacto. Si salió por plantilla, mandamos el
       // contacto aparte en texto libre (dentro de la ventana de 24hs; si ya
       // se cerró, Twilio lo rechaza y queda el aviso en el log).
-      if (r && r.enviado && r.via === 'plantilla' && cot.mudanceroTel) {
+      if (r && r.enviado && r.via === 'plantilla' && !usaV2 && cot.mudanceroTel) {
         try {
           await enviarWhatsAppTexto(
             mudanza.clienteWA,

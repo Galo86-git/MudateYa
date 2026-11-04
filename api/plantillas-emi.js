@@ -135,6 +135,19 @@ const CREAR = [
     } },
     variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Belgrano', '4': 'Sábado 3/10', '5': 'María', '6': '+5491100000000' } },
 
+  // Igual que pago_confirmado_cliente pero CON el contacto del mudancero ({{4}}).
+  // La original dice "te va a escribir para coordinar" y no lleva el teléfono:
+  // el cliente que pagó la seña por WhatsApp no recibía el contacto (el mail
+  // de esos clientes es falso, wa-…@wa.mudateya.ar). Se creó aparte (no se edita
+  // la aprobada) para no dejar el aviso sin plantilla mientras Meta aprueba.
+  // avisarSenaConfirmada usa esta solo si ya está aprobada; si no, sigue con la
+  // original y manda el contacto en un texto libre aparte.
+  { name: 'pago_confirmado_cliente_v2', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '¡Listo, {{1}}! Recibimos tu seña ✅\n\nTu mudancero {{2}} quedó confirmado para el {{3}}.\nSu contacto: {{4}}\n\nCoordiná con él los detalles de la mudanza. ¡Éxitos!',
+    } },
+    variables: { '1': 'Juan', '2': 'Cristian', '3': 'Sábado 3/10', '4': '+5491100000000' } },
+
   // Alerta al EQUIPO (no a un cliente) cuando Emi escala un caso URGENTE — un
   // flete del día no puede esperar a que alguien abra el mail a ADMIN_EMAIL,
   // que hasta ahora era el único canal de aviso (ver derivarHumano en
