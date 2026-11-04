@@ -2258,36 +2258,6 @@ async function traducirDetallesParaMudancero(texto) {
   }
 }
 
-// ¿Hay al menos un mudancero aprobado que cubra la zona del pedido? Mismo
-// criterio que el barrido y que por-zona (distancia real al origen; el texto de
-// la zona solo es respaldo si no se pudo geolocalizar). Devuelve
-// { hay: true|false|null, cantidad }: hay=null significa "no pude determinarlo"
-// (error, sin mudanceros cargados) y en ese caso NO se bloquea el pedido —
-// mejor publicar de más que dejar afuera a un cliente por una falla nuestra.
-async function hayMudancerosEnZona(origen, destino, origenCoords) {
-  try {
-    const { coincideZona, palabrasZona, cubreGeo } = require('./match-mudanceros');
-    const todos = (await getJSON('mudanceros:todos')) || [];
-    if (!todos.length) return { hay: null, cantidad: 0 };
-    const textoZona = `${origen || ''} ${destino || ''}`;
-    const palabras = palabrasZona(textoZona);
-    let cantidad = 0;
-    for (const email of todos) {
-      const p = await getJSON(`mudancero:perfil:${email}`);
-      if (!p || p.estado !== 'aprobado') continue;
-      const geo = await cubreGeo(p, origen, origenCoords);
-      if (geo === true) { cantidad++; continue; }
-      if (geo === false) continue;
-      const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
-      if (coincideZona(cobertura, palabras, { ignorarComodines: true, textoPedido: textoZona })) cantidad++;
-    }
-    return { hay: cantidad > 0, cantidad };
-  } catch (e) {
-    console.warn('hayMudancerosEnZona:', e.message);
-    return { hay: null, cantidad: 0 };
-  }
-}
-
 async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // Gate 1: campos críticos para que el pedido sea real (ver arriba). Sin
   // esto, nada se crea todavía.
@@ -2403,6 +2373,7 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // nunca llegan. Se le avisa ahora, antes de pedirle confirmación. Se saltea
   // con TEST_MUDANCERO_EMAIL (modo prueba dirigido) o COBERTURA_CHECK=0.
   if (!TEST_MUDANCERO_EMAIL && process.env.COBERTURA_CHECK !== '0') {
+    const { hayMudancerosEnZona } = require('./match-mudanceros');
     const cob = await hayMudancerosEnZona(input.origen, input.destino, origenCoords);
     if (cob.hay === false) {
       console.warn(`[cobertura] SIN mudanceros en zona — ${waId}: ${input.origen} -> ${input.destino}`);

@@ -2163,6 +2163,13 @@
         </div>
       </div>
 
+      <div id="pub-sincob" style="display:none;padding:1rem 0">
+        <div style="font-size:3rem;margin-bottom:12px">🗺️</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:.4rem">Todavía no llegamos a tu zona</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:1.4rem">No tenemos mudanceros que cubran esa dirección de origen, así que no publicamos tu pedido (no recibiría presupuestos). Probá con otra dirección o volvé a intentar más adelante.</p>
+        <a href="/" style="display:block;padding:13px;background:var(--blue);border-radius:var(--r);color:#fff;text-decoration:none;font-size:14px;font-weight:700">Volver al inicio</a>
+      </div>
+
       <div id="pub-ok" style="display:none;padding:1rem 0">
         <div style="font-size:3rem;margin-bottom:12px">🚀</div>
         <div style="font-size:1.1rem;font-weight:700;margin-bottom:.4rem">¡Publicada!</div>
@@ -2635,7 +2642,7 @@
         document.getElementById('listaRes').innerHTML = '<div class="no-results" style="padding:3rem;text-align:center">'
           + '<div style="font-size:40px;margin-bottom:12px">🗺️</div>'
           + '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Todavía no tenemos mudanceros en tu zona</div>'
-          + '<div style="font-size:13px;color:var(--text3);line-height:1.6">Estamos creciendo. Publicá tu mudanza igual y te avisamos cuando haya mudanceros disponibles en tu zona.</div>'
+          + '<div style="font-size:13px;color:var(--text3);line-height:1.6">Estamos creciendo, pero por ahora no llegamos a esa zona. Probá con otra dirección de origen o volvé a intentar más adelante.</div>'
           + '</div>';
         document.getElementById('resCount').innerHTML = '<strong>0</strong> disponibles';
         return;
@@ -3655,6 +3662,16 @@
       // Google Ads: conversión "cotización enviada" — solo si el pedido se publicó de verdad.
       if (_rPublicar && _rPublicar.ok && typeof gtag === 'function') {
         gtag('event', 'conversion', {send_to: 'AW-18095175887/8k2xCJrbyd4cEM_xubRD'});
+      }
+      // Sin mudanceros en la zona: el servidor no publica (422 + sinCobertura).
+      // Antes se ignoraba la respuesta y siempre se mostraba "¡Publicada!".
+      if (_rPublicar && _rPublicar.status === 422) {
+        var _dPub = await _rPublicar.json().catch(function(){ return {}; });
+        if (_dPub && _dPub.sinCobertura) {
+          document.getElementById('pub-ing').style.display='none';
+          document.getElementById('pub-sincob').style.display='block';
+          return;
+        }
       }
     } catch(e) { console.warn(e.message); }
     document.getElementById('pub-ing').style.display='none';

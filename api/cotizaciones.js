@@ -1019,6 +1019,23 @@ module.exports = async function handler(req, res) {
       const { modoCotizacion, mudancerosInvitados } = req.body;
       // modoCotizacion: 'abierto' (todos los mudanceros de la zona que quieran cotizar, sin tope) | 'dirigido' (cliente elige mudanceros)
       const modo = modoCotizacion || 'abierto';
+      // Cobertura: un pedido abierto en una zona sin ningún mudancero aprobado
+      // no recibe presupuestos nunca — el cliente se queda esperando. Se frena
+      // acá (cubre web, asesores e inmobiliarias; el bot ya lo chequea antes de
+      // pedir confirmación). No aplica a pedidos dirigidos (el cliente eligió a
+      // un mudancero puntual) ni en modo prueba. Si el chequeo no puede
+      // determinar la cobertura (hay:null) NO se bloquea. Apagable con COBERTURA_CHECK=0.
+      if (modo !== 'dirigido' && !process.env.TEST_MUDANCERO_EMAIL && process.env.COBERTURA_CHECK !== '0') {
+        const { hayMudancerosEnZona } = require('./match-mudanceros');
+        const cob = await hayMudancerosEnZona(desde, hasta, null);
+        if (cob.hay === false) {
+          console.warn(`[cobertura] SIN mudanceros en zona (publicar) — ${desde} -> ${hasta}`);
+          return res.status(422).json({
+            ok: false, sinCobertura: true,
+            error: 'Todavía no tenemos mudanceros que cubran tu zona, así que por ahora no podemos publicar tu pedido. Probá con otra dirección de origen o volvé a intentar más adelante.',
+          });
+        }
+      }
       const MAX_COT = 50;
       // Vigencia del pedido en HORAS HÁBILES (ver api/_habiles.js):
       // el reloj se pausa los fines de semana y feriados.

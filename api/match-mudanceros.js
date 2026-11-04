@@ -365,6 +365,37 @@ module.exports = async function handler(req, res) {
 // Se exportan también los helpers de zona (además del handler) para que
 // cotizaciones.js los reuse en el barrido del bot, en vez de duplicar la
 // lógica de matching por zona en dos archivos.
+// ¿Hay al menos un mudancero aprobado que cubra la zona del pedido? Mismo
+// criterio que el barrido y que por-zona: primero distancia real al origen; el
+// texto de la zona solo es respaldo si no se pudo geolocalizar. Devuelve
+// { hay: true|false|null, cantidad }: hay=null = "no pude determinarlo" (error,
+// sin mudanceros cargados) y quien llama NO debe bloquear en ese caso — mejor
+// publicar de más que dejar afuera a un cliente por una falla nuestra.
+// Lo usan el bot (crearPedido en whatsapp.js) y la web (action=publicar).
+async function hayMudancerosEnZona(origen, destino, origenCoords) {
+  try {
+    const todos = (await getJSON('mudanceros:todos')) || [];
+    if (!todos.length) return { hay: null, cantidad: 0 };
+    const textoZona = `${origen || ''} ${destino || ''}`;
+    const palabras = palabrasZona(textoZona);
+    let cantidad = 0;
+    for (const email of todos) {
+      const p = await getJSON(`mudancero:perfil:${email}`);
+      if (!p || p.estado !== 'aprobado') continue;
+      const geo = await cubreGeo(p, origen, origenCoords);
+      if (geo === true) { cantidad++; continue; }
+      if (geo === false) continue;
+      const cobertura = `${p.zonaBase || ''} ${p.zonasExtra || ''}`;
+      if (coincideZona(cobertura, palabras, { ignorarComodines: true, textoPedido: textoZona })) cantidad++;
+    }
+    return { hay: cantidad > 0, cantidad };
+  } catch (e) {
+    console.warn('hayMudancerosEnZona:', e.message);
+    return { hay: null, cantidad: 0 };
+  }
+}
+
+module.exports.hayMudancerosEnZona = hayMudancerosEnZona;
 module.exports.coincideZona = coincideZona;
 module.exports.palabrasZona = palabrasZona;
 module.exports.norm = norm;
