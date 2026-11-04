@@ -2889,7 +2889,12 @@ async function loadPedidos(silencioso){
     var r = await fetch('/api/cotizaciones?action=por-zona&email='+encodeURIComponent(currentUser.email)+'&zona='+encodeURIComponent(zona));
     var d = await r.json();
     var nuevosDisp = d.mudanzas || [];
-    var r2 = await fetch('/api/cotizaciones?action=mis-cotizaciones&email='+encodeURIComponent(currentUser.email));
+    // mis-cotizaciones exige x-session-token (cierre de IDOR del 2026-08-07).
+    // Antes no se mandaba: el servidor respondía 401, d2.mudanzas quedaba
+    // undefined y el mudancero veía "Aceptados 0 / En espera 0" sin ningún
+    // error, aunque tuviera trabajos con la seña paga.
+    var r2 = await fetch('/api/cotizaciones?action=mis-cotizaciones&email='+encodeURIComponent(currentUser.email), { headers: authHeaders() });
+    if (r2.status === 401) { cerrarSesionYReloguear(); return; }
     var d2 = await r2.json();
     var nuevasCot = d2.mudanzas || [];
 
