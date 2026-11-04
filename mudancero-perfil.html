@@ -1303,7 +1303,7 @@ var _mudancero = null;
   }
 
   // Siempre buscar datos frescos de Redis
-  fetch('/api/cotizaciones?action=catalogo')
+  fetch('/api/cotizaciones?action=catalogo' + (urlPid ? '&pid=' + encodeURIComponent(urlPid) : ''))
     .then(function(r){ return r.json(); })
     .then(function(d) {
       var lista = d.mudanceros || [];

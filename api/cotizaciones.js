@@ -3614,11 +3614,17 @@ module.exports = async function handler(req, res) {
 
       const todos = await getJSON('mudanceros:todos') || [];
       const catalogo = [];
+      const pidBuscado = String(req.query.pid || '').replace(/[^a-f0-9]/gi, '').slice(0, 32);
       for (const email of todos) {
         try {
           const p = await getJSON(`mudancero:perfil:${email}`);
           if (!p || p.estado !== 'aprobado') continue;
-          if (palabrasBuscadas.length > 0 && !cubreZona(p)) continue;
+          // ?pid=: perfil individual (link que Emi le pasa al cliente). Devuelve
+          // ESE mudancero aunque no tenga precios cargados ni cubra la zona buscada:
+          // si cotizó, su perfil tiene que poder verse.
+          if (pidBuscado) {
+            if (require('./_pid').pidMudancero(p.email || email) !== pidBuscado) continue;
+          } else if (palabrasBuscadas.length > 0 && !cubreZona(p)) continue;
 
           // ── Filtro: no mostrar mudanceros sin precios cargados ──────────
           // Criterio: tiene que tener al menos UN precio > 0 en cualquier
@@ -3650,7 +3656,7 @@ module.exports = async function handler(req, res) {
           var tieneSeguroActivo = !!p.seguroMudanza
              || !!p.verificadoSeguro
              || (p.servicios && String(p.servicios).toLowerCase().indexOf('seguro') !== -1);
-          if (!tienePrecioAlguno && !tieneSeguroActivo) continue;
+          if (!pidBuscado && !tienePrecioAlguno && !tieneSeguroActivo) continue;
 
           // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
           catalogo.push({
