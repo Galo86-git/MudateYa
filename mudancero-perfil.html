@@ -1262,9 +1262,16 @@ var _mudancero = null;
     urlEmail = params.get('id') ? decodeURIComponent(params.get('id')) : null;
   } catch(e) {}
 
+  // ?p=<pid>: link opaco que manda Emi (no lleva el email del mudancero). Se
+  // resuelve buscando el pid en el catálogo; el sessionStorage de otro perfil
+  // visto antes se ignora para no mostrar a otro mudancero.
+  var urlPid = null;
+  try { urlPid = new URLSearchParams(window.location.search).get('p') || null; } catch(e) {}
+  if (urlPid) m = null;
+
   var email = (m && m.email) || urlEmail;
 
-  if (!email) {
+  if (!email && !urlPid) {
     document.getElementById('mainContainer').innerHTML =
       '<div style="text-align:center;padding:4rem;color:var(--text3)">'
       +'<div style="font-size:3rem;margin-bottom:1rem">😕</div>'
@@ -1300,16 +1307,29 @@ var _mudancero = null;
     .then(function(r){ return r.json(); })
     .then(function(d) {
       var lista = d.mudanceros || [];
-      var fresco = lista.find(function(x){ return x.email === email; });
+      var fresco = lista.find(function(x){ return urlPid ? x.pid === urlPid : x.email === email; });
+      if (urlPid && !fresco) { perfilNoEncontrado(); return; }
       if (fresco) {
         m = Object.assign({}, m || {}, fresco);
+        email = fresco.email || email;
         sessionStorage.setItem('perfilMudancero', JSON.stringify(m));
       }
       renderConDatos(m || { email: email, nombre: email, calificacion: 0, nroResenas: 0, trabajosCompletados: 0 });
     })
     .catch(function() {
+      if (urlPid) { perfilNoEncontrado(); return; }
       renderConDatos(m || { email: email, nombre: email, calificacion: 0, nroResenas: 0, trabajosCompletados: 0 });
     });
+
+  function perfilNoEncontrado() {
+    document.getElementById('mainContainer').innerHTML =
+      '<div style="text-align:center;padding:4rem;color:var(--text3)">'
+      +'<div style="font-size:3rem;margin-bottom:1rem">😕</div>'
+      +'<div style="font-size:16px;font-weight:600;margin-bottom:8px">Perfil no encontrado</div>'
+      +'<p style="font-size:13px;margin-bottom:1.5rem">No pudimos cargar los datos de este mudancero.</p>'
+      +'<a href="/" style="color:var(--blue);font-size:13px">← Volver al inicio</a>'
+      +'</div>';
+  }
 })();
 </script>
 <!-- MODAL CONFIRMACIÓN COTIZACIÓN -->

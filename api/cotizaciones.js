@@ -3655,6 +3655,7 @@ module.exports = async function handler(req, res) {
           // Devolver solo datos públicos — sin datos bancarios ni fotos de DNI
           catalogo.push({
             email:               p.email,
+            pid:                 require('./_pid').pidMudancero(p.email),
             nombre:              p.nombre,
             empresa:             p.empresa             || '',
             zonaBase:            normalizarZona(p.zonaBase),

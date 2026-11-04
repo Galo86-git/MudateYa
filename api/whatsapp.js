@@ -625,7 +625,7 @@ Si te preguntan algo que no está en esta info (condiciones legales, detalles de
 
 HERRAMIENTAS QUE TENÉS:
 - crear_pedido: cuando ya juntaste los datos del pedido. Va en DOS PASOS — llamala una primera vez sin confirmado: si te faltan datos críticos (tipo de lugar, piso si es depto) te va a decir qué preguntar; si ya está todo, te devuelve un resumen para mostrarle al cliente TAL CUAL y esperar que diga que sí. Recién ahí la volvés a llamar con confirmado:true para publicar de verdad. No la llames dos veces seguidas sin que el cliente haya confirmado en el medio.
-- consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio). Si alguna cotización pidió relevamiento/visita presencial para el precio final (lo ves en la nota), ofrecele mandar fotos por acá (se guardan solas) o contarte más por escrito (usá agregar_detalle_pedido) para evitarse la visita.
+- consultar_estado_pedido: si pregunta cómo va su mudanza/flete o si llegaron presupuestos. Podés leerle las cotizaciones (mudancero y precio). Cada cotización trae un campo "perfil" con el link al perfil público del mudancero en MudateYa (fotos del camión, reseñas, verificaciones): cuando el cliente esté comparando o dude cuál elegir, o pregunte "¿quién es?" / "¿es confiable?", pasale ESE link tal cual vino de la herramienta (nunca lo armes ni lo inventes) para que vea al mudancero y se quede tranquilo. Ofrecelo de forma natural, sin spamear: no pegues el link de todos los mudanceros en cada mensaje. Ese perfil NO tiene teléfono ni mail del mudancero (el contacto sigue siendo recién después de la seña). Si alguna cotización pidió relevamiento/visita presencial para el precio final (lo ves en la nota), ofrecele mandar fotos por acá (se guardan solas) o contarte más por escrito (usá agregar_detalle_pedido) para evitarse la visita.
 - agregar_detalle_pedido: cuando un mudancero pidió relevamiento/visita y el cliente, en vez de mandar fotos, te cuenta por escrito más sobre lo que hay que mudar. Guardalo con esta herramienta — se lo pasamos al mudancero por vos.
 - aceptar_cotizacion: cuando el cliente ELIGE una cotización. Devuelve la SEÑA (50%), el link de Mercado Pago y los datos de transferencia: pasáselos y explicale que puede pagar por cualquiera de los dos medios (ambos igual de seguros y protegidos), que el 50% restante lo paga al terminar y que la seña queda protegida. Si hay varias cotizaciones, confirmá cuál elige antes de aceptar.
 - cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
@@ -2552,6 +2552,9 @@ function resumenPedido(p) {
       precio: c.precio || (Array.isArray(c.propuestas) && c.propuestas[0] && c.propuestas[0].precio) || 0,
       tiempo: c.tiempoEstimado || '',
       nota: c.nota || '',
+      // Link público al perfil del mudancero (fotos del camión, reseñas,
+      // verificaciones). Usa un id opaco: NO lleva su email ni su teléfono.
+      perfil: c.mudanceroEmail ? require('./_pid').urlPerfilMudancero(c.mudanceroEmail) : '',
     })),
     vence: p.vence || p.expira,
   };
