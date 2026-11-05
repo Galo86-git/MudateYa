@@ -1672,6 +1672,18 @@ module.exports = async function handler(req, res) {
       }
 
       await setJSON(`mudanza:${mudanzaId}`, mudanza, TTL_MUDANZA);
+      // Auto-reparación del índice del mudancero ganador. Su lista de pedidos
+      // (panel y Emi) sale de `mudancero:{email}`, que se arma al cotizar con un
+      // leer-modificar-escribir sin lock: si dos escrituras se pisan, el pedido
+      // ganado puede quedar afuera y el mudancero lo ve vacío (caso Pollice,
+      // 2026-11-04). Acá se asegura que, al ser elegido, el pedido esté en su lista.
+      try {
+        const _idxGan = await getJSON(`mudancero:${cot.mudanceroEmail}`) || [];
+        if (!_idxGan.includes(mudanzaId)) {
+          _idxGan.push(mudanzaId);
+          await setJSON(`mudancero:${cot.mudanceroEmail}`, _idxGan, 2592000);
+        }
+      } catch(e) { console.warn('Reparar índice mudancero ganador:', e.message); }
       try { await enviarEmailAceptacion(mudanza, cot); } catch(e) { console.error('Error email:', e.message); }
       // Avisar a los OTROS mudanceros que cotizaron que el cliente eligió a otro.
       try { await notificarMudancerosNoElegidos(mudanza, cot.mudanceroEmail); } catch(e) { console.warn('Aviso no-elegidos:', e.message); }
@@ -3467,6 +3479,24 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Admin: detalle de un pedido con cotizaciones (GET) ───────────
+    // Admin: reparar la lista de pedidos de un mudancero (índice `mudancero:{email}`)
+    // agregando un pedido en el que cotizó o fue elegido y que quedó afuera.
+    // Idempotente. Solo agrega si el mudancero figura de verdad en ese pedido.
+    if (action === 'admin-reparar-indice-mudancero' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { email, mudanzaId } = req.body || {};
+      if (!email || !mudanzaId) return res.status(400).json({ error: 'Faltan email y mudanzaId' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Pedido no encontrado' });
+      const figura = (m.cotizaciones || []).some(c => c.mudanceroEmail === email)
+        || (m.cotizacionAceptada && m.cotizacionAceptada.mudanceroEmail === email);
+      if (!figura) return res.status(400).json({ error: 'Ese mudancero no figura en el pedido' });
+      const idx = await getJSON(`mudancero:${email}`) || [];
+      const yaEstaba = idx.includes(mudanzaId);
+      if (!yaEstaba) { idx.push(mudanzaId); await setJSON(`mudancero:${email}`, idx, 2592000); }
+      return res.status(200).json({ ok: true, yaEstaba, total: idx.length });
+    }
+
     if (action === 'admin-pedido' && req.method === 'GET') {
       const { token, id } = req.query;
       if (!esAdmin(req)) {

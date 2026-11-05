@@ -674,6 +674,8 @@ PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", "quiero info", vino de un link): no t
 
 RECLAMOS Y PROBLEMAS: si te cuenta que el cliente no le paga el saldo, canceló sin avisar, hay una discrepancia con lo acordado, o cualquier lío que tus herramientas de arriba no resuelven, NO lo dejes solo con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea de verdad, y avisale que lo van a contactar.
 
+PAGOS Y SEÑA (NO es un reclamo): el cliente le paga la seña (50%) y el saldo a MUDATEYA, no al mudancero — él NO recibe la plata directo ni en su cuenta: MudateYa la retiene protegida y se la liquida (descontando la comisión). Si te dice "el cliente pagó pero no me llegó nada", "no recibí la seña" o te pasa un número de transacción, NO lo derives como reclamo: primero mirá sus pedidos (mis_pedidos / TUS PEDIDOS de arriba) — si el pedido figura con SEÑA PAGADA, confirmáselo ("ya está acreditada, el cliente pagó la seña ✅") y explicale que la seña la recibe MudateYa y que a él se le liquida después, sin darle fechas ni montos que no tengas. Solo derivá si el pedido figura SIN seña pagada y él asegura que el cliente pagó (ahí sí es una discrepancia real), o si no encontrás el pedido por ningún lado.
+
 PROBLEMA TÉCNICO (distinto de un reclamo — la plataforma no le funciona: no puede entrar a su cuenta, ve un error, algo no carga): pedile que te mande una captura o foto de lo que está viendo. Si lo reconocés con lo que sabés de MudateYa, ayudalo directo. Si no, o parece un error real de la plataforma, usá derivar_a_humano con motivo empezando en "BUG:" describiendo el problema. No prometas plazos de arreglo.
 
 TIP DE AUDIO: podés recibir audios perfectamente. NO lo menciones en el primer mensaje — recién a partir del segundo o tercer intercambio, si te sigue tipeando todo, mencionalo una vez con onda: algo como "Che, si te resulta más rápido también me podés mandar un audio — te entiendo igual 🎙️". Una sola vez por conversación, no lo repitas (esto es aparte del audio para explicar qué incluye una cotización puntual, que ya lo sugerís siempre al cotizar).
@@ -1431,6 +1433,8 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       const pedidos = (d.mudanzas || []).map((m) => ({
         id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`, estado: m.estado,
         miPrecio: (m.miCotizacion && m.miCotizacion.precio) || (m.cotizacionAceptada && m.cotizacionAceptada.precio) || null,
+        // Seña: sin esto Emi no podía confirmarle al mudancero que el cliente ya pagó.
+        senaPagada: !!m.anticipoPagado, montoSena: m.montoAnticipo || m.anticipoMonto || null, saldoPagado: !!m.saldoPagado, fecha: m.fecha || null,
       }));
       return JSON.stringify({ pedidos });
     }
@@ -3563,9 +3567,11 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
       const misPedidos = (dMis.mudanzas || []).map((m) => ({
         id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`, estado: m.estado,
         miPrecio: (m.miCotizacion && m.miCotizacion.precio) || (m.cotizacionAceptada && m.cotizacionAceptada.precio) || null,
+        // Seña: sin esto Emi no podía confirmarle al mudancero que el cliente ya pagó.
+        senaPagada: !!m.anticipoPagado, montoSena: m.montoAnticipo || m.anticipoMonto || null, saldoPagado: !!m.saldoPagado, fecha: m.fecha || null,
       }));
       const resumenMud = misPedidos.length
-        ? misPedidos.map((p) => `- ${p.id} (${p.tipo}, ${p.ruta}), estado: ${p.estado}${p.miPrecio ? `, tu precio: $${p.miPrecio}` : ''}`).join('\n')
+        ? misPedidos.map((p) => `- ${p.id} (${p.tipo}, ${p.ruta}), estado: ${p.estado}${p.miPrecio ? `, tu precio: $${p.miPrecio}` : ''}${p.senaPagada ? `, SEÑA PAGADA por el cliente${p.montoSena ? ` ($${p.montoSena})` : ''}` : ''}`).join('\n')
         : 'No tenés pedidos/cotizaciones activos ahora mismo.';
       systemDinamico += `\n\nTUS PEDIDOS/COTIZACIONES (snapshot de referencia rápida — no hace falta llamar a mis_pedidos si ya está acá; para pedidos NUEVOS disponibles en tu zona usá ver_pedidos):\n${resumenMud}`;
     } catch (e) { console.warn('auto-contexto mudancero:', e.message); }
