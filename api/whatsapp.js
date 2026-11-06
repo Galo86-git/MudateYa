@@ -657,7 +657,7 @@ IDIOMA: detectá en qué idioma te escribe y respondé EN ESE MISMO IDIOMA (si e
 PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
 - Ver los pedidos disponibles para cotizar → ver_pedidos.
 - Cotizar un pedido → cotizar (con el id del pedido y el precio). Interpretá la jerga de plata: "80 lucas/palos/mil"/"80k" = 80000; "una gamba" = 100; "un melón" = 1.000.000. Pasá el precio como número entero en pesos.
-- SI COBRA POR HORA, la cotización NO se carga por acá: la herramienta te va a devolver un error con un link. Pasáselo tal cual (*https://mudateya.ar/mi-cuenta*) y explicale en una línea que ahí carga su tarifa y las horas estimadas, y el sistema arma el total. No insistas con la herramienta ni le inventes un precio cerrado: el cliente vería la tarifa de una hora como si fuera el trabajo entero.
+- SI COBRA POR HORA (la herramienta te lo va a indicar), NO cotices con "precio": pedile dos datos — su TARIFA POR HORA y cuántas HORAS ESTIMA para ESE trabajo — y pasalos en tarifa_hora y horas_estimadas. El sistema arma el total (tarifa x horas) y el cliente lo ve como estimado que se liquida con las horas reales. Si te da un solo número ("300 lucas"), preguntale si es por hora o el total del trabajo; no asumas. Nunca cargues la tarifa de una hora como precio cerrado: el cliente la vería como el trabajo entero. Después de cotizar, repetile el cálculo ("$300.000 por hora x 4 hs = $1.200.000 estimado") para que confirme que quedó como quiso.
 - Pasar/rechazar un pedido que no te interesa (no le da la zona, el horario, no le cierra el precio, etc.) → pasar. Es una acción de rutina sobre ESE pedido puntual: "pasar" ya lo resuelve solo. NUNCA lo derives con derivar_a_humano ni lo interpretes como que quiere darse de baja de la cuenta o dejar la plataforma — no confundas "no disponible para este pedido" con "no disponible como mudancero".
 - Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo).
 - SI COBRA POR HORA, antes de completar preguntale CUÁNTAS HORAS trabajó y pasalas en horasTrabajadas. El sistema liquida con esas horas y recién ahí el cliente recibe el saldo con el precio corregido. Si te dice bastante más de lo que registró el sistema, preguntale por qué y mandalo en motivoHoras — no lo cuestiones ni lo trates de sospechoso, puede haber marcado el inicio tarde; solo necesitás la explicación para que quede registrada.
@@ -1174,11 +1174,13 @@ const mudanceroTools = [
       type: 'object',
       properties: {
         pedidoId: { type: 'string', description: 'ID del pedido a cotizar (de ver_pedidos)' },
-        precio: { type: 'integer', description: 'Precio en pesos (entero). Ej "80 lucas" = 80000' },
+        precio: { type: 'integer', description: 'Precio CERRADO en pesos (entero). Ej "80 lucas" = 80000. Solo para quien cobra precio fijo; si cobra por hora usá tarifa_hora y horas_estimadas.' },
+        tarifa_hora: { type: 'integer', description: 'SOLO si cobra por hora: su tarifa por hora en pesos (entero). El sistema calcula el total estimado = tarifa x horas.' },
+        horas_estimadas: { type: 'integer', description: 'SOLO si cobra por hora: horas que estima para este trabajo.' },
         nota: { type: 'string', description: 'Qué incluye / aclaraciones (opcional)' },
         tiempo: { type: 'string', description: 'Tiempo estimado, ej "3 horas" (opcional)' },
       },
-      required: ['pedidoId', 'precio'],
+      required: ['pedidoId'],
     },
   },
   {
@@ -1332,20 +1334,32 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       return JSON.stringify({ pedidos, nota });
     }
     if (name === 'cotizar') {
-      // COBRO POR HORA: por acá NO se puede cotizar. Esta tool manda un precio
-      // suelto, sin modalidad ni horas estimadas, así que el número entraría al
-      // sistema como PRECIO CERRADO: el mudancero pondría su TARIFA y el cliente
-      // la vería como el total del trabajo. Es exactamente la fuga que se arregló
-      // en el action 'cotizar' de cotizaciones.js, entrando por la otra puerta.
-      // mi-cuenta es el único lugar donde se cargan tarifa + horas juntas.
+      // COBRO POR HORA: se cotiza con tarifa + horas estimadas y el servidor arma
+      // el total (tarifa x horas), igual que el formulario de mi-cuenta. Antes se
+      // frenaba y se mandaba a la web: quien no entraba quedaba sin cotizar, o
+      // cargaba la tarifa de UNA hora como precio cerrado y el cliente la veía
+      // como el total del trabajo.
       if (mudancero && mudancero.tipoCobro === 'porHora') {
-        return JSON.stringify({
-          ok: false,
-          link: `${base}/mi-cuenta`,
-          error: 'Cobrás por hora y por acá solo puedo mandar precio cerrado, así que el total le llegaría mal al cliente. '
-               + 'Esta cotización hay que cargarla desde mi-cuenta: ahí ponés tu tarifa por hora y las horas estimadas, y el sistema arma el total. '
-               + 'Pasale el link y no intentes cotizar de nuevo por acá.',
+        const tarifa = parseInt(input.tarifa_hora, 10) || 0;
+        const horas = parseInt(input.horas_estimadas, 10) || 0;
+        if (tarifa <= 0 || horas <= 0) {
+          return JSON.stringify({
+            ok: false,
+            error: 'Cobrás por hora, así que necesito dos datos para cotizar: tu tarifa por hora y cuántas horas estimás para este trabajo. Preguntáselos (uno por vez si hace falta) y volvé a llamar a cotizar con tarifa_hora y horas_estimadas. No cargues el precio como cerrado.',
+          });
+        }
+        const rh = await postJSON('cotizar', {
+          mudanzaId: input.pedidoId, mudanceroEmail: email, mudanceroNombre: nombre, mudanceroTel: tel,
+          precio: tarifa, nota: input.nota || '', tiempoEstimado: input.tiempo || (horas + ' horas'),
+          modalidad: 'hora', horasIncluidas: horas, valorHoraAdicional: tarifa,
         });
+        const totalH = tarifa * horas;
+        return JSON.stringify(rh.ok
+          ? { ok: true, nota: `Cotización enviada por hora: $${tarifa.toLocaleString('es-AR')} por hora x ${horas} hs = $${totalH.toLocaleString('es-AR')} estimado. El total final se liquida con las horas reales trabajadas. El cliente ya la recibe; te avisamos si te elige.` }
+          : { ok: false, error: (rh.d && rh.d.error) || 'No se pudo cotizar.' });
+      }
+      if (!parseInt(input.precio, 10)) {
+        return JSON.stringify({ ok: false, error: 'Falta el precio. Preguntale cuánto cotiza para este pedido.' });
       }
       const { ok, d } = await postJSON('cotizar', {
         mudanzaId: input.pedidoId, mudanceroEmail: email, mudanceroNombre: nombre, mudanceroTel: tel,

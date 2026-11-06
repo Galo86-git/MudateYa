@@ -1387,6 +1387,21 @@ module.exports = async function handler(req, res) {
       // independientes del mismo formulario y nadie las conciliaba: el PDF salia
       // con $280.000 arriba y "3 hs x $90.000 = $270.000" abajo.
       const esCobroPorHora = modalidad === 'hora';
+      // Un mudancero con perfil "por hora" no puede mandar precio cerrado: su
+      // número es una tarifa horaria y el cliente la vería (y pagaría la seña
+      // sobre ella) como el total del trabajo. Caso real: Pollice cotizó
+      // $300.000 cerrado siendo su tarifa por hora (2026-11-04).
+      if (!esCobroPorHora) {
+        try {
+          const perfilCot = await getJSON(`mudancero:perfil:${mudanceroEmail}`);
+          if (perfilCot && perfilCot.tipoCobro === 'porHora') {
+            return res.status(400).json({
+              requiereCobroHora: true,
+              error: 'Tu perfil es de cobro por hora: cargá tu tarifa por hora y las horas estimadas para este trabajo, así el cliente ve el total correcto. Si este trabajo lo cobrás a precio fijo, cambiá tu tipo de cobro en el perfil.',
+            });
+          }
+        } catch (e) { console.warn('chequeo tipoCobro en cotizar:', e.message); }
+      }
       const horasEst = parseInt(horasIncluidas) || 0;
       const tarifaPorHora = parseInt(String(valorHoraAdicional || '').replace(/\D/g, '')) || 0;
       if (esCobroPorHora) {

@@ -34,17 +34,39 @@ async function resolver(nombre) {
 //   variables  objeto {1: '...', 2: '...'} para la plantilla
 //   textoLibre string de fallback (opcional pero recomendado)
 //   mediaUrl   adjunto para el fallback de texto libre (opcional)
+// Reintenta SOLO fallas de red transitorias ("fetch failed", conexión cortada,
+// timeout) — no errores de Twilio (plantilla rechazada, ventana de 24hs cerrada,
+// número inválido), que reintentar no arregla. Caso real: al registrarse una
+// seña fallaron dos plantillas seguidas con "fetch failed" (2026-11-04).
+function esErrorDeRedTransitorio(e) {
+  const msg = String((e && e.message) || e || '');
+  return /fetch failed|ECONNRESET|EPIPE|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|network/i.test(msg);
+}
+async function conReintentoDeRed(fn, intentos) {
+  const esperas = [400, 1200];
+  let ultimo;
+  for (let i = 0; i <= (intentos || 2); i++) {
+    try { return await fn(); }
+    catch (e) {
+      ultimo = e;
+      if (!esErrorDeRedTransitorio(e) || i >= (intentos || 2)) throw e;
+      await new Promise((r) => setTimeout(r, esperas[i] || 1200));
+    }
+  }
+  throw ultimo;
+}
+
 async function enviarPlantilla(to, nombre, variables, textoLibre, mediaUrl) {
   try {
     const p = await resolver(nombre);
     if (p && p.status === 'approved' && p.sid) {
-      await enviarWhatsApp(to, p.sid, variables || {});
+      await conReintentoDeRed(() => enviarWhatsApp(to, p.sid, variables || {}));
       return { enviado: true, via: 'plantilla', sid: p.sid };
     }
   } catch (e) { console.warn('enviarPlantilla plantilla:', e.message); }
   if (textoLibre) {
     try {
-      await enviarWhatsAppTexto(to, textoLibre, mediaUrl);
+      await conReintentoDeRed(() => enviarWhatsAppTexto(to, textoLibre, mediaUrl));
       return { enviado: true, via: 'texto_libre' };
     } catch (e) { return { enviado: false, motivo: e.message }; }
   }

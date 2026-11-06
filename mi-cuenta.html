@@ -5129,6 +5129,16 @@ async function enviarCotizacion(mudanzaId){
       })
     });
     var d = await r.json();
+    // Perfil "por hora" que mandó precio cerrado: el servidor lo rechaza. Se tilda
+    // "cobro por hora" para que cargue tarifa + horas en vez de repetir el error.
+    if (d.requiereCobroHora) {
+      var _chkH = document.getElementById('cot-por-hora');
+      if (_chkH && !_chkH.checked) { _chkH.checked = true; if (typeof toggleCobroHora === 'function') toggleCobroHora(); }
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar cotización →';
+      alert(d.error);
+      return;
+    }
     if(d.error) throw new Error(d.error);
     document.getElementById('cotModal').remove();
     await loadPedidos();
