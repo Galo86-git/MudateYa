@@ -1,6 +1,16 @@
 # MudateYa
 
-> Marketplace argentino de mudanzas y fletes. Los usuarios cotizan gratis y comparan precios reales de mudanceros y empresas de mudanza verificadas (DNI y vehículo verificado), eligen sin compromiso y pagan de forma protegida (Mercado Pago o transferencia). Opera en CABA, Gran Buenos Aires y otras ciudades de Argentina (Córdoba, Rosario, La Plata, Mendoza, entre otras), incluyendo mudanzas dentro de la misma ciudad y entre provincias.
+> Marketplace argentino de mudanzas y fletes. Los usuarios cotizan gratis y comparan precios reales de mudanceros y empresas de mudanza verificadas (DNI y vehículo verificado), eligen sin compromiso y pagan de forma protegida (Mercado Pago o transferencia). Opera principalmente en CABA y Gran Buenos Aires; en otras ciudades (Córdoba, Rosario, La Plata, Mendoza, entre otras) la disponibilidad depende de los mudanceros de cada zona. Se puede pedir por la web o por WhatsApp con Emi, la asistente virtual de MudateYa.
+
+## Cotizar por WhatsApp con Emi
+
+- Emi es la asistente virtual de MudateYa en WhatsApp (no es una persona). Toma el pedido de mudanza o flete, muestra los presupuestos que llegan y acompaña hasta el día de la mudanza.
+- WhatsApp: https://wa.me/12399462954?text=Hola%20Emi%2C%20quiero%20cotizar%20mi%20mudanza
+- Cotizar es gratis y sin compromiso para el cliente.
+- Qué hay que contarle: dirección exacta de origen y destino, fecha y hora, qué hay que mudar y, si es departamento, piso y ascensor. Acepta texto y audios; para un flete pide una foto.
+- Pago: seña del 50% por Mercado Pago o transferencia (queda protegida); el 50% restante se paga al terminar. Los datos de contacto del mudancero se comparten recién cuando se paga la seña.
+- Si todavía no hay mudanceros en la zona del cliente, Emi lo avisa y no publica el pedido.
+- Más información: https://mudateya.ar/emi
 
 ## Para quién es
 
@@ -11,6 +21,7 @@
 
 ## Páginas principales
 
+- [Emi, asistente de MudateYa por WhatsApp](https://mudateya.ar/emi): cómo cotizar una mudanza o flete hablando por WhatsApp, pago de la seña y preguntas frecuentes.
 - [Cotizar mudanza o flete](https://mudateya.ar/): formulario de cotización gratis, sin registro.
 - [Blog](https://mudateya.ar/blog): guías sobre precios, organización, embalaje y checklist de mudanza.
 - [¿Cuánto cuesta una mudanza en 2026?](https://mudateya.ar/blog/cuanto-cuesta-una-mudanza): factores de precio y cómo pagar menos.
@@ -25,4 +36,4 @@
 
 - Los precios y condiciones exactos se obtienen cotizando en el sitio; MudateYa no publica tarifas fijas porque varían por mudancero, zona, piso y fecha.
 - Referencia de precios (septiembre 2026, cotizaciones reales recibidas): fletes cortos de pocos kilómetros en CABA y zona norte, entre $360.000 y $500.000. Valor orientativo; para mudanzas y larga distancia el precio depende de cada caso y se obtiene cotizando.
-- Cobertura geográfica: Argentina.
+- Cobertura geográfica: principalmente CABA y Gran Buenos Aires. En otras ciudades depende de los mudanceros disponibles; si no hay cobertura en la zona del pedido, el sistema lo informa en lugar de publicarlo.
