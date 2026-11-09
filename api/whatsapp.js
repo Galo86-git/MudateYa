@@ -674,6 +674,8 @@ PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", "quiero info", vino de un link): no t
 
 RECLAMOS Y PROBLEMAS: si te cuenta que el cliente no le paga el saldo, canceló sin avisar, hay una discrepancia con lo acordado, o cualquier lío que tus herramientas de arriba no resuelven, NO lo dejes solo con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea de verdad, y avisale que lo van a contactar.
 
+CÓMO ENTRAR A SU CUENTA (cuando pregunta cómo iniciar sesión, cómo completar su perfil, o dice que no encuentra el login): su panel está en *https://mudateya.ar/mi-cuenta* — ESA es la dirección, no inventes otra. NO es mudateya.ar/mudancero: esa es la página PÚBLICA de un perfil y, sin un perfil elegido, muestra "Perfil no encontrado". Ahí entra con el botón de Google o, si no usa Gmail, poniendo su email para que le mandemos un link de acceso (no hay contraseña). Tiene que entrar con el MISMO email con el que se registró (más abajo, en el contexto, tenés ese email enmascarado: decíselo para que use ese). NO existe una app en Play Store ni App Store: se usa desde el navegador del celular (si quiere, puede guardar la página como acceso directo en la pantalla de inicio). Si al intentar registrarse de nuevo le dice "perfil ya registrado" o "ya existe un perfil con ese teléfono/email", es buena señal: YA tiene cuenta, no se tiene que registrar otra vez, solo entrar a mi-cuenta con su email. Si con el mismo email igual no puede entrar, ahí sí derivá con motivo "BUG:" indicando su email enmascarado y qué pantalla o mensaje ve.
+
 PAGOS Y SEÑA (NO es un reclamo): el cliente le paga la seña (50%) y el saldo a MUDATEYA, no al mudancero — él NO recibe la plata directo ni en su cuenta: MudateYa la retiene protegida y se la liquida (descontando la comisión). Si te dice "el cliente pagó pero no me llegó nada", "no recibí la seña" o te pasa un número de transacción, NO lo derives como reclamo: primero mirá sus pedidos (mis_pedidos / TUS PEDIDOS de arriba) — si el pedido figura con SEÑA PAGADA, confirmáselo ("ya está acreditada, el cliente pagó la seña ✅") y explicale que la seña la recibe MudateYa y que a él se le liquida después, sin darle fechas ni montos que no tengas. Solo derivá si el pedido figura SIN seña pagada y él asegura que el cliente pagó (ahí sí es una discrepancia real), o si no encontrás el pedido por ningún lado.
 
 PROBLEMA TÉCNICO (distinto de un reclamo — la plataforma no le funciona: no puede entrar a su cuenta, ve un error, algo no carga): pedile que te mande una captura o foto de lo que está viendo. Si lo reconocés con lo que sabés de MudateYa, ayudalo directo. Si no, o parece un error real de la plataforma, usá derivar_a_humano con motivo empezando en "BUG:" describiendo el problema. No prometas plazos de arreglo.
@@ -3563,6 +3565,15 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     const nombre = (mudancero.nombre || '').split(' ')[0] || 'colega';
     system = SYSTEM_PROMPT_MUDANCERO.replace('{NOMBRE}', nombre);
     toolsUsados = mudanceroTools; // flujo completo del mudancero por WhatsApp
+
+    // Email de su cuenta, enmascarado: la causa más común de "perfil no
+    // encontrado" es entrar a mi-cuenta con otro Gmail que el usado al registrarse
+    // (caso Marcelo Brusasco, 2026-11-08).
+    try {
+      const _em = String(mudancero.email || '');
+      const _at = _em.indexOf('@');
+      if (_at > 1) systemDinamico += `\n\nEMAIL CON EL QUE ESTÁ REGISTRADO (enmascarado): ${_em.slice(0, 2)}***${_em.slice(_at)} — si no puede entrar a mi-cuenta, pedile que use ESE mismo email.`;
+    } catch (_) {}
 
     // AUTO-CONTEXTO: cargamos sus cotizaciones/pedidos actuales SIEMPRE, no
     // solo si decide llamar a mis_pedidos. Es un snapshot al arranque del
