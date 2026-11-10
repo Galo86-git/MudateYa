@@ -69,5 +69,9 @@ test('migración de DNI: clasifica públicas / privadas / URLs raras', () => {
     { email: 'a@a.com', dniFrente: 'https://abc.public.blob.vercel-storage.com/x/dni.jpg', dniDorso: 'dni/h/dorso-1.jpg' },
     { email: 'b@b.com', dniFrente: 'https://evil.example.com/x.jpg', dniDorso: '' },
   ]);
-  assert.deepStrictEqual(r, { perfilesConDni: 2, fotosPublicas: 1, fotosYaPrivadas: 1, fotosConUrlRara: 1 });
+  assert.strictEqual(r.perfilesConDni, 2);
+  assert.strictEqual(r.fotosPublicas, 1);
+  assert.strictEqual(r.fotosYaPrivadas, 1);
+  assert.strictEqual(r.fotosConUrlRara, 1);
+  assert.strictEqual(r.detallePublicas.length, 1);
 });

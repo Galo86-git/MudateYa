@@ -49,28 +49,30 @@ async function perfilesConDni(r) {
 const esHttp = function (v) { return typeof v === 'string' && /^https?:\/\//i.test(v); };
 
 function resumen(perfiles) {
+  const detalle = [];
   let publicas = 0; let privadas = 0; let raras = 0; let conDni = 0;
   perfiles.forEach(function (p) {
     conDni++;
     [p.dniFrente, p.dniDorso].forEach(function (v) {
       if (!v) return;
       if (dniPriv.esPathnameDni(v)) privadas++;
-      else if (esHttp(v) && RE_URL_PUBLICA.test(v)) publicas++;
+      else if (esHttp(v) && RE_URL_PUBLICA.test(v)) { publicas++; if (detalle.length < 10) detalle.push({ clave: p.email, emailPerfil: p.emailPerfil, url: v.slice(0, 48) + '…' + v.slice(-18) }); }
       else raras++;
     });
   });
-  return { perfilesConDni: conDni, fotosPublicas: publicas, fotosYaPrivadas: privadas, fotosConUrlRara: raras };
+  return { perfilesConDni: conDni, fotosPublicas: publicas, fotosYaPrivadas: privadas, fotosConUrlRara: raras, detallePublicas: detalle };
 }
 
 async function aplicar(r) {
   const t0 = Date.now();
   const perfiles = await perfilesConDni(r);
-  let migradas = 0; let fallaron = 0; let quedan = 0; const errores = [];
+  let migradas = 0; let fallaron = 0; let quedan = 0; let candidatas = 0; const errores = [];
   for (let i = 0; i < perfiles.length; i++) {
     const p = perfiles[i];
     for (const par of [['dniFrente', 'frente'], ['dniDorso', 'dorso']]) {
       const campo = par[0]; const lado = par[1]; const vieja = p[campo];
       if (!esHttp(vieja)) continue;
+      candidatas++;
       if (!RE_URL_PUBLICA.test(vieja)) { fallaron++; errores.push(p.email + ' ' + campo + ': URL que no es del store público de Blob'); continue; }
       if (Date.now() - t0 > PRESUPUESTO_MS) { quedan++; continue; }
       try {
@@ -95,7 +97,7 @@ async function aplicar(r) {
       }
     }
   }
-  return { migradas: migradas, fallaron: fallaron, quedan: quedan, errores: errores.slice(0, 10) };
+  return { perfilesLeidos: perfiles.length, candidatas: candidatas, migradas: migradas, fallaron: fallaron, quedan: quedan, errores: errores.slice(0, 10) };
 }
 
 // Diagnóstico: guarda, lee y borra un archivo de prueba en el store privado, midiendo cada paso.
