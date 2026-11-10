@@ -121,20 +121,32 @@ async function probarStore() {
 
 async function borrarPublicas(r) {
   const blob = require('@vercel/blob');
+  const t0 = Date.now();
+  // Store público de las fotos: BLOB_FOTO_READ_WRITE_TOKEN (o BLOB_READ_WRITE_TOKEN si existiera).
   const tokens = [process.env.BLOB_FOTO_READ_WRITE_TOKEN, process.env.BLOB_READ_WRITE_TOKEN].filter(Boolean);
+  if (!tokens.length) throw new Error('Falta BLOB_FOTO_READ_WRITE_TOKEN en Vercel: sin ese token no se pueden borrar las fotos públicas.');
   const items = (await r.cmd('LRANGE', LOG_KEY, '0', '-1')) || [];
-  let borradas = 0; let fallaron = 0; const restantes = [];
-  for (let i = 0; i < items.length; i++) {
-    let e; try { e = JSON.parse(items[i]); } catch (x) { continue; }
-    if (!RE_URL_PUBLICA.test(e.vieja || '')) { restantes.push(items[i]); fallaron++; continue; }
-    let ok = false;
+  const parseados = items.map(function (raw) { try { return { raw: raw, e: JSON.parse(raw) }; } catch (x) { return null; } }).filter(Boolean);
+  let borradas = 0; let fallaron = 0; let quedan = 0; const restantes = []; const errores = [];
+  // Tandas de 15 URLs en una sola llamada; con tope de tiempo para no pasarse del límite de la función.
+  for (let i = 0; i < parseados.length; i += 15) {
+    const tanda = parseados.slice(i, i + 15);
+    if (Date.now() - t0 > 35000) { quedan += tanda.length; tanda.forEach(function (x) { restantes.push(x.raw); }); continue; }
+    const validas = tanda.filter(function (x) { return RE_URL_PUBLICA.test(x.e.vieja || ''); });
+    tanda.filter(function (x) { return validas.indexOf(x) === -1; }).forEach(function (x) { restantes.push(x.raw); fallaron++; });
+    if (!validas.length) continue;
+    let ok = false; let ultimoError = '';
     for (let t = 0; t < tokens.length && !ok; t++) {
-      try { await blob.del(e.vieja, { token: tokens[t] }); ok = true; } catch (err) { /* probar el otro token */ }
+      try {
+        await dniPriv.conTimeout(blob.del(validas.map(function (x) { return x.e.vieja; }), { token: tokens[t] }), 15000, 'borrar');
+        ok = true;
+      } catch (err) { ultimoError = err.message; }
     }
-    if (ok) borradas++; else { restantes.push(items[i]); fallaron++; }
+    if (ok) borradas += validas.length;
+    else { fallaron += validas.length; validas.forEach(function (x) { restantes.push(x.raw); }); if (errores.length < 5) errores.push(ultimoError); }
   }
   await r.pipeline([['DEL', LOG_KEY]].concat(restantes.length ? [['RPUSH', LOG_KEY].concat(restantes)] : []));
-  return { borradas: borradas, fallaron: fallaron };
+  return { borradas: borradas, fallaron: fallaron, quedan: quedan, errores: errores };
 }
 
 module.exports = async function handler(req, res) {

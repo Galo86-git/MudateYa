@@ -120,7 +120,9 @@ async function borrarPublicas(){
   setOut('outDni', 'Borrando…');
   try {
     var d = await llamar('/api/admin-dni-migrar', { method:'POST', body: JSON.stringify({ accion:'borrar-publicas', confirmar: true }) });
-    delete d.ok; setOut('outDni', JSON.stringify(d, null, 2));
+    delete d.ok;
+    var nota = d.quedan > 0 ? '\n\n➜ Quedan fotos por borrar: apretá de nuevo.' : (d.fallaron ? '' : '\n\n✓ Listo.');
+    setOut('outDni', JSON.stringify(d, null, 2) + nota);
   } catch(e){ setOut('outDni', '⚠ ' + e.message); }
   bloquear(ids, false);
 }
