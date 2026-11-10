@@ -125,7 +125,10 @@ function emailValido(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e |
 function faltante(dat, conv) {
   const f = ORDEN.find((p) => !dat[p]);
   if (f) return f;
-  if (dat.modo === 'abierto' && !dat.agenda) return (conv && conv.agendaTmp && conv.agendaTmp.fecha) ? 'agenda_franja' : 'agenda_dia';
+  if (dat.modo === 'abierto' && !dat.agenda) {
+    if (conv && conv.agendaTmp && conv.agendaTmp.franja === 'puntual') return 'agenda_hora';
+    return (conv && conv.agendaTmp && conv.agendaTmp.fecha) ? 'agenda_franja' : 'agenda_dia';
+  }
   return null;
 }
 
@@ -139,7 +142,7 @@ function fechaARmas(ahora, suma) {
   return { ymd: d.toISOString().slice(0, 10), dow: d.getUTCDay(), dd: String(d.getUTCDate()).padStart(2, '0'), mm: String(d.getUTCMonth() + 1).padStart(2, '0') };
 }
 function horaAR(ahora) { return new Date(ahora.getTime() - 3 * 3600 * 1000).getUTCHours(); }
-// norm → { fecha, txt, esHoy } | 'cerrado' (hoy ya no hay horarios) | null (no se entiende o ya pasó o está muy lejos)
+// norm → { fecha, txt, esHoy } | null (no se entiende, ya pasó o está muy lejos). Los horarios los carga cada profesional: ya no hay un "hoy cerrado" fijo.
 function interpretarDia(norm, ahora) {
   let suma = null;
   if (/\bpasado manana\b/.test(norm)) suma = 2;
@@ -161,16 +164,26 @@ function interpretarDia(norm, ahora) {
     }
   }
   if (suma == null || suma < 0 || suma > MAX_DIAS_ADELANTE) return null;
-  if (suma === 0 && horaAR(ahora) >= 19) return 'cerrado';
   const f = fechaARmas(ahora, suma);
   return { fecha: f.ymd, txt: DIAS_ES[f.dow] + ' ' + f.dd + '/' + f.mm, esHoy: suma === 0 };
 }
 function interpretarFranja(norm) {
-  if (/(cualquier|indistint|me da igual|todo el dia|cuando puedan)/.test(norm)) return 'cualquiera';
+  if (/(urgencia|urgente|24 ?h|fuera de horario|noche)/.test(norm)) return 'urgente24';
+  if (/(puntual|hora exacta|a una hora|hora especifica)/.test(norm)) return 'puntual';
   if (/(manana|temprano)/.test(norm)) return 'manana';
   if (/\btarde\b/.test(norm)) return 'tarde';
   return null;
 }
+// "9", "9:30", "9.30", "17hs", "a las 17:30" → { hh, mm, txt:'17:30' } | 'fuera' (no está entre las 6 y las 22) | null
+function interpretarHora(norm) {
+  const m = /(\d{1,2})(?:\s*[:.h]\s*(\d{2}))?\s*(?:hs|h)?\b/.exec(norm);
+  if (!m) return null;
+  const hh = Number(m[1]); const mm = m[2] ? Number(m[2]) : 0;
+  if (hh > 23 || mm > 59) return null;
+  if (hh < 6 || hh > 22 || (hh === 22 && mm > 0)) return 'fuera';
+  return { hh, mm, txt: String(hh) + ':' + String(mm).padStart(2, '0') };
+}
+function minutosAR(ahora) { const b = new Date(ahora.getTime() - 3 * 3600 * 1000); return b.getUTCHours() * 60 + b.getUTCMinutes(); }
 
 // ───────────────────────── Estado ─────────────────────────
 
@@ -196,6 +209,7 @@ function preguntaDe(paso, conv, precios) {
     case 'modo': return [['pedir_modo', { precios }]];
     case 'agenda_dia': return [['pedir_agenda_dia']];
     case 'agenda_franja': return [['pedir_agenda_franja', { dia: (conv.agendaTmp && conv.agendaTmp.txt) || '' }]];
+    case 'agenda_hora': return [['pedir_agenda_hora']];
     case 'confirmar': return [['resumen', { d: conv.datos }]];
     case 'humano_email': return [['humano_pedir_email']];
     default: return [['pedir_rubro']];
@@ -398,18 +412,35 @@ function avanzar(conv, c, precios) {
     }
     case 'agenda_dia': {
       const dia = interpretarDia(norm, c.ahora);
-      if (dia === 'cerrado') { conv.noEntendi = 0; return { partes: ['agenda_hoy_cerrado'] }; }
       if (!dia) { conv.noEntendi = (conv.noEntendi || 0) + 1; return { partes: ['agenda_dia_invalido'].concat(conv.noEntendi >= 3 ? ['ayuda_trabado'] : []) }; }
       conv.agendaTmp = dia;
       conv.paso = 'agenda_franja'; conv.noEntendi = 0;
       return null;
     }
     case 'agenda_franja': {
-      const n = opcion(norm, 3);
-      const franja = n ? ['manana', 'tarde', 'cualquiera'][n - 1] : interpretarFranja(norm);
+      const n = opcion(norm, 4);
+      const franja = n ? ['manana', 'tarde', 'puntual', 'urgente24'][n - 1] : interpretarFranja(norm);
       if (!franja) return noEntendio();
-      if (conv.agendaTmp && conv.agendaTmp.esHoy && franja === 'manana' && horaAR(c.ahora) >= 12) return { partes: ['agenda_franja_pasada'].concat(preguntaDe('agenda_franja', conv, precios)) };
+      const min = minutosAR(c.ahora);
+      // Hoy: una franja que ya terminó no sirve (mañana termina 13:00, tarde 18:00).
+      if (conv.agendaTmp && conv.agendaTmp.esHoy && ((franja === 'manana' && min >= 13 * 60) || (franja === 'tarde' && min >= 18 * 60))) {
+        return { partes: ['agenda_franja_pasada'].concat(preguntaDe('agenda_franja', conv, precios)) };
+      }
+      if (franja === 'puntual') { conv.agendaTmp.franja = 'puntual'; conv.paso = 'agenda_hora'; conv.noEntendi = 0; return null; }
       conv.datos.agenda = { fecha: conv.agendaTmp.fecha, txt: conv.agendaTmp.txt, franja };
+      conv.agendaTmp = null;
+      return ok();
+    }
+    case 'agenda_hora': {
+      if (interpretarFranja(norm) === 'urgente24') {            // escribió "urgencia": se pasa a atención fuera de horario
+        conv.datos.agenda = { fecha: conv.agendaTmp.fecha, txt: conv.agendaTmp.txt, franja: 'urgente24' };
+        conv.agendaTmp = null;
+        return ok();
+      }
+      const h = interpretarHora(norm);
+      if (!h || h === 'fuera') { conv.noEntendi = (conv.noEntendi || 0) + 1; return { partes: ['agenda_hora_invalida'].concat(conv.noEntendi >= 3 ? ['ayuda_trabado'] : []) }; }
+      if (conv.agendaTmp.esHoy && h.hh * 60 + h.mm < minutosAR(c.ahora) + 60) return { partes: ['agenda_hora_pasada'] };
+      conv.datos.agenda = { fecha: conv.agendaTmp.fecha, txt: conv.agendaTmp.txt, franja: 'puntual', hora: h.txt };
       conv.agendaTmp = null;
       return ok();
     }
@@ -464,6 +495,6 @@ async function confirmarPedido(c, conv, precios, salir) {
 
 module.exports = {
   manejar, normalizar, esMensajeHogar, detectarRubros, detectarZona, detectarUrgencia, detectarModo,
-  interpretarDia, interpretarFranja, limpiarTexto, limpiarDireccion, direccionValida, emailValido, opcion, idWa,
+  interpretarDia, interpretarFranja, interpretarHora, limpiarTexto, limpiarDireccion, direccionValida, emailValido, opcion, idWa,
   EMERGENCIA_RE, TEMAS, VIGENCIA_ACTIVA_MS,
 };
