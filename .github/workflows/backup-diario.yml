@@ -1,0 +1,67 @@
+# Backup diario de Redis (Upstash) → store privado y aparte de Vercel Blob, cifrado.
+# Corre en GitHub: no usa ninguna computadora tuya.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN   los mismos de Vercel
+#   BACKUP_ENCRYPTION_KEY          clave de 32 bytes (guardala también en tu gestor de contraseñas)
+#   BLOB_BACKUP_READ_WRITE_TOKEN   token del store privado SOLO de backups
+#   BLOB_READ_WRITE_TOKEN, BLOB_FOTO_READ_WRITE_TOKEN   (opcionales) para el inventario de archivos
+#   RESEND_API_KEY, MAIL_SEGURIDAD   para avisar por mail si el backup falla
+
+name: Backup diario
+
+on:
+  schedule:
+    # 06:00 UTC = 03:00 en Argentina.
+    - cron: '0 6 * * *'
+  workflow_dispatch: # botón para correrlo a mano
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-diario
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Instalar dependencias
+        run: npm ci --ignore-scripts
+
+      - name: Backup de Redis
+        env:
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          BLOB_BACKUP_READ_WRITE_TOKEN: ${{ secrets.BLOB_BACKUP_READ_WRITE_TOKEN }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          BLOB_FOTO_READ_WRITE_TOKEN: ${{ secrets.BLOB_FOTO_READ_WRITE_TOKEN }}
+        run: node scripts/backup-redis.mjs
+
+      - name: Avisar por mail si falló
+        if: failure()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_SEGURIDAD: ${{ secrets.MAIL_SEGURIDAD }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node -e "
+          const dest=(process.env.MAIL_SEGURIDAD||'').split(',').map(s=>s.trim()).filter(Boolean);
+          if(!process.env.RESEND_API_KEY||!dest.length){console.log('Sin RESEND_API_KEY o destinatario: no se manda mail');process.exit(0);}
+          fetch('https://api.resend.com/emails',{method:'POST',
+            headers:{Authorization:'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json'},
+            body:JSON.stringify({from:'MudateYa Backup <noreply@mudateya.ar>',to:dest,
+              subject:'🔴 Falló el backup diario de MudateYa',
+              text:'El backup de anoche falló. Hoy no hay una copia nueva. Detalle: '+process.env.RUN_URL})
+          }).then(r=>console.log('mail',r.status));
+          "
