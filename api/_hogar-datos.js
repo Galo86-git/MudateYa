@@ -8,12 +8,12 @@
 //   - Cada entidad se anota en un índice (SET) para poder listarlas sin escanear todo Redis.
 //   - La plata NO vive acá: vive en el libro (api/_hogar-libro.js), que solo se agrega.
 //
-// Tipos: proveedor | cliente | trabajo | solicitud
+// Tipos: proveedor | cliente | trabajo | solicitud | liquidacion | pago | reembolso
 
 const { cliente } = require('./_redis');
 const { PRECIOS_DEFAULT, validarPrecios } = require('./_hogar-reglas');
 
-const TIPOS = new Set(['proveedor', 'cliente', 'trabajo', 'solicitud']);
+const TIPOS = new Set(['proveedor', 'cliente', 'trabajo', 'solicitud', 'liquidacion', 'pago', 'reembolso']);
 const RE_ID = /^[A-Za-z0-9:_.-]{3,100}$/;
 
 const K = {

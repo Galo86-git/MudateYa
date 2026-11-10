@@ -61,6 +61,7 @@ function validar(e) {
   if (e.refExterna != null && !RE_REF.test(String(e.refExterna))) throw new EntradaInvalida('refExterna inválida');
   if (t.requiereNota && !(typeof e.nota === 'string' && e.nota.trim().length >= 5)) throw new EntradaInvalida('el tipo ' + e.tipo + ' requiere una nota (mínimo 5 caracteres)');
   if (e.nota != null && String(e.nota).length > 500) throw new EntradaInvalida('nota demasiado larga');
+  if (e.neto != null && (!Number.isInteger(e.neto) || e.neto < 0 || e.neto > e.monto)) throw new EntradaInvalida('neto debe ser un entero entre 0 y el monto');
   return t;
 }
 
@@ -88,6 +89,7 @@ async function registrar(e, opts) {
     id: e.id, ts, creado: new Date(ts).toISOString(),
     tipo: e.tipo, parte: t.parte, parteId: String(e.parteId), monto: e.monto,
     efectoSaldo: t.efectoSaldo,
+    neto: e.neto != null ? e.neto : null, // lo que efectivamente entró (después de comisión e impuestos de la pasarela)
     trabajoId: e.trabajoId != null ? String(e.trabajoId) : null,
     refExterna: e.refExterna != null ? String(e.refExterna) : null,
     nota: e.nota != null ? String(e.nota).trim() : null,

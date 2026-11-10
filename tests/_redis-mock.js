@@ -38,6 +38,9 @@ function crearMock() {
         return conScores ? trozo.flatMap((x) => [x.m, String(x.s)]) : trozo.map((x) => x.m);
       }
       case 'ZCARD': return e ? e.v.length : 0;
+      case 'ZSCORE': { const x = e && e.v.find((y) => y.m === r[0]); return x ? String(x.s) : null; }
+      case 'ZREM': { if (!e) return 0; const antes = e.v.length; e.v = e.v.filter((y) => !r.includes(y.m)); if (!e.v.length) db.delete(k); return antes - e.v.length; }
+      case 'SREM': { if (!e) return 0; let n = 0; r.forEach((x) => { if (e.v.delete(x)) n++; }); return n; }
       case 'EXISTS': return db.has(k) ? 1 : 0;
       case 'DEL': { const had = db.delete(k); return had ? 1 : 0; }
       case 'SET': {

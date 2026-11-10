@@ -162,10 +162,83 @@ async function consultarPago(paymentId) {
   };
 }
 
+
+// ── Funciones para MYA Hogar (se suman; las de arriba no cambian: Mudanza las usa en producción) ──
+// Todas con tiempo límite: una llamada colgada a Talo no puede dejar una función esperando.
+
+const TIMEOUT_MS = 8000;
+
+function aNumero(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+
+// Consulta completa: además de lo básico trae cada transferencia recibida (bruto, neto, comisión,
+// quién la mandó) y los reembolsos con su estado. Los nombres de campos de Talo no están 100%
+// documentados (ver nota de montos arriba), por eso se leen de forma defensiva.
+async function consultarPagoCompleto(paymentId) {
+  const r = await fetchAuth('/payments/' + encodeURIComponent(paymentId), { method: 'GET', signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const d = await r.json().catch(() => ({}));
+  const data = d && d.data;
+  if (!r.ok || !data) throw new Error('Talo: no se pudo consultar el pago (' + r.status + ')');
+
+  const q = (data.quotes && data.quotes[0]) || {};
+  const tf = data.transaction_fields || {};
+  const recibidas = (Array.isArray(data.transactions) ? data.transactions : []).filter(function (t) {
+    return t && !t.is_refund && String(t.transactionType || 'INBOUND').toUpperCase() === 'INBOUND';
+  });
+  const suma = function (campo) { return recibidas.reduce(function (s, t) { return s + aNumero(t[campo]); }, 0); };
+  const bruto = recibidas.length ? suma('amount') : aNumero(tf.amount || tf.amountReadable);
+  const acreditado = recibidas.length ? suma('credited_amount') : aNumero(tf.credited_amount);
+  const refunds = (Array.isArray(data.refunds) ? data.refunds : []).map(function (x, i) {
+    return { n: i, id: x.id || x.refund_id || '', estado: String(x.refund_status || x.status || '').toUpperCase(), monto: aNumero(x.amount) };
+  });
+  return {
+    paymentId:   data.id || paymentId,
+    estado:      data.payment_status || '',
+    externalId:  data.external_id || '',
+    montoPedido: aNumero(data.price && data.price.amount),
+    montoPagado: bruto,            // lo que transfirió el cliente (bruto)
+    acreditado:  acreditado,       // lo que entró a la cuenta (neto de comisión e impuestos)
+    comision:    suma('commission_amount') + suma('tax_amount'),
+    transferencias: recibidas.map(function (t) { return { id: t.transaction_id || t.id || '', bruto: aNumero(t.amount), neto: aNumero(t.credited_amount), remitenteCuit: t.sender_cuit || (t.transaction_data && t.transaction_data.senderCuit) || '' }; }),
+    reembolsado: aNumero(tf.refunded_amount),
+    refunds:     refunds,
+    cvu:         q.address || q.cvu || '',
+    alias:       q.alias || '',
+    expira:      data.expiration_timestamp || '',
+    paymentUrl:  data.payment_url || '',
+  };
+}
+
+// Reembolso por API. Sin monto = total. Es ASÍNCRONO: arranca PENDING y hay que volver a consultar
+// el pago (consultarPagoCompleto) hasta ver SUCCESS o FAILED. Talo no deja pedir otro mientras hay uno PENDING.
+async function reembolsar(paymentId, opts) {
+  const monto = opts && opts.monto;
+  const body = monto == null ? { refund_type: 'FULL' } : { refund_type: 'PARTIAL', amount: String(monto), currency: 'ARS' };
+  const r = await fetchAuth('/payments/' + encodeURIComponent(paymentId) + '/refunds', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 409 && d && d.message === 'refund.already.pending') return { ok: true, yaPendiente: true };
+  if (!r.ok) throw new Error('Talo: no se pudo pedir el reembolso (' + r.status + ' ' + ((d && d.message) || '') + ')');
+  return { ok: true, yaPendiente: false };
+}
+
+// Cambia el monto pedido de un pago. Talo recalcula el estado (p. ej. un UNDERPAID pasa a SUCCESS si lo
+// recibido alcanza) y vuelve a avisar por webhook. Solo para pagos que no vencieron.
+async function actualizarPrecio(paymentId, monto) {
+  const r = await fetchAuth('/payments/' + encodeURIComponent(paymentId) + '/price', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currency: 'ARS', amount: Number(monto) }), signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!r.ok) throw new Error('Talo: no se pudo actualizar el monto (' + r.status + ')');
+  return true;
+}
+
 module.exports = {
   taloConfigurado: taloConfigurado,
   esProduccion:    esProduccion,
   apiBase:         apiBase,
   crearPago:       crearPago,
-  consultarPago:   consultarPago
+  consultarPago:   consultarPago,
+  consultarPagoCompleto: consultarPagoCompleto,
+  reembolsar:      reembolsar,
+  actualizarPrecio: actualizarPrecio
 };

@@ -9,7 +9,8 @@
     "crear-preferencia.js",
     "pagar.js",
     "qr-expo.js",
-    "webhook-mp.js"
+    "webhook-mp.js",
+    "hogar-talo-webhook.js"
   ],
 
   "cronsPublicos": [],
@@ -42,6 +43,7 @@
     "contacto.js": "Formulario de contacto de la web: por definición lo usa gente sin cuenta.",
     "crear-preferencia.js / pagar.js": "Arrancan el pago en Mercado Pago. El cliente todavía no está logueado; la plata se valida después contra la API de MP.",
     "qr-expo.js": "Genera el QR público de las expos.",
+    "hogar-talo-webhook.js": "Webhook de Talo para los cobros de MYA Hogar: Talo todavía no firma sus avisos, pero el handler no confía en el payload — solo toma el paymentId, vuelve a consultar el pago contra la API de Talo con nuestro token y valida el monto contra NUESTROS registros antes de acreditar. Un aviso falso no mueve plata. Apagado por defecto (HOGAR_PAGOS_ACTIVO).",
     "webhook-mp.js": "Webhook de Mercado Pago: MP no manda firma verificable acá, pero el handler no confía en el payload — vuelve a consultar el pago contra la API de MP antes de acreditar nada.",
     "index.html / inmobiliaria.html: clave Google API": "Es la clave de Google Maps JS: por diseño viaja al navegador y no se puede ocultar, así que no cuenta como 'secreto filtrado'. Lo que sí importa es que esté restringida, y de eso se encarga el chequeo 'clave-maps', que la prueba contra Google sin referrer todos los días. No tocar esta entrada.",
     "clavesMapsAceptadas": "Solo para silenciar el chequeo de restricción de una clave puntual (primeros 12 caracteres). Vaciar salvo que haya una razón muy concreta: silenciarlo es aceptar que cualquiera pueda gastar contra la cuenta de Google."
