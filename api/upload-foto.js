@@ -24,6 +24,17 @@ module.exports = async function handler(req, res) {
   try {
     var carpeta   = req.headers['x-carpeta'] || 'mudanceros/tmp';
     var nombre    = req.headers['x-nombre']  || ('foto-' + Date.now());
+
+    // Este endpoint es PÚBLICO (store público, sin login). Documentos de
+    // identidad NO pueden pasar por acá: van a /api/dni (store privado).
+    if (/dni|document|cedula|pasaporte|cuil|cbu/i.test(carpeta + ' ' + nombre)) {
+      return res.status(400).json({ error: 'Los documentos se suben por /api/dni.' });
+    }
+    // Sin rutas raras: solo letras, números y / _ . - (y nunca "..").
+    if (!/^[A-Za-z0-9/_.-]{1,120}$/.test(carpeta) || !/^[A-Za-z0-9_.-]{1,120}$/.test(nombre) ||
+        carpeta.indexOf('..') !== -1 || carpeta.charAt(0) === '/') {
+      return res.status(400).json({ error: 'Carpeta o nombre inválidos.' });
+    }
     var mediaType = (req.headers['content-type'] || 'image/jpeg').split(';')[0].toLowerCase().trim();
 
     if (TIPOS_PERMITIDOS.indexOf(mediaType) === -1) {

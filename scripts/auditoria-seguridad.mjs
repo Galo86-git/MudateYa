@@ -243,6 +243,46 @@ function revisarCors() {
 }
 
 // ---------------------------------------------------------------------------
+// 5b. Documentos sensibles en un store público de Blob
+// ---------------------------------------------------------------------------
+// Un archivo subido con access:'public' es accesible para cualquiera que tenga
+// (o adivine) la URL. Los documentos (DNI, matrícula, seguro, CBU) tienen que ir
+// a un store PRIVADO y leerse por un endpoint con login (ver api/_dni-privado.js).
+// Este chequeo mira, en cada put(... access:'public'), si cerca aparece una palabra
+// de documento sensible, y además si el endpoint que sube ni siquiera lo prohíbe.
+const RE_SENSIBLE = /dni|documento|cedula|pasaporte|matr[ií]cula|antecedentes|p[oó]liza|seguro|\bart\b|certificado|cbu|cuil/i;
+function revisarBlobsPublicos() {
+  const dirApi = path.join(RAIZ, 'api');
+  if (!fs.existsSync(dirApi)) return;
+  for (const f of fs.readdirSync(dirApi).filter(x => x.endsWith('.js'))) {
+    const contenido = leer(path.join('api', f));
+    const re = /access:\s*['"]public['"]/g;
+    let m;
+    while ((m = re.exec(contenido))) {
+      const inicioLinea = contenido.lastIndexOf('\n', m.index) + 1;
+      if (/^\s*(\/\/|\*|\/\*)/.test(contenido.slice(inicioLinea, m.index))) continue; // es un comentario
+      const ventana = contenido.slice(Math.max(0, m.index - 500), m.index + 200);
+      if (RE_SENSIBLE.test(ventana) && !permitido('blobsPublicosAceptados', f)) {
+        reportar(ALTA, 'blobs', `Posible documento sensible en Blob PÚBLICO: api/${f}`,
+          'Hay un put(... access:"public") con referencias a documentos de identidad/seguros cerca. ' +
+          'Cualquiera con la URL puede verlo, sin login.',
+          'Subirlo con access:"private" y servirlo desde un endpoint autenticado (ver api/dni.js). ' +
+          'Si es una falsa alarma, agregar el archivo a "blobsPublicosAceptados" en el allowlist.');
+        break;
+      }
+    }
+  }
+  // El endpoint público de subida tiene que rechazar documentos explícitamente.
+  const up = path.join(dirApi, 'upload-foto.js');
+  if (fs.existsSync(up) && !/dni\|document/i.test(leer(path.join('api', 'upload-foto.js')))) {
+    reportar(ALTA, 'blobs', 'api/upload-foto.js acepta cualquier carpeta/nombre (incluidos documentos)',
+      'Es un endpoint público, sin login, que escribe en un store público: alguien puede subir o pisar archivos ' +
+      'bajo el dominio de MudateYa, y los documentos podrían terminar acá.',
+      'Rechazar carpetas/nombres de documentos y validar el formato de la ruta.');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 6. Headers de seguridad en producción
 // ---------------------------------------------------------------------------
 const HEADERS_ESPERADOS = [
@@ -478,6 +518,7 @@ async function main() {
   revisarSecretos();
   revisarEndpoints();
   revisarCors();
+  revisarBlobsPublicos();
   await revisarHeaders();
   await revisarCertificado();
   await revisarSondas();

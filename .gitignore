@@ -21,3 +21,6 @@ Thumbs.db
 # Editores
 .vscode/
 .idea/
+
+# Log de migración de DNI (datos personales)
+dni-migracion-log.json

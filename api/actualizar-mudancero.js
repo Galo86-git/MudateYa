@@ -123,22 +123,25 @@ module.exports = async function handler(req, res) {
       }
       if (!fotosVehUrls.length) fotosVehUrls = perfil.fotosVehiculo || [];
     }
-    // DNI frente: base64 o URL
-    if (data.dniFrente !== undefined) {
-      if (data.dniFrente && data.dniFrente.startsWith && data.dniFrente.startsWith('data:image')) {
-        dniFrenteUrl = await subirFotoBlob(data.dniFrente, emailSlug + '-dni-frente') || dniFrenteUrl;
-      } else if (data.dniFrente && data.dniFrente.startsWith && data.dniFrente.startsWith('http')) {
-        dniFrenteUrl = data.dniFrente;
+    // DNI frente/dorso: SIEMPRE al store privado (api/_dni-privado.js). En el perfil
+    // se guarda el pathname, no una URL. Se acepta: base64 (se sube), un pathname
+    // propio ya subido por /api/dni, o —solo para no romper perfiles viejos— una
+    // URL ya guardada que coincide con la que el perfil ya tenía.
+    const dniPriv = require('./_dni-privado');
+    async function resolverDni(valor, actual, lado) {
+      if (!valor || typeof valor !== 'string') return actual;
+      if (valor.startsWith('data:image')) {
+        try {
+          const buf = Buffer.from(valor.replace(/^data:image\/[\w+.-]+;base64,/, ''), 'base64');
+          return await dniPriv.subirDni(buf, data.email, lado);
+        } catch (e) { console.warn('DNI ' + lado + ' no se pudo guardar:', e.message); return actual; }
       }
+      if (dniPriv.perteneceA(valor, data.email)) return valor;
+      if (valor === actual) return actual; // URL legada sin cambios
+      return actual;
     }
-    // DNI dorso: base64 o URL
-    if (data.dniDorso !== undefined) {
-      if (data.dniDorso && data.dniDorso.startsWith && data.dniDorso.startsWith('data:image')) {
-        dniDorsoUrl = await subirFotoBlob(data.dniDorso, emailSlug + '-dni-dorso') || dniDorsoUrl;
-      } else if (data.dniDorso && data.dniDorso.startsWith && data.dniDorso.startsWith('http')) {
-        dniDorsoUrl = data.dniDorso;
-      }
-    }
+    if (data.dniFrente !== undefined) dniFrenteUrl = await resolverDni(data.dniFrente, dniFrenteUrl, 'frente');
+    if (data.dniDorso  !== undefined) dniDorsoUrl  = await resolverDni(data.dniDorso,  dniDorsoUrl,  'dorso');
     // DNI análisis (objeto con datos extraídos del DNI por OpenAI)
     if (data.dniAnalisis !== undefined) {
       dniAnalisisData = data.dniAnalisis || dniAnalisisData;

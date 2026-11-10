@@ -1204,6 +1204,23 @@ function ADMTK(){
   return sessionStorage.getItem('adminToken') || '';
 }
 
+// Carga las fotos de DNI del store privado (api/dni.js) con el token de admin y las
+// pone en los <img data-dni="...">. Al click se abren en otra pestaña.
+function dniAdminCargar(raiz) {
+  if (!raiz) return;
+  raiz.querySelectorAll('img[data-dni]').forEach(function(img) {
+    var pathname = img.getAttribute('data-dni');
+    fetch('/api/dni?pathname=' + encodeURIComponent(pathname), { headers: { 'x-admin-token': ADMTK() } })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+      .then(function(b) {
+        var u = URL.createObjectURL(b);
+        img.src = u;
+        img.onclick = function() { window.open(u, '_blank'); };
+      })
+      .catch(function(e) { img.alt = 'No se pudo cargar el DNI (' + e.message + ')'; });
+  });
+}
+
 var currentUser = null;
 var mudancerosData = [];
 var pagosData = [];
@@ -2557,8 +2574,17 @@ async function openModal(idx){
     // Fotos del DNI
     if (perfil.dniFrente || perfil.dniDorso) {
       html += '<div class="modal-section">🪪 Fotos del DNI</div><div class="modal-fotos">';
-      if (perfil.dniFrente) html += '<div class="modal-foto-item"><img src="'+esc(perfil.dniFrente)+'" onclick="window.open(\''+esc(perfil.dniFrente)+'\',\'_blank\')" title="DNI Frente"/></div>';
-      if (perfil.dniDorso)  html += '<div class="modal-foto-item"><img src="'+esc(perfil.dniDorso)+'" onclick="window.open(\''+esc(perfil.dniDorso)+'\',\'_blank\')" title="DNI Dorso"/></div>';
+      // Los DNI nuevos viven en un store privado: se guardan como pathname ("dni/...")
+      // y se piden con el token de admin (dniAdminCargar). Los viejos son URL http.
+      [['Frente', perfil.dniFrente], ['Dorso', perfil.dniDorso]].forEach(function(par) {
+        var v = par[1];
+        if (!v) return;
+        if (/^https?:/i.test(v)) {
+          html += '<div class="modal-foto-item"><img src="'+esc(v)+'" onclick="window.open(\''+esc(v)+'\',\'_blank\')" title="DNI '+par[0]+'"/></div>';
+        } else {
+          html += '<div class="modal-foto-item"><img data-dni="'+esc(v)+'" alt="Cargando DNI '+par[0]+'…" title="DNI '+par[0]+'" style="cursor:pointer;min-height:60px"/></div>';
+        }
+      });
       html += '</div>';
     } else {
       html += '<div class="modal-section">🪪 DNI</div><div style="font-size:12px;color:#F59E0B;padding:8px 0">⚠ Sin fotos de DNI — verificar manualmente</div>';
@@ -2656,6 +2682,7 @@ async function openModal(idx){
   }
 
   document.getElementById('modalContent').innerHTML = html;
+  dniAdminCargar(document.getElementById('modalContent'));
 
   // Limpiar botones dinámicos que pudieran quedar de una edición anterior
   var viejoBtnG = document.getElementById('btnGuardar');

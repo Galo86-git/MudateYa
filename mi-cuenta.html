@@ -6042,6 +6042,33 @@ async function pfSubirABlob(file, carpeta, nombre) {
 
 function pfCap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
+// ── DNI: store PRIVADO (api/dni.js). Se sube con la sesión del mudancero y se
+// muestra pidiendo la imagen con ese mismo header (un <img src> no puede
+// mandar headers, por eso se baja como blob). En el perfil se guarda el
+// pathname ("dni/..."), no una URL. Los perfiles viejos con URL http se
+// siguen mostrando directo hasta que se migren.
+async function pfSubirDni(file, lado) {
+  var email = (currentUser && currentUser.email) || '';
+  var res = await fetch('/api/dni?email=' + encodeURIComponent(email) + '&lado=' + encodeURIComponent(lado), {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': file.type || 'image/jpeg' }),
+    body: file,
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error subiendo el DNI');
+  return json.pathname;
+}
+
+function pfMostrarDni(imgEl, valor) {
+  if (!imgEl || !valor) return;
+  if (/^https?:/i.test(valor)) { imgEl.src = valor; return; }
+  var email = (currentUser && currentUser.email) || '';
+  fetch('/api/dni?pathname=' + encodeURIComponent(valor) + '&email=' + encodeURIComponent(email), { headers: authHeaders({}) })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+    .then(function(b) { imgEl.src = URL.createObjectURL(b); })
+    .catch(function(e) { console.warn('No se pudo mostrar el DNI:', e.message); });
+}
+
 // ── Foto de perfil ──
 function pfOnFotoPerfil(input) {
   if (!input.files || !input.files[0]) return;
@@ -6180,7 +6207,7 @@ function pfOnDNIUpload(input, lado) {
     text.textContent = 'Subiendo… ⏳';
     area.classList.add('has-file');
     _pfDniData[lado] = { b64: b64, mediaType: file.type || 'image/jpeg', dataUrl: dataUrl };
-    pfSubirABlob(file, _pfCarpetaTmp, 'dni-' + lado)
+    pfSubirDni(file, lado)
       .then(function(url) {
         if (lado === 'frente') { _pfUrlDniFrente = url; }
         else                   { _pfUrlDniDorso  = url; }
@@ -6296,7 +6323,7 @@ function pfCargarFotosExistentes() {
     _pfUrlDniFrente = p.dniFrente;
     var prF = document.getElementById('pf-dniFrente-preview');
     if (prF) {
-      prF.src = p.dniFrente;
+      pfMostrarDni(prF, p.dniFrente);
       prF.style.display = 'block';
       document.getElementById('pf-dniFrente-icon').style.display = 'none';
       document.getElementById('pf-dniFrente-text').textContent = 'Frente cargado ✓';
@@ -6309,7 +6336,7 @@ function pfCargarFotosExistentes() {
     _pfUrlDniDorso = p.dniDorso;
     var prD = document.getElementById('pf-dniDorso-preview');
     if (prD) {
-      prD.src = p.dniDorso;
+      pfMostrarDni(prD, p.dniDorso);
       prD.style.display = 'block';
       document.getElementById('pf-dniDorso-icon').style.display = 'none';
       document.getElementById('pf-dniDorso-text').textContent = 'Dorso cargado ✓';
