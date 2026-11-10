@@ -65,13 +65,13 @@ async function resumen(deps, solicitudId, paymentId) {
   const { redis } = deps;
   const p = await deps.talo.consultarPagoCompleto(paymentId).catch(() => null);
   const sol = await datos.leer('solicitud', solicitudId, { redis });
-  const cli = await libro.entradasDeCliente('cli-prueba', { redis });
+  const cli = await libro.entradasDeTrabajo(solicitudId, { redis }); // solo ESTA prueba (los cobros y devoluciones llevan el id del pedido)
   const reem = [];
   for (const id of await datos.ids('reembolso', { redis })) {
     const r = await datos.leer('reembolso', id, { redis });
     if (r && r.paymentId === paymentId) reem.push({ id, estado: r.estado, monto: r.monto, motivo: r.motivo });
   }
-  const ef = (await pagos.efectosPendientes(deps, 100)).map((e) => e.tipo);
+  const ef = (await pagos.efectosPendientes(deps, 200)).filter((e) => e.solicitudId === solicitudId).map((e) => e.tipo);
   return {
     talo: p && { estado: p.estado, pedido: p.montoPedido, pagado: p.montoPagado, acreditado: p.acreditado, comision: p.comision, reembolsado: p.reembolsado, refunds: p.refunds.map((x) => x.estado) },
     solicitud: sol && { estado: sol.estado },
@@ -95,7 +95,7 @@ async function crearPrueba(deps, informe, opts) {
 
 async function transferir(deps, informe, p, monto, etiqueta, acumulado) {
   await deps.talo.faucet(p.cvu, monto);
-  const tope = deps.topeEsperaMs != null ? deps.topeEsperaMs : 15000;
+  const tope = deps.topeEsperaMs != null ? deps.topeEsperaMs : 40000;
   const esp = await esperarMonto(deps.talo, p.paymentId, acumulado, tope, deps.pasoMs);
   const titulo = 'Talo registró la transferencia de ' + pesos(monto) + (etiqueta ? ' (' + etiqueta + ')' : '');
   const detalle = esp.vencio
@@ -143,7 +143,7 @@ async function cuerpoEscenario(nombre, deps, informe) {
     informe.chequeo('No se asentó ningún cobro', r.libro.length === 0, JSON.stringify(r.libro));
     informe.chequeo('El pedido no se reactivó', !!r.solicitud && r.solicitud.estado === 'esperando_pago' && enTalo.montoPagado >= GESTION, JSON.stringify(r.solicitud));
     informe.chequeo('Se pidió devolver ' + pesos(GESTION), r.reembolsos.length === 1 && r.reembolsos[0].monto === GESTION, JSON.stringify(r.reembolsos));
-    if (r.reembolsos[0]) await ejecutarYConciliar(deps, informe, r.reembolsos[0].id, 12000);
+    if (r.reembolsos[0]) await ejecutarYConciliar(deps, informe, r.reembolsos[0].id, 25000);
     informe.detalle = await resumen(deps, p.solicitudId, p.paymentId);
     return;
   }
@@ -198,7 +198,7 @@ async function cuerpoEscenario(nombre, deps, informe) {
     r = await resumen(deps, p.solicitudId, p.paymentId);
     informe.chequeo('En el libro queda lo esperado (' + pesos(MONTO) + '), no lo recibido', r.libro.length === 1 && r.libro[0].monto === MONTO, JSON.stringify(r.libro));
     informe.chequeo('Se pidió devolver la diferencia ($500)', r.reembolsos.length === 1 && r.reembolsos[0].monto === 500, JSON.stringify(r.reembolsos));
-    if (r.reembolsos[0]) await ejecutarYConciliar(deps, informe, r.reembolsos[0].id, 12000);
+    if (r.reembolsos[0]) await ejecutarYConciliar(deps, informe, r.reembolsos[0].id, 25000);
   }
 
   informe.detalle = await resumen(deps, p.solicitudId, p.paymentId);
