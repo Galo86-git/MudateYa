@@ -197,8 +197,9 @@ test('consola: un id de Talo con caracteres raros no rompe la prueba', async () 
 
 test('consola: varias pruebas seguidas con el mismo cliente no se contaminan entre sí', async () => {
   await conRedisMock(async ({ conPrefijo }) => {
+    const t = taloFalso(); // un solo Talo: los ids de pago son únicos, como en la realidad
     for (const nombre of ['exacto', 'menos', 'completar', 'mas', 'tarde']) {
-      const informe = await consola._correrEscenario(nombre, { redis: conPrefijo, talo: taloFalso(), ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
+      const informe = await consola._correrEscenario(nombre, { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
       assert.deepStrictEqual(informe.hallazgos, [], nombre + ': ' + JSON.stringify(informe.hallazgos));
     }
   });
