@@ -674,6 +674,8 @@ PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", "quiero info", vino de un link): no t
 
 RECLAMOS Y PROBLEMAS: si te cuenta que el cliente no le paga el saldo, canceló sin avisar, hay una discrepancia con lo acordado, o cualquier lío que tus herramientas de arriba no resuelven, NO lo dejes solo con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea de verdad, y avisale que lo van a contactar.
 
+PEDIDOS "INCOMPLETOS" / FALTAN DATOS PARA COTIZAR: antes de darle la razón a un mudancero que dice que un pedido viene incompleto o que no tiene datos para estimar, MIRÁ el pedido con ver_pedidos. Cada pedido trae "detalle" (ambientes, tipo/piso/ascensor de origen y destino, nivel de servicio, horario y qué hay que mudar) y "pdf" con el detalle completo y las fotos. Pasale ese detalle y el link al PDF (tal cual vino de la herramienta) y recién después pedile el precio. Si de verdad falta un dato clave en ESE pedido (por ejemplo, no dice qué hay que mudar), decile concretamente CUÁL falta; no generalices con "todos los pedidos vienen incompletos" ni culpes a la plataforma. Si te nombra un pedido que no aparece en ver_pedidos, puede haber vencido o no ser de su zona: decíselo así, sin inventar que "el sistema no lo reconoce" por una falla. NUNCA prometas que vas a "frenar el envío de pedidos" ni que el equipo ya lo hizo: no tenés esa herramienta. Si pide dejar de recibir pedidos, derivá con derivar_a_humano y decile solo que se lo pasás al equipo.
+
 CÓMO ENTRAR A SU CUENTA (cuando pregunta cómo iniciar sesión, cómo completar su perfil, o dice que no encuentra el login): su panel está en *https://mudateya.ar/mi-cuenta* — ESA es la dirección, no inventes otra. NO es mudateya.ar/mudancero: esa es la página PÚBLICA de un perfil y, sin un perfil elegido, muestra "Perfil no encontrado". Ahí entra con el botón de Google o, si no usa Gmail, poniendo su email para que le mandemos un link de acceso (no hay contraseña). Tiene que entrar con el MISMO email con el que se registró (más abajo, en el contexto, tenés ese email enmascarado: decíselo para que use ese). NO existe una app en Play Store ni App Store: se usa desde el navegador del celular (si quiere, puede guardar la página como acceso directo en la pantalla de inicio). Si al intentar registrarse de nuevo le dice "perfil ya registrado" o "ya existe un perfil con ese teléfono/email", es buena señal: YA tiene cuenta, no se tiene que registrar otra vez, solo entrar a mi-cuenta con su email. Si con el mismo email igual no puede entrar, ahí sí derivá con motivo "BUG:" indicando su email enmascarado y qué pantalla o mensaje ve.
 
 PAGOS Y SEÑA (NO es un reclamo): el cliente le paga la seña (50%) y el saldo a MUDATEYA, no al mudancero — él NO recibe la plata directo ni en su cuenta: MudateYa la retiene protegida y se la liquida (descontando la comisión). Si te dice "el cliente pagó pero no me llegó nada", "no recibí la seña" o te pasa un número de transacción, NO lo derives como reclamo: primero mirá sus pedidos (mis_pedidos / TUS PEDIDOS de arriba) — si el pedido figura con SEÑA PAGADA, confirmáselo ("ya está acreditada, el cliente pagó la seña ✅") y explicale que la seña la recibe MudateYa y que a él se le liquida después, sin darle fechas ni montos que no tengas. Solo derivá si el pedido figura SIN seña pagada y él asegura que el cliente pagó (ahí sí es una discrepancia real), o si no encontrás el pedido por ningún lado.
@@ -1328,6 +1330,38 @@ const mudanceroTools = [
 ];
 
 // Ejecuta una herramienta del MUDANCERO llamando al endpoint web correspondiente.
+// Resumen corto de lo que el mudancero necesita para cotizar un pedido: ambientes,
+// tipo/piso/ascensor de origen y destino, nivel, horario y lo que hay que mudar.
+// Antes el mudancero que trabaja por WhatsApp solo veía ruta, fecha y km (el aviso
+// y ver_pedidos): "me llegan los pedidos sin volumen ni características" (caso
+// Sergio Ghertner, 2026-11-10). Los datos SIEMPRE estuvieron en el pedido; el
+// PDF y el panel web los mostraban, el canal de WhatsApp no. Sin datos de contacto.
+function lugarCorto(tipo, piso, asc) {
+  const partes = [];
+  if (tipo) partes.push(tipo === 'departamento' ? 'depto' : tipo);
+  if (piso) partes.push('piso ' + piso);
+  if (asc) partes.push('ascensor: ' + asc);
+  return partes.join(', ');
+}
+function resumenParaMudancero(m) {
+  if (!m) return '';
+  const partes = [];
+  if (m.ambientes) partes.push(String(m.ambientes));
+  const o = lugarCorto(m.tipoOrigen, m.pisoOrigen, typeof m.ascOrigen === 'boolean' ? (m.ascOrigen ? 'sí' : 'no') : m.ascOrigen);
+  const d = lugarCorto(m.tipoDestino, m.pisoDestino, typeof m.ascDestino === 'boolean' ? (m.ascDestino ? 'sí' : 'no') : m.ascDestino);
+  if (o) partes.push('Origen: ' + o);
+  if (d) partes.push('Destino: ' + d);
+  if (m.nivel) partes.push('Servicio: ' + m.nivel);
+  if (m.horaOrigen) partes.push('Hora: ' + m.horaOrigen);
+  const serv = Array.isArray(m.servicios) ? m.servicios.join(', ') : String(m.servicios || '');
+  if (serv) partes.push('Incluye: ' + serv.slice(0, 120));
+  const det = String(m.detalles || (m.detallesAdicionales && m.detallesAdicionales.comentario) || '').replace(/\s+/g, ' ').trim();
+  if (det) partes.push('Detalle: ' + det.slice(0, 220));
+  const nFotos = Array.isArray(m.fotos) ? m.fotos.length : ((m.detallesAdicionales && Array.isArray(m.detallesAdicionales.fotos)) ? m.detallesAdicionales.fotos.length : 0);
+  if (nFotos) partes.push(nFotos + ' foto(s)');
+  return partes.join(' · ');
+}
+
 async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoActual) {
   const email = mudancero && mudancero.email;
   const nombre = mudancero && mudancero.nombre;
@@ -1349,9 +1383,13 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       const pedidos = (d.mudanzas || []).map((m) => ({
         id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`,
         km: m.km || null, ambientes: m.ambientes || '', fecha: m.fecha || '', urgente: !!m.urgente,
+        // Todo lo necesario para estimar el precio, y el PDF con el detalle completo
+        // (el mismo que ven en el mail y en el panel; no lleva datos de contacto).
+        detalle: resumenParaMudancero(m),
+        pdf: `${base}/api/cotizaciones?action=pedido-pdf&mudanzaId=${encodeURIComponent(m.id)}`,
       }));
       const nota = pedidos.length
-        ? 'Pedidos disponibles para cotizar. Para cotizar uno, usá cotizar con su id.'
+        ? 'Pedidos disponibles para cotizar. Cada uno trae "detalle" (ambientes, pisos, ascensor, nivel, qué hay que mudar) y "pdf" con el detalle completo: mostráselo al mudancero ANTES de pedirle el precio. Para cotizar uno, usá cotizar con su id.'
         : 'No hay pedidos disponibles en tu zona ahora.';
       return JSON.stringify({ pedidos, nota });
     }
@@ -3512,15 +3550,29 @@ async function barridoWhatsApp(pedido) {
       }
     }
     const nom = (p.nombre || '').split(' ')[0] || 'Hola';
+    // Detalle para poder estimar (ambientes, pisos, ascensor, nivel, qué hay que
+    // mudar). Sin saltos de línea: las variables de plantilla de WhatsApp no los admiten.
+    const detalleMud = (resumenParaMudancero(pedido) || 'ver detalle en mi-cuenta').replace(/[\r\n\t]+/g, ' ').slice(0, 380);
     const resumen =
       `🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +
       `📍 ${pedido.origen}\n🏁 ${pedido.destino}\n📅 ${pedido.fecha || 'a coordinar'}` +
-      `${pedido.km ? `\n📏 ${parseInt(pedido.km)} km` : ''}\n\n` +
-      `Entrá a cotizar: https://mudateya.ar/mi-cuenta`;
+      `${pedido.km ? `\n📏 ${parseInt(pedido.km)} km` : ''}\n` +
+      `📦 ${detalleMud}\n🔖 Código: ${pedido.id}\n\n` +
+      `Detalle completo y fotos: https://mudateya.ar/mi-cuenta — o respondé con el código y tu precio.`;
     try {
+      // v2 lleva el detalle y el código del pedido; se usa solo si Meta ya la
+      // aprobó. Si no, la original (solo ruta y fecha).
+      let usaV2 = false;
+      try {
+        const { resolver } = require('./_plantillas');
+        const p2 = await resolver('nuevo_pedido_mudancero_v2');
+        usaV2 = !!(p2 && p2.status === 'approved' && p2.sid);
+      } catch (_) {}
       await enviarPlantilla(
-        p.telefono, 'nuevo_pedido_mudancero',
-        { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: pedido.fecha || 'a coordinar' },
+        p.telefono, usaV2 ? 'nuevo_pedido_mudancero_v2' : 'nuevo_pedido_mudancero',
+        usaV2
+          ? { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: pedido.fecha || 'a coordinar', 5: detalleMud, 6: String(pedido.id) }
+          : { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: pedido.fecha || 'a coordinar' },
         resumen
       );
       enviados++;

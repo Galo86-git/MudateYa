@@ -148,6 +148,18 @@ const CREAR = [
     } },
     variables: { '1': 'Juan', '2': 'Cristian', '3': 'Sábado 3/10', '4': '+5491100000000' } },
 
+  // Igual que nuevo_pedido_mudancero pero CON el detalle del pedido ({{5}}:
+  // ambientes, pisos, ascensor, nivel, qué hay que mudar) y su código ({{6}}). La
+  // original solo traía ruta y fecha, y los mudanceros que trabajan por WhatsApp
+  // no podían estimar ("pedidos incompletos", Sergio Ghertner, 2026-11-10). Se
+  // creó aparte para no dejar el aviso sin plantilla mientras Meta aprueba;
+  // barridoWhatsApp (whatsapp.js) usa esta solo si ya está aprobada.
+  { name: 'nuevo_pedido_mudancero_v2', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: 'Hola {{1}}, tenés un pedido nuevo para cotizar en MudateYa.\n\nRuta: {{2}} → {{3}}\nFecha: {{4}}\nDetalle: {{5}}\nCódigo del pedido: {{6}}\n\nEl detalle completo y las fotos están en mudateya.ar/mi-cuenta. Para cotizar por acá, respondé con el código y tu precio. El pedido queda abierto 24 hs.',
+    } },
+    variables: { '1': 'Cristian', '2': 'Palermo', '3': 'Belgrano', '4': 'Sábado 3/10', '5': '2 ambientes · Origen: depto, piso 3, ascensor: sí · Destino: casa · Detalle: heladera, cama, 10 cajas', '6': 'MYA-1700000000000' } },
+
   // Alerta al EQUIPO (no a un cliente) cuando Emi escala un caso URGENTE — un
   // flete del día no puede esperar a que alguien abra el mail a ADMIN_EMAIL,
   // que hasta ahora era el único canal de aviso (ver derivarHumano en
