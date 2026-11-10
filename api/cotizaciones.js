@@ -81,6 +81,9 @@ async function tokenDeSesion(prefix, email, ttl) {
 // aparte) pero el resto del archivo seguía en 7. 180 días es el mismo TTL que
 // ya usa transferencias.js para el mismo tipo de dato de reconciliación.
 const TTL_MUDANZA = 60 * 60 * 24 * 180;
+// Máximo de propuestas de ajuste que un mudancero puede retirar por mudanza
+// (ver action=retirar-ajuste). Va acá arriba porque se exporta al cargar el módulo.
+const MAX_RETIROS_AJUSTE = 2;
 // Prefijos de asesor en Redis, uno por canal — deben coincidir con el
 // `prefijo` de cada entrada de CANALES en api/canales.js. No hay forma barata
 // de importarlos desde ahí sin arrastrar ese módulo entero, así que se
@@ -2251,6 +2254,13 @@ module.exports = async function handler(req, res) {
       if (m.ajustePrecio && (m.ajustePrecio.estado === 'aceptado' || m.ajustePrecio.estado === 'rechazado')) {
         return res.status(400).json({ error: 'Ya se realizó un ajuste en esta mudanza (solo se permite una vez)' });
       }
+      // Un ajuste RETIRADO no cuenta como el "uno solo" (ver retirar-ajuste),
+      // pero con tope: sin esto se podía proponer y retirar indefinidamente,
+      // mandándole al cliente un aviso cada vez.
+      const retirosPrevios = (m.ajustePrecio && m.ajustePrecio.retiros) || 0;
+      if (retirosPrevios >= MAX_RETIROS_AJUSTE) {
+        return res.status(400).json({ error: 'Ya retiraste ' + MAX_RETIROS_AJUSTE + ' propuestas de ajuste en esta mudanza. Escribinos a hola@mudateya.ar y lo resolvemos.' });
+      }
 
       const precioOriginal = parseInt(cot.precio || 0);
       const delta = nuevo - precioOriginal;
@@ -2268,7 +2278,9 @@ module.exports = async function handler(req, res) {
         aceptadoEn: null,
         rechazadoEn: null,
         recordatoriosEnviados: 0,
-        ultimoRecordatorio: null
+        ultimoRecordatorio: null,
+        retiros: retirosPrevios,
+        historialAjustes: (m.ajustePrecio && m.ajustePrecio.historialAjustes) || []
       };
       await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
 
@@ -2287,6 +2299,9 @@ module.exports = async function handler(req, res) {
       const { mudanzaId, clienteEmail } = req.body;
       if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
       if (!(await verificarSesionCliente(clienteEmail))) return res.status(401).json({ error: 'Sesión inválida' });
+      if (!(await adquirirLock(`lock:ajuste:${mudanzaId}`, 15))) {
+        return res.status(409).json({ error: 'Se está procesando otra acción sobre este ajuste. Esperá unos segundos y probá de nuevo.' });
+      }
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
@@ -2336,6 +2351,9 @@ module.exports = async function handler(req, res) {
       const { mudanzaId, clienteEmail } = req.body;
       if (!mudanzaId || !clienteEmail) return res.status(400).json({ error: 'Faltan datos' });
       if (!(await verificarSesionCliente(clienteEmail))) return res.status(401).json({ error: 'Sesión inválida' });
+      if (!(await adquirirLock(`lock:ajuste:${mudanzaId}`, 15))) {
+        return res.status(409).json({ error: 'Se está procesando otra acción sobre este ajuste. Esperá unos segundos y probá de nuevo.' });
+      }
       const m = await getJSON(`mudanza:${mudanzaId}`);
       if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
       if (m.clienteEmail !== clienteEmail) return res.status(403).json({ error: 'Sin permiso' });
@@ -2661,6 +2679,30 @@ module.exports = async function handler(req, res) {
 
       try { await notificarClienteAjustePropuesto(m, true); } catch(e) { console.warn('Email recordatorio:', e.message); }
       return res.status(200).json({ ok: true, recordatoriosEnviados: m.ajustePrecio.recordatoriosEnviados });
+    }
+
+    // 5. Mudancero RETIRA su propuesta de ajuste (se equivocó con el monto,
+    // etc.) mientras el cliente todavía no respondió. Sin esto no había forma
+    // de corregirlo: el cliente solo podía aceptar el número equivocado o
+    // rechazarlo — y rechazar cancela TODA la mudanza. Después puede proponer
+    // uno corregido (tope: MAX_RETIROS_AJUSTE). Lo usan la web y Emi.
+    if (action === 'retirar-ajuste' && req.method === 'POST') {
+      const { mudanzaId, mudanceroEmail } = req.body || {};
+      if (!mudanzaId || !mudanceroEmail) return res.status(400).json({ error: 'Faltan datos' });
+      // Mismo lock que aceptar/rechazar-ajuste: si el cliente responde en el
+      // mismo instante, una de las dos va primero y la otra ve el estado nuevo
+      // (sin esto, la que escribe última pisaba a la otra).
+      if (!(await adquirirLock(`lock:ajuste:${mudanzaId}`, 15))) {
+        return res.status(409).json({ error: 'Se está procesando otra acción sobre este ajuste. Esperá unos segundos y probá de nuevo.' });
+      }
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Mudanza no encontrada' });
+      const r = retirarAjusteEnMemoria(m, mudanceroEmail);
+      if (!r.ok) return res.status(r.status).json({ error: r.error });
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+
+      try { await notificarClienteAjusteRetirado(m); } catch(e) { console.warn('Aviso ajuste retirado:', e.message); }
+      return res.status(200).json({ ok: true, ajuste: m.ajustePrecio });
     }
     // ══ FIN AJUSTE DE PRECIO ═════════════════════════════════════════════
 
@@ -4789,6 +4831,9 @@ module.exports.buscarAsesorPorCodigo = buscarAsesorPorCodigo;
 module.exports.cotizacionVencida = cotizacionVencida;
 module.exports.vencimientoCotizacion = vencimientoCotizacion;
 module.exports.DIAS_VALIDEZ_COTIZACION = DIAS_VALIDEZ_COTIZACION;
+// Reglas de "retirar ajuste" (tests/ajuste-retirar.test.js).
+module.exports.retirarAjusteEnMemoria = retirarAjusteEnMemoria;
+module.exports.MAX_RETIROS_AJUSTE = MAX_RETIROS_AJUSTE;
 
 // ════════════════════════════════════════════════════════════════════
 // Mail de confirmación al cliente cuando publica un pedido nuevo.
@@ -6243,6 +6288,73 @@ async function notificarClienteSaldoPendiente(mudanza) {
 // ══════════════════════════════════════════════════════════════════════
 // EMAILS — Ajuste de precio
 // ══════════════════════════════════════════════════════════════════════
+
+// Retira (en memoria) un ajuste pendiente. Devuelve { ok } o { ok:false,
+// status, error }; NO guarda ni notifica — eso lo hace la acción. Separada
+// para poder testear las reglas sin Redis.
+function retirarAjusteEnMemoria(m, mudanceroEmail, ahoraIso) {
+  const cot = m && m.cotizacionAceptada;
+  if (!cot || cot.mudanceroEmail !== mudanceroEmail) return { ok: false, status: 403, error: 'Sin permiso' };
+  const aj = m.ajustePrecio;
+  if (!aj) return { ok: false, status: 400, error: 'No hay ningún ajuste para retirar' };
+  if (aj.estado !== 'pendiente_aprobacion') {
+    const motivos = {
+      aceptado: 'El cliente ya aceptó el ajuste, no se puede retirar.',
+      rechazado: 'El cliente ya rechazó el ajuste, no se puede retirar.',
+      retirado: 'Ese ajuste ya estaba retirado.',
+    };
+    return { ok: false, status: 400, error: motivos[aj.estado] || 'No hay un ajuste pendiente para retirar.' };
+  }
+  aj.historialAjustes = Array.isArray(aj.historialAjustes) ? aj.historialAjustes : [];
+  aj.historialAjustes.push({ montoNuevo: aj.montoNuevo, motivo: aj.motivo, propuestoEn: aj.propuestoEn, retiradoEn: ahoraIso || new Date().toISOString() });
+  aj.estado = 'retirado';
+  aj.retiradoEn = ahoraIso || new Date().toISOString();
+  aj.retiros = (aj.retiros || 0) + 1;
+  return { ok: true };
+}
+
+// Aviso al cliente de que el mudancero retiró su propuesta de ajuste: el
+// cliente ya recibió el pedido de aceptar/rechazar un monto (por WhatsApp
+// puede contestar "acepto"), así que tiene que saber que ya no vale.
+async function notificarClienteAjusteRetirado(mudanza) {
+  const esBot = mudanza.canal === 'whatsapp';
+  const cot = mudanza.cotizacionAceptada || {};
+  const aj = mudanza.ajustePrecio || {};
+  const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
+  const nombreMud = cot.mudanceroNombre || 'Tu mudancero';
+  const tipo = mudanza.tipo || 'mudanza';
+  const retiradoNum = Number(aj.montoNuevo || 0).toLocaleString('es-AR');
+  const vigenteNum = Number(aj.montoOriginal || cot.precio || 0).toLocaleString('es-AR');
+
+  if (mudanza.clienteWA) {
+    const texto =
+      `Hola ${nomCli}, ${nombreMud} retiró la propuesta de ajuste de precio de tu ${tipo} ($${retiradoNum}). ` +
+      `No tenés que hacer nada: el precio sigue siendo $${vigenteNum}. Si te llega una propuesta corregida, te la mostramos para que decidas.`;
+    try {
+      const { enviarPlantilla } = require('./_plantillas');
+      await enviarPlantilla(mudanza.clienteWA, 'ajuste_precio_retirado',
+        { 1: nomCli, 2: nombreMud, 3: tipo, 4: retiradoNum, 5: vigenteNum }, texto);
+    } catch (e) { console.warn('ajuste retirado WhatsApp:', e.message); }
+  }
+  // Pedido por WhatsApp: el email es sintético, no tiene sentido mandarle mail.
+  if (esBot) return;
+
+  if (!process.env.RESEND_API_KEY || !mudanza.clienteEmail) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+    to: mudanza.clienteEmail,
+    subject: `${nombreMud} retiró la propuesta de ajuste de precio`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
+      <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span></div>
+      <div style="padding:28px">
+        <p style="font-size:18px;color:#0F1923;margin-bottom:16px;line-height:1.7"><strong>${nombreMud}</strong> retiró la propuesta de ajuste de precio de tu ${tipo} ($${retiradoNum}).</p>
+        <p style="font-size:16px;color:#64748B;line-height:1.7">No tenés que hacer nada: el precio sigue siendo <strong>$${vigenteNum}</strong>. Si te llega una propuesta corregida, te la mostramos para que decidas.</p>
+      </div>
+      <div style="background:#F5F7FA;border-top:1px solid #E2E8F0;padding:14px 28px;font-size:14px;color:#94A3B8;font-family:monospace">MudateYa · mudateya.ar · ID: ${mudanza.id}</div>
+    </div>`,
+  });
+}
 
 // Email al cliente cuando el mudancero propone un nuevo precio (inicial o recordatorio)
 async function notificarClienteAjustePropuesto(mudanza, esRecordatorio) {

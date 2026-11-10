@@ -222,6 +222,14 @@ const CREAR = [
     types: { 'twilio/text': { body: '¡Hola {{1}}! Confirmamos el nuevo precio de tu {{2}} con {{3}}: ${{4}}.\n\nTe queda un saldo de ${{5}} a pagar cuando se complete el trabajo. ¡Gracias!' } },
     variables: { '1': 'Juan', '2': 'mudanza', '3': 'Cristian', '4': '150.000', '5': '30.000' } },
 
+  // El mudancero retiró su propuesta de ajuste (se equivocó, etc.). El cliente
+  // ya recibió "propuso ajustar a $X, respondé acepto/rechazo": tiene que
+  // enterarse de que ya no vale, porque contestar "acepto" sobre un monto
+  // retirado sería confuso. Sin plantilla aprobada cae a texto libre (24h).
+  { name: 'ajuste_precio_retirado', category: 'UTILITY',
+    types: { 'twilio/text': { body: 'Hola {{1}}, {{2}} retiró la propuesta de ajuste de precio de tu {{3}} (${{4}}).\n\nNo tenés que hacer nada: el precio sigue siendo ${{5}}. Si te llega una propuesta corregida, te la mostramos para que decidas.' } },
+    variables: { '1': 'Juan', '2': 'Cristian', '3': 'mudanza', '4': '150.000', '5': '120.000' } },
+
   // Confirmación al cliente cuando se cancela la mudanza (por rechazo de un
   // ajuste de precio) + estado del reintegro de la seña. Hoy solo mandaba email.
   { name: 'mudanza_cancelada_cliente', category: 'UTILITY',

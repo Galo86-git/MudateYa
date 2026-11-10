@@ -629,7 +629,7 @@ HERRAMIENTAS QUE TENÉS:
 - agregar_detalle_pedido: cuando un mudancero pidió relevamiento/visita y el cliente, en vez de mandar fotos, te cuenta por escrito más sobre lo que hay que mudar. Guardalo con esta herramienta — se lo pasamos al mudancero por vos.
 - aceptar_cotizacion: cuando el cliente ELIGE una cotización. Devuelve la SEÑA (50%), el link de Mercado Pago y los datos de transferencia: pasáselos y explicale que puede pagar por cualquiera de los dos medios (ambos igual de seguros y protegidos), que el 50% restante lo paga al terminar y que la seña queda protegida. Si hay varias cotizaciones, confirmá cuál elige antes de aceptar.
 - cancelar_pedido: si quiere cancelar. Confirmá con él ANTES de usarla.
-- responder_ajuste: si el mudancero propuso un ajuste de precio y el cliente acepta o rechaza (decision "aceptar" o "rechazar"). Aclarale que si rechaza se cancela la mudanza y se le devuelve la seña.
+- responder_ajuste: si el mudancero propuso un ajuste de precio y el cliente acepta o rechaza (decision "aceptar" o "rechazar"). Aclarale que si rechaza se cancela la mudanza y se le devuelve la seña. Ninguna de las dos se puede deshacer, así que la herramienta primero te devuelve un resumen: repetíselo al cliente con los montos exactos y preguntale si confirma; recién con su "sí" en el PRÓXIMO mensaje volvé a llamarla con confirmado:true y su respuesta en cita_confirmacion. Si el mudancero retiró el ajuste, la herramienta te va a decir que no hay ninguno pendiente: avisale que esa propuesta ya no vale y que el precio sigue igual.
 - calificar_mudancero: cuando el cliente puntúa al mudancero tras una mudanza completada (ej: "5 estrellas", "le pongo un 4, muy bueno"). Pasá las estrellas (1-5) y el comentario si lo hay. Agradecé y contale que suma a la reputación del mudancero.
 - derivar_a_humano: para reclamos (algo salió mal: no-show, daños, pago no acreditado, disputa de precio — motivo empezando en "RECLAMO:") o si pide hablar con alguien, se frustra, o hay algo fuera de tu alcance. Después de derivar, decile que el equipo lo va a contactar. NO derivar si solo pide el contacto de un mudancero antes de pagar la seña (ver REGLA CRÍTICA DE CONTACTO).
 
@@ -659,9 +659,9 @@ PODÉS HACER TODO POR ACÁ (usá las herramientas, NO lo mandes a la web):
 - Cotizar un pedido → cotizar (con el id del pedido y el precio). Interpretá la jerga de plata: "80 lucas/palos/mil"/"80k" = 80000; "una gamba" = 100; "un melón" = 1.000.000. Pasá el precio como número entero en pesos.
 - SI COBRA POR HORA (la herramienta te lo va a indicar), NO cotices con "precio": pedile dos datos — su TARIFA POR HORA y cuántas HORAS ESTIMA para ESE trabajo — y pasalos en tarifa_hora y horas_estimadas. El sistema arma el total (tarifa x horas) y el cliente lo ve como estimado que se liquida con las horas reales. Si te da un solo número ("300 lucas"), preguntale si es por hora o el total del trabajo; no asumas. Nunca cargues la tarifa de una hora como precio cerrado: el cliente la vería como el trabajo entero. Después de cotizar, repetile el cálculo ("$300.000 por hora x 4 hs = $1.200.000 estimado") para que confirme que quedó como quiso.
 - Pasar/rechazar un pedido que no te interesa (no le da la zona, el horario, no le cierra el precio, etc.) → pasar. Es una acción de rutina sobre ESE pedido puntual: "pasar" ya lo resuelve solo. NUNCA lo derives con derivar_a_humano ni lo interpretes como que quiere darse de baja de la cuenta o dejar la plataforma — no confundas "no disponible para este pedido" con "no disponible como mudancero".
-- Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo).
+- Arrancar el trabajo → iniciar_mudanza. Terminarlo → completar_mudanza (ahí el cliente paga el saldo). Completar NO se puede deshacer, así que la herramienta primero te devuelve un resumen: repetíselo tal cual y preguntale si confirma; recién cuando conteste que sí en su PRÓXIMO mensaje, volvé a llamarla con confirmado:true y su "sí" en cita_confirmacion.
 - SI COBRA POR HORA, antes de completar preguntale CUÁNTAS HORAS trabajó y pasalas en horasTrabajadas. El sistema liquida con esas horas y recién ahí el cliente recibe el saldo con el precio corregido. Si te dice bastante más de lo que registró el sistema, preguntale por qué y mandalo en motivoHoras — no lo cuestiones ni lo trates de sospechoso, puede haber marcado el inicio tarde; solo necesitás la explicación para que quede registrada.
-- Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar).
+- Reajustar el precio si aparece algo no previsto DESPUÉS de la seña → proponer_ajuste (nuevo precio + motivo; el cliente lo tiene que aceptar). Se permite UNO solo, y si el cliente lo rechaza se cancela toda la mudanza, así que la herramienta primero te devuelve un resumen con el precio original, el nuevo y la diferencia: repetíselo con los números exactos, preguntale si confirma, y recién con su "sí" en el PRÓXIMO mensaje volvé a llamarla con confirmado:true y cita_confirmacion. Si te dijo mal el monto o se arrepiente ANTES de que el cliente responda → retirar_ajuste (se le avisa al cliente que ya no vale) y después podés proponer el corregido. Si el cliente ya respondió, no se puede retirar: no le prometas que se puede arreglar, avisale que lo ve el equipo (derivar_a_humano).
 - Cambiar la fecha de una mudanza YA CONFIRMADA (seña pagada) → proponer_reprogramacion (nueva fecha + motivo; el cliente lo tiene que aceptar, no cambia sola). Si el CLIENTE le propuso a él una fecha nueva, usá responder_reprogramacion para aceptarla o rechazarla — rechazar no cancela nada, solo mantiene la fecha original.
 - Ver el estado de tus pedidos/cotizaciones → mis_pedidos.
 - Cancelar un trabajo YA CONFIRMADO (seña pagada) por un imprevisto de último momento → cancelar_trabajo_confirmado (motivo + cita_textual). Si faltan MENOS de 24hs para el horario agendado, el sistema sale a buscar reemplazo solo (mismo precio, el cliente no hace nada) y ese viaje queda sin comisión para quien lo tome — no le prometas nada de esto vos, dejá que la herramienta te confirme qué pasó. Si faltan 24hs o más, la herramienta va a devolver que contactes al equipo (usá derivar_a_humano en ese caso) — no es una emergencia, no insistas.
@@ -903,10 +903,14 @@ const tools = [
   {
     name: 'responder_ajuste',
     description:
-      'El cliente responde a un AJUSTE DE PRECIO que propuso el mudancero: lo acepta o lo rechaza. Si rechaza, la mudanza se cancela y se le devuelve la seña. Usalo cuando el cliente diga que acepta o rechaza el nuevo precio.',
+      'El cliente responde a un AJUSTE DE PRECIO que propuso el mudancero: lo acepta o lo rechaza. Si rechaza, la mudanza se cancela y se le devuelve la seña. Usalo cuando el cliente diga que acepta o rechaza el nuevo precio. SIN MARCHA ATRÁS: la primera llamada no ejecuta nada y te devuelve un resumen para repetirle al cliente y preguntarle si confirma; recién cuando contesta que sí en un mensaje POSTERIOR, volvé a llamar con confirmado:true y cita_confirmacion.',
     input_schema: {
       type: 'object',
-      properties: { decision: { type: 'string', enum: ['aceptar', 'rechazar'] } },
+      properties: {
+        decision: { type: 'string', enum: ['aceptar', 'rechazar'] },
+        confirmado: { type: 'boolean', description: 'Omitilo la primera vez (devuelve un resumen para confirmar). Solo true cuando el cliente ya confirmó en un mensaje POSTERIOR.' },
+        cita_confirmacion: { type: 'string', description: 'OBLIGATORIO con confirmado:true. Copiá LITERAL la respuesta del cliente donde confirma ("sí, rechazo", "dale, acepto").' },
+      },
       required: ['decision'],
     },
   },
@@ -1205,6 +1209,8 @@ const mudanceroTools = [
         pedidoId: { type: 'string' },
         horasTrabajadas: { type: 'number', description: 'Horas reales trabajadas (solo cobro por hora). Acepta medias horas: 3.5.' },
         motivoHoras: { type: 'string', description: 'Por qué las horas declaradas difieren de las que midió el sistema. Obligatorio si la diferencia supera 1 hora.' },
+        confirmado: { type: 'boolean', description: 'SIN MARCHA ATRÁS. Omitilo la primera vez: la herramienta no completa nada y te devuelve un resumen para repetirle al mudancero y preguntarle si confirma. Solo poné true cuando él ya contestó que sí en un mensaje POSTERIOR.' },
+        cita_confirmacion: { type: 'string', description: 'OBLIGATORIO con confirmado:true. Copiá LITERAL la respuesta del mudancero donde confirma ("sí", "dale, completala").' },
       },
       required: ['pedidoId'],
     },
@@ -1231,8 +1237,22 @@ const mudanceroTools = [
         nuevoPrecio: { type: 'integer', description: 'Nuevo precio total en pesos (entero)' },
         motivo: { type: 'string', description: 'Motivo del ajuste (mínimo unas palabras)' },
         cita_textual: { type: 'string', description: 'Copiá LITERAL lo que el mudancero te contó que justifica el ajuste — no lo redactes ni lo mejores vos. El cliente va a ver este motivo para decidir si paga más, así que tiene que ser textual, no una versión adornada.' },
+        confirmado: { type: 'boolean', description: 'SIN MARCHA ATRÁS (el cliente puede rechazarlo y eso cancela toda la mudanza). Omitilo la primera vez: la herramienta no envía nada y te devuelve un resumen con el precio original, el nuevo y la diferencia, para repetírselo al mudancero y preguntarle si confirma. Solo poné true cuando él ya contestó que sí en un mensaje POSTERIOR.' },
+        cita_confirmacion: { type: 'string', description: 'OBLIGATORIO con confirmado:true. Copiá LITERAL la respuesta del mudancero donde confirma el monto ("sí, es ese").' },
       },
       required: ['pedidoId', 'nuevoPrecio', 'motivo', 'cita_textual'],
+    },
+  },
+  {
+    name: 'retirar_ajuste',
+    description: 'Retira una propuesta de ajuste de precio que el cliente TODAVÍA NO respondió — por ejemplo si el mudancero se equivocó con el monto. Se le avisa al cliente que ya no vale. Después el mudancero puede proponer uno corregido con proponer_ajuste (máximo 2 retiros por mudanza). Si el cliente ya aceptó o rechazó, no se puede retirar.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        pedidoId: { type: 'string' },
+        cita_textual: { type: 'string', description: 'Copiá LITERAL lo que el mudancero escribió pidiendo retirar o corregir el ajuste (ej "me equivoqué en el monto", "sacá el ajuste").' },
+      },
+      required: ['pedidoId', 'cita_textual'],
     },
   },
   {
@@ -1375,6 +1395,43 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
     }
     if (name === 'iniciar_mudanza' || name === 'completar_mudanza') {
       const estado = name === 'iniciar_mudanza' ? 'en_curso' : 'completada';
+      // COMPLETAR NO SE DESHACE: apenas pasa, el cliente recibe el link para
+      // pagar el saldo. Se confirma ANTES de liquidar horas y de cambiar el
+      // estado (la liquidación tampoco se puede deshacer).
+      if (name === 'completar_mudanza') {
+        const esPorHora = !!(mudancero && mudancero.tipoCobro === 'porHora');
+        const hsC = parseFloat(input.horasTrabajadas);
+        // Sin las horas no hay nada que confirmar: se piden primero (mismo
+        // mensaje que más abajo).
+        if (esPorHora && (isNaN(hsC) || hsC <= 0)) {
+          return JSON.stringify({
+            ok: false,
+            error: 'Antes de completar necesito las horas reales que trabajaste. Preguntáselas y volvé a llamar a completar_mudanza con horasTrabajadas.',
+          });
+        }
+        const claveC = `${input.pedidoId}|${esPorHora ? hsC : ''}`;
+        if (!input.confirmado) {
+          const mm = await getJSON(`mudanza:${input.pedidoId}`);
+          if (!mm) return JSON.stringify({ ok: false, error: 'No encontré ese pedido.' });
+          const cotC = mm.cotizacionAceptada || {};
+          if (cotC.mudanceroEmail !== email) return JSON.stringify({ ok: false, error: 'Ese pedido no es tuyo.' });
+          const rutaC = `${(mm.desde || '').split(',')[0]} → ${(mm.hasta || '').split(',')[0]}`;
+          let saldoTxt = '';
+          if (!esPorHora) {
+            const totalC = parseInt(cotC.precio || mm.montoTotal || 0) || 0;
+            const antC = parseInt(mm.anticipoMonto || Math.round(totalC * 0.5)) || 0;
+            if (totalC) saldoTxt = ` de $${Math.max(0, totalC - antC).toLocaleString('es-AR')}`;
+          }
+          const resumenC = `Vas a marcar como COMPLETADA la ${mm.tipo || 'mudanza'} ${rutaC}.` +
+            (esPorHora ? ` Horas trabajadas: ${hsC} (con eso se liquida el saldo).` : '') +
+            ` Apenas lo hagas, el cliente recibe el aviso para pagar el saldo${saldoTxt}. Esto NO se puede deshacer. ¿Terminaste el trabajo y confirmás?`;
+          return JSON.stringify(pedirConfirmacion(conv, 'completar_mudanza', claveC, resumenC));
+        }
+        if (!confirmacionValida(conv, 'completar_mudanza', claveC, input.cita_confirmacion, textoActual)) {
+          return JSON.stringify({ ok: false, error: ERROR_SIN_CONFIRMACION });
+        }
+        conv.confirmPendiente = null;
+      }
       // COBRO POR HORA: hay que liquidar ANTES de completar. Al pasar a
       // 'completada' el sistema le manda al cliente el link del saldo en el
       // acto; si la liquidacion llega despues, el cliente ya pago contra el
@@ -1425,8 +1482,50 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       if (!citaValidaEnConversacion(input && input.cita_textual, textoActual, conv)) {
         return JSON.stringify({ ok: false, error: 'No encontré esa explicación en lo que me contaste. Contame de nuevo, con tus palabras, qué pasó — y con eso armo el ajuste.' });
       }
+      // El ajuste NO se puede corregir una vez enviado (solo retirar y volver a
+      // proponer), y si el cliente rechaza se cancela TODA la mudanza: se
+      // repite el monto y se confirma antes de mandarlo.
+      const nuevoAj = parseInt(String(input.nuevoPrecio || '').replace(/\D/g, ''), 10) || 0;
+      const claveA = `${input.pedidoId}|${nuevoAj}`;
+      if (!input.confirmado) {
+        const mm = await getJSON(`mudanza:${input.pedidoId}`);
+        if (!mm) return JSON.stringify({ ok: false, error: 'No encontré ese pedido.' });
+        const cotA = mm.cotizacionAceptada || {};
+        if (cotA.mudanceroEmail !== email) return JSON.stringify({ ok: false, error: 'Ese pedido no es tuyo.' });
+        const ajPrev = mm.ajustePrecio && mm.ajustePrecio.estado;
+        if (ajPrev === 'pendiente_aprobacion') {
+          return JSON.stringify({ ok: false, error: 'Ya hay un ajuste esperando la respuesta del cliente. Si querés corregirlo, usá retirar_ajuste y después proponé el nuevo.' });
+        }
+        if (ajPrev === 'aceptado' || ajPrev === 'rechazado') {
+          return JSON.stringify({ ok: false, error: 'En esta mudanza ya se hizo un ajuste (solo se permite uno).' });
+        }
+        const origA = parseInt(cotA.precio || 0) || 0;
+        if (nuevoAj < 1) return JSON.stringify({ ok: false, error: 'No entendí el nuevo precio. Preguntáselo de nuevo, con el número.' });
+        const difA = nuevoAj - origA;
+        const pctA = origA > 0 ? Math.round((difA / origA) * 100) : 0;
+        const signoA = difA >= 0 ? '+' : '-';
+        const resumenA = `Vas a proponerle al cliente cambiar el precio de $${origA.toLocaleString('es-AR')} a $${nuevoAj.toLocaleString('es-AR')} ` +
+          `(${signoA}$${Math.abs(difA).toLocaleString('es-AR')}, ${signoA}${Math.abs(pctA)}%). Motivo: "${String(input.motivo || '').slice(0, 200)}". ` +
+          `El cliente lo puede aceptar o rechazar, y si rechaza se cancela TODA la mudanza y se le devuelve la seña.` +
+          (Math.abs(pctA) >= 40 ? ` ⚠️ Es una diferencia muy grande (${signoA}${Math.abs(pctA)}%): pedile que chequee bien el número, por si sobra o falta un cero.` : '') +
+          ` ¿Confirmás que el nuevo precio es $${nuevoAj.toLocaleString('es-AR')}?`;
+        return JSON.stringify(pedirConfirmacion(conv, 'proponer_ajuste', claveA, resumenA));
+      }
+      if (!confirmacionValida(conv, 'proponer_ajuste', claveA, input.cita_confirmacion, textoActual)) {
+        return JSON.stringify({ ok: false, error: ERROR_SIN_CONFIRMACION });
+      }
+      conv.confirmPendiente = null;
       const { ok, d } = await postJSON('proponer-ajuste', { mudanzaId: input.pedidoId, mudanceroEmail: email, nuevoPrecio: input.nuevoPrecio, motivo: input.motivo });
-      return JSON.stringify(ok ? { ok: true, nota: 'Ajuste propuesto. El cliente lo tiene que aceptar.' } : { ok: false, error: d.error || 'No se pudo proponer el ajuste.' });
+      return JSON.stringify(ok ? { ok: true, nota: 'Ajuste propuesto. El cliente lo tiene que aceptar. Si te equivocaste con algo, podés retirarlo mientras no responda.' } : { ok: false, error: d.error || 'No se pudo proponer el ajuste.' });
+    }
+    if (name === 'retirar_ajuste') {
+      if (!citaValidaEnConversacion(input && input.cita_textual, textoActual, conv, 4)) {
+        return JSON.stringify({ ok: false, error: 'No encontré ese pedido de retirar el ajuste en lo que me escribiste. Contame de nuevo qué querés corregir.' });
+      }
+      const { ok, d } = await postJSON('retirar-ajuste', { mudanzaId: input.pedidoId, mudanceroEmail: email });
+      return JSON.stringify(ok
+        ? { ok: true, nota: 'Ajuste retirado. Ya le avisamos al cliente que no tiene que responderlo. Si querés proponer uno corregido, avisame el nuevo monto y el motivo.' }
+        : { ok: false, error: (d && d.error) || 'No se pudo retirar el ajuste.' });
     }
     if (name === 'proponer_reprogramacion') {
       const rp = await postJSON('proponer-reprogramacion', { mudanzaId: input.pedidoId, email, rol: 'mudancero', nuevaFecha: input.nuevaFecha, motivo: input.motivo || '' });
@@ -2688,6 +2787,36 @@ function citaValidaEnConversacion(cita, textoActual, conv, minLen) {
   return citaEsReal(cita, haystack, minLen);
 }
 
+// ── Confirmación en DOS PASOS para acciones sin marcha atrás ─────────────
+// (proponer ajuste, completar mudanza, aceptar/rechazar ajuste). Un error en
+// esos pasos no se puede deshacer: un monto mal tipeado, o un "completada"
+// por error que le manda al cliente el link del saldo. Mismo patrón que
+// crear_pedido, pero forzado en CÓDIGO (el prompt solo no alcanza):
+//   1) La primera llamada NO ejecuta nada: devuelve un resumen con los datos
+//      exactos para que Emi se los repita a la persona y pregunte.
+//   2) La segunda (confirmado:true + cita_confirmacion) ejecuta SOLO si
+//      llegó en un mensaje POSTERIOR de la persona (conv.nTurnos avanzó), la
+//      cita aparece en ese mensaje, y los datos son los mismos del resumen.
+// Si el modelo encadena las dos llamadas en el mismo turno, la segunda falla.
+const CONFIRMACION_TTL_MS = 30 * 60 * 1000;
+function pedirConfirmacion(conv, accion, clave, resumen) {
+  conv.confirmPendiente = { accion, clave, ts: Date.now(), turno: conv.nTurnos || 0 };
+  return {
+    ok: true, ejecutado: false, requiere_confirmacion: true, resumen,
+    nota: 'NO se ejecutó nada todavía. Mostrale a la persona este resumen con los números EXACTOS y preguntale si confirma. Recién cuando conteste que sí en su PRÓXIMO mensaje, volvé a llamar a esta herramienta con los mismos datos más confirmado:true y cita_confirmacion (su "sí" literal). Si corrige algún dato, NO confirmes: llamá de nuevo con el dato corregido y sin confirmado.',
+  };
+}
+function confirmacionValida(conv, accion, clave, citaConfirmacion, textoActual) {
+  const p = conv && conv.confirmPendiente;
+  if (!p || p.accion !== accion || p.clave !== clave) return false;
+  if (Date.now() - p.ts > CONFIRMACION_TTL_MS) return false;
+  if ((conv.nTurnos || 0) <= p.turno) return false; // mismo turno: no hubo respuesta de la persona
+  const c = normalizarTextoCita(citaConfirmacion);
+  if (c.length < 2) return false;
+  return (' ' + normalizarTextoCita(textoActual) + ' ').includes(' ' + c + ' ');
+}
+const ERROR_SIN_CONFIRMACION = 'Todavía no tengo tu confirmación. Repetile los datos a la persona, preguntale si confirma, y esperá su respuesta en el próximo mensaje.';
+
 async function derivarHumano(waId, motivo, conv, opts) {
   opts = opts || {};
   // citaTextual solo viene cuando la derivación la disparó el modelo por tool
@@ -3004,12 +3133,30 @@ async function aceptarCotizacionCliente(waId, mudanceroNombre, pedidoId) {
 
 // El cliente acepta/rechaza el ajuste de precio propuesto por el mudancero.
 // Reusa aceptar-ajuste / rechazar-ajuste del web.
-async function responderAjusteCliente(waId, decision) {
+async function responderAjusteCliente(waId, decision, conv, textoActual, confirmado, citaConfirmacion) {
   const dec = decision === 'rechazar' ? 'rechazar' : (decision === 'aceptar' ? 'aceptar' : null);
   if (!dec) return { ok: false, mensaje: 'Decime si aceptás o rechazás el nuevo precio.' };
   const pedidos = await pedidosDelCliente(waId);
   const m = pedidos.slice().reverse().find((p) => p.ajustePrecio && p.ajustePrecio.estado === 'pendiente_aprobacion');
   if (!m) return { ok: false, mensaje: 'No tenés ningún ajuste de precio pendiente para responder.' };
+
+  // Aceptar cambia el precio y rechazar CANCELA toda la mudanza: ninguna de
+  // las dos se deshace, así que se confirma antes (ver pedirConfirmacion).
+  const claveR = `${m.id}|${dec}`;
+  if (!confirmado) {
+    const aj = m.ajustePrecio || {};
+    const nuevoR = Number(aj.montoNuevo || 0);
+    const origR = Number(aj.montoOriginal || 0);
+    const antR = Number(m.anticipoMonto || Math.round(origR * 0.5)) || 0;
+    const resumenR = dec === 'aceptar'
+      ? `Vas a ACEPTAR el nuevo precio de $${nuevoR.toLocaleString('es-AR')} (antes $${origR.toLocaleString('es-AR')}). El saldo a pagar al terminar pasa a ser $${Math.max(0, nuevoR - antR).toLocaleString('es-AR')}. ¿Confirmás?`
+      : `Vas a RECHAZAR el ajuste de $${nuevoR.toLocaleString('es-AR')}. Eso CANCELA toda la ${m.tipo || 'mudanza'} y se te devuelve la seña. No se puede deshacer. ¿Confirmás que querés cancelarla?`;
+    return pedirConfirmacion(conv, 'responder_ajuste', claveR, resumenR);
+  }
+  if (!confirmacionValida(conv, 'responder_ajuste', claveR, citaConfirmacion, textoActual)) {
+    return { ok: false, mensaje: ERROR_SIN_CONFIRMACION };
+  }
+  conv.confirmPendiente = null;
   try {
     const action = dec === 'aceptar' ? 'aceptar-ajuste' : 'rechazar-ajuste';
     // x-internal-secret: aceptar-ajuste/rechazar-ajuste exigen sesión web
@@ -3167,7 +3314,7 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
       return JSON.stringify(await aceptarCotizacionCliente(waId, input && input.mudancero, input && input.pedidoId));
     }
     if (name === 'responder_ajuste') {
-      return JSON.stringify(await responderAjusteCliente(waId, input && input.decision));
+      return JSON.stringify(await responderAjusteCliente(waId, input && input.decision, conv, textoActual, input && input.confirmado, input && input.cita_confirmacion));
     }
     if (name === 'proponer_reprogramacion') {
       return JSON.stringify(await proponerReprogramacionCliente(waId, input && input.nuevaFecha, input && input.motivo, input && input.pedidoId));
@@ -3728,6 +3875,9 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   conv.messages.push({ role: 'user', content: contenidoHistorial });
   conv.messages.push({ role: 'assistant', content: salida });
   if (conv.messages.length > 20) conv.messages = conv.messages.slice(-20);
+  // Contador de turnos: lo usa la confirmación en dos pasos (confirmacionValida)
+  // para saber que la persona contestó en un mensaje posterior al resumen.
+  conv.nTurnos = (conv.nTurnos || 0) + 1;
   await setJSON(key, conv, 60 * 60 * 24 * 30);
   return salida;
 }
@@ -3844,3 +3994,5 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.avisoVideoNoSoportado = avisoVideoNoSoportado;
+module.exports.pedirConfirmacion = pedirConfirmacion;
+module.exports.confirmacionValida = confirmacionValida;
