@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
 
     var nombre = 'circulo/' + Date.now() + '-' + Math.random().toString(16).slice(2, 8) + '.jpg';
     var token = process.env.BLOB_READ_WRITE_TOKEN;
-    var blob = await blobLib.put(nombre, buffer, { access: 'private', contentType: 'image/jpeg', token: token });
+    var blob = await blobLib.put(nombre, buffer, { access: 'private', addRandomSuffix: true, contentType: 'image/jpeg', token: token });
 
     return res.status(200).json({ pathname: blob.pathname });
   } catch (e) {

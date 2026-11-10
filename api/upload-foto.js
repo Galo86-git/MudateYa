@@ -74,6 +74,7 @@ module.exports = async function handler(req, res) {
 
     var result = await put(pathname, buffer, {
       access: 'public',
+      addRandomSuffix: true, // sin esto la URL sería adivinable (carpeta + nombre + timestamp)
       contentType: mediaType,
       token: token,
     });

@@ -34,7 +34,7 @@ async function subirFotoBlob(base64, nombre) {
     const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
     const ext = mimeType.split('/')[1] || 'jpg';
     const blob = await put(`mudateya/mudanceros/${nombre}-${Date.now()}.${ext}`, buffer, {
-      access: 'public', contentType: mimeType,
+      access: 'public', addRandomSuffix: true, contentType: mimeType,
     });
     return blob.url;
   } catch(e) {

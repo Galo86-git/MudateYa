@@ -2210,7 +2210,7 @@ async function subirFotoBlob(base64, tipo) {
     const filename = `mudateya/pedido-wa/${Date.now()}-${crypto.randomBytes(3).toString('hex')}.${ext}`;
     // Mismo token que upload-foto.js: las fotos usan el store BLOB_FOTO_*.
     const token = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
-    const blob = await put(filename, buffer, { access: 'public', contentType: tipo || 'image/jpeg', token });
+    const blob = await put(filename, buffer, { access: 'public', addRandomSuffix: true, contentType: tipo || 'image/jpeg', token });
     return blob.url;
   } catch (e) { console.warn('subirFotoBlob:', e.message); return null; }
 }

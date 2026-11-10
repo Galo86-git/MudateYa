@@ -6068,7 +6068,7 @@ async function generarPDFResumenPresupuestosUrl(mudanza, cots) {
     const buffer = Buffer.from(base64, 'base64');
     const filename = `mudateya/resumen-asesor/${mudanza.id || Date.now()}-${Date.now()}.pdf`;
     const token = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
-    const blob = await put(filename, buffer, { access: 'public', contentType: 'application/pdf', token });
+    const blob = await put(filename, buffer, { access: 'public', addRandomSuffix: true, contentType: 'application/pdf', token });
     return blob.url;
   } catch (e) {
     console.warn('generarPDFResumenPresupuestosUrl:', e.message);

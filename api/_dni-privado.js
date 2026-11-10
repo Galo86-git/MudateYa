@@ -92,7 +92,9 @@ function aBuffer(stream) {
 async function leerDni(pathname) {
   if (!esPathnameDni(pathname)) throw new Error('pathname inválido');
   const token = process.env.BLOB_READ_WRITE_TOKEN;
+  // @vercel/blob >= 2.3 (antes no existía get ni access:'private'). Devuelve null si no existe.
   const result = await blobLib.get(pathname, { access: 'private', token: token });
+  if (!result || result.statusCode !== 200 || !result.stream) throw new Error('no encontrada');
   const buffer = await aBuffer(result.stream);
   return { buffer: buffer, contentType: (result.blob && result.blob.contentType) || 'image/jpeg' };
 }

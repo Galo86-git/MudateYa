@@ -120,7 +120,7 @@ async function rehostearLogo(img, slugOrDominio) {
   var ext = (img.contentType.split('/')[1] || 'png').replace('jpeg', 'jpg').split('+')[0];
   var nombre = 'inmobiliarias/auto-' + String(slugOrDominio).replace(/[^a-z0-9-]/g, '-').slice(0, 40) + '-' + Date.now() + '.' + ext;
   var token = process.env.BLOB_FOTO_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
-  var blob = await blobLib.put(nombre, img.buffer, { access: 'public', contentType: img.contentType, token: token });
+  var blob = await blobLib.put(nombre, img.buffer, { access: 'public', addRandomSuffix: true, contentType: img.contentType, token: token });
   return blob.url;
 }
 
