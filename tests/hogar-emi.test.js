@@ -33,7 +33,7 @@ function parrafosDelCatalogo() {
   const set = new Set();
   const vars = {
     precios: PRECIOS_DEFAULT, opciones: ['gas', 'electricidad'], n: 1, codigo: 'HG-ABCDE12', dia: 'jueves 12/11',
-    d: { rubro: 'plomeria', zona: 'san_isidro', urgencia: 'urgente', modo: 'abierto', direccion: 'Libertador 1234', fotos: [], agenda: { txt: 'jueves 12/11', franja: 'tarde' } },
+    d: { rubro: 'plomeria', zona: 'san_isidro', modo: 'abierto', direccion: 'Libertador 1234', fotos: [], agenda: { txt: 'jueves 12/11', franja: 'tarde' } },
   };
   for (const id of Object.keys(cat.CATALOGO)) cat.render(id, vars).split('\n\n').forEach((p) => set.add(p));
   [['gas', 'electricidad'], ['plomeria', 'aire'], ['gas', 'electricidad', 'cerrajeria']].forEach((o) => cat.render('rubro_ambiguo', { opciones: o }).split('\n\n').forEach((p) => set.add(p)));
@@ -45,7 +45,7 @@ const delCatalogo = (texto) => String(texto).split('\n\n').every((p) => PERMITID
 // ───────────────────────── Catálogo y guarda de salida ─────────────────────────
 
 test('catálogo: cada mensaje pasa la guarda de salida (sin promesas, sin precios de trabajos, sin teléfonos, sin URLs)', () => {
-  const vars = { precios: PRECIOS_DEFAULT, opciones: ['gas', 'electricidad'], n: 2, codigo: 'HG-ABCDE12', dia: 'viernes 13/11', d: { rubro: 'gas', zona: 'vicente_lopez', urgencia: 'semana', modo: 'abierto', direccion: 'Libertador 1234, piso 3', fotos: ['a'], agenda: { txt: 'viernes 13/11', franja: 'cualquiera' } } };
+  const vars = { precios: PRECIOS_DEFAULT, opciones: ['gas', 'electricidad'], n: 2, codigo: 'HG-ABCDE12', dia: 'viernes 13/11', d: { rubro: 'gas', zona: 'vicente_lopez', modo: 'abierto', direccion: 'Libertador 1234, piso 3', fotos: ['a'], agenda: { asap: true, txt: 'Lo antes posible' } } };
   for (const id of Object.keys(cat.CATALOGO)) {
     const t = cat.render(id, vars);
     assert.deepStrictEqual(cat.verificarSalida(t, id), { ok: true }, id + ': ' + t);
@@ -113,18 +113,16 @@ test('flujo completo con opciones numeradas: del saludo al pedido registrado', a
     r = await dec('1');
     assert.match(r.respuesta, /qué pasa/);
     r = await dec('Se rompió un caño debajo de la bacha y sale agua por el piso');
-    assert.match(r.respuesta, /Qué tan urgente/);
-    r = await dec('1');
     assert.match(r.respuesta, /dirección exacta/);
     r = await dec('Avenida Libertador 1234');
     assert.match(r.respuesta, /Contactos directos/); assert.match(r.respuesta, /\$1\.500/); assert.match(r.respuesta, /\$5\.000/);
     r = await dec('2');
-    assert.match(r.respuesta, /Qué día te queda bien/);
-    r = await dec('mañana');
-    assert.match(r.respuesta, /En qué horario/); assert.match(r.respuesta, /miércoles 11\/11/);
+    assert.match(r.respuesta, /Cuándo lo necesitás/);
+    r = await dec('3');                                       // mañana
+    assert.match(r.respuesta, /En qué franja/); assert.match(r.respuesta, /miércoles 11\/11/);
     r = await dec('1');
     assert.match(r.respuesta, /Día y horario: miércoles 11\/11 · Mañana \(8 a 13\)/);
-    assert.match(r.respuesta, /Revisemos tu pedido/); assert.match(r.respuesta, /Plomería/); assert.match(r.respuesta, /San Isidro/); assert.match(r.respuesta, /Hoy \/ urgente/); assert.match(r.respuesta, /Gestión de MYA/); assert.match(r.respuesta, /Avenida Libertador 1234/);
+    assert.match(r.respuesta, /Revisemos tu pedido/); assert.match(r.respuesta, /Plomería/); assert.match(r.respuesta, /San Isidro/); assert.doesNotMatch(r.respuesta, /Urgencia/); assert.match(r.respuesta, /Gestión de MYA/); assert.match(r.respuesta, /Avenida Libertador 1234/);
     r = await dec('1');
     const codigo = /n° (HG-[A-Z]{5}\d{2})/.exec(r.respuesta)[1];
     assert.match(r.respuesta, /no puedo asegurarte plazos/);
@@ -134,7 +132,7 @@ test('flujo completo con opciones numeradas: del saludo al pedido registrado', a
     assert.strictEqual(ids.length, 1);
     const s = await datos.leer('solicitud', ids[0], { redis });
     assert.strictEqual(s.estado, 'datos_completos'); assert.strictEqual(s.modo, 'abierto'); assert.strictEqual(s.rubro, 'plomeria');
-    assert.strictEqual(s.zona, 'san_isidro'); assert.strictEqual(s.urgencia, 'urgente'); assert.strictEqual(s.direccion, 'Avenida Libertador 1234'); assert.strictEqual(s.codigo, codigo);
+    assert.strictEqual(s.zona, 'san_isidro'); assert.strictEqual(s.urgencia, null); assert.strictEqual(s.direccion, 'Avenida Libertador 1234'); assert.strictEqual(s.codigo, codigo);
     assert.strictEqual(s.preciosAlCrear.contactoDirecto, 1500);
     assert.deepStrictEqual(s.agenda, { fecha: '2026-11-11', txt: 'miércoles 11/11', franja: 'manana' });
     const cli = await datos.leer('cliente', s.clienteId, { redis });
@@ -151,11 +149,11 @@ test('flujo completo con opciones numeradas: del saludo al pedido registrado', a
   });
 });
 
-test('primer mensaje con todo: se aprovecha rubro, zona, urgencia y descripción', async () => {
+test('primer mensaje con todo: se aprovecha rubro, zona y descripción', async () => {
   await conEmi(async ({ dec, conv }) => {
     const r = await dec('Necesito un electricista en Olivos, urgente, se cortó la luz de la cocina y no anda ningún enchufe');
     const c = await conv();
-    assert.strictEqual(c.datos.rubro, 'electricidad'); assert.strictEqual(c.datos.zona, 'vicente_lopez'); assert.strictEqual(c.datos.urgencia, 'urgente');
+    assert.strictEqual(c.datos.rubro, 'electricidad'); assert.strictEqual(c.datos.zona, 'vicente_lopez');
     assert.ok(c.datos.descripcion.length >= 40);
     assert.strictEqual(c.paso, 'direccion');
     assert.match(r.respuesta, /dirección exacta/);
@@ -194,7 +192,6 @@ test('descripción y dirección: se limpian teléfonos, emails y datos sueltos',
     const c = await conv();
     assert.doesNotMatch(c.datos.descripcion, /5555|juan@/);
     assert.match(c.datos.descripcion, /\[dato oculto\]/);
-    await dec('1');
     const r1 = await dec('mi dirección es secreta');
     assert.match(r1.respuesta, /calle y número/, 'sin número no sirve');
     assert.strictEqual(emi.limpiarDireccion('Libertador 1234 tel 11 5555-6666'), 'Libertador 1234 tel');
@@ -249,9 +246,8 @@ const TRAMPAS = [
 const PASOS_CON_TRAMPAS = [
   ['rubro', async (dec) => { await dec('hola, quiero un gasista'); await dec('menu'); }],
   ['zona', async (dec) => { await dec('necesito un plomero'); }],
-  ['urgencia', async (dec) => { await dec('necesito un plomero'); await dec('1'); await dec('se rompió una cañería de la cocina y pierde mucha agua'); }],
-  ['agenda_dia', async (dec) => { await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble'); await dec('1'); await dec('Libertador 1234'); await dec('2'); }],
-  ['modo', async (dec) => { await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble'); await dec('1'); await dec('Libertador 1234'); }],
+  ['agenda_cuando', async (dec) => { await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble'); await dec('Libertador 1234'); await dec('2'); }],
+  ['modo', async (dec) => { await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble'); await dec('Libertador 1234'); }],
 ];
 
 test('batería de trampas: en cada paso, la respuesta es fija del catálogo, no avanza el pedido y repite la pregunta', async () => {
@@ -269,7 +265,7 @@ test('batería de trampas: en cada paso, la respuesta es fija del catálogo, no 
         const c = await conv();
         assert.strictEqual(c.paso, pasoAntes, `[${paso}] "${texto}" movió el pedido`);
         assert.strictEqual(JSON.stringify(c.datos), antes, `[${paso}] "${texto}" modificó los datos`);
-        assert.ok(r.respuesta.includes(cat.render({ zona: 'pedir_zona', urgencia: 'pedir_urgencia', modo: 'pedir_modo', agenda_dia: 'pedir_agenda_dia', rubro: 'pedir_rubro' }[pasoAntes], { precios: PRECIOS_DEFAULT })), `[${paso}] "${texto}" no repite la pregunta`);
+        assert.ok(r.respuesta.includes(cat.render({ zona: 'pedir_zona', modo: 'pedir_modo', agenda_cuando: 'pedir_agenda_cuando', rubro: 'pedir_rubro' }[pasoAntes], { precios: PRECIOS_DEFAULT })), `[${paso}] "${texto}" no repite la pregunta`);
       }
     });
   }
@@ -379,9 +375,8 @@ test('no hay errores sueltos: si algo se rompe adentro, el cliente recibe el men
   });
 });
 
-test('interpretación: opciones, urgencia, modo', () => {
+test('interpretación: opciones y modo', () => {
   assert.strictEqual(emi.opcion('1', 3), 1); assert.strictEqual(emi.opcion('2.', 3), 2); assert.strictEqual(emi.opcion('4', 3), null); assert.strictEqual(emi.opcion('dos', 3), 2); assert.strictEqual(emi.opcion('hola', 3), null);
-  assert.strictEqual(emi.detectarUrgencia('es urgente'), 'urgente'); assert.strictEqual(emi.detectarUrgencia('esta semana'), 'semana'); assert.strictEqual(emi.detectarUrgencia('sin apuro'), 'sin_apuro');
   assert.strictEqual(emi.detectarModo('quiero ver los contactos'), 'directo'); assert.strictEqual(emi.detectarModo('que lo gestionen ustedes'), 'abierto');
   assert.deepStrictEqual(emi.detectarRubros('la estufa y el enchufe').sort(), ['electricidad', 'gas']);
   assert.strictEqual(emi.emailValido('ana@correo.com'), true); assert.strictEqual(emi.emailValido('ana@'), false);
@@ -411,12 +406,14 @@ test('whatsapp.js → intentarHogar: apagado por defecto; no toca mudanceros/ase
   });
 });
 
-// ───────────────────────── Día y horario (solo en la gestión de MYA) ─────────────────────────
+// ───────────────────────── Cuándo lo necesita (solo en la gestión de MYA) ─────────────────────────
 
-test('modo contactos directos: NO pide día ni horario (el cliente lo arregla con cada profesional)', async () => {
+const DESCR = 'necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble';
+const hastaModo = async (dec) => { await dec(DESCR); await dec('Libertador 1234'); };
+
+test('contactos directos: NO pregunta cuándo (el cliente lo arregla con cada profesional)', async () => {
   await conEmi(async ({ redis, dec }) => {
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234');
+    await hastaModo(dec);
     const r = await dec('1');                     // contactos directos
     assert.match(r.respuesta, /Revisemos tu pedido/); assert.doesNotMatch(r.respuesta, /Día y horario/);
     const fin = await dec('1');
@@ -426,116 +423,97 @@ test('modo contactos directos: NO pide día ni horario (el cliente lo arregla co
   });
 });
 
-test('gestión de MYA: el día y el horario son obligatorios (no se puede confirmar sin ellos)', async () => {
+test('gestión de MYA: "¿Cuándo lo necesitás?" tiene 4 opciones y es obligatorio', async () => {
   await conEmi(async ({ dec, conv }) => {
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234');
+    await hastaModo(dec);
     let r = await dec('2');
-    assert.strictEqual((await conv()).paso, 'agenda_dia');
+    assert.strictEqual((await conv()).paso, 'agenda_cuando');
+    assert.match(r.respuesta, /Cuándo lo necesitás/); assert.match(r.respuesta, /1\) Lo antes posible/); assert.match(r.respuesta, /4\) Otro día/);
     assert.ok(delCatalogo(r.respuesta));
-    r = await dec('cuando puedan');                           // no es un día
-    assert.match(r.respuesta, /No pude entender ese día/); assert.strictEqual((await conv()).paso, 'agenda_dia');
+    r = await dec('quiero que sea pronto'); assert.match(r.respuesta, /No te entendí/); assert.strictEqual((await conv()).paso, 'agenda_cuando');
+    r = await dec('2');                                       // hoy → franja
+    assert.strictEqual((await conv()).paso, 'agenda_franja');
+    assert.match(r.respuesta, /En qué franja/); assert.match(r.respuesta, /1\) Mañana \(8 a 13\)/); assert.match(r.respuesta, /2\) Tarde \(13 a 18\)/);
+    assert.doesNotMatch(r.respuesta, /igual|puntual|24 h/i, 'no hay "me da igual", hora puntual ni 24 h');
+  });
+});
+
+test('"me da igual" NO es una franja válida: hay que elegir mañana o tarde', async () => {
+  await conEmi(async ({ dec, conv }) => {
+    await hastaModo(dec); await dec('2'); await dec('mañana');
+    for (const t of ['me da igual', 'cualquiera', '3', 'cuando puedan']) {
+      const r = await dec(t);
+      assert.match(r.respuesta, /No te entendí/, t); assert.strictEqual((await conv()).paso, 'agenda_franja', t);
+    }
+    const r = await dec('tarde');
+    assert.match(r.respuesta, /Día y horario: miércoles 11\/11 · Tarde \(13 a 18\)/);
+  });
+});
+
+test('"Lo antes posible": se guarda sin día ni franja, y el pedido queda marcado como urgente', async () => {
+  await conEmi(async ({ redis, dec, conv }) => {
+    await hastaModo(dec); await dec('2');
+    const r = await dec('1');
+    assert.match(r.respuesta, /Día y horario: Lo antes posible/); assert.strictEqual((await conv()).paso, 'confirmar');
+    assert.deepStrictEqual((await conv()).datos.agenda, { asap: true, txt: 'Lo antes posible' });
+    await dec('1');
+    const s = await datos.leer('solicitud', (await datos.ids('solicitud', { redis }))[0], { redis });
+    assert.deepStrictEqual(s.agenda, { asap: true, txt: 'Lo antes posible' }); assert.strictEqual(s.urgencia, 'urgente');
+  });
+});
+
+test('"Otro día": se escribe el día y después la franja; rechaza basura, pasado y más de 14 días', async () => {
+  await conEmi(async ({ dec, conv }) => {
+    await hastaModo(dec); await dec('2');
+    let r = await dec('4');
+    assert.strictEqual((await conv()).paso, 'agenda_dia'); assert.match(r.respuesta, /Qué día/);
+    for (const t of ['cuando puedan', '5/11', '1/12', 'ayer']) { r = await dec(t); assert.match(r.respuesta, /No pude entender ese día/, t); }
     r = await dec('el jueves');
     assert.strictEqual((await conv()).paso, 'agenda_franja'); assert.match(r.respuesta, /jueves 12\/11/);
-    r = await dec('xx');                                      // franja inválida
-    assert.match(r.respuesta, /No te entendí/); assert.match(r.respuesta, /4\) Urgencia fuera de horario \(24 h\)/); assert.strictEqual((await conv()).paso, 'agenda_franja');
-    r = await dec('tarde');
-    assert.match(r.respuesta, /Tarde \(13 a 18\)/); assert.strictEqual((await conv()).paso, 'confirmar');
-    // si reinicia, la agenda se descarta
-    r = await dec('2');
+    r = await dec('1');
+    assert.match(r.respuesta, /Día y horario: jueves 12\/11 · Mañana \(8 a 13\)/);
+    assert.deepStrictEqual((await conv()).datos.agenda, { fecha: '2026-11-12', txt: 'jueves 12/11', franja: 'manana' });
+    r = await dec('2');                                       // reinicia: la agenda se descarta
     assert.strictEqual((await conv()).datos.agenda, undefined); assert.strictEqual((await conv()).agendaTmp, null);
   });
 });
 
-test('día: hoy, mañana, día de la semana, fecha; rechaza pasado, lejano y basura; hoy a la noche está cerrado', () => {
-  const ahora = new Date('2026-11-10T15:00:00Z'); // martes 12:00 hora Argentina
-  const d = (t, a) => emi.interpretarDia(emi.normalizar(t), a || ahora);
-  assert.strictEqual(d('hoy').txt, 'martes 10/11'); assert.strictEqual(d('hoy').esHoy, true);
-  assert.strictEqual(d('Mañana').txt, 'miércoles 11/11');
-  assert.strictEqual(d('pasado mañana').txt, 'jueves 12/11');
-  assert.strictEqual(d('el viernes').txt, 'viernes 13/11');
-  assert.strictEqual(d('el martes').txt, 'martes 17/11', 'el mismo día de la semana de hoy es la semana que viene');
-  assert.strictEqual(d('15/11').fecha, '2026-11-15'); assert.strictEqual(d('24-11').fecha, '2026-11-24');
-  assert.strictEqual(d('1/12'), null, 'más de 14 días');
-  assert.strictEqual(d('5/11'), null, 'ya pasó'); assert.strictEqual(d('ayer'), null); assert.strictEqual(d('32/13'), null); assert.strictEqual(d('algún día'), null);
-  assert.strictEqual(d('hoy', new Date('2026-11-10T22:00:00Z')).esHoy, true, 'a las 19 todavía se puede pedir para hoy (hay profesionales que atienden de noche)');
-  assert.strictEqual(d('mañana', new Date('2026-11-10T23:30:00Z')).txt, 'miércoles 11/11', 'a la noche "mañana" sigue siendo mañana en hora AR');
-  assert.strictEqual(d('mañana', new Date('2026-11-11T02:00:00Z')).txt, 'miércoles 11/11', '23:00 AR del martes (ya miércoles en UTC): mañana es el miércoles');
-  assert.strictEqual(emi.interpretarFranja('por la tarde'), 'tarde'); assert.strictEqual(emi.interpretarFranja('temprano'), 'manana');
-  assert.strictEqual(emi.interpretarFranja('una hora puntual'), 'puntual'); assert.strictEqual(emi.interpretarFranja('urgencia'), 'urgente24'); assert.strictEqual(emi.interpretarFranja('xx'), null);
-});
-
-test('franjas: hoy a la tarde no admite la mañana; hoy de noche solo hora puntual o urgencia', async () => {
+test('hoy: una franja que ya terminó no sirve; después de las 18 solo "lo antes posible" u otro día', async () => {
   await conEmi(async ({ dec, conv, estado }) => {
     estado.ahora = new Date('2026-11-10T17:00:00Z');         // 14:00 hora AR
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234'); await dec('2'); await dec('hoy');
+    await hastaModo(dec); await dec('2'); await dec('2');     // hoy
     let r = await dec('1');                                   // mañana (8 a 13): ya pasó
     assert.match(r.respuesta, /Esa franja ya pasó para hoy/); assert.strictEqual((await conv()).paso, 'agenda_franja');
     await dec('2');                                           // tarde (13 a 18): todavía sirve
     assert.deepStrictEqual((await conv()).datos.agenda, { fecha: '2026-11-10', txt: 'martes 10/11', franja: 'tarde' });
   });
   await conEmi(async ({ dec, conv, estado }) => {
-    estado.ahora = new Date('2026-11-10T22:30:00Z');         // 19:30 hora AR: "hoy" se acepta (hay profesionales de noche)
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234'); await dec('2'); await dec('hoy');
-    assert.strictEqual((await conv()).paso, 'agenda_franja');
-    let r = await dec('2');                                   // tarde (13 a 18): ya terminó
-    assert.match(r.respuesta, /Esa franja ya pasó para hoy/);
-    r = await dec('4');                                       // urgencia fuera de horario
-    assert.match(r.respuesta, /Revisemos tu pedido/); assert.match(r.respuesta, /Urgencia fuera de horario \(24 h\)/);
-    assert.strictEqual((await conv()).datos.agenda.franja, 'urgente24');
-  });
-});
-
-test('hora puntual (gestión de MYA): entre las 6 y las 22, con una hora de margen si es hoy; "urgencia" pasa a 24 h', async () => {
-  await conEmi(async ({ dec, conv, estado }) => {
-    estado.ahora = new Date('2026-11-10T15:00:00Z');         // martes 12:00 hora AR
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234'); await dec('2');
-    await dec('mañana');
-    let r = await dec('3');                                   // una hora puntual
-    assert.strictEqual((await conv()).paso, 'agenda_hora'); assert.match(r.respuesta, /A qué hora/);
-    assert.ok(delCatalogo(r.respuesta));
-    r = await dec('a las 25');
-    assert.match(r.respuesta, /entre las 6 y las 22/); assert.strictEqual((await conv()).paso, 'agenda_hora');
-    r = await dec('3 de la mañana');
-    assert.match(r.respuesta, /No pude entender esa hora|entre las 6 y las 22/);
-    r = await dec('17:30');
-    assert.match(r.respuesta, /Día y horario: miércoles 11\/11 · a las 17:30/);
-    assert.deepStrictEqual((await conv()).datos.agenda, { fecha: '2026-11-11', txt: 'miércoles 11/11', franja: 'puntual', hora: '17:30' });
+    estado.ahora = new Date('2026-11-10T22:30:00Z');         // 19:30 hora AR
+    await hastaModo(dec); await dec('2');
+    const r = await dec('2');                                 // hoy
+    assert.match(r.respuesta, /Para hoy ya no quedan franjas/); assert.match(r.respuesta, /Cuándo lo necesitás/);
+    assert.strictEqual((await conv()).paso, 'agenda_cuando');
+    await dec('1');                                           // lo antes posible sí se puede de noche
+    assert.deepStrictEqual((await conv()).datos.agenda, { asap: true, txt: 'Lo antes posible' });
   });
   await conEmi(async ({ dec, conv, estado }) => {
-    estado.ahora = new Date('2026-11-10T15:00:00Z');         // 12:00 hora AR
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234'); await dec('2'); await dec('hoy'); await dec('3');
-    let r = await dec('12:30');                               // menos de una hora de margen
-    assert.match(r.respuesta, /ya pasó o es muy pronto/); assert.strictEqual((await conv()).paso, 'agenda_hora');
-    r = await dec('13:00');                                   // justo una hora de margen
-    assert.match(r.respuesta, /a las 13:00/);
-  });
-  await conEmi(async ({ dec, conv }) => {
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234'); await dec('2'); await dec('jueves'); await dec('3');
-    const r = await dec('urgencia');                          // en vez de una hora, pide atención fuera de horario
-    assert.match(r.respuesta, /Urgencia fuera de horario \(24 h\)/);
-    assert.strictEqual((await conv()).datos.agenda.franja, 'urgente24');
+    estado.ahora = new Date('2026-11-10T22:30:00Z');         // 19:30 hora AR: "hoy" escrito en "otro día" tampoco
+    await hastaModo(dec); await dec('2'); await dec('4');
+    const r = await dec('hoy');
+    assert.match(r.respuesta, /Para hoy ya no quedan franjas/); assert.strictEqual((await conv()).paso, 'agenda_cuando');
   });
 });
 
-test('hora: formatos y límites', () => {
-  const h = (t) => emi.interpretarHora(emi.normalizar(t));
-  assert.deepStrictEqual(h('9'), { hh: 9, mm: 0, txt: '9:00' }); assert.strictEqual(h('9:30').txt, '9:30'); assert.strictEqual(h('9.30').txt, '9:30');
-  assert.strictEqual(h('17hs').txt, '17:00'); assert.strictEqual(h('a las 17:30').txt, '17:30'); assert.strictEqual(h('22').txt, '22:00');
-  for (const t of ['5', '23', '22:30', '0:30']) assert.strictEqual(h(t), 'fuera', t);
-  for (const t of ['abc', '25:00', '12:75']) assert.strictEqual(h(t), null, t);
-});
-
-test('contactos directos: no hay día ni horario ni urgencia 24 h (se arregla con cada profesional)', async () => {
-  await conEmi(async ({ dec, conv }) => {
-    await dec('necesito un plomero en Olivos, la bacha de la cocina pierde agua hace dos días y moja el mueble');
-    await dec('1'); await dec('Libertador 1234');
-    const r = await dec('1');
-    assert.strictEqual((await conv()).paso, 'confirmar'); assert.doesNotMatch(r.respuesta, /Día y horario/);
-  });
+test('día: hoy, mañana, día de la semana, fecha (hora Argentina)', () => {
+  const ahora = new Date('2026-11-10T15:00:00Z'); // martes 12:00 hora Argentina
+  const d = (t, a) => emi.interpretarDia(emi.normalizar(t), a || ahora);
+  assert.strictEqual(d('hoy').txt, 'martes 10/11'); assert.strictEqual(d('hoy').esHoy, true);
+  assert.strictEqual(d('Mañana').txt, 'miércoles 11/11'); assert.strictEqual(d('pasado mañana').txt, 'jueves 12/11');
+  assert.strictEqual(d('el viernes').txt, 'viernes 13/11'); assert.strictEqual(d('el martes').txt, 'martes 17/11', 'el mismo día de la semana de hoy es la semana que viene');
+  assert.strictEqual(d('15/11').fecha, '2026-11-15'); assert.strictEqual(d('24-11').fecha, '2026-11-24');
+  assert.strictEqual(d('1/12'), null, 'más de 14 días'); assert.strictEqual(d('5/11'), null, 'ya pasó'); assert.strictEqual(d('ayer'), null); assert.strictEqual(d('32/13'), null); assert.strictEqual(d('algún día'), null);
+  assert.strictEqual(d('mañana', new Date('2026-11-10T23:30:00Z')).txt, 'miércoles 11/11', 'a la noche "mañana" sigue siendo mañana en hora AR');
+  assert.strictEqual(d('mañana', new Date('2026-11-11T02:00:00Z')).txt, 'miércoles 11/11', '23:00 AR del martes (ya miércoles en UTC): mañana es el miércoles');
+  assert.strictEqual(emi.interpretarFranja('por la tarde'), 'tarde'); assert.strictEqual(emi.interpretarFranja('temprano'), 'manana');
+  for (const t of ['cualquiera', 'me da igual', 'puntual', 'urgencia']) assert.strictEqual(emi.interpretarFranja(t), null, t);
 });

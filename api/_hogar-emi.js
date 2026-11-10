@@ -29,7 +29,7 @@ const cat = require('./_hogar-emi-catalogo');
 
 const VIGENCIA_ACTIVA_MS = 6 * 60 * 60 * 1000;   // una conversación sin actividad por más de 6 h se da por terminada
 const TTL_CONV_SEG = 2 * 24 * 3600;
-const ORDEN = ['rubro', 'zona', 'descripcion', 'urgencia', 'direccion', 'modo'];
+const ORDEN = ['rubro', 'zona', 'descripcion', 'direccion', 'modo'];
 
 // ───────────────────────── Interpretación (reglas, sin modelo) ─────────────────────────
 
@@ -87,13 +87,6 @@ function detectarZona(norm) {
   return null;
 }
 
-function detectarUrgencia(norm) {
-  if (/(urgente|hoy|ahora|ya mismo|cuanto antes|lo antes posible)/.test(norm)) return 'urgente';
-  if (/(esta semana|en la semana|estos dias)/.test(norm)) return 'semana';
-  if (/(sin apuro|cuando puedan|no corre prisa|no es urgente|tranqui)/.test(norm)) return 'sin_apuro';
-  return null;
-}
-
 function detectarModo(norm) {
   if (/(contacto|directo|elegir|elijo|quiero ver)/.test(norm)) return 'directo';
   if (/(gestion|coordin|busquen|ustedes|que lo gestione)/.test(norm)) return 'abierto';
@@ -121,14 +114,11 @@ function limpiarDireccion(t) {
 function direccionValida(s) { return s.length >= 5 && /\p{L}/u.test(s) && /\d{1,5}/.test(s); }
 function emailValido(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim()) && String(e).length <= 120; }
 
-// Primer dato que falta. En la gestión de MYA (modo abierto) también hace falta el día y la franja horaria.
+// Primer dato que falta. En la gestión de MYA (modo abierto) también hace falta el cuándo (lo antes posible, o día y franja).
 function faltante(dat, conv) {
   const f = ORDEN.find((p) => !dat[p]);
   if (f) return f;
-  if (dat.modo === 'abierto' && !dat.agenda) {
-    if (conv && conv.agendaTmp && conv.agendaTmp.franja === 'puntual') return 'agenda_hora';
-    return (conv && conv.agendaTmp && conv.agendaTmp.fecha) ? 'agenda_franja' : 'agenda_dia';
-  }
+  if (dat.modo === 'abierto' && !dat.agenda) return 'agenda_cuando';
   return null;
 }
 
@@ -168,20 +158,9 @@ function interpretarDia(norm, ahora) {
   return { fecha: f.ymd, txt: DIAS_ES[f.dow] + ' ' + f.dd + '/' + f.mm, esHoy: suma === 0 };
 }
 function interpretarFranja(norm) {
-  if (/(urgencia|urgente|24 ?h|fuera de horario|noche)/.test(norm)) return 'urgente24';
-  if (/(puntual|hora exacta|a una hora|hora especifica)/.test(norm)) return 'puntual';
   if (/(manana|temprano)/.test(norm)) return 'manana';
   if (/\btarde\b/.test(norm)) return 'tarde';
   return null;
-}
-// "9", "9:30", "9.30", "17hs", "a las 17:30" → { hh, mm, txt:'17:30' } | 'fuera' (no está entre las 6 y las 22) | null
-function interpretarHora(norm) {
-  const m = /(\d{1,2})(?:\s*[:.h]\s*(\d{2}))?\s*(?:hs|h)?\b/.exec(norm);
-  if (!m) return null;
-  const hh = Number(m[1]); const mm = m[2] ? Number(m[2]) : 0;
-  if (hh > 23 || mm > 59) return null;
-  if (hh < 6 || hh > 22 || (hh === 22 && mm > 0)) return 'fuera';
-  return { hh, mm, txt: String(hh) + ':' + String(mm).padStart(2, '0') };
 }
 function minutosAR(ahora) { const b = new Date(ahora.getTime() - 3 * 3600 * 1000); return b.getUTCHours() * 60 + b.getUTCMinutes(); }
 
@@ -204,12 +183,11 @@ function preguntaDe(paso, conv, precios) {
     case 'rubro_ambiguo': return [['rubro_ambiguo', { opciones: conv.ambiguos || Object.keys(cat.RUBROS) }]];
     case 'zona': return [['pedir_zona']];
     case 'descripcion': return [['pedir_descripcion']];
-    case 'urgencia': return [['pedir_urgencia']];
     case 'direccion': return [['pedir_direccion']];
     case 'modo': return [['pedir_modo', { precios }]];
+    case 'agenda_cuando': return [['pedir_agenda_cuando']];
     case 'agenda_dia': return [['pedir_agenda_dia']];
     case 'agenda_franja': return [['pedir_agenda_franja', { dia: (conv.agendaTmp && conv.agendaTmp.txt) || '' }]];
-    case 'agenda_hora': return [['pedir_agenda_hora']];
     case 'confirmar': return [['resumen', { d: conv.datos }]];
     case 'humano_email': return [['humano_pedir_email']];
     default: return [['pedir_rubro']];
@@ -316,7 +294,7 @@ async function procesar(c) {
     return salir(['humano_pedir_email']);
   }
 
-  // 3) PRIMER MENSAJE: se aprovecha lo que ya dijo (rubro, zona, urgencia, descripción).
+  // 3) PRIMER MENSAJE: se aprovecha lo que ya dijo (rubro, zona, descripción).
   let bienvenida = false;
   if (nuevaConv) {
     bienvenida = true;
@@ -325,7 +303,6 @@ async function procesar(c) {
     const z = detectarZona(norm);
     if (z === 'fuera') return salir(['bienvenida', 'zona_fuera'], { borrar: true });
     if (z) conv.datos.zona = z;
-    const u = detectarUrgencia(norm); if (u) conv.datos.urgencia = u;
     const desc = limpiarTexto(c.texto, 600);
     if (desc.length >= 40) conv.datos.descripcion = desc;
     const f = faltante(conv.datos, conv);
@@ -391,12 +368,6 @@ function avanzar(conv, c, precios) {
       if ((c.imagenes || []).length) return null; // mandó solo fotos: se las guarda y se le vuelve a preguntar
       return noEntendio();
     }
-    case 'urgencia': {
-      const n = opcion(norm, 3);
-      const u = n ? ['urgente', 'semana', 'sin_apuro'][n - 1] : detectarUrgencia(norm);
-      if (u) { conv.datos.urgencia = u; return ok(); }
-      return noEntendio();
-    }
     case 'direccion': {
       if (c.ubicacion) { conv.datos.direccion = 'Ubicación compartida'; conv.datos.ubicacion = { lat: c.ubicacion.lat, lng: c.ubicacion.lng }; return ok(); }
       const dir = limpiarDireccion(c.texto);
@@ -410,37 +381,36 @@ function avanzar(conv, c, precios) {
       if (m) { conv.datos.modo = m; return ok(); }
       return noEntendio();
     }
+    case 'agenda_cuando': {
+      const n = opcion(norm, 4);
+      if (n === 1 || /(lo antes posible|cuanto antes|ahora mismo|urgente)/.test(norm)) {
+        conv.datos.agenda = { asap: true, txt: 'Lo antes posible' };   // se le avisa a quienes estén disponibles AHORA según su horario
+        return ok();
+      }
+      if (n === 4 || /otro dia/.test(norm)) { conv.paso = 'agenda_dia'; conv.noEntendi = 0; return null; }
+      const dia = (n === 2 || /\bhoy\b/.test(norm)) ? interpretarDia('hoy', c.ahora) : (n === 3 || /\bmanana\b/.test(norm)) ? interpretarDia('manana', c.ahora) : null;
+      if (!dia) return noEntendio();
+      if (dia.esHoy && minutosAR(c.ahora) >= 18 * 60) return { partes: ['agenda_hoy_sin_franjas', 'pedir_agenda_cuando'] };
+      conv.agendaTmp = dia; conv.paso = 'agenda_franja'; conv.noEntendi = 0;
+      return null;
+    }
     case 'agenda_dia': {
       const dia = interpretarDia(norm, c.ahora);
       if (!dia) { conv.noEntendi = (conv.noEntendi || 0) + 1; return { partes: ['agenda_dia_invalido'].concat(conv.noEntendi >= 3 ? ['ayuda_trabado'] : []) }; }
-      conv.agendaTmp = dia;
-      conv.paso = 'agenda_franja'; conv.noEntendi = 0;
+      if (dia.esHoy && minutosAR(c.ahora) >= 18 * 60) { conv.paso = 'agenda_cuando'; return { partes: ['agenda_hoy_sin_franjas', 'pedir_agenda_cuando'] }; }
+      conv.agendaTmp = dia; conv.paso = 'agenda_franja'; conv.noEntendi = 0;
       return null;
     }
     case 'agenda_franja': {
-      const n = opcion(norm, 4);
-      const franja = n ? ['manana', 'tarde', 'puntual', 'urgente24'][n - 1] : interpretarFranja(norm);
+      const n = opcion(norm, 2);
+      const franja = n ? ['manana', 'tarde'][n - 1] : interpretarFranja(norm);
       if (!franja) return noEntendio();
       const min = minutosAR(c.ahora);
       // Hoy: una franja que ya terminó no sirve (mañana termina 13:00, tarde 18:00).
       if (conv.agendaTmp && conv.agendaTmp.esHoy && ((franja === 'manana' && min >= 13 * 60) || (franja === 'tarde' && min >= 18 * 60))) {
         return { partes: ['agenda_franja_pasada'].concat(preguntaDe('agenda_franja', conv, precios)) };
       }
-      if (franja === 'puntual') { conv.agendaTmp.franja = 'puntual'; conv.paso = 'agenda_hora'; conv.noEntendi = 0; return null; }
       conv.datos.agenda = { fecha: conv.agendaTmp.fecha, txt: conv.agendaTmp.txt, franja };
-      conv.agendaTmp = null;
-      return ok();
-    }
-    case 'agenda_hora': {
-      if (interpretarFranja(norm) === 'urgente24') {            // escribió "urgencia": se pasa a atención fuera de horario
-        conv.datos.agenda = { fecha: conv.agendaTmp.fecha, txt: conv.agendaTmp.txt, franja: 'urgente24' };
-        conv.agendaTmp = null;
-        return ok();
-      }
-      const h = interpretarHora(norm);
-      if (!h || h === 'fuera') { conv.noEntendi = (conv.noEntendi || 0) + 1; return { partes: ['agenda_hora_invalida'].concat(conv.noEntendi >= 3 ? ['ayuda_trabado'] : []) }; }
-      if (conv.agendaTmp.esHoy && h.hh * 60 + h.mm < minutosAR(c.ahora) + 60) return { partes: ['agenda_hora_pasada'] };
-      conv.datos.agenda = { fecha: conv.agendaTmp.fecha, txt: conv.agendaTmp.txt, franja: 'puntual', hora: h.txt };
       conv.agendaTmp = null;
       return ok();
     }
@@ -486,7 +456,7 @@ async function confirmarPedido(c, conv, precios, salir) {
   const dat = conv.datos;
   await datos.crear('solicitud', id, {
     origen: 'emi_hogar', estado: 'datos_completos', codigo, modo: dat.modo, clienteId,
-    rubro: dat.rubro, zona: dat.zona, descripcion: dat.descripcion, urgencia: dat.urgencia, direccion: dat.direccion,
+    rubro: dat.rubro, zona: dat.zona, descripcion: dat.descripcion, urgencia: (dat.agenda && dat.agenda.asap) ? 'urgente' : null, direccion: dat.direccion,
     ubicacion: dat.ubicacion || null, agenda: dat.agenda || null, fotos: dat.fotos || [], preciosAlCrear: { contactoDirecto: precios.contactoDirecto, gestionAbierto: precios.gestionAbierto },
   }, { redis: r, ahora });
   conv.paso = 'completo'; conv.solicitudId = id;
@@ -494,7 +464,7 @@ async function confirmarPedido(c, conv, precios, salir) {
 }
 
 module.exports = {
-  manejar, normalizar, esMensajeHogar, detectarRubros, detectarZona, detectarUrgencia, detectarModo,
-  interpretarDia, interpretarFranja, interpretarHora, limpiarTexto, limpiarDireccion, direccionValida, emailValido, opcion, idWa,
+  manejar, normalizar, esMensajeHogar, detectarRubros, detectarZona, detectarModo,
+  interpretarDia, interpretarFranja, limpiarTexto, limpiarDireccion, direccionValida, emailValido, opcion, idWa,
   EMERGENCIA_RE, TEMAS, VIGENCIA_ACTIVA_MS,
 };

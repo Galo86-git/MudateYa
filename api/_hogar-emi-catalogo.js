@@ -8,17 +8,16 @@
 //     de los trabajos. Solo es asertiva sobre el pedido.
 //   - Los únicos montos que aparecen son los de MYA (contacto directo y gestión), y vienen de la configuración de precios
 //     (datos.precios()), nunca escritos acá.
-//   - No se repite texto libre del cliente (salvo valores ya validados: rubro/zona/urgencia/modo y la dirección saneada).
+//   - No se repite texto libre del cliente (salvo valores ya validados: rubro/zona/modo y la dirección saneada).
 //
 // Cada mensaje es una función (vars) → texto. `render(id, vars)` es la ÚNICA forma de armar una salida.
 // Si se cambia un texto, hay que correr tests/hogar-emi.test.js (revisa que ningún mensaje viole las reglas).
 
 const RUBROS = { plomeria: 'Plomería', gas: 'Gas', electricidad: 'Electricidad', cerrajeria: 'Cerrajería', aire: 'Aire acondicionado' };
 const ZONAS = { san_isidro: 'San Isidro', vicente_lopez: 'Vicente López' };
-const URGENCIAS = { urgente: 'Hoy / urgente', semana: 'Esta semana', sin_apuro: 'Sin apuro' };
 const MODOS = { directo: 'Contactos directos', abierto: 'Gestión de MYA' };
 // El horario de cada profesional lo carga él (libre). Estas son las franjas que elige el cliente en la gestión de MYA.
-const FRANJAS = { manana: 'Mañana (8 a 13)', tarde: 'Tarde (13 a 18)', puntual: 'Una hora puntual', urgente24: 'Urgencia fuera de horario (24 h)' };
+const FRANJAS = { manana: 'Mañana (8 a 13)', tarde: 'Tarde (13 a 18)' };
 const MAX_FOTOS = 6;
 
 const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
@@ -31,21 +30,19 @@ const CATALOGO = {
   pedir_zona: () => '¿En qué zona es? Respondé con el número o el nombre de la localidad:\n1) San Isidro (Martínez, Acassuso, Beccar, Boulogne, Villa Adelina)\n2) Vicente López (Olivos, La Lucila, Florida, Munro, Villa Martelli, Carapachay)',
   zona_fuera: () => 'Por ahora solo trabajamos en San Isidro y Vicente López, así que no puedo gestionar este pedido. Gracias por escribir.',
   pedir_descripcion: () => 'Contame con tus palabras qué pasa. También podés mandar hasta ' + MAX_FOTOS + ' fotos; no muestres tu dirección ni datos personales en ellas.',
-  pedir_urgencia: () => '¿Qué tan urgente es? Respondé con el número:\n' + lista(Object.values(URGENCIAS)),
   pedir_direccion: () => '¿Cuál es la dirección exacta (calle y número)? Los profesionales ven solo una zona aproximada hasta que el pedido se paga; la dirección exacta se les da recién ahí.',
   direccion_invalida: () => 'Necesito calle y número (por ejemplo: Libertador 1234). ¿Me la pasás?',
   pedir_modo: (v) => 'Hay dos formas de seguir. Respondé con el número:\n' +
     '1) Contactos directos: ves los profesionales de tu zona y elegís los que quieras. Cuesta ' + pesos(v.precios.contactoDirecto) + ' por cada contacto y se paga una sola vez. El acuerdo lo hacés vos con cada uno.\n' +
     '2) Gestión de MYA: busco un profesional que pueda tomar tu pedido y coordino la visita. La gestión cuesta ' + pesos(v.precios.gestionAbierto) + ' y se paga cuando un profesional acepta.\n\n' +
     'En los dos casos MYA es solo un intermediario: conecta con profesionales independientes, no realiza los trabajos y no garantiza el trabajo.',
-  resumen: (v) => 'Revisemos tu pedido:\n• Rubro: ' + RUBROS[v.d.rubro] + '\n• Zona: ' + ZONAS[v.d.zona] + '\n• Urgencia: ' + URGENCIAS[v.d.urgencia] + '\n• Modo: ' + MODOS[v.d.modo] + '\n• Dirección: ' + v.d.direccion + (v.d.agenda ? '\n• Día y horario: ' + v.d.agenda.txt + ' · ' + (v.d.agenda.hora ? 'a las ' + v.d.agenda.hora : FRANJAS[v.d.agenda.franja]) : '') + '\n• Fotos: ' + (v.d.fotos || []).length + '\n\n¿Está todo bien? Respondé con el número:\n1) Sí, confirmar\n2) Empezar de nuevo',
-  pedir_agenda_dia: () => '¿Qué día te queda bien para que vaya el profesional? Escribilo así: "hoy", "mañana", "jueves" o "15/11" (hasta 14 días desde hoy).',
-  agenda_dia_invalido: () => 'No pude entender ese día, o ya pasó. Escribilo así: "hoy", "mañana", "jueves" o "15/11" (hasta 14 días desde hoy).',
-  pedir_agenda_franja: (v) => '¿En qué horario? (' + v.dia + ') Respondé con el número:\n' + lista(Object.values(FRANJAS)),
+  resumen: (v) => 'Revisemos tu pedido:\n• Rubro: ' + RUBROS[v.d.rubro] + '\n• Zona: ' + ZONAS[v.d.zona] + '\n• Modo: ' + MODOS[v.d.modo] + '\n• Dirección: ' + v.d.direccion + (v.d.agenda ? '\n• Día y horario: ' + (v.d.agenda.asap ? v.d.agenda.txt : v.d.agenda.txt + ' · ' + FRANJAS[v.d.agenda.franja]) : '') + '\n• Fotos: ' + (v.d.fotos || []).length + '\n\n¿Está todo bien? Respondé con el número:\n1) Sí, confirmar\n2) Empezar de nuevo',
+  pedir_agenda_cuando: () => '¿Cuándo lo necesitás? Respondé con el número:\n1) Lo antes posible\n2) Hoy\n3) Mañana\n4) Otro día',
+  pedir_agenda_dia: () => '¿Qué día? Escribilo así: "jueves" o "15/11" (hasta 14 días desde hoy).',
+  agenda_dia_invalido: () => 'No pude entender ese día, o ya pasó. Escribilo así: "jueves" o "15/11" (hasta 14 días desde hoy).',
+  agenda_hoy_sin_franjas: () => 'Para hoy ya no quedan franjas. Elegí "lo antes posible" u otro día.',
+  pedir_agenda_franja: (v) => '¿En qué franja? (' + v.dia + ') Respondé con el número:\n' + lista(Object.values(FRANJAS)),
   agenda_franja_pasada: () => 'Esa franja ya pasó para hoy. Elegí otra.',
-  pedir_agenda_hora: () => '¿A qué hora? Escribila así: "9:30" o "17" (entre las 6 y las 22).',
-  agenda_hora_invalida: () => 'No pude entender esa hora, o no está entre las 6 y las 22. Escribila así: "9:30" o "17". Para atención fuera de ese horario escribí "urgencia".',
-  agenda_hora_pasada: () => 'Esa hora ya pasó o es muy pronto para hoy (necesito al menos una hora de margen). ¿A qué otra hora?',
   // PLACEHOLDER hasta conectar profesionales y cobro: no promete nada.
   fin_datos_completos: (v) => 'Listo, registré tu pedido (n° ' + v.codigo + '). Por ahora quedó registrado y no puedo asegurarte plazos ni disponibilidad.\n\nSi necesitás otro rubro, escribime "menu" y hacemos otro pedido.',
   foto_ok: (v) => 'Recibí tu foto (' + v.n + '/' + MAX_FOTOS + ').',
@@ -99,4 +96,4 @@ function verificarSalida(texto, id) {
   return { ok: true };
 }
 
-module.exports = { CATALOGO, RUBROS, ZONAS, URGENCIAS, MODOS, FRANJAS, MAX_FOTOS, render, armar, verificarSalida, PROHIBIDO };
+module.exports = { CATALOGO, RUBROS, ZONAS, MODOS, FRANJAS, MAX_FOTOS, render, armar, verificarSalida, PROHIBIDO };
