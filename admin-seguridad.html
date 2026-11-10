@@ -39,6 +39,7 @@
     <div class="card">
       <h2>1 · Fotos de DNI a almacenamiento privado</h2>
       <p>Pasa las fotos de DNI que hoy son públicas a un lugar privado. Orden: <b>Contar</b> → <b>Migrar</b> (repetí hasta que "quedan" sea 0) → mirá en el admin que algunos DNI se ven → <b>Borrar las públicas</b>.</p>
+      <button id="bProbar" class="sec" onclick="dni('probar')">Probar almacenamiento</button>
       <button id="bContar" onclick="dni('contar')">Contar</button>
       <button id="bMigrar" onclick="dni('aplicar')">Migrar</button>
       <button id="bBorrar" class="peligro" onclick="borrarPublicas()">Borrar las públicas (sin vuelta atrás)</button>
@@ -100,11 +101,11 @@ async function llamar(url, opts){
 }
 
 async function dni(accion){
-  var ids = ['bContar','bMigrar','bBorrar']; bloquear(ids, true);
-  setOut('outDni', accion === 'contar' ? 'Contando…' : 'Migrando… (puede tardar hasta un minuto)');
+  var ids = ['bProbar','bContar','bMigrar','bBorrar']; bloquear(ids, true);
+  setOut('outDni', accion === 'contar' ? 'Contando…' : accion === 'probar' ? 'Probando…' : 'Migrando… (puede tardar hasta un minuto)');
   try {
-    var d = accion === 'contar'
-      ? await llamar('/api/admin-dni-migrar?accion=contar')
+    var d = (accion === 'contar' || accion === 'probar')
+      ? await llamar('/api/admin-dni-migrar?accion=' + accion)
       : await llamar('/api/admin-dni-migrar', { method:'POST', body: JSON.stringify({ accion: accion }) });
     delete d.ok;
     var extra = (d.quedan > 0) ? '\n\n➜ Quedan fotos: apretá Migrar de nuevo.' : (accion === 'aplicar' && !d.fallaron ? '\n\n✓ Listo. Mirá en el admin que se vean algunos DNI y después borrá las públicas.' : '');
@@ -115,7 +116,7 @@ async function dni(accion){
 
 async function borrarPublicas(){
   if (!confirm('Esto borra para siempre las fotos de DNI públicas que ya se copiaron al almacenamiento privado.\n\n¿Ya verificaste en el admin que los DNI se ven bien?')) return;
-  var ids = ['bContar','bMigrar','bBorrar']; bloquear(ids, true);
+  var ids = ['bProbar','bContar','bMigrar','bBorrar']; bloquear(ids, true);
   setOut('outDni', 'Borrando…');
   try {
     var d = await llamar('/api/admin-dni-migrar', { method:'POST', body: JSON.stringify({ accion:'borrar-publicas', confirmar: true }) });

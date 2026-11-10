@@ -50,10 +50,11 @@ async function hacerBackup() {
   const arch = core.armarArchivo(vuelco.lineas, fecha, clave);
 
   const nombre = PREFIJO + fecha + '.mya';
-  await blob.put(nombre, arch.archivo, { access: 'private', token: token, allowOverwrite: true, addRandomSuffix: false, contentType: 'application/octet-stream' });
+  const { conTimeout } = require('./_dni-privado');
+  await conTimeout(blob.put(nombre, arch.archivo, { access: 'private', token: token, allowOverwrite: true, addRandomSuffix: false, contentType: 'application/octet-stream' }), 90000, 'guardar el backup');
 
   // Verificación: bajarlo de nuevo, descifrar y contar.
-  const r = await blob.get(nombre, { access: 'private', token: token, useCache: false });
+  const r = await conTimeout(blob.get(nombre, { access: 'private', token: token, useCache: false }), 60000, 'releer el backup');
   if (!r || r.statusCode !== 200) throw new Error('No se pudo releer el backup recién subido');
   const chunks = [];
   const reader = r.stream.getReader();

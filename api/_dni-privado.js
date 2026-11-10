@@ -61,6 +61,13 @@ function tipoRealDeImagen(buf) {
   return null;
 }
 
+// Si una operación de Blob se cuelga, falla con un mensaje claro en vez de dejar la función esperando.
+function conTimeout(promesa, ms, que) {
+  let t;
+  const corte = new Promise(function (_, rej) { t = setTimeout(function () { rej(new Error('Blob no respondió a tiempo (' + que + ', ' + Math.round(ms / 1000) + 's)')); }, ms); });
+  return Promise.race([promesa, corte]).finally(function () { clearTimeout(t); });
+}
+
 const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heic' };
 
 // Sube un DNI y devuelve el pathname. Lanza si el archivo no es imagen o si el
@@ -73,7 +80,7 @@ async function subirDni(buffer, email, lado) {
   const pathname = carpetaDe(email) + ladoOk + '-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex') + '.' + EXT[tipo];
   const token = tokenPrivado();
   if (!hayStorePrivado()) throw new Error(MSG_SIN_STORE);
-  const r = await blobLib.put(pathname, buffer, { access: 'private', contentType: tipo, token: token });
+  const r = await conTimeout(blobLib.put(pathname, buffer, { access: 'private', contentType: tipo, token: token }), 12000, 'guardar');
   return r.pathname || pathname;
 }
 
@@ -105,10 +112,10 @@ async function leerDni(pathname) {
   const token = tokenPrivado();
   if (!hayStorePrivado()) throw new Error(MSG_SIN_STORE);
   // @vercel/blob >= 2.3 (antes no existía get ni access:'private'). Devuelve null si no existe.
-  const result = await blobLib.get(pathname, { access: 'private', token: token });
+  const result = await conTimeout(blobLib.get(pathname, { access: 'private', token: token }), 12000, 'leer');
   if (!result || result.statusCode !== 200 || !result.stream) throw new Error('no encontrada');
-  const buffer = await aBuffer(result.stream);
+  const buffer = await conTimeout(aBuffer(result.stream), 12000, 'descargar');
   return { buffer: buffer, contentType: (result.blob && result.blob.contentType) || 'image/jpeg' };
 }
 
-module.exports = { tokenPrivado, hayStorePrivado, MSG_SIN_STORE, PREFIJO, MAX_BYTES, TIPOS, carpetaDe, esPathnameDni, perteneceA, tipoRealDeImagen, subirDni, leerDni };
+module.exports = { conTimeout, tokenPrivado, hayStorePrivado, MSG_SIN_STORE, PREFIJO, MAX_BYTES, TIPOS, carpetaDe, esPathnameDni, perteneceA, tipoRealDeImagen, subirDni, leerDni };

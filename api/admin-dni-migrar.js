@@ -19,7 +19,7 @@ const { actualizarPerfilMudancero } = require('./_perfil-mudancero');
 const dniPriv = require('./_dni-privado');
 
 const LOG_KEY = 'dni:migracion-pendiente-borrar';
-const PRESUPUESTO_MS = 40 * 1000; // por tanda: la función de Vercel tiene tope de tiempo
+const PRESUPUESTO_MS = 20 * 1000; // por tanda: la función de Vercel tiene tope de tiempo
 const RE_URL_PUBLICA = /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i;
 
 function redis() {
@@ -74,7 +74,7 @@ async function aplicar(r) {
       if (!RE_URL_PUBLICA.test(vieja)) { fallaron++; errores.push(p.email + ' ' + campo + ': URL que no es del store público de Blob'); continue; }
       if (Date.now() - t0 > PRESUPUESTO_MS) { quedan++; continue; }
       try {
-        const resp = await fetch(vieja);
+        const resp = await fetch(vieja, { signal: AbortSignal.timeout(10000) });
         if (!resp.ok) throw new Error('HTTP ' + resp.status + ' al bajar la foto');
         const buf = Buffer.from(await resp.arrayBuffer());
         const pathname = await dniPriv.subirDni(buf, p.email, lado);
@@ -93,6 +93,25 @@ async function aplicar(r) {
     }
   }
   return { migradas: migradas, fallaron: fallaron, quedan: quedan, errores: errores.slice(0, 10) };
+}
+
+// Diagnóstico: guarda, lee y borra un archivo de prueba en el store privado, midiendo cada paso.
+async function probarStore() {
+  const blob = require('@vercel/blob');
+  const token = dniPriv.tokenPrivado();
+  const t = { hayStorePrivado: dniPriv.hayStorePrivado(), conToken: !!token, conBlobStoreId: !!process.env.BLOB_STORE_ID };
+  if (!t.hayStorePrivado) return { ...t, error: dniPriv.MSG_SIN_STORE };
+  const nombre = 'prueba/ping-' + Date.now() + '.txt';
+  let paso = 'guardar'; let t0 = Date.now();
+  try {
+    await dniPriv.conTimeout(blob.put(nombre, Buffer.from('ok'), { access: 'private', token: token, addRandomSuffix: false, contentType: 'text/plain' }), 15000, 'guardar');
+    t.msGuardar = Date.now() - t0; paso = 'leer'; t0 = Date.now();
+    const g = await dniPriv.conTimeout(blob.get(nombre, { access: 'private', token: token, useCache: false }), 15000, 'leer');
+    t.msLeer = Date.now() - t0; t.statusLeer = g && g.statusCode; paso = 'borrar'; t0 = Date.now();
+    await dniPriv.conTimeout(blob.del(nombre, { token: token }), 15000, 'borrar');
+    t.msBorrar = Date.now() - t0; t.ok = true;
+  } catch (e) { t.error = 'Falló al ' + paso + ': ' + e.message; }
+  return t;
 }
 
 async function borrarPublicas(r) {
@@ -125,6 +144,7 @@ module.exports = async function handler(req, res) {
       s.pendientesDeBorrar = Number(await r.cmd('LLEN', LOG_KEY)) || 0;
       return res.status(200).json({ ok: true, ...s });
     }
+    if (req.method === 'GET' && accion === 'probar') return res.status(200).json(await probarStore());
     if (req.method === 'POST' && accion === 'aplicar') {
       if (!dniPriv.hayStorePrivado()) return res.status(400).json({ error: dniPriv.MSG_SIN_STORE });
       return res.status(200).json({ ok: true, ...(await aplicar(r)) });
