@@ -44,6 +44,8 @@ function describirEfecto(e) {
       case 'reembolso_fallido': return 'Talo rechazó una devolución (' + e.reembolsoId + '). Se puede reintentar.';
       case 'reembolso_ok_sin_monto': return 'Talo confirmó una devolución pero no se pudo leer el monto (' + e.reembolsoId + '): revisar el libro.';
       case 'reembolso_vencido': return 'DEVOLUCIÓN VENCIDA (más de 24 h): ' + e.reembolsoId + ' · ' + pesos(e.monto) + ' · ' + e.motivoReembolso + ' · estado ' + e.estado + '.';
+      case 'hogar_emi_salida_bloqueada': return 'Emi Hogar BLOQUEÓ una respuesta (mensaje ' + e.mensaje + ', razón: ' + e.razon + '). Revisar el catálogo.';
+      case 'hogar_cliente_pide_humano': return 'Un cliente de Hogar pidió hablar con una persona. Responderle por email a: ' + e.email + ' (venía del paso ' + (e.pasoAnterior || '?') + ').';
       default: return String(e.motivo || 'aviso');
     }
   }

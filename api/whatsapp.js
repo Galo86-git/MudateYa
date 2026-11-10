@@ -3950,6 +3950,24 @@ function twiml(mensaje) {
 }
 
 // ------------------------------------------------------------------
+// MYA Hogar. APAGADO por defecto: solo actúa con HOGAR_EMI_ACTIVO=1. Si escribe un cliente (no mudancero/asesor/inmobiliaria)
+// y el mensaje es de Hogar —o ya hay una conversación de Hogar abierta— responde Emi en modo estricto (api/_hogar-emi.js:
+// solo mensajes fijos del catálogo). Devuelve el texto a enviar, o null si NO es de Hogar (y el flujo de siempre sigue igual).
+// Si Hogar falla por cualquier motivo devuelve null: nunca puede dejar sin respuesta a un cliente de Mudanza.
+// ------------------------------------------------------------------
+async function intentarHogar(entrada, roles, deps) {
+  if (process.env.HOGAR_EMI_ACTIVO !== '1') return null;
+  if (roles && (roles.mud || roles.ase || roles.inm)) return null;
+  try {
+    const h = await require('./_hogar-emi').manejar(entrada, Object.assign({ descargarMedia: descargarMediaBase64 }, deps || {}));
+    return h && typeof h.respuesta === 'string' ? h.respuesta : null;
+  } catch (e) {
+    console.error('Emi Hogar falló, se sigue con el flujo normal:', e && e.message);
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------
 // Handler (Vercel Function) — webhook de Twilio
 // ------------------------------------------------------------------
 module.exports = async function handler(req, res) {
@@ -4014,6 +4032,8 @@ module.exports = async function handler(req, res) {
       if (partes.length) textoFinal = (textoFinal ? textoFinal + ' ' : '') + partes.join(' ');
     }
 
+    const textoSinAvisoVideo = textoFinal; // para MYA Hogar: el aviso de video es de Mudanza
+
     // Los videos no se pueden recibir (no se guardan ni llegan al mudancero).
     // Antes se descartaban en silencio y Emi cargaba "video adjunto" en el
     // pedido igual: el mudancero cotizaba sin ver nada. Ahora Emi se entera y
@@ -4037,6 +4057,10 @@ module.exports = async function handler(req, res) {
       return res.status(200).send(twiml('Perdón, no te entendí. ¿Me lo repetís?'));
     }
 
+    // MYA Hogar (apagado por defecto): ver intentarHogar().
+    const respuestaHogar = await intentarHogar({ waId, texto: textoSinAvisoVideo, imagenes, ubicacion }, { mud, ase, inm });
+    if (respuestaHogar !== null) return res.status(200).send(twiml(respuestaHogar));
+
     const respuesta = await generarRespuesta(waId, textoFinal, imagenes, ubicacion, mud, ase, inm);
     return res.status(200).send(twiml(respuesta));
   } catch (e) {
@@ -4046,5 +4070,6 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.avisoVideoNoSoportado = avisoVideoNoSoportado;
+module.exports.intentarHogar = intentarHogar;
 module.exports.pedirConfirmacion = pedirConfirmacion;
 module.exports.confirmacionValida = confirmacionValida;
