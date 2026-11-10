@@ -32,6 +32,7 @@ const ESCENARIOS = {
   menos:     { titulo: 'Pago de menos', descripcion: 'El cliente transfiere menos de lo pedido (y no completa).' },
   completar: { titulo: 'Pago de menos y después completa', descripcion: 'Transfiere una parte y luego el resto. Confirma si Talo suma las dos transferencias al mismo alias.' },
   mas:       { titulo: 'Pago de más + devolución', descripcion: 'Transfiere de más; se acredita lo esperado y se devuelve la diferencia por Talo.' },
+  sobrepago: { titulo: 'DIAGNÓSTICO: pago de más (¿dónde va la plata?)', descripcion: 'Transfiere un poco de más y averigua si Talo lo asocia al pago o a dónde va.' },
   tarde:     { titulo: 'Pago tardío (modo abierto) + devolución total', descripcion: 'El pedido ya venció cuando llega el pago: se devuelve todo por Talo.' },
 };
 
@@ -133,6 +134,25 @@ async function correrEscenario(nombre, deps) {
 
 async function cuerpoEscenario(nombre, deps, informe) {
   informe.nota('Modo de prueba: Talo SANDBOX y datos aislados (sandbox:). No se mueve plata real ni se toca el libro real.');
+
+  if (nombre === 'sobrepago') {
+    const p = await crearPrueba(deps, informe, { modo: 'directo', monto: MONTO });
+    await deps.talo.faucet(p.cvu, MONTO + 100);
+    informe.paso('Se simuló una transferencia de ' + pesos(MONTO + 100) + ' (100 de más) al CVU del pago de ' + pesos(MONTO));
+    const e1 = await esperarMonto(deps.talo, p.paymentId, MONTO, 25000, deps.pasoMs);
+    informe.chequeo('Talo asoció la transferencia de más al pago', !e1.vencio, e1.vencio ? 'Después de 25 s el pago sigue con ' + pesos(e1.pago.montoPagado) + ' recibidos (estado ' + e1.pago.estado + ')' : 'estado ' + e1.pago.estado + ' · recibido ' + pesos(e1.pago.montoPagado));
+    if (e1.vencio) {
+      await deps.talo.faucet(p.cvu, MONTO);
+      informe.paso('Se simuló una segunda transferencia, ahora por el monto exacto (' + pesos(MONTO) + ')');
+      const e2 = await esperarMonto(deps.talo, p.paymentId, MONTO, 25000, deps.pasoMs);
+      informe.paso('Después de la exacta, Talo muestra recibido ' + pesos(e2.pago.montoPagado) + ' · estado ' + e2.pago.estado, e2.vencio ? 'tampoco la registró' : 'la exacta sí se registró');
+    }
+    if (typeof deps.talo.listarTransacciones === 'function') {
+      try { informe.detalle = { transaccionesRecientes: await deps.talo.listarTransacciones() }; }
+      catch (e) { informe.paso('No se pudo listar las transacciones de la cuenta sandbox', e.message); }
+    }
+    return;
+  }
 
   if (nombre === 'tarde') {
     const p = await crearPrueba(deps, informe, { modo: 'abierto', monto: GESTION, vencida: true });

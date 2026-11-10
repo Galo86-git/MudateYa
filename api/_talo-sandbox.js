@@ -98,7 +98,20 @@ function crearTaloSandbox(env) {
     return true;
   }
 
-  return { configurado, fuente: cred ? cred.fuente : null, base: BASE, token, crearPago, consultarPagoCompleto, reembolsar, faucet };
+  // Últimas transferencias de la cuenta de sandbox (para diagnosticar a dónde fue una plata). Campos defensivos.
+  async function listarTransacciones() {
+    exigir();
+    const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const r = await auth('/transactions/?user_id=' + encodeURIComponent(cred.userId) + '&start_date=' + encodeURIComponent(desde), { method: 'GET' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error('Talo sandbox: no se pudieron listar las transacciones (' + r.status + ')');
+    const lista = (d && d.data && (d.data.transactions || d.data.items)) || (Array.isArray(d && d.data) ? d.data : []);
+    return lista.slice(0, 15).map(function (t) {
+      return { tipo: t.transactionType || t.type || '', monto: t.amount, bruto: t.gross_amount, pago: t.payment_id || null, estado: t.transaction_status || t.status || '', cuando: t.creation_timestamp || '' };
+    });
+  }
+
+  return { configurado, fuente: cred ? cred.fuente : null, base: BASE, token, crearPago, consultarPagoCompleto, reembolsar, faucet, listarTransacciones };
 }
 
 module.exports = { crearTaloSandbox, credenciales, BASE };

@@ -204,3 +204,23 @@ test('consola: varias pruebas seguidas con el mismo cliente no se contaminan ent
     }
   });
 });
+
+test('consola: diagnóstico de pago de más — si Talo lo ignora, lo informa y lista las transacciones', async () => {
+  await conRedisMock(async ({ conPrefijo }) => {
+    const t = taloFalso();
+    const faucet = t.faucet.bind(t);
+    t.faucet = async (cvu, monto) => { const p = Object.values(t.pagos).find((x) => x.cvu === cvu); if (monto > p.pedido) return true; return faucet(cvu, monto); }; // Talo "ignora" lo que excede
+    t.listarTransacciones = async () => [{ tipo: 'INBOUND', monto: 4600, pago: null, estado: 'PROCESSED' }];
+    const informe = await consola._correrEscenario('sobrepago', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
+    assert.ok(informe.hallazgos.some((h) => /asoció la transferencia de más/.test(h)), JSON.stringify(informe.hallazgos));
+    assert.ok(informe.pasos.some((p) => /segunda transferencia/.test(p.titulo)), 'prueba también con la exacta');
+    assert.deepStrictEqual(informe.detalle.transaccionesRecientes[0].monto, 4600);
+  });
+});
+
+test('consola: diagnóstico de pago de más — si Talo lo asocia, no hay hallazgos', async () => {
+  await conRedisMock(async ({ conPrefijo }) => {
+    const informe = await consola._correrEscenario('sobrepago', { redis: conPrefijo, talo: taloFalso(), ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
+    assert.deepStrictEqual(informe.hallazgos, []);
+  });
+});
