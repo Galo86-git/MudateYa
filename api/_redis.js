@@ -38,6 +38,10 @@ const REINTENTABLES = new Set([
 
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Comandos cuya clave es el 1er argumento (para prefijoClaves).
+const UNA_CLAVE = new Set(['GET', 'SET', 'DEL', 'EXISTS', 'SADD', 'SREM', 'SMEMBERS', 'ZADD', 'ZREM', 'ZRANGE', 'ZSCORE', 'ZCARD',
+  'HSET', 'HGETALL', 'LRANGE', 'LLEN', 'RPUSH', 'EXPIRE', 'PEXPIRE', 'TYPE', 'PTTL', 'TTL']);
+
 function crearCliente(opts) {
   opts = opts || {};
   const url = opts.url || process.env.UPSTASH_REDIS_REST_URL;
@@ -45,9 +49,32 @@ function crearCliente(opts) {
   const timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : 5000;
   const intentos = opts.intentos != null ? opts.intentos : 3;
   const esperaMs = opts.esperaMs != null ? opts.esperaMs : 150;
+  // prefijoClaves: todo lo que escribe/lee este cliente vive bajo ese prefijo (ej. 'sandbox:'). Se usa para el modo
+  // de pruebas: los datos de prueba NO se mezclan con los reales (ni con el libro de cargos). Si aparece un comando
+  // que no sabe prefijar, falla en vez de tocar claves reales.
+  const prefijo = opts.prefijoClaves || '';
+  function prefijar(c) {
+    if (!prefijo) return c;
+    const op = String(c[0]).toUpperCase(); const x = c.slice();
+    if (UNA_CLAVE.has(op)) { x[1] = prefijo + x[1]; return x; }
+    if (op === 'EVAL') { x[3] = prefijo + x[3]; return x; }
+    if (op === 'SCAN') {
+      const i = x.findIndex((a) => String(a).toUpperCase() === 'MATCH');
+      if (i >= 0) x[i + 1] = prefijo + x[i + 1]; else x.push('MATCH', prefijo + '*');
+      return x;
+    }
+    throw new Error('Comando no soportado con prefijoClaves: ' + op);
+  }
+  function sacarPrefijo(c, resultado) {
+    if (prefijo && String(c[0]).toUpperCase() === 'SCAN' && Array.isArray(resultado) && Array.isArray(resultado[1])) {
+      return [resultado[0], resultado[1].map((k) => (String(k).indexOf(prefijo) === 0 ? String(k).slice(prefijo.length) : k))];
+    }
+    return resultado;
+  }
 
-  async function enviar(comandos, reintentable) {
+  async function enviar(comandosOriginales, reintentable) {
     if (!url || !token) throw new RedisError('Redis no configurado');
+    const comandos = comandosOriginales.map(prefijar);
     let ultimo;
     const max = reintentable ? intentos : 1;
     for (let i = 0; i < max; i++) {
@@ -61,9 +88,9 @@ function crearCliente(opts) {
         if (r.status === 429 || r.status >= 500) throw new RedisError('Redis respondió ' + r.status, { transitorio: true });
         if (!r.ok) throw new RedisError('Redis respondió ' + r.status);
         const d = await r.json();
-        return d.map(function (x) {
+        return d.map(function (x, i) {
           if (x && x.error) throw new RedisError('Redis: ' + x.error);
-          return x.result;
+          return sacarPrefijo(comandosOriginales[i], x.result);
         });
       } catch (e) {
         const transitorio = e instanceof RedisError ? e.transitorio : true; // red, timeout, JSON roto

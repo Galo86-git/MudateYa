@@ -23,6 +23,19 @@
   button:disabled{opacity:.5;cursor:wait}
   pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-word;font-size:13px;min-height:44px;margin:6px 0 0}
   #login,#app{display:none}
+  select{font:inherit;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);margin:0 8px 8px 0;max-width:100%}
+  .informe{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;min-height:44px;margin:6px 0 0}
+  .informe h3{font-size:15px;margin:10px 0 6px}
+  .informe h3:first-child{margin-top:0}
+  .informe .paso{margin:4px 0;line-height:1.4}
+  .informe .det{display:block;color:var(--mut);font-size:12.5px;margin-left:22px;word-break:break-word}
+  .informe .ok{color:var(--ok);font-weight:700}
+  .informe .mal{color:var(--mal);font-weight:700}
+  .informe .banda{padding:8px 10px;border-radius:8px;margin:8px 0;font-weight:600}
+  .informe .banda.ok{background:rgba(21,128,61,.12)}
+  .informe .banda.mal{background:rgba(185,28,28,.12)}
+  .informe details{margin-top:8px}
+  .informe pre{margin:6px 0 0;font-size:12px}
 </style>
 </head>
 <body>
@@ -52,6 +65,23 @@
       <button id="bBackup" onclick="backup('POST')">Hacer backup ahora</button>
       <button id="bEstado" class="sec" onclick="backup('GET')">Ver backups guardados</button>
       <pre id="outBackup">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>3 · Probar los cobros con Talo (plata de mentira)</h2>
+      <p>Simula clientes que pagan de distintas formas contra el <b>sandbox</b> de Talo y te dice si el sistema reaccionó bien. No mueve plata real ni toca los datos reales. Primero <b>Verificar conexión</b>; después elegí una prueba y apretá <b>Correr</b> (tarda unos segundos).</p>
+      <button id="bTaloEstado" class="sec" onclick="taloEstado()">Verificar conexión con Talo</button>
+      <select id="taloEsc">
+        <option value="exacto">Pago exacto</option>
+        <option value="menos">Pago de menos</option>
+        <option value="completar">Pago de menos y después completa (¿Talo suma?)</option>
+        <option value="mas">Pago de más + devolución</option>
+        <option value="tarde">Pago tardío + devolución total</option>
+      </select>
+      <button id="bTaloCorrer" onclick="taloCorrer(document.getElementById('taloEsc').value)">Correr</button>
+      <button id="bTaloTodas" onclick="taloTodas()">Correr todas</button>
+      <button id="bTaloLimpiar" class="sec" onclick="taloLimpiar()">Borrar datos de prueba</button>
+      <div id="outTalo" class="informe">—</div>
     </div>
   </div>
 </div>
@@ -125,6 +155,68 @@ async function borrarPublicas(){
     setOut('outDni', JSON.stringify(d, null, 2) + nota);
   } catch(e){ setOut('outDni', '⚠ ' + e.message); }
   bloquear(ids, false);
+}
+
+// ── Consola de pruebas de Talo (sandbox) ──
+function esc(s){ var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+var TALO_IDS = ['bTaloEstado','bTaloCorrer','bTaloTodas','bTaloLimpiar'];
+
+function htmlInforme(d){
+  var h = '<h3>' + esc(d.escenario) + '</h3>';
+  h += '<div class="banda ' + (d.resultado === 'ok' ? 'ok' : 'mal') + '">' + (d.resultado === 'ok' ? '✅ Todo salió como se esperaba' : '⚠ Hay cosas para revisar (' + d.hallazgos.length + ')') + '</div>';
+  (d.pasos || []).forEach(function(p){
+    var marca = p.ok === true ? '<span class="ok">✓</span>' : (p.ok === false ? '<span class="mal">✗</span>' : '•');
+    h += '<div class="paso">' + marca + ' ' + esc(p.titulo) + (p.detalle ? '<span class="det">' + esc(p.detalle) + '</span>' : '') + '</div>';
+  });
+  if (d.detalle) h += '<details><summary>Ver detalle técnico</summary><pre>' + esc(JSON.stringify(d.detalle, null, 2)) + '</pre></details>';
+  return h;
+}
+
+async function taloEstado(){
+  bloquear(TALO_IDS, true); document.getElementById('outTalo').textContent = 'Verificando…';
+  try {
+    var d = await llamar('/api/admin-talo-sandbox', { method:'POST', body: JSON.stringify({ accion:'estado' }) });
+    var h;
+    if (!d.credencialesSandbox) {
+      h = '<div class="banda mal">⚠ Faltan las credenciales de sandbox de Talo</div><div class="paso">' + esc(d.falta) + '</div><span class="det">' + esc(d.modoDeLaApp) + '</span>';
+    } else if (d.tokenOk) {
+      h = '<div class="banda ok">✅ Conectado al sandbox de Talo</div><span class="det">Credenciales: ' + esc(d.fuente) + ' · ' + esc(d.modoDeLaApp) + '</span>';
+    } else {
+      h = '<div class="banda mal">⚠ No se pudo conectar: ' + esc(d.error || '') + '</div><span class="det">Credenciales: ' + esc(d.fuente) + '</span>';
+    }
+    document.getElementById('outTalo').innerHTML = h;
+  } catch(e){ document.getElementById('outTalo').textContent = '⚠ ' + e.message; }
+  bloquear(TALO_IDS, false);
+}
+
+async function taloEscenario(nombre){
+  return llamar('/api/admin-talo-sandbox', { method:'POST', body: JSON.stringify({ accion:'escenario', nombre: nombre }) });
+}
+
+async function taloCorrer(nombre){
+  bloquear(TALO_IDS, true); document.getElementById('outTalo').textContent = 'Corriendo la prueba… (puede tardar hasta un minuto)';
+  try { document.getElementById('outTalo').innerHTML = htmlInforme(await taloEscenario(nombre)); }
+  catch(e){ document.getElementById('outTalo').textContent = '⚠ ' + e.message; }
+  bloquear(TALO_IDS, false);
+}
+
+async function taloTodas(){
+  bloquear(TALO_IDS, true);
+  var nombres = ['exacto','menos','completar','mas','tarde']; var out = document.getElementById('outTalo'); var acum = '';
+  for (var i = 0; i < nombres.length; i++) {
+    out.innerHTML = acum + '<div class="paso">Corriendo ' + (i + 1) + ' de ' + nombres.length + '…</div>';
+    try { acum += htmlInforme(await taloEscenario(nombres[i])); }
+    catch(e){ acum += '<h3>' + esc(nombres[i]) + '</h3><div class="banda mal">⚠ ' + esc(e.message) + '</div>'; }
+  }
+  out.innerHTML = acum;
+  bloquear(TALO_IDS, false);
+}
+
+async function taloLimpiar(){
+  bloquear(TALO_IDS, true);
+  try { var d = await llamar('/api/admin-talo-sandbox', { method:'POST', body: JSON.stringify({ accion:'limpiar' }) }); document.getElementById('outTalo').textContent = '✓ Datos de prueba borrados (' + d.borradas + ').'; }
+  catch(e){ document.getElementById('outTalo').textContent = '⚠ ' + e.message; }
+  bloquear(TALO_IDS, false);
 }
 
 async function backup(metodo){

@@ -170,15 +170,8 @@ const TIMEOUT_MS = 8000;
 
 function aNumero(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 
-// Consulta completa: además de lo básico trae cada transferencia recibida (bruto, neto, comisión,
-// quién la mandó) y los reembolsos con su estado. Los nombres de campos de Talo no están 100%
-// documentados (ver nota de montos arriba), por eso se leen de forma defensiva.
-async function consultarPagoCompleto(paymentId) {
-  const r = await fetchAuth('/payments/' + encodeURIComponent(paymentId), { method: 'GET', signal: AbortSignal.timeout(TIMEOUT_MS) });
-  const d = await r.json().catch(() => ({}));
-  const data = d && d.data;
-  if (!r.ok || !data) throw new Error('Talo: no se pudo consultar el pago (' + r.status + ')');
-
+// Convierte la respuesta de Talo (data) en nuestro formato. PURA: se usa también desde el modo de pruebas.
+function parsearPagoCompleto(data, paymentId) {
   const q = (data.quotes && data.quotes[0]) || {};
   const tf = data.transaction_fields || {};
   const recibidas = (Array.isArray(data.transactions) ? data.transactions : []).filter(function (t) {
@@ -206,6 +199,17 @@ async function consultarPagoCompleto(paymentId) {
     expira:      data.expiration_timestamp || '',
     paymentUrl:  data.payment_url || '',
   };
+}
+
+// Consulta completa: además de lo básico trae cada transferencia recibida (bruto, neto, comisión,
+// quién la mandó) y los reembolsos con su estado. Los nombres de campos de Talo no están 100%
+// documentados (ver nota de montos arriba), por eso se leen de forma defensiva.
+async function consultarPagoCompleto(paymentId) {
+  const r = await fetchAuth('/payments/' + encodeURIComponent(paymentId), { method: 'GET', signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const d = await r.json().catch(() => ({}));
+  const data = d && d.data;
+  if (!r.ok || !data) throw new Error('Talo: no se pudo consultar el pago (' + r.status + ')');
+  return parsearPagoCompleto(data, paymentId);
 }
 
 // Reembolso por API. Sin monto = total. Es ASÍNCRONO: arranca PENDING y hay que volver a consultar
@@ -239,6 +243,7 @@ module.exports = {
   crearPago:       crearPago,
   consultarPago:   consultarPago,
   consultarPagoCompleto: consultarPagoCompleto,
+  parsearPagoCompleto: parsearPagoCompleto,
   reembolsar:      reembolsar,
   actualizarPrecio: actualizarPrecio
 };
