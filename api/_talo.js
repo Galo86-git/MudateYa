@@ -212,6 +212,34 @@ async function consultarPagoCompleto(paymentId) {
   return parsearPagoCompleto(data, paymentId);
 }
 
+// Normaliza la respuesta de GET /transactions/. PURA. Montos observados en el sandbox: amount = neto (después de
+// comisión), gross_amount = bruto (lo que transfirió el cliente); las devoluciones son OUTBOUND y negativas.
+function normalizarTransacciones(d) {
+  const data = d && d.data;
+  const lista = Array.isArray(data) ? data : (data && (data.transactions || data.items)) || [];
+  return {
+    transacciones: lista.map(function (t) {
+      return {
+        id: String(t.transaction_id || t.id || ''), tipo: String(t.transactionType || t.type || '').toUpperCase(),
+        bruto: aNumero(t.gross_amount != null ? t.gross_amount : t.amount), neto: aNumero(t.amount),
+        pagoId: t.payment_id || null, clienteId: t.customer_id || null,
+        estado: String(t.transaction_status || t.status || ''), cuando: t.creation_timestamp || '',
+      };
+    }),
+    hayMas: !!(data && !Array.isArray(data) && data.lastEvaluatedKey),
+  };
+}
+
+// Transferencias de los últimos días (la cuenta de Talo es compartida con Mudanza). Sirve para detectar plata que
+// entró SIN asociarse a ningún pago (payment_id vacío): Talo no asocia, por ejemplo, un pago que se pasa mucho del monto.
+async function listarTransaccionesRecientes(opts) {
+  const desde = (opts && opts.desde) || new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
+  const r = await fetchAuth('/transactions/?user_id=' + encodeURIComponent(process.env.TALO_USER_ID) + '&start_date=' + encodeURIComponent(desde), { method: 'GET', signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error('Talo: no se pudieron listar las transacciones (' + r.status + ')');
+  return normalizarTransacciones(d);
+}
+
 // Reembolso por API. Sin monto = total. Es ASÍNCRONO: arranca PENDING y hay que volver a consultar
 // el pago (consultarPagoCompleto) hasta ver SUCCESS o FAILED. Talo no deja pedir otro mientras hay uno PENDING.
 async function reembolsar(paymentId, opts) {
@@ -244,6 +272,8 @@ module.exports = {
   consultarPago:   consultarPago,
   consultarPagoCompleto: consultarPagoCompleto,
   parsearPagoCompleto: parsearPagoCompleto,
+  normalizarTransacciones: normalizarTransacciones,
+  listarTransaccionesRecientes: listarTransaccionesRecientes,
   reembolsar:      reembolsar,
   actualizarPrecio: actualizarPrecio
 };

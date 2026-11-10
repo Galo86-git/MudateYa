@@ -18,8 +18,8 @@ async function conRedisMock(fn) {
 
 // Talo sandbox simulado. Opciones: suma (¿junta transferencias al mismo alias?), escala (100 = centavos).
 function taloFalso(o) {
-  o = Object.assign({ suma: true, escala: 1 }, o);
-  const pagos = {}; let n = 0;
+  o = Object.assign({ suma: true, escala: 1, tolerancia: Infinity }, o);
+  const pagos = {}; let n = 0; const sueltas = []; // sueltas: transferencias que Talo no asoció a ningún pago
   const estadoDe = (p) => (p.recibido === 0 ? 'PENDING' : p.recibido === p.pedido ? 'SUCCESS' : p.recibido > p.pedido ? 'OVERPAID' : 'UNDERPAID');
   const vista = (p) => ({
     paymentId: p.id, estado: estadoDe(p), externalId: p.externalId, montoPedido: p.pedido, montoPagado: p.recibido * o.escala,
@@ -30,7 +30,12 @@ function taloFalso(o) {
     pagos, reembolsosPedidos: [],
     configurado: () => true, fuente: 'falso', base: 'https://sandbox-api.talo.com.ar',
     async crearPago(x) { const id = 'VAR-' + (++n); pagos[id] = { id, pedido: x.monto, recibido: 0, externalId: x.externalId, cvu: '000000' + n, alias: 'alias.' + n, refunds: [] }; return vista(pagos[id]); },
-    async faucet(cvu, monto) { const p = Object.values(pagos).find((x) => x.cvu === cvu); p.recibido = o.suma ? p.recibido + monto : monto; return true; },
+    async faucet(cvu, monto) {
+      const p = Object.values(pagos).find((x) => x.cvu === cvu);
+      if (p.recibido + monto > p.pedido + o.tolerancia) { sueltas.push({ id: 'TX' + sueltas.length, tipo: 'INBOUND', bruto: monto, neto: Math.round(monto * 0.99), pagoId: null, clienteId: null, estado: 'PROCESSED', cuando: new Date().toISOString() }); return true; }
+      p.recibido = o.suma ? p.recibido + monto : monto; return true;
+    },
+    async listarTransaccionesRecientes() { return { transacciones: sueltas.concat(Object.values(pagos).filter((x) => x.recibido > 0).map((x) => ({ id: 'TXP' + x.id, tipo: 'INBOUND', bruto: x.recibido, neto: x.recibido, pagoId: x.id, clienteId: null, estado: 'PROCESSED', cuando: new Date().toISOString() }))), hayMas: false }; },
     async consultarPagoCompleto(id) {
       const p = pagos[id];
       p.refunds.forEach((r) => { if (r.estado === 'PENDING') r.estado = 'SUCCESS'; }); // la devolución "se procesa" en la siguiente consulta
@@ -68,7 +73,7 @@ test('consola: escenario DE MENOS sin hallazgos (espera el resto)', async () => 
 test('consola: escenario DE MÁS acredita, pide y completa la devolución', async () => {
   const i = await correr('mas');
   assert.deepStrictEqual(i.hallazgos, []);
-  assert.deepStrictEqual(i.t.reembolsosPedidos, [{ id: 'VAR-1', monto: 500 }]);
+  assert.deepStrictEqual(i.t.reembolsosPedidos, [{ id: 'VAR-1', monto: 100 }]);
   assert.deepStrictEqual(i.detalle.libro.map((e) => e.tipo).sort(), ['cobro_contactos', 'reembolso_cliente']);
 });
 
@@ -205,22 +210,42 @@ test('consola: varias pruebas seguidas con el mismo cliente no se contaminan ent
   });
 });
 
-test('consola: diagnóstico de pago de más — si Talo lo ignora, lo informa y lista las transacciones', async () => {
+test('consola: pago de más GRANDE — Talo no lo asocia; el control de "sin asociar" lo detecta y avisa una sola vez', async () => {
   await conRedisMock(async ({ conPrefijo }) => {
-    const t = taloFalso();
-    const faucet = t.faucet.bind(t);
-    t.faucet = async (cvu, monto) => { const p = Object.values(t.pagos).find((x) => x.cvu === cvu); if (monto > p.pedido) return true; return faucet(cvu, monto); }; // Talo "ignora" lo que excede
-    t.listarTransacciones = async () => [{ tipo: 'INBOUND', monto: 4600, pago: null, estado: 'PROCESSED' }];
+    const t = taloFalso({ tolerancia: 100 }); // Talo solo asocia hasta +$100 de más
     const informe = await consola._correrEscenario('sobrepago', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
-    assert.ok(informe.hallazgos.some((h) => /asoció la transferencia de más/.test(h)), JSON.stringify(informe.hallazgos));
-    assert.ok(informe.pasos.some((p) => /segunda transferencia/.test(p.titulo)), 'prueba también con la exacta');
-    assert.deepStrictEqual(informe.detalle.transaccionesRecientes[0].monto, 4600);
+    assert.deepStrictEqual(informe.hallazgos, []);
+    assert.ok(informe.pasos.some((p) => /NO asoció/.test(p.titulo)));
+    assert.strictEqual(informe.detalle.avisos.length, 1);
+    assert.strictEqual(informe.detalle.avisos[0].bruto, 5000);
   });
 });
 
-test('consola: diagnóstico de pago de más — si Talo lo asocia, no hay hallazgos', async () => {
+test('consola: pago de más GRANDE — si Talo cambia y lo asocia, la prueba lo indica y no falla', async () => {
   await conRedisMock(async ({ conPrefijo }) => {
     const informe = await consola._correrEscenario('sobrepago', { redis: conPrefijo, talo: taloFalso(), ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
     assert.deepStrictEqual(informe.hallazgos, []);
+    assert.ok(informe.pasos.some((p) => /SÍ la asoció/.test(p.titulo)));
   });
+});
+
+test('consola: si el control no detecta la transferencia suelta, la prueba lo marca', async () => {
+  await conRedisMock(async ({ conPrefijo }) => {
+    const t = taloFalso({ tolerancia: 100 });
+    t.listarTransaccionesRecientes = async () => ({ transacciones: [], hayMas: false }); // el listado no la trae
+    const informe = await consola._correrEscenario('sobrepago', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
+    assert.ok(informe.hallazgos.some((h) => /detecta transferencias sin asociar/.test(h)), JSON.stringify(informe.hallazgos));
+  });
+});
+
+test('normalizarTransacciones: neto, bruto, entrantes sin pago asociado', () => {
+  const r = talo.normalizarTransacciones({ data: { transactions: [
+    { transaction_id: 'TX1', transactionType: 'INBOUND', amount: '4939.50', gross_amount: '5000', payment_id: null, transaction_status: 'PROCESSED', creation_timestamp: '2026-11-10T19:21:23Z' },
+    { id: 'TX2', transactionType: 'OUTBOUND', amount: '-5000.00', gross_amount: '-5000', payment_id: 'VAR-1' },
+  ], lastEvaluatedKey: { x: 1 } } });
+  assert.strictEqual(r.hayMas, true);
+  assert.deepStrictEqual(r.transacciones[0], { id: 'TX1', tipo: 'INBOUND', bruto: 5000, neto: 4939.5, pagoId: null, clienteId: null, estado: 'PROCESSED', cuando: '2026-11-10T19:21:23Z' });
+  assert.strictEqual(r.transacciones[1].bruto, -5000);
+  assert.deepStrictEqual(talo.normalizarTransacciones({}), { transacciones: [], hayMas: false });
+  assert.deepStrictEqual(talo.normalizarTransacciones({ data: [{ id: 'A', type: 'inbound', amount: 10 }] }).transacciones.map((x) => x.tipo), ['INBOUND']);
 });

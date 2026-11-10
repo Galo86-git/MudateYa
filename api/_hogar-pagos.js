@@ -277,6 +277,21 @@ async function conciliarReembolso(id, d) {
   });
 }
 
+// Plata que entró a la cuenta de Talo SIN asociarse a ningún pago (payment_id vacío). Pasa, por ejemplo, cuando un cliente
+// transfiere bastante más que lo pedido: Talo no la asocia y NO hay aviso (webhook) del pago. Sin este control, nadie se
+// entera. Cada transferencia se avisa UNA sola vez (idempotente por id). La cuenta es compartida con Mudanza: se revisa todo.
+async function revisarSinAsociar(d, opts) {
+  const { redis: r, talo, ahora } = dep(d);
+  const res = await talo.listarTransaccionesRecientes(opts || {});
+  const sueltas = (res.transacciones || []).filter(function (t) { return t.tipo === 'INBOUND' && !t.pagoId && !t.clienteId && t.bruto > 0; });
+  let nuevas = 0;
+  for (const t of sueltas) {
+    const id = 'ef:sinasociar:' + idSeguro(t.id || (t.cuando + ':' + t.bruto));
+    if (await encolarEfecto(r, ahora, id, { tipo: 'equipo_alerta', motivo: 'transferencia_sin_asociar', transaccionId: t.id, bruto: t.bruto, neto: t.neto, cuando: t.cuando })) nuevas++;
+  }
+  return { revisadas: (res.transacciones || []).length, sinAsociar: sueltas.length, nuevas, hayMas: !!res.hayMas };
+}
+
 // Devoluciones que se pasaron del plazo de 24 h (para la alerta del cron).
 async function reembolsosVencidos(d) {
   const { redis: r, ahora } = dep(d);
@@ -290,6 +305,6 @@ async function reembolsosVencidos(d) {
 
 module.exports = {
   armarExternalId, parsearExternalId, idSeguro, decidir, procesarPago, anotarAviso, procesarBuzon,
-  solicitarReembolso, ejecutarReembolso, conciliarReembolso, reembolsosVencidos,
+  solicitarReembolso, ejecutarReembolso, conciliarReembolso, reembolsosVencidos, revisarSinAsociar,
   encolarEfecto, efectosPendientes, marcarEfectoHecho, PLAZO_REEMBOLSO_MS, TOLERANCIA_PESOS,
 };

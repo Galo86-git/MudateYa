@@ -16,7 +16,7 @@
 //
 // Vercel ignora los archivos de /api que empiezan con "_".
 
-const { parsearPagoCompleto } = require('./_talo');
+const { parsearPagoCompleto, normalizarTransacciones } = require('./_talo');
 
 const BASE = 'https://sandbox-api.talo.com.ar'; // fija a propósito
 const TIMEOUT_MS = 25000; // el sandbox puede tardar (arranque en frío, token): mejor esperar que cortar
@@ -98,20 +98,17 @@ function crearTaloSandbox(env) {
     return true;
   }
 
-  // Últimas transferencias de la cuenta de sandbox (para diagnosticar a dónde fue una plata). Campos defensivos.
-  async function listarTransacciones() {
+  // Últimas transferencias de la cuenta de sandbox (misma forma que _talo.listarTransaccionesRecientes).
+  async function listarTransaccionesRecientes(o) {
     exigir();
-    const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const desde = (o && o.desde) || new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     const r = await auth('/transactions/?user_id=' + encodeURIComponent(cred.userId) + '&start_date=' + encodeURIComponent(desde), { method: 'GET' });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error('Talo sandbox: no se pudieron listar las transacciones (' + r.status + ')');
-    const lista = (d && d.data && (d.data.transactions || d.data.items)) || (Array.isArray(d && d.data) ? d.data : []);
-    return lista.slice(0, 15).map(function (t) {
-      return { tipo: t.transactionType || t.type || '', monto: t.amount, bruto: t.gross_amount, pago: t.payment_id || null, estado: t.transaction_status || t.status || '', cuando: t.creation_timestamp || '' };
-    });
+    return normalizarTransacciones(d);
   }
 
-  return { configurado, fuente: cred ? cred.fuente : null, base: BASE, token, crearPago, consultarPagoCompleto, reembolsar, faucet, listarTransacciones };
+  return { configurado, fuente: cred ? cred.fuente : null, base: BASE, token, crearPago, consultarPagoCompleto, reembolsar, faucet, listarTransaccionesRecientes };
 }
 
 module.exports = { crearTaloSandbox, credenciales, BASE };

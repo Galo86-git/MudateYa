@@ -31,8 +31,8 @@ const ESCENARIOS = {
   exacto:    { titulo: 'Pago exacto', descripcion: 'El cliente paga justo lo pedido.' },
   menos:     { titulo: 'Pago de menos', descripcion: 'El cliente transfiere menos de lo pedido (y no completa).' },
   completar: { titulo: 'Pago de menos y después completa', descripcion: 'Transfiere una parte y luego el resto. Confirma si Talo suma las dos transferencias al mismo alias.' },
-  mas:       { titulo: 'Pago de más + devolución', descripcion: 'Transfiere de más; se acredita lo esperado y se devuelve la diferencia por Talo.' },
-  sobrepago: { titulo: 'DIAGNÓSTICO: pago de más (¿dónde va la plata?)', descripcion: 'Transfiere un poco de más y averigua si Talo lo asocia al pago o a dónde va.' },
+  mas:       { titulo: 'Pago de más (+$100) + devolución', descripcion: 'Transfiere un poco de más; Talo lo asocia, se acredita lo esperado y se devuelve la diferencia por Talo.' },
+  sobrepago: { titulo: 'Pago de más GRANDE (+$500): plata sin asociar + alerta', descripcion: 'Talo no asocia al pago una transferencia que se pasa mucho del monto. Verifica que el control de transferencias sin asociar la detecte y avise al equipo.' },
   tarde:     { titulo: 'Pago tardío (modo abierto) + devolución total', descripcion: 'El pedido ya venció cuando llega el pago: se devuelve todo por Talo.' },
 };
 
@@ -137,20 +137,20 @@ async function cuerpoEscenario(nombre, deps, informe) {
 
   if (nombre === 'sobrepago') {
     const p = await crearPrueba(deps, informe, { modo: 'directo', monto: MONTO });
-    await deps.talo.faucet(p.cvu, MONTO + 100);
-    informe.paso('Se simuló una transferencia de ' + pesos(MONTO + 100) + ' (100 de más) al CVU del pago de ' + pesos(MONTO));
-    const e1 = await esperarMonto(deps.talo, p.paymentId, MONTO, 25000, deps.pasoMs);
-    informe.chequeo('Talo asoció la transferencia de más al pago', !e1.vencio, e1.vencio ? 'Después de 25 s el pago sigue con ' + pesos(e1.pago.montoPagado) + ' recibidos (estado ' + e1.pago.estado + ')' : 'estado ' + e1.pago.estado + ' · recibido ' + pesos(e1.pago.montoPagado));
-    if (e1.vencio) {
-      await deps.talo.faucet(p.cvu, MONTO);
-      informe.paso('Se simuló una segunda transferencia, ahora por el monto exacto (' + pesos(MONTO) + ')');
-      const e2 = await esperarMonto(deps.talo, p.paymentId, MONTO, 25000, deps.pasoMs);
-      informe.paso('Después de la exacta, Talo muestra recibido ' + pesos(e2.pago.montoPagado) + ' · estado ' + e2.pago.estado, e2.vencio ? 'tampoco la registró' : 'la exacta sí se registró');
-    }
-    if (typeof deps.talo.listarTransacciones === 'function') {
-      try { informe.detalle = { transaccionesRecientes: await deps.talo.listarTransacciones() }; }
-      catch (e) { informe.paso('No se pudo listar las transacciones de la cuenta sandbox', e.message); }
-    }
+    const t0 = new Date(Date.now() - 60 * 1000).toISOString();
+    await deps.talo.faucet(p.cvu, MONTO + 500);
+    informe.paso('Se simuló una transferencia de ' + pesos(MONTO + 500) + ' (500 de más) al CVU del pago de ' + pesos(MONTO));
+    const e1 = await esperarMonto(deps.talo, p.paymentId, MONTO, 20000, deps.pasoMs);
+    informe.paso(
+      e1.vencio ? 'Talo NO asoció esa transferencia al pago (sigue con ' + pesos(e1.pago.montoPagado) + ' recibidos, estado ' + e1.pago.estado + ')' : 'Talo SÍ la asoció al pago (estado ' + e1.pago.estado + ', recibido ' + pesos(e1.pago.montoPagado) + ')',
+      e1.vencio ? 'Es lo esperado: la plata quedó en la cuenta sin dueño. Sin aviso del pago, solo el control de transferencias sin asociar puede detectarla.' : 'Talo cambió su comportamiento: ya asocia pagos de más grandes.');
+    const barrido = await pagos.revisarSinAsociar(deps, { desde: t0 });
+    informe.chequeo('El control detecta transferencias sin asociar', !e1.vencio || barrido.sinAsociar >= 1, 'revisó ' + barrido.revisadas + ' transacciones · sin asociar: ' + barrido.sinAsociar + ' · avisos nuevos: ' + barrido.nuevas);
+    const ef = (await pagos.efectosPendientes(deps, 200)).filter((e) => e.motivo === 'transferencia_sin_asociar');
+    informe.chequeo('Se anotó el aviso al equipo', !e1.vencio || ef.length >= 1, ef.length + ' aviso(s): ' + ef.map((e) => pesos(e.bruto)).join(', '));
+    const otra = await pagos.revisarSinAsociar(deps, { desde: t0 });
+    informe.chequeo('Revisar de nuevo no repite el aviso', otra.nuevas === 0, 'avisos nuevos: ' + otra.nuevas);
+    informe.detalle = { barrido, avisos: ef };
     return;
   }
 
@@ -211,13 +211,13 @@ async function cuerpoEscenario(nombre, deps, informe) {
   }
 
   if (nombre === 'mas') {
-    enTalo = await transferir(deps, informe, p, 5000, 'de más', 5000);
+    enTalo = await transferir(deps, informe, p, MONTO + 100, '100 de más', MONTO + 100);
     informe.chequeo('Talo marca el pago como OVERPAID', enTalo.estado === 'OVERPAID', 'estado: ' + enTalo.estado);
     proc = await pagos.procesarPago(p.paymentId, deps);
     informe.chequeo('El sistema ACREDITA lo esperado', accionDe(proc) === 'acreditar', decisionTxt(proc));
     r = await resumen(deps, p.solicitudId, p.paymentId);
     informe.chequeo('En el libro queda lo esperado (' + pesos(MONTO) + '), no lo recibido', r.libro.length === 1 && r.libro[0].monto === MONTO, JSON.stringify(r.libro));
-    informe.chequeo('Se pidió devolver la diferencia ($500)', r.reembolsos.length === 1 && r.reembolsos[0].monto === 500, JSON.stringify(r.reembolsos));
+    informe.chequeo('Se pidió devolver la diferencia ($100)', r.reembolsos.length === 1 && r.reembolsos[0].monto === 100, JSON.stringify(r.reembolsos));
     if (r.reembolsos[0]) await ejecutarYConciliar(deps, informe, r.reembolsos[0].id, 25000);
   }
 

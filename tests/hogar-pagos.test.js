@@ -348,3 +348,20 @@ test('ids de Talo con caracteres raros: se procesan igual (clave segura) y el id
     await pagos.anotarAviso(deps, raro); // el webhook también lo acepta
   });
 });
+
+test('plata sin asociar: avisa solo las entradas sin pago ni cliente, una sola vez cada una', async () => {
+  await conEntorno(async ({ redis, deps, talo }) => {
+    talo.listarTransaccionesRecientes = async () => ({ hayMas: false, transacciones: [
+      { id: 'TX1', tipo: 'INBOUND', bruto: 5000, neto: 4939.5, pagoId: null, clienteId: null, cuando: 'x' },       // suelta → avisar
+      { id: 'TX2', tipo: 'INBOUND', bruto: 4500, neto: 4445, pagoId: 'VAR-1', clienteId: null, cuando: 'x' },       // asociada
+      { id: 'TX3', tipo: 'OUTBOUND', bruto: -5000, neto: -5000, pagoId: null, clienteId: null, cuando: 'x' },       // devolución
+      { id: 'TX4', tipo: 'INBOUND', bruto: 300, neto: 296, pagoId: null, clienteId: 'cli-fijo', cuando: 'x' },      // cliente fijo de Talo
+    ] });
+    const a = await pagos.revisarSinAsociar(deps);
+    assert.deepStrictEqual(a, { revisadas: 4, sinAsociar: 1, nuevas: 1, hayMas: false });
+    const b = await pagos.revisarSinAsociar(deps);
+    assert.strictEqual(b.nuevas, 0, 'no repite el aviso');
+    const ef = (await pagos.efectosPendientes(deps)).filter((e) => e.motivo === 'transferencia_sin_asociar');
+    assert.strictEqual(ef.length, 1); assert.strictEqual(ef[0].bruto, 5000);
+  });
+});
