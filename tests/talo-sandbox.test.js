@@ -249,3 +249,21 @@ test('normalizarTransacciones: neto, bruto, entrantes sin pago asociado', () => 
   assert.deepStrictEqual(talo.normalizarTransacciones({}), { transacciones: [], hayMas: false });
   assert.deepStrictEqual(talo.normalizarTransacciones({ data: [{ id: 'A', type: 'inbound', amount: 10 }] }).transacciones.map((x) => x.tipo), ['INBOUND']);
 });
+
+test('consola: inspección técnica — detecta si la transferencia suelta trae el CVU destino', async () => {
+  for (const traeCvu of [true, false]) {
+    await conRedisMock(async ({ conPrefijo }) => {
+      const t = taloFalso({ tolerancia: 100 });
+      t.crudo = async (path) => {
+        if (path.indexOf('/payments/') === 0) return { status: 200, body: { data: { payment_status: 'PENDING', transaction_fields: {} } } };
+        const cvu = Object.values(t.pagos)[0].cvu;
+        return { status: 200, body: { data: { transactions: [{ transaction_id: 'TX#1', transactionType: 'INBOUND', amount: '4939.5', gross_amount: '5000', payment_id: null, transaction_data: traeCvu ? { recipient: cvu } : {} }] } } };
+      };
+      const informe = await consola._correrEscenario('inspeccionar', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
+      assert.ok(informe.pasos.some((p) => /Se encontró la transferencia suelta/.test(p.titulo) && p.ok === true));
+      const cv = informe.pasos.find((p) => /trae el CVU/.test(p.titulo));
+      assert.strictEqual(cv.ok, traeCvu, 'traeCvu=' + traeCvu);
+      assert.ok(informe.detalle.transaccionSuelta);
+    });
+  }
+});

@@ -108,7 +108,16 @@ function crearTaloSandbox(env) {
     return normalizarTransacciones(d);
   }
 
-  return { configurado, fuente: cred ? cred.fuente : null, base: BASE, token, crearPago, consultarPagoCompleto, reembolsar, faucet, listarTransaccionesRecientes };
+  // GET crudo (solo sandbox, solo rutas de pagos/transacciones) para inspeccionar qué devuelve Talo.
+  async function crudo(path) {
+    exigir();
+    if (!/^\/(payments|transactions)\//.test(path)) throw new Error('Ruta no permitida');
+    const r = await auth(path.split('{user_id}').join(encodeURIComponent(cred.userId)), { method: 'GET' });
+    const body = await r.json().catch(() => null);
+    return { status: r.status, body };
+  }
+
+  return { configurado, fuente: cred ? cred.fuente : null, base: BASE, token, crearPago, consultarPagoCompleto, reembolsar, faucet, listarTransaccionesRecientes, crudo };
 }
 
 module.exports = { crearTaloSandbox, credenciales, BASE };

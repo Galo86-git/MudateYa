@@ -33,6 +33,7 @@ const ESCENARIOS = {
   completar: { titulo: 'Pago de menos y después completa', descripcion: 'Transfiere una parte y luego el resto. Confirma si Talo suma las dos transferencias al mismo alias.' },
   mas:       { titulo: 'Pago de más (+$100) + devolución', descripcion: 'Transfiere un poco de más; Talo lo asocia, se acredita lo esperado y se devuelve la diferencia por Talo.' },
   sobrepago: { titulo: 'Pago de más GRANDE (+$500): plata sin asociar + alerta', descripcion: 'Talo no asocia al pago una transferencia que se pasa mucho del monto. Verifica que el control de transferencias sin asociar la detecte y avise al equipo.' },
+  inspeccionar: { titulo: 'TÉCNICO: datos crudos de Talo para un pago de más grande', descripcion: 'Muestra exactamente qué devuelve Talo para una transferencia que no asocia: ¿trae el CVU destino?' },
   tarde:     { titulo: 'Pago tardío (modo abierto) + devolución total', descripcion: 'El pedido ya venció cuando llega el pago: se devuelve todo por Talo.' },
 };
 
@@ -134,6 +135,24 @@ async function correrEscenario(nombre, deps) {
 
 async function cuerpoEscenario(nombre, deps, informe) {
   informe.nota('Modo de prueba: Talo SANDBOX y datos aislados (sandbox:). No se mueve plata real ni se toca el libro real.');
+
+  if (nombre === 'inspeccionar') {
+    const p = await crearPrueba(deps, informe, { modo: 'directo', monto: MONTO });
+    const t0 = new Date(Date.now() - 60 * 1000).toISOString();
+    await deps.talo.faucet(p.cvu, MONTO + 500);
+    informe.paso('Se simuló una transferencia de ' + pesos(MONTO + 500) + ' (500 de más) al CVU ' + p.cvu);
+    await dormir(deps.pasoMs != null ? deps.pasoMs : 8000);
+    const pagoCrudo = await deps.talo.crudo('/payments/' + encodeURIComponent(p.paymentId));
+    const lista = await deps.talo.crudo('/transactions/?user_id={user_id}&start_date=' + encodeURIComponent(t0));
+    const items = (lista.body && lista.body.data && (lista.body.data.transactions || lista.body.data.items)) || (lista.body && Array.isArray(lista.body.data) ? lista.body.data : []);
+    const suelta = items.find((t) => !t.payment_id && Number(t.gross_amount != null ? t.gross_amount : t.amount) === MONTO + 500);
+    informe.chequeo('Se encontró la transferencia suelta en la cuenta', !!suelta, suelta ? 'campos: ' + Object.keys(suelta).join(', ') : 'no apareció en las últimas transacciones');
+    const texto = JSON.stringify(suelta || {});
+    informe.chequeo('La transferencia suelta trae el CVU al que se mandó', !!suelta && texto.indexOf(p.cvu) !== -1, texto.indexOf(p.cvu) !== -1 ? 'Sí: el CVU ' + p.cvu + ' figura en los datos → se puede conciliar con el pedido' : 'No aparece el CVU ' + p.cvu + ' en los datos de la transacción');
+    informe.chequeo('El pago sigue sin esa transferencia asociada', Number((pagoCrudo.body && pagoCrudo.body.data && pagoCrudo.body.data.transaction_fields && pagoCrudo.body.data.transaction_fields.amount) || 0) === 0, 'Estado del pago en Talo: ' + ((pagoCrudo.body && pagoCrudo.body.data && pagoCrudo.body.data.payment_status) || '?'));
+    informe.detalle = { transaccionSuelta: suelta || null, pago: pagoCrudo.body && pagoCrudo.body.data };
+    return;
+  }
 
   if (nombre === 'sobrepago') {
     const p = await crearPrueba(deps, informe, { modo: 'directo', monto: MONTO });
