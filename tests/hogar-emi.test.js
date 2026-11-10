@@ -132,8 +132,14 @@ test('flujo completo con opciones numeradas: del saludo al pedido registrado', a
     const cli = await datos.leer('cliente', s.clienteId, { redis });
     assert.strictEqual(cli.wa, WA);
     assert.strictEqual((await conv()).paso, 'completo');
-    // una conversación terminada no captura mensajes que no son de Hogar
+    assert.match(r.respuesta, /escribime "menu" y hacemos otro pedido/);
+    // una conversación terminada no captura mensajes que no son de Hogar...
     assert.strictEqual(await dec('gracias!'), null);
+    // ...salvo "menu": el cliente pide otro rubro y arranca un pedido nuevo (sin pisar el anterior)
+    const otro = await dec('menu');
+    assert.ok(otro && /empezamos de nuevo/.test(otro.respuesta) && /Qué necesitás/.test(otro.respuesta));
+    assert.strictEqual((await datos.ids('solicitud', { redis })).length, 1, 'el pedido anterior queda como estaba');
+    assert.strictEqual((await conv()).paso, 'rubro');
   });
 });
 
@@ -153,6 +159,8 @@ test('rubro ambiguo: ofrece solo las opciones posibles', async () => {
   await conEmi(async ({ dec, conv }) => {
     let r = await dec('necesito un gasista o electricista, no sé, la estufa y el enchufe');
     assert.match(r.respuesta, /más de un rubro/); assert.match(r.respuesta, /1\) Gas/); assert.match(r.respuesta, /2\) Electricidad/);
+    assert.match(r.respuesta, /Después podés hacer otro pedido para el otro/);
+    assert.ok(delCatalogo(r.respuesta));
     assert.doesNotMatch(r.respuesta, /Cerrajería/);
     r = await dec('2');
     assert.strictEqual((await conv()).datos.rubro, 'electricidad');

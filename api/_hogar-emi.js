@@ -188,7 +188,9 @@ async function manejar(e, d) {
 
   let conv = await r.getJSON(K.conv(wk));
   const activa = !!conv && conv.paso && conv.paso !== 'completo' && (ahora.getTime() - (conv.ultimo || 0)) < VIGENCIA_ACTIVA_MS;
-  if (!activa && !esMensajeHogar(norm)) return null;          // no es Hogar: sigue el flujo de Mudanza
+  // Recién terminó un pedido y escribe "menu" (se lo ofrecimos para pedir otro rubro): es de Hogar.
+  const recienCompleto = !!conv && conv.paso === 'completo' && (ahora.getTime() - (conv.ultimo || 0)) < 24 * 3600 * 1000;
+  if (!activa && !esMensajeHogar(norm) && !(recienCompleto && CONTROL.reinicio.test(norm))) return null;          // no es Hogar: sigue el flujo de Mudanza
 
   try {
     return await procesar({ r, ahora, d, wk, waId, texto, norm, imagenes, ubicacion: e.ubicacion || null, conv, activa });

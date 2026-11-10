@@ -25,7 +25,7 @@ const lista = (items) => items.map((x, i) => (i + 1) + ') ' + x).join('\n');
 const CATALOGO = {
   bienvenida: () => '¡Hola! Soy Emi, de MudateYa. Te ayudo a conseguir profesionales para tu hogar en San Isidro y Vicente López: plomería, gas, electricidad, cerrajería y aire acondicionado.\n\nYo solo gestiono el pedido: no doy consejos técnicos, no manejo precios de los trabajos y no puedo asegurar disponibilidad.',
   pedir_rubro: () => '¿Qué necesitás? Respondé con el número:\n' + lista(Object.values(RUBROS)),
-  rubro_ambiguo: (v) => 'Puede ser más de un rubro. ¿Cuál necesitás? Respondé con el número:\n' + lista(v.opciones.map((k) => RUBROS[k])),
+  rubro_ambiguo: (v) => 'Puede ser más de un rubro. ¿Cuál necesitás primero? Respondé con el número:\n' + lista(v.opciones.map((k) => RUBROS[k])) + '\n\nDespués podés hacer otro pedido para el otro.',
   pedir_zona: () => '¿En qué zona es? Respondé con el número o el nombre de la localidad:\n1) San Isidro (Martínez, Acassuso, Beccar, Boulogne, Villa Adelina)\n2) Vicente López (Olivos, La Lucila, Florida, Munro, Villa Martelli, Carapachay)',
   zona_fuera: () => 'Por ahora solo trabajamos en San Isidro y Vicente López, así que no puedo gestionar este pedido. Gracias por escribir.',
   pedir_descripcion: () => 'Contame con tus palabras qué pasa. También podés mandar hasta ' + MAX_FOTOS + ' fotos; no muestres tu dirección ni datos personales en ellas.',
@@ -37,7 +37,7 @@ const CATALOGO = {
     '2) Gestión de MYA: yo busco quién tome tu pedido y coordino. La gestión cuesta ' + pesos(v.precios.gestionAbierto) + ' y se paga cuando un profesional acepta.',
   resumen: (v) => 'Revisemos tu pedido:\n• Rubro: ' + RUBROS[v.d.rubro] + '\n• Zona: ' + ZONAS[v.d.zona] + '\n• Urgencia: ' + URGENCIAS[v.d.urgencia] + '\n• Modo: ' + MODOS[v.d.modo] + '\n• Dirección: ' + v.d.direccion + '\n• Fotos: ' + (v.d.fotos || []).length + '\n\n¿Está todo bien? Respondé con el número:\n1) Sí, confirmar\n2) Empezar de nuevo',
   // PLACEHOLDER hasta conectar profesionales y cobro: no promete nada.
-  fin_datos_completos: (v) => 'Listo, registré tu pedido (n° ' + v.codigo + '). Por ahora quedó registrado y no puedo asegurarte plazos ni disponibilidad.',
+  fin_datos_completos: (v) => 'Listo, registré tu pedido (n° ' + v.codigo + '). Por ahora quedó registrado y no puedo asegurarte plazos ni disponibilidad.\n\nSi necesitás otro rubro, escribime "menu" y hacemos otro pedido.',
   foto_ok: (v) => 'Recibí tu foto (' + v.n + '/' + MAX_FOTOS + ').',
   foto_limite: () => 'Ya tengo el máximo de fotos (' + MAX_FOTOS + ').',
   foto_no_guardada: () => 'No pude guardar esa foto. ¿Probás mandarla de nuevo?',
