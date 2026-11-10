@@ -79,6 +79,18 @@ async function chequearMercadoPago() {
   }
 }
 
+// MYA Hogar: ¿el proceso por minuto sigue corriendo? (solo si Hogar está activado)
+async function chequearHogarCron() {
+  try {
+    if (process.env.HOGAR_PAGOS_ACTIVO !== '1') return { ok: null, detalle: 'Hogar apagado' };
+    var e = await require('./_hogar-cron').estadoLatido();
+    if (!e.ultimo) return { ok: false, detalle: 'el proceso por minuto de Hogar nunca dejó latido' };
+    return { ok: e.ok, detalle: 'último ciclo hace ' + e.minutos + ' min' + (e.ultimoOk === false ? ' (con errores)' : '') };
+  } catch (err) {
+    return { ok: false, detalle: err.message };
+  }
+}
+
 module.exports = async function handler(req, res) {
   var esVercelCron = false;
   try { esVercelCron = esCronVercel(req); } catch (e) {}
@@ -90,6 +102,7 @@ module.exports = async function handler(req, res) {
     redis: await chequearRedis(),
     resend: await chequearResend(),
     mercadopago: await chequearMercadoPago(),
+    hogar_cron: await chequearHogarCron(),
   };
 
   // Solo avisamos en las TRANSICIONES de estado (comparamos contra la última
@@ -155,3 +168,5 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({ ok: true, servicios: servicios, cambios: cambios });
 };
+
+module.exports._chequearHogarCron = chequearHogarCron;

@@ -367,8 +367,34 @@ async function reembolsosVencidos(d) {
   return out;
 }
 
+// Mira en Talo cómo van las devoluciones AUTOMÁTICAS que están en proceso y asienta las que terminaron (las manuales se
+// marcan a mano). Lo usa el proceso por minuto.
+async function conciliarReembolsosEnProceso(d) {
+  const { redis: r } = dep(d);
+  const res = { revisados: 0, completados: 0, fallidos: 0, enProceso: 0 };
+  for (const id of await datos.ids('reembolso', { redis: r })) {
+    const e = await datos.leer('reembolso', id, { redis: r });
+    if (!e || e.estado !== 'en_proceso' || e.manual) continue;
+    res.revisados++;
+    const x = await conciliarReembolso(id, d);
+    if (x.estado === 'completado') res.completados++; else if (x.estado === 'fallido') res.fallidos++; else res.enProceso++;
+  }
+  return res;
+}
+
+// Una alerta por día por cada devolución que pasó el plazo (idempotente por devolución y fecha). `fecha` = AAAA-MM-DD (hora AR).
+async function alertarReembolsosVencidos(d, fecha) {
+  const { redis: r, ahora } = dep(d);
+  const vencidos = await reembolsosVencidos(d);
+  let nuevas = 0;
+  for (const v of vencidos) {
+    if (await encolarEfecto(r, ahora, 'ef:reembolso:' + v.id + ':vencido:' + fecha, { tipo: 'equipo_alerta', motivo: 'reembolso_vencido', reembolsoId: v.id, monto: v.monto, motivoReembolso: v.motivo, estado: v.estado })) nuevas++;
+  }
+  return { vencidos: vencidos.length, nuevas };
+}
+
 module.exports = {
   armarExternalId, parsearExternalId, idSeguro, decidir, procesarPago, anotarAviso, procesarBuzon,
-  solicitarReembolso, ejecutarReembolso, completarReembolsoManual, conciliarReembolso, reembolsosVencidos, revisarSinAsociar,
+  solicitarReembolso, ejecutarReembolso, completarReembolsoManual, conciliarReembolso, reembolsosVencidos, conciliarReembolsosEnProceso, alertarReembolsosVencidos, revisarSinAsociar,
   encolarEfecto, efectosPendientes, marcarEfectoHecho, PLAZO_REEMBOLSO_MS, TOLERANCIA_PESOS,
 };

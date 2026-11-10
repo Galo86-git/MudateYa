@@ -1100,6 +1100,9 @@
     },
     "api/hogar-talo-webhook.js": {
       "maxDuration": 30
+    },
+    "api/cron-hogar.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -1262,6 +1265,10 @@
     {
       "path": "/api/cron-backup",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron-hogar",
+      "schedule": "* * * * *"
     }
   ]
 }
