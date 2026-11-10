@@ -81,3 +81,16 @@ test('api/dni: sin CORS abierto', async () => {
   await handler({ method: 'GET', query: { pathname: 'dni/x/y.jpg' }, headers: {} }, r);
   assert.strictEqual(r.headers['Access-Control-Allow-Origin'], undefined);
 });
+
+test('tokenPrivado: usa la variable propia primero; sin ninguna devuelve vacío y subirDni avisa claro', async () => {
+  const claves = ['BLOB_PRIVADO_READ_WRITE_TOKEN', 'BLOB_BACKUP_READ_WRITE_TOKEN', 'BLOB_READ_WRITE_TOKEN'];
+  const previo = {}; claves.forEach((k) => { previo[k] = process.env[k]; delete process.env[k]; });
+  try {
+    assert.strictEqual(dni.tokenPrivado(), '');
+    await assert.rejects(() => dni.subirDni(JPG, 'a@a.com', 'frente'), /almacenamiento privado/);
+    process.env.BLOB_READ_WRITE_TOKEN = 'publico-o-viejo';
+    assert.strictEqual(dni.tokenPrivado(), 'publico-o-viejo');
+    process.env.BLOB_PRIVADO_READ_WRITE_TOKEN = 'privado';
+    assert.strictEqual(dni.tokenPrivado(), 'privado');
+  } finally { claves.forEach((k) => { if (previo[k] === undefined) delete process.env[k]; else process.env[k] = previo[k]; }); }
+});

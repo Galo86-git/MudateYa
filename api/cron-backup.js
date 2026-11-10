@@ -6,9 +6,8 @@
 //                      GET  /api/cron-backup?accion=estado → lista los backups guardados
 //
 // Variables: BACKUP_ENCRYPTION_KEY (32 bytes base64/hex; si se pierde, los backups no se
-// pueden abrir), BLOB_BACKUP_READ_WRITE_TOKEN (opcional: store aparte; si no existe usa
-// BLOB_READ_WRITE_TOKEN, que tiene que ser un store privado). Los archivos se restauran con
-// scripts/restaurar-backup.mjs.
+// pueden abrir), BLOB_PRIVADO_READ_WRITE_TOKEN (store privado de Blob; el mismo de los DNI).
+// Los archivos se restauran con scripts/restaurar-backup.mjs.
 //
 // Si falla, avisa por mail a ADMIN_EMAIL. Después de subir, vuelve a bajar el archivo, lo
 // descifra y compara la cantidad de claves.
@@ -22,7 +21,7 @@ const RETENER_DIARIOS = 30;
 const RETENER_MENSUALES = 12;
 
 function tokenBlob() {
-  return process.env.BLOB_BACKUP_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+  return require('./_dni-privado').tokenPrivado();
 }
 
 async function listarBackups(blob, token) {
@@ -38,7 +37,7 @@ async function listarBackups(blob, token) {
 async function hacerBackup() {
   const blob = require('@vercel/blob');
   const token = tokenBlob();
-  if (!token) throw new Error('Falta BLOB_BACKUP_READ_WRITE_TOKEN / BLOB_READ_WRITE_TOKEN');
+  if (!token) throw new Error(require('./_dni-privado').MSG_SIN_STORE);
   const clave = core.parseClave(process.env.BACKUP_ENCRYPTION_KEY);
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const tk = process.env.UPSTASH_REDIS_REST_TOKEN;
