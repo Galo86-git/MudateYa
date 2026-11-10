@@ -219,8 +219,13 @@ function normalizarTransacciones(d) {
   const lista = Array.isArray(data) ? data : (data && (data.transactions || data.items)) || [];
   return {
     transacciones: lista.map(function (t) {
+      const td = (t.transaction_data && (t.transaction_data.PROCESSED || t.transaction_data[Object.keys(t.transaction_data)[0]])) || {};
       return {
         id: String(t.transaction_id || t.id || ''), tipo: String(t.transactionType || t.type || '').toUpperCase(),
+        // Una transferencia que Talo NO asocia a un pago igual trae a cuál INTENTÓ ir (attempted_payment_id), el CVU/alias
+        // al que se mandó y quién la mandó: con eso se puede conciliar por nuestra cuenta.
+        intentoPagoId: t.attempted_payment_id || null, address: t.address || '', alias: t.address_alias || '',
+        remitente: { cuit: td.senderCuit || '', titular: td.senderTitular || '', cbu: t.sender_address || td.sender || '' },
         bruto: aNumero(t.gross_amount != null ? t.gross_amount : t.amount), neto: aNumero(t.amount),
         pagoId: t.payment_id || null, clienteId: t.customer_id || null,
         estado: String(t.transaction_status || t.status || ''), cuando: t.creation_timestamp || '',

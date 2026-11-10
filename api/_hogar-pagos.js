@@ -98,6 +98,7 @@ const K = {
   // ('hogar:lock:{tipo}:{id}'), porque se esperarían entre sí (interbloqueo).
   lockPago: (id) => 'hogar:lock:op-cobro:' + id,
   lockReembolso: (id) => 'hogar:lock:op-reembolso:' + id,
+  sueltasHechas: 'hogar:sueltas:hechas',
 };
 const dep = (d) => ({ redis: (d && d.redis) || cliente(), talo: (d && d.talo) || require('./_talo'), ahora: (d && d.ahora) || new Date() });
 
@@ -142,11 +143,19 @@ async function procesarBuzon(d, n) {
 }
 
 // ── Procesar un pago de Talo (verificado contra la API, con lock, idempotente) ──
-async function procesarPago(paymentId, d) {
+// extra.sueltas: transferencias que Talo recibió para este pago pero NO asoció a él (ver revisarSinAsociar). Se suman a lo
+// pagado, y si hay que devolver, la devolución es MANUAL (la API de devoluciones solo opera sobre plata asociada al pago).
+async function procesarPago(paymentId, d, extra) {
   const { redis: r, talo, ahora } = dep(d);
   const pid = idSeguro(paymentId);
   return r.withLock(K.lockPago(pid), 30, async () => {
     const pago = await talo.consultarPagoCompleto(paymentId); // la verdad es la API, no el aviso
+    const sueltas = (extra && Array.isArray(extra.sueltas)) ? extra.sueltas : [];
+    if (sueltas.length) {
+      pago.montoPagado += sueltas.reduce((t, x) => t + x.bruto, 0);
+      pago.acreditado += sueltas.reduce((t, x) => t + x.neto, 0);
+    }
+    const datosManual = sueltas.length ? { manual: true, remitente: sueltas[0].remitente || null, transacciones: sueltas.map((x) => x.id) } : {};
     const ref = parsearExternalId(pago.externalId);
     if (!ref) return { ignorado: 'external_id ajeno (no es de Hogar)' };
 
@@ -193,11 +202,11 @@ async function procesarPago(paymentId, d) {
 
     // Plata de más (cliente): se devuelve la diferencia.
     if (dec.excedente > 0 && ref.clase !== 'liq') {
-      await solicitarReembolso({ paymentId, monto: dec.excedente, motivo: 'excedente', solicitudId: entidad.id }, { redis: r, ahora });
+      await solicitarReembolso(Object.assign({ paymentId, monto: dec.excedente, motivo: 'excedente', solicitudId: entidad.id }, datosManual), { redis: r, ahora });
     }
     // No se pudo honrar (tardío en modo abierto / insuficiente y vencido): se devuelve lo que llegó.
     if (dec.accion === 'devolver_todo') {
-      await solicitarReembolso({ paymentId, monto: dec.aDevolver, motivo: dec.motivo, solicitudId: entidad.id }, { redis: r, ahora });
+      await solicitarReembolso(Object.assign({ paymentId, monto: dec.aDevolver, motivo: dec.motivo, solicitudId: entidad.id }, datosManual), { redis: r, ahora });
       await encolarEfecto(r, ahora, 'ef:' + pid + ':devolucion', { tipo: 'cliente_devolucion', solicitudId: entidad.id, monto: dec.aDevolver, motivo: dec.motivo });
     }
     if (dec.accion === 'esperar' && dec.motivo === 'insuficiente_esperando_resto') {
@@ -224,9 +233,10 @@ async function solicitarReembolso(o, d) {
   try {
     const ent = await datos.crear('reembolso', id, {
       paymentId: o.paymentId, monto: o.monto != null ? o.monto : null, motivo: o.motivo, solicitudId: o.solicitudId || null,
+      manual: !!o.manual, remitente: o.remitente || null, transacciones: o.transacciones || [],
       estado: 'solicitado', solicitadoEn: ahora.toISOString(), venceEn: new Date(ahora.getTime() + PLAZO_REEMBOLSO_MS).toISOString(), intentos: 0,
     }, { redis: r, ahora });
-    await encolarEfecto(r, ahora, 'ef:reembolso:' + id + ':nuevo', { tipo: 'equipo_reembolso_pendiente', reembolsoId: id, paymentId: o.paymentId, monto: o.monto, motivo: o.motivo, venceEn: ent.venceEn });
+    await encolarEfecto(r, ahora, 'ef:reembolso:' + id + ':nuevo', { tipo: 'equipo_reembolso_pendiente', reembolsoId: id, paymentId: o.paymentId, monto: o.monto, motivo: o.motivo, venceEn: ent.venceEn, manual: !!o.manual, remitente: o.remitente || null });
     return { reembolso: ent, nuevo: true };
   } catch (e) {
     if (!(e instanceof datos.EntidadExistente)) throw e;
@@ -246,6 +256,9 @@ async function ejecutarReembolso(id, d) {
     if (!ent) throw new datos.EntidadInexistente(id);
     if (ent.estado === 'completado') return { ya: 'completado' };
     if (ent.estado === 'en_proceso') return { ya: 'en_proceso' };
+    // Plata que Talo no asoció al pago: la API de devoluciones no puede moverla. Se devuelve a mano desde el panel de Talo
+    // (los datos de quién la mandó están en la devolución) y después se marca con completarReembolsoManual().
+    if (ent.manual) return { manual: true, monto: ent.monto, remitente: ent.remitente, transacciones: ent.transacciones };
     const res = await talo.reembolsar(ent.paymentId, { monto: ent.monto });
     await datos.actualizar('reembolso', id, (x) => { x.estado = 'en_proceso'; x.ejecutadoEn = ahora.toISOString(); x.intentos = (x.intentos || 0) + 1; x.yaPendienteEnTalo = !!res.yaPendiente; }, { redis: r, ahora });
     return { ejecutado: true };
@@ -277,19 +290,70 @@ async function conciliarReembolso(id, d) {
   });
 }
 
+// Marca como hecha una devolución MANUAL (se devolvió desde el panel de Talo). Asienta el reembolso en el libro una sola vez.
+async function completarReembolsoManual(id, o, d) {
+  const { redis: r, ahora } = dep(d);
+  const nota = o && o.nota ? String(o.nota).trim() : '';
+  if (nota.length < 5) throw new Error('Falta una nota (referencia de la devolución hecha en Talo, mínimo 5 caracteres)');
+  return r.withLock(K.lockReembolso(id), 30, async () => {
+    const ent = await datos.leer('reembolso', id, { redis: r });
+    if (!ent) throw new datos.EntidadInexistente(id);
+    if (!ent.manual) throw new Error('Esta devolución es automática: se ejecuta con ejecutarReembolso');
+    if (ent.estado === 'completado') return { estado: 'completado', ya: true };
+    const sol = ent.solicitudId ? await datos.leer('solicitud', ent.solicitudId, { redis: r }) : null;
+    await libro.registrar({ id: 'reembolso:' + id, tipo: 'reembolso_cliente', parteId: (sol && (sol.clienteId || sol.cliente)) || 'sin-cliente', monto: ent.monto, refExterna: idSeguro(ent.paymentId), trabajoId: ent.solicitudId || null, nota: 'Devolución manual: ' + nota, por: (o && o.por) || 'admin' }, { redis: r, ahora });
+    await datos.actualizar('reembolso', id, (x) => { x.estado = 'completado'; x.completadoEn = ahora.toISOString(); x.notaManual = nota; }, { redis: r, ahora });
+    await encolarEfecto(r, ahora, 'ef:reembolso:' + id + ':ok', { tipo: 'cliente_devolucion_hecha', solicitudId: ent.solicitudId, monto: ent.monto });
+    return { estado: 'completado' };
+  });
+}
+
 // Plata que entró a la cuenta de Talo SIN asociarse a ningún pago (payment_id vacío). Pasa, por ejemplo, cuando un cliente
-// transfiere bastante más que lo pedido: Talo no la asocia y NO hay aviso (webhook) del pago. Sin este control, nadie se
-// entera. Cada transferencia se avisa UNA sola vez (idempotente por id). La cuenta es compartida con Mudanza: se revisa todo.
+// transfiere bastante más que lo pedido: Talo no la asocia y NO avisa (no hay webhook). PERO la transferencia trae a qué
+// pago INTENTÓ ir (attempted_payment_id), así que acá se CONCILIA igual: se suma a lo pagado de ese pedido y sigue el camino
+// de siempre (se acredita lo esperado y la diferencia queda como devolución MANUAL con los datos de quién la mandó).
+// Lo que no se puede atribuir a un pedido de Hogar (sin pago intentado, o de Mudanza) se avisa al equipo, una sola vez.
+// Cada transferencia se procesa una vez (se anota en un conjunto). La cuenta de Talo es compartida con Mudanza.
 async function revisarSinAsociar(d, opts) {
   const { redis: r, talo, ahora } = dep(d);
-  const res = await talo.listarTransaccionesRecientes(opts || {});
-  const sueltas = (res.transacciones || []).filter(function (t) { return t.tipo === 'INBOUND' && !t.pagoId && !t.clienteId && t.bruto > 0; });
-  let nuevas = 0;
-  for (const t of sueltas) {
-    const id = 'ef:sinasociar:' + idSeguro(t.id || (t.cuando + ':' + t.bruto));
-    if (await encolarEfecto(r, ahora, id, { tipo: 'equipo_alerta', motivo: 'transferencia_sin_asociar', transaccionId: t.id, bruto: t.bruto, neto: t.neto, cuando: t.cuando })) nuevas++;
+  opts = opts || {};
+  const desdeMs = opts.desde ? Date.parse(opts.desde) : ahora.getTime() - 24 * 3600 * 1000;
+  const res = await talo.listarTransaccionesRecientes({ desde: opts.desde });
+  const lista = res.transacciones || [];
+  const idDe = function (t) { return idSeguro(t.id || (t.cuando + ':' + t.bruto)); };
+  const sueltas = lista.filter(function (t) {
+    if (!(t.tipo === 'INBOUND' && !t.pagoId && !t.clienteId && t.bruto > 0)) return false;
+    const ms = Date.parse(t.cuando);
+    return Number.isNaN(ms) || ms >= desdeMs;
+  });
+  const hechas = new Set((await r.cmd('SMEMBERS', K.sueltasHechas)) || []);
+  const pendientes = sueltas.filter(function (t) { return !hechas.has(idDe(t)); });
+  const out = { revisadas: lista.length, sinAsociar: sueltas.length, conciliadas: 0, nuevas: 0, hayMas: !!res.hayMas };
+
+  const porPago = {};
+  const sinPago = [];
+  pendientes.forEach(function (t) { if (t.intentoPagoId) (porPago[t.intentoPagoId] = porPago[t.intentoPagoId] || []).push(t); else sinPago.push(t); });
+
+  const marcar = async function (t) { await r.cmd('SADD', K.sueltasHechas, idDe(t)); };
+  const alertar = async function (t, motivo) {
+    if (await encolarEfecto(r, ahora, 'ef:sinasociar:' + idDe(t), { tipo: 'equipo_alerta', motivo, transaccionId: t.id, bruto: t.bruto, neto: t.neto, cuando: t.cuando, pagoIntentado: t.intentoPagoId || null, remitente: t.remitente || null })) out.nuevas++;
+    await marcar(t);
+  };
+
+  for (const pid of Object.keys(porPago)) {
+    // Todas las sueltas de ese pago (incluidas las ya procesadas): el total se recalcula completo y es idempotente.
+    const todas = sueltas.filter(function (t) { return t.intentoPagoId === pid; });
+    let procesado = null;
+    try { procesado = await procesarPago(pid, d, { sueltas: todas }); } catch (e) { procesado = null; }
+    if (procesado && !procesado.ignorado) {
+      out.conciliadas += porPago[pid].length;
+      for (const t of porPago[pid]) await marcar(t);
+    } else {
+      for (const t of porPago[pid]) await alertar(t, procesado ? 'transferencia_sin_asociar' : 'transferencia_sin_asociar_error');
+    }
   }
-  return { revisadas: (res.transacciones || []).length, sinAsociar: sueltas.length, nuevas, hayMas: !!res.hayMas };
+  for (const t of sinPago) await alertar(t, 'transferencia_sin_asociar');
+  return out;
 }
 
 // Devoluciones que se pasaron del plazo de 24 h (para la alerta del cron).
@@ -305,6 +369,6 @@ async function reembolsosVencidos(d) {
 
 module.exports = {
   armarExternalId, parsearExternalId, idSeguro, decidir, procesarPago, anotarAviso, procesarBuzon,
-  solicitarReembolso, ejecutarReembolso, conciliarReembolso, reembolsosVencidos, revisarSinAsociar,
+  solicitarReembolso, ejecutarReembolso, completarReembolsoManual, conciliarReembolso, reembolsosVencidos, revisarSinAsociar,
   encolarEfecto, efectosPendientes, marcarEfectoHecho, PLAZO_REEMBOLSO_MS, TOLERANCIA_PESOS,
 };

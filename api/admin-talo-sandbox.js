@@ -32,8 +32,8 @@ const ESCENARIOS = {
   menos:     { titulo: 'Pago de menos', descripcion: 'El cliente transfiere menos de lo pedido (y no completa).' },
   completar: { titulo: 'Pago de menos y después completa', descripcion: 'Transfiere una parte y luego el resto. Confirma si Talo suma las dos transferencias al mismo alias.' },
   mas:       { titulo: 'Pago de más (+$100) + devolución', descripcion: 'Transfiere un poco de más; Talo lo asocia, se acredita lo esperado y se devuelve la diferencia por Talo.' },
-  sobrepago: { titulo: 'Pago de más GRANDE (+$500): plata sin asociar + alerta', descripcion: 'Talo no asocia al pago una transferencia que se pasa mucho del monto. Verifica que el control de transferencias sin asociar la detecte y avise al equipo.' },
-  inspeccionar: { titulo: 'TÉCNICO: datos crudos de Talo para un pago de más grande', descripcion: 'Muestra exactamente qué devuelve Talo para una transferencia que no asocia: ¿trae el CVU destino?' },
+  sobrepago: { titulo: 'Pago de más GRANDE (+$500): Talo no lo asocia, MYA lo concilia', descripcion: 'Talo no asocia al pago una transferencia que se pasa mucho del monto, pero informa a qué pago iba. Verifica que MYA la concilie igual: acredita lo esperado y deja la diferencia como devolución manual.' },
+  inspeccionar: { titulo: 'TÉCNICO: datos crudos de Talo para un pago de más grande', descripcion: 'Muestra exactamente qué devuelve Talo para una transferencia que no asocia: CVU destino y pago intentado.' },
   tarde:     { titulo: 'Pago tardío (modo abierto) + devolución total', descripcion: 'El pedido ya venció cuando llega el pago: se devuelve todo por Talo.' },
 };
 
@@ -138,19 +138,22 @@ async function cuerpoEscenario(nombre, deps, informe) {
 
   if (nombre === 'inspeccionar') {
     const p = await crearPrueba(deps, informe, { modo: 'directo', monto: MONTO });
-    const t0 = new Date(Date.now() - 60 * 1000).toISOString();
     await deps.talo.faucet(p.cvu, MONTO + 500);
     informe.paso('Se simuló una transferencia de ' + pesos(MONTO + 500) + ' (500 de más) al CVU ' + p.cvu);
-    await dormir(deps.pasoMs != null ? deps.pasoMs : 8000);
+    // Buscar LA transferencia de este pago (por su CVU destino); el listado puede tardar unos segundos en mostrarla.
+    let suelta = null; let lista = null;
+    for (let i = 0; i < 6 && !suelta; i++) {
+      await dormir(deps.pasoMs != null ? deps.pasoMs : 4000);
+      lista = await deps.talo.crudo('/transactions/?user_id={user_id}');
+      const items = (lista.body && lista.body.data && (lista.body.data.transactions || lista.body.data.items)) || (lista.body && Array.isArray(lista.body.data) ? lista.body.data : []);
+      suelta = items.find((t) => t.address === p.cvu && !t.payment_id) || null;
+    }
     const pagoCrudo = await deps.talo.crudo('/payments/' + encodeURIComponent(p.paymentId));
-    const lista = await deps.talo.crudo('/transactions/?user_id={user_id}&start_date=' + encodeURIComponent(t0));
-    const items = (lista.body && lista.body.data && (lista.body.data.transactions || lista.body.data.items)) || (lista.body && Array.isArray(lista.body.data) ? lista.body.data : []);
-    const suelta = items.find((t) => !t.payment_id && Number(t.gross_amount != null ? t.gross_amount : t.amount) === MONTO + 500);
-    informe.chequeo('Se encontró la transferencia suelta en la cuenta', !!suelta, suelta ? 'campos: ' + Object.keys(suelta).join(', ') : 'no apareció en las últimas transacciones');
-    const texto = JSON.stringify(suelta || {});
-    informe.chequeo('La transferencia suelta trae el CVU al que se mandó', !!suelta && texto.indexOf(p.cvu) !== -1, texto.indexOf(p.cvu) !== -1 ? 'Sí: el CVU ' + p.cvu + ' figura en los datos → se puede conciliar con el pedido' : 'No aparece el CVU ' + p.cvu + ' en los datos de la transacción');
+    informe.chequeo('Se encontró la transferencia de este pago en la cuenta (sin pago asociado)', !!suelta, suelta ? 'campos: ' + Object.keys(suelta).join(', ') : 'no apareció en el listado de transacciones');
+    informe.chequeo('La transferencia trae el CVU destino', !!suelta && suelta.address === p.cvu, suelta ? 'CVU ' + suelta.address + ' · alias ' + (suelta.address_alias || '') : '');
+    informe.chequeo('La transferencia trae a qué pago intentó ir (attempted_payment_id)', !!suelta && suelta.attempted_payment_id === p.paymentId, suelta ? String(suelta.attempted_payment_id) : '');
     informe.chequeo('El pago sigue sin esa transferencia asociada', Number((pagoCrudo.body && pagoCrudo.body.data && pagoCrudo.body.data.transaction_fields && pagoCrudo.body.data.transaction_fields.amount) || 0) === 0, 'Estado del pago en Talo: ' + ((pagoCrudo.body && pagoCrudo.body.data && pagoCrudo.body.data.payment_status) || '?'));
-    informe.detalle = { transaccionSuelta: suelta || null, pago: pagoCrudo.body && pagoCrudo.body.data };
+    informe.detalle = { transaccionSuelta: suelta, pago: pagoCrudo.body && pagoCrudo.body.data };
     return;
   }
 
@@ -159,17 +162,41 @@ async function cuerpoEscenario(nombre, deps, informe) {
     const t0 = new Date(Date.now() - 60 * 1000).toISOString();
     await deps.talo.faucet(p.cvu, MONTO + 500);
     informe.paso('Se simuló una transferencia de ' + pesos(MONTO + 500) + ' (500 de más) al CVU del pago de ' + pesos(MONTO));
-    const e1 = await esperarMonto(deps.talo, p.paymentId, MONTO, 20000, deps.pasoMs);
+    const e1 = await esperarMonto(deps.talo, p.paymentId, MONTO, deps.topeEsperaMs != null ? deps.topeEsperaMs : 20000, deps.pasoMs);
     informe.paso(
       e1.vencio ? 'Talo NO asoció esa transferencia al pago (sigue con ' + pesos(e1.pago.montoPagado) + ' recibidos, estado ' + e1.pago.estado + ')' : 'Talo SÍ la asoció al pago (estado ' + e1.pago.estado + ', recibido ' + pesos(e1.pago.montoPagado) + ')',
-      e1.vencio ? 'Es lo esperado: la plata quedó en la cuenta sin dueño. Sin aviso del pago, solo el control de transferencias sin asociar puede detectarla.' : 'Talo cambió su comportamiento: ya asocia pagos de más grandes.');
-    const barrido = await pagos.revisarSinAsociar(deps, { desde: t0 });
-    informe.chequeo('El control detecta transferencias sin asociar', !e1.vencio || barrido.sinAsociar >= 1, 'revisó ' + barrido.revisadas + ' transacciones · sin asociar: ' + barrido.sinAsociar + ' · avisos nuevos: ' + barrido.nuevas);
-    const ef = (await pagos.efectosPendientes(deps, 200)).filter((e) => e.motivo === 'transferencia_sin_asociar');
-    informe.chequeo('Se anotó el aviso al equipo', !e1.vencio || ef.length >= 1, ef.length + ' aviso(s): ' + ef.map((e) => pesos(e.bruto)).join(', '));
-    const otra = await pagos.revisarSinAsociar(deps, { desde: t0 });
-    informe.chequeo('Revisar de nuevo no repite el aviso', otra.nuevas === 0, 'avisos nuevos: ' + otra.nuevas);
-    informe.detalle = { barrido, avisos: ef };
+      e1.vencio ? 'Sin aviso del pago, la transferencia solo se detecta revisando las transacciones de la cuenta.' : 'Talo cambió su comportamiento: ya asocia pagos de más grandes.');
+
+    // La transferencia suele tardar unos segundos en aparecer en el listado de transacciones.
+    let barrido = null; let r = null;
+    for (let i = 0; i < 6; i++) {
+      barrido = await pagos.revisarSinAsociar(deps, { desde: t0 });
+      r = await resumen(deps, p.solicitudId, p.paymentId);
+      if (r.solicitud && r.solicitud.estado === 'pagada') break;
+      if (!e1.vencio) break;
+      await dormir(deps.pasoMs != null ? deps.pasoMs : 4000);
+    }
+    if (e1.vencio) {
+      informe.chequeo('El control concilió la transferencia suelta con su pedido', !!r.solicitud && r.solicitud.estado === 'pagada', 'revisó ' + barrido.revisadas + ' transacciones · conciliadas: ' + barrido.conciliadas + ' · pedido: ' + JSON.stringify(r.solicitud));
+      informe.chequeo('En el libro queda lo esperado (' + pesos(MONTO) + '), una sola vez', r.libro.filter((e) => e.tipo === 'cobro_contactos').length === 1 && r.libro.find((e) => e.tipo === 'cobro_contactos').monto === MONTO, JSON.stringify(r.libro));
+      const dev = r.reembolsos[0];
+      informe.chequeo('Se pidió devolver la diferencia (' + pesos(500) + ') como devolución MANUAL', !!dev && dev.monto === 500, JSON.stringify(r.reembolsos));
+      const ent = dev ? await datos.leer('reembolso', dev.id, { redis: deps.redis }) : null;
+      informe.chequeo('La devolución trae los datos de quién transfirió (para devolverle)', !!ent && !!ent.manual && !!ent.remitente && !!ent.remitente.cuit, ent && ent.remitente ? ent.remitente.titular + ' · CUIT ' + ent.remitente.cuit : 'sin datos de remitente');
+      const otra = await pagos.revisarSinAsociar(deps, { desde: t0 });
+      const r2 = await resumen(deps, p.solicitudId, p.paymentId);
+      informe.chequeo('Revisar de nuevo no duplica nada', otra.conciliadas === 0 && r2.libro.filter((e) => e.tipo === 'cobro_contactos').length === 1 && r2.reembolsos.length === 1, 'conciliadas: ' + otra.conciliadas + ' · entradas de cobro: ' + r2.libro.filter((e) => e.tipo === 'cobro_contactos').length + ' · devoluciones: ' + r2.reembolsos.length);
+      if (dev) {
+        const ej = await pagos.ejecutarReembolso(dev.id, deps);
+        informe.chequeo('Ejecutar una devolución manual NO le pide nada a Talo (se hace desde su panel)', !!ej.manual, JSON.stringify(ej));
+        await pagos.completarReembolsoManual(dev.id, { nota: 'Devuelto desde el panel de Talo (prueba)', por: 'consola' }, deps);
+        const r3 = await resumen(deps, p.solicitudId, p.paymentId);
+        informe.chequeo('Al marcarla como hecha, el reembolso queda asentado en el libro', r3.libro.some((e) => e.tipo === 'reembolso_cliente' && e.monto === 500), JSON.stringify(r3.libro.map((e) => e.tipo + ':' + e.monto)));
+      }
+      informe.detalle = await resumen(deps, p.solicitudId, p.paymentId);
+    } else {
+      informe.detalle = { barrido };
+    }
     return;
   }
 

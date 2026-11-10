@@ -32,7 +32,7 @@ function taloFalso(o) {
     async crearPago(x) { const id = 'VAR-' + (++n); pagos[id] = { id, pedido: x.monto, recibido: 0, externalId: x.externalId, cvu: '000000' + n, alias: 'alias.' + n, refunds: [] }; return vista(pagos[id]); },
     async faucet(cvu, monto) {
       const p = Object.values(pagos).find((x) => x.cvu === cvu);
-      if (p.recibido + monto > p.pedido + o.tolerancia) { sueltas.push({ id: 'TX' + sueltas.length, tipo: 'INBOUND', bruto: monto, neto: Math.round(monto * 0.99), pagoId: null, clienteId: null, estado: 'PROCESSED', cuando: new Date().toISOString() }); return true; }
+      if (p.recibido + monto > p.pedido + o.tolerancia) { sueltas.push({ id: 'TX' + sueltas.length, tipo: 'INBOUND', bruto: monto, neto: Math.round(monto * 0.99), pagoId: null, clienteId: null, intentoPagoId: p.id, address: p.cvu, alias: p.alias, remitente: { cuit: '27767826051', titular: 'Patricia Fernández', cbu: '0270000068177940014287' }, estado: 'PROCESSED', cuando: new Date().toISOString() }); return true; }
       p.recibido = o.suma ? p.recibido + monto : monto; return true;
     },
     async listarTransaccionesRecientes() { return { transacciones: sueltas.concat(Object.values(pagos).filter((x) => x.recibido > 0).map((x) => ({ id: 'TXP' + x.id, tipo: 'INBOUND', bruto: x.recibido, neto: x.recibido, pagoId: x.id, clienteId: null, estado: 'PROCESSED', cuando: new Date().toISOString() }))), hayMas: false }; },
@@ -210,14 +210,15 @@ test('consola: varias pruebas seguidas con el mismo cliente no se contaminan ent
   });
 });
 
-test('consola: pago de más GRANDE — Talo no lo asocia; el control de "sin asociar" lo detecta y avisa una sola vez', async () => {
+test('consola: pago de más GRANDE — Talo no lo asocia; MYA lo concilia por el pago intentado', async () => {
   await conRedisMock(async ({ conPrefijo }) => {
     const t = taloFalso({ tolerancia: 100 }); // Talo solo asocia hasta +$100 de más
     const informe = await consola._correrEscenario('sobrepago', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
     assert.deepStrictEqual(informe.hallazgos, []);
     assert.ok(informe.pasos.some((p) => /NO asoció/.test(p.titulo)));
-    assert.strictEqual(informe.detalle.avisos.length, 1);
-    assert.strictEqual(informe.detalle.avisos[0].bruto, 5000);
+    assert.deepStrictEqual(informe.detalle.libro.map((e) => e.tipo).sort(), ['cobro_contactos', 'reembolso_cliente']);
+    assert.strictEqual(informe.detalle.solicitud.estado, 'pagada');
+    assert.deepStrictEqual(t.reembolsosPedidos, [], 'la devolución es manual: no se le pide a Talo');
   });
 });
 
@@ -229,41 +230,44 @@ test('consola: pago de más GRANDE — si Talo cambia y lo asocia, la prueba lo 
   });
 });
 
-test('consola: si el control no detecta la transferencia suelta, la prueba lo marca', async () => {
+test('consola: si el listado de Talo no trae la transferencia suelta, la prueba lo marca', async () => {
   await conRedisMock(async ({ conPrefijo }) => {
     const t = taloFalso({ tolerancia: 100 });
-    t.listarTransaccionesRecientes = async () => ({ transacciones: [], hayMas: false }); // el listado no la trae
+    t.listarTransaccionesRecientes = async () => ({ transacciones: [], hayMas: false });
     const informe = await consola._correrEscenario('sobrepago', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
-    assert.ok(informe.hallazgos.some((h) => /detecta transferencias sin asociar/.test(h)), JSON.stringify(informe.hallazgos));
+    assert.ok(informe.hallazgos.some((h) => /concilió la transferencia suelta/.test(h)), JSON.stringify(informe.hallazgos));
   });
 });
 
 test('normalizarTransacciones: neto, bruto, entrantes sin pago asociado', () => {
   const r = talo.normalizarTransacciones({ data: { transactions: [
-    { transaction_id: 'TX1', transactionType: 'INBOUND', amount: '4939.50', gross_amount: '5000', payment_id: null, transaction_status: 'PROCESSED', creation_timestamp: '2026-11-10T19:21:23Z' },
+    { transaction_id: 'TX1', transactionType: 'INBOUND', amount: '4939.50', gross_amount: '5000', payment_id: null, attempted_payment_id: 'VAR-9', address: '0000716', address_alias: 'nov.1.talo', sender_address: '0270000068177940014287', transaction_data: { PROCESSED: { senderCuit: '27767826051', senderTitular: 'Patricia Fernández' } }, transaction_status: 'PROCESSED', creation_timestamp: '2026-11-10T19:21:23Z' },
     { id: 'TX2', transactionType: 'OUTBOUND', amount: '-5000.00', gross_amount: '-5000', payment_id: 'VAR-1' },
   ], lastEvaluatedKey: { x: 1 } } });
   assert.strictEqual(r.hayMas, true);
-  assert.deepStrictEqual(r.transacciones[0], { id: 'TX1', tipo: 'INBOUND', bruto: 5000, neto: 4939.5, pagoId: null, clienteId: null, estado: 'PROCESSED', cuando: '2026-11-10T19:21:23Z' });
+  assert.deepStrictEqual(r.transacciones[0], { id: 'TX1', tipo: 'INBOUND', intentoPagoId: 'VAR-9', address: '0000716', alias: 'nov.1.talo', remitente: { cuit: '27767826051', titular: 'Patricia Fernández', cbu: '0270000068177940014287' }, bruto: 5000, neto: 4939.5, pagoId: null, clienteId: null, estado: 'PROCESSED', cuando: '2026-11-10T19:21:23Z' });
   assert.strictEqual(r.transacciones[1].bruto, -5000);
   assert.deepStrictEqual(talo.normalizarTransacciones({}), { transacciones: [], hayMas: false });
   assert.deepStrictEqual(talo.normalizarTransacciones({ data: [{ id: 'A', type: 'inbound', amount: 10 }] }).transacciones.map((x) => x.tipo), ['INBOUND']);
 });
 
-test('consola: inspección técnica — detecta si la transferencia suelta trae el CVU destino', async () => {
-  for (const traeCvu of [true, false]) {
+test('consola: inspección técnica — verifica CVU destino y pago intentado de la transferencia suelta', async () => {
+  for (const trae of [true, false]) {
     await conRedisMock(async ({ conPrefijo }) => {
       const t = taloFalso({ tolerancia: 100 });
       t.crudo = async (path) => {
         if (path.indexOf('/payments/') === 0) return { status: 200, body: { data: { payment_status: 'PENDING', transaction_fields: {} } } };
-        const cvu = Object.values(t.pagos)[0].cvu;
-        return { status: 200, body: { data: { transactions: [{ transaction_id: 'TX#1', transactionType: 'INBOUND', amount: '4939.5', gross_amount: '5000', payment_id: null, transaction_data: traeCvu ? { recipient: cvu } : {} }] } } };
+        const p = Object.values(t.pagos)[0];
+        return { status: 200, body: { data: { transactions: [
+          { transaction_id: 'TX#vieja', transactionType: 'INBOUND', amount: '4939.5', gross_amount: '5000', payment_id: null, address: '0000000000000000000001', attempted_payment_id: 'VAR-OTRO' }, // de otra prueba
+          { transaction_id: 'TX#1', transactionType: 'INBOUND', amount: '4939.5', gross_amount: '5000', payment_id: null, address: p.cvu, address_alias: p.alias, attempted_payment_id: trae ? p.id : undefined },
+        ] } } };
       };
       const informe = await consola._correrEscenario('inspeccionar', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
-      assert.ok(informe.pasos.some((p) => /Se encontró la transferencia suelta/.test(p.titulo) && p.ok === true));
-      const cv = informe.pasos.find((p) => /trae el CVU/.test(p.titulo));
-      assert.strictEqual(cv.ok, traeCvu, 'traeCvu=' + traeCvu);
-      assert.ok(informe.detalle.transaccionSuelta);
+      assert.ok(informe.pasos.some((p) => /Se encontró la transferencia de este pago/.test(p.titulo) && p.ok === true), 'elige la de ESTE pago, no la vieja');
+      assert.strictEqual(informe.pasos.find((p) => /trae el CVU destino/.test(p.titulo)).ok, true);
+      assert.strictEqual(informe.pasos.find((p) => /pago intentó ir/.test(p.titulo)).ok, trae);
+      assert.strictEqual(informe.detalle.transaccionSuelta.transaction_id, 'TX#1');
     });
   }
 });

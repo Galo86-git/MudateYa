@@ -349,19 +349,114 @@ test('ids de Talo con caracteres raros: se procesan igual (clave segura) y el id
   });
 });
 
-test('plata sin asociar: avisa solo las entradas sin pago ni cliente, una sola vez cada una', async () => {
-  await conEntorno(async ({ redis, deps, talo }) => {
+// ───────────────────────── Plata que Talo no asoció al pago ─────────────────────────
+
+const REMITENTE = { cuit: '27767826051', titular: 'Patricia Fernández', cbu: '0270000068177940014287' };
+const suelta = (id, bruto, pagoIntentado, extra) => Object.assign({ id, tipo: 'INBOUND', bruto, neto: Math.round(bruto * 0.99), pagoId: null, clienteId: null, intentoPagoId: pagoIntentado, address: '0000716', alias: 'a.b.talo', remitente: REMITENTE, estado: 'PROCESSED', cuando: AHORA.toISOString() }, extra);
+
+test('transferencia suelta de más: se concilia por el pago intentado — se acredita lo esperado y la diferencia queda como devolución MANUAL', async () => {
+  await conEntorno(async ({ redis, deps, nuevoPago, talo }) => {
+    await solicitud(deps, 'sol-40');
+    nuevoPago('VAR-40', { estado: 'PENDING', externalId: 'hogar~contactos~sol-40', montoPedido: 4500, montoPagado: 0 }); // Talo la dejó sin asociar
+    talo.listarTransaccionesRecientes = async () => ({ hayMas: false, transacciones: [suelta('TX#40', 5000, 'VAR-40')] });
+
+    const a = await pagos.revisarSinAsociar(deps);
+    assert.strictEqual(a.conciliadas, 1);
+    assert.strictEqual((await datos.leer('solicitud', 'sol-40', { redis })).estado, 'pagada', 'el cliente/oficio puede avanzar');
+    const ent = (await libro.entradasDeCliente('cli-1', { redis })).filter((e) => e.tipo === 'cobro_contactos');
+    assert.strictEqual(ent.length, 1); assert.strictEqual(ent[0].monto, 4500);
+
+    const r = await datos.leer('reembolso', 'VAR-40.excedente', { redis });
+    assert.strictEqual(r.monto, 500); assert.strictEqual(r.manual, true);
+    assert.deepStrictEqual(r.remitente, REMITENTE, 'trae los datos para devolverle');
+    assert.deepStrictEqual(r.transacciones, ['TX#40']);
+
+    // Un control posterior no repite nada
+    const b = await pagos.revisarSinAsociar(deps);
+    assert.deepStrictEqual([b.conciliadas, b.nuevas], [0, 0]);
+    assert.strictEqual((await libro.entradasDeCliente('cli-1', { redis })).filter((e) => e.tipo === 'cobro_contactos').length, 1);
+    assert.deepStrictEqual(await datos.ids('reembolso', { redis }), ['VAR-40.excedente']);
+
+    // Ejecutarla no le pide nada a Talo; se devuelve desde su panel y se marca como hecha
+    const ej = await pagos.ejecutarReembolso('VAR-40.excedente', deps);
+    assert.strictEqual(ej.manual, true); assert.strictEqual(ej.monto, 500); assert.strictEqual(talo.reembolsos.length, 0);
+    await assert.rejects(() => pagos.completarReembolsoManual('VAR-40.excedente', { nota: 'x' }, deps), /Falta una nota/);
+    await pagos.completarReembolsoManual('VAR-40.excedente', { nota: 'Devuelto desde el panel de Talo, ref 123', por: 'admin@mya' }, deps);
+    await pagos.completarReembolsoManual('VAR-40.excedente', { nota: 'Devuelto desde el panel de Talo, ref 123' }, deps); // repetido
+    const dev = (await libro.entradasDeCliente('cli-1', { redis })).filter((e) => e.tipo === 'reembolso_cliente');
+    assert.strictEqual(dev.length, 1); assert.strictEqual(dev[0].monto, 500);
+    assert.strictEqual((await datos.leer('reembolso', 'VAR-40.excedente', { redis })).estado, 'completado');
+  });
+});
+
+test('transferencias sueltas parciales: la primera espera, la segunda completa y acredita', async () => {
+  await conEntorno(async ({ redis, deps, nuevoPago, talo }) => {
+    await solicitud(deps, 'sol-41', { modo: 'abierto', cobro: { monto: 5000, clase: 'gestion' }, vigenteHasta: '2026-11-10T15:30:00Z' });
+    nuevoPago('VAR-41', { estado: 'PENDING', externalId: 'hogar~gestion~sol-41', montoPedido: 5000, montoPagado: 0 });
+    let lista = [suelta('TX#41a', 3000, 'VAR-41')];
+    talo.listarTransaccionesRecientes = async () => ({ hayMas: false, transacciones: lista });
+    await pagos.revisarSinAsociar(deps);
+    assert.strictEqual((await datos.leer('solicitud', 'sol-41', { redis })).estado, 'esperando_pago');
+    assert.ok((await pagos.efectosPendientes(deps)).some((e) => e.tipo === 'cliente_pago_insuficiente' && e.falta === 2000));
+
+    lista = [suelta('TX#41b', 2000, 'VAR-41'), suelta('TX#41a', 3000, 'VAR-41')];
+    const r = await pagos.revisarSinAsociar(deps);
+    assert.strictEqual(r.conciliadas, 1);
+    assert.strictEqual((await datos.leer('solicitud', 'sol-41', { redis })).estado, 'pagada');
+    assert.strictEqual((await libro.entradasDeCliente('cli-1', { redis })).filter((e) => e.tipo === 'cobro_gestion').length, 1);
+    assert.deepStrictEqual(await datos.ids('reembolso', { redis }), [], 'sin diferencia: nada que devolver');
+  });
+});
+
+test('transferencia suelta tardía en modo abierto: se devuelve todo (devolución manual)', async () => {
+  await conEntorno(async ({ redis, deps, nuevoPago, talo }) => {
+    await solicitud(deps, 'sol-42', { modo: 'abierto', estado: 'cancelada', cobro: { monto: 5000, clase: 'gestion' } });
+    nuevoPago('VAR-42', { estado: 'PENDING', externalId: 'hogar~gestion~sol-42', montoPedido: 5000, montoPagado: 0 });
+    talo.listarTransaccionesRecientes = async () => ({ hayMas: false, transacciones: [suelta('TX#42', 5000, 'VAR-42')] });
+    await pagos.revisarSinAsociar(deps);
+    assert.strictEqual((await libro.entradasDeCliente('cli-1', { redis })).length, 0);
+    const r = await datos.leer('reembolso', 'VAR-42.tardio_pedido_caducado', { redis });
+    assert.strictEqual(r.monto, 5000); assert.strictEqual(r.manual, true);
+  });
+});
+
+test('transferencia suelta de un proveedor sobre su liquidación: se asienta como pago', async () => {
+  await conEntorno(async ({ redis, deps, nuevoPago, talo }) => {
+    await datos.crear('liquidacion', '2026-11-13.prov-9', { provId: 'prov-9', monto: 10000, estado: 'pendiente', pagado: 0, pagos: {} }, deps);
+    await libro.registrar({ id: 'cargo_gestion:t-9', tipo: 'cargo_gestion', parteId: 'prov-9', monto: 10000 }, deps);
+    nuevoPago('VAR-43', { estado: 'PENDING', externalId: 'hogar~liq~2026-11-13.prov-9', montoPedido: 10000, montoPagado: 0 });
+    talo.listarTransaccionesRecientes = async () => ({ hayMas: false, transacciones: [suelta('TX#43', 10500, 'VAR-43')] });
+    await pagos.revisarSinAsociar(deps);
+    assert.strictEqual(await libro.saldoProveedor('prov-9', { redis }), -500, 'pagó 500 de más: queda saldo a favor, no se devuelve');
+    assert.strictEqual((await datos.leer('liquidacion', '2026-11-13.prov-9', { redis })).estado, 'pagada');
+    assert.deepStrictEqual(await datos.ids('reembolso', { redis }), []);
+  });
+});
+
+test('transferencias sueltas que no se pueden atribuir (sin pago intentado, o de Mudanza): se avisa al equipo una sola vez', async () => {
+  await conEntorno(async ({ redis, deps, nuevoPago, talo }) => {
+    nuevoPago('VAR-MUD', { estado: 'PENDING', externalId: 'MYA-1700000000000__anticipo', montoPedido: 50000, montoPagado: 0 });
     talo.listarTransaccionesRecientes = async () => ({ hayMas: false, transacciones: [
-      { id: 'TX1', tipo: 'INBOUND', bruto: 5000, neto: 4939.5, pagoId: null, clienteId: null, cuando: 'x' },       // suelta → avisar
-      { id: 'TX2', tipo: 'INBOUND', bruto: 4500, neto: 4445, pagoId: 'VAR-1', clienteId: null, cuando: 'x' },       // asociada
-      { id: 'TX3', tipo: 'OUTBOUND', bruto: -5000, neto: -5000, pagoId: null, clienteId: null, cuando: 'x' },       // devolución
-      { id: 'TX4', tipo: 'INBOUND', bruto: 300, neto: 296, pagoId: null, clienteId: 'cli-fijo', cuando: 'x' },      // cliente fijo de Talo
+      suelta('TX#sin', 300, null),                                                         // no dice a qué pago iba → avisar
+      suelta('TX#mud', 60000, 'VAR-MUD'),                                                  // pago de Mudanza → avisar
+      suelta('TX#asoc', 4500, null, { pagoId: 'VAR-1' }),                                   // ya asociada → nada
+      suelta('TX#dev', -5000, null, { tipo: 'OUTBOUND' }),                                  // devolución → nada
+      suelta('TX#fijo', 300, null, { clienteId: 'cli-fijo' }),                              // cliente fijo → nada
     ] });
     const a = await pagos.revisarSinAsociar(deps);
-    assert.deepStrictEqual(a, { revisadas: 4, sinAsociar: 1, nuevas: 1, hayMas: false });
-    const b = await pagos.revisarSinAsociar(deps);
-    assert.strictEqual(b.nuevas, 0, 'no repite el aviso');
+    assert.deepStrictEqual([a.sinAsociar, a.nuevas, a.conciliadas], [2, 2, 0]);
     const ef = (await pagos.efectosPendientes(deps)).filter((e) => e.motivo === 'transferencia_sin_asociar');
-    assert.strictEqual(ef.length, 1); assert.strictEqual(ef[0].bruto, 5000);
+    assert.deepStrictEqual(ef.map((e) => e.bruto).sort((x, y) => x - y), [300, 60000]);
+    assert.strictEqual(ef.find((e) => e.bruto === 300).remitente.titular, 'Patricia Fernández', 'el aviso trae quién mandó');
+    const b = await pagos.revisarSinAsociar(deps);
+    assert.deepStrictEqual([b.nuevas, b.conciliadas], [0, 0], 'no se repite');
+  });
+});
+
+test('transferencias sueltas: solo se miran las posteriores al límite pedido', async () => {
+  await conEntorno(async ({ deps, talo }) => {
+    talo.listarTransaccionesRecientes = async () => ({ hayMas: false, transacciones: [suelta('TX#vieja', 300, null, { cuando: '2026-11-01T00:00:00Z' }), suelta('TX#nueva', 400, null)] });
+    const r = await pagos.revisarSinAsociar(deps, { desde: '2026-11-10T00:00:00Z' });
+    assert.strictEqual(r.sinAsociar, 1);
   });
 });
