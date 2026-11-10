@@ -17,6 +17,7 @@ const RUBROS = { plomeria: 'Plomería', gas: 'Gas', electricidad: 'Electricidad'
 const ZONAS = { san_isidro: 'San Isidro', vicente_lopez: 'Vicente López' };
 const URGENCIAS = { urgente: 'Hoy / urgente', semana: 'Esta semana', sin_apuro: 'Sin apuro' };
 const MODOS = { directo: 'Contactos directos', abierto: 'Gestión de MYA' };
+const FRANJAS = { manana: 'Mañana (7 a 12)', tarde: 'Tarde (12 a 19)', cualquiera: 'Cualquier horario (7 a 19)' };
 const MAX_FOTOS = 6;
 
 const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
@@ -35,7 +36,12 @@ const CATALOGO = {
   pedir_modo: (v) => 'Hay dos formas de seguir. Respondé con el número:\n' +
     '1) Contactos directos: ves los profesionales de tu zona y elegís los que quieras. Cuesta ' + pesos(v.precios.contactoDirecto) + ' por cada contacto, se paga una sola vez, y el acuerdo lo hacés vos con cada uno. MYA no garantiza el trabajo.\n' +
     '2) Gestión de MYA: yo busco quién tome tu pedido y coordino. La gestión cuesta ' + pesos(v.precios.gestionAbierto) + ' y se paga cuando un profesional acepta.',
-  resumen: (v) => 'Revisemos tu pedido:\n• Rubro: ' + RUBROS[v.d.rubro] + '\n• Zona: ' + ZONAS[v.d.zona] + '\n• Urgencia: ' + URGENCIAS[v.d.urgencia] + '\n• Modo: ' + MODOS[v.d.modo] + '\n• Dirección: ' + v.d.direccion + '\n• Fotos: ' + (v.d.fotos || []).length + '\n\n¿Está todo bien? Respondé con el número:\n1) Sí, confirmar\n2) Empezar de nuevo',
+  resumen: (v) => 'Revisemos tu pedido:\n• Rubro: ' + RUBROS[v.d.rubro] + '\n• Zona: ' + ZONAS[v.d.zona] + '\n• Urgencia: ' + URGENCIAS[v.d.urgencia] + '\n• Modo: ' + MODOS[v.d.modo] + '\n• Dirección: ' + v.d.direccion + (v.d.agenda ? '\n• Día y horario: ' + v.d.agenda.txt + ' · ' + FRANJAS[v.d.agenda.franja] : '') + '\n• Fotos: ' + (v.d.fotos || []).length + '\n\n¿Está todo bien? Respondé con el número:\n1) Sí, confirmar\n2) Empezar de nuevo',
+  pedir_agenda_dia: () => '¿Qué día te queda bien para que vaya el profesional? Escribilo así: "hoy", "mañana", "jueves" o "15/11" (hasta 14 días desde hoy).',
+  agenda_dia_invalido: () => 'No pude entender ese día, o ya pasó. Escribilo así: "hoy", "mañana", "jueves" o "15/11" (hasta 14 días desde hoy).',
+  agenda_hoy_cerrado: () => 'Hoy ya no quedan horarios (los profesionales atienden de 7 a 19). ¿Para qué otro día?',
+  pedir_agenda_franja: (v) => '¿En qué horario? (' + v.dia + ') Respondé con el número:\n' + lista(Object.values(FRANJAS)),
+  agenda_franja_pasada: () => 'Esa franja ya pasó para hoy. Elegí otra.',
   // PLACEHOLDER hasta conectar profesionales y cobro: no promete nada.
   fin_datos_completos: (v) => 'Listo, registré tu pedido (n° ' + v.codigo + '). Por ahora quedó registrado y no puedo asegurarte plazos ni disponibilidad.\n\nSi necesitás otro rubro, escribime "menu" y hacemos otro pedido.',
   foto_ok: (v) => 'Recibí tu foto (' + v.n + '/' + MAX_FOTOS + ').',
@@ -89,4 +95,4 @@ function verificarSalida(texto, id) {
   return { ok: true };
 }
 
-module.exports = { CATALOGO, RUBROS, ZONAS, URGENCIAS, MODOS, MAX_FOTOS, render, armar, verificarSalida, PROHIBIDO };
+module.exports = { CATALOGO, RUBROS, ZONAS, URGENCIAS, MODOS, FRANJAS, MAX_FOTOS, render, armar, verificarSalida, PROHIBIDO };

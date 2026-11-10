@@ -121,7 +121,56 @@ function limpiarDireccion(t) {
 function direccionValida(s) { return s.length >= 5 && /\p{L}/u.test(s) && /\d{1,5}/.test(s); }
 function emailValido(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim()) && String(e).length <= 120; }
 
-const faltante = (dat) => ORDEN.find((p) => !dat[p]) || null;
+// Primer dato que falta. En la gestión de MYA (modo abierto) también hace falta el día y la franja horaria.
+function faltante(dat, conv) {
+  const f = ORDEN.find((p) => !dat[p]);
+  if (f) return f;
+  if (dat.modo === 'abierto' && !dat.agenda) return (conv && conv.agendaTmp && conv.agendaTmp.fecha) ? 'agenda_franja' : 'agenda_dia';
+  return null;
+}
+
+// ── Día y horario (hora Argentina, UTC-3) ──
+const DIAS_ES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const DIAS_NORM = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
+const MAX_DIAS_ADELANTE = 14;
+function fechaARmas(ahora, suma) {
+  const b = new Date(ahora.getTime() - 3 * 3600 * 1000);
+  const d = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate() + suma));
+  return { ymd: d.toISOString().slice(0, 10), dow: d.getUTCDay(), dd: String(d.getUTCDate()).padStart(2, '0'), mm: String(d.getUTCMonth() + 1).padStart(2, '0') };
+}
+function horaAR(ahora) { return new Date(ahora.getTime() - 3 * 3600 * 1000).getUTCHours(); }
+// norm → { fecha, txt, esHoy } | 'cerrado' (hoy ya no hay horarios) | null (no se entiende o ya pasó o está muy lejos)
+function interpretarDia(norm, ahora) {
+  let suma = null;
+  if (/\bpasado manana\b/.test(norm)) suma = 2;
+  else if (/\bhoy\b/.test(norm)) suma = 0;
+  else if (/\bmanana\b/.test(norm)) suma = 1;
+  else {
+    const nom = Object.keys(DIAS_NORM).find((k) => new RegExp('\\b' + k + '\\b').test(norm));
+    if (nom) { const hoy = fechaARmas(ahora, 0).dow; suma = ((DIAS_NORM[nom] - hoy + 7) % 7) || 7; }
+    else {
+      const m = /(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?/.exec(norm);
+      if (m) {
+        const base = fechaARmas(ahora, 0);
+        const anio = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : Number(base.ymd.slice(0, 4));
+        const t = Date.UTC(anio, Number(m[2]) - 1, Number(m[1]));
+        const hoy0 = Date.UTC(Number(base.ymd.slice(0, 4)), Number(base.ymd.slice(5, 7)) - 1, Number(base.ymd.slice(8, 10)));
+        if (Number(m[1]) < 1 || Number(m[1]) > 31 || Number(m[2]) < 1 || Number(m[2]) > 12) return null;
+        suma = Math.round((t - hoy0) / 86400000);
+      }
+    }
+  }
+  if (suma == null || suma < 0 || suma > MAX_DIAS_ADELANTE) return null;
+  if (suma === 0 && horaAR(ahora) >= 19) return 'cerrado';
+  const f = fechaARmas(ahora, suma);
+  return { fecha: f.ymd, txt: DIAS_ES[f.dow] + ' ' + f.dd + '/' + f.mm, esHoy: suma === 0 };
+}
+function interpretarFranja(norm) {
+  if (/(cualquier|indistint|me da igual|todo el dia|cuando puedan)/.test(norm)) return 'cualquiera';
+  if (/(manana|temprano)/.test(norm)) return 'manana';
+  if (/\btarde\b/.test(norm)) return 'tarde';
+  return null;
+}
 
 // ───────────────────────── Estado ─────────────────────────
 
@@ -145,6 +194,8 @@ function preguntaDe(paso, conv, precios) {
     case 'urgencia': return [['pedir_urgencia']];
     case 'direccion': return [['pedir_direccion']];
     case 'modo': return [['pedir_modo', { precios }]];
+    case 'agenda_dia': return [['pedir_agenda_dia']];
+    case 'agenda_franja': return [['pedir_agenda_franja', { dia: (conv.agendaTmp && conv.agendaTmp.txt) || '' }]];
     case 'confirmar': return [['resumen', { d: conv.datos }]];
     case 'humano_email': return [['humano_pedir_email']];
     default: return [['pedir_rubro']];
@@ -222,7 +273,6 @@ async function procesar(c) {
     return { respuesta: s.texto, paso: conv.paso, bloqueada: s.bloqueada };
   };
   const preguntar = (prefijo) => (prefijo || []).concat(preguntaDe(conv.paso, conv, precios));
-  const reasignarPaso = () => { const f = faltante(conv.datos); conv.paso = f || 'confirmar'; conv.noEntendi = 0; };
 
   // 1) EMERGENCIA: mensaje fijo y se corta el pedido.
   if (EMERGENCIA_RE.some((re) => re.test(norm))) {
@@ -264,7 +314,7 @@ async function procesar(c) {
     const u = detectarUrgencia(norm); if (u) conv.datos.urgencia = u;
     const desc = limpiarTexto(c.texto, 600);
     if (desc.length >= 40) conv.datos.descripcion = desc;
-    const f = faltante(conv.datos);
+    const f = faltante(conv.datos, conv);
     conv.paso = (!conv.datos.rubro && conv.ambiguos) ? 'rubro_ambiguo' : (f || 'confirmar');
   } else if (!norm && (c.imagenes || []).length && !c.ubicacion) {
     // Mensaje con solo fotos: se guardan y se repite la pregunta (no cuenta como "no te entendí").
@@ -300,7 +350,7 @@ function avanzar(conv, c, precios) {
     conv.noEntendi = (conv.noEntendi || 0) + 1;
     return { partes: ['no_entendi'].concat(conv.noEntendi >= 3 ? ['ayuda_trabado'] : [], preguntaDe(conv.paso, conv, precios)) };
   };
-  const ok = () => { const f = faltante(conv.datos); conv.paso = f || 'confirmar'; conv.noEntendi = 0; return null; };
+  const ok = () => { const f = faltante(conv.datos, conv); conv.paso = f || 'confirmar'; conv.noEntendi = 0; return null; };
 
   switch (conv.paso) {
     case 'rubro':
@@ -346,11 +396,28 @@ function avanzar(conv, c, precios) {
       if (m) { conv.datos.modo = m; return ok(); }
       return noEntendio();
     }
+    case 'agenda_dia': {
+      const dia = interpretarDia(norm, c.ahora);
+      if (dia === 'cerrado') { conv.noEntendi = 0; return { partes: ['agenda_hoy_cerrado'] }; }
+      if (!dia) { conv.noEntendi = (conv.noEntendi || 0) + 1; return { partes: ['agenda_dia_invalido'].concat(conv.noEntendi >= 3 ? ['ayuda_trabado'] : []) }; }
+      conv.agendaTmp = dia;
+      conv.paso = 'agenda_franja'; conv.noEntendi = 0;
+      return null;
+    }
+    case 'agenda_franja': {
+      const n = opcion(norm, 3);
+      const franja = n ? ['manana', 'tarde', 'cualquiera'][n - 1] : interpretarFranja(norm);
+      if (!franja) return noEntendio();
+      if (conv.agendaTmp && conv.agendaTmp.esHoy && franja === 'manana' && horaAR(c.ahora) >= 12) return { partes: ['agenda_franja_pasada'].concat(preguntaDe('agenda_franja', conv, precios)) };
+      conv.datos.agenda = { fecha: conv.agendaTmp.fecha, txt: conv.agendaTmp.txt, franja };
+      conv.agendaTmp = null;
+      return ok();
+    }
     case 'confirmar': {
       const n = opcion(norm, 2);
       if (n === 1 || /^(si|sii|ok|dale|confirmo|confirmar|listo|correcto)$/.test(norm)) return { confirmar: true };
       if (n === 2 || /^(no|empezar de nuevo|corregir)$/.test(norm)) {
-        conv.datos = { fotos: conv.datos.fotos || [] }; conv.paso = 'rubro'; conv.noEntendi = 0;
+        conv.datos = { fotos: conv.datos.fotos || [] }; conv.agendaTmp = null; conv.paso = 'rubro'; conv.noEntendi = 0;
         return { partes: ['reinicio'].concat(preguntaDe('rubro', conv)) };
       }
       return noEntendio();
@@ -389,7 +456,7 @@ async function confirmarPedido(c, conv, precios, salir) {
   await datos.crear('solicitud', id, {
     origen: 'emi_hogar', estado: 'datos_completos', codigo, modo: dat.modo, clienteId,
     rubro: dat.rubro, zona: dat.zona, descripcion: dat.descripcion, urgencia: dat.urgencia, direccion: dat.direccion,
-    ubicacion: dat.ubicacion || null, fotos: dat.fotos || [], preciosAlCrear: { contactoDirecto: precios.contactoDirecto, gestionAbierto: precios.gestionAbierto },
+    ubicacion: dat.ubicacion || null, agenda: dat.agenda || null, fotos: dat.fotos || [], preciosAlCrear: { contactoDirecto: precios.contactoDirecto, gestionAbierto: precios.gestionAbierto },
   }, { redis: r, ahora });
   conv.paso = 'completo'; conv.solicitudId = id;
   return salir([['fin_datos_completos', { codigo }]]);
@@ -397,6 +464,6 @@ async function confirmarPedido(c, conv, precios, salir) {
 
 module.exports = {
   manejar, normalizar, esMensajeHogar, detectarRubros, detectarZona, detectarUrgencia, detectarModo,
-  limpiarTexto, limpiarDireccion, direccionValida, emailValido, opcion, idWa,
+  interpretarDia, interpretarFranja, limpiarTexto, limpiarDireccion, direccionValida, emailValido, opcion, idWa,
   EMERGENCIA_RE, TEMAS, VIGENCIA_ACTIVA_MS,
 };
