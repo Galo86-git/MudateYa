@@ -19,13 +19,17 @@ const PREFIJO = 'dni/';
 const MAX_BYTES = 8 * 1024 * 1024;
 const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
-// Token del store PRIVADO. Variable propia (BLOB_PRIVADO_READ_WRITE_TOKEN) para no confundirlo con el
-// store público de fotos. Las otras son alternativas por compatibilidad.
+// Store PRIVADO de Blob. Hay dos formas de conectarlo en Vercel:
+//   - Store nuevo conectado al proyecto: Vercel crea BLOB_STORE_ID y el SDK se autentica solo
+//     (OIDC): no hace falta ningún token.
+//   - Con token: BLOB_PRIVADO_READ_WRITE_TOKEN (o alguna de las alternativas por compatibilidad).
+// tokenPrivado() devuelve el token si existe, o undefined para que el SDK use OIDC + BLOB_STORE_ID.
 function tokenPrivado() {
-  return process.env.BLOB_PRIVADO_READ_WRITE_TOKEN || process.env.BLOB_BACKUP_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN || '';
+  return process.env.BLOB_PRIVADO_READ_WRITE_TOKEN || process.env.BLOB_BACKUP_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN || undefined;
 }
+function hayStorePrivado() { return !!(tokenPrivado() || process.env.BLOB_STORE_ID); }
 
-const MSG_SIN_STORE = 'Falta conectar el almacenamiento privado de Blob (variable BLOB_PRIVADO_READ_WRITE_TOKEN en Vercel).';
+const MSG_SIN_STORE = 'Falta conectar el almacenamiento privado de Blob al proyecto (Vercel → Storage → mya-privado → Connect Project).';
 
 // Carpeta derivada del email por hash: el pathname no expone el email.
 function carpetaDe(email) {
@@ -68,7 +72,7 @@ async function subirDni(buffer, email, lado) {
   const ladoOk = lado === 'dorso' ? 'dorso' : 'frente';
   const pathname = carpetaDe(email) + ladoOk + '-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex') + '.' + EXT[tipo];
   const token = tokenPrivado();
-  if (!token) throw new Error(MSG_SIN_STORE);
+  if (!hayStorePrivado()) throw new Error(MSG_SIN_STORE);
   const r = await blobLib.put(pathname, buffer, { access: 'private', contentType: tipo, token: token });
   return r.pathname || pathname;
 }
@@ -99,7 +103,7 @@ function aBuffer(stream) {
 async function leerDni(pathname) {
   if (!esPathnameDni(pathname)) throw new Error('pathname inválido');
   const token = tokenPrivado();
-  if (!token) throw new Error(MSG_SIN_STORE);
+  if (!hayStorePrivado()) throw new Error(MSG_SIN_STORE);
   // @vercel/blob >= 2.3 (antes no existía get ni access:'private'). Devuelve null si no existe.
   const result = await blobLib.get(pathname, { access: 'private', token: token });
   if (!result || result.statusCode !== 200 || !result.stream) throw new Error('no encontrada');
@@ -107,4 +111,4 @@ async function leerDni(pathname) {
   return { buffer: buffer, contentType: (result.blob && result.blob.contentType) || 'image/jpeg' };
 }
 
-module.exports = { tokenPrivado, MSG_SIN_STORE, PREFIJO, MAX_BYTES, TIPOS, carpetaDe, esPathnameDni, perteneceA, tipoRealDeImagen, subirDni, leerDni };
+module.exports = { tokenPrivado, hayStorePrivado, MSG_SIN_STORE, PREFIJO, MAX_BYTES, TIPOS, carpetaDe, esPathnameDni, perteneceA, tipoRealDeImagen, subirDni, leerDni };

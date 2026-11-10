@@ -37,7 +37,7 @@ async function listarBackups(blob, token) {
 async function hacerBackup() {
   const blob = require('@vercel/blob');
   const token = tokenBlob();
-  if (!token) throw new Error(require('./_dni-privado').MSG_SIN_STORE);
+  if (!require('./_dni-privado').hayStorePrivado()) throw new Error(require('./_dni-privado').MSG_SIN_STORE);
   const clave = core.parseClave(process.env.BACKUP_ENCRYPTION_KEY);
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const tk = process.env.UPSTASH_REDIS_REST_TOKEN;

@@ -126,7 +126,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, ...s });
     }
     if (req.method === 'POST' && accion === 'aplicar') {
-      if (!dniPriv.tokenPrivado()) return res.status(400).json({ error: dniPriv.MSG_SIN_STORE });
+      if (!dniPriv.hayStorePrivado()) return res.status(400).json({ error: dniPriv.MSG_SIN_STORE });
       return res.status(200).json({ ok: true, ...(await aplicar(r)) });
     }
     if (req.method === 'POST' && accion === 'borrar-publicas') {

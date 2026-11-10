@@ -82,14 +82,18 @@ test('api/dni: sin CORS abierto', async () => {
   assert.strictEqual(r.headers['Access-Control-Allow-Origin'], undefined);
 });
 
-test('tokenPrivado: usa la variable propia primero; sin ninguna devuelve vacío y subirDni avisa claro', async () => {
-  const claves = ['BLOB_PRIVADO_READ_WRITE_TOKEN', 'BLOB_BACKUP_READ_WRITE_TOKEN', 'BLOB_READ_WRITE_TOKEN'];
+test('store privado: token propio primero; sin token pero con BLOB_STORE_ID (OIDC) alcanza; sin nada avisa claro', async () => {
+  const claves = ['BLOB_PRIVADO_READ_WRITE_TOKEN', 'BLOB_BACKUP_READ_WRITE_TOKEN', 'BLOB_READ_WRITE_TOKEN', 'BLOB_STORE_ID'];
   const previo = {}; claves.forEach((k) => { previo[k] = process.env[k]; delete process.env[k]; });
   try {
-    assert.strictEqual(dni.tokenPrivado(), '');
+    assert.strictEqual(dni.tokenPrivado(), undefined);
+    assert.strictEqual(dni.hayStorePrivado(), false);
     await assert.rejects(() => dni.subirDni(JPG, 'a@a.com', 'frente'), /almacenamiento privado/);
-    process.env.BLOB_READ_WRITE_TOKEN = 'publico-o-viejo';
-    assert.strictEqual(dni.tokenPrivado(), 'publico-o-viejo');
+    process.env.BLOB_STORE_ID = 'store_x';
+    assert.strictEqual(dni.hayStorePrivado(), true);
+    assert.strictEqual(dni.tokenPrivado(), undefined);
+    process.env.BLOB_READ_WRITE_TOKEN = 'viejo';
+    assert.strictEqual(dni.tokenPrivado(), 'viejo');
     process.env.BLOB_PRIVADO_READ_WRITE_TOKEN = 'privado';
     assert.strictEqual(dni.tokenPrivado(), 'privado');
   } finally { claves.forEach((k) => { if (previo[k] === undefined) delete process.env[k]; else process.env[k] = previo[k]; }); }
