@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin · Seguridad y backup</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{--bg:#F5F7FA;--card:#fff;--ink:#0F1923;--mut:#64748B;--line:#E2E8F0;--azul:#003580;--ok:#15803D;--mal:#B91C1C}
+  @media (prefers-color-scheme: dark){:root{--bg:#0B1220;--card:#111A2B;--ink:#E7EDF5;--mut:#93A1B5;--line:#223048;--azul:#6AA3FF;--ok:#4ADE80;--mal:#F87171}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+  h1{font-size:22px;margin:8px 0 4px}
+  p.sub{color:var(--mut);margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:16px;margin:0 0 6px}
+  .card p{margin:4px 0 12px;color:var(--mut);font-size:14px}
+  button{font:inherit;border:0;border-radius:8px;padding:10px 14px;background:var(--azul);color:#fff;cursor:pointer;margin:0 8px 8px 0}
+  button.sec{background:transparent;color:var(--azul);border:1px solid var(--azul)}
+  button.peligro{background:var(--mal)}
+  button:disabled{opacity:.5;cursor:wait}
+  pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-word;font-size:13px;min-height:44px;margin:6px 0 0}
+  #login,#app{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Seguridad y backup</h1>
+  <p class="sub">Solo para el equipo.</p>
+
+  <div id="login" class="card">
+    <p>Ingresá con tu cuenta de Google autorizada.</p>
+    <div id="googleBtn"></div>
+  </div>
+
+  <div id="app">
+    <div class="card">
+      <h2>1 · Fotos de DNI a almacenamiento privado</h2>
+      <p>Pasa las fotos de DNI que hoy son públicas a un lugar privado. Orden: <b>Contar</b> → <b>Migrar</b> (repetí hasta que "quedan" sea 0) → mirá en el admin que algunos DNI se ven → <b>Borrar las públicas</b>.</p>
+      <button id="bContar" onclick="dni('contar')">Contar</button>
+      <button id="bMigrar" onclick="dni('aplicar')">Migrar</button>
+      <button id="bBorrar" class="peligro" onclick="borrarPublicas()">Borrar las públicas (sin vuelta atrás)</button>
+      <pre id="outDni">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>2 · Backup de la base de datos</h2>
+      <p>Se hace solo todas las noches (03:00 hora Argentina), cifrado. Acá podés hacer uno ahora y ver los guardados.</p>
+      <button id="bBackup" onclick="backup('POST')">Hacer backup ahora</button>
+      <button id="bEstado" class="sec" onclick="backup('GET')">Ver backups guardados</button>
+      <pre id="outBackup">—</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+var GOOGLE_CLIENT_ID = '';
+function ADMTK(){ return sessionStorage.getItem('adminToken') || ''; }
+
+window.onload = async function(){
+  try { var cfg = await (await fetch('/api/admin-config')).json(); GOOGLE_CLIENT_ID = cfg.googleClientId; } catch(e){}
+  var u = null;
+  try { u = JSON.parse(sessionStorage.getItem('adminUser') || 'null'); } catch(e){}
+  if (u && ADMTK() && (!u._expires || Date.now() < u._expires)) return mostrar();
+  document.getElementById('login').style.display = 'block';
+  var t = setInterval(function(){
+    if (window.google && GOOGLE_CLIENT_ID) {
+      clearInterval(t);
+      google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onCred });
+      google.accounts.id.renderButton(document.getElementById('googleBtn'), { theme:'filled_black', size:'large', text:'signin_with', width:260 });
+    }
+  }, 200);
+};
+
+async function onCred(resp){
+  try {
+    var payload = JSON.parse(atob(resp.credential.split('.')[1]));
+    var r = await fetch('/api/admin-sesion', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ googleIdToken: resp.credential }) });
+    var d = await r.json();
+    if (!r.ok || !d.token) { alert('⚠ ' + (d.error || 'No se pudo iniciar sesión')); return; }
+    sessionStorage.setItem('adminToken', d.token);
+    sessionStorage.setItem('adminUser', JSON.stringify({ name: payload.name, email: payload.email, _expires: Date.now() + (d.expiraEn || 12*3600*1000) }));
+    mostrar();
+  } catch(e){ alert('No se pudo conectar. Probá de nuevo.'); }
+}
+function mostrar(){ document.getElementById('login').style.display='none'; document.getElementById('app').style.display='block'; }
+
+function setOut(id, txt){ document.getElementById(id).textContent = txt; }
+function bloquear(ids, v){ ids.forEach(function(i){ document.getElementById(i).disabled = v; }); }
+
+async function llamar(url, opts){
+  opts = opts || {}; opts.headers = Object.assign({ 'x-admin-token': ADMTK(), 'Content-Type': 'application/json' }, opts.headers || {});
+  var r = await fetch(url, opts);
+  var d = {}; try { d = await r.json(); } catch(e){}
+  if (r.status === 401) { sessionStorage.removeItem('adminToken'); throw new Error('La sesión venció. Recargá la página y entrá de nuevo.'); }
+  if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+  return d;
+}
+
+async function dni(accion){
+  var ids = ['bContar','bMigrar','bBorrar']; bloquear(ids, true);
+  setOut('outDni', accion === 'contar' ? 'Contando…' : 'Migrando… (puede tardar hasta un minuto)');
+  try {
+    var d = accion === 'contar'
+      ? await llamar('/api/admin-dni-migrar?accion=contar')
+      : await llamar('/api/admin-dni-migrar', { method:'POST', body: JSON.stringify({ accion: accion }) });
+    delete d.ok;
+    var extra = (d.quedan > 0) ? '\n\n➜ Quedan fotos: apretá Migrar de nuevo.' : (accion === 'aplicar' && !d.fallaron ? '\n\n✓ Listo. Mirá en el admin que se vean algunos DNI y después borrá las públicas.' : '');
+    setOut('outDni', JSON.stringify(d, null, 2) + extra);
+  } catch(e){ setOut('outDni', '⚠ ' + e.message); }
+  bloquear(ids, false);
+}
+
+async function borrarPublicas(){
+  if (!confirm('Esto borra para siempre las fotos de DNI públicas que ya se copiaron al almacenamiento privado.\n\n¿Ya verificaste en el admin que los DNI se ven bien?')) return;
+  var ids = ['bContar','bMigrar','bBorrar']; bloquear(ids, true);
+  setOut('outDni', 'Borrando…');
+  try {
+    var d = await llamar('/api/admin-dni-migrar', { method:'POST', body: JSON.stringify({ accion:'borrar-publicas', confirmar: true }) });
+    delete d.ok; setOut('outDni', JSON.stringify(d, null, 2));
+  } catch(e){ setOut('outDni', '⚠ ' + e.message); }
+  bloquear(ids, false);
+}
+
+async function backup(metodo){
+  var ids = ['bBackup','bEstado']; bloquear(ids, true);
+  setOut('outBackup', metodo === 'POST' ? 'Haciendo el backup…' : 'Consultando…');
+  try {
+    var d = metodo === 'POST' ? await llamar('/api/cron-backup', { method:'POST' }) : await llamar('/api/cron-backup?accion=estado');
+    delete d.ok; setOut('outBackup', JSON.stringify(d, null, 2));
+  } catch(e){ setOut('outBackup', '⚠ ' + e.message); }
+  bloquear(ids, false);
+}
+</script>
+</body>
+</html>

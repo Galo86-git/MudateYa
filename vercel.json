@@ -1088,6 +1088,12 @@
       "regions": [
         "gru1"
       ]
+    },
+    "api/cron-backup.js": {
+      "maxDuration": 300
+    },
+    "api/admin-dni-migrar.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -1246,6 +1252,10 @@
     {
       "path": "/api/cron-seguimiento-mudanceros",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron-backup",
+      "schedule": "0 6 * * *"
     }
   ]
 }

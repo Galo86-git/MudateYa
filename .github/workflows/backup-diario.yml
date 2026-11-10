@@ -1,19 +1,12 @@
-# Backup diario de Redis (Upstash) → store privado y aparte de Vercel Blob, cifrado.
-# Corre en GitHub: no usa ninguna computadora tuya.
-#
-# Secrets (Settings → Secrets and variables → Actions):
-#   UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN   los mismos de Vercel
-#   BACKUP_ENCRYPTION_KEY          clave de 32 bytes (guardala también en tu gestor de contraseñas)
-#   BLOB_BACKUP_READ_WRITE_TOKEN   token del store privado SOLO de backups
-#   BLOB_READ_WRITE_TOKEN, BLOB_FOTO_READ_WRITE_TOKEN   (opcionales) para el inventario de archivos
-#   RESEND_API_KEY, MAIL_SEGURIDAD   para avisar por mail si el backup falla
+# COPIA EXTRA, solo manual. El backup de todos los dias ahora corre dentro de MudateYa
+# (api/cron-backup.js, cron de Vercel a las 06:00 UTC). Este workflow queda para quien quiera
+# una copia adicional fuera de Vercel: requiere cargar los secretos de abajo en GitHub.
+#   UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, BACKUP_ENCRYPTION_KEY,
+#   BLOB_BACKUP_READ_WRITE_TOKEN, RESEND_API_KEY, MAIL_SEGURIDAD
 
-name: Backup diario
+name: Backup manual (copia extra)
 
 on:
-  schedule:
-    # 06:00 UTC = 03:00 en Argentina.
-    - cron: '0 6 * * *'
   workflow_dispatch: # botón para correrlo a mano
 
 permissions:
