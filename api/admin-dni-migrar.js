@@ -40,7 +40,7 @@ async function perfilesConDni(r) {
       if (!v) return;
       let p; try { p = JSON.parse(v); } catch (e) { return; }
       if (!p || (!p.dniFrente && !p.dniDorso)) return;
-      out.push({ email: p.email || lote[j].replace('mudancero:perfil:', ''), dniFrente: p.dniFrente || '', dniDorso: p.dniDorso || '' });
+      out.push({ email: lote[j].replace('mudancero:perfil:', ''), emailPerfil: p.email || '', dniFrente: p.dniFrente || '', dniDorso: p.dniDorso || '' });
     });
   }
   return out;
@@ -80,10 +80,13 @@ async function aplicar(r) {
         const pathname = await dniPriv.subirDni(buf, p.email, lado);
         await dniPriv.leerDni(pathname); // comprobar que se puede leer del privado antes de cambiar nada
         let cambio = false;
-        await actualizarPerfilMudancero(p.email, function (perfil) {
+        // El email de la CLAVE de Redis (no el del perfil, que puede diferir en mayúsculas).
+        const actualizado = await actualizarPerfilMudancero(p.email, function (perfil) {
           if (perfil[campo] === vieja) { perfil[campo] = pathname; cambio = true; }
         });
-        if (cambio) {
+        if (!actualizado) throw new Error('no se encontró el perfil para actualizarlo');
+        if (!cambio) throw new Error('el perfil cambió mientras se migraba; volver a intentar');
+        {
           await r.cmd('RPUSH', LOG_KEY, JSON.stringify({ email: p.email, campo: campo, vieja: vieja, nueva: pathname, fecha: new Date().toISOString() }));
           migradas++;
         }
