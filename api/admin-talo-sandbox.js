@@ -88,7 +88,7 @@ async function crearPrueba(deps, informe, opts) {
   const vigenteHasta = modo === 'abierto' ? new Date(deps.ahora.getTime() + (opts.vencida ? -60 * 1000 : 30 * 60 * 1000)).toISOString() : null;
   await datos.crear('solicitud', id, { modo, estado: 'esperando_pago', clienteId: 'cli-prueba', cobro: { monto, clase }, vigenteHasta }, { redis: deps.redis, ahora: deps.ahora });
   const pago = await deps.talo.crearPago({ monto, externalId: pagos.armarExternalId(clase, id), webhookUrl: deps.webhookUrl, motivo: 'Prueba Hogar ' + id });
-  informe.paso('Pago de prueba creado en Talo sandbox', 'Pedido ' + id + ' · ' + (modo === 'abierto' ? 'gestión' : '3 contactos') + ' · ' + pesos(monto) + ' · ' + (pago.alias || pago.cvu));
+  informe.paso('Pago de prueba creado en Talo sandbox', 'Pedido ' + id + ' · ' + (modo === 'abierto' ? 'gestión' : '3 contactos') + ' · ' + pesos(monto) + ' · ' + (pago.alias || pago.cvu) + ' · ID en Talo: ' + pago.paymentId);
   informe.chequeo('Talo devolvió un CVU/alias para transferir', !!(pago.cvu || pago.alias), pago.cvu ? 'CVU ' + pago.cvu : 'sin CVU en la respuesta');
   return { solicitudId: id, paymentId: pago.paymentId, cvu: pago.cvu, monto };
 }
@@ -121,9 +121,17 @@ async function ejecutarYConciliar(deps, informe, reembolsoId, topeMs) {
 const decisionTxt = (proc) => (proc && proc.decision ? proc.decision.accion + ' (' + proc.decision.motivo + ')' : JSON.stringify(proc));
 const accionDe = (proc) => (proc && proc.decision ? proc.decision.accion : null);
 
+// Corre un escenario. Si algo falla en el medio, el informe conserva lo que ya pasó y marca dónde se cortó
+// (antes se perdía todo y solo se veía el mensaje de error).
 async function correrEscenario(nombre, deps) {
   if (!ESCENARIOS[nombre]) throw new Error('Escenario desconocido: ' + nombre);
   const informe = nuevoInforme();
+  try { await cuerpoEscenario(nombre, deps, informe); }
+  catch (e) { informe.chequeo('La prueba se interrumpió', false, e.message); }
+  return informe;
+}
+
+async function cuerpoEscenario(nombre, deps, informe) {
   informe.nota('Modo de prueba: Talo SANDBOX y datos aislados (sandbox:). No se mueve plata real ni se toca el libro real.');
 
   if (nombre === 'tarde') {
@@ -137,7 +145,7 @@ async function correrEscenario(nombre, deps) {
     informe.chequeo('Se pidió devolver ' + pesos(GESTION), r.reembolsos.length === 1 && r.reembolsos[0].monto === GESTION, JSON.stringify(r.reembolsos));
     if (r.reembolsos[0]) await ejecutarYConciliar(deps, informe, r.reembolsos[0].id, 12000);
     informe.detalle = await resumen(deps, p.solicitudId, p.paymentId);
-    return informe;
+    return;
   }
 
   const abierto = nombre === 'menos' || nombre === 'completar';
@@ -194,7 +202,6 @@ async function correrEscenario(nombre, deps) {
   }
 
   informe.detalle = await resumen(deps, p.solicitudId, p.paymentId);
-  return informe;
 }
 
 async function limpiar(redisBase) {

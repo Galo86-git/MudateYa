@@ -326,3 +326,25 @@ test('webhook: apagado por defecto; ignora lo que no es de Hogar; método no per
     assert.strictEqual(r.code, 405);
   } finally { delete process.env.HOGAR_PAGOS_ACTIVO; }
 });
+
+test('ids de Talo con caracteres raros: se procesan igual (clave segura) y el id original se conserva', async () => {
+  await conEntorno(async ({ redis, deps, nuevoPago, talo }) => {
+    const raro = 'VAR-ab#12 cd/ñ=';
+    assert.match(pagos.idSeguro(raro), /^p_[a-f0-9]{24}$/);
+    assert.strictEqual(pagos.idSeguro(raro), pagos.idSeguro(raro), 'estable');
+    assert.strictEqual(pagos.idSeguro('VAR-123'), 'VAR-123', 'los normales no cambian');
+    await solicitud(deps, 'sol-30');
+    nuevoPago(raro, { estado: 'OVERPAID', externalId: 'hogar~contactos~sol-30', montoPagado: 5000, acreditado: 4950 });
+    await pagos.procesarPago(raro, deps);
+    await pagos.procesarPago(raro, deps); // repetido
+    const ent = (await libro.entradasDeCliente('cli-1', { redis })).filter((e) => e.tipo === 'cobro_contactos');
+    assert.strictEqual(ent.length, 1);
+    assert.ok(ent[0].nota.includes(raro), 'el id original queda en la nota del libro');
+    const id = pagos.idSeguro(raro) + '.excedente';
+    await pagos.ejecutarReembolso(id, deps);
+    assert.deepStrictEqual(talo.reembolsos, [{ id: raro, monto: 500 }], 'a Talo se le manda el id ORIGINAL');
+    talo.pagos[raro].refunds[0].estado = 'SUCCESS';
+    assert.strictEqual((await pagos.conciliarReembolso(id, deps)).estado, 'completado');
+    await pagos.anotarAviso(deps, raro); // el webhook también lo acepta
+  });
+});

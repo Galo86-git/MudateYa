@@ -166,7 +166,7 @@ async function consultarPago(paymentId) {
 // ── Funciones para MYA Hogar (se suman; las de arriba no cambian: Mudanza las usa en producción) ──
 // Todas con tiempo límite: una llamada colgada a Talo no puede dejar una función esperando.
 
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 15000;
 
 function aNumero(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 

@@ -19,7 +19,7 @@
 const { parsearPagoCompleto } = require('./_talo');
 
 const BASE = 'https://sandbox-api.talo.com.ar'; // fija a propósito
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 25000; // el sandbox puede tardar (arranque en frío, token): mejor esperar que cortar
 
 function credenciales(env) {
   env = env || process.env;

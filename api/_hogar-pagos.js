@@ -18,6 +18,7 @@
 //
 // Vercel ignora los archivos de /api que empiezan con "_".
 
+const crypto = require('crypto');
 const { cliente } = require('./_redis');
 const libro = require('./_hogar-libro');
 const datos = require('./_hogar-datos');
@@ -26,6 +27,15 @@ const PREFIJO_EXTERNAL = 'hogar';
 const CLASES = { contactos: 'solicitud', gestion: 'solicitud', liq: 'liquidacion' };
 const TOLERANCIA_PESOS = 1;            // diferencias de redondeo
 const PLAZO_REEMBOLSO_MS = 24 * 60 * 60 * 1000;
+
+// Los ids de Talo no tienen un formato documentado. Para usarlos como parte de una clave de Redis o de un id del libro
+// (que solo aceptan letras, números y : _ . -), se usa tal cual si es compatible; si no, un hash estable. El id ORIGINAL
+// se guarda siempre dentro del registro y es el que se le manda a Talo.
+function idSeguro(id) {
+  const s = String(id == null ? '' : id);
+  if (/^[A-Za-z0-9:_.-]{3,100}$/.test(s)) return s;
+  return 'p_' + crypto.createHash('sha1').update(s).digest('hex').slice(0, 24);
+}
 
 // ── external_id: viaja a Talo y vuelve en la consulta ──
 function armarExternalId(clase, refId) {
@@ -112,7 +122,7 @@ async function marcarEfectoHecho(d, id) {
 
 // ── Buzón de avisos de Talo (para contestar 200 rápido y procesar sin perder nada) ──
 async function anotarAviso(d, paymentId) {
-  if (!/^[A-Za-z0-9_.:-]{4,100}$/.test(String(paymentId || ''))) throw new Error('paymentId inválido');
+  if (!/^[^\x00-\x1F\x7F]{3,120}$/.test(String(paymentId || ''))) throw new Error('paymentId inválido'); // cualquier texto sin caracteres de control
   const { redis: r, ahora } = dep(d);
   await r.cmd('ZADD', K.inbox, String(ahora.getTime()), String(paymentId)); // si ya estaba, solo actualiza la hora
 }
@@ -134,7 +144,8 @@ async function procesarBuzon(d, n) {
 // ── Procesar un pago de Talo (verificado contra la API, con lock, idempotente) ──
 async function procesarPago(paymentId, d) {
   const { redis: r, talo, ahora } = dep(d);
-  return r.withLock(K.lockPago(paymentId), 30, async () => {
+  const pid = idSeguro(paymentId);
+  return r.withLock(K.lockPago(pid), 30, async () => {
     const pago = await talo.consultarPagoCompleto(paymentId); // la verdad es la API, no el aviso
     const ref = parsearExternalId(pago.externalId);
     if (!ref) return { ignorado: 'external_id ajeno (no es de Hogar)' };
@@ -142,15 +153,15 @@ async function procesarPago(paymentId, d) {
     const entidad = await datos.leer(ref.entidad, ref.refId, { redis: r });
     if (!entidad) {
       // Entró plata por un pedido que no existe en nuestros registros: no se acredita nada, se avisa y se anota.
-      await encolarEfecto(r, ahora, 'ef:' + paymentId + ':huerfano', { tipo: 'equipo_alerta', motivo: 'pago_sin_pedido', paymentId, externalId: pago.externalId, pagado: pago.montoPagado });
+      await encolarEfecto(r, ahora, 'ef:' + pid + ':huerfano', { tipo: 'equipo_alerta', motivo: 'pago_sin_pedido', paymentId, externalId: pago.externalId, pagado: pago.montoPagado });
       return { huerfano: true };
     }
 
     // Registro del pago (se crea la primera vez que lo vemos).
-    let reg = await datos.leer('pago', paymentId, { redis: r });
+    let reg = await datos.leer('pago', pid, { redis: r });
     if (!reg) {
-      try { reg = await datos.crear('pago', paymentId, { paymentId, externalId: pago.externalId, clase: ref.clase, refId: ref.refId, estado: 'visto', registrado: 0 }, { redis: r, ahora }); }
-      catch (e) { if (e instanceof datos.EntidadExistente) reg = await datos.leer('pago', paymentId, { redis: r }); else throw e; }
+      try { reg = await datos.crear('pago', pid, { paymentId, externalId: pago.externalId, clase: ref.clase, refId: ref.refId, estado: 'visto', registrado: 0 }, { redis: r, ahora }); }
+      catch (e) { if (e instanceof datos.EntidadExistente) reg = await datos.leer('pago', pid, { redis: r }); else throw e; }
     }
 
     const esperado = ref.clase === 'liq' ? Number(entidad.monto) : Number(entidad.cobro && entidad.cobro.monto);
@@ -163,20 +174,20 @@ async function procesarPago(paymentId, d) {
     if (dec.accion === 'acreditar' && dec.aAcreditar > 0) {
       if (ref.clase === 'liq') {
         const acumulado = (reg.registrado || 0) + dec.aAcreditar;
-        await libro.registrar({ id: 'pago_proveedor:' + paymentId + ':' + acumulado, tipo: 'pago_proveedor', parteId: entidad.provId, monto: dec.aAcreditar, neto: Math.round(dec.aAcreditar * proporcion), refExterna: paymentId, trabajoId: null }, { redis: r, ahora });
+        await libro.registrar({ id: 'pago_proveedor:' + pid + ':' + acumulado, tipo: 'pago_proveedor', parteId: entidad.provId, monto: dec.aAcreditar, neto: Math.round(dec.aAcreditar * proporcion), refExterna: pid, nota: 'Talo ' + paymentId, trabajoId: null }, { redis: r, ahora });
         registradoNuevo = acumulado;
         await datos.actualizar('liquidacion', ref.refId, (l) => {
-          l.pagos = l.pagos || {}; l.pagos[paymentId] = acumulado;
+          l.pagos = l.pagos || {}; l.pagos[pid] = acumulado;
           l.pagado = Object.values(l.pagos).reduce((s, x) => s + x, 0);
           l.estado = l.pagado + TOLERANCIA_PESOS >= l.monto ? 'pagada' : 'parcial';
         }, { redis: r, ahora });
-        await encolarEfecto(r, ahora, 'ef:' + paymentId + ':liq:' + acumulado, { tipo: 'proveedor_pago_registrado', provId: entidad.provId, liquidacionId: ref.refId, monto: dec.aAcreditar, falta: dec.falta });
+        await encolarEfecto(r, ahora, 'ef:' + pid + ':liq:' + acumulado, { tipo: 'proveedor_pago_registrado', provId: entidad.provId, liquidacionId: ref.refId, monto: dec.aAcreditar, falta: dec.falta });
       } else {
         const tipo = ref.clase === 'contactos' ? 'cobro_contactos' : 'cobro_gestion';
-        await libro.registrar({ id: 'cobro:' + paymentId, tipo, parteId: entidad.clienteId || entidad.cliente || 'sin-cliente', monto: esperado, neto: Math.min(esperado, Math.round(esperado * proporcion)), refExterna: paymentId, trabajoId: entidad.id }, { redis: r, ahora });
+        await libro.registrar({ id: 'cobro:' + pid, tipo, parteId: entidad.clienteId || entidad.cliente || 'sin-cliente', monto: esperado, neto: Math.min(esperado, Math.round(esperado * proporcion)), refExterna: pid, nota: 'Talo ' + paymentId, trabajoId: entidad.id }, { redis: r, ahora });
         registradoNuevo = esperado;
         await datos.actualizar('solicitud', ref.refId, (s) => { if (s.estado !== 'pagada') { s.estado = 'pagada'; s.pagoId = paymentId; s.pagadoEn = ahora.toISOString(); } }, { redis: r, ahora });
-        await encolarEfecto(r, ahora, 'ef:' + paymentId + ':pago_ok', { tipo: ref.clase === 'contactos' ? 'cliente_entregar_contactos' : 'cliente_pago_ok_gestion', solicitudId: entidad.id, motivo: dec.motivo });
+        await encolarEfecto(r, ahora, 'ef:' + pid + ':pago_ok', { tipo: ref.clase === 'contactos' ? 'cliente_entregar_contactos' : 'cliente_pago_ok_gestion', solicitudId: entidad.id, motivo: dec.motivo });
       }
     }
 
@@ -187,13 +198,13 @@ async function procesarPago(paymentId, d) {
     // No se pudo honrar (tardío en modo abierto / insuficiente y vencido): se devuelve lo que llegó.
     if (dec.accion === 'devolver_todo') {
       await solicitarReembolso({ paymentId, monto: dec.aDevolver, motivo: dec.motivo, solicitudId: entidad.id }, { redis: r, ahora });
-      await encolarEfecto(r, ahora, 'ef:' + paymentId + ':devolucion', { tipo: 'cliente_devolucion', solicitudId: entidad.id, monto: dec.aDevolver, motivo: dec.motivo });
+      await encolarEfecto(r, ahora, 'ef:' + pid + ':devolucion', { tipo: 'cliente_devolucion', solicitudId: entidad.id, monto: dec.aDevolver, motivo: dec.motivo });
     }
     if (dec.accion === 'esperar' && dec.motivo === 'insuficiente_esperando_resto') {
-      await encolarEfecto(r, ahora, 'ef:' + paymentId + ':falta:' + pago.montoPagado, { tipo: 'cliente_pago_insuficiente', solicitudId: entidad.id, pagado: pago.montoPagado, falta: dec.falta });
+      await encolarEfecto(r, ahora, 'ef:' + pid + ':falta:' + pago.montoPagado, { tipo: 'cliente_pago_insuficiente', solicitudId: entidad.id, pagado: pago.montoPagado, falta: dec.falta });
     }
 
-    await datos.actualizar('pago', paymentId, (p) => {
+    await datos.actualizar('pago', pid, (p) => {
       p.estado = dec.accion === 'acreditar' ? 'acreditado' : dec.accion === 'devolver_todo' ? 'a_devolver' : dec.accion === 'esperar' ? 'esperando' : p.estado;
       p.estadoTalo = pago.estado; p.pagadoVisto = pago.montoPagado; p.acreditadoVisto = pago.acreditado; p.comisionVista = pago.comision;
       p.registrado = registradoNuevo; p.ultimaDecision = { accion: dec.accion, motivo: dec.motivo, cuando: ahora.toISOString() };
@@ -209,7 +220,7 @@ async function solicitarReembolso(o, d) {
   const { redis: r, ahora } = dep(d);
   if (!o || !o.paymentId || !o.motivo) throw new Error('Falta paymentId o motivo');
   if (o.monto != null && !(Number.isInteger(o.monto) && o.monto > 0)) throw new Error('El monto a devolver debe ser un entero positivo');
-  const id = o.paymentId + '.' + String(o.motivo).replace(/[^A-Za-z0-9_-]/g, '_');
+  const id = idSeguro(o.paymentId) + '.' + String(o.motivo).replace(/[^A-Za-z0-9_-]/g, '_');
   try {
     const ent = await datos.crear('reembolso', id, {
       paymentId: o.paymentId, monto: o.monto != null ? o.monto : null, motivo: o.motivo, solicitudId: o.solicitudId || null,
@@ -255,7 +266,7 @@ async function conciliarReembolso(id, d) {
       const monto = ent.monto != null ? ent.monto : (ultimo.monto || pago.reembolsado);
       if (!(monto > 0)) { await encolarEfecto(r, ahora, 'ef:reembolso:' + id + ':sin_monto', { tipo: 'equipo_alerta', motivo: 'reembolso_ok_sin_monto', reembolsoId: id }); return { estado: 'en_proceso' }; }
       const sol = ent.solicitudId ? await datos.leer('solicitud', ent.solicitudId, { redis: r }) : null;
-      await libro.registrar({ id: 'reembolso:' + id, tipo: 'reembolso_cliente', parteId: (sol && (sol.clienteId || sol.cliente)) || 'sin-cliente', monto, refExterna: ent.paymentId, trabajoId: ent.solicitudId || null, nota: 'Devolución (' + ent.motivo + ') por Talo', por: 'sistema' }, { redis: r, ahora });
+      await libro.registrar({ id: 'reembolso:' + id, tipo: 'reembolso_cliente', parteId: (sol && (sol.clienteId || sol.cliente)) || 'sin-cliente', monto, refExterna: idSeguro(ent.paymentId), trabajoId: ent.solicitudId || null, nota: 'Devolución (' + ent.motivo + ') por Talo ' + ent.paymentId, por: 'sistema' }, { redis: r, ahora });
       await datos.actualizar('reembolso', id, (x) => { x.estado = 'completado'; x.completadoEn = ahora.toISOString(); }, { redis: r, ahora });
       await encolarEfecto(r, ahora, 'ef:reembolso:' + id + ':ok', { tipo: 'cliente_devolucion_hecha', solicitudId: ent.solicitudId, monto });
       return { estado: 'completado' };
@@ -278,7 +289,7 @@ async function reembolsosVencidos(d) {
 }
 
 module.exports = {
-  armarExternalId, parsearExternalId, decidir, procesarPago, anotarAviso, procesarBuzon,
+  armarExternalId, parsearExternalId, idSeguro, decidir, procesarPago, anotarAviso, procesarBuzon,
   solicitarReembolso, ejecutarReembolso, conciliarReembolso, reembolsosVencidos,
   encolarEfecto, efectosPendientes, marcarEfectoHecho, PLAZO_REEMBOLSO_MS, TOLERANCIA_PESOS,
 };

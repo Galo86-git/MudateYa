@@ -174,3 +174,23 @@ test('endpoint: sin admin → 401; solo POST; acciones inválidas', async () => 
     assert.strictEqual(r.code, 400, 'sin credenciales no corre nada');
   } finally { delete process.env.ADMIN_TOKEN; delete process.env.TALO_MODO; }
 });
+
+test('consola: si Talo falla a mitad de la prueba, el informe conserva lo que pasó y marca dónde se cortó', async () => {
+  await conRedisMock(async ({ conPrefijo }) => {
+    const t = taloFalso();
+    t.faucet = async () => { throw new Error('The operation was aborted due to timeout'); };
+    const informe = await consola._correrEscenario('exacto', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
+    assert.ok(informe.pasos.some((p) => /Pago de prueba creado/.test(p.titulo) && /ID en Talo: VAR-1/.test(p.detalle)), 'muestra los pasos previos y el id de Talo');
+    assert.ok(informe.hallazgos.some((h) => /interrumpió/.test(h) && /timeout/.test(h)), JSON.stringify(informe.hallazgos));
+  });
+});
+
+test('consola: un id de Talo con caracteres raros no rompe la prueba', async () => {
+  await conRedisMock(async ({ conPrefijo }) => {
+    const t = taloFalso();
+    const crear = t.crearPago.bind(t);
+    t.crearPago = async (x) => { const p = await crear(x); const orig = t.pagos[p.paymentId]; delete t.pagos[p.paymentId]; orig.id = 'VAR-x#y z/1'; t.pagos[orig.id] = orig; return Object.assign({}, p, { paymentId: orig.id }); };
+    const informe = await consola._correrEscenario('exacto', { redis: conPrefijo, talo: t, ahora: new Date(), webhookUrl: 'x', topeEsperaMs: 60, pasoMs: 5 });
+    assert.deepStrictEqual(informe.hallazgos, []);
+  });
+});
