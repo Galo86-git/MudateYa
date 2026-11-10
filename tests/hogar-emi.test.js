@@ -54,7 +54,9 @@ test('catálogo: cada mensaje pasa la guarda de salida (sin promesas, sin precio
   const conMonto = Object.keys(cat.CATALOGO).filter((id) => /\$\d/.test(cat.render(id, vars)));
   assert.deepStrictEqual(conMonto.sort(), ['pedir_modo']);
   assert.match(cat.render('pedir_modo', vars), /\$1\.500/); assert.match(cat.render('pedir_modo', vars), /\$5\.000/);
+  assert.match(cat.render('pedir_modo', vars), /solo un intermediario/);
   assert.match(cat.render('pedir_modo', vars), /no garantiza el trabajo/);
+  assert.match(cat.render('bienvenida', vars), /solo un intermediario/);
 });
 
 test('guarda de salida: bloquea URL, teléfono, email, promesa, pedido de documentos y montos fuera de lugar', () => {
