@@ -161,7 +161,7 @@ module.exports = async function handler(req, res) {
         const okMud = await avisarMudancero(m, hora);
         if (okCli || okMud) {
           m.avisoVispera = new Date().toISOString();
-          await setJSON(`mudanza:${id}`, m, 604800);
+          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 180);
         }
       }
     }

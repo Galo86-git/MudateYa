@@ -70,6 +70,84 @@ async function hacerBackup() {
   return { fecha: fecha, archivo: nombre, claves: vuelco.total, kb: Math.round(arch.archivo.length / 1024), omitidas: vuelco.omitidas.length, borrados: borrar.length };
 }
 
+// Restaura UN pedido (`mudanza:{id}`) desde los backups diarios, todo del lado del
+// servidor (usa el store privado por OIDC, la clave de cifrado y Redis que ya están
+// en Vercel: no hace falta ninguna clave en la compu). Caso Pollice (2026-11-12): el
+// pedido expiró de Redis por un TTL de 7 días y había que traerlo de vuelta.
+//  - Solo restaura ESE pedido y solo si NO existe ahora (no pisa nada).
+//  - Prueba los backups de las fechas pedidas (por defecto, los últimos 7 días).
+//  - Lo deja con 180 días de vida y se asegura de que figure en la lista de pedidos
+//    del mudancero ganador (`mudancero:{email}`), que es de donde sale su panel.
+//  - Con { "soloVer": true } no escribe nada: solo dice qué encontró.
+async function restaurarPedido(body) {
+  const id = String((body && body.mudanzaId) || '').trim();
+  if (!/^[A-Za-z0-9_-]{6,40}$/.test(id)) throw new Error('mudanzaId inválido');
+  const soloVer = !!(body && body.soloVer);
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const tk = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !tk) throw new Error('Redis no configurado');
+  const redis = core.crearRedis(url, tk);
+  const clave = core.parseClave(process.env.BACKUP_ENCRYPTION_KEY);
+  const key = 'mudanza:' + id;
+  const TTL = 60 * 60 * 24 * 180;
+  const informe = { mudanzaId: id, yaExistia: false, fechaBackup: null, restaurado: false, indiceMudancero: null };
+
+  let valor = await redis.cmd('GET', key);
+  if (valor) {
+    informe.yaExistia = true;
+  } else {
+    const blob = require('@vercel/blob');
+    const token = tokenBlob();
+    let fechas = Array.isArray(body && body.fechas) && body.fechas.length ? body.fechas.map(String) : null;
+    if (!fechas) {
+      fechas = [];
+      for (let d = 0; d < 7; d++) fechas.push(core.fechaAR(new Date(Date.now() - d * 86400000)));
+    }
+    informe.fechasProbadas = [];
+    for (const fecha of fechas) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) continue;
+      informe.fechasProbadas.push(fecha);
+      let r;
+      try { r = await blob.get(PREFIJO + fecha + '.mya', { access: 'private', token: token, useCache: false }); } catch (e) { r = null; }
+      if (!r || r.statusCode !== 200) continue;
+      const chunks = [];
+      const reader = r.stream.getReader();
+      for (;;) { const x = await reader.read(); if (x.done) break; chunks.push(Buffer.from(x.value)); }
+      const lineas = core.descifrar(Buffer.concat(chunks), clave).toString('utf8').split('\n');
+      for (const ln of lineas) {
+        if (!ln || ln.indexOf('"' + key + '"') === -1) continue;
+        let e; try { e = JSON.parse(ln); } catch (_) { continue; }
+        if (e && e.k === key && e.t === 'string' && e.v) { valor = e.v; informe.fechaBackup = fecha; break; }
+      }
+      if (valor) break;
+    }
+    if (!valor) { informe.ok = false; informe.motivo = 'No está en ninguno de los backups probados'; return informe; }
+    if (!soloVer) {
+      await redis.cmd('SET', key, valor, 'EX', String(TTL), 'NX');
+      informe.restaurado = true;
+    }
+  }
+
+  let m = null; try { m = JSON.parse(valor); } catch (_) {}
+  if (m) {
+    informe.estado = m.estado; informe.anticipoPagado = !!m.anticipoPagado; informe.saldoPagado = !!m.saldoPagado;
+    informe.mudancero = m.cotizacionAceptada && m.cotizacionAceptada.mudanceroEmail || null;
+  }
+  if (!soloVer) {
+    if (informe.yaExistia) await redis.cmd('EXPIRE', key, String(TTL));
+    const email = informe.mudancero;
+    if (email) {
+      const rawIdx = await redis.cmd('GET', 'mudancero:' + email);
+      let idx = []; try { idx = rawIdx ? JSON.parse(rawIdx) : []; } catch (_) {}
+      if (!Array.isArray(idx)) idx = [];
+      informe.indiceMudancero = idx.includes(id) ? 'ya estaba' : 'agregado';
+      if (!idx.includes(id)) { idx.push(id); await redis.cmd('SET', 'mudancero:' + email, JSON.stringify(idx), 'EX', '2592000'); }
+    }
+  }
+  informe.ok = true;
+  return informe;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const cron = esCronVercel(req);
@@ -77,6 +155,11 @@ module.exports = async function handler(req, res) {
   if (!cron && !admin) return res.status(401).json({ error: 'no autorizado' });
 
   try {
+    if (req.method === 'POST' && req.query && req.query.accion === 'restaurar-pedido') {
+      if (!admin) return res.status(403).json({ error: 'solo admin' });
+      const inf = await restaurarPedido(req.body || {});
+      return res.status(inf.ok ? 200 : 404).json(inf);
+    }
     if (req.method === 'GET' && req.query && req.query.accion === 'estado') {
       const blob = require('@vercel/blob');
       const lista = (await listarBackups(blob, tokenBlob())).map(function (b) {

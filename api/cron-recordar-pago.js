@@ -108,7 +108,7 @@ module.exports = async function handler(req, res) {
         const monto = Math.round(total * 0.5);
         if (await enviarRecordatorio(m, 'anticipo', monto)) {
           m.recordatorioPagoSena = new Date().toISOString();
-          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 30);
+          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 180);
           enviados++;
         }
         continue;
@@ -120,7 +120,7 @@ module.exports = async function handler(req, res) {
         const monto = Math.max(0, total - ant);
         if (monto > 0 && await enviarRecordatorio(m, 'saldo', monto)) {
           m.recordatorioPagoSaldo = new Date().toISOString();
-          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 30);
+          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 180);
           enviados++;
         }
         continue;
@@ -141,7 +141,7 @@ module.exports = async function handler(req, res) {
             const c = m.cotizaciones.find((x) => x.id === cotAceptada.id);
             if (c && c.estado === 'aceptada') c.estado = 'pendiente';
           }
-          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 30);
+          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 180);
           try { await avisarLiberacionCliente(m); } catch (e) { console.warn('avisarLiberacionCliente:', e.message); }
           try {
             if (cotAceptada) await require('./cotizaciones').notificarMudanceroPedidoCancelado({ ...m, cotizacionAceptada: cotAceptada });

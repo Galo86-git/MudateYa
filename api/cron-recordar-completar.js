@@ -181,7 +181,7 @@ module.exports = async function handler(req, res) {
         } else if (await preguntarAlMudancero(m, ruta, hechas + 1)) {
           m.preguntasCompletar = hechas + 1;
           m.ultimaPreguntaCompletar = new Date().toISOString();
-          await setJSON(`mudanza:${id}`, m, 604800);
+          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 180);
           preguntados++;
         }
       }
@@ -195,7 +195,7 @@ module.exports = async function handler(req, res) {
         });
         if (!dry) {
           m.alertaSinCompletar = new Date().toISOString();
-          await setJSON(`mudanza:${id}`, m, 604800);
+          await setJSON(`mudanza:${id}`, m, 60 * 60 * 24 * 180);
         }
       }
     }

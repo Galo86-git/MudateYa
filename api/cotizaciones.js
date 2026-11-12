@@ -3536,6 +3536,29 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Admin: detalle de un pedido con cotizaciones (GET) ───────────
+    // Admin: devuelve a 180 días el TTL de los pedidos con seña pagada / aceptados /
+    // en curso / completados. Bug 2026-11-12: cron-vispera-mudanza y
+    // cron-recordar-completar re-guardaban el pedido con 7 días de vida, así que un
+    // pedido pagado desaparecía de Redis una semana después del aviso de víspera
+    // (caso Pollice, $300.000). Esto repara los que todavía existen. Con
+    // {"mudanzaId": "..."} repara solo uno (útil tras restaurar un backup, que trae
+    // el TTL que le quedaba). Idempotente: solo relee y reescribe el mismo contenido.
+    if (action === 'admin-reparar-ttl-mudanzas' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { mudanzaId } = req.body || {};
+      const ids = mudanzaId ? [mudanzaId] : (await getJSON('mudanzas:todos') || []);
+      const ESTADOS = ['cotizacion_aceptada', 'en_curso', 'completada', 'buscando_reemplazo_urgente'];
+      const reparados = [], inexistentes = [];
+      for (const id of ids.slice(0, 3000)) {
+        const m = await getJSON(`mudanza:${id}`);
+        if (!m) { inexistentes.push(id); continue; }
+        if (!mudanzaId && !(m.anticipoPagado || m.saldoPagado || ESTADOS.includes(m.estado))) continue;
+        await setJSON(`mudanza:${id}`, m, TTL_MUDANZA);
+        reparados.push(id);
+      }
+      return res.status(200).json({ ok: true, revisados: ids.length, reparados: reparados.length, ids: reparados, inexistentes: inexistentes.length, idsInexistentes: inexistentes.slice(0, 50) });
+    }
+
     // Admin: reparar la lista de pedidos de un mudancero (índice `mudancero:{email}`)
     // agregando un pedido en el que cotizó o fue elegido y que quedó afuera.
     // Idempotente. Solo agrega si el mudancero figura de verdad en ese pedido.
