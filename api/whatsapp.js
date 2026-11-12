@@ -674,7 +674,7 @@ PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", "quiero info", vino de un link): no t
 
 RECLAMOS Y PROBLEMAS: si te cuenta que el cliente no le paga el saldo, canceló sin avisar, hay una discrepancia con lo acordado, o cualquier lío que tus herramientas de arriba no resuelven, NO lo dejes solo con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea de verdad, y avisale que lo van a contactar.
 
-PEDIDOS "INCOMPLETOS" / FALTAN DATOS PARA COTIZAR: antes de darle la razón a un mudancero que dice que un pedido viene incompleto o que no tiene datos para estimar, MIRÁ el pedido con ver_pedidos. Cada pedido trae "detalle" (ambientes, tipo/piso/ascensor de origen y destino, nivel de servicio, horario y qué hay que mudar) y "pdf" con el detalle completo y las fotos. Pasale ese detalle y el link al PDF (tal cual vino de la herramienta) y recién después pedile el precio. Si de verdad falta un dato clave en ESE pedido (por ejemplo, no dice qué hay que mudar), decile concretamente CUÁL falta; no generalices con "todos los pedidos vienen incompletos" ni culpes a la plataforma. Si te nombra un pedido que no aparece en ver_pedidos, puede haber vencido o no ser de su zona: decíselo así, sin inventar que "el sistema no lo reconoce" por una falla. NUNCA prometas que vas a "frenar el envío de pedidos" ni que el equipo ya lo hizo: no tenés esa herramienta. Si pide dejar de recibir pedidos, derivá con derivar_a_humano y decile solo que se lo pasás al equipo.
+PEDIDOS "INCOMPLETOS" / FALTAN DATOS PARA COTIZAR: antes de darle la razón a un mudancero que dice que un pedido viene incompleto o que no tiene datos para estimar, MIRÁ el pedido con ver_pedidos. Cada pedido trae "detalle" (ambientes, tipo/piso/ascensor de origen y destino, nivel de servicio, horario y qué hay que mudar) y "pdf" con el detalle completo y las fotos. Pasale ese detalle y el link al PDF (tal cual vino de la herramienta) y recién después pedile el precio. Si pide ver las fotos o imágenes de un pedido, o más información, usá ver_fotos_pedido: le mandamos por este mismo chat el PDF y cada foto que cargó el cliente. Si de verdad falta un dato clave en ESE pedido (por ejemplo, no dice qué hay que mudar), decile concretamente CUÁL falta; no generalices con "todos los pedidos vienen incompletos" ni culpes a la plataforma. Si te nombra un pedido que no aparece en ver_pedidos, puede haber vencido o no ser de su zona: decíselo así, sin inventar que "el sistema no lo reconoce" por una falla. NUNCA prometas que vas a "frenar el envío de pedidos" ni que el equipo ya lo hizo: no tenés esa herramienta. Si pide dejar de recibir pedidos, derivá con derivar_a_humano y decile solo que se lo pasás al equipo.
 
 CÓMO ENTRAR A SU CUENTA (cuando pregunta cómo iniciar sesión, cómo completar su perfil, o dice que no encuentra el login): su panel está en *https://mudateya.ar/mi-cuenta* — ESA es la dirección, no inventes otra. NO es mudateya.ar/mudancero: esa es la página PÚBLICA de un perfil y, sin un perfil elegido, muestra "Perfil no encontrado". Ahí entra con el botón de Google o, si no usa Gmail, poniendo su email para que le mandemos un link de acceso (no hay contraseña). Tiene que entrar con el MISMO email con el que se registró (más abajo, en el contexto, tenés ese email enmascarado: decíselo para que use ese). NO existe una app en Play Store ni App Store: se usa desde el navegador del celular (si quiere, puede guardar la página como acceso directo en la pantalla de inicio). Si al intentar registrarse de nuevo le dice "perfil ya registrado" o "ya existe un perfil con ese teléfono/email", es buena señal: YA tiene cuenta, no se tiene que registrar otra vez, solo entrar a mi-cuenta con su email. Si con el mismo email igual no puede entrar, ahí sí derivá con motivo "BUG:" indicando su email enmascarado y qué pantalla o mensaje ve.
 
@@ -1176,6 +1176,15 @@ const mudanceroTools = [
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
+    name: 'ver_fotos_pedido',
+    description: 'Le manda al mudancero, por este mismo chat de WhatsApp, el PDF con el detalle completo de un pedido y cada foto que cargó el cliente, para que pueda dimensionar la mudanza y cotizar mejor. Usala cuando pida ver las fotos o imágenes de un pedido, o más información de uno. Necesita el id del pedido (de ver_pedidos).',
+    input_schema: {
+      type: 'object',
+      properties: { pedidoId: { type: 'string', description: 'ID del pedido (de ver_pedidos)' } },
+      required: ['pedidoId'],
+    },
+  },
+  {
     name: 'cotizar',
     description: 'Envía la cotización del mudancero para un pedido. Interpretá la jerga de plata y pasá el precio como entero en pesos.',
     input_schema: {
@@ -1392,6 +1401,37 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
         ? 'Pedidos disponibles para cotizar. Cada uno trae "detalle" (ambientes, pisos, ascensor, nivel, qué hay que mudar) y "pdf" con el detalle completo: mostráselo al mudancero ANTES de pedirle el precio. Para cotizar uno, usá cotizar con su id.'
         : 'No hay pedidos disponibles en tu zona ahora.';
       return JSON.stringify({ pedidos, nota });
+    }
+    if (name === 'ver_fotos_pedido') {
+      // Fotos + PDF del pedido por el chat (un mudancero pidió "que desde el bot
+      // vean las imágenes", 2026-11-12). Las fotos del cliente ya están moderadas
+      // (sin teléfonos ni mails) y el PDF no lleva datos de contacto.
+      const idP = String((input && input.pedidoId) || '').trim();
+      const mP = idP ? await getJSON(`mudanza:${idP}`) : null;
+      if (!mP) return JSON.stringify({ ok: false, error: 'No encontré ese pedido: puede haber vencido. Mirá los vigentes con ver_pedidos.' });
+      const abierto = ['buscando', 'cotizando', 'cotizaciones_completas'].includes(mP.estado);
+      const lePertenece = (mP.cotizaciones || []).some((c) => c.mudanceroEmail === email)
+        || !!(mP.cotizacionAceptada && mP.cotizacionAceptada.mudanceroEmail === email);
+      if (!abierto && !lePertenece) return JSON.stringify({ ok: false, error: 'Ese pedido ya no está abierto.' });
+      if (mP.modoCotizacion === 'dirigido' && !lePertenece && !(mP.mudancerosInvitados || []).includes(email)) {
+        return JSON.stringify({ ok: false, error: 'Ese pedido no está disponible para vos.' });
+      }
+      const urls = [];
+      [].concat(Array.isArray(mP.fotos) ? mP.fotos : [], (mP.detallesAdicionales && Array.isArray(mP.detallesAdicionales.fotos)) ? mP.detallesAdicionales.fotos : [])
+        .forEach((u) => { if (typeof u === 'string' && /^https:\/\//.test(u) && urls.indexOf(u) === -1) urls.push(u); });
+      const fotosAEnviar = urls.slice(0, 6);
+      const { enviarWhatsAppTexto } = require('./_whatsapp');
+      let enviadas = 0, pdfOk = false;
+      try { await enviarWhatsAppTexto(waId, '📄 Detalle del pedido (PDF):', `${base}/api/cotizaciones?action=pedido-pdf&mudanzaId=${encodeURIComponent(idP)}`); pdfOk = true; } catch (e) { console.warn('ver_fotos_pedido pdf:', e.message); }
+      for (let i = 0; i < fotosAEnviar.length; i++) {
+        try { await enviarWhatsAppTexto(waId, `📷 Foto ${i + 1} de ${fotosAEnviar.length} del pedido`, fotosAEnviar[i]); enviadas++; } catch (e) { console.warn('ver_fotos_pedido foto:', e.message); }
+      }
+      return JSON.stringify({
+        ok: pdfOk || enviadas > 0, pdfEnviado: pdfOk, fotosEnviadas: enviadas, fotosEnElPedido: urls.length,
+        nota: urls.length
+          ? `Ya le mandé por el chat el PDF y ${enviadas} foto(s). No describas ni interpretes las imágenes por tu cuenta: decile que las mire y que te cuente cuánto cotiza.`
+          : 'El cliente no cargó fotos en este pedido. Ya le mandé el PDF con el detalle; decile que no hay fotos y que con ese detalle puede cotizar o pedirle al cliente más datos a través de MudateYa.',
+      });
     }
     if (name === 'cotizar') {
       // COBRO POR HORA: se cotiza con tarifa + horas estimadas y el servidor arma
