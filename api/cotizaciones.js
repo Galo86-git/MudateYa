@@ -485,6 +485,13 @@ async function generarPDFBase64(datos) {
   doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C_GRND);
   doc.text('VERIFICADO', MX + 52, Y + 48, { width: 60, align: 'center' });
 
+  // Link al perfil del mudancero en MudateYa (fotos del camión, reseñas, verificaciones):
+  // clickeable dentro del PDF, para que el cliente lo tenga siempre con el presupuesto.
+  if (datos.perfilUrl) {
+    doc.font('Helvetica-Bold').fontSize(8).fillColor(C_BLUE);
+    doc.text('Ver perfil, fotos y reseñas  >', MX + 120, Y + 48, { width: COL_W - 132, lineBreak: false, link: datos.perfilUrl, underline: true });
+  }
+
   Y += CARD_H + 16;
 
   // ── 4. DETALLE MUDANZA ────────────────────────────────────────────
@@ -1518,6 +1525,7 @@ module.exports = async function handler(req, res) {
         clienteNombre:     mudanza.clienteNombre,
         clienteEmail:      mudanza.clienteEmail,
         mudanceroNombre:   cot.mudanceroNombre,
+        perfilUrl:         require('./_pid').urlPerfilMudancero(cot.mudanceroEmail),
         mudancero_initials:(cot.mudanceroNombre||'MV').slice(0,2).toUpperCase(),
         desde:             mudanza.desde,
         hasta:             mudanza.hasta,
@@ -5041,21 +5049,44 @@ async function notificarCliente(mudanza, cotizacion) {
     const { enviarPlantilla } = require('./_plantillas');
     const nomCli = (mudanza.clienteNombre || '').split(' ')[0] || 'Hola';
     const precioFmt = '$' + Number(cotizacion.precio || 0).toLocaleString('es-AR');
+    // Link al perfil del mudancero en MudateYa (fotos del camión, reseñas, verificaciones).
+    // Id opaco: no revela su email ni su teléfono antes de la seña.
+    const urlPerfil = require('./_pid').urlPerfilMudancero(cotizacion.mudanceroEmail);
     const texto =
       `💰 ¡Llegó una cotización para tu ${mudanza.tipo || 'mudanza'}!\n` +
       `${cotizacion.mudanceroNombre || 'Un mudancero'} cotizó ${mudanza.desde} → ${mudanza.hasta} en ${precioFmt}` +
       (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
       (cotizacion.nota ? `"${cotizacion.nota}"\n` : '') +
+      (urlPerfil ? `👤 Conocé su perfil, con fotos del camión y reseñas: ${urlPerfil}\n` : '') +
       `Respondeme por acá y te ayudo a verla y elegir 🙂`;
-    // 1) Aviso: plantilla presupuestos_cliente si está aprobada, si no texto libre.
-    try { await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto); }
+    // 1) Aviso: plantilla con el detalle de ESTA cotización y el link al perfil
+    //    (cotizacion_recibida_cliente) si Meta ya la aprobó; si no, la genérica
+    //    presupuestos_cliente, y si tampoco, texto libre.
+    try {
+      let usaDetalle = false;
+      if (urlPerfil) {
+        try { const p2 = await require('./_plantillas').resolver('cotizacion_recibida_cliente'); usaDetalle = !!(p2 && p2.status === 'approved' && p2.sid); } catch (_) {}
+      }
+      if (usaDetalle) {
+        await enviarPlantilla(mudanza.clienteWA, 'cotizacion_recibida_cliente',
+          { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '', 4: cotizacion.mudanceroNombre || 'Un mudancero', 5: precioFmt, 6: urlPerfil }, texto);
+      } else {
+        await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto);
+      }
+    }
     catch (e) { console.error('notificarCliente WhatsApp:', e.message); }
     // 2) PDF como adjunto (solo llega dentro de la ventana; fuera, el cliente lo pide a Emi).
     try {
       const pdfUrl = `https://mudateya.ar/api/cotizaciones?action=pdf&mudanzaId=${encodeURIComponent(mudanza.id)}&cotizacionId=${encodeURIComponent(cotizacion.id)}`;
       await enviarWhatsAppTexto(mudanza.clienteWA, '📄 Te paso el presupuesto en PDF:', pdfUrl);
     } catch (e) { console.error('notificarCliente WhatsApp pdf:', e.message); }
-    // 3) Si el mudancero pidió relevamiento/visita, sugerirle fotos como alternativa.
+    // 3) Link al perfil por separado (dentro de la ventana de 24hs): si el aviso salió por
+    //    la plantilla genérica, el link NO viaja en ella.
+    if (urlPerfil) {
+      try { await enviarWhatsAppTexto(mudanza.clienteWA, `👤 Conocé a ${cotizacion.mudanceroNombre || 'este mudancero'}: fotos del camión, reseñas y verificaciones\n${urlPerfil}`); }
+      catch (e) { console.warn('notificarCliente WhatsApp perfil:', e.message); }
+    }
+    // 4) Si el mudancero pidió relevamiento/visita, sugerirle fotos como alternativa.
     if (pideVisitaPresencial(cotizacion.nota)) {
       try {
         const textoSugerencia = `¡Hola ${nomCli}! ${cotizacion.mudanceroNombre || 'El mudancero'} te cotizó tu ${mudanza.tipo || 'mudanza'}, pero pidió visitarte para confirmar el precio final.\n\nSi querés evitarte la visita, respondeme por acá con fotos de lo que hay que mudar o contame más detalles por escrito — se los paso al mudancero para que ajuste el precio sin necesidad de ir. 📷`;
@@ -5080,6 +5111,7 @@ async function notificarCliente(mudanza, cotizacion) {
         `💰 ¡Llegó una cotización para tu ${mudanza.tipo || 'mudanza'}!\n` +
         `${cotizacion.mudanceroNombre || 'Un mudancero'} cotizó ${mudanza.desde} → ${mudanza.hasta} en ${precioFmt}` +
         (cotizacion.tiempoEstimado ? ` (${cotizacion.tiempoEstimado})` : '') + '.\n' +
+        (require('./_pid').urlPerfilMudancero(cotizacion.mudanceroEmail) ? `👤 Conocé su perfil, con fotos del camión y reseñas: ${require('./_pid').urlPerfilMudancero(cotizacion.mudanceroEmail)}\n` : '') +
         `Entrá a mudateya.ar/mi-mudanza para verla y elegir.`;
       await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto);
 

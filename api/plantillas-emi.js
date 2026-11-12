@@ -148,6 +148,17 @@ const CREAR = [
     } },
     variables: { '1': 'Juan', '2': 'Cristian', '3': 'Sábado 3/10', '4': '+5491100000000' } },
 
+  // Aviso al cliente de UNA cotización puntual, con el nombre y el precio del mudancero
+  // y el link a su perfil en MudateYa ({{6}}: fotos del camión, reseñas, verificaciones).
+  // La genérica presupuestos_cliente no dice quién cotizó ni lleva link, y el cliente
+  // no tenía cómo conocer al mudancero antes de elegir. notificarCliente (cotizaciones.js)
+  // usa esta solo si Meta ya la aprobó; si no, la genérica + el link en un texto aparte.
+  { name: 'cotizacion_recibida_cliente', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: '¡Hola {{1}}! Llegó un presupuesto para tu mudanza ({{2}} → {{3}}).\n\n{{4}} cotizó {{5}}.\nConocé su perfil, con fotos del camión y reseñas: {{6}}\n\nRespondé este mensaje y te ayudo a verlo y elegir.',
+    } },
+    variables: { '1': 'Juan', '2': 'Palermo', '3': 'Belgrano', '4': 'Cristian', '5': '$250.000', '6': 'https://mudateya.ar/mudancero?p=0123456789abcdef' } },
+
   // Igual que nuevo_pedido_mudancero pero CON el detalle del pedido ({{5}}:
   // ambientes, pisos, ascensor, nivel, qué hay que mudar) y su código ({{6}}). La
   // original solo traía ruta y fecha, y los mudanceros que trabajan por WhatsApp
