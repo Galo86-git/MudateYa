@@ -5062,17 +5062,23 @@ async function notificarCliente(mudanza, cotizacion) {
     // 1) Aviso: plantilla con el detalle de ESTA cotización y el link al perfil
     //    (cotizacion_recibida_cliente) si Meta ya la aprobó; si no, la genérica
     //    presupuestos_cliente, y si tampoco, texto libre.
+    // linkYaEnviado: el link al perfil ya viajó en el aviso (plantilla con link, o texto
+    // libre que lo incluye): en ese caso NO se manda el mensaje aparte (quedaba duplicado).
+    let linkYaEnviado = false;
     try {
       let usaDetalle = false;
       if (urlPerfil) {
         try { const p2 = await require('./_plantillas').resolver('cotizacion_recibida_cliente'); usaDetalle = !!(p2 && p2.status === 'approved' && p2.sid); } catch (_) {}
       }
+      let rAviso;
       if (usaDetalle) {
-        await enviarPlantilla(mudanza.clienteWA, 'cotizacion_recibida_cliente',
+        rAviso = await enviarPlantilla(mudanza.clienteWA, 'cotizacion_recibida_cliente',
           { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '', 4: cotizacion.mudanceroNombre || 'Un mudancero', 5: precioFmt, 6: urlPerfil }, texto);
       } else {
-        await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto);
+        rAviso = await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto);
       }
+      // Con la plantilla con link, o si cayó a texto libre (que ya incluye el link), el link llegó.
+      linkYaEnviado = !!(rAviso && rAviso.enviado && ((usaDetalle && rAviso.via === 'plantilla') || rAviso.via === 'texto_libre'));
     }
     catch (e) { console.error('notificarCliente WhatsApp:', e.message); }
     // 2) PDF como adjunto (solo llega dentro de la ventana; fuera, el cliente lo pide a Emi).
@@ -5080,9 +5086,9 @@ async function notificarCliente(mudanza, cotizacion) {
       const pdfUrl = `https://mudateya.ar/api/cotizaciones?action=pdf&mudanzaId=${encodeURIComponent(mudanza.id)}&cotizacionId=${encodeURIComponent(cotizacion.id)}`;
       await enviarWhatsAppTexto(mudanza.clienteWA, '📄 Te paso el presupuesto en PDF:', pdfUrl);
     } catch (e) { console.error('notificarCliente WhatsApp pdf:', e.message); }
-    // 3) Link al perfil por separado (dentro de la ventana de 24hs): si el aviso salió por
-    //    la plantilla genérica, el link NO viaja en ella.
-    if (urlPerfil) {
+    // 3) Link al perfil por separado (dentro de la ventana de 24hs): solo si el aviso salió
+    //    por la plantilla genérica, que NO lleva el link.
+    if (urlPerfil && !linkYaEnviado) {
       try { await enviarWhatsAppTexto(mudanza.clienteWA, `👤 Conocé a ${cotizacion.mudanceroNombre || 'este mudancero'}: fotos del camión, reseñas y verificaciones\n${urlPerfil}`); }
       catch (e) { console.warn('notificarCliente WhatsApp perfil:', e.message); }
     }
