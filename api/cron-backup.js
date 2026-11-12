@@ -148,6 +148,90 @@ async function restaurarPedido(body) {
   return informe;
 }
 
+// Auditoría (SOLO LECTURA): qué pedidos del índice permanente `mudanzas:todos` ya no
+// existen en Redis y, de esos, cuáles estaban PAGADOS en algún backup. Bug 2026-11-12:
+// varios crons guardaban el pedido con 7 días de vida, así que un pedido pagado podía
+// desaparecer una semana después del aviso de víspera, antes de liquidarle al mudancero.
+// Recorre los backups del más nuevo al más viejo y se queda con la versión más reciente
+// de cada pedido faltante. Con presupuesto de tiempo: si no alcanza, devuelve lo
+// hallado y `completo:false`. Con { "backups": N } limita cuántos backups mira.
+async function auditarPerdidos(body) {
+  const t0 = Date.now();
+  const PRESUPUESTO_MS = 240000;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const tk = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !tk) throw new Error('Redis no configurado');
+  const redis = core.crearRedis(url, tk);
+  const clave = core.parseClave(process.env.BACKUP_ENCRYPTION_KEY);
+  const blob = require('@vercel/blob');
+  const token = tokenBlob();
+
+  const rawTodos = await redis.cmd('GET', 'mudanzas:todos');
+  let todos = []; try { todos = rawTodos ? JSON.parse(rawTodos) : []; } catch (_) {}
+  if (!Array.isArray(todos)) todos = [];
+  const faltantes = new Set();
+  for (let i = 0; i < todos.length; i += 200) {
+    const lote = todos.slice(i, i + 200);
+    const ex = await redis.pipeline(lote.map(function (id) { return ['EXISTS', 'mudanza:' + id]; }));
+    lote.forEach(function (id, j) { if (!Number(ex[j])) faltantes.add(String(id)); });
+  }
+
+  const lista = (await listarBackups(blob, token))
+    .map(function (b) { return b.pathname; })
+    .filter(function (n) { return /\d{4}-\d{2}-\d{2}\.mya$/.test(n); })
+    .sort(function (a, b) { return String(b).localeCompare(String(a)); });
+  const limite = Math.max(1, Math.min(lista.length, parseInt(body && body.backups, 10) || lista.length));
+
+  const hallados = {}; // id -> { fechaBackup, m }
+  let revisados = 0, completo = true, ultimaFecha = null;
+  for (let i = 0; i < limite; i++) {
+    if (Date.now() - t0 > PRESUPUESTO_MS) { completo = false; break; }
+    if (Object.keys(hallados).length >= faltantes.size) break;
+    let r;
+    try { r = await blob.get(lista[i], { access: 'private', token: token, useCache: false }); } catch (e) { r = null; }
+    if (!r || r.statusCode !== 200) continue;
+    const chunks = [];
+    const reader = r.stream.getReader();
+    for (;;) { const x = await reader.read(); if (x.done) break; chunks.push(Buffer.from(x.value)); }
+    const fecha = (lista[i].match(/(\d{4}-\d{2}-\d{2})\.mya$/) || [])[1];
+    let texto;
+    try { texto = core.descifrar(Buffer.concat(chunks), clave).toString('utf8'); } catch (e) { continue; }
+    revisados++; ultimaFecha = fecha;
+    const lineas = texto.split('\n');
+    for (const ln of lineas) {
+      if (ln.indexOf('{"k":"mudanza:') !== 0) continue;
+      const mk = ln.match(/^\{"k":"mudanza:([^"]+)"/);
+      if (!mk || !faltantes.has(mk[1]) || hallados[mk[1]]) continue;
+      let e; try { e = JSON.parse(ln); } catch (_) { continue; }
+      if (!e || e.t !== 'string' || !e.v) continue;
+      let m; try { m = JSON.parse(e.v); } catch (_) { continue; }
+      hallados[mk[1]] = { fechaBackup: fecha, m: m };
+    }
+  }
+
+  const pagados = [];
+  Object.keys(hallados).forEach(function (id) {
+    const m = hallados[id].m || {};
+    if (!(m.anticipoPagado || m.saldoPagado)) return;
+    const ca = m.cotizacionAceptada || {};
+    pagados.push({
+      id: id, estado: m.estado || null, fechaMudanza: m.fecha || null,
+      anticipoPagado: !!m.anticipoPagado, saldoPagado: !!m.saldoPagado, completada: !!m.fechaCompletada,
+      precio: ca.precio || m.montoTotal || null, mudancero: ca.mudanceroNombre || null, mudanceroEmail: ca.mudanceroEmail || null,
+      canal: m.canal || null, clienteWA: m.clienteWA ? String(m.clienteWA).replace(/\d(?=\d{3})/g, '*') : null,
+      ultimoBackup: hallados[id].fechaBackup,
+    });
+  });
+  pagados.sort(function (a, b) { return String(b.fechaMudanza || '').localeCompare(String(a.fechaMudanza || '')); });
+  return {
+    ok: true, completo: completo,
+    indice: todos.length, faltantes: faltantes.size,
+    backups: { disponibles: lista.length, revisados: revisados, masNuevo: lista[0] || null, masViejo: lista[lista.length - 1] || null, ultimaFechaRevisada: ultimaFecha },
+    hallados: Object.keys(hallados).length, noEstanEnNingunBackup: faltantes.size - Object.keys(hallados).length,
+    pagadosPerdidos: pagados.length, detalle: pagados,
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const cron = esCronVercel(req);
@@ -155,6 +239,10 @@ module.exports = async function handler(req, res) {
   if (!cron && !admin) return res.status(401).json({ error: 'no autorizado' });
 
   try {
+    if ((req.method === 'POST' || req.method === 'GET') && req.query && req.query.accion === 'auditar-perdidos') {
+      if (!admin) return res.status(403).json({ error: 'solo admin' });
+      return res.status(200).json(await auditarPerdidos(req.body || {}));
+    }
     if (req.method === 'POST' && req.query && req.query.accion === 'restaurar-pedido') {
       if (!admin) return res.status(403).json({ error: 'solo admin' });
       const inf = await restaurarPedido(req.body || {});
