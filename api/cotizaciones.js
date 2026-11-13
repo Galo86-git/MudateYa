@@ -81,6 +81,17 @@ async function tokenDeSesion(prefix, email, ttl) {
 // aparte) pero el resto del archivo seguía en 7. 180 días es el mismo TTL que
 // ya usa transferencias.js para el mismo tipo de dato de reconciliación.
 const TTL_MUDANZA = 60 * 60 * 24 * 180;
+
+// Saludo personalizado para los mails a mudanceros: reemplaza {{saludo}} por
+// "Hola Cristian," (primer nombre) o "Hola," si no hay un nombre confiable. Se ignoran los
+// nombres de empresa ("Transportes…", "Fletes…") y los que no parecen un nombre de pila.
+function saludoMudancero(nombreCompleto) {
+  const primero = String(nombreCompleto || '').trim().split(/\s+/)[0] || '';
+  const GENERICAS = /^(transportes?|fletes?|mudanzas?|log[ií]stica|empresa|servicios?|grupo|expreso|cargas?|camiones|logistics?)$/i;
+  const esSociedad = /\b(S\.?A\.?|S\.?R\.?L\.?|S\.?A\.?S\.?)\s*$/i.test(String(nombreCompleto || '').trim()); // "Castro y Regini SA"
+  if (esSociedad || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{2,20}$/.test(primero) || GENERICAS.test(primero)) return 'Hola,';
+  return 'Hola ' + primero.charAt(0).toUpperCase() + primero.slice(1).toLowerCase() + ',';
+}
 // Máximo de propuestas de ajuste que un mudancero puede retirar por mudanza
 // (ver action=retirar-ajuste). Va acá arriba porque se exporta al cargar el módulo.
 const MAX_RETIROS_AJUSTE = 2;
@@ -1972,11 +1983,13 @@ module.exports = async function handler(req, res) {
     // borrador de un mail antes de decidir mandarlo a todos.
     if (action === 'admin-enviar-mail' && req.method === 'POST') {
       if (!esAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
-      const { to, subject, html } = req.body || {};
+      const { to, subject, html, nombre } = req.body || {};
       if (!to || !subject || !html) return res.status(400).json({ error: 'Faltan to, subject y/o html' });
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
-        const r = await resend.emails.send({ from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to, subject, html });
+        // Para probar el saludo personalizado: pasar "nombre" (ej. "Cristian Pollice"); si no, "Hola,".
+        const htmlPrueba = String(html).split('{{saludo}}').join(saludoMudancero(nombre));
+        const r = await resend.emails.send({ from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to, subject, html: htmlPrueba });
         // El SDK de Resend puede devolver { data: null, error: {...} } SIN
         // lanzar excepción — sin este chequeo, un envío que en realidad
         // falló (dominio no verificado, rate limit, etc.) se reportaba
@@ -2015,8 +2028,10 @@ module.exports = async function handler(req, res) {
           if (soloPrueba && enviados.length >= 1) break; // soloPrueba: manda solo al primero, para probar el filtro/loop sin spamear
           try {
             const linkB = linkBaja(email, 'admin-mail-mudanceros');
+            // {{saludo}} → "Hola Cristian," con el primer nombre de este mudancero (o "Hola,").
+            const htmlPers = String(html).split('{{saludo}}').join(saludoMudancero(perfil.nombre));
             const rEnv = await resend.emails.send({
-              from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to: email, subject, html,
+              from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to: email, subject, html: htmlPers,
               headers: {
                 'List-Unsubscribe': `<mailto:hola@mudateya.ar?subject=BAJA>, <${linkB}>`,
                 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
