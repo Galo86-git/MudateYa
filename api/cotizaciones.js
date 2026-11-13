@@ -3564,10 +3564,14 @@ module.exports = async function handler(req, res) {
       const porCanal = { emi_whatsapp: 0, web_o_asesor: 0, desconocido: 0 };
       const existentes = { total: 0, conCotizacion: 0, aceptadas: 0, conSenaPagada: 0, completadas: 0, canalCampoWhatsapp: 0, cotizacionesTotal: 0 };
       let delAnio = 0, fueraDeAnio = 0;
+      const porMes = {}; // 'AAAA-MM' -> { emi_whatsapp, web_o_asesor, total, porcentajeEmi }
       for (const id of ids) {
         const d = decodificar(id);
         if (d.t === null || d.t < desde || d.t >= hasta) { if (d.t !== null) fueraDeAnio++; else porCanal.desconocido++; continue; }
         delAnio++; porCanal[d.canal]++;
+        const mes = new Date(d.t).toISOString().slice(0, 7);
+        const pm = porMes[mes] || (porMes[mes] = { emi_whatsapp: 0, web_o_asesor: 0, total: 0 });
+        pm[d.canal]++; pm.total++;
         const p = await getJSON(`mudanza:${id}`);
         if (!p) continue;
         existentes.total++;
@@ -3600,6 +3604,7 @@ module.exports = async function handler(req, res) {
         pedidos: {
           publicadosEnElAnio: delAnio, porCanalSegunId: porCanal,
           porcentajeEmiSegunId: pct(porCanal.emi_whatsapp, delAnio), idsDeOtrosAnios: fueraDeAnio,
+          porMes: Object.keys(porMes).sort().map(function (k) { const v = porMes[k]; return { mes: k, total: v.total, emi: v.emi_whatsapp, webOAsesor: v.web_o_asesor, porcentajeEmi: pct(v.emi_whatsapp, v.total) }; }),
           existentesHoyEnRedis: existentes,
         },
         aviso: 'Los pedidos publicados cuentan por el índice permanente; los que vencieron ya no existen en Redis, así que el detalle (cotizaciones, seña, completadas) es solo de los que siguen existiendo. Incluye pruebas internas si las hubo.',
