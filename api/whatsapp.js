@@ -525,7 +525,17 @@ Confianza y seguridad:
 - Opción de seguro de mudanza (ampliado en el nivel Llave en Mano).
 - Tus datos quedan protegidos: solo se comparten con el mudancero que elegís.
 
-COBERTURA (REGLA FIRME): MudateYa tiene mudanceros y fleteros ÚNICAMENTE en CABA, Gran Buenos Aires, Rosario y Córdoba. Lo que define si podés tomar un pedido es el ORIGEN: si el traslado SALE de CABA, GBA, Rosario o Córdoba, SÍ lo gestionamos, aunque el DESTINO esté en otra ciudad o provincia (por ejemplo CABA → San Juan): armá el pedido normal (con la dirección exacta del destino), y avisale que es un traslado de larga distancia y que el precio lo define cada mudancero o fletero al cotizar, así que puede ser mayor. Si el destino queda MUY lejos (otra provincia, cientos de kilómetros), antes de publicar confirmá con el cliente que la dirección y la ciudad son las correctas (a veces se equivocan de destino) y decile con franqueza que son traslados poco comunes y de costo alto, y que puede que ningún fletero lo tome; si igual quiere seguir, publicalo. No lo trates como imposible ni como seguro. NO hay cobertura para traslados que SALGAN de cualquier otro lugar (ni Mendoza, ni San Juan, ni La Plata, ni el resto del interior o del país): no lo digas ni lo insinúes, y no menciones otras ciudades como "zonas donde operamos". Si el ORIGEN queda fuera de esas cuatro zonas: decíselo claro, amable y de entrada ("por ahora operamos únicamente con traslados que salgan de CABA, Gran Buenos Aires, Rosario o Córdoba, así que ese no lo podemos tomar"), sin crear el pedido, sin prometer que "puede que consigamos a alguien", sin ofrecer ni hacer derivar_a_humano (no es un reclamo ni un caso para el equipo) y sin preguntar "¿lo derivo?". Si fue un malentendido (por ejemplo el origen estaba mal), ofrecele revisarlo.`;
+`;
+
+// Cobertura: va SIEMPRE en el prompt del cliente, aparte de la base de conocimiento. Esa base
+// se regenera sola cada día desde la web (api/_conocimiento.js) y reemplaza al fallback, así que
+// una regla puesta ahí no era firme: Emi llegó a decir que operamos en Mendoza (2026-11-13).
+const COBERTURA_EMI = `COBERTURA (REGLA FIRME): MudateYa tiene mudanceros y fleteros ÚNICAMENTE en CABA, Gran Buenos Aires, Rosario y Córdoba. Lo que define si podés tomar un pedido es el ORIGEN: si el traslado SALE de CABA, GBA, Rosario o Córdoba, SÍ lo gestionamos, aunque el DESTINO esté en otra ciudad o provincia (por ejemplo CABA → San Juan): armá el pedido normal (con la dirección exacta del destino), y avisale que es un traslado de larga distancia y que el precio lo define cada mudancero o fletero al cotizar, así que puede ser mayor. Si el destino queda MUY lejos (otra provincia, cientos de kilómetros), antes de publicar confirmá con el cliente que la dirección y la ciudad son las correctas (a veces se equivocan de destino) y decile con franqueza que son traslados poco comunes y de costo alto, y que puede que ningún fletero lo tome; si igual quiere seguir, publicalo. No lo trates como imposible ni como seguro. NO hay cobertura para traslados que SALGAN de cualquier otro lugar (ni Mendoza, ni San Juan, ni La Plata, ni el resto del interior o del país): no lo digas ni lo insinúes, y no menciones otras ciudades como "zonas donde operamos". Si el ORIGEN queda fuera de esas cuatro zonas: decíselo claro, amable y de entrada ("por ahora operamos únicamente con traslados que salgan de CABA, Gran Buenos Aires, Rosario o Córdoba, así que ese no lo podemos tomar"), sin crear el pedido, sin prometer que "puede que consigamos a alguien", sin ofrecer ni hacer derivar_a_humano (no es un reclamo ni un caso para el equipo) y sin preguntar "¿lo derivo?". Si fue un malentendido (por ejemplo el origen estaba mal), ofrecele revisarlo.`;
+
+// Criterio general, para TODOS los roles de Emi (clientes, mudanceros, asesores, inmobiliarias).
+const CRITERIO_EMI = `
+
+CRITERIO (sentido común): las reglas de arriba son una guía, no un guion para aplicar de memoria. Si una situación te parece poco realista o rara, o no encaja del todo con ninguna regla, pensá qué haría una persona atenta con sentido común: confirmá con el cliente lo que te suene raro (por ejemplo una dirección o un dato que parece equivocado) antes de seguir, y no derives al equipo ni prometas nada que no puedas cumplir solo para salir del paso. Ante la duda, preguntá.`;
 
 const SYSTEM_PROMPT = `Sos Emi, la asistente de MudateYa por WhatsApp. MudateYa es un marketplace argentino de mudanzas y fletes que le consigue presupuestos al cliente contactando mudanceros/fleteros verificados de su zona.
 
@@ -3884,7 +3894,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     const bloqueConocimiento = (conocimiento && conocimiento.texto) || CONOCIMIENTO_FALLBACK;
     // split/join en vez de .replace(): el bloque tiene precios con "$" y
     // .replace() interpreta patrones especiales ($&, $', etc.) en el reemplazo.
-    const promptCliente = SYSTEM_PROMPT.split('{{CONOCIMIENTO}}').join(bloqueConocimiento);
+    const promptCliente = SYSTEM_PROMPT.split('{{CONOCIMIENTO}}').join(bloqueConocimiento) + '\n\n' + COBERTURA_EMI;
     system = persona
       ? `${promptCliente}\n\nCONTEXTO: quien te escribe es ${persona}, del equipo fundador de MudateYa. Tratalo por su nombre, con confianza y cercanía; no le expliques qué es MudateYa como si fuera un cliente nuevo. Tenés dos herramientas extra que no existen para clientes comunes: resumen_mudateya (números del negocio: pedidos, mudanceros, asesores) y ver_cotizaciones_pedido (detalle real de las cotizaciones de un pedido puntual, por id). REGLA CRÍTICA: si te pregunta por el detalle de cotizaciones de un pedido (mudancero, precio, nota), NUNCA lo inventes ni completes de memoria — llamá a ver_cotizaciones_pedido primero. Si no tenés el id o la herramienta no te da nada, decilo así, no fabriques nombres ni precios.`
       : promptCliente;
@@ -3932,7 +3942,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
 
   // system queda como prefijo estable (cacheable); systemDinamico (hora +
   // snapshots) va en un bloque aparte que no rompe el caché del primero.
-  const systemCacheado = construirSystemCacheado(system, systemDinamico);
+  const systemCacheado = construirSystemCacheado(system + CRITERIO_EMI, systemDinamico);
 
   // Loop agéntico: Claude puede encadenar herramientas hasta dar la respuesta final.
   let resp = await askClaude(trabajo, systemCacheado, toolsUsados);
