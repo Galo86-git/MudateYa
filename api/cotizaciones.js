@@ -5066,13 +5066,22 @@ async function notificarCliente(mudanza, cotizacion) {
     // libre que lo incluye): en ese caso NO se manda el mensaje aparte (quedaba duplicado).
     let linkYaEnviado = false;
     try {
-      let usaDetalle = false;
+      // Se prefiere la versión neutra (presupuesto_recibido_cliente, pensada para que Meta
+      // la deje como UTILITY); si no está aprobada, la primera versión (que Meta pasó a
+      // MARKETING); si tampoco, la genérica.
+      let nombreDetalle = null;
       if (urlPerfil) {
-        try { const p2 = await require('./_plantillas').resolver('cotizacion_recibida_cliente'); usaDetalle = !!(p2 && p2.status === 'approved' && p2.sid); } catch (_) {}
+        for (const nom of ['presupuesto_recibido_cliente', 'cotizacion_recibida_cliente']) {
+          try {
+            const p2 = await require('./_plantillas').resolver(nom);
+            if (p2 && p2.status === 'approved' && p2.sid) { nombreDetalle = nom; break; }
+          } catch (_) {}
+        }
       }
+      const usaDetalle = !!nombreDetalle;
       let rAviso;
       if (usaDetalle) {
-        rAviso = await enviarPlantilla(mudanza.clienteWA, 'cotizacion_recibida_cliente',
+        rAviso = await enviarPlantilla(mudanza.clienteWA, nombreDetalle,
           { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '', 4: cotizacion.mudanceroNombre || 'Un mudancero', 5: precioFmt, 6: urlPerfil }, texto);
       } else {
         rAviso = await enviarPlantilla(mudanza.clienteWA, 'presupuestos_cliente', { 1: nomCli, 2: mudanza.desde || '', 3: mudanza.hasta || '' }, texto);

@@ -148,6 +148,18 @@ const CREAR = [
     } },
     variables: { '1': 'Juan', '2': 'Cristian', '3': 'Sábado 3/10', '4': '+5491100000000' } },
 
+  // Versión NEUTRA de cotizacion_recibida_cliente (abajo). Meta reclasificó esa de UTILITY a
+  // MARKETING (2026-11-13) — probable motivo: el tono promocional ("Conocé su perfil, con
+  // fotos del camión y reseñas", "te ayudo a verlo y elegir"). Acá solo se informa algo que el
+  // cliente ya pidió (el presupuesto recibido): quién, cuánto y dónde ver su perfil. Se creó
+  // aparte porque las plantillas son inmutables; notificarCliente prefiere esta si está
+  // aprobada y, si no, usa la anterior.
+  { name: 'presupuesto_recibido_cliente', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: 'Hola {{1}}, recibiste un presupuesto para tu mudanza ({{2}} → {{3}}).\n\nMudancero: {{4}}\nPrecio: {{5}}\nPerfil del mudancero: {{6}}\n\nSi querés revisarlo o elegirlo, respondé este mensaje.',
+    } },
+    variables: { '1': 'Juan', '2': 'Palermo', '3': 'Belgrano', '4': 'Cristian', '5': '$250.000', '6': 'https://mudateya.ar/mudancero?p=0123456789abcdef' } },
+
   // Aviso al cliente de UNA cotización puntual, con el nombre y el precio del mudancero
   // y el link a su perfil en MudateYa ({{6}}: fotos del camión, reseñas, verificaciones).
   // La genérica presupuestos_cliente no dice quién cotizó ni lleva link, y el cliente
