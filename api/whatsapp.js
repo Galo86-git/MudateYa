@@ -587,7 +587,7 @@ NIVEL DE SERVICIO: para MUDANZAS (no aplica a fletes), preguntale SIEMPRE qué n
 
 COMPARAR LOS 3 NIVELES: si el cliente quiere ver precios de Esencial, Integral y Llave en Mano para elegir entre las tres (no solo un nivel), marcá comparar_niveles:true al crear el pedido — así los mudanceros cotizan los 3 y el cliente los compara lado a lado. No lo ofrezcas de entrada como opción por defecto (la mayoría solo quiere un nivel), pero si pregunta "¿me pueden pasar los 3 precios?" o algo así, es justo para eso. No aplica a fletes (un solo precio).
 
-FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). En mudanzas la foto ayuda pero no es obligatoria.
+FLETES — FOTOS OBLIGATORIAS: si es un FLETE, pedile SÍ O SÍ al menos una foto de lo que hay que trasladar ANTES de crear el pedido. La foto es imprescindible para dimensionar el flete y que el fletero cotice bien (se la adjuntamos al pedido). NO llames a crear_pedido de un flete si el cliente todavía no mandó ninguna foto: pedísela con onda ("para cotizarte justo necesito una fotito de lo que hay que llevar 📷"). El sistema BLOQUEA la publicación de un flete sin foto guardada: no hay excepción, ni aunque el cliente diga que no tiene (explicale que se la saque en el momento). Si te avisamos que una foto no se guardó, no la cuentes como recibida y pedila de nuevo. En mudanzas la foto ayuda pero no es obligatoria.
 
 PESO DE LO PESADO: cuando el cliente manda fotos (o cuenta) de muebles, electrodomésticos u objetos que se ven pesados o voluminosos — heladera, lavarropas, placard, mesa de mármol o de madera maciza, caja fuerte, piano, máquinas, equipamiento de gimnasio — preguntale con onda el peso aproximado de las cosas, o al menos de lo más pesado ("¿sabés más o menos cuánto pesa lo más pesado? aunque sea una idea, así el fletero sabe si va con ayudantes o con algún equipo"). Es lo que define cuánta gente hace falta y el precio, y evita sorpresas el día del traslado. Reglas: (1) en un FLETE preguntalo antes de crear el pedido, junto con lo demás que estás juntando; en una MUDANZA completa preguntalo solo por lo que se vea realmente pesado, no le pidas el peso de cada cosa. (2) Una sola vez, sin insistir: si no sabe, seguí igual — podés preguntarle algo que ayude a estimar (medidas, si es de madera maciza, mármol o metal, si entre dos personas lo pueden levantar), pero no lo trabes ni le hagas un interrogatorio. (3) NUNCA inventes ni estimes vos el peso mirando la foto: cargá solo lo que el cliente te dijo, dentro de los *detalles* (ej. "la heladera pesa unos 90 kg, según el cliente"). Si no lo supo, no escribas ningún número.
 
@@ -1828,7 +1828,7 @@ async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
   }
   // Gate 1: campos críticos para que el pedido sea real (mismo criterio que
   // el formulario web — ver camposCriticosFaltantes).
-  const faltanCriticos = camposCriticosFaltantes(input);
+  const faltanCriticos = camposCriticosFaltantes(input, fotos);
   if (faltanCriticos.length) {
     return { ok: false, error: `Antes de seguir, preguntale al asesor: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` };
   }
@@ -2384,8 +2384,12 @@ async function avisarMudanceroFotosOTexto(pedido, motivo) {
 // que el mudancero/fletero tenga con qué cotizar bien desde el primer
 // mensaje, sin ida y vuelta. Compartido entre crear_pedido (cliente) y
 // cargar_pedido_referido (asesor): los dos usan los mismos nombres de campo.
-function camposCriticosFaltantes(input) {
+const MSJ_FALTA_FOTO_FLETE = 'UNA FOTO de lo que hay que trasladar (en un flete es obligatoria, sin excepción)';
+function camposCriticosFaltantes(input, fotos) {
   const falta = [];
+  // FLETE: la foto es obligatoria, sin excepción (el fletero tiene que ver qué hay que llevar para cotizar). Esto lo exige el código:
+  // antes era solo una instrucción en el prompt y un flete salió sin fotos (2026-11-13).
+  if (String((input && input.tipo) || '').toLowerCase() === 'flete' && !(Array.isArray(fotos) && fotos.length)) falta.push(MSJ_FALTA_FOTO_FLETE);
   const tOrigen = String((input && input.tipo_origen) || '').toLowerCase();
   const tDestino = String((input && input.tipo_destino) || '').toLowerCase();
   if (!tOrigen) falta.push('si el origen es casa o departamento');
@@ -2468,9 +2472,10 @@ async function traducirDetallesParaMudancero(texto) {
 async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // Gate 1: campos críticos para que el pedido sea real (ver arriba). Sin
   // esto, nada se crea todavía.
-  const faltanCriticos = camposCriticosFaltantes(input);
+  const faltanCriticos = camposCriticosFaltantes(input, fotos);
   if (faltanCriticos.length) {
-    return { ok: false, faltanCriticos, nota: `Antes de seguir, preguntale al cliente: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` };
+    const sinFoto = faltanCriticos.includes(MSJ_FALTA_FOTO_FLETE);
+    return { ok: false, faltanCriticos, nota: `Antes de seguir, preguntale al cliente: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` + (sinFoto ? ' SIN FOTO NO SE PUEDE PUBLICAR UN FLETE: no ofrezcas seguir sin foto ni digas que se puede. Si dice que no tiene, explicale con onda que sin una foto de lo que hay que llevar el fletero no puede cotizar y que se la saque en el momento (aunque sea con mala luz). Si ya mandó una foto en esta charla y no se guardó, decile que no llegó bien y pedile que la mande de nuevo.' : '') };
   }
   const id = nuevoId();
   const ahora = new Date();
@@ -3759,8 +3764,10 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   if (imagenes && imagenes.length) {
     const bloques = [];
     conv.fotos = Array.isArray(conv.fotos) ? conv.fotos : [];
+    const fotosNoGuardadas = [];   // motivos: antes una foto que fallaba se descartaba en silencio y el pedido salía sin ella
     for (const img of imagenes) {
       const data = await descargarMediaBase64(img.url);
+      if (!data) fotosNoGuardadas.push('no se pudo descargar o pesa más de 5 MB');
       if (data) {
         bloques.push({ type: 'image', source: { type: 'base64', media_type: img.tipo, data } });
         // Persistimos la foto (Blob público) para adjuntarla al pedido: el fletero/
@@ -3775,11 +3782,14 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
             const chequeoInicial = await chequearContactoEnFoto(data, img.tipo);
             if (!chequeoInicial.tieneContacto) {
               const url = await subirFotoBlob(data, img.tipo);
-              if (url) conv.fotos.push(url);
-            }
-          } catch (e) { console.warn('chequearContactoEnFoto (pedido nuevo):', e.message); }
+              if (url) conv.fotos.push(url); else fotosNoGuardadas.push('falló al subirla');
+            } else fotosNoGuardadas.push('se ve un teléfono o un mail en la foto');
+          } catch (e) { console.warn('chequearContactoEnFoto (pedido nuevo):', e.message); fotosNoGuardadas.push('falló al guardarla'); }
         }
       }
+    }
+    if (fotosNoGuardadas.length) {
+      bloques.push({ type: 'text', text: `[Aviso del sistema, no lo escribió la persona: ${fotosNoGuardadas.length} foto(s) de este mensaje NO se guardaron en el pedido (${[...new Set(fotosNoGuardadas)].join('; ')}). Decíselo con claridad y pedile que la mande de nuevo (más liviana, o sin teléfonos ni mails a la vista). No la cuentes como recibida: en un flete sin foto guardada no se puede publicar el pedido.]` });
     }
     bloques.push({
       type: 'text',
@@ -4121,5 +4131,7 @@ module.exports = async function handler(req, res) {
 
 module.exports.avisoVideoNoSoportado = avisoVideoNoSoportado;
 module.exports.intentarHogar = intentarHogar;
+module.exports.camposCriticosFaltantes = camposCriticosFaltantes;
+module.exports.MSJ_FALTA_FOTO_FLETE = MSJ_FALTA_FOTO_FLETE;
 module.exports.pedirConfirmacion = pedirConfirmacion;
 module.exports.confirmacionValida = confirmacionValida;
