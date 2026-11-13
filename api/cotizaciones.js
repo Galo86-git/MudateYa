@@ -3544,6 +3544,68 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Admin: detalle de un pedido con cotizaciones (GET) ───────────
+    // Admin (SOLO LECTURA): números para comunicar a los mudanceros — cuántos hay dados
+    // de alta, cuántos pedidos hubo en el año y por qué canal entraron. El canal se infiere
+    // del FORMATO DEL ID, porque muchos pedidos viejos ya no existen en Redis (vencieron):
+    //   · id base36 + 6 hex (ej. "mw2gor8v42d4b0") → lo creó Emi directo por WhatsApp (crearPedido).
+    //   · id "MYA-<ms>" → entró por la web o por el flujo de asesor/inmobiliaria (action=publicar).
+    // El año sale del timestamp que lleva cada id. Query opcional: ?anio=2026
+    if (action === 'admin-estadisticas' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const anio = parseInt((req.query && req.query.anio) || (req.body && req.body.anio) || '2026', 10);
+      const desde = Date.UTC(anio, 0, 1), hasta = Date.UTC(anio + 1, 0, 1);
+      const decodificar = function (id) {
+        const s = String(id);
+        if (/^MYA-\d{10,}$/.test(s)) return { t: parseInt(s.slice(4), 10), canal: 'web_o_asesor' };
+        if (/^[0-9a-z]{8}[0-9a-f]{6}$/.test(s)) return { t: parseInt(s.slice(0, 8), 36), canal: 'emi_whatsapp' };
+        return { t: null, canal: 'desconocido' };
+      };
+      const ids = await getJSON('mudanzas:todos') || [];
+      const porCanal = { emi_whatsapp: 0, web_o_asesor: 0, desconocido: 0 };
+      const existentes = { total: 0, conCotizacion: 0, aceptadas: 0, conSenaPagada: 0, completadas: 0, canalCampoWhatsapp: 0, cotizacionesTotal: 0 };
+      let delAnio = 0, fueraDeAnio = 0;
+      for (const id of ids) {
+        const d = decodificar(id);
+        if (d.t === null || d.t < desde || d.t >= hasta) { if (d.t !== null) fueraDeAnio++; else porCanal.desconocido++; continue; }
+        delAnio++; porCanal[d.canal]++;
+        const p = await getJSON(`mudanza:${id}`);
+        if (!p) continue;
+        existentes.total++;
+        const nCot = (p.cotizaciones || []).length;
+        existentes.cotizacionesTotal += nCot;
+        if (nCot > 0) existentes.conCotizacion++;
+        if (p.cotizacionAceptada) existentes.aceptadas++;
+        if (p.anticipoPagado) existentes.conSenaPagada++;
+        if (p.estado === 'completada') existentes.completadas++;
+        if (p.canal === 'whatsapp') existentes.canalCampoWhatsapp++;
+      }
+      const emails = await getJSON('mudanceros:todos') || [];
+      const mud = { enLaLista: emails.length, aprobados: 0, pendientes: 0, otros: 0, aprobadosConTelefono: 0, aprobadosConFotoCamion: 0, aprobadosPorHora: 0, porZona: {} };
+      for (const em of emails) {
+        const p = await getJSON(`mudancero:perfil:${em}`);
+        if (!p) continue;
+        if (p.estado === 'aprobado') {
+          mud.aprobados++;
+          if (p.telefono) mud.aprobadosConTelefono++;
+          if (p.fotoCamion || (Array.isArray(p.fotosVehiculo) && p.fotosVehiculo.length)) mud.aprobadosConFotoCamion++;
+          if (p.tipoCobro === 'porHora') mud.aprobadosPorHora++;
+          const z = String(p.zonaBase || 'sin zona').split(/[,(-]/)[0].trim().slice(0, 30) || 'sin zona';
+          mud.porZona[z] = (mud.porZona[z] || 0) + 1;
+        } else if (p.estado === 'pendiente') mud.pendientes++; else mud.otros++;
+      }
+      const pct = function (a, b) { return b ? Math.round(a * 1000 / b) / 10 : null; };
+      return res.status(200).json({
+        ok: true, anio: anio,
+        mudanceros: mud,
+        pedidos: {
+          publicadosEnElAnio: delAnio, porCanalSegunId: porCanal,
+          porcentajeEmiSegunId: pct(porCanal.emi_whatsapp, delAnio), idsDeOtrosAnios: fueraDeAnio,
+          existentesHoyEnRedis: existentes,
+        },
+        aviso: 'Los pedidos publicados cuentan por el índice permanente; los que vencieron ya no existen en Redis, así que el detalle (cotizaciones, seña, completadas) es solo de los que siguen existiendo. Incluye pruebas internas si las hubo.',
+      });
+    }
+
     // Admin: devuelve a 180 días el TTL de los pedidos con seña pagada / aceptados /
     // en curso / completados. Bug 2026-11-12: cron-vispera-mudanza y
     // cron-recordar-completar re-guardaban el pedido con 7 días de vida, así que un
