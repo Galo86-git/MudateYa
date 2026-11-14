@@ -530,7 +530,7 @@ Confianza y seguridad:
 // Cobertura: va SIEMPRE en el prompt del cliente, aparte de la base de conocimiento. Esa base
 // se regenera sola cada día desde la web (api/_conocimiento.js) y reemplaza al fallback, así que
 // una regla puesta ahí no era firme: Emi llegó a decir que operamos en Mendoza (2026-11-13).
-const COBERTURA_EMI = `COBERTURA (REGLA FIRME): MudateYa tiene mudanceros y fleteros ÚNICAMENTE en CABA, Gran Buenos Aires, Rosario y Córdoba. Lo que define si podés tomar un pedido es el ORIGEN: si el traslado SALE de CABA, GBA, Rosario o Córdoba, SÍ lo gestionamos, aunque el DESTINO esté en otra ciudad o provincia (por ejemplo CABA → San Juan): armá el pedido normal (con la dirección exacta del destino), y avisale que es un traslado de larga distancia y que el precio lo define cada mudancero o fletero al cotizar, así que puede ser mayor. Si el destino queda MUY lejos (otra provincia, cientos de kilómetros), antes de publicar confirmá con el cliente que la dirección y la ciudad son las correctas (a veces se equivocan de destino) y decile con franqueza que son traslados poco comunes y de costo alto, y que puede que ningún fletero lo tome; si igual quiere seguir, publicalo. No lo trates como imposible ni como seguro. NO hay cobertura para traslados que SALGAN de cualquier otro lugar (ni Mendoza, ni San Juan, ni La Plata, ni el resto del interior o del país): no lo digas ni lo insinúes, y no menciones otras ciudades como "zonas donde operamos". Si el ORIGEN queda fuera de esas cuatro zonas: decíselo claro, amable y de entrada ("por ahora operamos únicamente con traslados que salgan de CABA, Gran Buenos Aires, Rosario o Córdoba, así que ese no lo podemos tomar"), sin crear el pedido, sin prometer que "puede que consigamos a alguien", sin ofrecer ni hacer derivar_a_humano (no es un reclamo ni un caso para el equipo) y sin preguntar "¿lo derivo?". Si fue un malentendido (por ejemplo el origen estaba mal), ofrecele revisarlo.`;
+const COBERTURA_EMI = `COBERTURA (REGLA FIRME): MudateYa tiene mudanceros y fleteros ÚNICAMENTE en CABA, Gran Buenos Aires, Rosario y Córdoba. Lo que define si podés tomar un pedido es el ORIGEN: si el traslado SALE de CABA, GBA, Rosario o Córdoba, SÍ lo gestionamos, aunque el DESTINO esté en otra ciudad o provincia (por ejemplo CABA → San Juan): armá el pedido normal (con la dirección exacta del destino), y avisale que es un traslado de larga distancia y que el precio lo define cada mudancero o fletero al cotizar, así que puede ser mayor. Si el destino queda MUY lejos (otra provincia, cientos de kilómetros), antes de publicar confirmá con el cliente que la dirección EXACTA (calle y número) y la ciudad son las correctas (a veces se equivocan de destino) y decile con franqueza que son traslados poco comunes y de costo alto, y que puede que ningún fletero lo tome; si igual quiere seguir, publicalo. No lo trates como imposible ni como seguro. NO hay cobertura para traslados que SALGAN de cualquier otro lugar (ni Mendoza, ni San Juan, ni La Plata, ni el resto del interior o del país): no lo digas ni lo insinúes, y no menciones otras ciudades como "zonas donde operamos". Si el ORIGEN queda fuera de esas cuatro zonas: decíselo claro, amable y de entrada ("por ahora operamos únicamente con traslados que salgan de CABA, Gran Buenos Aires, Rosario o Córdoba, así que ese no lo podemos tomar"), sin crear el pedido, sin prometer que "puede que consigamos a alguien", sin ofrecer ni hacer derivar_a_humano (no es un reclamo ni un caso para el equipo) y sin preguntar "¿lo derivo?". Si fue un malentendido (por ejemplo el origen estaba mal), ofrecele revisarlo.`;
 
 // Criterio general, para TODOS los roles de Emi (clientes, mudanceros, asesores, inmobiliarias).
 const CRITERIO_EMI = `
@@ -571,7 +571,7 @@ PROBLEMA TÉCNICO (distinto de un reclamo — acá algo de la plataforma no le f
 FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de esto depende cómo se cotiza y cobra el pedido): un FLETE es transportar algo puntual de un lugar a otro (un mueble, un electro, unas cajas, "llevame esto de acá para allá") — no implica vaciar una casa entera ni embalaje/organización. Una MUDANZA es el traslado completo de un hogar u oficina — todos los ambientes, con más volumen y logística. Si tenés dudas con lo que te cuenta, preguntá con onda ("¿es la mudanza completa o son algunas cosas puntuales para trasladar?") antes de decidir el tipo — no lo asumas por el tono urgente o la cantidad de mensajes.
 
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
-la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
+la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Esto NO tiene excepciones, tampoco en traslados de larga distancia: el sistema bloquea cualquier pedido cuyo origen o destino no tenga calle y número. Si el cliente dice que no sabe la dirección (por ejemplo la del destino), sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
 HORA: OBLIGATORIA antes de publicar — preguntala si no la tenés ("¿más o menos a qué hora?"). Pasala en el campo *hora* como "HH:MM". Con eso el recordatorio de la víspera le llega exactamente 24 horas antes de su horario, en vez de a una hora genérica del día.
 
@@ -1832,6 +1832,10 @@ async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
   if (faltanCriticos.length) {
     return { ok: false, error: `Antes de seguir, preguntale al asesor: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` };
   }
+  const dirInexactas = await direccionesInexactas(input);
+  if (dirInexactas.length) {
+    return { ok: false, error: 'Antes de seguir, preguntale al asesor: ' + dirInexactas.join('; ') + '.' + NOTA_DIRECCION_EXACTA };
+  }
   // Km por ruta (Google) — mismo cálculo que ya usa crearPedido para el
   // cliente directo, así TODO pedido (venga por acá o por la web) tiene la
   // fila de distancia en el mail al mudancero. Best-effort: si falla o no
@@ -2384,6 +2388,43 @@ async function avisarMudanceroFotosOTexto(pedido, motivo) {
 // que el mudancero/fletero tenga con qué cotizar bien desde el primer
 // mensaje, sin ida y vuelta. Compartido entre crear_pedido (cliente) y
 // cargar_pedido_referido (asesor): los dos usan los mismos nombres de campo.
+// Dirección EXACTA (calle y número) en origen y destino: obligatoria, SIN excepciones (tampoco en larga distancia).
+// Antes era solo una instrucción del prompt y un flete salió con destino "Cipolletti, Río Negro" (2026-11-13).
+// Regla dura: el texto tiene que traer letras y un número (la altura). Además, si Google dice que la dirección NO existe, se rechaza;
+// si Google no responde o la marca incompleta no se bloquea (hay direcciones reales, como rutas, que Google no desglosa).
+function textoConCalleYNumero(d) {
+  const t = String(d == null ? '' : d).trim();
+  return /\p{L}{3}/u.test(t) && /(^|[^\d])\d{1,5}([^\d]|$)/.test(t);
+}
+// Countries, barrios cerrados y clubes de campo se identifican por su NOMBRE: no se les exige calle y número, pero SÍ tienen que figurar en Google Maps.
+const RE_LUGAR_CERRADO = /(country|barrio (cerrado|privado)|b[°º] ?(cerrado|privado)|club de campo|club house|chacras?\b|estancia|complejo (cerrado|residencial)|urbanizaci[oó]n (cerrada|privada)|fideicomiso)/i;
+async function direccionesInexactas(input) {
+  const faltan = [];
+  const lados = [['origen', input && input.origen], ['destino', input && input.destino]];
+  for (const [lado, dir] of lados) {
+    const t = String(dir == null ? '' : dir).trim();
+    const lugarCerrado = RE_LUGAR_CERRADO.test(t) && /\p{L}{3}/u.test(t);
+    // 1) Texto: calle y número (salvo country / barrio cerrado, que van por nombre).
+    if (!lugarCerrado && !textoConCalleYNumero(t)) { faltan.push('la dirección EXACTA del ' + lado + ' (calle y número); con la ciudad, el barrio o la zona no alcanza'); continue; }
+    // 2) Google Maps: la dirección tiene que existir y figurar completa (calle y número). Si no está en el mapa, no se toma el pedido.
+    let g = null;
+    try {
+      const { geocodificar } = require('./_geo');
+      g = await Promise.race([geocodificar(t), new Promise((r) => setTimeout(() => r(null), 4000))]);
+    } catch (_) { g = null; }
+    if (g && g.ok) {
+      // (un country o barrio cerrado que Google reconoce alcanza, aunque no traiga calle y número)
+      if (!g.completa && !lugarCerrado) faltan.push('la dirección del ' + lado + ' no figura completa en Google Maps (falta la calle o el número): pedile la calle y el número exactos, o una dirección aproximada cercana que sí figure en el mapa');
+    } else if (g && g.existe === false) {
+      faltan.push(lugarCerrado
+        ? 'el country o barrio cerrado del ' + lado + ' no figura en Google Maps: pedile el nombre exacto como aparece en el mapa, o una dirección aproximada cercana que sí figure'
+        : 'la dirección del ' + lado + ' no existe en Google Maps: pedile que la confirme (calle y número), o una dirección aproximada cercana que sí figure en el mapa');
+    }
+    // Si Google no responde (sin clave, caído o lento) no se puede validar: queda la regla de texto del paso 1.
+  }
+  return faltan;
+}
+const NOTA_DIRECCION_EXACTA = ' LAS DIRECCIONES SIEMPRE TIENEN QUE SER EXACTAS (calle y número), en origen y en destino, sin excepciones: tampoco en traslados de larga distancia. Si el cliente dice que no sabe la dirección, sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, por ejemplo mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona.';
 const MSJ_FALTA_FOTO_FLETE = 'UNA FOTO de lo que hay que trasladar (en un flete es obligatoria, sin excepción)';
 function camposCriticosFaltantes(input, fotos) {
   const falta = [];
@@ -2476,6 +2517,10 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   if (faltanCriticos.length) {
     const sinFoto = faltanCriticos.includes(MSJ_FALTA_FOTO_FLETE);
     return { ok: false, faltanCriticos, nota: `Antes de seguir, preguntale al cliente: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` + (sinFoto ? ' SIN FOTO NO SE PUEDE PUBLICAR UN FLETE: no ofrezcas seguir sin foto ni digas que se puede. Si dice que no tiene, explicale con onda que sin una foto de lo que hay que llevar el fletero no puede cotizar y que se la saque en el momento (aunque sea con mala luz). Si ya mandó una foto en esta charla y no se guardó, decile que no llegó bien y pedile que la mande de nuevo.' : '') };
+  }
+  const dirInexactas = await direccionesInexactas(input);
+  if (dirInexactas.length) {
+    return { ok: false, faltanCriticos: dirInexactas, nota: 'Antes de seguir, preguntale al cliente: ' + dirInexactas.join('; ') + '.' + NOTA_DIRECCION_EXACTA };
   }
   const id = nuevoId();
   const ahora = new Date();
@@ -4133,5 +4178,7 @@ module.exports.avisoVideoNoSoportado = avisoVideoNoSoportado;
 module.exports.intentarHogar = intentarHogar;
 module.exports.camposCriticosFaltantes = camposCriticosFaltantes;
 module.exports.MSJ_FALTA_FOTO_FLETE = MSJ_FALTA_FOTO_FLETE;
+module.exports.direccionesInexactas = direccionesInexactas;
+module.exports.textoConCalleYNumero = textoConCalleYNumero;
 module.exports.pedirConfirmacion = pedirConfirmacion;
 module.exports.confirmacionValida = confirmacionValida;
