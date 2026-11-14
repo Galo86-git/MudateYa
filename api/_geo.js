@@ -122,7 +122,7 @@ async function buscarLugares(nombre) {
       const clave = (res.formatted_address || '').toLowerCase();
       if (!clave || vistos.has(clave)) continue;
       vistos.add(clave);
-      lugares.push({ direccion: res.formatted_address, localidad: localidad, provincia: provincia, tipos: (res.types || []).slice(0, 3) });
+      lugares.push({ direccion: res.formatted_address, localidad: localidad, provincia: provincia, tipos: (res.types || []).slice(0, 3), parcial: !!res.partial_match });   // parcial = Google no encontró el nombre completo, aproximó
       if (lugares.length >= 5) break;
     }
     return { ok: true, lugares: lugares };

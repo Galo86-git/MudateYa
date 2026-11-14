@@ -3445,13 +3445,21 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
     if (name === 'buscar_lugar') {
       const { buscarLugares } = require('./_geo');
       const r = await buscarLugares(input && input.nombre);
-      if (!r.ok) return JSON.stringify({ ok: false, nota: 'No pude buscar el lugar ahora. Pedile al cliente la localidad y cargalo como "Barrio cerrado <nombre>, <localidad>"; el sistema lo valida al crear el pedido.' });
+      if (!r.ok) return JSON.stringify({ ok: false, nota: 'No pude buscar el lugar ahora. Pedile al cliente la localidad y cargalo como "Barrio cerrado <nombre>, <localidad>"; el sistema lo valida al crear el pedido. No menciones "el sistema" ni detalles técnicos al cliente.' });
       if (!r.lugares.length) return JSON.stringify({ ok: true, lugares: [], nota: 'No encontré ese nombre en Google Maps. Pedile al cliente la localidad o cómo figura en el mapa. Si no figura, hace falta calle y número, o una dirección aproximada cercana que sí figure.' });
+      // Un resultado "dudoso" (Google aproximó el nombre, o no trae localidad) NO se da por bueno: no se confirma como barrio ni se le
+      // pregunta la zona al cliente; se pide una dirección aproximada cercana que sí figure en el mapa.
+      const confiables = r.lugares.filter((l) => l.localidad && !l.parcial);
+      const NO_TECNICO = ' No menciones "el sistema", "Google" ni detalles técnicos: hablale al cliente en simple.';
+      if (!confiables.length) {
+        return JSON.stringify({ ok: true, lugares: [], dudosos: r.lugares.length,
+          nota: 'No pude ubicar ese nombre con seguridad en el mapa (no aparece con una localidad clara). NO lo des por válido, no le confirmes que es un barrio cerrado y no le preguntes la zona. Decile con onda que no lo encontrás en el mapa con ese nombre y pedile UNA de estas dos cosas: el nombre exacto como figura en el mapa, o una dirección aproximada cercana (calle y número). Es obligatorio para que el fletero pueda cotizar.' + NO_TECNICO });
+      }
       return JSON.stringify({
-        ok: true, lugares: r.lugares,
-        nota: r.lugares.length === 1
-          ? 'Hay UN solo resultado: confirmalo con el cliente ("¿es el de <localidad>, <provincia>?"). Si dice que sí, cargalo como "Barrio cerrado <nombre>, <localidad>".'
-          : 'Hay VARIOS resultados: mostrale las opciones numeradas (solo localidad y provincia, sin direcciones largas) para que elija él. No elijas vos. Con su elección, cargalo como "Barrio cerrado <nombre>, <localidad>".',
+        ok: true, lugares: confiables,
+        nota: (confiables.length === 1
+          ? 'Hay UN solo resultado confiable: confirmalo con el cliente ("¿es el de <localidad>, <provincia>?"). Si dice que sí, cargalo como "Barrio cerrado <nombre>, <localidad>".'
+          : 'Hay VARIOS resultados: mostrale las opciones numeradas (solo localidad y provincia, sin direcciones largas) para que elija él. No elijas vos. Con su elección, cargalo como "Barrio cerrado <nombre>, <localidad>".') + NO_TECNICO,
       });
     }
     if (name === 'validar_direccion') {

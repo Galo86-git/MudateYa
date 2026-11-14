@@ -48,3 +48,11 @@ test('sin clave, sin nombre o con error de Google: ok:false (Emi sigue pidiendo 
   process.env.GOOGLE_MAPS_API_KEY = 'x'; global.fetch = async () => { throw new Error('red caída'); };
   assert.strictEqual((await geo.buscarLugares('Santa Bárbara')).ok, false);
 });
+
+test('marca como parcial lo que Google solo aproximó, y deja la localidad vacía si no la trae (Emi no lo da por bueno)', async () => {
+  googleResponde({ status: 'OK', results: [{ formatted_address: 'Santa Barbarita, Buenos Aires, Argentina', types: ['political'], partial_match: true, address_components: [{ long_name: 'Buenos Aires', types: ['administrative_area_level_1', 'political'] }] }] });
+  const r = await geo.buscarLugares('Santa Barbarita');
+  assert.strictEqual(r.lugares.length, 1); assert.strictEqual(r.lugares[0].parcial, true); assert.strictEqual(r.lugares[0].localidad, '');
+  googleResponde({ status: 'OK', results: [resultado('Los Álamos, Pilar, Buenos Aires', 'Pilar', 'Buenos Aires')] });
+  assert.strictEqual((await geo.buscarLugares('Los Álamos')).lugares[0].parcial, false);
+});
