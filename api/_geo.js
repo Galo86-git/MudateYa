@@ -98,4 +98,38 @@ function haversineKm(a, b) {
   return Math.round(R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s)));
 }
 
-module.exports = { geocodificar, distanciaKm, haversineKm };
+// Busca un LUGAR por nombre (country, barrio cerrado, club de campo...) y devuelve hasta 5 candidatos distintos en Argentina,
+// para que el cliente elija cuando el nombre se repite en más de una localidad. Sin clave o con error devuelve { ok:false }.
+async function buscarLugares(nombre) {
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  const q = String(nombre || '').trim();
+  if (!key) return { ok: false, motivo: 'sin_key' };
+  if (!q) return { ok: false, motivo: 'sin_nombre' };
+  try {
+    const url = 'https://maps.googleapis.com/maps/api/geocode/json'
+      + '?address=' + encodeURIComponent(q)
+      + '&region=ar&components=country:AR&language=es&key=' + key;
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.status && d.status !== 'OK' && d.status !== 'ZERO_RESULTS') return { ok: false, motivo: d.status };
+    const vistos = new Set();
+    const lugares = [];
+    for (const res of (d.results || [])) {
+      const comp = {};
+      (res.address_components || []).forEach(function (c) { (c.types || []).forEach(function (t) { comp[t] = c.long_name; }); });
+      const localidad = comp.locality || comp.administrative_area_level_2 || '';
+      const provincia = comp.administrative_area_level_1 || '';
+      const clave = (res.formatted_address || '').toLowerCase();
+      if (!clave || vistos.has(clave)) continue;
+      vistos.add(clave);
+      lugares.push({ direccion: res.formatted_address, localidad: localidad, provincia: provincia, tipos: (res.types || []).slice(0, 3) });
+      if (lugares.length >= 5) break;
+    }
+    return { ok: true, lugares: lugares };
+  } catch (e) {
+    console.warn('buscarLugares:', e.message);
+    return { ok: false, motivo: e.message };
+  }
+}
+
+module.exports = { geocodificar, distanciaKm, haversineKm, buscarLugares };

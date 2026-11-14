@@ -571,7 +571,7 @@ PROBLEMA TÉCNICO (distinto de un reclamo — acá algo de la plataforma no le f
 FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de esto depende cómo se cotiza y cobra el pedido): un FLETE es transportar algo puntual de un lugar a otro (un mueble, un electro, unas cajas, "llevame esto de acá para allá") — no implica vaciar una casa entera ni embalaje/organización. Una MUDANZA es el traslado completo de un hogar u oficina — todos los ambientes, con más volumen y logística. Si tenés dudas con lo que te cuenta, preguntá con onda ("¿es la mudanza completa o son algunas cosas puntuales para trasladar?") antes de decidir el tipo — no lo asumas por el tono urgente o la cantidad de mensajes.
 
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
-la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Esto NO tiene excepciones, tampoco en traslados de larga distancia: el sistema bloquea cualquier pedido cuyo origen o destino no tenga calle y número. Si el cliente dice que no sabe la dirección (por ejemplo la del destino), sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
+la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Esto NO tiene excepciones, tampoco en traslados de larga distancia: el sistema bloquea cualquier pedido cuyo origen o destino no tenga calle y número. Si el cliente dice que no sabe la dirección (por ejemplo la del destino), sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, ANTES de preguntarle la localidad llamá a buscar_lugar con el nombre: si devuelve un solo resultado, confirmalo con el cliente; si devuelve varios, mostrale las opciones numeradas (localidad y provincia) para que elija él, sin elegir vos; recién si no hay resultados pedile la localidad. Después cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
 HORA: OBLIGATORIA antes de publicar — preguntala si no la tenés ("¿más o menos a qué hora?"). Pasala en el campo *hora* como "HH:MM". Con eso el recordatorio de la víspera le llega exactamente 24 horas antes de su horario, en vez de a una hora genérica del día.
 
@@ -885,6 +885,18 @@ const tools = [
         cita_textual: { type: 'string', description: 'Copiá LITERAL la frase donde el cliente confirmó que quiere cancelar (su "sí, cancelalo" o equivalente) — no la parafrasees, y no uses esta herramienta si no hay una confirmación real y textual.' },
       },
       required: ['cita_textual'],
+    },
+  },
+  {
+    name: 'buscar_lugar',
+    description:
+      'Busca en Google Maps un COUNTRY, BARRIO CERRADO o club de campo por su nombre y devuelve hasta 5 candidatos (con localidad y provincia). Usala apenas el cliente confirme que el lugar es un barrio cerrado o country, ANTES de preguntarle la localidad: si hay un solo resultado, confirmalo con el cliente; si hay varios, mostrale las opciones numeradas (localidad y provincia) para que elija él; si no hay ninguno, recién ahí pedile la localidad o calle y número. Nunca elijas vos entre varios.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'Nombre del barrio cerrado o country, tal cual lo dijo el cliente (ej. "Santa Bárbara")' },
+      },
+      required: ['nombre'],
     },
   },
   {
@@ -1950,7 +1962,7 @@ async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
 // sección "SI SE QUIERE MUDAR ÉL MISMO"). Mismos nombres que en `tools`.
 const NOMBRES_TOOLS_CLIENTE_PARA_ASESOR = [
   'crear_pedido', 'consultar_estado_pedido', 'agregar_detalle_pedido', 'cancelar_pedido',
-  'validar_direccion', 'aceptar_cotizacion', 'responder_ajuste', 'calificar_mudancero',
+  'validar_direccion', 'buscar_lugar', 'aceptar_cotizacion', 'responder_ajuste', 'calificar_mudancero',
 ];
 
 // Ejecuta una herramienta del ASESOR.
@@ -2424,7 +2436,7 @@ async function direccionesInexactas(input) {
   }
   return faltan;
 }
-const NOTA_DIRECCION_EXACTA = ' LAS DIRECCIONES SIEMPRE TIENEN QUE SER EXACTAS (calle y número), en origen y en destino, sin excepciones: tampoco en traslados de larga distancia. Si el cliente dice que no sabe la dirección, sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, por ejemplo mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa.';
+const NOTA_DIRECCION_EXACTA = ' LAS DIRECCIONES SIEMPRE TIENEN QUE SER EXACTAS (calle y número), en origen y en destino, sin excepciones: tampoco en traslados de larga distancia. Si el cliente dice que no sabe la dirección, sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, por ejemplo mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, ANTES de preguntarle la localidad llamá a buscar_lugar con el nombre: si devuelve un solo resultado, confirmalo con el cliente; si devuelve varios, mostrale las opciones numeradas (localidad y provincia) para que elija él, sin elegir vos; recién si no hay resultados pedile la localidad. Después cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa.';
 const MSJ_FALTA_FOTO_FLETE = 'UNA FOTO de lo que hay que trasladar (en un flete es obligatoria, sin excepción)';
 function camposCriticosFaltantes(input, fotos) {
   const falta = [];
@@ -3429,6 +3441,18 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
     }
     if (name === 'cancelar_pedido') {
       return JSON.stringify(await cancelarPedidoCliente(waId, input && input.id, input && input.cita_textual, textoActual, conv));
+    }
+    if (name === 'buscar_lugar') {
+      const { buscarLugares } = require('./_geo');
+      const r = await buscarLugares(input && input.nombre);
+      if (!r.ok) return JSON.stringify({ ok: false, nota: 'No pude buscar el lugar ahora. Pedile al cliente la localidad y cargalo como "Barrio cerrado <nombre>, <localidad>"; el sistema lo valida al crear el pedido.' });
+      if (!r.lugares.length) return JSON.stringify({ ok: true, lugares: [], nota: 'No encontré ese nombre en Google Maps. Pedile al cliente la localidad o cómo figura en el mapa. Si no figura, hace falta calle y número, o una dirección aproximada cercana que sí figure.' });
+      return JSON.stringify({
+        ok: true, lugares: r.lugares,
+        nota: r.lugares.length === 1
+          ? 'Hay UN solo resultado: confirmalo con el cliente ("¿es el de <localidad>, <provincia>?"). Si dice que sí, cargalo como "Barrio cerrado <nombre>, <localidad>".'
+          : 'Hay VARIOS resultados: mostrale las opciones numeradas (solo localidad y provincia, sin direcciones largas) para que elija él. No elijas vos. Con su elección, cargalo como "Barrio cerrado <nombre>, <localidad>".',
+      });
     }
     if (name === 'validar_direccion') {
       const { geocodificar } = require('./_geo');
