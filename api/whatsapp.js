@@ -571,7 +571,7 @@ PROBLEMA TÉCNICO (distinto de un reclamo — acá algo de la plataforma no le f
 FLETE vs MUDANZA (importante clasificarlo bien, no es solo semántica — de esto depende cómo se cotiza y cobra el pedido): un FLETE es transportar algo puntual de un lugar a otro (un mueble, un electro, unas cajas, "llevame esto de acá para allá") — no implica vaciar una casa entera ni embalaje/organización. Una MUDANZA es el traslado completo de un hogar u oficina — todos los ambientes, con más volumen y logística. Si tenés dudas con lo que te cuenta, preguntá con onda ("¿es la mudanza completa o son algunas cosas puntuales para trasladar?") antes de decidir el tipo — no lo asumas por el tono urgente o la cantidad de mensajes.
 
 QUÉ NECESITÁS PARA ARMAR EL PEDIDO (juntalo charlando, no de un saque):
-la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Esto NO tiene excepciones, tampoco en traslados de larga distancia: el sistema bloquea cualquier pedido cuyo origen o destino no tenga calle y número. Si el cliente dice que no sabe la dirección (por ejemplo la del destino), sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, ANTES de preguntarle la localidad llamá a buscar_lugar con el nombre: si devuelve un solo resultado, confirmalo con el cliente; si devuelve varios, mostrale las opciones numeradas (localidad y provincia) para que elija él, sin elegir vos; recién si no hay resultados pedile la localidad. Después cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
+la DIRECCIÓN EXACTA de origen y de destino (calle y número + barrio/localidad), más o menos cuándo, qué hay que mover (muebles grandes, electro, cajas; en mudanza también ambientes, piso y si hay ascensor), y el nombre. La dirección EXACTA de los dos lados (calle y número) es OBLIGATORIA antes de crear el pedido, tanto para fletes como para mudanzas: NO alcanza con el barrio o la zona. Si te dan solo el barrio ("me mudo de Palermo"), pedí la calle y el número con onda ("¿en qué dirección exacta? calle y altura 🙂"). VALIDÁ cada dirección (origen y destino) con validar_direccion apenas te la den: si devuelve existe:false, no existe → repreguntá; si completa:false, falta calle/número → pedilo. Recién con las dos direcciones válidas creá el pedido. Esto NO tiene excepciones, tampoco en traslados de larga distancia: el sistema bloquea cualquier pedido cuyo origen o destino no tenga calle y número. Si el cliente dice que no sabe la dirección (por ejemplo la del destino), sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, ANTES de preguntarle la localidad llamá a buscar_lugar con el nombre: si devuelve un solo resultado, confirmalo con el cliente; si devuelve varios, mostrale las opciones numeradas (localidad y provincia) para que elija él, sin elegir vos; recién si no hay resultados pedile la localidad. Después cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa. LA FORMA MÁS FÁCIL Y EXACTA es que el cliente te mande la UBICACIÓN de WhatsApp (el clip → Ubicación → buscar el lugar, por ejemplo el nombre del country → enviar): una ubicación compartida vale como dirección exacta de ese lado. Ofrecésela siempre que no puedas ubicar un lugar. También podés aceptar una captura o un link de Google Maps para IDENTIFICAR el nombre y la localidad, pero eso solo no reemplaza a la ubicación: con el nombre confirmado, buscalo de nuevo con buscar_lugar. Fuera de eso, no over-preguntes: mejor rápido y humano que exhaustivo.
 
 HORA: OBLIGATORIA antes de publicar — preguntala si no la tenés ("¿más o menos a qué hora?"). Pasala en el campo *hora* como "HH:MM". Con eso el recordatorio de la víspera le llega exactamente 24 horas antes de su horario, en vez de a una hora genérica del día.
 
@@ -836,6 +836,8 @@ const tools = [
         tipo: { type: 'string', enum: ['mudanza', 'flete'], description: 'flete = transportar algo puntual (un mueble, un electro, unas cajas), sin vaciar una casa entera. mudanza = traslado completo de un hogar/oficina, todos los ambientes.' },
         origen: { type: 'string' },
         destino: { type: 'string' },
+        ubicacion_origen: { type: 'integer', description: 'Número de la UBICACIÓN de WhatsApp (la ves en el aviso "Ubicación #N") que el cliente compartió y CONFIRMÓ como el origen. Vale como dirección exacta de ese lado. En origen escribí igual el nombre del lugar que confirmó.' },
+        ubicacion_destino: { type: 'integer', description: 'Igual que ubicacion_origen, pero para el DESTINO (ej. un country o barrio cerrado que el cliente ubicó con el mapa de WhatsApp).' },
         fecha: { type: 'string', description: 'Fecha de la mudanza en formato YYYY-MM-DD (ej "2026-08-07"). Convertí vos lo que diga el cliente: si dice "mañana" o "el viernes", resolvelo contra la fecha de hoy que tenés en contexto y pasá la fecha real. NUNCA mandes "mañana" ni "7/8" como texto: se guarda tal cual y despues no hay forma de saber cuando es.' },
         hora: { type: 'string', description: 'OBLIGATORIO. Hora a la que arranca la mudanza, formato 24h "HH:MM" (ej "09:00"). Preguntala si no la tenés — con eso el recordatorio de la víspera le llega justo 24hs antes de su horario real, no a una hora genérica.' },
         detalles: { type: 'string', description: 'OBLIGATORIO. Descripción breve de todo lo que hay que mudar y cualquier particularidad (muebles grandes, electro, cajas, algo delicado). Si hay algo pesado, incluí el peso aproximado que dijo el cliente (nunca uno inventado por vos). Pedísela con onda explicando el motivo: "contame brevemente qué hay que mudar, así el mudancero tiene con qué cotizar mejor" — y ofrecele mandarlo por audio si le resulta más fácil, vos lo transcribís igual.' },
@@ -2410,11 +2412,25 @@ function textoConCalleYNumero(d) {
 }
 // Countries, barrios cerrados y clubes de campo se identifican por su NOMBRE: no se les exige calle y número, pero SÍ tienen que figurar en Google Maps.
 const RE_LUGAR_CERRADO = /(country|barrio (cerrado|privado)|b[°º] ?(cerrado|privado)|club de campo|club house|chacras?\b|estancia|complejo (cerrado|residencial)|urbanizaci[oó]n (cerrada|privada)|fideicomiso)/i;
-async function direccionesInexactas(input) {
+// Ubicación de WhatsApp compartida por el cliente: vale como dirección EXACTA de ese lado (son coordenadas, no se pueden falsificar ni leer mal).
+// El modelo solo dice QUÉ número de ubicación (ubicacion_origen / ubicacion_destino); el código verifica que exista en la conversación y esté en Argentina.
+function pinValido(ubicaciones, n) {
+  const i = Number(n);
+  if (!Array.isArray(ubicaciones) || !Number.isInteger(i) || i < 1 || i > ubicaciones.length) return null;
+  const u = ubicaciones[i - 1] || {};
+  const lat = Number(u.lat), lng = Number(u.lng);
+  if (!isFinite(lat) || !isFinite(lng) || lat < -56 || lat > -21 || lng < -74 || lng > -53) return null;   // dentro de Argentina
+  return { lat, lng, direccion: u.direccion || '' };
+}
+async function direccionesInexactas(input, ubicaciones) {
   const faltan = [];
-  const lados = [['origen', input && input.origen], ['destino', input && input.destino]];
-  for (const [lado, dir] of lados) {
+  const lados = [['origen', input && input.origen, input && input.ubicacion_origen], ['destino', input && input.destino, input && input.ubicacion_destino]];
+  for (const [lado, dir, nPin] of lados) {
     const t = String(dir == null ? '' : dir).trim();
+    if (nPin !== undefined && nPin !== null && pinValido(ubicaciones, nPin)) {
+      if (!/\p{L}{3}/u.test(t)) faltan.push('el nombre o referencia del ' + lado + ' (por ejemplo el nombre del lugar que confirmó el cliente)');
+      continue;   // ubicación compartida: no hace falta calle y número ni validarla contra Google
+    }
     const lugarCerrado = RE_LUGAR_CERRADO.test(t) && /\p{L}{3}/u.test(t);
     // 1) Texto: calle y número (salvo country / barrio cerrado, que van por nombre).
     if (!lugarCerrado && !textoConCalleYNumero(t)) { faltan.push('la dirección EXACTA del ' + lado + ' (calle y número); con la ciudad, el barrio o la zona no alcanza. Si es un country o barrio cerrado, preguntale una vez si lo es y cargalo como "Barrio cerrado <nombre>, <localidad>"'); continue; }
@@ -2436,7 +2452,7 @@ async function direccionesInexactas(input) {
   }
   return faltan;
 }
-const NOTA_DIRECCION_EXACTA = ' LAS DIRECCIONES SIEMPRE TIENEN QUE SER EXACTAS (calle y número), en origen y en destino, sin excepciones: tampoco en traslados de larga distancia. Si el cliente dice que no sabe la dirección, sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, por ejemplo mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, ANTES de preguntarle la localidad llamá a buscar_lugar con el nombre: si devuelve un solo resultado, confirmalo con el cliente; si devuelve varios, mostrale las opciones numeradas (localidad y provincia) para que elija él, sin elegir vos; recién si no hay resultados pedile la localidad. Después cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa.';
+const NOTA_DIRECCION_EXACTA = ' LAS DIRECCIONES SIEMPRE TIENEN QUE SER EXACTAS (calle y número), en origen y en destino, sin excepciones: tampoco en traslados de larga distancia. Si el cliente dice que no sabe la dirección, sugerile que busque una dirección aproximada (la calle y la altura de un punto cercano, por ejemplo mirando en Google Maps) y explicale que es OBLIGATORIO para que el fletero pueda cotizar. La dirección tiene que figurar en Google Maps. Los countries y barrios cerrados se aceptan por su nombre (sin calle y número), pero también tienen que figurar en Google Maps tal cual. No crees el pedido con solo ciudad, barrio o zona. SI EL LUGAR SUENA A BARRIO, COUNTRY O COMPLEJO y no trae calle y número (por ejemplo "el barrio Santa Bárbara"), preguntale UNA sola vez "¿es un barrio cerrado o country?". Si dice que sí, ANTES de preguntarle la localidad llamá a buscar_lugar con el nombre: si devuelve un solo resultado, confirmalo con el cliente; si devuelve varios, mostrale las opciones numeradas (localidad y provincia) para que elija él, sin elegir vos; recién si no hay resultados pedile la localidad. Después cargá ese lugar (origen o destino) EXACTAMENTE con la forma "Barrio cerrado <nombre>, <localidad>" (ej. "Barrio cerrado Santa Bárbara, Tigre"): así el sistema lo acepta sin calle y número, siempre que figure en Google Maps. Si dice que no es cerrado, o el sistema te avisa que no figura en Google Maps, pedí calle y número, o una dirección aproximada cercana que sí figure en el mapa. LA FORMA MÁS FÁCIL Y EXACTA es que el cliente te mande la UBICACIÓN de WhatsApp (el clip → Ubicación → buscar el lugar, por ejemplo el nombre del country → enviar): una ubicación compartida vale como dirección exacta de ese lado. Ofrecésela siempre que no puedas ubicar un lugar. También podés aceptar una captura o un link de Google Maps para IDENTIFICAR el nombre y la localidad, pero eso solo no reemplaza a la ubicación: con el nombre confirmado, buscalo de nuevo con buscar_lugar.';
 const MSJ_FALTA_FOTO_FLETE = 'UNA FOTO de lo que hay que trasladar (en un flete es obligatoria, sin excepción)';
 function camposCriticosFaltantes(input, fotos) {
   const falta = [];
@@ -2536,7 +2552,8 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
     const sinFoto = faltanCriticos.includes(MSJ_FALTA_FOTO_FLETE);
     return { ok: false, faltanCriticos, nota: `Antes de seguir, preguntale al cliente: ${faltanCriticos.join(', ')}. Si ya te lo dijo antes en la charla, no lo repreguntes — solo faltaba pasarlo en el campo correcto.` + (sinFoto ? ' SIN FOTO NO SE PUEDE PUBLICAR UN FLETE: no ofrezcas seguir sin foto ni digas que se puede. Si dice que no tiene, explicale con onda que sin una foto de lo que hay que llevar el fletero no puede cotizar y que se la saque en el momento (aunque sea con mala luz). Si ya mandó una foto en esta charla y no se guardó, decile que no llegó bien y pedile que la mande de nuevo.' : '') };
   }
-  const dirInexactas = await direccionesInexactas(input);
+  const pinO = pinValido(ubicaciones, input.ubicacion_origen), pinD = pinValido(ubicaciones, input.ubicacion_destino);
+  const dirInexactas = await direccionesInexactas(input, ubicaciones);
   if (dirInexactas.length) {
     return { ok: false, faltanCriticos: dirInexactas, nota: 'Antes de seguir, preguntale al cliente: ' + dirInexactas.join('; ') + '.' + NOTA_DIRECCION_EXACTA };
   }
@@ -2550,17 +2567,20 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // al publicar desde la web (sinContacto en cotizaciones.js). Acá faltaba:
   // un cliente que escribía o decía su teléfono ("mejor llamame al...") lo
   // filtraba a todos los mudanceros de la zona sin haber elegido a ninguno.
-  const detallesLimpios = await traducirDetallesParaMudancero(sinContactoWA(input.detalles || ''));
+  let detallesLimpios = await traducirDetallesParaMudancero(sinContactoWA(input.detalles || ''));
+  // Ubicación compartida por WhatsApp: el fletero recibe el link al punto exacto (la dirección exacta ya la ven igual los fleteros en el pedido).
+  if (pinO) detallesLimpios += (detallesLimpios ? '\n' : '') + '📍 Ubicación exacta del origen: https://maps.google.com/?q=' + pinO.lat + ',' + pinO.lng;
+  if (pinD) detallesLimpios += (detallesLimpios ? '\n' : '') + '📍 Ubicación exacta del destino: https://maps.google.com/?q=' + pinD.lat + ',' + pinD.lng;
 
   // Geocodificar origen/destino con Google (best-effort): coords para geo-match y
   // km por ruta para mostrar en el PDF. Si falta la key o falla, sigue sin ello.
   let origenCoords = null, destinoCoords = null, kmCalc = 0;
   try {
     const { geocodificar, distanciaKm, haversineKm } = require('./_geo');
-    const [go, gd] = await Promise.all([geocodificar(input.origen), geocodificar(input.destino)]);
-    if (go && go.ok) origenCoords = { lat: go.lat, lng: go.lng };
-    if (gd && gd.ok) destinoCoords = { lat: gd.lat, lng: gd.lng };
-    kmCalc = (await distanciaKm(input.origen, input.destino))
+    const [go, gd] = await Promise.all([pinO ? null : geocodificar(input.origen), pinD ? null : geocodificar(input.destino)]);
+    if (pinO) origenCoords = { lat: pinO.lat, lng: pinO.lng }; else if (go && go.ok) origenCoords = { lat: go.lat, lng: go.lng };
+    if (pinD) destinoCoords = { lat: pinD.lat, lng: pinD.lng }; else if (gd && gd.ok) destinoCoords = { lat: gd.lat, lng: gd.lng };
+    kmCalc = (await distanciaKm(pinO ? origenCoords : input.origen, pinD ? destinoCoords : input.destino))
              || haversineKm(origenCoords, destinoCoords) || 0;
   } catch (_) {}
 
@@ -3454,7 +3474,7 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
       if (!r.ok) return JSON.stringify({ ok: false, nota: 'No pude buscar el lugar ahora. Pedile al cliente la localidad y cargalo como "Barrio cerrado <nombre>, <localidad>"; el sistema lo valida al crear el pedido. No menciones "el sistema" ni detalles técnicos al cliente.' });
       if (!r.lugares.length) return JSON.stringify({ ok: true, lugares: [], nota: 'No encontré ese nombre en Google Maps. Pedile al cliente la localidad o cómo figura en el mapa. Si no figura, hace falta calle y número, o una dirección aproximada cercana que sí figure.' });
       // Un resultado "dudoso" (Google aproximó el nombre, o no trae localidad) NO se da por bueno: no se confirma como barrio ni se le
-      // pregunta la zona al cliente; se pide una dirección aproximada cercana que sí figure en el mapa.
+      // pregunta la zona al cliente; se pide una dirección aproximada cercana que sí figure en el mapa. LA FORMA MÁS FÁCIL Y EXACTA es que el cliente te mande la UBICACIÓN de WhatsApp (el clip → Ubicación → buscar el lugar, por ejemplo el nombre del country → enviar): una ubicación compartida vale como dirección exacta de ese lado. Ofrecésela siempre que no puedas ubicar un lugar. También podés aceptar una captura o un link de Google Maps para IDENTIFICAR el nombre y la localidad, pero eso solo no reemplaza a la ubicación: con el nombre confirmado, buscalo de nuevo con buscar_lugar.
       const confiables = r.lugares.filter((l) => l.localidad && !l.parcial);
       const NO_TECNICO = ' No menciones "el sistema", "Google" ni detalles técnicos: hablale al cliente en simple.';
       if (!confiables.length) {
@@ -3835,7 +3855,15 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
   if (ubicacion) {
     conv.ubicaciones = conv.ubicaciones || [];
     conv.ubicaciones.push({ ...ubicacion, cuando: new Date().toISOString() });
-    const nota = `[📍 El cliente compartió una ubicación${ubicacion.direccion ? ' ("' + ubicacion.direccion + '")' : ''}: ${ubicacion.lat},${ubicacion.lng} — https://maps.google.com/?q=${ubicacion.lat},${ubicacion.lng}. Usala como origen o destino según lo que estén conversando; si no está claro cuál es, preguntale.]`;
+    const nPin = conv.ubicaciones.length;
+    let lugarGoogle = '';
+    try {
+      const { geocodificarInversa } = require('./_geo');
+      const inv = await Promise.race([geocodificarInversa(ubicacion.lat, ubicacion.lng), new Promise((r) => setTimeout(() => r(null), 3000))]);
+      if (inv && inv.ok && inv.existe) lugarGoogle = ' Google la ubica en: "' + inv.direccion + '"' + (inv.localidad ? ' (' + inv.localidad + (inv.provincia ? ', ' + inv.provincia : '') + ')' : '') + '.';
+    } catch (_) { /* si no se puede, sigue con las coordenadas */ }
+    conv.ubicaciones[nPin - 1].direccionGoogle = lugarGoogle ? lugarGoogle.slice(0, 200) : '';
+    const nota = `[📍 Ubicación #${nPin} compartida por el cliente${ubicacion.direccion ? ' ("' + ubicacion.direccion + '")' : ''}: ${ubicacion.lat},${ubicacion.lng} — https://maps.google.com/?q=${ubicacion.lat},${ubicacion.lng}.${lugarGoogle} Preguntale si es el ORIGEN o el DESTINO (salvo que ya esté claro) y confirmale el lugar ("¿es <lugar>, <localidad>?"). Con su OK, vale como dirección EXACTA de ese lado: al llamar a crear_pedido pasá ubicacion_origen=${nPin} (o ubicacion_destino=${nPin}) y en origen/destino escribí el nombre del lugar que confirmó. No hables de coordenadas ni de "sistema".]`;
     texto2 = (texto2 ? texto2 + ' ' : '') + nota;
   }
 
@@ -4217,6 +4245,7 @@ module.exports.intentarHogar = intentarHogar;
 module.exports.camposCriticosFaltantes = camposCriticosFaltantes;
 module.exports.MSJ_FALTA_FOTO_FLETE = MSJ_FALTA_FOTO_FLETE;
 module.exports.direccionesInexactas = direccionesInexactas;
+module.exports.pinValido = pinValido;
 module.exports.armarResumenPedido = armarResumenPedido;
 module.exports.textoKm = textoKm;
 module.exports.textoConCalleYNumero = textoConCalleYNumero;

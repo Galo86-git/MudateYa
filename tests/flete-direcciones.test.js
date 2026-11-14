@@ -90,3 +90,48 @@ test('el resumen para confirmar incluye la distancia y las fotos; la nota obliga
   assert.doesNotMatch(wa.armarResumenPedido(input, 0, 0), /Distancia|Fotos adjuntas/, 'sin km ni fotos no se inventa nada');
   assert.match(wa.textoKm(58.4), /58 km/); assert.match(wa.textoKm(58.4), /NO inventes ni estimes ningún precio/); assert.strictEqual(wa.textoKm(0), '');
 });
+
+// ───────────── Ubicación compartida por WhatsApp ─────────────
+
+const PACHECO = { lat: '-34.4536', lng: '-58.6561', direccion: 'Pacheco Golf' };   // Label que manda WhatsApp con el pin
+const CABA = { lat: '-34.6037', lng: '-58.3816', direccion: '' };
+
+test('ubicación compartida: solo vale si existe en la conversación y está en Argentina', () => {
+  const u = [PACHECO, CABA];
+  assert.deepStrictEqual(wa.pinValido(u, 1), { lat: -34.4536, lng: -58.6561, direccion: 'Pacheco Golf' });
+  assert.ok(wa.pinValido(u, 2)); assert.ok(wa.pinValido(u, '2'));
+  for (const n of [0, 3, -1, 1.5, 'x', null, undefined]) assert.strictEqual(wa.pinValido(u, n), null, String(n));
+  assert.strictEqual(wa.pinValido([], 1), null); assert.strictEqual(wa.pinValido(undefined, 1), null);
+  assert.strictEqual(wa.pinValido([{ lat: '40.4', lng: '-3.7' }], 1), null, 'Madrid: fuera de Argentina');
+  assert.strictEqual(wa.pinValido([{ lat: 'abc', lng: 'def' }], 1), null);
+});
+
+test('un pin confirmado reemplaza la calle y número y la validación de Google, solo de ese lado', async () => {
+  respuestaGoogle = NO_EXISTE;                                // Google no ubica el country por nombre
+  const input = { origen: 'Diego Palma 306, San Isidro', destino: 'Pacheco Golf, General Pacheco', ubicacion_destino: 1 };
+  assert.deepStrictEqual(await wa.direccionesInexactas(input, [PACHECO]).then((f) => f.filter((m) => /destino/.test(m))), []);
+  // sin el pin (o con un número que no existe) se rechaza como siempre
+  const sinPin = await wa.direccionesInexactas({ origen: input.origen, destino: input.destino }, [PACHECO]);
+  assert.ok(sinPin.some((m) => /destino/.test(m)));
+  const pinInexistente = await wa.direccionesInexactas({ origen: input.origen, destino: input.destino, ubicacion_destino: 5 }, [PACHECO]);
+  assert.ok(pinInexistente.some((m) => /destino/.test(m)));
+  // el pin del destino no salva al origen
+  const soloDestino = await wa.direccionesInexactas({ origen: 'Palermo', destino: 'Pacheco Golf', ubicacion_destino: 1 }, [PACHECO]);
+  assert.ok(soloDestino.some((m) => /origen/.test(m))); assert.ok(!soloDestino.some((m) => /destino/.test(m)));
+  // el pin necesita igual el nombre del lugar
+  const sinNombre = await wa.direccionesInexactas({ origen: 'Diego Palma 306, San Isidro', destino: '', ubicacion_destino: 1 }, [PACHECO]);
+  assert.ok(sinNombre.some((m) => /nombre o referencia del destino/.test(m)));
+});
+
+test('de coordenadas a lugar (Google simulado)', async () => {
+  const fetchOriginal = global.fetch, clave = process.env.GOOGLE_MAPS_API_KEY;
+  try {
+    process.env.GOOGLE_MAPS_API_KEY = 'x';
+    global.fetch = async () => ({ json: async () => ({ status: 'OK', results: [{ formatted_address: 'Pacheco Golf, General Pacheco, Buenos Aires', address_components: [{ long_name: 'General Pacheco', types: ['locality'] }, { long_name: 'Buenos Aires', types: ['administrative_area_level_1'] }] }] }) });
+    const r = await geo.geocodificarInversa('-34.4536', '-58.6561');
+    assert.strictEqual(r.ok, true); assert.strictEqual(r.localidad, 'General Pacheco'); assert.match(r.direccion, /Pacheco Golf/);
+    assert.strictEqual((await geo.geocodificarInversa('abc', 'def')).ok, false);
+    delete process.env.GOOGLE_MAPS_API_KEY;
+    assert.strictEqual((await geo.geocodificarInversa('-34.4', '-58.6')).ok, false);
+  } finally { global.fetch = fetchOriginal; if (clave === undefined) delete process.env.GOOGLE_MAPS_API_KEY; else process.env.GOOGLE_MAPS_API_KEY = clave; }
+});
