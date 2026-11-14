@@ -82,3 +82,11 @@ test('"barrio Santa Barbarita" a secas se rechaza y Emi recibe cómo seguir; car
   f = await wa.direccionesInexactas({ origen: 'Diego Palma 306, Villa Ballester', destino: 'Barrio cerrado Santa Bárbara, Tigre' });
   assert.strictEqual(f.length, 1); assert.match(f[0], /no figura en Google Maps/);
 });
+
+test('el resumen para confirmar incluye la distancia y las fotos; la nota obliga a decir los km y a no inventar precios', () => {
+  const input = { tipo: 'flete', origen: 'Diego Palma 306, San Isidro', destino: 'Barrio cerrado Pacheco Golf, General Pacheco', fecha: '2026-11-14', hora: '15:00', detalles: 'Heladera Drean 314L con Freezer' };
+  const r = wa.armarResumenPedido(input, 58.4, 2);
+  assert.match(r, /Distancia aproximada por ruta: 58 km/); assert.match(r, /Fotos adjuntas: 2/); assert.match(r, /Heladera Drean/);
+  assert.doesNotMatch(wa.armarResumenPedido(input, 0, 0), /Distancia|Fotos adjuntas/, 'sin km ni fotos no se inventa nada');
+  assert.match(wa.textoKm(58.4), /58 km/); assert.match(wa.textoKm(58.4), /NO inventes ni estimes ningún precio/); assert.strictEqual(wa.textoKm(0), '');
+});

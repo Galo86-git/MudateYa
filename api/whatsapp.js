@@ -1884,10 +1884,10 @@ async function cargarPedidoReferido(input, asesor, fotos, textoActual, conv) {
       if (pdfBase64) pdfUrl = await subirFotoBlob(pdfBase64, 'application/pdf'); // nombre genérico, sirve para cualquier archivo
     } catch (e) { console.warn('cargarPedidoReferido: no se pudo armar el PDF de preview:', e.message); }
     return {
-      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input), pdfUrl,
+      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input, kmCalc, Array.isArray(fotos) ? fotos.length : 0), pdfUrl,
       nota: pdfUrl
-        ? 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale al asesor por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
-        : 'No se pudo armar el PDF, así que mostrale ESTE resumen al asesor tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
+        ? textoKm(kmCalc) + 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale al asesor por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
+        : textoKm(kmCalc) + 'No se pudo armar el PDF, así que mostrale ESTE resumen al asesor tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
     };
   }
   // confirmado:true: no alcanza con el booleano solo — se valida que la
@@ -2465,9 +2465,14 @@ function camposCriticosFaltantes(input, fotos) {
 // salga a mudanceros reales. No incluye km/geocoding (eso es para el PDF que
 // ya recibe el mudancero después, acá alcanza con lo que la persona puede
 // chequear a ojo).
-function armarResumenPedido(input) {
+// Frase que se antepone a la nota de confirmación: Emi tiene que decirle al cliente la distancia (km) antes de que confirme.
+function textoKm(km) {
+  return km > 0 ? 'La distancia aproximada por ruta es de ' + Math.round(km) + ' km: mencionala SIEMPRE en tu mensaje de confirmación, junto con origen, destino, fecha, qué se traslada y las fotos. Los precios los ponen los fleteros al cotizar: NO inventes ni estimes ningún precio. ' : '';
+}
+function armarResumenPedido(input, km, nFotos) {
   const lineas = [];
   lineas.push((input.tipo === 'flete' ? 'Flete' : 'Mudanza') + ': ' + input.origen + ' → ' + input.destino);
+  if (km > 0) lineas.push('Distancia aproximada por ruta: ' + Math.round(km) + ' km');   // el cliente confirma sabiendo cuánto es el recorrido (el fletero cotiza con eso)
   const hora = input.hora || input.horario || '';
   lineas.push('Fecha: ' + input.fecha + (hora ? ' a las ' + hora : ''));
   if (input.tipo_origen) {
@@ -2481,6 +2486,7 @@ function armarResumenPedido(input) {
   if (input.nivel) lineas.push('Nivel de servicio: ' + input.nivel);
   if (input.ambientes) lineas.push('Ambientes: ' + input.ambientes);
   if (input.detalles) lineas.push('Detalle: ' + input.detalles);
+  if (nFotos > 0) lineas.push('Fotos adjuntas: ' + nFotos);
   if (input.urgente) lineas.push('⚡ Urgente');
   return lineas.join('\n');
 }
@@ -2671,10 +2677,10 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
       if (pdfBase64) pdfUrl = await subirFotoBlob(pdfBase64, 'application/pdf'); // nombre genérico, sirve para cualquier archivo
     } catch (e) { console.warn('crearPedido: no se pudo armar el PDF de preview:', e.message); }
     return {
-      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input), pdfUrl,
+      ok: true, pendienteConfirmar: true, resumen: armarResumenPedido(input, kmCalc, Array.isArray(fotos) ? fotos.length : 0), pdfUrl,
       nota: pdfUrl
-        ? 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
-        : 'No se pudo armar el PDF, así que mostrale ESTE resumen al cliente tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
+        ? textoKm(kmCalc) + 'Ya le mandé el PDF con el detalle del pedido (así lo va a ver el mudancero). Preguntale por WhatsApp si está todo bien o si quiere aclarar/agregar algo más antes de publicarlo (puede contarlo por texto o mandarte un audio, lo sumás a los detalles). Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos (más lo que haya agregado) más confirmado:true. Todavía no se publicó nada.'
+        : textoKm(kmCalc) + 'No se pudo armar el PDF, así que mostrale ESTE resumen al cliente tal cual (no lo resumas de nuevo con tus palabras) y preguntale si está todo bien o si quiere aclarar/agregar algo más antes de mandarlo. Recién cuando confirme explícitamente que está todo bien, volvé a llamar a esta MISMA herramienta con exactamente los mismos datos más confirmado:true. Todavía no se publicó nada.',
     };
   }
   // confirmado:true: no alcanza con el booleano solo — se valida que la
@@ -4211,6 +4217,8 @@ module.exports.intentarHogar = intentarHogar;
 module.exports.camposCriticosFaltantes = camposCriticosFaltantes;
 module.exports.MSJ_FALTA_FOTO_FLETE = MSJ_FALTA_FOTO_FLETE;
 module.exports.direccionesInexactas = direccionesInexactas;
+module.exports.armarResumenPedido = armarResumenPedido;
+module.exports.textoKm = textoKm;
 module.exports.textoConCalleYNumero = textoConCalleYNumero;
 module.exports.pedirConfirmacion = pedirConfirmacion;
 module.exports.confirmacionValida = confirmacionValida;
