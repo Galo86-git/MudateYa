@@ -2487,9 +2487,16 @@ module.exports = async function handler(req, res) {
       }
 
       if (refundError) m.refundError = refundError;
+      // Las cotizaciones que seguían "pendientes" quedan sin efecto: antes se quedaban en
+      // "Pendiente" aunque el pedido estuviera cancelado (se veía mal en el admin).
+      (m.cotizaciones || []).forEach(function (c) { if (c && c.estado === 'pendiente') c.estado = 'cancelada'; });
       await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
       try { await require('./_mudanzas-activas').sacarDeMudanzasActivas(mudanzaId); }
       catch (e) { console.warn('mudanzas:activas (sacar, cancelar-pedido):', e.message); }
+      // Avisar a los mudanceros que ya habían cotizado (el que había sido elegido, si lo hubo,
+      // recibe su propio aviso más abajo). Antes solo se enteraba el elegido: los demás
+      // cotizaban, y el pedido desaparecía sin que nadie les dijera nada.
+      try { await notificarCotizantesPedidoCancelado(m); } catch (e) { console.warn('Aviso cotizantes cancelación:', e.message); }
 
       try {
         if (teniaSeñaPagada) await notificarClienteMudanzaCancelada(m, refundOk);
@@ -5537,6 +5544,55 @@ async function notificarMudancerosNoElegidos(mudanza, emailGanador) {
       } catch(e) { console.warn('Aviso no-elegido loop:', emailMud, e.message); }
     }
   } catch(e) { console.warn('notificarMudancerosNoElegidos:', e.message); }
+}
+
+// El cliente canceló el pedido: se avisa a TODOS los mudanceros que habían cotizado (menos al
+// elegido, que recibe notificarMudanceroPedidoCancelado). Mismo canal que "no elegido":
+// push + email + WhatsApp. Caso real 2026-11-13: pedido con 5 cotizaciones, cancelado por
+// el cliente, y ninguno de los 5 mudanceros se enteró.
+async function notificarCotizantesPedidoCancelado(mudanza) {
+  try {
+    const elegido = String((mudanza.cotizacionAceptada && mudanza.cotizacionAceptada.mudanceroEmail) || '').toLowerCase();
+    const destinatarios = Array.from(new Set((mudanza.cotizaciones || []).map(c => c.mudanceroEmail).filter(Boolean)))
+      .filter(e => String(e).toLowerCase() !== elegido);
+    if (!destinatarios.length) return;
+    const rutaTxt = `${(mudanza.desde || mudanza.origen || '').split(',')[0]} → ${(mudanza.hasta || mudanza.destino || '').split(',')[0]}`;
+    Promise.all(destinatarios.map(emailMud =>
+      enviarPush(emailMud, {
+        titulo: 'El cliente canceló el pedido',
+        cuerpo: `Tu cotización quedó sin efecto: ${rutaTxt}`,
+        link: '/mi-cuenta'
+      }).catch(() => {})
+    )).catch(() => {});
+    const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+    const { enviarPlantilla } = require('./_plantillas');
+    for (const emailMud of destinatarios) {
+      try {
+        const perfil = await getJSON(`mudancero:perfil:${emailMud}`);
+        const nombre = (perfil && perfil.nombre) ? perfil.nombre.split(' ')[0] : 'Mudancero';
+        if (resend) {
+          resend.emails.send({
+            from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
+            to: emailMud,
+            subject: `El cliente canceló el pedido — ${rutaTxt}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;background:#F5F7FA;padding:20px">
+              <div style="background:#003580;padding:18px 24px;border-radius:8px 8px 0 0"><span style="font-size:18px;font-weight:900;color:#fff">MUDATE</span><span style="font-size:18px;font-weight:900;color:#22C36A">YA</span></div>
+              <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px">
+                <h2 style="color:#0F1923;font-size:18px;margin:0 0 12px">Hola ${nombre},</h2>
+                <p style="color:#374151;font-size:17px;line-height:1.7">El cliente <b>canceló este pedido</b>, así que tu cotización quedó sin efecto:</p>
+                <div style="background:#EEF2F7;border-left:4px solid #64748B;padding:12px 14px;border-radius:6px;margin:16px 0;font-size:17px;color:#334155"><b>${rutaTxt}</b></div>
+                <p style="color:#374151;font-size:16px;line-height:1.7">No afecta tu calificación. Gracias por cotizar: seguí atento, que vienen más pedidos.</p>
+              </div></div>`
+          }).catch(e => console.warn('Email cotizante cancelación:', emailMud, e.message));
+        }
+        if (perfil && perfil.telefono) {
+          const textoLibre = `Hola ${nombre}, el cliente canceló el pedido ${rutaTxt}, así que tu cotización quedó sin efecto. No afecta tu calificación. ¡Gracias por cotizar!`;
+          enviarPlantilla(perfil.telefono, 'pedido_cancelado_mudancero', { 1: nombre, 2: rutaTxt }, textoLibre)
+            .catch(e => console.warn('WhatsApp cotizante cancelación:', emailMud, e.message));
+        }
+      } catch (e) { console.warn('Aviso cotizante cancelación loop:', emailMud, e.message); }
+    }
+  } catch (e) { console.warn('notificarCotizantesPedidoCancelado:', e.message); }
 }
 
 async function enviarEmailAceptacion(mudanza, cot) {

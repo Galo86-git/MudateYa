@@ -3431,11 +3431,16 @@ function renderPedidoModal(p) {
   } else {
     cots.forEach(function(c) {
       var esAc = c.estado === 'aceptada' || (p.cotizacionAceptada && p.cotizacionAceptada.id === c.id);
+      // Si el pedido ya se cerró (cancelado, eliminado o vencido), las cotizaciones que no fueron
+      // elegidas no están "Pendientes": quedaron sin efecto.
+      var estPedido = String(p.estado || '');
+      var pedidoCerrado = /^(cancelad|eliminad|vencid)/.test(estPedido);
+      var etiquetaCot = esAc ? '✓ Aceptada' : (pedidoCerrado ? 'Sin efecto (pedido ' + (estPedido.indexOf('vencid') === 0 ? 'vencido' : 'cancelado') + ')' : 'Pendiente');
       var precio = c.precio ? '$'+parseInt(c.precio).toLocaleString('es-AR') : '—';
       var fc = c.fecha ? new Date(c.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
       html += '<div class="cot-item'+(esAc?' aceptada':'')+'">'
         + '<div class="cot-item-head"><span class="cot-item-mud">🚛 '+esc(c.mudanceroNombre||c.mudanceroEmail||'—')+'</span><span class="cot-item-precio">'+esc(precio)+'</span></div>'
-        + '<div class="cot-item-meta"><span>📅 '+esc(fc)+'</span>'+(c.tiempoEstimado?'<span>⏱ '+esc(c.tiempoEstimado)+'</span>':'')+'<span class="cot-badge '+(esAc?'aceptada':'pendiente')+'">'+(esAc?'✓ Aceptada':'Pendiente')+'</span></div>'
+        + '<div class="cot-item-meta"><span>📅 '+esc(fc)+'</span>'+(c.tiempoEstimado?'<span>⏱ '+esc(c.tiempoEstimado)+'</span>':'')+'<span class="cot-badge '+(esAc?'aceptada':'pendiente')+'">'+etiquetaCot+'</span></div>'
         + (c.nota?'<div class="cot-item-nota">'+esc(c.nota)+'</div>':'')
         + '</div>';
     });

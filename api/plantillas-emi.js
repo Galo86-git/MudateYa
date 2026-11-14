@@ -148,6 +148,14 @@ const CREAR = [
     } },
     variables: { '1': 'Juan', '2': 'Cristian', '3': 'Sábado 3/10', '4': '+5491100000000' } },
 
+  // Aviso al mudancero que había cotizado un pedido que el CLIENTE canceló (notificarCotizantesPedidoCancelado
+  // en cotizaciones.js). Es informativo sobre algo que ya hizo (cotizar), sin tono comercial.
+  { name: 'pedido_cancelado_mudancero', category: 'UTILITY',
+    types: { 'twilio/text': {
+      body: 'Hola {{1}}, el cliente canceló el pedido {{2}}, así que tu cotización quedó sin efecto. No afecta tu calificación. Gracias por cotizar.',
+    } },
+    variables: { '1': 'Cristian', '2': 'Caseros → Caseros' } },
+
   // Versión NEUTRA de cotizacion_recibida_cliente (abajo). Meta reclasificó esa de UTILITY a
   // MARKETING (2026-11-13) — probable motivo: el tono promocional ("Conocé su perfil, con
   // fotos del camión y reseñas", "te ayudo a verlo y elegir"). Acá solo se informa algo que el
