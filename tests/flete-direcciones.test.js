@@ -71,3 +71,14 @@ test('si Google no responde (sin clave, caído o lento) no se frena un pedido co
   respuestaGoogle = SIN_RESPUESTA;
   assert.strictEqual((await wa.direccionesInexactas({ origen: 'Av. Mitre 4144, Caseros', destino: 'Cipolletti, Río Negro' })).length, 1);
 });
+
+test('"barrio Santa Barbarita" a secas se rechaza y Emi recibe cómo seguir; cargado como barrio cerrado y ubicado en Google, se acepta', async () => {
+  respuestaGoogle = OK;
+  let f = await wa.direccionesInexactas({ origen: 'Diego Palma 306, Villa Ballester', destino: 'barrio Santa Barbarita' });
+  assert.strictEqual(f.length, 1); assert.match(f[0], /destino/); assert.match(f[0], /Barrio cerrado <nombre>, <localidad>/);
+  respuestaGoogle = (dir) => (/Santa B/.test(dir) ? INCOMPLETA : OK);    // Google ubica el barrio pero sin calle y número
+  assert.deepStrictEqual(await wa.direccionesInexactas({ origen: 'Diego Palma 306, Villa Ballester', destino: 'Barrio cerrado Santa Bárbara, Tigre' }), []);
+  respuestaGoogle = (dir) => (/Santa B/.test(dir) ? NO_EXISTE : OK);     // Google no lo ubica: no se toma
+  f = await wa.direccionesInexactas({ origen: 'Diego Palma 306, Villa Ballester', destino: 'Barrio cerrado Santa Bárbara, Tigre' });
+  assert.strictEqual(f.length, 1); assert.match(f[0], /no figura en Google Maps/);
+});
