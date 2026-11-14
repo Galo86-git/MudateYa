@@ -132,31 +132,4 @@ async function buscarLugares(nombre) {
   }
 }
 
-// De coordenadas (ubicación compartida por WhatsApp) a lugar: dirección, localidad y provincia. Sin clave o con error: { ok:false }.
-async function geocodificarInversa(lat, lng) {
-  const key = process.env.GOOGLE_MAPS_API_KEY;
-  const la = Number(lat), lo = Number(lng);
-  if (!key) return { ok: false, motivo: 'sin_key' };
-  if (!isFinite(la) || !isFinite(lo)) return { ok: false, motivo: 'coordenadas_invalidas' };
-  try {
-    const url = 'https://maps.googleapis.com/maps/api/geocode/json'
-      + '?latlng=' + encodeURIComponent(la + ',' + lo) + '&language=es&region=ar&key=' + key;
-    const r = await fetch(url);
-    const d = await r.json();
-    if (d.status && d.status !== 'OK' && d.status !== 'ZERO_RESULTS') return { ok: false, motivo: d.status };
-    const res = (d.results || [])[0];
-    if (!res) return { ok: true, existe: false };
-    const comp = {};
-    (res.address_components || []).forEach(function (c) { (c.types || []).forEach(function (t) { comp[t] = c.long_name; }); });
-    return {
-      ok: true, existe: true, direccion: res.formatted_address || '',
-      calle: comp.route || '', numero: comp.street_number || '',
-      localidad: comp.locality || comp.administrative_area_level_2 || '', provincia: comp.administrative_area_level_1 || '',
-    };
-  } catch (e) {
-    console.warn('geocodificarInversa:', e.message);
-    return { ok: false, motivo: e.message };
-  }
-}
-
-module.exports = { geocodificar, distanciaKm, haversineKm, buscarLugares, geocodificarInversa };
+module.exports = { geocodificar, distanciaKm, haversineKm, buscarLugares };
