@@ -44,3 +44,10 @@ test('las páginas vecinas enlazan a las nuevas', () => {
     for (const s of SLUGS) assert.ok(h.includes('href="/' + s + '"'), f + ' → ' + s);
   }
 });
+
+test('cada página por zona (mudanzas-en-* y fletes-en-*) tiene su ruta en vercel.json: sin ruta, la URL canónica da 404 y solo anda el .html', () => {
+  const vj = JSON.parse(leer('vercel.json'));
+  const fuentes = new Set((vj.rewrites || []).map((r) => r.source));
+  const sinRuta = fs.readdirSync(RAIZ).filter((f) => /^(mudanzas|fletes)-en-.*[.]html$/.test(f)).map((f) => '/' + f.replace('.html', '')).filter((u) => !fuentes.has(u));
+  assert.deepStrictEqual(sinRuta, []);
+});

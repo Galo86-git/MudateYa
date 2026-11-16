@@ -194,6 +194,18 @@
       "destination": "/mudanzas-en-boedo.html"
     },
     {
+      "source": "/mudanzas-en-acassuso",
+      "destination": "/mudanzas-en-acassuso.html"
+    },
+    {
+      "source": "/mudanzas-en-beccar",
+      "destination": "/mudanzas-en-beccar.html"
+    },
+    {
+      "source": "/mudanzas-en-zona-norte",
+      "destination": "/mudanzas-en-zona-norte.html"
+    },
+    {
       "source": "/mudanzas-en-san-isidro",
       "destination": "/mudanzas-en-san-isidro.html"
     },
