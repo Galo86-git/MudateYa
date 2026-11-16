@@ -31,6 +31,7 @@
 - [Plan para inmobiliarias](https://mudateya.ar/inmobiliaria.html): mudanceros verificados como beneficio para sus clientes.
 - [MudateYa Mobility](https://mudateya.ar/mya-mobility.html): relocation B2B para empresas, colegios, clubes de fútbol y cuerpo diplomático.
 - [Fletes y mudanzas por barrio/ciudad](https://mudateya.ar/sitemap.xml): páginas locales por barrio y zona de CABA, Gran Buenos Aires, Rosario y Córdoba, que son las zonas de origen donde opera el servicio.
+- [Mudanzas en Zona Norte](https://mudateya.ar/mudanzas-en-zona-norte): Vicente López, San Isidro (Acassuso, Béccar, Martínez), San Fernando, Tigre, Pilar y Escobar; accesos a barrios cerrados y cómo cotizar. También: [Acassuso](https://mudateya.ar/mudanzas-en-acassuso) y [Béccar](https://mudateya.ar/mudanzas-en-beccar).
 
 ## Notas
 
