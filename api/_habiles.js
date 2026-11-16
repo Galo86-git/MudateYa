@@ -176,7 +176,36 @@ function vencimientoHabilISO(horas, desde) {
   return sumarHorasHabiles(base, horas).toISOString();
 }
 
+// ── Tope de la ventana para cotizar ──
+// La ventana (24 hs hábiles, o 3 hs si es urgente) NUNCA puede pasar de COTIZAR_HASTA_HS_ANTES horas antes de la fecha y hora de inicio del trabajo.
+// Antes un pedido publicado el sábado para el domingo seguía abierto hasta el martes (el reloj hábil no corre el fin de semana).
+// Se puede cambiar con la variable de entorno COTIZAR_HASTA_HS_ANTES. Si el trabajo es tan pronto que el tope ya pasó, queda al menos 1 hora para cotizar.
+var COTIZAR_HASTA_HS_ANTES = 3;
+function inicioTrabajo(fecha, hora) {
+  var f = String(fecha || '').split('-');
+  if (f.length !== 3) return null;
+  var y = Number(f[0]), m = Number(f[1]), d = Number(f[2]);
+  if (!(y > 2000) || !(m >= 1 && m <= 12) || !(d >= 1 && d <= 31)) return null;
+  var h = 9, mi = 0;   // sin hora: se asume las 9:00
+  var p = String(hora || '').split(':');
+  if (p.length === 2 && p[0].trim() !== '' && isFinite(Number(p[0])) && isFinite(Number(p[1])) && Number(p[0]) >= 0 && Number(p[0]) <= 23) { h = Number(p[0]); mi = Number(p[1]); }
+  return new Date(Date.UTC(y, m - 1, d, h + 3, mi));   // hora Argentina (UTC-3)
+}
+function limitarAlInicio(expiraISO, fecha, hora, ahora) {
+  var ini = inicioTrabajo(fecha, hora);
+  if (!ini) return expiraISO;
+  var env = Number(process.env.COTIZAR_HASTA_HS_ANTES);
+  var horas = env > 0 ? env : COTIZAR_HASTA_HS_ANTES;
+  var tope = new Date(ini.getTime() - horas * 3600000);
+  var base = ahora ? new Date(ahora) : new Date();
+  var piso = new Date(base.getTime() + 3600000);
+  var limite = tope < piso ? piso : tope;
+  return new Date(expiraISO) <= limite ? expiraISO : limite.toISOString();
+}
+
 module.exports = {
+  limitarAlInicio: limitarAlInicio,
+  inicioTrabajo: inicioTrabajo,
   sumarHorasHabiles: sumarHorasHabiles,
   vencimientoHabilISO: vencimientoHabilISO,
   esDiaHabil: esDiaHabil,

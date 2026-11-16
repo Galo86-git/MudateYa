@@ -16,7 +16,7 @@
 //   SKIP_TWILIO_VALIDATION    -> "1" solo para debug; en prod dejar sin setear
 
 const crypto = require('crypto');
-const { vencimientoHabilISO, aHoraAR } = require('./_habiles'); // vencimiento en horas hábiles (igual que el web)
+const { vencimientoHabilISO, aHoraAR, limitarAlInicio } = require('./_habiles'); // vencimiento en horas hábiles (igual que el web)
 
 // Modo prueba: si está seteada, los pedidos del bot se publican SOLO para este
 // mudancero (modo "dirigido"), así ningún mudancero real los ve mientras testeás.
@@ -2571,9 +2571,10 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // Con TEST_MUDANCERO_EMAIL el pedido va en modo "dirigido" solo a ese mudancero,
   // así ningún mudancero real lo ve mientras se prueba.
   // Ventana para cotizar: si es URGENTE, corta (3hs, lo necesitan ya); si no, 24hs hábiles.
-  const expiraISO = input.urgente
+  // Tope: se puede cotizar hasta unas horas ANTES de la fecha y hora de inicio del trabajo (limitarAlInicio).
+  const expiraISO = limitarAlInicio(input.urgente
     ? new Date(ahora.getTime() + 3 * 60 * 60 * 1000).toISOString()
-    : vencimientoHabilISO(24);
+    : vencimientoHabilISO(24), input.fecha, input.hora || input.horario, ahora);
   const dirigido = !!TEST_MUDANCERO_EMAIL;
   const pedido = {
     id,
