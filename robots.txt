@@ -1,3 +1,14 @@
+# Buscadores y asistentes de IA: acceso explícito (el resto cae en "*", que también permite todo).
+# OAI-SearchBot: buscador de ChatGPT. ChatGPT-User: cuando alguien le pide a ChatGPT abrir una página. PerplexityBot: Perplexity.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
 User-agent: *
 Allow: /
 
