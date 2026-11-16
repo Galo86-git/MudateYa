@@ -1,6 +1,6 @@
 # MudateYa
 
-> Marketplace argentino de mudanzas y fletes. Los usuarios cotizan gratis y comparan precios reales de mudanceros y empresas de mudanza verificadas (DNI y vehículo verificado), eligen sin compromiso y pagan de forma protegida (Mercado Pago o transferencia). Opera con traslados que salen desde CABA, Gran Buenos Aires, Rosario y Córdoba (el destino puede estar en otro lugar). Se puede pedir por la web o por WhatsApp con Emi, la asistente virtual de MudateYa.
+> Marketplace argentino de mudanzas y fletes. Los usuarios cotizan gratis y comparan precios reales de mudanceros y empresas de mudanza verificadas (DNI y vehículo verificado), eligen sin compromiso y pagan con Mercado Pago o transferencia. Opera con traslados que salen desde CABA, Gran Buenos Aires, Rosario y Córdoba (el destino puede estar en otro lugar). Se puede pedir por la web o por WhatsApp con Emi, la asistente virtual de MudateYa.
 
 ## Cotizar por WhatsApp con Emi
 
@@ -8,7 +8,7 @@
 - WhatsApp: https://wa.me/12399462954?text=Hola%20Emi%2C%20quiero%20cotizar%20mi%20mudanza
 - Cotizar es gratis y sin compromiso para el cliente.
 - Qué hay que contarle: dirección exacta de origen y destino, fecha y hora, qué hay que mudar y, si es departamento, piso y ascensor. Acepta texto y audios; para un flete pide una foto.
-- Pago: seña del 50% por Mercado Pago o transferencia (queda protegida); el 50% restante se paga al terminar. Los datos de contacto del mudancero se comparten recién cuando se paga la seña.
+- Pago: seña del 50% por Mercado Pago o transferencia; el 50% restante se paga al terminar. Los datos de contacto del mudancero se comparten recién cuando se paga la seña.
 - Si todavía no hay mudanceros en la zona del cliente, Emi lo avisa y no publica el pedido.
 - Más información: https://mudateya.ar/emi
 

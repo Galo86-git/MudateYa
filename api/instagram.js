@@ -56,7 +56,7 @@ async function setJSON(key, value, ttlSeconds) {
 
 // Info de respaldo si api/_conocimiento.js todavía no sincronizó nada desde
 // la web (cron recién agregado) o Redis no responde. Corta, como todo en IG.
-const CONOCIMIENTO_FALLBACK_IG = `MudateYa: marketplace argentino de mudanzas y fletes, conecta clientes con mudanceros/fleteros verificados. Comparar presupuestos es gratis. Niveles: Esencial, Integral, Llave en Mano (todo incluido). Pago: 50% seña + 50% al terminar, protegido (Mercado Pago o transferencia). Cobertura: CABA/GBA, interior según disponibilidad.`;
+const CONOCIMIENTO_FALLBACK_IG = `MudateYa: marketplace argentino de mudanzas y fletes, conecta clientes con mudanceros/fleteros verificados. Comparar presupuestos es gratis. Niveles: Esencial, Integral, Llave en Mano (todo incluido). Pago: 50% seña + 50% al terminar (Mercado Pago o transferencia). Cobertura: CABA/GBA, interior según disponibilidad.`;
 
 // ------------------------------------------------------------------
 // System prompt del agente

@@ -51,3 +51,11 @@ test('cada página por zona (mudanzas-en-* y fletes-en-*) tiene su ruta en verce
   const sinRuta = fs.readdirSync(RAIZ).filter((f) => /^(mudanzas|fletes)-en-.*[.]html$/.test(f)).map((f) => '/' + f.replace('.html', '')).filter((u) => !fuentes.has(u));
   assert.deepStrictEqual(sinRuta, []);
 });
+
+test('el sitio no dice "pago protegido" ni variantes (no es una garantía formal): se describe solo cómo se paga', () => {
+  const malos = [];
+  for (const f of fs.readdirSync(RAIZ).filter((n) => /[.](html|txt)$/.test(n) && !['terminos.html', 'cobrar.html'].includes(n))) {
+    if (/protegid[oa]s?/i.test(leer(f))) malos.push(f);
+  }
+  assert.deepStrictEqual(malos, []);
+});
