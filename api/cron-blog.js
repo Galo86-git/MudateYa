@@ -48,6 +48,7 @@ const TEMAS = [
   { slug: 'como-elegir-un-mudancero-confiable', tag: 'Contratar', titulo: 'Cómo elegir un mudancero confiable' },
   { slug: 'mudanza-de-ultimo-momento-que-hacer', tag: 'Urgencias', titulo: 'Mudanza de último momento: qué hacer' },
   { slug: 'errores-comunes-al-mudarse', tag: 'Guías', titulo: 'Los 7 errores más comunes al mudarse (y cómo evitarlos)' },
+  { slug: 'mudanza-de-departamento-a-casa-zona-norte', tag: 'Guías', titulo: 'De departamento a casa en Zona Norte: cómo organizar la mudanza' },
   { slug: 'mudanza-entre-provincias-argentina', tag: 'Larga distancia', titulo: 'Mudanza entre provincias en Argentina: la guía' },
 ];
 
@@ -99,8 +100,9 @@ async function datosReales() {
 }
 
 function bloqueDatos(d) {
-  if (!d || !d.muestras) {
-    return 'NO tengo precios reales del sistema en este momento. NO inventes cifras exactas de precios; hablá de precios en términos relativos (qué los sube o baja) sin dar montos específicos.';
+  // MudateYa NO publica precios (los fija cada mudancero al cotizar): las notas nunca llevan montos en pesos, aunque haya datos.
+  if (true) {
+    return 'MudateYa NO publica precios: cada mudancero fija su cotización. NO escribas ningún monto en pesos ni rangos de precios, ni "desde $", ni descuentos. Hablá de precios solo en términos relativos (qué factores los suben o los bajan) y remití a cotizar para conocer el valor.';
   }
   const l = [];
   if (d.amb1) l.push(`- Mudanza chica (1 ambiente/monoambiente): alrededor de ${fmt(d.amb1)}`);
@@ -117,11 +119,20 @@ function bloqueDatos(d) {
     `Lo que NO se puede es inventar cifras, dar un monto como exacto, o apartarse más de un 10% del valor de referencia.`;
 }
 
+// Hay un monto en pesos (por ejemplo $350.000)? MudateYa no publica precios.
+function tieneMontos(nota) {
+  const t = [nota && nota.titulo, nota && nota.metaDescripcion, nota && nota.resumen, nota && nota.cuerpoHtml].join(' ');
+  for (let i = 0; i < t.length - 1; i++) {
+    if (t[i] === '$') { let j = i + 1; while (t[j] === ' ') j++; if (t[j] >= '0' && t[j] <= '9') return true; }
+  }
+  return false;
+}
+
 async function generar(tema, datos) {
   const system =
     `Sos redactor de contenidos SEO de MudateYa, el marketplace argentino de mudanzas y fletes. ` +
     `Escribís en español rioplatense (voseo), claro, útil y cercano, sin sonar a folleto. ` +
-    `Nunca inventás datos ni precios: si te doy precios de referencia, usás esos; si no, no das cifras exactas. ` +
+    `Nunca inventás datos y NUNCA escribís montos en pesos ni descuentos: MudateYa no publica precios, los fija cada mudancero al cotizar. ` +
     `El objetivo es posicionar en Google y ser genuinamente útil para alguien que se va a mudar en Argentina.`;
   const user =
     `Escribí una nota de blog sobre: "${tema.titulo}".\n\n` +
@@ -142,12 +153,12 @@ async function generar(tema, datos) {
 async function revisar(nota, datos) {
   const system =
     `Sos editor de calidad de MudateYa. Revisás notas de blog antes de publicarlas en el sitio real. ` +
-    `Rechazás si hay datos o precios inventados/contradictorios con los de referencia, ` +
+    `Rechazás si hay datos inventados, CUALQUIER monto en pesos o rango de precios (MudateYa no publica precios), descuentos, ` +
     `errores de hecho, español no argentino, tono de folleto/spam, o contenido inútil o riesgoso.\n` +
     `Rechazás por problemas REALES, no por preferencias de estilo: la nota no tiene que ser perfecta, ` +
     `tiene que ser publicable. Ante una duda menor, aprobás.`;
   const user =
-    `Datos de precios de referencia que la nota DEBERÍA respetar:\n${bloqueDatos(datos)}\n\n` +
+    `Regla de precios que la nota DEBE respetar:\n${bloqueDatos(datos)}\n\n` +
     `NOTA A REVISAR:\nTítulo: ${nota.titulo}\nMeta: ${nota.metaDescripcion}\n\n${nota.cuerpoHtml}\n\n` +
     `NO son motivo de rechazo (esto es contenido correcto, no lo marques):\n` +
     `- Redondear un precio de referencia al millar más cercano cuando va con "alrededor de", "cerca de", ` +
@@ -217,11 +228,12 @@ module.exports = async function handler(req, res) {
     if (!tema) tema = await proponerTemaNuevo(usados);  // cola fija agotada → tema fresco (nunca se frena)
     if (!tema) return res.status(200).json({ ok: true, info: 'sin tema disponible esta vez' });
 
-    const datos = await datosReales();
+    const datos = { muestras: 0 };   // ya no se juntan precios de mudanceros (ver bloqueDatos)
     const nota = await generar(tema, datos);
     if (!nota || !nota.cuerpoHtml || !nota.titulo) throw new Error('nota vacía');
 
-    const review = await revisar(nota, datos);
+    let review = await revisar(nota, datos);
+    if (tieneMontos(nota)) review = { aprobado: false, motivos: ['La nota incluye un monto en pesos: MudateYa no publica precios'].concat((review && review.motivos) || []) };
 
     if (!review || !review.aprobado) {
       // No publica: le manda el borrador al admin para que decida.
@@ -264,3 +276,4 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ error: e.message });
   }
 };
+module.exports.tieneMontos = tieneMontos;

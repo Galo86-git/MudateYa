@@ -3384,6 +3384,15 @@ async function responderReprogramacionCliente(waId, decision) {
 // El cliente califica al mudancero tras una mudanza completada+pagada. Reusa el
 // endpoint 'calificar', que guarda la reseña en el perfil del mudancero y
 // recalcula su reputación (promedioEstrellas / calificacion / nroResenas).
+// Invitación a dejar una reseña de MudateYa en Google. Apagada hasta que exista GOOGLE_RESENAS_URL (enlace de "Pedir reseñas" del perfil de Google Business).
+// Se le hace a TODOS los que califican, sea cual sea la nota: Google prohíbe filtrar a quién se le pide la reseña, ofrecer incentivos o pedir solo reseñas positivas.
+// La reseña es sobre la experiencia con MudateYa (plataforma y coordinación), no sobre el trabajo físico de la empresa de mudanzas.
+function notaResenaGoogle() {
+  const url = String(process.env.GOOGLE_RESENAS_URL || '').trim();
+  if (url.indexOf('https://') !== 0) return '';
+  return 'Después de agradecer la calificación, invitalo UNA sola vez y sin presionar a contar su experiencia con MudateYa (la plataforma y la coordinación, no el trabajo de la empresa de mudanzas) en Google, y pasale este enlace tal cual: ' + url + ' . Es opcional. No ofrezcas nada a cambio, no pidas que la opinión sea positiva y no insistas si no responde.';
+}
+
 async function calificarMudanceroCliente(waId, estrellas, comentario) {
   const n = parseInt(estrellas, 10);
   if (!(n >= 1 && n <= 5)) return { ok: false, mensaje: 'La calificación tiene que ser de 1 a 5 estrellas.' };
@@ -3405,7 +3414,7 @@ async function calificarMudanceroCliente(waId, estrellas, comentario) {
     const d = await r.json().catch(() => ({}));
     if (!r.ok || !d.ok) return { ok: false, mensaje: (d && d.error) || 'No pude registrar la calificación.' };
     const mud = (m.cotizacionAceptada || {}).mudanceroNombre || 'el mudancero';
-    return { ok: true, estrellas: n, mudancero: mud, mensaje: `¡Gracias! Registré tu calificación de ${n}⭐ para ${mud}. Suma a su reputación en MudateYa.` };
+    return { ok: true, estrellas: n, mudancero: mud, mensaje: `¡Gracias! Registré tu calificación de ${n}⭐ para ${mud}. Suma a su reputación en MudateYa.`, ...(notaResenaGoogle() ? { nota: notaResenaGoogle() } : {}) };
   } catch (e) {
     console.warn('calificarMudanceroCliente:', e.message);
     return { ok: false, mensaje: 'Tuve un problemita registrando la calificación, probá en un ratito.' };
@@ -4222,3 +4231,4 @@ module.exports.textoKm = textoKm;
 module.exports.textoConCalleYNumero = textoConCalleYNumero;
 module.exports.pedirConfirmacion = pedirConfirmacion;
 module.exports.confirmacionValida = confirmacionValida;
+module.exports.notaResenaGoogle = notaResenaGoogle;
