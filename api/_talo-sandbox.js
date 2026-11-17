@@ -65,7 +65,7 @@ function crearTaloSandbox(env) {
     exigir();
     const body = { user_id: cred.userId, price: { amount: Number(o.monto), currency: 'ARS' }, payment_options: ['transfer'], external_id: o.externalId, motive: o.motivo || 'MudateYa Hogar (prueba)' };
     if (o.webhookUrl) body.webhook_url = o.webhookUrl;
-    const r = await fetch(BASE + '/payments/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const r = await auth('/payments/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
     const data = d && d.data;
     if (!r.ok || !data || !data.id) throw new Error('Talo sandbox: no se pudo crear el pago (' + r.status + ' ' + ((d && d.message) || '') + ')');

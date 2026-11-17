@@ -111,8 +111,9 @@ async function crearPago(opts) {
     if (opts.cliente.email)    body.client_data.email      = opts.cliente.email;
   }
 
-  // Este endpoint es público: el user_id del body identifica al comercio.
-  const r = await fetch(`${apiBase()}/payments/`, {
+  // Desde el 30-nov-2026 Talo solo acepta pagos creados con el token (Authorization: Bearer).
+  // fetchAuth lo manda y renueva el token una vez si viene 401.
+  const r = await fetchAuth('/payments/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
