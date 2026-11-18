@@ -593,6 +593,8 @@ PESO DE LO PESADO: cuando el cliente manda fotos (o cuenta) de muebles, electrod
 
 VIDEOS: por este canal NO se pueden recibir videos — no los ves y no llegan al pedido ni al mudancero. Si el cliente dice que te mandó un video, o el sistema te avisa que llegó uno, explicale con claridad que no lo pudiste ver y que no le va a llegar al mudancero, y pedile fotos (o que te describa por escrito lo que muestra el video, ej. cómo es el acceso, los pisos, si hay que subir algo con sogas). NUNCA escribas en el pedido (detalles, comentario) que hay un video adjunto ni que "el video muestra..." algo: solo podés cargar lo que el cliente te dijo por escrito o lo que se ve en las fotos.
 
+CANTIDAD DE FOTOS: NUNCA escribas en el pedido (detalles, comentario) cuántas fotos mandó el cliente ni frases como "8 fotos adjuntas": las fotos se adjuntan solas y el mudancero las ve. Además, el número que vos viste en la charla puede ser distinto al de las que realmente se guardaron (hay un máximo de 6, y alguna puede fallar), así que no le afirmes al cliente una cantidad de fotos recibidas salvo la que te confirme el sistema.
+
 TIP ENTRE SEMANA: si NO es urgente y el cliente todavía no cerró un día fijo (dice "el finde", "el sábado", o pregunta "¿cuándo me conviene?"), mencioná una vez, con onda y sin insistir, que entre semana suele ser más barato y hay más mudanceros libres — algo en la línea de "Dato: si tenés margen, entre semana (mar-jue) sueles conseguir mejores precios y más mudanceros libres — ¿te cierra alguno de esos días, o va sí o sí el finde?". Si ya te dijo que tiene que ser un día puntual (por lo que sea), no insistas ni lo repitas.
 
 TIP DE AUDIO: podés recibir audios perfectamente (los transcribís vos sola). NO lo menciones en el primer mensaje — recién a partir del segundo o tercer intercambio, si seguís juntando datos y todo viene por texto, mencionalo una vez con onda: algo como "Che, si te resulta más cómodo también me podés mandar un audio contándome todo — te entiendo igual 🎙️". Una sola vez por conversación, nunca lo repitas.
@@ -2349,6 +2351,18 @@ function sinContactoWA(texto) {
   return t;
 }
 
+// Saca del texto del pedido frases del tipo "8 fotos adjuntas" o "Fotos adjuntas: 3".
+// Emi las escribía contando lo que MANDÓ el cliente, que no es lo que se guardó
+// (tope de 6, o fotos que fallaron al subir): el mudancero veía un número en el
+// comentario y otro distinto en las imágenes. Las fotos van solas al pedido y el
+// mudancero las ve, así que no hace falta aclarar cuántas son.
+function quitarConteoFotos(texto) {
+  if (!texto) return texto;
+  return String(texto)
+    .replace(/\s*(?:\b\d+\s+fotos?\s+adjuntas?|fotos?\s+adjuntas?\s*:\s*\d+)\s*\.?/gi, '')
+    .trim();
+}
+
 // Avisa al/los mudancero(s) que pidieron relevamiento/visita en su cotización
 // de que el cliente mandó fotos o más detalle en vez de la visita — sin esto,
 // quedaban guardadas en el pedido pero nadie del lado del mudancero se
@@ -2514,7 +2528,7 @@ function armarResumenPedido(input, km, nFotos) {
 // ANTHROPIC_API_KEY, error de red), sigue con el texto original en vez de
 // bloquear la creación del pedido.
 async function traducirDetallesParaMudancero(texto) {
-  const limpio = String(texto || '').trim();
+  const limpio = quitarConteoFotos(String(texto || '').trim()) || '';
   if (!limpio) return '';
   try {
     const { claudeJSON, MODEL_LIGHT } = require('./_ia');
@@ -2535,7 +2549,7 @@ async function traducirDetallesParaMudancero(texto) {
       maxTokens: 400,
     });
     if (r.esEspanol || !r.traduccion) return limpio;
-    return `[Pedido armado en ${r.idioma || 'otro idioma'} — puede no hablar español fluido]\n${r.traduccion}`;
+    return `[Pedido armado en ${r.idioma || 'otro idioma'} — puede no hablar español fluido]\n${quitarConteoFotos(r.traduccion)}`;
   } catch (e) {
     console.warn('traducirDetallesParaMudancero:', e.message);
     return limpio;
@@ -3871,6 +3885,7 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
     const bloques = [];
     conv.fotos = Array.isArray(conv.fotos) ? conv.fotos : [];
     const fotosNoGuardadas = [];   // motivos: antes una foto que fallaba se descartaba en silencio y el pedido salía sin ella
+    let fotosPorTope = 0;          // fotos que NO se guardaron porque el pedido ya llegó al máximo (antes se perdían sin avisar)
     for (const img of imagenes) {
       const data = await descargarMediaBase64(img.url);
       if (!data) fotosNoGuardadas.push('no se pudo descargar o pesa más de 5 MB');
@@ -3891,8 +3906,13 @@ async function generarRespuesta(waId, texto, imagenes, ubicacion, mudancero, ase
               if (url) conv.fotos.push(url); else fotosNoGuardadas.push('falló al subirla');
             } else fotosNoGuardadas.push('se ve un teléfono o un mail en la foto');
           } catch (e) { console.warn('chequearContactoEnFoto (pedido nuevo):', e.message); fotosNoGuardadas.push('falló al guardarla'); }
+        } else {
+          fotosPorTope++;
         }
       }
+    }
+    if (fotosPorTope) {
+      bloques.push({ type: 'text', text: `[Aviso del sistema, no lo escribió la persona: el pedido ya tiene el máximo de 6 fotos guardadas, así que ${fotosPorTope} foto(s) de este mensaje NO se agregaron. Decíselo con claridad (con esas 6 alcanza para cotizar; si quiere que vaya otra, que elija entre las que ya mandó). No digas cuántas fotos mandó ni cuántas "adjuntas" hay en el pedido: lo que cuenta es lo que el sistema guardó.]` });
     }
     if (fotosNoGuardadas.length) {
       bloques.push({ type: 'text', text: `[Aviso del sistema, no lo escribió la persona: ${fotosNoGuardadas.length} foto(s) de este mensaje NO se guardaron en el pedido (${[...new Set(fotosNoGuardadas)].join('; ')}). Decíselo con claridad y pedile que la mande de nuevo (más liviana, o sin teléfonos ni mails a la vista). No la cuentes como recibida: en un flete sin foto guardada no se puede publicar el pedido.]` });
@@ -4236,6 +4256,7 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.avisoVideoNoSoportado = avisoVideoNoSoportado;
+module.exports.quitarConteoFotos = quitarConteoFotos;
 module.exports.intentarHogar = intentarHogar;
 module.exports.camposCriticosFaltantes = camposCriticosFaltantes;
 module.exports.MSJ_FALTA_FOTO_FLETE = MSJ_FALTA_FOTO_FLETE;
