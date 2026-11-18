@@ -4607,13 +4607,20 @@ async function generarPDFDetallesBase64(mudanza) {
       y = Math.max(yFinO, yFinD) + 16;
 
       // ── Comentario libre (compartido)
-      if (d.comentario) {
+      // El comentario puede traer una frase del tipo "8 fotos adjuntas" escrita por
+      // quien lo cargó (el bot la saca del conteo de lo que mandó el cliente, no de las
+      // fotos que realmente se guardaron). La sacamos: las fotos que valen son las que
+      // se ven más abajo, y un número distinto al de las imágenes confunde al mudancero.
+      const comentarioPdf = String(d.comentario || '')
+        .replace(/\s*(?:\b\d+\s+fotos?\s+adjuntas?|fotos?\s+adjuntas?\s*:\s*\d+)\s*\.?/gi, '')
+        .trim();
+      if (comentarioPdf) {
         doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
            .text('COMENTARIO DEL CLIENTE', MARGIN, y);
         y += 18;
         doc.fillColor('#F8FAFC').rect(MARGIN, y - 4, CONTENT_W, 6).fill();
         doc.fillColor('#0F1923').font('Helvetica').fontSize(10)
-           .text(d.comentario, MARGIN + 4, y, { width: CONTENT_W - 8, lineGap: 3 });
+           .text(comentarioPdf, MARGIN + 4, y, { width: CONTENT_W - 8, lineGap: 3 });
         y = doc.y + 16;
       }
 
@@ -4622,7 +4629,7 @@ async function generarPDFDetallesBase64(mudanza) {
         // Si nos queda poco espacio en la página, saltamos a la siguiente
         if (y > 600) { doc.addPage(); y = 50; }
         doc.fillColor('#1A6FFF').font('Helvetica-Bold').fontSize(11)
-           .text('FOTOS DEL LUGAR', MARGIN, y);
+           .text('FOTOS', MARGIN, y);
         y += 18;
         // 2 fotos por fila, cada una ~240px ancho
         const fotoW = (CONTENT_W - 10) / 2;
