@@ -3683,6 +3683,27 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, yaEstaba, total: idx.length });
     }
 
+    // ── Admin: sacar un pedido BORRADO de los índices de todos los mudanceros ──
+    // Después de admin-borrar-permanente, los índices `mudancero:{email}` de quienes cotizaron
+    // pueden seguir listando el id. Recorre esos índices (solo listas de ids, no perfiles ni
+    // otras claves) y lo saca. No toca perfiles, reseñas ni nada más de la cuenta.
+    if (action === 'admin-limpiar-pedido-mudanceros' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { mudanzaId } = req.body || {};
+      if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
+      if (await getJSON(`mudanza:${mudanzaId}`)) return res.status(400).json({ error: 'El pedido todavía existe: borralo primero con admin-borrar-permanente' });
+      const keysRaw = await redisCall('KEYS', 'mudancero:*');
+      const keys = (Array.isArray(keysRaw) ? keysRaw : []).filter(k => String(k).split(':').length === 2 && String(k).includes('@'));
+      const limpiados = [];
+      for (const k of keys) {
+        const idx = await getJSON(k);
+        if (!Array.isArray(idx) || !idx.includes(mudanzaId)) continue;
+        await setJSON(k, idx.filter(id => id !== mudanzaId), 2592000);
+        limpiados.push(String(k).replace('mudancero:', ''));
+      }
+      return res.status(200).json({ ok: true, indicesRevisados: keys.length, limpiados });
+    }
+
     if (action === 'admin-pedido' && req.method === 'GET') {
       const { token, id } = req.query;
       if (!esAdmin(req)) {
