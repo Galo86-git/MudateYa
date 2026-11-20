@@ -3,7 +3,7 @@
 // Guarda en Redis + valida CUIL contra AFIP + notifica al admin
 // Las fotos se suben a Vercel Blob (no se guardan en Redis)
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { validarCuit: validarCuitAfip } = require('./_afip');
 const { redisPipeline } = require('./_ia');
 

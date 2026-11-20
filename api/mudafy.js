@@ -150,7 +150,7 @@ async function enviarBienvenida(opts) {
   var importado = !!opts.importado;
   var destino   = opts.to || email;
 
-  const { Resend } = require('resend');
+  const { Resend } = require('./_resend-seguro');
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   var primerNombre = escHtml(String(nombre).split(' ')[0] || '');

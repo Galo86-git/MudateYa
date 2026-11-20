@@ -16,7 +16,7 @@ async function alertarEquipo(asunto, resumen, datos) {
       console.error('[alerta-equipo] falta RESEND_API_KEY o ADMIN_EMAIL:', asunto);
       return false;
     }
-    const { Resend } = require('resend');
+    const { Resend } = require('./_resend-seguro');
     const filas = Object.keys(datos || {}).map(function (k) {
       return '<tr><td style="padding:4px 12px 4px 0;color:#64748B">' + esc(k) + '</td><td style="padding:4px 0"><b>' + esc(datos[k]) + '</b></td></tr>';
     }).join('');

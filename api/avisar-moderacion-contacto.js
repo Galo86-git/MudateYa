@@ -15,7 +15,7 @@
 
 var { esAdmin } = require('./_auth');
 const { redisPipeline } = require('./_ia');
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 
 async function redisCall(method, ...args) {
   var url   = process.env.UPSTASH_REDIS_REST_URL;

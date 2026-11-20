@@ -29,7 +29,7 @@
 //                                 idempotente, así que si el cron sigue corriendo días después
 //                                 no reenvía nada).
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { esAdmin, esCronVercel } = require('./_auth');
 const { linkBaja } = require('./_baja');
 const { yaEsInmobiliaria } = require('./_inmobiliarias-dedupe');

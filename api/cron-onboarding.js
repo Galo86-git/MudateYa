@@ -16,7 +16,7 @@
 //   1. Llega del Vercel Cron (header x-vercel-cron === '1'), o
 //   2. Se llama manualmente con ?token=ADMIN_TOKEN
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { linkBaja } = require('./_baja');
 
 // Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,

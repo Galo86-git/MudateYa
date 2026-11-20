@@ -462,7 +462,7 @@ module.exports = async function handler(req, res) {
 
       // ── Mails (no rompemos el flow si fallan: la inmobiliaria ya quedó activa) ──
       try {
-        const { Resend } = require('resend');
+        const { Resend } = require('./_resend-seguro');
         const resend = new Resend(process.env.RESEND_API_KEY);
 
         // (1) Bienvenida instantánea, con su link propio y el link para repartir entre sus asesores
@@ -702,7 +702,7 @@ module.exports = async function handler(req, res) {
       var enviarBienvenida = body.enviarBienvenida !== false; // default true
       if (enviarBienvenida && data.contactoEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contactoEmail)) {
         try {
-          const { Resend } = require('resend');
+          const { Resend } = require('./_resend-seguro');
           const resend = new Resend(process.env.RESEND_API_KEY);
           var urlInmo = 'https://mudateya.ar/inmobiliaria/' + data.slug;
           var urlRegistroAsesores = urlInmo + '/registro';

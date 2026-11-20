@@ -14,7 +14,7 @@
 // Corre por cron (ver vercel.json). Canal: email (siempre) + WhatsApp opcional
 // (plantilla onboarding_mudancero) si ONBOARDING_WA_ACTIVO=1.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { linkBaja } = require('./_baja');
 
 // Headers List-Unsubscribe (RFC 2369) + List-Unsubscribe-Post (RFC 8058,

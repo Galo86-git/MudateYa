@@ -223,7 +223,7 @@ module.exports = async function handler(req, res) {
       lista.push(id);
       await setJSON(CLAVE_LISTA, lista);
 
-      var { Resend } = require('resend');
+      var { Resend } = require('./_resend-seguro');
       var resend = new Resend(process.env.RESEND_API_KEY);
       var mail = emailContacto(lead);
       var linkB = linkBaja(email, 'desarrolladoras-contacto');

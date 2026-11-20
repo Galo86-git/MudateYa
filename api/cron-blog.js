@@ -15,7 +15,7 @@
 //
 // Interruptor: BLOG_AUTO=0 lo apaga. Por defecto está activo (default: publicar).
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const MODEL = 'claude-sonnet-4-5';
 
 async function redisCall(method, ...args) {

@@ -33,7 +33,7 @@
 // no ofrece la opción. Nunca se muestran datos bancarios a medias.
 
 const { esAdmin } = require('./_auth');
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const crypto = require('crypto');
 const talo = require('./_talo');
 
@@ -106,7 +106,7 @@ async function avisarTransferenciaInsuficiente(m, tipoPago, pago) {
   // 1) Equipo (email).
   try {
     if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
-      const { Resend } = require('resend');
+      const { Resend } = require('./_resend-seguro');
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',

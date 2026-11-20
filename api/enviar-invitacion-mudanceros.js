@@ -27,7 +27,7 @@
 //   prospectos nuevos a PROSPECTOS (ver ./_mudanceros-prospectos.js) alcanza para que salgan
 //   solos en la próxima corrida, sin tocar este archivo ni correr nada a mano.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { esAdmin, esCronVercel } = require('./_auth');
 const { linkBaja } = require('./_baja');
 

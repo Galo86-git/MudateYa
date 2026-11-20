@@ -24,7 +24,7 @@
 // IDEMPOTENCIA: SET ... NX por semana (clave = lunes en hora AR), igual que
 // cron-asesores-semanal.js.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { XMLParser } = require('fast-xml-parser');
 
 var SITE = 'https://mudateya.ar';

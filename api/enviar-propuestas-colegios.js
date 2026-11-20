@@ -19,7 +19,7 @@
 //   GET ?token=…&test=x@y.com → envía UNA muestra a esa dirección (no marca).
 //   GET ?token=…&apply=1      → ENVÍA a todos los pendientes (una sola corrida).
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { esAdmin } = require('./_auth');
 const { linkBaja } = require('./_baja');
 

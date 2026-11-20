@@ -143,7 +143,7 @@ module.exports = async function handler(req, res) {
       const resultados = [];
       if (canal === 'email') {
         if (!process.env.RESEND_API_KEY) return res.status(200).json({ ok: false, error: 'sin RESEND_API_KEY' });
-        const { Resend } = require('resend');
+        const { Resend } = require('./_resend-seguro');
         const resend = new Resend(process.env.RESEND_API_KEY);
         // Suprimidos globales (mismo SET que usa enviar-propuesta-remax.js
         // etc, ver api/_baja.js) — solo aplica a la rama de MAIL: es una

@@ -125,7 +125,7 @@ module.exports = async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (!process.env.RESEND_API_KEY) return res.status(200).json({ ok: false, error: 'sin RESEND_API_KEY' });
-      const { Resend } = require('resend');
+      const { Resend } = require('./_resend-seguro');
       const resend = new Resend(process.env.RESEND_API_KEY);
 
       // Filtro opcional { soloEmails: [...] } -- para reintentar SOLO los que

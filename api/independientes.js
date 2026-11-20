@@ -212,7 +212,7 @@ module.exports = async function handler(req, res) {
       // necesite desde el admin, y para "se me perdió el link" ahora está
       // Emi por WhatsApp.
       try {
-        const { Resend } = require('resend');
+        const { Resend } = require('./_resend-seguro');
         const resend = new Resend(process.env.RESEND_API_KEY);
         var primerNombre = nombre.split(' ')[0];
 

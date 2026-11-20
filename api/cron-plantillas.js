@@ -6,7 +6,7 @@
 // También sirve de chequeo manual: GET /api/cron-plantillas devuelve el estado
 // actual y los cambios desde la última corrida.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 
 async function redisCall(method, ...args) {
   const url = process.env.UPSTASH_REDIS_REST_URL;

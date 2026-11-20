@@ -35,7 +35,7 @@
 //   ?test=mail@x.com  → envía UN solo mail de muestra a esa dirección y corta.
 //                       Si ese mail es un asesor de canal, usa su link REAL.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 var { linkBaja } = require('./_baja');
 
 // ── Canales con link exclusivo de cotización (?asesor={codigo}) ──

@@ -313,7 +313,7 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  var { Resend } = require('resend');
+  var { Resend } = require('./_resend-seguro');
   var resend = new Resend(process.env.RESEND_API_KEY);
   var suprimidos = (await redisCall('smembers', ['baja:emails'])) || [];
   var suprSet = {}; suprimidos.forEach(function (e) { suprSet[String(e).toLowerCase()] = 1; });

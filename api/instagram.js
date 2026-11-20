@@ -314,7 +314,7 @@ async function registrarMudancero(input) {
 // ------------------------------------------------------------------
 async function derivarHumanoIG(igsid, motivo, conv) {
   try {
-    const { Resend } = require('resend');
+    const { Resend } = require('./_resend-seguro');
     const adminMail = process.env.ADMIN_EMAIL;
     if (process.env.RESEND_API_KEY && adminMail) {
       const resend = new Resend(process.env.RESEND_API_KEY);

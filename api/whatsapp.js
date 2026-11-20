@@ -2005,7 +2005,7 @@ async function ejecutarToolAsesor(name, input, asesor, waId, conv, textoActual) 
       if (porMail) {
         if (!email) return JSON.stringify({ ok: false, error: 'No tengo un mail cargado para vos.' });
         try {
-          const { Resend } = require('resend');
+          const { Resend } = require('./_resend-seguro');
           const resend = new Resend(process.env.RESEND_API_KEY);
           const primerNombre = (nombre || '').split(' ')[0] || '';
           await resend.emails.send({
@@ -2217,7 +2217,7 @@ async function notificarMudanceroTest(pedido) {
   // 1) Email
   if (process.env.RESEND_API_KEY) {
     try {
-      const { Resend } = require('resend');
+      const { Resend } = require('./_resend-seguro');
       const resend = new Resend(process.env.RESEND_API_KEY);
       const fotosHtml = (Array.isArray(pedido.fotos) ? pedido.fotos.slice(0, 6) : [])
         .map((u) => `<img src="${u}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;margin:4px">`).join('');
@@ -2407,7 +2407,7 @@ async function avisarMudanceroFotosOTexto(pedido, motivo) {
     }
     if (!entregado && c.mudanceroEmail && process.env.RESEND_API_KEY) {
       try {
-        const { Resend } = require('resend');
+        const { Resend } = require('./_resend-seguro');
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
           from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar',
@@ -3052,7 +3052,7 @@ async function derivarHumano(waId, motivo, conv, opts) {
     await redisCall('LTRIM', 'panel:escalaciones', 0, 199);
   } catch (e) { console.warn('derivarHumano: no se pudo loguear para el panel:', e.message); }
   try {
-    const { Resend } = require('resend');
+    const { Resend } = require('./_resend-seguro');
     const adminMail = process.env.ADMIN_EMAIL;
     if (process.env.RESEND_API_KEY && adminMail) {
       const resend = new Resend(process.env.RESEND_API_KEY);

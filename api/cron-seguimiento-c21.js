@@ -26,7 +26,7 @@
 //   GET ?token=…              → DRY: quiénes tocan hoy y con qué touch, NO envía.
 //   GET ?token=…&apply=1      → manda los toques que correspondan hoy.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { esAdmin, esCronVercel } = require('./_auth');
 const { linkBaja } = require('./_baja');
 const { elegiblesHoy, marcarEnviado, getJSON } = require('./_seguimiento');

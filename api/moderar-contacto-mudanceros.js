@@ -16,7 +16,7 @@
 // Los perfiles ya 'rechazado' se ignoran (no hace falta re-banear).
 
 var { esAdmin } = require('./_auth');
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { redisPipeline } = require('./_ia');
 
 async function redisCall(method, ...args) {

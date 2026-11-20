@@ -5,7 +5,7 @@
 // mobile) — un cliente con un problema real podía creer que ya avisó a MudateYa
 // sin haberlo hecho. Ahora se manda de verdad desde el servidor.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

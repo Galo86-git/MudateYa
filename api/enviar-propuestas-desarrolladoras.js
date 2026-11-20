@@ -131,7 +131,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, yaEnviado: true, cuando: yaEnviado, nota: 'Ya se mandó antes, no se repite.' });
   }
 
-  var { Resend } = require('resend');
+  var { Resend } = require('./_resend-seguro');
   var resend = new Resend(process.env.RESEND_API_KEY);
   var resultados = [];
 

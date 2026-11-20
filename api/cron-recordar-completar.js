@@ -97,7 +97,7 @@ async function avisarAlEquipo(pendientes) {
   const adminMail = process.env.ADMIN_EMAIL;
   if (!process.env.RESEND_API_KEY || !adminMail || !pendientes.length) return false;
   try {
-    const { Resend } = require('resend');
+    const { Resend } = require('./_resend-seguro');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const filas = pendientes.map((p) =>
       `<tr>

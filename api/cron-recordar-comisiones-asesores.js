@@ -119,7 +119,7 @@ module.exports = async function handler(req, res) {
 
   if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
     try {
-      var { Resend } = require('resend');
+      var { Resend } = require('./_resend-seguro');
       var resend = new Resend(process.env.RESEND_API_KEY);
       var nombreMes = NOMBRES_MES[mesComision] + ' ' + anioComision;
       // A propósito SOLO el total, sin desglose: el mail es para chequear a las

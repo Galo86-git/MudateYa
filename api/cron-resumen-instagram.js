@@ -19,7 +19,7 @@
 // (agregando &enviar=1 se fuerza el mail en vez de solo devolver el JSON).
 
 var { esAdmin, esCronVercel } = require('./_auth');
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 
 const GRAPH = 'https://graph.instagram.com/v21.0';
 

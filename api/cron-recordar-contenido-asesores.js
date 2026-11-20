@@ -24,7 +24,7 @@
 // MODOS DE PRUEBA (solo con ?token=ADMIN_TOKEN):
 //   ?dry=1  → no manda nada, devuelve qué mandaría (hay contenido o no, y la semana ISO calculada).
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const base = require('./cron-asesores-semanal');
 const { numeroSemanaISO, CONTENIDO_SEMANAS, emailRecordatorio, redisCall } = base;
 

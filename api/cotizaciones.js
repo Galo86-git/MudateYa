@@ -6,7 +6,7 @@ var { vencimientoHabilISO, aHoraAR, limitarAlInicio } = require('./_habiles');
 // notificarMudanceros para filtrar a quién avisar en pedidos del bot.
 var { coincideZona, palabrasZona, cubreGeo } = require('./match-mudanceros');
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 
 // Helper de push notifications (definido en api/push.js)
 // Si push.js no está disponible o falla, los envíos de email siguen funcionando normal.
@@ -842,7 +842,7 @@ module.exports = async function handler(req, res) {
       console.error('[magic-link] RESEND_API_KEY no configurada');
       return res.status(500).json({ error: 'Error de configuración del servidor' });
     }
-    const { Resend } = require('resend');
+    const { Resend } = require('./_resend-seguro');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const link = `https://mudateya.ar/mi-cuenta?token=${token}`;
     const nombre = String(perfil.nombre || 'Mudancero').replace(/[<>&"']/g, function(c){
@@ -913,7 +913,7 @@ module.exports = async function handler(req, res) {
       console.error('[magic-link-cliente] RESEND_API_KEY no configurada');
       return res.status(500).json({ error: 'Error de configuración del servidor' });
     }
-    const { Resend } = require('resend');
+    const { Resend } = require('./_resend-seguro');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const link = `https://mudateya.ar/?token=${token}`;
     const nombreEsc = nombreNorm.replace(/[<>&"']/g, function(c){

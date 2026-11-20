@@ -39,7 +39,7 @@
 // Nunca manda al listado real salvo que dispare el propio cron de Vercel o el
 // admin explícitamente sin ?dry/?test/?verLog.
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const base = require('./cron-asesores-semanal');
 const { recolectarDestinatarios, SITE, WA_EMI, getJSON, redisCall, validEmail, headersListUnsub } = base;
 

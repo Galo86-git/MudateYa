@@ -9,7 +9,7 @@
 // GET  ?token=ADMIN_TOKEN            → preview, no manda nada
 // POST ?token=ADMIN_TOKEN {apply:true} → manda el mail ahora
 
-const { Resend } = require('resend');
+const { Resend } = require('./_resend-seguro');
 const { esAdmin } = require('./_auth');
 const { linkBaja } = require('./_baja');
 

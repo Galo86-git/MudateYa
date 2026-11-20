@@ -140,7 +140,7 @@ module.exports = async function handler(req, res) {
 
   if (cambios.length && process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
     try {
-      const { Resend } = require('resend');
+      const { Resend } = require('./_resend-seguro');
       var resend = new Resend(process.env.RESEND_API_KEY);
       var hayAlgunCaido = cambios.some(function (c) { return c.a === 'down'; });
       var filas = cambios.map(function (c) {
