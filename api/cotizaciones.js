@@ -3683,6 +3683,73 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, yaEstaba, total: idx.length });
     }
 
+    // ── Admin: cambiar el MAIL de la cuenta de un mudancero ──
+    // El mail es la clave de toda la cuenta (perfil, índice de pedidos, reseñas, push, passkeys, cotizaciones
+    // dentro de cada pedido). Esta acción lo migra TODO al mail nuevo. Sin `ejecutar:true` es una simulación
+    // (solo cuenta qué cambiaría). Se niega si el mail nuevo ya tiene cuenta. Pedida a mano por el dueño
+    // (caso Gabriel Berman, 2026-11-20): no hay autoservicio a propósito, para que nadie pueda robar una
+    // cuenta pidiéndolo desde WhatsApp. Efecto colateral: el link público del perfil (pid) cambia, porque
+    // se calcula a partir del mail, y las sesiones abiertas se cierran.
+    if (action === 'admin-cambiar-email-mudancero' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { emailViejo, emailNuevo, ejecutar } = req.body || {};
+      const ev = String(emailViejo || '').trim().toLowerCase();
+      const en = String(emailNuevo || '').trim().toLowerCase();
+      const okMail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+      if (!okMail(ev) || !okMail(en)) return res.status(400).json({ error: 'Mails inválidos' });
+      if (ev === en) return res.status(400).json({ error: 'Son el mismo mail' });
+      const perfil = await getJSON(`mudancero:perfil:${ev}`);
+      if (!perfil) return res.status(404).json({ error: 'No hay cuenta de mudancero con el mail viejo' });
+      if (await getJSON(`mudancero:perfil:${en}`)) return res.status(409).json({ error: 'El mail nuevo ya tiene una cuenta de mudancero' });
+
+      const needles = [...new Set([ev, String(perfil.email || '').trim()].filter(Boolean))];
+      const ids = (await getJSON('mudanzas:todos')) || [];
+      const tocar = []; // [id, jsonNuevo]
+      for (let i = 0; i < ids.length; i += 25) {
+        await Promise.all(ids.slice(i, i + 25).map(async (id) => {
+          try {
+            const m = await getJSON(`mudanza:${id}`);
+            if (!m) return;
+            let s = JSON.stringify(m), cambio = false;
+            for (const nd of needles) {
+              const q = JSON.stringify(nd);
+              if (s.includes(q)) { s = s.split(q).join(JSON.stringify(en)); cambio = true; }
+            }
+            if (cambio) tocar.push([id, s]);
+          } catch (_) {}
+        }));
+      }
+
+      const resumen = { ok: true, simulacion: !ejecutar, de: ev, a: en, nombre: perfil.nombre || '', telefono: perfil.telefono || '', pedidosAActualizar: tocar.length };
+      if (!ejecutar) return res.status(200).json({ ...resumen, nota: 'Simulación: no se cambió nada. Repetí con "ejecutar": true para aplicar.' });
+
+      // 1) perfil
+      await setJSON(`mudancero:perfil:${en}`, { ...perfil, email: en, emailAnterior: perfil.email || ev });
+      // 2) pedidos que mencionan el mail
+      for (const [id, s] of tocar) await setJSON(`mudanza:${id}`, JSON.parse(s), TTL_MUDANZA);
+      // 3) índice de pedidos del mudancero (se junta con el del mail nuevo si existiera)
+      const idxV = (await getJSON(`mudancero:${ev}`)) || [];
+      const idxN = (await getJSON(`mudancero:${en}`)) || [];
+      const idxM = [...new Set([...idxN, ...idxV])];
+      if (idxM.length) await setJSON(`mudancero:${en}`, idxM, 2592000);
+      // 4) claves de otros tipos que se renombran tal cual (si no existen, RENAME falla y se ignora)
+      const renombradas = [];
+      for (const pref of ['push:subs:', 'passkey:', 'mudancero:reseñas:', 'mudancero:resenas:', 'reseñas:mudancero:']) {
+        try { await redisCall('RENAME', pref + ev, pref + en); renombradas.push(pref); } catch (_) {}
+      }
+      // 5) lista general, índice por teléfono, PWA instaladas
+      const todos = (await getJSON('mudanceros:todos')) || [];
+      await setJSON('mudanceros:todos', [...new Set(todos.map((e) => (String(e).toLowerCase() === ev ? en : e)))]);
+      const tel8 = String(perfil.telefono || '').replace(/\D/g, '').slice(-8);
+      if (tel8.length === 8) { try { await redisCall('HSET', 'mudanceros:tel8-idx', tel8, en); } catch (_) {} }
+      try { if (await redisCall('SISMEMBER', 'pwa:instalados', ev)) { await redisCall('SREM', 'pwa:instalados', ev); await redisCall('SADD', 'pwa:instalados', en); } } catch (_) {}
+      // 6) recién ahora se borran las claves viejas (el backup diario las conserva) y se cierran sesiones
+      await redisCall('DEL', `mudancero:perfil:${ev}`);
+      await redisCall('DEL', `mudancero:${ev}`);
+      try { await redisCall('DEL', `session:mudancero:${ev}`); } catch (_) {}
+      return res.status(200).json({ ...resumen, simulacion: false, indicePedidos: idxM.length, clavesRenombradas: renombradas });
+    }
+
     // ── Admin: sacar un pedido BORRADO de los índices de todos los mudanceros ──
     // Después de admin-borrar-permanente, los índices `mudancero:{email}` de quienes cotizaron
     // pueden seguir listando el id. Recorre esos índices (solo listas de ids, no perfiles ni
