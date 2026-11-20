@@ -1903,6 +1903,9 @@ module.exports = async function handler(req, res) {
           );
         } catch (_) {}
       }
+      // Aviso al admin de cada seña/saldo acreditado (MP o transferencia/Talo). Hasta ahora solo
+      // te escribíamos cuando algo fallaba o era raro; si todo salía bien no te enterabas.
+      try { await notificarAdminPagoRecibido(m, tipoPago); } catch(e) { console.warn('Email admin pago recibido:', e.message); }
       // Cierre para el asesor: comision si fue alquiler, regalo si compraventa.
       if (tipoPago === 'saldo' && m.partnerAsesor) {
         try { await notificarAsesorMudanzaCompletada(m); }
@@ -7035,6 +7038,39 @@ async function notificarReprogramacionResuelta(mudanza, decision) {
 }
 
 // Alerta al admin cuando hay un ajuste muy alto (+30%)
+// Mail al admin cuando se acredita una seña o un saldo (por Mercado Pago o por transferencia/Talo).
+// Informativo: no hay nada que hacer. Las situaciones raras (monto distinto, reintegros, etc.)
+// siguen teniendo sus propias alertas.
+async function notificarAdminPagoRecibido(m, tipoPago) {
+  const admin = process.env.ADMIN_EMAIL;
+  if (!process.env.RESEND_API_KEY || !admin) return;
+  const esSena = tipoPago === 'anticipo';
+  const monto = esSena ? (parseInt(m.anticipoMonto) || 0) : (parseInt(m.saldoMonto) || 0);
+  const total = parseInt((m.cotizacionAceptada && m.cotizacionAceptada.precio) || m.montoTotal || 0) || 0;
+  const fmt = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
+  const medio = (esSena ? m.mpAnticipoPagoId : m.mpSaldoPagoId) ? 'Mercado Pago' : 'Transferencia (Talo)';
+  const ruta = `${(m.desde || m.origen || '').split(',')[0]} → ${(m.hasta || m.destino || '').split(',')[0]}`;
+  const cot = m.cotizacionAceptada || {};
+  const canal = m.canal === 'whatsapp' ? 'WhatsApp (Emi)' : (m.partnerAsesor || m.partner ? 'Asesor / inmobiliaria' : 'Web');
+  const fila = (k, v) => `<tr><td style="padding:6px 0;color:#64748B;width:140px">${k}</td><td style="padding:6px 0;color:#0F1923"><b>${v}</b></td></tr>`;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'MudateYa <noreply@mudateya.ar>', reply_to: 'hola@mudateya.ar', to: admin,
+    subject: `💰 ${esSena ? 'Seña' : 'Saldo'} pagada ${fmt(monto)} · ${ruta}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#0F1923">
+      <h2 style="color:#15803D;margin:0 0 12px">💰 ${esSena ? 'Seña' : 'Saldo'} acreditada: ${fmt(monto)}</h2>
+      <table style="font-size:15px;border-collapse:collapse;width:100%">
+        ${fila('Pedido', m.id)}${fila('Ruta', ruta)}${fila('Fecha', m.fecha || '—')}${fila('Tipo', m.tipo || '—')}
+        ${fila('Medio de pago', medio)}${fila('Total del trabajo', fmt(total))}
+        ${fila('Mudancero', cot.mudanceroNombre || cot.mudanceroEmail || '—')}
+        ${fila('Cliente', (m.clienteNombre || '—') + (m.clienteWA ? ' · ' + m.clienteWA : ''))}
+        ${fila('Canal', canal)}
+      </table>
+      <p style="font-size:13px;color:#94A3B8;margin-top:16px">Aviso informativo: el pago se registró solo y ya se avisó al mudancero y al cliente.</p>
+    </div>`,
+  });
+}
+
 async function notificarAdminAjusteAlto(mudanza) {
   if (!process.env.RESEND_API_KEY) return;
   const admin = process.env.ADMIN_EMAIL || 'jgalozaldivar@gmail.com';
