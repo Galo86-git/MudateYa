@@ -3403,7 +3403,7 @@ function renderPedidoModal(p) {
   var cots  = p.cotizaciones || [];
   var fecha = p.fechaPublicacion ? new Date(p.fechaPublicacion).toLocaleString('es-AR') : '—';
   var waBtn = p.clienteWA
-    ? '<a href="https://wa.me/54'+p.clienteWA.replace(/\D/g,'')+'" target="_blank" class="pm-wa-btn">💬 Abrir WhatsApp</a>'
+    ? '<a href="https://wa.me/'+(function(n){ n = String(n).replace(/\D/g,''); return n.indexOf('54') === 0 ? n : '54'+n; })(p.clienteWA)+'" target="_blank" class="pm-wa-btn">💬 Abrir WhatsApp</a>'
     : '<span style="color:var(--text3);font-size:12px">No registrado</span>';
 
   var html = '<div class="pm-section">'
