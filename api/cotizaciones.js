@@ -1722,8 +1722,11 @@ module.exports = async function handler(req, res) {
         }
       } catch(e) { console.warn('Reparar índice mudancero ganador:', e.message); }
       try { await enviarEmailAceptacion(mudanza, cot); } catch(e) { console.error('Error email:', e.message); }
-      // Avisar a los OTROS mudanceros que cotizaron que el cliente eligió a otro.
-      try { await notificarMudancerosNoElegidos(mudanza, cot.mudanceroEmail); } catch(e) { console.warn('Aviso no-elegidos:', e.message); }
+      // YA NO se avisa a los otros mudanceros que cotizaron que el pedido se adjudicó (decisión
+      // 2026-11-20). Si algún día se quiere volver: variable AVISAR_NO_ELEGIDOS=1 en Vercel.
+      if (process.env.AVISAR_NO_ELEGIDOS === '1') {
+        try { await notificarMudancerosNoElegidos(mudanza, cot.mudanceroEmail); } catch(e) { console.warn('Aviso no-elegidos:', e.message); }
+      }
       // Gate de contacto: al aceptar todavía no hay anticipo pagado, así que
       // la respuesta sale sin el teléfono del mudancero.
       const mudanzaSegura = sanitizarParaCliente(mudanza);
@@ -1735,6 +1738,9 @@ module.exports = async function handler(req, res) {
     // adjudicado (no se puede abusar para spamear). Lo usa el bot cuando el
     // cliente acepta por WhatsApp (el aceptar del web ya lo hace inline).
     if (action === 'avisar-no-elegidos' && req.method === 'POST') {
+      // Desactivado (2026-11-20): al adjudicarse un pedido no se avisa a los demás cotizantes.
+      // El bot sigue llamando a esta acción y queda como no-op. Se reactiva con AVISAR_NO_ELEGIDOS=1.
+      if (process.env.AVISAR_NO_ELEGIDOS !== '1') return res.status(200).json({ ok: true, desactivado: true });
       const { mudanzaId } = req.body || {};
       if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
       const m = await getJSON(`mudanza:${mudanzaId}`);
