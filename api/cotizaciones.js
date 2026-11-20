@@ -4726,7 +4726,13 @@ async function notificarMudanceros(mudanza) {
 
   const expira = fmtVencimientoAR(mudanza.expira);
   const esFlete = mudanza.tipo === 'flete';
+  // "Para HOY": si la fecha del pedido es hoy (hora Argentina) se trata como urgente aunque el flag no esté
+  // (caso 2026-11-20: un flete de las 16hs salió a los fleteros como un aviso común, sin decir que era del día).
+  const hoyAR = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+  const esHoy = String(mudanza.fecha || '').slice(0, 10) === hoyAR;
+  const urgenteAviso = !!mudanza.urgente || esHoy;
   const tipoLabel = esFlete ? '📦 Nuevo flete' : '🚛 Nueva mudanza';
+  const prefijoHoy = urgenteAviso ? (esHoy ? '🚨 URGENTE · PARA HOY — ' : '🚨 URGENTE — ') : '';
   // Pack/nivel que pidió el cliente — el mudancero necesita saberlo para cotizar correctamente
   const nivelMap = { esencial: '📦 Esencial', integral: '🛠️ Integral', llave: '🔑 Llave en mano', flete: '🚚 Flete' };
   const nivelLabel = esFlete ? '' : (nivelMap[mudanza.nivel] || '');
@@ -4773,12 +4779,13 @@ async function notificarMudanceros(mudanza) {
   // action=publicar) en vez de las 24hs hábiles normales. Necesita destacarse
   // bien arriba para que el mudancero sepa que tiene que responder ya, no
   // "cuando pueda" como cualquier otro pedido.
-  const bannerUrgente = mudanza.urgente
-    ? `<div style="background:#FEE2E2;border-bottom:1px solid #FCA5A5;padding:11px 28px;font-size:16px;color:#B91C1C;font-weight:700;display:flex;align-items:center"><span style="background:#DC2626;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">🚨</span>URGENTE · Necesitan mudarse ya, respondé lo antes posible</div>`
+  const bannerUrgente = urgenteAviso
+    ? `<div style="background:#FEE2E2;border-bottom:1px solid #FCA5A5;padding:11px 28px;font-size:16px;color:#B91C1C;font-weight:700;display:flex;align-items:center"><span style="background:#DC2626;color:#fff;width:22px;height:22px;display:inline-block;line-height:22px;text-align:center;border-radius:6px;margin-right:10px;font-size:16px">🚨</span>${esHoy ? 'URGENTE · Es para HOY' + (mudanza.horaOrigen ? ' a las ' + mudanza.horaOrigen + ' hs' : '') + ' — cotizá lo antes posible' : 'URGENTE · Necesitan mudarse ya, respondé lo antes posible'}</div>`
     : '';
 
   const emailHtml = (nombreMudancero) => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body style="margin:0;padding:0"><div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden">
     <div style="background:#003580;padding:20px 28px"><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#fff">Mudate</span><span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#22C36A">Ya</span><span style="font-size:16px;color:rgba(255,255,255,.7);margin-left:12px">Nuevo pedido disponible</span></div>
+    ${bannerUrgente}
     ${bannerMudafyMudancero}
     ${bannerDetalles}
     <div style="background:#EEF4FF;border-bottom:1px solid #C7D9FF;padding:12px 28px;font-size:16px;color:#1A6FFF;font-weight:600">${tipoLabel} · ${mudanza.id}</div>
@@ -4938,7 +4945,7 @@ async function notificarMudanceros(mudanza) {
         const params = {
           from: 'MudateYa <noreply@mudateya.ar>', reply_to:'hola@mudateya.ar',
           to: dest.email,
-          subject: `${tipoLabel} disponible — ${mudanza.desde} → ${mudanza.hasta}`,
+          subject: `${prefijoHoy}${tipoLabel} disponible — ${mudanza.desde} → ${mudanza.hasta}`,
           html: emailHtml(dest.nombre),
         };
         if (pdfDetallesBase64) {
@@ -4953,7 +4960,7 @@ async function notificarMudanceros(mudanza) {
 
     // Push notifications a todos los destinatarios (en paralelo)
     const dirigido = mudanza.modoCotizacion === 'dirigido';
-    const tituloPush = dirigido ? '⭐ Te eligieron' : tipoLabel;
+    const tituloPush = dirigido ? '⭐ Te eligieron' : (prefijoHoy + tipoLabel);
     const cuerpoPush = `${mudanza.desde?.split(',')[0] || mudanza.desde} → ${mudanza.hasta?.split(',')[0] || mudanza.hasta}`;
     await Promise.all(destinatarios.map(function(dest){
       return enviarPush(dest.email, {
@@ -4978,8 +4985,10 @@ async function notificarMudanceros(mudanza) {
     try {
       const { enviarPlantilla } = require('./_plantillas');
       const conTel = destinatarios.filter(function(d){ return d.tel; });
-      const fechaTxt = fmtFechaAR(mudanza.fecha) || 'a coordinar';
-      const plantillaPedido = mudanza.urgente ? 'nuevo_pedido_mudancero_urgente' : 'nuevo_pedido_mudancero';
+      const fechaTxt = esHoy
+        ? 'HOY' + (mudanza.horaOrigen ? ' a las ' + mudanza.horaOrigen + ' hs' : '') + ' (URGENTE)'
+        : (fmtFechaAR(mudanza.fecha) || 'a coordinar');
+      const plantillaPedido = urgenteAviso ? 'nuevo_pedido_mudancero_urgente' : 'nuevo_pedido_mudancero';
       for (let i = 0; i < conTel.length; i += 5) {
         const lote = conTel.slice(i, i + 5);
         await Promise.all(lote.map(function(dest){

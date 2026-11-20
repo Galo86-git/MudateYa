@@ -1415,7 +1415,7 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       const d = await r.json().catch(() => ({}));
       const pedidos = (d.mudanzas || []).map((m) => ({
         id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`,
-        km: m.km || null, ambientes: m.ambientes || '', fecha: m.fecha || '', urgente: !!m.urgente,
+        km: m.km || null, ambientes: m.ambientes || '', fecha: m.fecha || '', urgente: !!m.urgente || String(m.fecha || '').slice(0, 10) === new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date()),
         // Todo lo necesario para estimar el precio, y el PDF con el detalle completo
         // (el mismo que ven en el mail y en el panel; no lleva datos de contacto).
         detalle: resumenParaMudancero(m),
@@ -3772,12 +3772,18 @@ async function barridoWhatsApp(pedido) {
       }
     }
     const nom = (p.nombre || '').split(' ')[0] || 'Hola';
+    // Para HOY: se dice explícito en el aviso (fecha = "HOY a las 16:00 hs (URGENTE)") para que el fletero sepa que no es un pedido común.
+    const hoyAR = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+    const esHoyBarrido = String(pedido.fecha || '').slice(0, 10) === hoyAR;
+    const fechaAviso = esHoyBarrido
+      ? 'HOY' + (pedido.horaOrigen ? ' a las ' + pedido.horaOrigen + ' hs' : '') + ' (URGENTE)'
+      : (pedido.fecha || 'a coordinar');
     // Detalle para poder estimar (ambientes, pisos, ascensor, nivel, qué hay que
     // mudar). Sin saltos de línea: las variables de plantilla de WhatsApp no los admiten.
     const detalleMud = (resumenParaMudancero(pedido) || 'ver detalle en mi-cuenta').replace(/[\r\n\t]+/g, ' ').slice(0, 380);
     const resumen =
-      `🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +
-      `📍 ${pedido.origen}\n🏁 ${pedido.destino}\n📅 ${pedido.fecha || 'a coordinar'}` +
+      `${esHoyBarrido ? '🚨 URGENTE — PARA HOY\n' : ''}🆕 Nuevo pedido para cotizar (${pedido.tipo}):\n` +
+      `📍 ${pedido.origen}\n🏁 ${pedido.destino}\n📅 ${fechaAviso}` +
       `${pedido.km ? `\n📏 ${parseInt(pedido.km)} km` : ''}\n` +
       `📦 ${detalleMud}\n🔖 Código: ${pedido.id}\n\n` +
       `Detalle completo y fotos: https://mudateya.ar/mi-cuenta — o respondé con el código y tu precio.`;
@@ -3793,8 +3799,8 @@ async function barridoWhatsApp(pedido) {
       await enviarPlantilla(
         p.telefono, usaV2 ? 'nuevo_pedido_mudancero_v2' : 'nuevo_pedido_mudancero',
         usaV2
-          ? { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: pedido.fecha || 'a coordinar', 5: detalleMud, 6: String(pedido.id) }
-          : { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: pedido.fecha || 'a coordinar' },
+          ? { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: fechaAviso, 5: detalleMud, 6: String(pedido.id) }
+          : { 1: nom, 2: pedido.origen, 3: pedido.destino, 4: fechaAviso },
         resumen
       );
       enviados++;
