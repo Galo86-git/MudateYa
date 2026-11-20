@@ -3704,6 +3704,30 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, indicesRevisados: keys.length, limpiados });
     }
 
+    // ── Admin: mandar un pedido ya publicado a los mudanceros de su zona ──
+    // Caso: un urgente del bot no se barre solo cuando ALERTA_URGENTE_TEL está seteada. Esto dispara
+    // el MISMO barrido que un pedido normal (mail + push + PDF y WhatsApp), sin importar BARRIDO_ACTIVO,
+    // solo a los aprobados que cubren la zona. Protegido contra doble disparo (10 min) salvo forzar:true.
+    if (action === 'admin-barrer-pedido' && req.method === 'POST') {
+      if (!esAdmin(req)) return res.status(401).json({ error: 'Token inválido' });
+      const { mudanzaId, forzar } = req.body || {};
+      if (!mudanzaId) return res.status(400).json({ error: 'Falta mudanzaId' });
+      const m = await getJSON(`mudanza:${mudanzaId}`);
+      if (!m) return res.status(404).json({ error: 'Pedido no encontrado' });
+      if (m.estado !== 'buscando') return res.status(400).json({ error: `El pedido está en estado "${m.estado}", no se puede barrer` });
+      if (!forzar && m.barridoManualTs && Date.now() - m.barridoManualTs < 10 * 60 * 1000) {
+        return res.status(409).json({ error: 'Ya se barrió hace menos de 10 minutos (usá forzar:true si querés repetirlo)' });
+      }
+      m.barridoManualTs = Date.now();
+      await setJSON(`mudanza:${mudanzaId}`, m, TTL_MUDANZA);
+      const out = { ok: true, mudanzaId, mailPushPdf: null, whatsapp: null };
+      try { await notificarMudanceros(m); out.mailPushPdf = 'enviado'; }
+      catch (e) { out.mailPushPdf = 'error: ' + e.message; }
+      try { out.whatsapp = await require('./whatsapp').barridoWhatsApp(m); }
+      catch (e) { out.whatsapp = 'error: ' + e.message; }
+      return res.status(200).json(out);
+    }
+
     if (action === 'admin-pedido' && req.method === 'GET') {
       const { token, id } = req.query;
       if (!esAdmin(req)) {

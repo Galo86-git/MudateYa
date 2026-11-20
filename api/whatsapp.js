@@ -3801,6 +3801,7 @@ async function barridoWhatsApp(pedido) {
     } catch (e) { console.warn('[barrido] wa', email, e.message); }
   }
   console.log(`[barrido] whatsapp enviados: ${enviados}`);
+  return enviados;
 }
 
 // ------------------------------------------------------------------
@@ -4302,6 +4303,7 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.avisoVideoNoSoportado = avisoVideoNoSoportado;
+module.exports.barridoWhatsApp = barridoWhatsApp;
 module.exports.quitarConteoFotos = quitarConteoFotos;
 module.exports.intentarHogar = intentarHogar;
 module.exports.camposCriticosFaltantes = camposCriticosFaltantes;
