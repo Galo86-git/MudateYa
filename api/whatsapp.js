@@ -606,8 +606,8 @@ TIEMPO DE LOS PRESUPUESTOS: el pedido queda abierto hasta 24 horas HÁBILES para
 MUDANZA O FLETE URGENTE / EN EL DÍA (es hoy, mañana, ahora, o una emergencia — aplica igual a un flete que a una mudanza): NO lo hagas esperar el flujo normal de presupuestos. Hacé esto:
 1. Bajale la ansiedad y decile que esto lo tomamos ya para conseguirle a alguien disponible hoy.
 2. Juntá al toque solo lo mínimo: qué hay que mover, de dónde a dónde, y para cuándo exacto. Si es un flete (pocas cosas, un mueble, un electro), no le pidas datos de mudanza completa.
-3. Cargá el pedido con crear_pedido (tipo "flete" o "mudanza" según corresponda) y urgente: true.
-4. Después derivá con derivar_a_humano, con el motivo empezando en "URGENTE:", aclarando si es FLETE o MUDANZA, y un resumen de una línea (ej: "URGENTE: flete hoy, heladera de Av. Cabildo 1200 a Rivadavia 4500" o "URGENTE: mudanza hoy 18hs, 2 amb, Palermo→Caballito").
+3. Cargá el pedido con crear_pedido (tipo "flete" o "mudanza" según corresponda) y urgente: true. En los urgentes de hoy/mañana NO esperes confirmación ni preguntes "¿está todo bien?" antes: cuando tengas los datos, se publica directo (confirmado:true, sin cita). Recién después le contás qué cargaste y que te avise si algo está mal.
+4. Después derivá con derivar_a_humano UNA SOLA VEZ (nunca repitas la derivación en la misma charla), con el motivo empezando en "URGENTE:", aclarando si es FLETE o MUDANZA, y un resumen de una línea (ej: "URGENTE: flete hoy, heladera de Av. Cabildo 1200 a Rivadavia 4500" o "URGENTE: mudanza hoy 18hs, 2 amb, Palermo→Caballito").
 5. Cerrá avisando que alguien del equipo lo contacta a la brevedad por acá. No prometas horario ni precio.
 
 TONO: andá al grano, sin vueltas — contestá lo que te preguntaron, sin repetir lo que ya te dijeron ni meter relleno antes de la respuesta.
@@ -2576,6 +2576,17 @@ async function traducirDetallesParaMudancero(texto) {
   }
 }
 
+// true si fecha (YYYY-MM-DD) es hoy o mañana en hora de Argentina.
+function fechaEsHoyOManiana(fecha, ahora) {
+  const m = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return false;
+  const fmt = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(d);
+  const hoy = fmt(ahora || new Date());
+  const manana = fmt(new Date((ahora || new Date()).getTime() + 24 * 60 * 60 * 1000));
+  const f = m[1] + '-' + m[2] + '-' + m[3];
+  return f === hoy || f === manana;
+}
+
 async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // Gate 1: campos críticos para que el pedido sea real (ver arriba). Sin
   // esto, nada se crea todavía.
@@ -2718,7 +2729,12 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // pedido recién se crea cuando esta misma función se vuelve a llamar con
   // los mismos datos más confirmado:true, después de que la persona lo vio
   // y dijo que sí.
-  if (!input.confirmado) {
+  // EXCEPCIÓN urgentes (2026-11-20): un flete/mudanza urgente para hoy o mañana se publica YA, sin esperar el "sí".
+  // Caso real: Emi armó el resumen de un flete de las 16hs, preguntó "¿está todo bien?" y derivó al equipo sin que el
+  // pedido existiera: nadie podía cotizarlo y el cliente esperaba. Los campos críticos y las direcciones ya pasaron los
+  // gates de arriba; si algo estaba mal, el cliente lo corrige después (agregar_detalle_pedido) o lo ve el equipo.
+  const omiteConfirmacion = !!input.urgente && fechaEsHoyOManiana(input.fecha, ahora);
+  if (!input.confirmado && !omiteConfirmacion) {
     let pdfUrl = null;
     try {
       const { generarPDFDetallesBase64 } = require('./cotizaciones');
@@ -2736,7 +2752,7 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   // cita_textual sea una confirmación REAL, textual, del cliente (mismo
   // mecanismo que cancelar_pedido/derivar_a_humano). Si el modelo mandó
   // confirmado:true sin respaldo real en la charla, se frena acá.
-  if (!citaValidaEnConversacion(input.cita_textual, textoActual, conv, 2)) {
+  if (!omiteConfirmacion && !citaValidaEnConversacion(input.cita_textual, textoActual, conv, 2)) {
     return { ok: false, error: 'No encontré esa confirmación en lo que escribiste. Antes de publicar necesito una frase real tuya confirmando que está todo bien — contame de nuevo si querés seguir.' };
   }
 
@@ -3033,6 +3049,16 @@ async function derivarHumano(waId, motivo, conv, opts) {
   if (opts.citaTextual !== undefined && !citaValidaEnConversacion(opts.citaTextual, opts.textoActual, conv)) {
     return { ok: false, mensaje: 'No encontré esa frase en lo que escribiste. No le voy a avisar al equipo sin algo concreto que lo respalde — contame de nuevo qué necesitás.' };
   }
+  // Antidupe: la misma derivación (mismo número + mismo motivo) se avisa una sola vez cada 10 min.
+  // Caso real 2026-11-20: llegaron 3 mails idénticos por un solo flete urgente.
+  try {
+    const claveDup = 'derivacion:dup:' + String(waId).replace(/\D/g, '') + ':' + require('crypto').createHash('sha1').update(String(motivo || '')).digest('hex').slice(0, 16);
+    const nuevo = await redisCall('SET', claveDup, '1', 'EX', '600', 'NX');
+    if (nuevo === null) {
+      console.log('[derivarHumano] duplicada, no se re-avisa —', waId);
+      return { ok: true, duplicada: true, mensaje: 'Ya avisamos al equipo de esto hace un momento: alguien lo toma a la brevedad.' };
+    }
+  } catch (e) { console.warn('derivarHumano antidupe:', e.message); }
   const esMudancero = opts.rol === 'mudancero';
   const ROL_LABELS = { mudancero: 'mudancero/fletero', asesor: 'asesor inmobiliario', inmobiliaria: 'contacto de inmobiliaria' };
   const quienLabel = ROL_LABELS[opts.rol] || 'cliente';
@@ -3491,7 +3517,7 @@ async function ejecutarTool(name, input, waId, conv, textoActual) {
       conv.fotos = [];
       conv.ubicaciones = [];
       const nota = pedido.urgente
-        ? 'Pedido URGENTE creado. Ahora derivá al equipo con derivar_a_humano (motivo que empiece con "URGENTE:") para que lo tomen a mano ya. No prometas horario ni precio.'
+        ? 'Pedido URGENTE creado y publicado (no hizo falta esperar confirmación). Ahora derivá al equipo con derivar_a_humano UNA SOLA VEZ (motivo que empiece con "URGENTE:") para que lo tomen a mano ya. Después contale al cliente los datos que cargaste y pedile que te avise ya mismo si algo está mal. No prometas horario ni precio.'
         : 'Pedido creado; salimos a buscar hasta 5 presupuestos de mudanceros cercanos. Vale 24hs.';
       return JSON.stringify({ ok: true, id: pedido.id, tipo: pedido.tipo, estado: pedido.estado, urgente: pedido.urgente, nota });
     }
