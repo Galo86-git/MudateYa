@@ -686,7 +686,7 @@ PRIMER MENSAJE O ALGO AMBIGUO (ej: "hola", "quiero info", vino de un link): no t
 
 RECLAMOS Y PROBLEMAS: si te cuenta que el cliente no le paga el saldo, canceló sin avisar, hay una discrepancia con lo acordado, o cualquier lío que tus herramientas de arriba no resuelven, NO lo dejes solo con un "escribile a hola@mudateya.ar" — usá derivar_a_humano (motivo empezando en "RECLAMO:" si algo salió mal) para que el equipo lo vea de verdad, y avisale que lo van a contactar.
 
-PEDIDOS "INCOMPLETOS" / FALTAN DATOS PARA COTIZAR: antes de darle la razón a un mudancero que dice que un pedido viene incompleto o que no tiene datos para estimar, MIRÁ el pedido con ver_pedidos. Cada pedido trae "detalle" (ambientes, tipo/piso/ascensor de origen y destino, nivel de servicio, horario y qué hay que mudar) y "pdf" con el detalle completo y las fotos. Pasale ese detalle y el link al PDF (tal cual vino de la herramienta) y recién después pedile el precio. Si pide ver las fotos o imágenes de un pedido, o más información, usá ver_fotos_pedido: le mandamos por este mismo chat el PDF y cada foto que cargó el cliente. Si de verdad falta un dato clave en ESE pedido (por ejemplo, no dice qué hay que mudar), decile concretamente CUÁL falta; no generalices con "todos los pedidos vienen incompletos" ni culpes a la plataforma. Si te nombra un pedido que no aparece en ver_pedidos, puede haber vencido o no ser de su zona: decíselo así, sin inventar que "el sistema no lo reconoce" por una falla. Si al cotizar el sistema dice que la mudanza "no se encontró" o ya no acepta cotizaciones, casi seguro el pedido se cerró o lo cancelaron/retiraron en el medio (no es una falla de la plataforma): decíselo así ("ese pedido ya no está disponible; puede que el cliente lo haya cancelado o retirado"), ofrecele ver los vigentes con ver_pedidos, y NO uses derivar_a_humano con "BUG:" por eso. NUNCA prometas que vas a "frenar el envío de pedidos" ni que el equipo ya lo hizo: no tenés esa herramienta. Si pide dejar de recibir pedidos, derivá con derivar_a_humano y decile solo que se lo pasás al equipo.
+PEDIDOS "INCOMPLETOS" / FALTAN DATOS PARA COTIZAR: antes de darle la razón a un mudancero que dice que un pedido viene incompleto o que no tiene datos para estimar, MIRÁ el pedido con ver_pedidos. Cada pedido trae "detalle" (ambientes, tipo/piso/ascensor de origen y destino, nivel de servicio, horario y qué hay que mudar) y "pdf" con el detalle completo y las fotos. Pasale ese detalle y el link al PDF (tal cual vino de la herramienta) y recién después pedile el precio. Si pide ver las fotos o imágenes de un pedido, o más información, usá ver_fotos_pedido: le mandamos por este mismo chat el PDF y cada foto que cargó el cliente. Si de verdad falta un dato clave en ESE pedido (por ejemplo, no dice qué hay que mudar), decile concretamente CUÁL falta; no generalices con "todos los pedidos vienen incompletos" ni culpes a la plataforma. Si te nombra un pedido que no aparece en ver_pedidos, puede haber vencido o no ser de su zona: decíselo así, sin inventar que "el sistema no lo reconoce" por una falla. Los ids de pedidos (ej. "mwo40oas4c79dd") copialos SIEMPRE literal del resultado más reciente de ver_pedidos: nunca de un mensaje anterior de la charla ni de memoria, porque un solo carácter distinto hace que "no se encuentre". Si al cotizar el sistema te devuelve la lista de pedidos abiertos, preguntale cuál es y usá el id exacto de esa lista. Si al cotizar el sistema dice que la mudanza "no se encontró" o ya no acepta cotizaciones, casi seguro el pedido se cerró o lo cancelaron/retiraron en el medio (no es una falla de la plataforma): decíselo así ("ese pedido ya no está disponible; puede que el cliente lo haya cancelado o retirado"), ofrecele ver los vigentes con ver_pedidos, y NO uses derivar_a_humano con "BUG:" por eso. NUNCA prometas que vas a "frenar el envío de pedidos" ni que el equipo ya lo hizo: no tenés esa herramienta. Si pide dejar de recibir pedidos, derivá con derivar_a_humano y decile solo que se lo pasás al equipo.
 
 CÓMO ENTRAR A SU CUENTA (cuando pregunta cómo iniciar sesión, cómo completar su perfil, o dice que no encuentra el login): su panel está en *https://mudateya.ar/mi-cuenta* — ESA es la dirección, no inventes otra. NO es mudateya.ar/mudancero: esa es la página PÚBLICA de un perfil y, sin un perfil elegido, muestra "Perfil no encontrado". Ahí entra con el botón de Google o, si no usa Gmail, poniendo su email para que le mandemos un link de acceso (no hay contraseña). Tiene que entrar con el MISMO email con el que se registró (más abajo, en el contexto, tenés ese email enmascarado: decíselo para que use ese). NO existe una app en Play Store ni App Store: se usa desde el navegador del celular (si quiere, puede guardar la página como acceso directo en la pantalla de inicio). Si al intentar registrarse de nuevo le dice "perfil ya registrado" o "ya existe un perfil con ese teléfono/email", es buena señal: YA tiene cuenta, no se tiene que registrar otra vez, solo entrar a mi-cuenta con su email. Si con el mismo email igual no puede entrar, ahí sí derivá con motivo "BUG:" indicando su email enmascarado y qué pantalla o mensaje ve.
 
@@ -1458,6 +1458,24 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       });
     }
     if (name === 'cotizar') {
+      // Si el id no corresponde a ningún pedido, NO se le dice solo "no encontrada": se le devuelve a Emi la lista de
+      // pedidos abiertos de este mudancero para que le pregunte cuál es y use el id EXACTO. Caso real 2026-11-19/20: Emi
+      // copió mal el id (usó "mwif2njsq0a4c9" cuando el pedido abierto era "mwo40oas4c79dd") y mandó un reclamo por "bug".
+      const respuestaPedidoNoEncontrado = async () => {
+        try {
+          const rv = await fetch(`${base}/api/cotizaciones?action=por-zona&email=${encodeURIComponent(email)}`);
+          const dv = await rv.json().catch(() => ({}));
+          const vigentes = (dv.mudanzas || []).map((m) => ({ id: m.id, tipo: m.tipo, ruta: `${m.desde || ''} → ${m.hasta || ''}`, fecha: m.fecha || '' }));
+          return JSON.stringify({
+            ok: false,
+            error: 'Ese id no corresponde a ningún pedido abierto (puede estar mal copiado, o el pedido ya se cerró).',
+            pedidosVigentes: vigentes,
+            nota: vigentes.length
+              ? 'Estos son los pedidos abiertos de este mudancero. Preguntale cuál es el que quiere cotizar (por la ruta) y volvé a llamar a cotizar con el id EXACTO de esta lista, copiado carácter por carácter. NUNCA uses un id de un mensaje anterior ni de memoria.'
+              : 'Ahora no hay pedidos abiertos en su zona: decile que ese pedido ya no está disponible.',
+          });
+        } catch (e) { return JSON.stringify({ ok: false, error: 'Mudanza no encontrada' }); }
+      };
       // COBRO POR HORA: se cotiza con tarifa + horas estimadas y el servidor arma
       // el total (tarifa x horas), igual que el formulario de mi-cuenta. Antes se
       // frenaba y se mandaba a la web: quien no entraba quedaba sin cotizar, o
@@ -1477,6 +1495,7 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
           precio: tarifa, nota: input.nota || '', tiempoEstimado: input.tiempo || (horas + ' horas'),
           modalidad: 'hora', horasIncluidas: horas, valorHoraAdicional: tarifa,
         });
+        if (!rh.ok && /no encontrada/i.test(String((rh.d && rh.d.error) || ''))) return await respuestaPedidoNoEncontrado();
         const totalH = tarifa * horas;
         return JSON.stringify(rh.ok
           ? { ok: true, nota: `Cotización enviada por hora: $${tarifa.toLocaleString('es-AR')} por hora x ${horas} hs = $${totalH.toLocaleString('es-AR')} estimado. El total final se liquida con las horas reales trabajadas. El cliente ya la recibe; te avisamos si te elige.` }
@@ -1489,6 +1508,7 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
         mudanzaId: input.pedidoId, mudanceroEmail: email, mudanceroNombre: nombre, mudanceroTel: tel,
         precio: input.precio, nota: input.nota || '', tiempoEstimado: input.tiempo || '',
       });
+      if (!ok && /no encontrada/i.test(String((d && d.error) || ''))) return await respuestaPedidoNoEncontrado();
       return JSON.stringify(ok ? { ok: true, nota: 'Cotización enviada. El cliente ya la recibe; te avisamos si te elige.' } : { ok: false, error: d.error || 'No se pudo cotizar.' });
     }
     if (name === 'pasar') {
