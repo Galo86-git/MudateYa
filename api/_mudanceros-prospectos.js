@@ -230,7 +230,17 @@ var PROSPECTOS = [
   { n: 'Fletes Rosario Mudanzas', region: 'Rosario', e: 'contacto@fletesrosario.com', tel: '0341 637-6795' },
   { n: 'Fletes Mudanzas Rosario', region: 'Rosario', e: 'fletesmudanzasrosario@gmail.com', tel: '0341 15-388-9017' },
   { n: 'Aba Mudanzas', region: 'Rosario', e: 'mudanzasaba@hotmail.com', tel: '0341 649-3401' },
-  { n: 'Mudanzas BAY', region: 'Rosario', e: 'fletebay@gmail.com', tel: '0341 654-1371' }
+  { n: 'Mudanzas BAY', region: 'Rosario', e: 'fletebay@gmail.com', tel: '0341 654-1371' },
+  // ── Barrida 2026-11-26 (foco Córdoba y Mendoza) — 6 nuevos, cada uno con email visto en su propio sitio
+  // (el de Cóndor estaba ofuscado en la web: puede rebotar). Los que solo tienen teléfono/WhatsApp NO van acá:
+  // se contactan a mano. Alinstant y Giordano (Córdoba) comparten celular, probablemente el mismo operador: solo
+  // entra Alinstant, que es el que tiene mail. ──
+  { n: 'Mudanzas Impilcor', region: 'Córdoba', e: 'info@mudanzasimpilcor.com.ar', tel: '351 323 2300', zona: 'Córdoba Capital y La Calera' },
+  { n: 'Carlos Wamba Fletes y Mudanzas', region: 'Córdoba', e: 'carloswamba25@gmail.com', tel: '+54 9 351 201-1010', zona: 'Córdoba Capital' },
+  { n: 'Mudanzas Alinstant', region: 'Córdoba', e: 'alinstant@hotmail.com', tel: '0351 464-6161', zona: 'Córdoba' },
+  { n: 'FletesYa! Mudanzas Río Cuarto', region: 'Córdoba', e: 'fleteselmorro@gmail.com', tel: '+54 3585 744682', zona: 'Río Cuarto' },
+  { n: 'Mudanzas Miranda', region: 'Mendoza', e: 'info@mudanzasmiranda.com.ar', tel: '+54 9 261 513-0910', zona: 'Godoy Cruz y Gran Mendoza' },
+  { n: 'Mudanzas y Fletes Cóndor', region: 'Mendoza', e: 'info@mudanzascondor.com', tel: '+54 9 261 665-7209', zona: 'Godoy Cruz y Gran Mendoza' }
 ];
 
 var REGION_TEXTO = {
