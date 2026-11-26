@@ -2013,7 +2013,11 @@ function clasificarPagos() {
       comisionAsesorPct: p.comisionAsesorPct,
       asesorCodigo: p.asesorCodigo
     };
-    if (fechaLiberacion <= hoy) liquidables.push(item);
+    // Se compara por DÍA, no por hora: si se libera hoy ("0 d. háb.") ya es liquidable (antes quedaba en retención
+    // hasta la hora del pago original, y el panel decía "faltan 0 días" con el pago todavía retenido).
+    var libDia = new Date(fechaLiberacion); libDia.setHours(0,0,0,0);
+    var hoyDia = new Date(hoy); hoyDia.setHours(0,0,0,0);
+    if (libDia <= hoyDia) liquidables.push(item);
     else enRetencion.push(item);
   });
   // Ordenar: liquidables por fecha más antigua, retención por fecha más cercana a liberarse
