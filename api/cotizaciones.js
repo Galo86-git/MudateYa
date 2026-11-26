@@ -123,6 +123,26 @@ async function adquirirLock(key, ttl) {
   catch (e) { return true; }
 }
 
+// Precio escrito por una persona → entero en pesos. Entiende "860.000", "860,000", "$860 000" (como antes: se
+// ignora todo lo que no sea dígito) y TAMBIÉN la jerga: "860 mil", "860k", "86 lucas" (×1.000), "1,5 millones",
+// "2 palos" (×1.000.000). Antes "860 mil" se guardaba como $860 (caso real 2026-11-26: una mudanza de 4 hs
+// aceptada a $860). Si es un número pelado, el comportamiento no cambia.
+function parsearPrecioCotizacion(raw) {
+  if (typeof raw === 'number') return Number.isFinite(raw) ? Math.round(raw) : 0;
+  const s = String(raw == null ? '' : raw).toLowerCase().trim();
+  if (!s) return 0;
+  const m = s.match(/(\d+(?:[.,]\d+)?)\s*(millones?|palos?|mil|lucas?|luca|k)\b/);
+  if (m) {
+    const n = parseFloat(m[1].replace(',', '.'));
+    const mult = /^(millon|palo)/.test(m[2]) ? 1000000 : 1000;
+    return Number.isFinite(n) ? Math.round(n * mult) : 0;
+  }
+  return parseInt(s.replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+}
+// Debajo de este monto una cotización se considera "sospechosamente baja" y se pide confirmarla (variable de entorno
+// PRECIO_MINIMO_COTIZACION para cambiarlo). Un flete corto o una mudanza no bajan de ahí.
+const PRECIO_MINIMO_COTIZACION = parseInt(process.env.PRECIO_MINIMO_COTIZACION) || 10000;
+
 // ════════════════════════════════════════════════════
 // GATE DE CONTACTO — los celulares se liberan con el anticipo
 // ════════════════════════════════════════════════════
@@ -1377,14 +1397,14 @@ module.exports = async function handler(req, res) {
           .filter(p => p && NIVELES_VALIDOS.indexOf(p.nivel) !== -1)
           .map(p => ({
             nivel: p.nivel,
-            precio: parseInt(String(p.precio||0).replace(/\./g,'').replace(/[^0-9]/g,'')) || 0,
+            precio: parsearPrecioCotizacion(p.precio),
             tiempoEstimado: sinContacto(p.tiempoEstimado || ''),
             nota: sinContacto(p.nota || '')
           }))
           .filter(p => p.precio > 0);
       } else if (precio) {
         // Modo viejo: precio plano
-        const precioLimpio = parseInt(String(precio).replace(/\./g,'').replace(/[^0-9]/g,'')) || 0;
+        const precioLimpio = parsearPrecioCotizacion(precio);
         if (precioLimpio > 0) {
           const nivelDefault = mudanza.nivel || 'esencial';
           propuestasNorm = [{
@@ -1424,13 +1444,26 @@ module.exports = async function handler(req, res) {
         } catch (e) { console.warn('chequeo tipoCobro en cotizar:', e.message); }
       }
       const horasEst = parseInt(horasIncluidas) || 0;
-      const tarifaPorHora = parseInt(String(valorHoraAdicional || '').replace(/\D/g, '')) || 0;
+      const tarifaPorHora = parsearPrecioCotizacion(valorHoraAdicional);
       if (esCobroPorHora) {
         if (horasEst <= 0 || tarifaPorHora <= 0) {
           return res.status(400).json({ error: 'Cobro por hora: falta la tarifa por hora o las horas estimadas' });
         }
         const totalEstimado = tarifaPorHora * horasEst;
         propuestasNorm = propuestasNorm.map((p) => Object.assign({}, p, { precio: totalEstimado }));
+      }
+
+      // Precio sospechosamente bajo (probable "860" por "860 mil" / $860.000): se frena y se pide confirmar, salvo
+      // que el cliente de la API ya haya confirmado (confirmarPrecioBajo:true). No guarda nada ni gasta el cupo.
+      const precioMasBajo = Math.min(...propuestasNorm.map(p => p.precio));
+      if (precioMasBajo < PRECIO_MINIMO_COTIZACION && !(req.body && req.body.confirmarPrecioBajo)) {
+        try { await redisCall('DEL', `lock:cotizar:${mudanzaId}`); } catch (_) {}
+        return res.status(400).json({
+          precioBajo: true,
+          precioIngresado: precioMasBajo,
+          precioMinimo: PRECIO_MINIMO_COTIZACION,
+          error: `El precio que cargaste ($${precioMasBajo.toLocaleString('es-AR')}) parece muy bajo. Si querías poner $${(precioMasBajo * 1000).toLocaleString('es-AR')}, escribilo completo. Si de verdad es ese monto, confirmalo.`,
+        });
       }
 
       // Para compat con código existente (PDF, listados viejos, etc.):

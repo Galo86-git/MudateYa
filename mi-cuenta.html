@@ -4688,6 +4688,18 @@ function formatearPrecioInput(input) {
   input.value = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+// Campo de precio al COTIZAR: igual que formatearPrecioInput, pero si la persona escribe jerga ("860 mil", "86 lucas",
+// "860k") no le borra las letras mientras tipea; al salir del campo se convierte al número real (860.000).
+function formatearPrecioCotInput(input) {
+  if (/[a-zA-Z]/.test(input.value)) return;
+  formatearPrecioInput(input);
+}
+function normalizarPrecioCotInput(input) {
+  if (!/[a-zA-Z]/.test(input.value)) return;
+  var v = parsePrecioAR(input.value);
+  input.value = v > 0 ? fmtMiles(v) : '';
+}
+
 // ── SERVICIOS Y PRECIOS (4 cards: Esencial / Integral / Llave / Flete) ─────
 var _pfSvc = { esencial:false, integral:false, llave:false, flete:false };
 var _pfSeguro = false;
@@ -4887,7 +4899,7 @@ function abrirCotizacion(mudanza){
       +   '<div style="position:relative;display:flex;align-items:center;margin-bottom:6px"><span style="position:absolute;left:11px;font-size:13px;color:var(--text3);font-family:var(--mono)">$</span>'
       +   '<input type="text" id="pp-precio-'+nivel+'" value="'+(pBase>0?fmtMiles(pBase):'')+'" placeholder="Precio base ($ARS)" inputmode="numeric" '
       +     'style="width:100%;padding:10px 12px 10px 24px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px;font-family:var(--mono);color:var(--text);background:#fff;outline:none;font-weight:600" '
-      +     'oninput="formatearPrecioInput(this);_recalcularTotalCot()"/></div>'
+      +     'oninput="formatearPrecioCotInput(this);_recalcularTotalCot()" onblur="normalizarPrecioCotInput(this);_recalcularTotalCot()"/></div>'
       + (sinPrecio?'<div style="font-size:10.5px;color:#F59E0B;font-family:var(--mono);margin-bottom:4px">⚠ No tenés precio cargado para '+cfg.nombre+' — ingresalo o cargalo en tu perfil</div>':'')
       +   '<input type="text" id="pp-nota-'+nivel+'" value="'+esc(_notaPredetPorNivel(nivel))+'" placeholder="Nota específica para este pack (opcional)" '
       +     'style="width:100%;padding:8px 10px;border:1px solid #E2E8F0;border-radius:7px;font-size:11.5px;font-family:Inter,sans-serif;color:var(--text);background:#fff;outline:none"/>'
@@ -5009,7 +5021,7 @@ function _recalcularTotalCot() {
     if (card.getAttribute('data-on') !== '1') return;
     algunoActivo = true;
     var pEl = document.getElementById('pp-precio-'+nivel);
-    var rawBase = pEl ? (parseInt((pEl.value || '0').replace(/\./g,'').replace(/[^0-9]/g,'')) || 0) : 0;
+    var rawBase = pEl ? parsePrecioAR(pEl.value) : 0;
     var total = rawBase + rawKm;
     var cfg = packsCfg[nivel];
     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed #E2E8F0">'
@@ -5062,7 +5074,21 @@ function recalcPrecioPorHora() {
   if (typeof _recalcularTotalCot === 'function') { try { _recalcularTotalCot(); } catch (e) {} }
 }
 
-async function enviarCotizacion(mudanzaId){
+// Precio escrito a mano → número. Entiende "860.000" y también "860 mil", "860k", "86 lucas" (×1.000) y
+// "1,5 millones" (×1.000.000). Antes "860 mil" se mandaba como 860 (caso real 2026-11-26).
+function parsePrecioAR(raw) {
+  var s = String(raw == null ? '' : raw).toLowerCase().trim();
+  if (!s) return 0;
+  var m = s.match(/(\d+(?:[.,]\d+)?)\s*(millones?|palos?|mil|lucas?|luca|k)\b/);
+  if (m) {
+    var n = parseFloat(m[1].replace(',', '.'));
+    var mult = /^(millon|palo)/.test(m[2]) ? 1000000 : 1000;
+    return isFinite(n) ? Math.round(n * mult) : 0;
+  }
+  return parseInt(s.replace(/\./g,'').replace(/[^0-9]/g,'')) || 0;
+}
+
+async function enviarCotizacion(mudanzaId, confirmarBajo){
   // Construir array de propuestas activas
   var packs = window._cotPacksDisponibles || [];
   var kmEl = document.getElementById('cot-km-monto');
@@ -5084,7 +5110,7 @@ async function enviarCotizacion(mudanzaId){
     var card = document.getElementById('pp-card-'+nivel);
     if (!card || card.getAttribute('data-on') !== '1') return;
     var pEl = document.getElementById('pp-precio-'+nivel);
-    var rawBase = pEl ? (parseInt((pEl.value || '0').replace(/\./g,'').replace(/[^0-9]/g,'')) || 0) : 0;
+    var rawBase = pEl ? parsePrecioAR(pEl.value) : 0;
     if (rawBase <= 0) return; // no incluir packs sin precio
     var notaEl = document.getElementById('pp-nota-'+nivel);
     var notaPack = notaEl ? notaEl.value.trim() : '';
@@ -5102,7 +5128,8 @@ async function enviarCotizacion(mudanzaId){
     var nombres = { esencial:'Esencial', integral:'Integral', llave:'Llave en mano', flete:'Flete' };
     return '• '+(emojis[p.nivel]||'')+' '+(nombres[p.nivel]||p.nivel)+': $'+parseInt(p.precio).toLocaleString('es-AR');
   }).join('\n');
-  var ok = await confirmarAccion({
+  // Si ya se pidió confirmar un precio bajo, no se repite este diálogo.
+  var ok = confirmarBajo ? true : await confirmarAccion({
     titulo: '¿Enviar cotización?',
     mensaje: 'El cliente recibirá tu propuesta y podrá aceptarla.\n\n'+resumenPacks+(tiempo?'\n\nTiempo estimado: '+tiempo:''),
     textoConfirmar: '✓ Sí, enviar',
@@ -5125,6 +5152,7 @@ async function enviarCotizacion(mudanzaId){
         modalidad:          porHora ? 'hora' : 'cerrado',
         horasIncluidas:     horasIncl,
         valorHoraAdicional: valorHora,
+        confirmarPrecioBajo: !!confirmarBajo,
         // Compat: campos planos por si algún flujo viejo los espera
         precio: String(propuestas[0].precio),
         nota: notaGeneral,
@@ -5140,6 +5168,19 @@ async function enviarCotizacion(mudanzaId){
       btn.disabled = false;
       btn.innerHTML = 'Enviar cotización →';
       alert(d.error);
+      return;
+    }
+    // Precio sospechosamente bajo (ej. 860 en vez de 860.000): se pide confirmar con el monto bien a la vista.
+    if (d.precioBajo) {
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar cotización →';
+      var okBajo = await confirmarAccion({
+        titulo: '⚠️ ¿Es el precio correcto?',
+        mensaje: 'Cargaste $' + parseInt(d.precioIngresado).toLocaleString('es-AR') + ', que parece muy bajo.\n\nSi querías poner $' + (parseInt(d.precioIngresado) * 1000).toLocaleString('es-AR') + ', cancelá y escribilo completo.\n\nSi de verdad es $' + parseInt(d.precioIngresado).toLocaleString('es-AR') + ', confirmalo.',
+        textoConfirmar: 'Sí, es ese precio',
+        colorConfirmar: '#F59E0B'
+      });
+      if (okBajo) return enviarCotizacion(mudanzaId, true);
       return;
     }
     if(d.error) throw new Error(d.error);

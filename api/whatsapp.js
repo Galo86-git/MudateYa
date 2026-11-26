@@ -1215,7 +1215,8 @@ const mudanceroTools = [
       type: 'object',
       properties: {
         pedidoId: { type: 'string', description: 'ID del pedido a cotizar (de ver_pedidos)' },
-        precio: { type: 'integer', description: 'Precio CERRADO en pesos (entero). Ej "80 lucas" = 80000. Solo para quien cobra precio fijo; si cobra por hora usá tarifa_hora y horas_estimadas.' },
+        precio: { type: 'integer', description: 'Precio CERRADO en pesos (entero). Ej "80 lucas" = 80000, "860 mil" = 860000, "1,5 millones" = 1500000. Solo para quien cobra precio fijo; si cobra por hora usá tarifa_hora y horas_estimadas. Si el monto te queda por debajo de $10.000 casi seguro faltan ceros: confirmalo con la persona antes de enviarlo.' },
+        confirmar_precio_bajo: { type: 'boolean', description: 'SOLO si el sistema te devolvió precioBajo:true y la persona confirmó, en su último mensaje, que ese monto exacto es correcto. No lo pongas de entrada.' },
         tarifa_hora: { type: 'integer', description: 'SOLO si cobra por hora: su tarifa por hora en pesos (entero). El sistema calcula el total estimado = tarifa x horas.' },
         horas_estimadas: { type: 'integer', description: 'SOLO si cobra por hora: horas que estima para este trabajo.' },
         nota: { type: 'string', description: 'Qué incluye / aclaraciones (opcional)' },
@@ -1476,6 +1477,13 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
           });
         } catch (e) { return JSON.stringify({ ok: false, error: 'Mudanza no encontrada' }); }
       };
+      // Precio sospechosamente bajo (el servidor lo frena): Emi tiene que confirmarlo con el mudancero ANTES de enviar.
+      // Caso real 2026-11-26: una mudanza de 4 hs se aceptó a $860 (era $860.000).
+      const respuestaPrecioBajo = (d) => ({
+        ok: false, precioBajo: true,
+        error: d.error,
+        nota: `NO se envió la cotización: el monto ($${Number(d.precioIngresado || 0).toLocaleString('es-AR')}) parece demasiado bajo, seguramente faltan ceros. Preguntale al mudancero, con el monto escrito en pesos, si es correcto o si quiso decir $${(Number(d.precioIngresado || 0) * 1000).toLocaleString('es-AR')}. Si confirma que es ESE monto exacto, volvé a llamar a cotizar con los mismos datos y confirmar_precio_bajo:true. Si corrige el monto, usá el nuevo.`,
+      });
       // COBRO POR HORA: se cotiza con tarifa + horas estimadas y el servidor arma
       // el total (tarifa x horas), igual que el formulario de mi-cuenta. Antes se
       // frenaba y se mandaba a la web: quien no entraba quedaba sin cotizar, o
@@ -1494,7 +1502,9 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
           mudanzaId: input.pedidoId, mudanceroEmail: email, mudanceroNombre: nombre, mudanceroTel: tel,
           precio: tarifa, nota: input.nota || '', tiempoEstimado: input.tiempo || (horas + ' horas'),
           modalidad: 'hora', horasIncluidas: horas, valorHoraAdicional: tarifa,
+          confirmarPrecioBajo: !!input.confirmar_precio_bajo,
         });
+        if (!rh.ok && rh.d && rh.d.precioBajo) return JSON.stringify(respuestaPrecioBajo(rh.d));
         if (!rh.ok && /no encontrada/i.test(String((rh.d && rh.d.error) || ''))) return await respuestaPedidoNoEncontrado();
         const totalH = tarifa * horas;
         return JSON.stringify(rh.ok
@@ -1507,7 +1517,9 @@ async function ejecutarToolMudancero(name, input, mudancero, waId, conv, textoAc
       const { ok, d } = await postJSON('cotizar', {
         mudanzaId: input.pedidoId, mudanceroEmail: email, mudanceroNombre: nombre, mudanceroTel: tel,
         precio: input.precio, nota: input.nota || '', tiempoEstimado: input.tiempo || '',
+        confirmarPrecioBajo: !!input.confirmar_precio_bajo,
       });
+      if (!ok && d && d.precioBajo) return JSON.stringify(respuestaPrecioBajo(d));
       if (!ok && /no encontrada/i.test(String((d && d.error) || ''))) return await respuestaPedidoNoEncontrado();
       return JSON.stringify(ok ? { ok: true, nota: 'Cotización enviada. El cliente ya la recibe; te avisamos si te elige.' } : { ok: false, error: d.error || 'No se pudo cotizar.' });
     }
