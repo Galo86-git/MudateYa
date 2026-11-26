@@ -2835,7 +2835,11 @@ async function crearPedido(input, waId, ubicaciones, fotos, textoActual, conv) {
   //     2026-08-06: una mudanza de prueba se notificó a toda la red.
   // OJO: el flag BARRIDO_ACTIVO ya NO está apagado — esto sale en serio.
   const esPrueba = !!quienEscribe(waId);
-  const urgenteReservado = pedido.urgente && alertaUrgenteTels().length > 0;
+  // CAMBIO 2026-11-26: los urgentes YA NO se reservan. Antes, con ALERTA_URGENTE_TEL seteada, un urgente no se barría
+  // y había que mandarlo a mano (pasó con dos fletes del día, Francisco y Catalina: nadie lo vio hasta correr
+  // admin-barrer-pedido). Ahora el urgente sale a los mudanceros de la zona como cualquier pedido, y ALERTA_URGENTE_TEL
+  // solo decide QUIÉN recibe la alerta al equipo. Para volver al modo reservado: URGENTE_RESERVADO=1 en Vercel.
+  const urgenteReservado = pedido.urgente && alertaUrgenteTels().length > 0 && process.env.URGENTE_RESERVADO === '1';
   if (urgenteReservado) {
     console.log(`[barrido] omitido (URGENTE reservado a ALERTA_URGENTE_TEL) — pedido ${id}`);
   } else if (esPrueba) {
